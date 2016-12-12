@@ -1,24 +1,24 @@
-package graph;
+package dag;
 
 import java.util.HashMap;
 
-public class Edge<K, V> {
+public class Edge<I, O> {
   public enum Type {
-    NtoN,
-    OtoN,
-    OtoO,
-    NtoO
+    M2M,
+    O2M,
+    O2O,
+    N2N
   }
 
   private final String id;
   private final HashMap<String, Object> attributes;
   private final Type type;
-  private final Node<?, ?, K, V> src;
-  private final Node<K, V, ?, ?> dst;
+  private final InternalNode<?, I> src;
+  private final InternalNode<O, ?> dst;
 
  public Edge(final Type type,
-             final Node<?, ?, K, V> src,
-             final Node<K, V, ?, ?> dst) {
+             final InternalNode<?, I> src,
+             final InternalNode<O, ?> dst) {
     this.id = IdManager.newEdgeId();
     attributes = new HashMap<>(0);
     this.type = type;
@@ -39,11 +39,11 @@ public class Edge<K, V> {
     return type;
   }
 
-  public Node<?, ?, K, V> getSrc() {
+  public InternalNode<?, I> getSrc() {
     return src;
   }
 
-  public Node<K, V, ?, ?> getDst() {
+  public InternalNode<O, ?> getDst() {
     return dst;
   }
 
@@ -52,6 +52,10 @@ public class Edge<K, V> {
     final StringBuilder sb = new StringBuilder();
     sb.append("id: ");
     sb.append(id);
+    sb.append(", src: ");
+    sb.append(src.getId());
+    sb.append(", dst: ");
+    sb.append(dst.getId());
     sb.append(", attributes: ");
     sb.append(attributes);
     sb.append(", type: ");

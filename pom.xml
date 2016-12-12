@@ -18,9 +18,8 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.beam</groupId>
-            <artifactId>beam-runners-direct-java</artifactId>
+            <artifactId>beam-sdks-java-core</artifactId>
             <version>${beam.version}</version>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

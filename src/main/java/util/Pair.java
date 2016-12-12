@@ -1,4 +1,4 @@
-package graph.examples;
+package util;
 
 public class Pair<K, V> {
   public K key;
