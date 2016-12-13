@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Public API
+ */
 public class DAGBuilder {
   private HashMap<String, List<Edge>> id2inEdges = new HashMap<>();
   private HashMap<String, List<Edge>> id2outEdges = new HashMap<>();
@@ -43,9 +46,10 @@ public class DAGBuilder {
   }
 
   public DAG build() {
-    // TODO: Check graph and see everything is connected and correct
-    final List<Node> sources = nodes.stream()
+    // TODO: Check graph's correctness before returning
+    final List<SourceNode> sources = nodes.stream()
         .filter(node -> !id2inEdges.containsKey(node.getId()))
+        .map(node -> (SourceNode)node)
         .collect(Collectors.toList());
     return new DAG(sources, id2inEdges, id2outEdges);
   }

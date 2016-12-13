@@ -4,7 +4,7 @@ import dag.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
-import org.apache.beam.sdk.runners.TransformTreeNode;
+import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.PValue;
 import util.Pair;
@@ -21,28 +21,32 @@ class Visitor implements Pipeline.PipelineVisitor {
   }
 
   @Override
-  public CompositeBehavior enterCompositeTransform(final TransformTreeNode node) {
-    System.out.println("enter composite " + node.getTransform());
+  public CompositeBehavior enterCompositeTransform(final TransformHierarchy.Node node) {
+    // System.out.println("enter composite " + node.getTransform());
     return CompositeBehavior.ENTER_TRANSFORM;
   }
 
   @Override
-  public void leaveCompositeTransform(final TransformTreeNode node) {
-    System.out.println("leave composite " + node.getTransform());
+  public void leaveCompositeTransform(final TransformHierarchy.Node node) {
+    // System.out.println("leave composite " + node.getTransform());
   }
 
   @Override
-  public void visitPrimitiveTransform(final TransformTreeNode beamNode) {
-    System.out.println("visitp " + beamNode.getTransform());
+  public void visitPrimitiveTransform(final TransformHierarchy.Node beamNode) {
+    // System.out.println("visitp " + beamNode.getTransform());
     if (beamNode.getTransform() instanceof GroupByKey) {
-      final Pair<Node, Edge.Type> src = hashToInNode.get(beamNode.getInput().hashCode());
+      if (beamNode.getInputs().size() != 1)
+        throw new IllegalStateException();
+      final Pair<Node, Edge.Type> src = hashToInNode.get(beamNode.getInputs().iterator().next().hashCode());
       src.val = Edge.Type.M2M;
-      hashToInNode.put(beamNode.getOutput().hashCode(), src);
+      if (beamNode.getOutputs().size() != 1)
+        throw new IllegalStateException();
+      hashToInNode.put(beamNode.getOutputs().iterator().next().hashCode(), src);
     } else {
       final Node newNode = createNode(beamNode);
-      beamNode.getExpandedOutputs()
+      beamNode.getOutputs()
           .forEach(output -> hashToInNode.put(output.hashCode(), new Pair<>(newNode, Edge.Type.O2O)));
-      beamNode.getInputs().keySet().stream()
+      beamNode.getInputs().stream()
           .filter(input -> hashToInNode.containsKey(input.hashCode()))
           .map(input -> hashToInNode.get(input.hashCode()))
           .forEach(pair -> db.connectNodes(pair.key, newNode, pair.val));
@@ -50,12 +54,12 @@ class Visitor implements Pipeline.PipelineVisitor {
   }
 
   @Override
-  public void visitValue(final PValue value, final TransformTreeNode producer) {
+  public void visitValue(final PValue value, final TransformHierarchy.Node  producer) {
     // System.out.println("visitv value " + value);
     // System.out.println("visitv producer " + producer.getTransform());
   }
 
-  private <I, O> Node createNode(final TransformTreeNode beamNode) {
+  private <I, O> Node createNode(final TransformHierarchy.Node  beamNode) {
     final PTransform transform = beamNode.getTransform();
     if (transform instanceof Read.Bounded) {
       // Source
@@ -63,7 +67,12 @@ class Visitor implements Pipeline.PipelineVisitor {
       return db.createNode(new Source<>(read.getSource()));
     } else if (transform instanceof Write.Bound) {
       // Sink
-      final Write.Bound write = (Write.Bound)transform;
+      /*
+      final Write.Bound<I> write = (Write.Bound)transform;
+      final Sink<I> sink = write.getSink();
+      final Sink.WriteOperation wo = sink.createWriteOperation();
+      final Sink.Writer<I, ?> writer = wo.createWriter(
+      */
       throw new UnsupportedOperationException();
     } else if (transform instanceof ParDo.Bound) {
       //  Internal

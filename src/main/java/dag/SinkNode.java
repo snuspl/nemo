@@ -17,15 +17,15 @@ package dag;
 
 import java.util.HashMap;
 
-public class SourceNode<T> implements Node<Void, T> { // Replace Void with something similar to PBegin in Beam
+public class SinkNode<T> implements Node<T, Void> { // Replace Void with something similar to PEnd in Beam
   private final String id;
   private final HashMap<String, Object> attributes;
-  private final Source<T> source;
+  private final Sink<T> sink;
 
-  SourceNode(final Source<T> source) {
+  SinkNode(final Sink<T> sink) {
     this.id = IdManager.newNodeId();
     this.attributes = new HashMap<>();
-    this.source = source;
+    this.sink = sink;
   }
 
   @Override
@@ -38,8 +38,8 @@ public class SourceNode<T> implements Node<Void, T> { // Replace Void with somet
     return attributes;
   }
 
-  public Source<T> getSource() {
-    return source;
+  public Sink<T> getSink() {
+    return sink;
   }
 
   @Override
@@ -49,9 +49,8 @@ public class SourceNode<T> implements Node<Void, T> { // Replace Void with somet
     sb.append(id);
     sb.append(", attributes: ");
     sb.append(attributes);
-    sb.append(", source: ");
-    sb.append(source);
+    sb.append(", sink: ");
+    sb.append(sink);
     return sb.toString();
   }
-
 }

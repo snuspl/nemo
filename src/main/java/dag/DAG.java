@@ -3,13 +3,16 @@ package dag;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * Public API
+ */
 public class DAG {
   private final HashMap<String, List<Edge>> id2inEdges;
   private final HashMap<String, List<Edge>> id2outEdges;
-  private final List<Node> sources;
+  private final List<SourceNode> sources;
   private final Map<String, Object> attributes;
 
-  public DAG(final List<Node> sources,
+  public DAG(final List<SourceNode> sources,
              final HashMap<String, List<Edge>> id2inEdges,
              final HashMap<String, List<Edge>> id2outEdges) {
     this.sources = sources;
@@ -18,7 +21,7 @@ public class DAG {
     this.id2outEdges = id2outEdges;
   }
 
-  public List<Node> getSources() {
+  public List<SourceNode> getSources() {
     return sources;
   }
 

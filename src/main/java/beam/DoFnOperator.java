@@ -20,14 +20,15 @@ class DoFnOperator<I, O> implements dag.Operator<I, O> {
 
   @Override
   public Iterable<O> compute(final Iterable<I> input) {
-    final DoFnInvoker<I, O> invoker = DoFnInvokers.INSTANCE.newByteBuddyInvoker(doFn);
+    final DoFnInvoker<I, O> invoker = DoFnInvokers.invokerFor(doFn);
     final ArrayList<O> outputList = new ArrayList<>();
     final ProcessContext<I, O> context = new ProcessContext<>(doFn, outputList);
+
     invoker.invokeSetup();
     invoker.invokeStartBundle(context);
     input.forEach(element -> {
       context.setElement(element);
-      invoker.invokeProcessElement(context, null);
+      invoker.invokeProcessElement(context);
     });
     invoker.invokeFinishBundle(context);
     invoker.invokeTeardown();

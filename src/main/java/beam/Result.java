@@ -21,12 +21,12 @@ public class Result implements PipelineResult {
   }
 
   @Override
-  public State waitUntilFinish(Duration duration) throws IOException, InterruptedException {
+  public State waitUntilFinish(Duration duration) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public State waitUntilFinish() throws IOException, InterruptedException {
+  public State waitUntilFinish() {
     throw new UnsupportedOperationException();
   }
 

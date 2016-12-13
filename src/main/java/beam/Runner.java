@@ -1,5 +1,6 @@
 package beam;
 
+import beam.examples.SimpleMapReduceEngine;
 import dag.DAG;
 import dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
@@ -17,7 +18,15 @@ public class Runner extends PipelineRunner<Result> {
     final Visitor visitor = new Visitor(db);
     pipeline.traverseTopologically(visitor);
     final DAG dag = db.build();
+
+    System.out.println("##### VORTEX COMPILER #####");
     DAG.print(dag);
+    System.out.println("##### VORTEX ENGINE #####");
+    try {
+      SimpleMapReduceEngine.executeDAG(dag);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     return new Result();
   }
 }
