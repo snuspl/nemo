@@ -1,36 +1,41 @@
 package dag;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class DAG {
-  private final List<InternalNode> sources;
+  private final HashMap<String, List<Edge>> id2inEdges;
+  private final HashMap<String, List<Edge>> id2outEdges;
+  private final List<Node> sources;
   private final Map<String, Object> attributes;
 
-  public DAG(final List<InternalNode> sources) {
+  public DAG(final List<Node> sources,
+             final HashMap<String, List<Edge>> id2inEdges,
+             final HashMap<String, List<Edge>> id2outEdges) {
     this.sources = sources;
     this.attributes = new HashMap<>();
+    this.id2inEdges = id2inEdges;
+    this.id2outEdges = id2outEdges;
   }
 
-  public List<InternalNode> getSources() {
+  public List<Node> getSources() {
     return sources;
   }
 
-  List<Edge<?, I>> getInEdges();
+  public Optional<List<Edge>> getInEdges(final Node node) {
+    final List<Edge> inEdges = id2inEdges.get(node.getId());
+    return inEdges == null ? Optional.empty() : Optional.of(inEdges);
+  }
 
-  List<Edge<O, ?>> getOutEdges();
-
-  void addInEdge(final Edge<?, I> edge);
-
-  void addOutEdge(final Edge<O, ?> edge);
+  public Optional<List<Edge>> getOutEdges(final Node node) {
+    final List<Edge> outEdges = id2outEdges.get(node.getId());
+    return outEdges == null ? Optional.empty() : Optional.of(outEdges);
+  }
 
   ////////// Auxiliary functions for graph construction and view
 
-  public static void print(final DAG DAG) {
-    doDFS(DAG, (node -> System.out.println(node)), VisitOrder.Pre);
+  public static void print(final DAG dag) {
+    doDFS(dag, (node -> System.out.println("<node> " + node + " / <inEdges> " + dag.getInEdges(node))), VisitOrder.Pre);
   }
 
   ////////// DFS Traversal
@@ -41,30 +46,29 @@ public class DAG {
 
   private static HashSet visited;
 
-  public static void doDFS(final DAG DAG,
-                           final Consumer<InternalNode> function,
+  public static void doDFS(final DAG dag,
+                           final Consumer<Node> function,
                            final VisitOrder visitOrder) {
     visited = new HashSet();
-    for (final InternalNode node : DAG.getSources()) {
-      if (!visited.contains(node)) {
-        DFSVisit(node, function, visitOrder);
-      }
-    }
+    dag.getSources().stream()
+        .filter(source -> !visited.contains(source))
+        .forEach(source -> DFSVisit(dag, source, function, visitOrder));
     visited = null;
   }
 
-  private static <K, V> void DFSVisit(final InternalNode node,
-                                      final Consumer<InternalNode> nodeConsumer,
-                                      final VisitOrder visitOrder) {
+  private static void DFSVisit(final DAG dag,
+                               final Node node,
+                               final Consumer<Node> nodeConsumer,
+                               final VisitOrder visitOrder) {
     if (visitOrder == VisitOrder.Pre) {
       nodeConsumer.accept(node);
     }
-    final List<Edge> outEdges = node.getOutEdges();
-    for (final Edge<K, V> outEdge : outEdges) {
-      final InternalNode outNode = outEdge.getDst();
-      if (!visited.contains(outNode)) {
-        DFSVisit(outNode, nodeConsumer, visitOrder);
-      }
+    final Optional<List<Edge>> outEdges = dag.getOutEdges(node);
+    if (outEdges.isPresent()) {
+      outEdges.get().stream()
+          .map(outEdge -> outEdge.getDst())
+          .filter(outNode -> !visited.contains(outNode))
+          .forEach(outNode -> DFSVisit(dag, outNode, nodeConsumer, visitOrder));
     }
     if (visitOrder == VisitOrder.Post) {
       nodeConsumer.accept(node);

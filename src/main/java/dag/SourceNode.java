@@ -1,4 +1,5 @@
-package dag;/*
+package dag;
+/*
  * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,44 +15,31 @@ package dag;/*
  * limitations under the License.
  */
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class SourceNode<O> implements Node<Void, O> {
   private final String id;
   private final HashMap<String, Object> attributes;
-  private final Reader<O> reader;
-  private final List<Edge<O, ?>> outEdges = new ArrayList<>(0);
+  private final Source<O> source;
 
-  public SourceNode() {
+  SourceNode(final Source<O> source) {
     this.id = IdManager.newNodeId();
     this.attributes = new HashMap<>();
+    this.source = source;
   }
 
+  @Override
   public String getId() {
     return id;
   }
 
+  @Override
   public HashMap<String, Object> getAttributes() {
     return attributes;
   }
 
-  public List<Edge<?, Void>> getInEdges() {
-    return inEdges;
-  }
-
-  public List<Edge<O, ?>> getOutEdges() {
-    return outEdges;
-  }
-
-  public void addInEdge(final Edge<?, I> edge) {
-    throw new UnsupportedOperationException()
-  }
-
-  public void addOutEdge(final Edge<O, ?> edge) {
-    // Checking
-    outEdges.add(edge);
+  public Source<O> getSource() {
+    return source;
   }
 
   @Override
@@ -61,10 +49,8 @@ public class SourceNode<O> implements Node<Void, O> {
     sb.append(id);
     sb.append(", attributes: ");
     sb.append(attributes);
-    sb.append(", operator: ");
-    sb.append(operator);
-    sb.append(", outEdges: ");
-    sb.append(outEdges);
+    sb.append(", source: ");
+    sb.append(source);
     return sb.toString();
   }
 

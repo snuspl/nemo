@@ -6,10 +6,10 @@ import org.apache.beam.sdk.transforms.reflect.DoFnInvokers;
 
 import java.util.ArrayList;
 
-public class DoFnOperator<I, O> implements dag.Operator<I, O> {
+class DoFnOperator<I, O> implements dag.Operator<I, O> {
   private final DoFn<I, O> doFn;
 
-  public DoFnOperator(final DoFn<I, O> doFn) {
+  DoFnOperator(final DoFn<I, O> doFn) {
     this.doFn = doFn;
   }
 

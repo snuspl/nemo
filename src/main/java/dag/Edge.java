@@ -13,12 +13,12 @@ public class Edge<I, O> {
   private final String id;
   private final HashMap<String, Object> attributes;
   private final Type type;
-  private final InternalNode<?, I> src;
-  private final InternalNode<O, ?> dst;
+  private final Node<?, I> src;
+  private final Node<O, ?> dst;
 
- public Edge(final Type type,
-             final InternalNode<?, I> src,
-             final InternalNode<O, ?> dst) {
+  Edge(final Type type,
+       final Node<?, I> src,
+       final Node<O, ?> dst) {
     this.id = IdManager.newEdgeId();
     attributes = new HashMap<>(0);
     this.type = type;
@@ -39,11 +39,11 @@ public class Edge<I, O> {
     return type;
   }
 
-  public InternalNode<?, I> getSrc() {
+  public Node<?, I> getSrc() {
     return src;
   }
 
-  public InternalNode<O, ?> getDst() {
+  public Node<O, ?> getDst() {
     return dst;
   }
 
