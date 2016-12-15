@@ -1,33 +1,38 @@
-package beam;
+package beam.node;
 
+import dag.node.Source;
 import org.apache.beam.sdk.io.BoundedSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class Source<O> implements dag.Source<O> {
-  private final BoundedSource<O> beamSource;
+public class BeamSource<O> extends Source<O> {
+  private final BoundedSource<O> source;
 
-  Source(final BoundedSource<O> beamSource) {
-    this.beamSource = beamSource;
+  public BeamSource(final BoundedSource<O> source) {
+    this.source = source;
   }
 
   @Override
-  public List<dag.Source.Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception {
+  public List<Source.Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception {
     // Can't use lambda due to exception thrown
-    final List<dag.Source.Reader<O>> readers = new ArrayList<>();
-    for (final BoundedSource<O> bs : beamSource.splitIntoBundles(desiredBundleSizeBytes, null)) {
-      readers.add(new Reader<>(bs.createReader(null)));
+    final List<Source.Reader<O>> readers = new ArrayList<>();
+    for (final BoundedSource<O> s : source.splitIntoBundles(desiredBundleSizeBytes, null)) {
+      readers.add(new Reader<>(s.createReader(null)));
     }
     return readers;
   }
 
   @Override
   public String toString() {
-    return beamSource.toString();
+    final StringBuilder sb = new StringBuilder();
+    sb.append(super.toString());
+    sb.append(", BoundedSource: ");
+    sb.append(source);
+    return sb.toString();
   }
 
-  class Reader<T> implements dag.Source.Reader {
+  public class Reader<T> implements dag.node.Source.Reader<T> {
     private final BoundedSource.BoundedReader<T> beamReader;
 
     Reader(final BoundedSource.BoundedReader<T> beamReader) {

@@ -17,17 +17,17 @@ import org.joda.time.Instant;
 
 import java.util.ArrayList;
 
-class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext implements DoFnInvoker.ArgumentProvider<I, O> {
+public class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext implements DoFnInvoker.ArgumentProvider<I, O> {
   private I element;
   private final ArrayList<O> outputs;
 
-  ProcessContext(final DoFn<I, O> fn,
+  public ProcessContext(final DoFn<I, O> fn,
                         final ArrayList<O> outputs) {
     fn.super();
     this.outputs = outputs;
   }
 
-  void setElement(final I element) {
+  public void setElement(final I element) {
     this.element = element;
   }
 

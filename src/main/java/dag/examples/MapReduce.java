@@ -1,6 +1,7 @@
 package dag.examples;
 
 import dag.*;
+import dag.node.Node;
 import util.Pair;
 
 import java.util.LinkedList;
@@ -9,16 +10,15 @@ import java.util.Optional;
 
 public class MapReduce {
   public static void main(final String[] args) {
-    final EmptyOperator<String, Pair<String, Integer>> mapOp = new EmptyOperator<>("MapOperator");
-    final EmptyOperator<Pair<String, Iterable<Integer>>, String> reduceOp = new EmptyOperator<>("ReduceOperator");
-    final DAGBuilder db = new DAGBuilder();
-
-    final Node<String, Pair<String, Integer>> mapNode = db.createNode(mapOp);
-    final Node<Pair<String, Iterable<Integer>>, String> reduceNode = db.createNode(reduceOp);
+    final EmptyDo<String, Pair<String, Integer>> map = new EmptyDo<>("MapOperator");
+    final EmptyDo<Pair<String, Iterable<Integer>>, String> reduce = new EmptyDo<>("ReduceOperator");
 
     // Before
-    db.connectNodes(mapNode, reduceNode, Edge.Type.M2M);
-    final DAG dag = db.build();
+    final DAGBuilder builder = new DAGBuilder();
+    builder.addNode(map);
+    builder.addNode(reduce);
+    builder.connectNodes(map, reduce, Edge.Type.M2M);
+    final DAG dag = builder.build();
     System.out.println("Before DoFnOperator Placement");
     DAG.print(dag);
 

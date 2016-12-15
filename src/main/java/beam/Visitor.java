@@ -1,23 +1,26 @@
 package beam;
 
+import beam.node.BeamDo;
+import beam.node.BeamSource;
 import dag.*;
+import dag.node.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.values.PValue;
-import util.Pair;
 
 import java.util.HashMap;
 
 class Visitor implements Pipeline.PipelineVisitor {
-  private final DAGBuilder db;
-  private final HashMap<Integer, Pair<Node, Edge.Type>> hashToInNode;
+  private final DAGBuilder builder;
+  private final HashMap<Integer, Node> hashToNodeOutput;
 
-  Visitor(final DAGBuilder db) {
-    this.db = db;
-    this.hashToInNode = new HashMap<>();
+  Visitor(final DAGBuilder builder) {
+    this.builder = builder;
+    this.hashToNodeOutput = new HashMap<>();
   }
 
   @Override
@@ -34,23 +37,19 @@ class Visitor implements Pipeline.PipelineVisitor {
   @Override
   public void visitPrimitiveTransform(final TransformHierarchy.Node beamNode) {
     // System.out.println("visitp " + beamNode.getTransform());
-    if (beamNode.getTransform() instanceof GroupByKey) {
-      if (beamNode.getInputs().size() != 1)
-        throw new IllegalStateException();
-      final Pair<Node, Edge.Type> src = hashToInNode.get(beamNode.getInputs().iterator().next().hashCode());
-      src.val = Edge.Type.M2M;
-      if (beamNode.getOutputs().size() != 1)
-        throw new IllegalStateException();
-      hashToInNode.put(beamNode.getOutputs().iterator().next().hashCode(), src);
-    } else {
-      final Node newNode = createNode(beamNode);
-      beamNode.getOutputs()
-          .forEach(output -> hashToInNode.put(output.hashCode(), new Pair<>(newNode, Edge.Type.O2O)));
-      beamNode.getInputs().stream()
-          .filter(input -> hashToInNode.containsKey(input.hashCode()))
-          .map(input -> hashToInNode.get(input.hashCode()))
-          .forEach(pair -> db.connectNodes(pair.key, newNode, pair.val));
-    }
+    if (beamNode.getOutputs().size() > 1 || beamNode.getInputs().size() > 1)
+      throw new UnsupportedOperationException(beamNode.toString());
+
+    final Node newNode = createNode(beamNode);
+    builder.addNode(newNode);
+
+    beamNode.getOutputs()
+        .forEach(output -> hashToNodeOutput.put(output.hashCode(), newNode));
+
+    beamNode.getInputs().stream()
+        .filter(input -> hashToNodeOutput.containsKey(input.hashCode()))
+        .map(input -> hashToNodeOutput.get(input.hashCode()))
+        .forEach(src -> builder.connectNodes(src, newNode, getInEdgeType(newNode)));
   }
 
   @Override
@@ -59,12 +58,15 @@ class Visitor implements Pipeline.PipelineVisitor {
     // System.out.println("visitv producer " + producer.getTransform());
   }
 
-  private <I, O> Node createNode(final TransformHierarchy.Node  beamNode) {
+  private <I, O> Node createNode(final TransformHierarchy.Node beamNode) {
     final PTransform transform = beamNode.getTransform();
     if (transform instanceof Read.Bounded) {
       // Source
       final Read.Bounded<O> read = (Read.Bounded)transform;
-      return db.createNode(new Source<>(read.getSource()));
+      final BeamSource<O> source = new BeamSource<>(read.getSource());
+      return source;
+    } else if (transform instanceof GroupByKey) {
+      return new dag.node.GroupByKey();
     } else if (transform instanceof Write.Bound) {
       // Sink
       /*
@@ -73,14 +75,21 @@ class Visitor implements Pipeline.PipelineVisitor {
       final Sink.WriteOperation wo = sink.createWriteOperation();
       final Sink.Writer<I, ?> writer = wo.createWriter(
       */
-      throw new UnsupportedOperationException();
+      throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       //  Internal
       final ParDo.Bound<I, O> pd = (ParDo.Bound<I, O>)transform;
-      final DoFn<I, O> fn = pd.getNewFn();
-      return db.createNode(new DoFnOperator<>(fn));
+      return new BeamDo<>(pd.getNewFn());
     } else {
-      throw new IllegalArgumentException("Unknown Transform: " + transform);
+      throw new UnsupportedOperationException(transform.toString());
+    }
+  }
+
+  private Edge.Type getInEdgeType(final Node node) {
+    if (node instanceof dag.node.GroupByKey) {
+      return Edge.Type.M2M;
+    } else {
+      return Edge.Type.O2O;
     }
   }
 }

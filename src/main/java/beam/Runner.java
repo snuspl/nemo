@@ -14,10 +14,10 @@ public class Runner extends PipelineRunner<Result> {
   }
 
   public Result run(final Pipeline pipeline) {
-    final DAGBuilder db = new DAGBuilder();
-    final Visitor visitor = new Visitor(db);
+    final DAGBuilder builder = new DAGBuilder();
+    final Visitor visitor = new Visitor(builder);
     pipeline.traverseTopologically(visitor);
-    final DAG dag = db.build();
+    final DAG dag = builder.build();
 
     System.out.println("##### VORTEX COMPILER #####");
     DAG.print(dag);

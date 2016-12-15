@@ -1,5 +1,8 @@
 package dag;
 
+import dag.node.Node;
+import dag.node.Source;
+
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -9,10 +12,10 @@ import java.util.function.Consumer;
 public class DAG {
   private final HashMap<String, List<Edge>> id2inEdges;
   private final HashMap<String, List<Edge>> id2outEdges;
-  private final List<SourceNode> sources;
+  private final List<Source> sources;
   private final Map<String, Object> attributes;
 
-  public DAG(final List<SourceNode> sources,
+  public DAG(final List<Source> sources,
              final HashMap<String, List<Edge>> id2inEdges,
              final HashMap<String, List<Edge>> id2outEdges) {
     this.sources = sources;
@@ -21,7 +24,7 @@ public class DAG {
     this.id2outEdges = id2outEdges;
   }
 
-  public List<SourceNode> getSources() {
+  public List<Source> getSources() {
     return sources;
   }
 
@@ -47,12 +50,12 @@ public class DAG {
     Post
   }
 
-  private static HashSet visited;
+  private static HashSet<Node> visited;
 
   public static void doDFS(final DAG dag,
                            final Consumer<Node> function,
                            final VisitOrder visitOrder) {
-    visited = new HashSet();
+    visited = new HashSet<>();
     dag.getSources().stream()
         .filter(source -> !visited.contains(source))
         .forEach(source -> DFSVisit(dag, source, function, visitOrder));
@@ -63,6 +66,7 @@ public class DAG {
                                final Node node,
                                final Consumer<Node> nodeConsumer,
                                final VisitOrder visitOrder) {
+    visited.add(node);
     if (visitOrder == VisitOrder.Pre) {
       nodeConsumer.accept(node);
     }

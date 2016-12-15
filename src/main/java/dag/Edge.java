@@ -1,5 +1,8 @@
 package dag;
 
+import dag.node.Node;
+import util.IdManager;
+
 import java.util.HashMap;
 
 public class Edge<I, O> {

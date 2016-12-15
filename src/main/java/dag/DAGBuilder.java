@@ -1,5 +1,7 @@
 package dag;
 
+import dag.node.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,16 +18,8 @@ public class DAGBuilder {
   public DAGBuilder() {
   }
 
-  public <T> Node<Void, T> createNode(final Source<T> source) {
-    final SourceNode<T> node = new SourceNode<>(source);
+  public void addNode(final Node node) {
     nodes.add(node);
-    return node;
-  }
-
-  public <I, O> Node<I, O> createNode(final Operator<I, O> operator) {
-    final InternalNode<I, O> node = new InternalNode<>(operator);
-    nodes.add(node);
-    return node;
   }
 
   public <I, O> Edge<I, O> connectNodes(final Node<?, I> src, final Node<O, ?> dst, final Edge.Type type) {
@@ -47,9 +41,9 @@ public class DAGBuilder {
 
   public DAG build() {
     // TODO: Check graph's correctness before returning
-    final List<SourceNode> sources = nodes.stream()
+    final List<Source> sources = nodes.stream()
         .filter(node -> !id2inEdges.containsKey(node.getId()))
-        .map(node -> (SourceNode)node)
+        .map(node -> (Source)node)
         .collect(Collectors.toList());
     return new DAG(sources, id2inEdges, id2outEdges);
   }
