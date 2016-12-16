@@ -29,6 +29,10 @@ public class Edge<I, O> {
     this.dst = dst;
   }
 
+  public String getId() {
+    return id;
+  }
+
   Edge setAttr(final String key, final Object val) {
     attributes.put(key, val);
     return this;

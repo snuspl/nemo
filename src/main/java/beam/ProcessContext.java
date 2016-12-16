@@ -16,15 +16,19 @@ import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext implements DoFnInvoker.ArgumentProvider<I, O> {
   private I element;
+  private final Map<PCollectionView, Object> broadcasted;
   private final ArrayList<O> outputs;
 
   public ProcessContext(final DoFn<I, O> fn,
-                        final ArrayList<O> outputs) {
+                        final ArrayList<O> outputs,
+                        final Map<PCollectionView, Object> broadcasted) {
     fn.super();
     this.outputs = outputs;
+    this.broadcasted = broadcasted;
   }
 
   public void setElement(final I element) {
@@ -38,7 +42,7 @@ public class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext implements D
 
   @Override
   public <T> T sideInput(final PCollectionView<T> view) {
-    throw new UnsupportedOperationException();
+    return (T)broadcasted.get(view);
   }
 
   @Override

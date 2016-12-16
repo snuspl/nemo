@@ -1,5 +1,6 @@
 package beam;
 
+import beam.node.BeamBroadcast;
 import beam.node.BeamDo;
 import beam.node.BeamSource;
 import dag.*;
@@ -16,11 +17,11 @@ import java.util.HashMap;
 
 class Visitor implements Pipeline.PipelineVisitor {
   private final DAGBuilder builder;
-  private final HashMap<Integer, Node> hashToNodeOutput;
+  private final HashMap<PValue, Node> PValueToNodeOutput;
 
   Visitor(final DAGBuilder builder) {
     this.builder = builder;
-    this.hashToNodeOutput = new HashMap<>();
+    this.PValueToNodeOutput = new HashMap<>();
   }
 
   @Override
@@ -44,11 +45,11 @@ class Visitor implements Pipeline.PipelineVisitor {
     builder.addNode(newNode);
 
     beamNode.getOutputs()
-        .forEach(output -> hashToNodeOutput.put(output.hashCode(), newNode));
+        .forEach(output -> PValueToNodeOutput.put(output, newNode));
 
     beamNode.getInputs().stream()
-        .filter(input -> hashToNodeOutput.containsKey(input.hashCode()))
-        .map(input -> hashToNodeOutput.get(input.hashCode()))
+        .filter(PValueToNodeOutput::containsKey)
+        .map(PValueToNodeOutput::get)
         .forEach(src -> builder.connectNodes(src, newNode, getInEdgeType(newNode)));
   }
 
@@ -67,6 +68,11 @@ class Visitor implements Pipeline.PipelineVisitor {
       return source;
     } else if (transform instanceof GroupByKey) {
       return new dag.node.GroupByKey();
+    } else if (transform instanceof View.CreatePCollectionView) {
+      final View.CreatePCollectionView view = (View.CreatePCollectionView)transform;
+      final Broadcast newNode = new BeamBroadcast(view.getView());
+      PValueToNodeOutput.put(view.getView(), newNode);
+      return newNode;
     } else if (transform instanceof Write.Bound) {
       // Sink
       /*
@@ -78,16 +84,24 @@ class Visitor implements Pipeline.PipelineVisitor {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       //  Internal
-      final ParDo.Bound<I, O> pd = (ParDo.Bound<I, O>)transform;
-      return new BeamDo<>(pd.getNewFn());
+      final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>)transform;
+      final BeamDo<I, O> newNode = new BeamDo<>(parDo.getNewFn());
+      parDo.getSideInputs().stream()
+          .filter(PValueToNodeOutput::containsKey)
+          .map(PValueToNodeOutput::get)
+          .forEach(src -> builder.connectNodes(src, newNode, Edge.Type.O2O)); // Broadcasted = O2O
+      return newNode;
     } else {
       throw new UnsupportedOperationException(transform.toString());
     }
   }
 
+
   private Edge.Type getInEdgeType(final Node node) {
     if (node instanceof dag.node.GroupByKey) {
       return Edge.Type.M2M;
+    } else if (node instanceof dag.node.Broadcast) {
+      return Edge.Type.O2M;
     } else {
       return Edge.Type.O2O;
     }

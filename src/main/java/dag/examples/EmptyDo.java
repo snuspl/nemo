@@ -2,7 +2,9 @@ package dag.examples;
 
 import dag.node.Do;
 
-public class EmptyDo<I, O> extends Do<I, O> {
+import java.util.Map;
+
+public class EmptyDo<I, O, T> extends Do<I, O, T> {
   private final String name;
 
   public EmptyDo(final String name) {
@@ -19,7 +21,7 @@ public class EmptyDo<I, O> extends Do<I, O> {
   }
 
   @Override
-  public Iterable<O> compute(Iterable<I> input) {
+  public Iterable<O> compute(Iterable<I> input, Map<T, Object> broadcasted) {
     return null;
   }
 }

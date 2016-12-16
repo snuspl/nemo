@@ -1,5 +1,7 @@
 package dag.node;
 
-public abstract class Do<I, O> extends Node<I, O> {
-  public abstract Iterable<O> compute(Iterable<I> input);
+import java.util.Map;
+
+public abstract class Do<I, O, T> extends Node<I, O> {
+  public abstract Iterable<O> compute(Iterable<I> input, Map<T, Object> broadcasted);
 }

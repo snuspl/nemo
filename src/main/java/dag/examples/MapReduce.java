@@ -10,8 +10,8 @@ import java.util.Optional;
 
 public class MapReduce {
   public static void main(final String[] args) {
-    final EmptyDo<String, Pair<String, Integer>> map = new EmptyDo<>("MapOperator");
-    final EmptyDo<Pair<String, Iterable<Integer>>, String> reduce = new EmptyDo<>("ReduceOperator");
+    final EmptyDo<String, Pair<String, Integer>, Void> map = new EmptyDo<>("MapOperator");
+    final EmptyDo<Pair<String, Iterable<Integer>>, String, Void> reduce = new EmptyDo<>("ReduceOperator");
 
     // Before
     final DAGBuilder builder = new DAGBuilder();

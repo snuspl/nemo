@@ -1,25 +1,47 @@
 package beam.examples;
 
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.View;
+import beam.Runner;
+import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.io.TextIO;
+import org.apache.beam.sdk.options.PipelineOptions;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.*;
 
-public final class ComplexWorkload {
-  /*
+import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+public final class SideInput {
   public static void main(final String[] args) {
-    final PCollection<Integer> maxWordLengthCutOff = ...; // Singleton PCollection
-    final PCollectionView<Integer> maxWordLengthCutOffView = maxWordLengthCutOff.apply(View.<Integer>asSingleton());
-    final PCollection<String> wordsBelowCutOff = words.apply(ParDo.withSideInputs(maxWordLengthCutOffView)
+    final String inputFilePath = args[0];
+    final String outputFilePath = args[1];
+    final PipelineOptions options = PipelineOptionsFactory.create();
+    options.setRunner(Runner.class);
+
+    final Pipeline p = Pipeline.create(options);
+    final PCollection<String> elemCollection = p.apply(TextIO.Read.from(inputFilePath));
+    final PCollectionView<Iterable<String>> allCollection = elemCollection.apply(View.<String>asIterable());
+
+    elemCollection.apply(ParDo.withSideInputs(allCollection)
         .of(new DoFn<String, String>() {
           @ProcessElement
-          public void processElement(ProcessContext c) {
-            String word = c.element();
-            int lengthCutOff = c.sideInput(maxWordLengthCutOffView);
-            if (word.length() <= lengthCutOff) {
-              c.output(word);
+          public void processElement(final ProcessContext c) {
+            final String line = c.element();
+            final Iterable<String> all = c.sideInput(allCollection);
+            final Optional<String> appended = StreamSupport.stream(all.spliterator(), false)
+                .reduce((l, r) -> l + '%' + r);
+            if (appended.isPresent()) {
+              c.output("line: " + line + ", all: " + appended.get());
+            } else {
+              c.output("error");
             }
           }}));
+
+    p.run();
+  }
+
+  /*
+  public static void main(final String[] args) {
 
     final int wordLengthCutOff = 10;
     // Create tags to use for the main and side outputs.
