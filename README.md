@@ -1,7 +1,5 @@
 # Vortex 
-<!---
-[![Build Status](http://cmscluster.snu.ac.kr/jenkins/job/Vortex-master/badge/icon)](http://cmscluster.snu.ac.kr/jenkins/job/Vortex-master/)
--->
+[![Build Status](http://cmscluster.snu.ac.kr:8080/jenkins/buildStatus/icon?job=Vortex-master)](http://cmscluster.snu.ac.kr:8080/jenkins/job/Vortex-master/)
 
 Vortex is a general-purpose data-processing engine.
 
