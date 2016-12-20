@@ -41,17 +41,20 @@ class Visitor implements Pipeline.PipelineVisitor {
 
   @Override
   public CompositeBehavior enterCompositeTransform(final TransformHierarchy.Node node) {
+    // Print if needed for development
     // System.out.println("enter composite " + node.getTransform());
     return CompositeBehavior.ENTER_TRANSFORM;
   }
 
   @Override
   public void leaveCompositeTransform(final TransformHierarchy.Node node) {
+    // Print if needed for development
     // System.out.println("leave composite " + node.getTransform());
   }
 
   @Override
   public void visitPrimitiveTransform(final TransformHierarchy.Node beamNode) {
+    // Print if needed for development
     // System.out.println("visitp " + beamNode.getTransform());
     if (beamNode.getOutputs().size() > 1 || beamNode.getInputs().size() > 1)
       throw new UnsupportedOperationException(beamNode.toString());
@@ -70,6 +73,7 @@ class Visitor implements Pipeline.PipelineVisitor {
 
   @Override
   public void visitValue(final PValue value, final TransformHierarchy.Node  producer) {
+    // Print if needed for development
     // System.out.println("visitv value " + value);
     // System.out.println("visitv producer " + producer.getTransform());
   }
@@ -77,7 +81,6 @@ class Visitor implements Pipeline.PipelineVisitor {
   private <I, O> Node createNode(final TransformHierarchy.Node beamNode) {
     final PTransform transform = beamNode.getTransform();
     if (transform instanceof Read.Bounded) {
-      // Source
       final Read.Bounded<O> read = (Read.Bounded)transform;
       final BeamSource<O> source = new BeamSource<>(read.getSource());
       return source;
@@ -89,16 +92,8 @@ class Visitor implements Pipeline.PipelineVisitor {
       PValueToNodeOutput.put(view.getView(), newNode);
       return newNode;
     } else if (transform instanceof Write.Bound) {
-      // Sink
-      /*
-      final Write.Bound<I> write = (Write.Bound)transform;
-      final Sink<I> sink = write.getSink();
-      final Sink.WriteOperation wo = sink.createWriteOperation();
-      final Sink.Writer<I, ?> writer = wo.createWriter(
-      */
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
-      //  Internal
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>)transform;
       final BeamDo<I, O> newNode = new BeamDo<>(parDo.getNewFn());
       parDo.getSideInputs().stream()
@@ -110,7 +105,6 @@ class Visitor implements Pipeline.PipelineVisitor {
       throw new UnsupportedOperationException(transform.toString());
     }
   }
-
 
   private Edge.Type getInEdgeType(final Node node) {
     if (node instanceof dag.node.GroupByKey) {

@@ -15,12 +15,19 @@
  */
 package beam;
 
+import dag.Attributes;
+import dag.Edge;
+import dag.node.Node;
 import engine.SimpleEngine;
 import dag.DAG;
 import dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.PipelineRunner;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 public class Runner extends PipelineRunner<Result> {
 
@@ -34,8 +41,13 @@ public class Runner extends PipelineRunner<Result> {
     pipeline.traverseTopologically(visitor);
     final DAG dag = builder.build();
 
-    System.out.println("##### VORTEX COMPILER #####");
+    System.out.println("##### VORTEX COMPILER (Before Placement) #####");
     DAG.print(dag);
+
+    System.out.println("##### VORTEX COMPILER (After Placement) #####");
+    place(dag);
+    DAG.print(dag);
+
     System.out.println("##### VORTEX ENGINE #####");
     try {
       SimpleEngine.executeDAG(dag);
@@ -44,4 +56,31 @@ public class Runner extends PipelineRunner<Result> {
     }
     return new Result();
   }
+
+  private void place(final DAG dag) {
+    final List<Node> topoSorted = new LinkedList<>();
+    DAG.doDFS(dag, (node -> topoSorted.add(0, node)), DAG.VisitOrder.PostOrder);
+    topoSorted.forEach(node -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdges(node);
+      if (!inEdges.isPresent()) {
+        node.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+      } else {
+        if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
+          node.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved);
+        } else {
+          node.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+        }
+      }
+    });
+  }
+
+  private boolean hasM2M(final List<Edge> edges) {
+    return edges.stream().filter(edge -> edge.getType() == Edge.Type.M2M).count() > 0;
+  }
+
+  private boolean allFromReserved(final List<Edge> edges) {
+    return edges.stream()
+        .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Placement.Reserved);
+  }
+
 }

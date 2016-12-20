@@ -24,11 +24,10 @@ public class Edge<I, O> {
     M2M,
     O2M,
     O2O,
-    N2N
   }
 
   private final String id;
-  private final HashMap<String, Object> attributes;
+  private final HashMap<Attributes.Key, Attributes.Val> attributes;
   private final Type type;
   private final Node<?, I> src;
   private final Node<O, ?> dst;
@@ -37,7 +36,7 @@ public class Edge<I, O> {
        final Node<?, I> src,
        final Node<O, ?> dst) {
     this.id = IdManager.newEdgeId();
-    attributes = new HashMap<>(0);
+    this.attributes = new HashMap<>(0);
     this.type = type;
     this.src = src;
     this.dst = dst;
@@ -47,12 +46,12 @@ public class Edge<I, O> {
     return id;
   }
 
-  Edge setAttr(final String key, final Object val) {
+  public Edge<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
     attributes.put(key, val);
     return this;
   }
 
-  Object getAttr(final String key) {
+  public Attributes.Val getAttr(final Attributes.Key key) {
     return attributes.get(key);
   }
 

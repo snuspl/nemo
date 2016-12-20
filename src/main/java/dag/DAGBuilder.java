@@ -22,15 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Public API
- */
 public class DAGBuilder {
-  private HashMap<String, List<Edge>> id2inEdges = new HashMap<>();
-  private HashMap<String, List<Edge>> id2outEdges = new HashMap<>();
-  private List<Node> nodes = new ArrayList<>();
+  private HashMap<String, List<Edge>> id2inEdges;
+  private HashMap<String, List<Edge>> id2outEdges;
+  private List<Node> nodes;
 
   public DAGBuilder() {
+    this.id2inEdges = new HashMap<>();
+    this.id2outEdges = new HashMap<>();
+    this.nodes = new ArrayList<>();
   }
 
   public void addNode(final Node node) {
@@ -55,7 +55,7 @@ public class DAGBuilder {
   }
 
   public DAG build() {
-    // TODO: Check graph's correctness before returning
+    // TODO #22: DAG Integrity Check
     final List<Source> sources = nodes.stream()
         .filter(node -> !id2inEdges.containsKey(node.getId()))
         .map(node -> (Source)node)

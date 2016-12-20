@@ -43,7 +43,7 @@ public final class MapReduce {
         .apply(Combine.<String, Long, Long>groupedValues(new Sum.SumLongFn()))
         .apply(MapElements.via((KV<String, Long> kv) -> kv.getKey() + ": " + kv.getValue())
             .withOutputType(TypeDescriptors.strings()));
-        // .apply(TextIO.Write.to(outputFilePath));
+        // .apply(TextIO.Write.to(outputFilePath)); TODO #12: Implement Sink Nodes
     p.run();
   }
 }

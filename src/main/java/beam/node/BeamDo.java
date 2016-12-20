@@ -32,7 +32,7 @@ public class BeamDo<I, O> extends dag.node.Do<I, O, PCollectionView> {
   }
 
   @Override
-  public Iterable<O> compute(final Iterable<I> input, final Map<PCollectionView, Object> broadcasted) {
+  public Iterable<O> transform(final Iterable<I> input, final Map<PCollectionView, Object> broadcasted) {
     final DoFnInvoker<I, O> invoker = DoFnInvokers.invokerFor(doFn);
     final ArrayList<O> outputList = new ArrayList<>();
     final ProcessContext<I, O> context = new ProcessContext<>(doFn, outputList, broadcasted);

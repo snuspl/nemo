@@ -33,31 +33,34 @@ import org.joda.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * TODO #20: Make ProcessContext Kinder
+ */
 public class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext implements DoFnInvoker.ArgumentProvider<I, O> {
-  private I element;
-  private final Map<PCollectionView, Object> broadcasted;
+  private I inputElement;
+  private final Map<PCollectionView, Object> sideInputs;
   private final ArrayList<O> outputs;
 
   public ProcessContext(final DoFn<I, O> fn,
                         final ArrayList<O> outputs,
-                        final Map<PCollectionView, Object> broadcasted) {
+                        final Map<PCollectionView, Object> sideInputs) {
     fn.super();
     this.outputs = outputs;
-    this.broadcasted = broadcasted;
+    this.sideInputs = sideInputs;
   }
 
   public void setElement(final I element) {
-    this.element = element;
+    this.inputElement = element;
   }
 
   @Override
   public I element() {
-    return this.element;
+    return this.inputElement;
   }
 
   @Override
   public <T> T sideInput(final PCollectionView<T> view) {
-    return (T)broadcasted.get(view);
+    return (T) sideInputs.get(view);
   }
 
   @Override

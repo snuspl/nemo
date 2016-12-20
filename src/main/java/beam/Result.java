@@ -24,6 +24,9 @@ import org.joda.time.Duration;
 
 import java.io.IOException;
 
+/**
+ * TODO #20: Make ProcessContext Kinder
+ */
 public class Result implements PipelineResult {
   @Override
   public State getState() {

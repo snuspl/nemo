@@ -15,11 +15,33 @@
  */
 package dag;
 
+/**
+ * TODO #21: Refactor Attributes Class
+ */
 public class Attributes {
-  private static String node = "node_";
-  public static String parallelism = node + "parallelism";
-  public static String placement = node + "placement";
+  /**
+   * Attribute Keys
+   */
+  public enum Key {
+    Placement,
+    EdgePartitioning;
+  }
 
-  private static String edge = "edge_";
-  public static String dependency = edge + "dependency";
+  /**
+   * Attribute Vals
+   */
+  public interface Val {
+  }
+
+  public enum Placement implements Val {
+    Transient,
+    Reserved,
+    Compute,
+    Storage
+  }
+
+  public enum EdgePartitioning implements Val {
+    Hash,
+    Range
+  }
 }

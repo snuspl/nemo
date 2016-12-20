@@ -16,7 +16,7 @@
 package dag.node;
 
 public abstract class Broadcast<I, O, T> extends Node<I, O> {
-  // TODO: Get Type: Map/Iterable/ETC
+  public abstract O transform(Iterable<I> input);
 
   public abstract T getTag();
 }

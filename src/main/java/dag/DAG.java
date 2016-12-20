@@ -21,20 +21,15 @@ import dag.node.Source;
 import java.util.*;
 import java.util.function.Consumer;
 
-/**
- * Public API
- */
 public class DAG {
   private final HashMap<String, List<Edge>> id2inEdges;
   private final HashMap<String, List<Edge>> id2outEdges;
   private final List<Source> sources;
-  private final Map<String, Object> attributes;
 
   public DAG(final List<Source> sources,
              final HashMap<String, List<Edge>> id2inEdges,
              final HashMap<String, List<Edge>> id2outEdges) {
     this.sources = sources;
-    this.attributes = new HashMap<>();
     this.id2inEdges = id2inEdges;
     this.id2outEdges = id2outEdges;
   }
@@ -56,13 +51,13 @@ public class DAG {
   ////////// Auxiliary functions for graph construction and view
 
   public static void print(final DAG dag) {
-    doDFS(dag, (node -> System.out.println("<node> " + node + " / <inEdges> " + dag.getInEdges(node))), VisitOrder.Pre);
+    doDFS(dag, (node -> System.out.println("<node> " + node + " / <inEdges> " + dag.getInEdges(node))), VisitOrder.PreOrder);
   }
 
   ////////// DFS Traversal
   public enum VisitOrder {
-    Pre,
-    Post
+    PreOrder,
+    PostOrder
   }
 
   private static HashSet<Node> visited;
@@ -73,16 +68,16 @@ public class DAG {
     visited = new HashSet<>();
     dag.getSources().stream()
         .filter(source -> !visited.contains(source))
-        .forEach(source -> DFSVisit(dag, source, function, visitOrder));
+        .forEach(source -> visit(dag, source, function, visitOrder));
     visited = null;
   }
 
-  private static void DFSVisit(final DAG dag,
-                               final Node node,
-                               final Consumer<Node> nodeConsumer,
-                               final VisitOrder visitOrder) {
+  private static void visit(final DAG dag,
+                            final Node node,
+                            final Consumer<Node> nodeConsumer,
+                            final VisitOrder visitOrder) {
     visited.add(node);
-    if (visitOrder == VisitOrder.Pre) {
+    if (visitOrder == VisitOrder.PreOrder) {
       nodeConsumer.accept(node);
     }
     final Optional<List<Edge>> outEdges = dag.getOutEdges(node);
@@ -90,9 +85,9 @@ public class DAG {
       outEdges.get().stream()
           .map(outEdge -> outEdge.getDst())
           .filter(outNode -> !visited.contains(outNode))
-          .forEach(outNode -> DFSVisit(dag, outNode, nodeConsumer, visitOrder));
+          .forEach(outNode -> visit(dag, outNode, nodeConsumer, visitOrder));
     }
-    if (visitOrder == VisitOrder.Post) {
+    if (visitOrder == VisitOrder.PostOrder) {
       nodeConsumer.accept(node);
     }
   }

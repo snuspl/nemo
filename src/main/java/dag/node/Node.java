@@ -15,6 +15,7 @@
  */
 package dag.node;
 
+import dag.Attributes;
 import dag.IdManager;
 
 import java.io.Serializable;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 
 public abstract class Node<I, O> implements Serializable {
   private final String id;
-  private final HashMap<String, Object> attributes;
+  private final HashMap<Attributes.Key, Attributes.Val> attributes;
 
   public Node() {
     this.id = IdManager.newNodeId();
@@ -33,8 +34,13 @@ public abstract class Node<I, O> implements Serializable {
     return id;
   }
 
-  public HashMap<String, Object> getAttributes() {
-    return attributes;
+  public Node<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
+    attributes.put(key, val);
+    return this;
+  }
+
+  public Attributes.Val getAttr(final Attributes.Key key) {
+    return attributes.get(key);
   }
 
   @Override

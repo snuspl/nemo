@@ -22,13 +22,15 @@ import org.apache.beam.sdk.values.KV;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
+/**
+ * An engine that simply prints out intermediate results
+ */
 public class SimpleEngine {
 
   public static void executeDAG(final DAG dag) throws Exception {
     final List<Node> topoSorted = new LinkedList<>();
-    DAG.doDFS(dag, (node -> topoSorted.add(0, node)), DAG.VisitOrder.Post);
+    DAG.doDFS(dag, (node -> topoSorted.add(0, node)), DAG.VisitOrder.PostOrder);
 
     final Map<String, List<Iterable>> edgeIdToData = new HashMap<>();
     final Map<String, Object> edgeIdToBroadcast = new HashMap<>();
@@ -45,35 +47,49 @@ public class SimpleEngine {
             .forEach(id -> edgeIdToData.put(id, data));
       } else if (node instanceof Do) {
         final Do op = (Do)node;
+
+        // Get Broadcasted SideInputs
         final Map<Object, Object> broadcastInput = new HashMap<>();
         dag.getInEdges(node).get().stream()
             .filter(inEdge -> inEdge.getSrc() instanceof Broadcast)
             .forEach(inEdge -> broadcastInput.put(((Broadcast)inEdge.getSrc()).getTag(), edgeIdToBroadcast.get(inEdge.getId())));
+
+        // Get MainInputs
         final List<Iterable> mainInput = dag.getInEdges(node).get().stream()
             .filter(inEdge -> !(inEdge.getSrc() instanceof Broadcast))
             .map(inEdge -> edgeIdToData.get(inEdge.getId()))
             .findFirst()
             .get();
+
+        // Get Output
         final List<Iterable> output = mainInput.stream()
-            .map(iterable -> op.compute(iterable, broadcastInput))
+            .map(iterable -> op.transform(iterable, broadcastInput))
             .collect(Collectors.toList());
 
-        if (dag.getOutEdges(node).isPresent()) { // TODO: Refactor
-          edgeIdToData.put(getSingleEdgeId(dag, node, EdgeDirection.Out), output); // TODO: Support multi outedges
+        // TODO #22: DAG Integrity Check, TODO #12: Implement Sink Node
+        if (dag.getOutEdges(node).isPresent()) {
+          // TODO #14: Implement Multi-Output Do Nodes
+          edgeIdToData.put(getSingleEdgeId(dag, node, EdgeDirection.Out), output);
+        } else {
+          edgeIdToData.put("NOEDGE", output);
+
         }
       } else if (node instanceof GroupByKey) {
         final List<Iterable> data = shuffle(edgeIdToData.get(getSingleEdgeId(dag, node, EdgeDirection.In)));
         edgeIdToData.put(getSingleEdgeId(dag, node, EdgeDirection.Out), data);
       } else if (node instanceof Broadcast) {
-        final List<Iterable> inEdgeData = edgeIdToData.get(getSingleEdgeId(dag, node, EdgeDirection.In));
-        edgeIdToBroadcast.put(getSingleEdgeId(dag, node, EdgeDirection.Out), broadcast(inEdgeData));
+        final Broadcast broadcastNode = (Broadcast)node;
+        final List<Iterable> beforeBroadcasted = edgeIdToData.get(getSingleEdgeId(dag, node, EdgeDirection.In));
+        final Iterable afterBroadcasted = broadcast(beforeBroadcasted);
+        edgeIdToBroadcast.put(getSingleEdgeId(dag, node, EdgeDirection.Out), broadcastNode.transform(afterBroadcasted));
       } else if (node instanceof Sink) {
         throw new UnsupportedOperationException();
       } else {
         throw new UnsupportedOperationException();
       }
 
-      System.out.println("All Data after " + node.getId() + ": " + edgeIdToData);
+      System.out.println("All non-broadcast data after " + node.getId() + ": " + edgeIdToData);
+      System.out.println("Also, All broadcast data: " + edgeIdToBroadcast);
     }
   }
 
@@ -97,10 +113,10 @@ public class SimpleEngine {
   }
 
 
-  private static Object broadcast(final List<Iterable> iterables) {
-    return iterables.stream()
-        .flatMap(iterable -> StreamSupport.stream(iterable.spliterator(), false))
-        .collect(Collectors.toList());
+  private static Iterable broadcast(final List<Iterable> iterables) {
+    final List result = new ArrayList();
+    iterables.stream().forEach(iterable -> iterable.forEach(x -> result.add(x)));
+    return result;
   }
 
 
