@@ -4,9 +4,9 @@
 Vortex is a general-purpose data-processing engine.
 
 ## Components
-# translator: Translates various high-level user programs for the compiler.
-# compiler: Compiles user programs into a physical execution plan.
-# runtime: Physically executes the plan.
+* translator: Translates various high-level user programs for the compiler.
+* compiler: Compiles user programs into a physical execution plan.
+* runtime: Physically executes the plan.
 
 ## Requirements
 * Beam 0.4.0-incubating-SNAPSHOT (You must download it from https://github.com/apache/incubator-beam and build it)
