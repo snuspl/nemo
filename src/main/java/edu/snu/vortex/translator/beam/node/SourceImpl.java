@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package beam.node;
+package edu.snu.vortex.translator.beam.node;
 
-import dag.node.Source;
+import edu.snu.vortex.compiler.plan.node.Source;
 import org.apache.beam.sdk.io.BoundedSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BeamSource<O> extends Source<O> {
+public class SourceImpl<O> extends Source<O> {
   private final BoundedSource<O> source;
 
-  public BeamSource(final BoundedSource<O> source) {
+  public SourceImpl(final BoundedSource<O> source) {
     this.source = source;
   }
 
@@ -47,7 +47,7 @@ public class BeamSource<O> extends Source<O> {
     return sb.toString();
   }
 
-  public class Reader<T> implements dag.node.Source.Reader<T> {
+  public class Reader<T> implements Source.Reader<T> {
     private final BoundedSource.BoundedReader<T> beamReader;
 
     Reader(final BoundedSource.BoundedReader<T> beamReader) {

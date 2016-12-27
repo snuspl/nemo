@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package beam;
+package edu.snu.vortex.translator.beam;
 
-import dag.Attributes;
-import dag.Edge;
-import dag.node.Node;
-import engine.SimpleEngine;
-import dag.DAG;
-import dag.DAGBuilder;
+import edu.snu.vortex.compiler.plan.Attributes;
+import edu.snu.vortex.compiler.plan.DAG;
+import edu.snu.vortex.compiler.plan.DAGBuilder;
+import edu.snu.vortex.compiler.plan.Edge;
+import edu.snu.vortex.compiler.plan.node.Node;
+import edu.snu.vortex.runtime.SimpleEngine;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.PipelineRunner;
@@ -50,6 +50,7 @@ public class Runner extends PipelineRunner<Result> {
 
     System.out.println("##### VORTEX ENGINE #####");
     try {
+      // TODO #25: Compiler Interfaces
       SimpleEngine.executeDAG(dag);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -57,6 +58,7 @@ public class Runner extends PipelineRunner<Result> {
     return new Result();
   }
 
+  // TODO #25: Compiler Interfaces
   private void place(final DAG dag) {
     final List<Node> topoSorted = new LinkedList<>();
     DAG.doDFS(dag, (node -> topoSorted.add(0, node)), DAG.VisitOrder.PostOrder);

@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag.node;
+package edu.snu.vortex.compiler.plan.node;
 
-import java.util.List;
+import java.util.Map;
 
-public abstract class Sink<I> extends Node<I, Void> {
-  // Maybe make the parameter a any-type hashmap(attributes/options)
-  public abstract List<Writer<I>> getWriters(final int numWriters) throws Exception;
-
-  interface Writer<I> {
-    void write(Iterable<I> data) throws Exception;
-  }
+public abstract class Do<I, O, T> extends Node<I, O> {
+  // We assume for now that broadcasted data are only used in Do
+  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
 }

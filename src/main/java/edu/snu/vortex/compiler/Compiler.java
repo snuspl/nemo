@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag.node;
+package edu.snu.vortex.compiler;
 
-public class GroupByKey<I, O> extends Node<I, O> {
+/**
+ * TODO #25: Compiler Interfaces
+ * Translates a logical DAG(e.g., Beam operator DAG) into a physical DAG(execution plan) for the runtime.
+ */
+public class Compiler {
 }

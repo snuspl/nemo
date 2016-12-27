@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag;
+package edu.snu.vortex.compiler.plan;
 
-import dag.node.Node;
+import edu.snu.vortex.compiler.plan.node.Node;
 
 import java.util.HashMap;
 
+/**
+ * Physical execution plan of intermediate data movement.
+ */
 public class Edge<I, O> {
   public enum Type {
     M2M,

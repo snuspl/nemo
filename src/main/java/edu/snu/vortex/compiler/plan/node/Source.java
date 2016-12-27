@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag.node;
+package edu.snu.vortex.compiler.plan.node;
 
-import java.util.Map;
+import java.util.List;
 
-public abstract class Do<I, O, T> extends Node<I, O> {
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public abstract class Source<O> extends Node<Void, O> {
+  // Maybe make the parameter a any-type hashmap(attributes/options)
+  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+
+  public interface Reader<O> {
+    Iterable<O> read() throws Exception;
+  }
 }

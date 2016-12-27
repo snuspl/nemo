@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package beam.node;
+package edu.snu.vortex.translator.beam.node;
 
-import dag.node.Broadcast;
+import edu.snu.vortex.compiler.plan.node.Broadcast;
 import org.apache.beam.sdk.transforms.ViewFn;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -24,15 +24,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class BeamBroadcast<I, O> extends Broadcast<I, O, PCollectionView> {
+public class BroadcastImpl<I, O> extends Broadcast<I, O, PCollectionView> {
   private final PCollectionView view;
 
-  public BeamBroadcast(final PCollectionView<O> view) {
+  public BroadcastImpl(final PCollectionView<O> view) {
     this.view = view;
   }
 
   @Override
-  public O transform(Iterable<I> inputs) {
+  public O transform(final Iterable<I> inputs) {
     final List<WindowedValue<I>> windowed = StreamSupport.stream(inputs.spliterator(), false)
         .map(input -> WindowedValue.valueInGlobalWindow(input)) // We only support batch for now
         .collect(Collectors.toList());

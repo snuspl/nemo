@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package beam;
+package edu.snu.vortex.translator.beam;
 
-import beam.node.BeamBroadcast;
-import beam.node.BeamDo;
-import beam.node.BeamSource;
-import dag.*;
-import dag.node.*;
+import edu.snu.vortex.translator.beam.node.BroadcastImpl;
+import edu.snu.vortex.translator.beam.node.DoImpl;
+import edu.snu.vortex.translator.beam.node.SourceImpl;
+import edu.snu.vortex.compiler.plan.DAGBuilder;
+import edu.snu.vortex.compiler.plan.Edge;
+import edu.snu.vortex.compiler.plan.node.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
@@ -29,14 +30,15 @@ import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.values.PValue;
 
 import java.util.HashMap;
+import java.util.Map;
 
 class Visitor implements Pipeline.PipelineVisitor {
   private final DAGBuilder builder;
-  private final HashMap<PValue, Node> PValueToNodeOutput;
+  private final Map<PValue, Node> pValueToNodeOutput;
 
   Visitor(final DAGBuilder builder) {
     this.builder = builder;
-    this.PValueToNodeOutput = new HashMap<>();
+    this.pValueToNodeOutput = new HashMap<>();
   }
 
   @Override
@@ -63,11 +65,11 @@ class Visitor implements Pipeline.PipelineVisitor {
     builder.addNode(newNode);
 
     beamNode.getOutputs()
-        .forEach(output -> PValueToNodeOutput.put(output, newNode));
+        .forEach(output -> pValueToNodeOutput.put(output, newNode));
 
     beamNode.getInputs().stream()
-        .filter(PValueToNodeOutput::containsKey)
-        .map(PValueToNodeOutput::get)
+        .filter(pValueToNodeOutput::containsKey)
+        .map(pValueToNodeOutput::get)
         .forEach(src -> builder.connectNodes(src, newNode, getInEdgeType(newNode)));
   }
 
@@ -82,23 +84,23 @@ class Visitor implements Pipeline.PipelineVisitor {
     final PTransform transform = beamNode.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded)transform;
-      final BeamSource<O> source = new BeamSource<>(read.getSource());
+      final SourceImpl<O> source = new SourceImpl<>(read.getSource());
       return source;
     } else if (transform instanceof GroupByKey) {
-      return new dag.node.GroupByKey();
+      return new edu.snu.vortex.compiler.plan.node.GroupByKey();
     } else if (transform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView)transform;
-      final Broadcast newNode = new BeamBroadcast(view.getView());
-      PValueToNodeOutput.put(view.getView(), newNode);
+      final Broadcast newNode = new BroadcastImpl(view.getView());
+      pValueToNodeOutput.put(view.getView(), newNode);
       return newNode;
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>)transform;
-      final BeamDo<I, O> newNode = new BeamDo<>(parDo.getNewFn());
+      final DoImpl<I, O> newNode = new DoImpl<>(parDo.getNewFn());
       parDo.getSideInputs().stream()
-          .filter(PValueToNodeOutput::containsKey)
-          .map(PValueToNodeOutput::get)
+          .filter(pValueToNodeOutput::containsKey)
+          .map(pValueToNodeOutput::get)
           .forEach(src -> builder.connectNodes(src, newNode, Edge.Type.O2O)); // Broadcasted = O2O
       return newNode;
     } else {
@@ -107,9 +109,9 @@ class Visitor implements Pipeline.PipelineVisitor {
   }
 
   private Edge.Type getInEdgeType(final Node node) {
-    if (node instanceof dag.node.GroupByKey) {
+    if (node instanceof edu.snu.vortex.compiler.plan.node.GroupByKey) {
       return Edge.Type.M2M;
-    } else if (node instanceof dag.node.Broadcast) {
+    } else if (node instanceof Broadcast) {
       return Edge.Type.O2M;
     } else {
       return Edge.Type.O2O;

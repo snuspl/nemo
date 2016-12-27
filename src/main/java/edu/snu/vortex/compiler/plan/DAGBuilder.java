@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag;
+package edu.snu.vortex.compiler.plan;
 
-import dag.node.*;
+import edu.snu.vortex.compiler.plan.node.Node;
+import edu.snu.vortex.compiler.plan.node.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DAGBuilder {
-  private HashMap<String, List<Edge>> id2inEdges;
-  private HashMap<String, List<Edge>> id2outEdges;
+  private Map<String, List<Edge>> id2inEdges;
+  private Map<String, List<Edge>> id2outEdges;
   private List<Node> nodes;
 
   public DAGBuilder() {
@@ -44,7 +46,7 @@ public class DAGBuilder {
     return edge;
   }
 
-  private void addToEdgeList(final HashMap<String, List<Edge>> map, final String id, final Edge edge) {
+  private void addToEdgeList(final Map<String, List<Edge>> map, final String id, final Edge edge) {
     if (map.containsKey(id)) {
       map.get(id).add(edge);
     } else {

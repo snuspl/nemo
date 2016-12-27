@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag.node;
+package edu.snu.vortex.compiler.plan.node;
 
-import dag.Attributes;
-import dag.IdManager;
+import edu.snu.vortex.compiler.plan.Attributes;
+import edu.snu.vortex.compiler.plan.IdManager;
 
 import java.io.Serializable;
 import java.util.HashMap;
 
+/**
+ * Physical execution plan of a user operator.
+ */
 public abstract class Node<I, O> implements Serializable {
   private final String id;
   private final HashMap<Attributes.Key, Attributes.Val> attributes;

@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package engine;
+package edu.snu.vortex.runtime;
 
-import dag.*;
-import dag.node.*;
-import dag.node.Do;
+import edu.snu.vortex.compiler.plan.DAG;
+import edu.snu.vortex.compiler.plan.Edge;
+import edu.snu.vortex.compiler.plan.node.*;
+import edu.snu.vortex.compiler.plan.node.Do;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * An engine that simply prints out intermediate results
+ * An edu.snu.vortex.engine that simply prints out intermediate results
  */
 public class SimpleEngine {
 
@@ -49,7 +50,7 @@ public class SimpleEngine {
         final Do op = (Do)node;
 
         // Get Broadcasted SideInputs
-        final Map<Object, Object> broadcastInput = new HashMap<>();
+        final Map broadcastInput = new HashMap<>();
         dag.getInEdges(node).get().stream()
             .filter(inEdge -> inEdge.getSrc() instanceof Broadcast)
             .forEach(inEdge -> broadcastInput.put(((Broadcast)inEdge.getSrc()).getTag(), edgeIdToBroadcast.get(inEdge.getId())));

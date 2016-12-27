@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag.node;
+package edu.snu.vortex.compiler.plan;
 
-public abstract class Broadcast<I, O, T> extends Node<I, O> {
-  public abstract O transform(Iterable<I> input);
+import java.util.concurrent.atomic.AtomicInteger;
 
-  public abstract T getTag();
+public class IdManager {
+  private static AtomicInteger nodeId = new AtomicInteger(1);
+  private static AtomicInteger edgeId = new AtomicInteger(1);
+
+  public static String newNodeId() {
+    return "node" + nodeId.getAndIncrement();
+  }
+  public static String newEdgeId() {
+    return "edge" + edgeId.getAndIncrement();
+  }
 }

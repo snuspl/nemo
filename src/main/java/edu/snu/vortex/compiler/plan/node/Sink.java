@@ -13,35 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag;
+package edu.snu.vortex.compiler.plan.node;
 
-/**
- * TODO #21: Refactor Attributes Class
- */
-public class Attributes {
-  /**
-   * Attribute Keys
-   */
-  public enum Key {
-    Placement,
-    EdgePartitioning;
-  }
+import java.util.List;
 
-  /**
-   * Attribute Vals
-   */
-  public interface Val {
-  }
+public abstract class Sink<I> extends Node<I, Void> {
+  // Maybe make the parameter a any-type hashmap(attributes/options)
+  public abstract List<Writer<I>> getWriters(final int numWriters) throws Exception;
 
-  public enum Placement implements Val {
-    Transient,
-    Reserved,
-    Compute,
-    Storage
-  }
-
-  public enum EdgePartitioning implements Val {
-    Hash,
-    Range
+  interface Writer<I> {
+    void write(Iterable<I> data) throws Exception;
   }
 }

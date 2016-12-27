@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package beam.node;
+package edu.snu.vortex.translator.beam.node;
 
-import beam.ProcessContext;
+import edu.snu.vortex.compiler.plan.node.Do;
+import edu.snu.vortex.translator.beam.ProcessContext;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvokers;
@@ -24,10 +25,10 @@ import org.apache.beam.sdk.values.PCollectionView;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class BeamDo<I, O> extends dag.node.Do<I, O, PCollectionView> {
+public class DoImpl<I, O> extends Do<I, O, PCollectionView> {
   private final DoFn doFn;
 
-  public BeamDo(final DoFn doFn) {
+  public DoImpl(final DoFn doFn) {
     this.doFn = doFn;
   }
 

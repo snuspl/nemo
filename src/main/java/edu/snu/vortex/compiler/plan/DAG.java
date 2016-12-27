@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dag;
+package edu.snu.vortex.compiler.plan;
 
-import dag.node.Node;
-import dag.node.Source;
+import edu.snu.vortex.compiler.plan.node.Node;
+import edu.snu.vortex.compiler.plan.node.Source;
 
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * Physical execution plan of a user program.
+ */
 public class DAG {
-  private final HashMap<String, List<Edge>> id2inEdges;
-  private final HashMap<String, List<Edge>> id2outEdges;
+  private final Map<String, List<Edge>> id2inEdges;
+  private final Map<String, List<Edge>> id2outEdges;
   private final List<Source> sources;
 
   public DAG(final List<Source> sources,
-             final HashMap<String, List<Edge>> id2inEdges,
-             final HashMap<String, List<Edge>> id2outEdges) {
+             final Map<String, List<Edge>> id2inEdges,
+             final Map<String, List<Edge>> id2outEdges) {
     this.sources = sources;
     this.id2inEdges = id2inEdges;
     this.id2outEdges = id2outEdges;
@@ -60,22 +63,20 @@ public class DAG {
     PostOrder
   }
 
-  private static HashSet<Node> visited;
-
   public static void doDFS(final DAG dag,
                            final Consumer<Node> function,
                            final VisitOrder visitOrder) {
-    visited = new HashSet<>();
+    final HashSet<Node> visited = new HashSet<>();
     dag.getSources().stream()
         .filter(source -> !visited.contains(source))
-        .forEach(source -> visit(dag, source, function, visitOrder));
-    visited = null;
+        .forEach(source -> visit(source, function, visitOrder, dag, visited));
   }
 
-  private static void visit(final DAG dag,
-                            final Node node,
+  private static void visit(final Node node,
                             final Consumer<Node> nodeConsumer,
-                            final VisitOrder visitOrder) {
+                            final VisitOrder visitOrder,
+                            final DAG dag,
+                            final HashSet<Node> visited) {
     visited.add(node);
     if (visitOrder == VisitOrder.PreOrder) {
       nodeConsumer.accept(node);
@@ -85,7 +86,7 @@ public class DAG {
       outEdges.get().stream()
           .map(outEdge -> outEdge.getDst())
           .filter(outNode -> !visited.contains(outNode))
-          .forEach(outNode -> visit(dag, outNode, nodeConsumer, visitOrder));
+          .forEach(outNode -> visit(outNode, nodeConsumer, visitOrder, dag, visited));
     }
     if (visitOrder == VisitOrder.PostOrder) {
       nodeConsumer.accept(node);
