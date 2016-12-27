@@ -16,3 +16,4 @@ Vortex is a general-purpose data-processing engine.
 ## Examples
 * java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.translator.beam.examples.MapReduce ./src/main/resources/sample_input ./src/main/resources/sample_output
 * java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.translator.beam.examples.Broadcast ./src/main/resources/sample_input ./src/main/resources/sample_output
+* java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.examples.MapReduce
