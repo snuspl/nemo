@@ -15,13 +15,13 @@
  */
 package edu.snu.vortex.compiler.optimizer.examples;
 
-import edu.snu.vortex.compiler.optimizer.ir.Attributes;
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
-import edu.snu.vortex.compiler.optimizer.ir.DAGBuilder;
-import edu.snu.vortex.compiler.optimizer.ir.Edge;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Do;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Operator;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.Attributes;
+import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAGBuilder;
+import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.operator.Do;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -36,11 +36,11 @@ public class MapReduce {
 
     // Before
     final DAGBuilder builder = new DAGBuilder();
-    builder.addOp(source);
-    builder.addOp(map);
-    builder.addOp(reduce);
-    builder.connectOps(source, map, Edge.Type.O2O);
-    builder.connectOps(map, reduce, Edge.Type.M2M);
+    builder.addOperator(source);
+    builder.addOperator(map);
+    builder.addOperator(reduce);
+    builder.connectOperators(source, map, Edge.Type.O2O);
+    builder.connectOperators(map, reduce, Edge.Type.M2M);
     final DAG dag = builder.build();
     System.out.println("Before Optimization");
     DAG.print(dag);

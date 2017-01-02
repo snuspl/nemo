@@ -15,10 +15,10 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
-import edu.snu.vortex.compiler.optimizer.ir.Attributes;
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
-import edu.snu.vortex.compiler.optimizer.ir.Edge;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.Attributes;
+import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.operator.Operator;
 
 import java.util.LinkedList;
 import java.util.List;

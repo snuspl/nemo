@@ -18,7 +18,7 @@ package edu.snu.vortex.client;
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.engine.SimpleEngine;
 
 public class JobLauncher {

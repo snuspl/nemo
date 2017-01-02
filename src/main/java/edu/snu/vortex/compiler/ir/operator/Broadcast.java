@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir.operator;
+package edu.snu.vortex.compiler.ir.operator;
 
-public class GroupByKey<I, O> extends Operator<I, O> {
+public abstract class Broadcast<I, O, T> extends Operator<I, O> {
+  public abstract O transform(Iterable<I> input);
+
+  public abstract T getTag();
 }

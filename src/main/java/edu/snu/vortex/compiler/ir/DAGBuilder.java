@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir;
+package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.optimizer.ir.operator.Operator;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,11 +35,11 @@ public class DAGBuilder {
     this.operators = new ArrayList<>();
   }
 
-  public void addOp(final Operator operator) {
+  public void addOperator(final Operator operator) {
     operators.add(operator);
   }
 
-  public <I, O> Edge<I, O> connectOps(final Operator<?, I> src, final Operator<O, ?> dst, final Edge.Type type) {
+  public <I, O> Edge<I, O> connectOperators(final Operator<?, I> src, final Operator<O, ?> dst, final Edge.Type type) {
     final Edge<I, O> edge = new Edge<>(type, src, dst);
     addToEdgeList(id2inEdges, dst.getId(), edge);
     addToEdgeList(id2outEdges, src.getId(), edge);

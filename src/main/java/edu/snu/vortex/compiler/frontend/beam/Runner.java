@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
-import edu.snu.vortex.compiler.optimizer.ir.DAGBuilder;
+import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.PipelineRunner;

@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.Frontend;
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAG;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

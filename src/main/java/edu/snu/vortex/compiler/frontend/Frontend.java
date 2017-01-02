@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend;
 
-import edu.snu.vortex.compiler.optimizer.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAG;
 
 public interface Frontend {
   DAG compile(final String[] args) throws Exception;

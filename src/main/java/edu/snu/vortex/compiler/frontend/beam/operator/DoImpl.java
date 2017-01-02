@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.optimizer.ir.operator.Do;
+import edu.snu.vortex.compiler.ir.operator.Do;
 import edu.snu.vortex.compiler.frontend.beam.ProcessContext;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;

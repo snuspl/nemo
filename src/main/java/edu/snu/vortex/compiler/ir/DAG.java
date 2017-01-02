@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir;
+package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.optimizer.ir.operator.Operator;
-import edu.snu.vortex.compiler.optimizer.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.*;
 import java.util.function.Consumer;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir;
+package edu.snu.vortex.compiler.ir;
 
 /**
  * TODO #21: Refactor Attributes Class

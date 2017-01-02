@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir.operator;
+package edu.snu.vortex.compiler.ir;
 
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in Do
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public class IdManager {
+  private static AtomicInteger operatorId = new AtomicInteger(1);
+  private static AtomicInteger edgeId = new AtomicInteger(1);
+
+  public static String newOperatorId() {
+    return "operator" + operatorId.getAndIncrement();
+  }
+  public static String newEdgeId() {
+    return "edge" + edgeId.getAndIncrement();
+  }
 }

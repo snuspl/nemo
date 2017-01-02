@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir.operator;
+package edu.snu.vortex.compiler.ir.operator;
 
-public abstract class Broadcast<I, O, T> extends Operator<I, O> {
-  public abstract O transform(Iterable<I> input);
+import java.util.List;
 
-  public abstract T getTag();
+public abstract class Source<O> extends Operator<Void, O> {
+  // Maybe make the parameter a any-type hashmap(attributes/options)
+  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+
+  public interface Reader<O> {
+    Iterable<O> read() throws Exception;
+  }
 }

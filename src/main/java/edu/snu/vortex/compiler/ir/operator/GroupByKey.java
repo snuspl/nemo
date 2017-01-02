@@ -13,18 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.ir;
+package edu.snu.vortex.compiler.ir.operator;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class IdManager {
-  private static AtomicInteger operatorId = new AtomicInteger(1);
-  private static AtomicInteger edgeId = new AtomicInteger(1);
-
-  public static String newOperatorId() {
-    return "operator" + operatorId.getAndIncrement();
-  }
-  public static String newEdgeId() {
-    return "edge" + edgeId.getAndIncrement();
-  }
+public class GroupByKey<I, O> extends Operator<I, O> {
 }

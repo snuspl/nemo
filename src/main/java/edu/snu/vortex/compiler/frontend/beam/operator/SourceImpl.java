@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.optimizer.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.operator.Source;
 import org.apache.beam.sdk.io.BoundedSource;
 
 import java.util.ArrayList;
