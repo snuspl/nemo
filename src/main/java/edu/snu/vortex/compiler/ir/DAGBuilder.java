@@ -18,10 +18,7 @@ package edu.snu.vortex.compiler.ir;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.compiler.ir.operator.Source;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DAGBuilder {
@@ -35,14 +32,50 @@ public class DAGBuilder {
     this.operators = new ArrayList<>();
   }
 
+  /**
+   * add a operator.
+   * @param operator
+   */
   public void addOperator(final Operator operator) {
-    operators.add(operator);
+    if (!this.containsOperator(operator)) {
+      operators.add(operator);
+    }
   }
 
+  public void addDAG(final DAG dag) {
+    dag.doDFS((operator -> {
+      addOperator(operator);
+      final Optional<List<Edge>> inEdges = dag.getOutEdges(operator);
+      if (inEdges.isPresent()) {
+        inEdges.get().forEach(e -> {
+          addOperator(e.getSrc());
+          connectOperators(e.getSrc(), e.getDst(), e.getType());
+        });
+      }
+    }), DAG.VisitOrder.PreOrder);
+  }
+
+  /**
+   * add an edge for the given operators.
+   * @param src
+   * @param dst
+   * @param type
+   * @return
+   */
   public <I, O> Edge<I, O> connectOperators(final Operator<?, I> src, final Operator<O, ?> dst, final Edge.Type type) {
     final Edge<I, O> edge = new Edge<>(type, src, dst);
-    addToEdgeList(id2inEdges, dst.getId(), edge);
-    addToEdgeList(id2outEdges, src.getId(), edge);
+    if (!this.containsEdge(edge)) {
+      addToEdgeList(id2inEdges, dst.getId(), edge);
+      addToEdgeList(id2outEdges, src.getId(), edge);
+    }
+    return edge;
+  }
+
+  public <I, O> Edge<I, O> connectOperators(final Edge edge) {
+    if (!this.containsEdge(edge)) {
+      addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
+      addToEdgeList(id2outEdges, edge.getSrc().getId(), edge);
+    }
     return edge;
   }
 
@@ -56,11 +89,44 @@ public class DAGBuilder {
     }
   }
 
+  public List<Operator> getOperators() {
+    return operators;
+  }
+
+  /**
+   * check if the DAGBuilder contains the operator
+   * @param operator
+   * @return
+   */
+  public boolean containsOperator(Operator operator) {
+    return operators.contains(operator);
+  }
+
+  /**
+   * returns the number of operators in the DAGBuilder
+   * @return
+   */
+  public int size() {
+    return operators.size();
+  }
+
+  /**
+   * check if the DAGBuilder contains the edge
+   * @param edge
+   * @return
+   */
+  public boolean containsEdge(Edge edge) {
+    return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
+  }
+
+  /**
+   * build the DAG
+   * @return
+   */
   public DAG build() {
     // TODO #22: DAG Integrity Check
-    final List<Source> sources = operators.stream()
+    final List<Operator> sources = operators.stream()
         .filter(operator -> !id2inEdges.containsKey(operator.getId()))
-        .map(operator -> (Source)operator)
         .collect(Collectors.toList());
     return new DAG(sources, id2inEdges, id2outEdges);
   }

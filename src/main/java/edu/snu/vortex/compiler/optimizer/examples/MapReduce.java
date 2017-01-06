@@ -43,11 +43,11 @@ public class MapReduce {
     builder.connectOperators(map, reduce, Edge.Type.M2M);
     final DAG dag = builder.build();
     System.out.println("Before Optimization");
-    DAG.print(dag);
+    System.out.println(dag);
 
     // Optimize
     final List<Operator> topoSorted = new LinkedList<>();
-    DAG.doDFS(dag, (operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
+    dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
     topoSorted.forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
       if (!inEdges.isPresent()) {
@@ -59,7 +59,7 @@ public class MapReduce {
 
     // After
     System.out.println("After Optimization");
-    DAG.print(dag);
+    System.out.println(dag);
   }
 
   private static class Pair<K, V> {
