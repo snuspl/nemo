@@ -16,7 +16,6 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,22 +36,9 @@ public class DAGBuilder {
    * @param operator
    */
   public void addOperator(final Operator operator) {
-    if (!this.containsOperator(operator)) {
+    if (!this.contains(operator)) {
       operators.add(operator);
     }
-  }
-
-  public void addDAG(final DAG dag) {
-    dag.doDFS((operator -> {
-      addOperator(operator);
-      final Optional<List<Edge>> inEdges = dag.getOutEdges(operator);
-      if (inEdges.isPresent()) {
-        inEdges.get().forEach(e -> {
-          addOperator(e.getSrc());
-          connectOperators(e.getSrc(), e.getDst(), e.getType());
-        });
-      }
-    }), DAG.VisitOrder.PreOrder);
   }
 
   /**
@@ -64,7 +50,7 @@ public class DAGBuilder {
    */
   public <I, O> Edge<I, O> connectOperators(final Operator<?, I> src, final Operator<O, ?> dst, final Edge.Type type) {
     final Edge<I, O> edge = new Edge<>(type, src, dst);
-    if (!this.containsEdge(edge)) {
+    if (!this.contains(edge)) {
       addToEdgeList(id2inEdges, dst.getId(), edge);
       addToEdgeList(id2outEdges, src.getId(), edge);
     }
@@ -72,7 +58,7 @@ public class DAGBuilder {
   }
 
   public <I, O> Edge<I, O> connectOperators(final Edge edge) {
-    if (!this.containsEdge(edge)) {
+    if (!this.contains(edge)) {
       addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
       addToEdgeList(id2outEdges, edge.getSrc().getId(), edge);
     }
@@ -98,8 +84,17 @@ public class DAGBuilder {
    * @param operator
    * @return
    */
-  public boolean containsOperator(Operator operator) {
+  public boolean contains(Operator operator) {
     return operators.contains(operator);
+  }
+
+  /**
+   * check if the DAGBuilder contains the edge
+   * @param edge
+   * @return
+   */
+  public boolean contains(Edge edge) {
+    return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
   }
 
   /**
@@ -108,15 +103,6 @@ public class DAGBuilder {
    */
   public int size() {
     return operators.size();
-  }
-
-  /**
-   * check if the DAGBuilder contains the edge
-   * @param edge
-   * @return
-   */
-  public boolean containsEdge(Edge edge) {
-    return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
   }
 
   /**

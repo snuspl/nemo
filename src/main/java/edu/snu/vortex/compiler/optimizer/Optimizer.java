@@ -34,7 +34,7 @@ public class Optimizer {
     dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
     // Placement
     topoSorted.forEach(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
         operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
       } else {
@@ -96,7 +96,7 @@ public class Optimizer {
     final Stage newStage = new Stage(newStageDAGBuilder.build());
     newDAGbuilder.addOperator(newStage);
     topoSorted.forEach(operator -> {
-      if (!newStageDAGBuilder.containsOperator(operator)) {
+      if (!newStageDAGBuilder.contains(operator)) {
         newDAGbuilder.addOperator(operator);
         newStageDAGBuilder.getOperators().forEach(o -> {
           Optional<Edge> edge = dag.getEdgeBetween(operator, o);
@@ -121,8 +121,8 @@ public class Optimizer {
   }
 
   private boolean isExtendable(final DAG dag, final Operator operator) {
-    final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
-    final Optional<List<Edge>> outEdges = dag.getOutEdges(operator);
+    final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+    final Optional<List<Edge>> outEdges = dag.getOutEdgesOf(operator);
 
     if (inEdges.isPresent()) {
       if (inEdges.get().stream().filter(e ->
@@ -144,7 +144,7 @@ public class Optimizer {
     final HashSet<Operator> neighbors = new HashSet<>();
     builder.getOperators().forEach(operator -> {
       neighbors(dag, operator).forEach(neighborOperator -> {
-        if (!builder.containsOperator(neighborOperator)) {
+        if (!builder.contains(neighborOperator)) {
           neighbors.add(neighborOperator);
         }
       });
@@ -153,8 +153,8 @@ public class Optimizer {
   }
 
   private Set<Operator> neighbors(final DAG dag, final Operator operator) {
-    final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
-    final Optional<List<Edge>> outEdges = dag.getOutEdges(operator);
+    final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+    final Optional<List<Edge>> outEdges = dag.getOutEdgesOf(operator);
     final HashSet<Operator> neighbors = new HashSet<>();
 
     if (inEdges.isPresent()) {

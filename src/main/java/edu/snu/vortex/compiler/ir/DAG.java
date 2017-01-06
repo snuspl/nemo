@@ -45,7 +45,7 @@ public class DAG {
    * @param operator
    * @return
    */
-  public Optional<List<Edge>> getInEdges(final Operator operator) {
+  public Optional<List<Edge>> getInEdgesOf(final Operator operator) {
     final List<Edge> inEdges = id2inEdges.get(operator.getId());
     return inEdges == null ? Optional.empty() : Optional.of(inEdges);
   }
@@ -55,7 +55,7 @@ public class DAG {
    * @param operator
    * @return
    */
-  public Optional<List<Edge>> getOutEdges(final Operator operator) {
+  public Optional<List<Edge>> getOutEdgesOf(final Operator operator) {
     final List<Edge> outEdges = id2outEdges.get(operator.getId());
     return outEdges == null ? Optional.empty() : Optional.of(outEdges);
   }
@@ -67,8 +67,8 @@ public class DAG {
    * @return
    */
   public Optional<Edge> getEdgeBetween(final Operator operator1, final Operator operator2) {
-    final Optional<List<Edge>> inEdges = this.getInEdges(operator1);
-    final Optional<List<Edge>> outEdges = this.getOutEdges(operator1);
+    final Optional<List<Edge>> inEdges = this.getInEdgesOf(operator1);
+    final Optional<List<Edge>> outEdges = this.getOutEdgesOf(operator1);
     final Set<Edge> edges = new HashSet<>();
 
     if (inEdges.isPresent()) {
@@ -124,7 +124,7 @@ public class DAG {
       sb.append("<operator> ");
       sb.append(operator.toString());
       sb.append(" / <inEdges> ");
-      sb.append(this.getInEdges(operator).toString());
+      sb.append(this.getInEdgesOf(operator).toString());
       sb.append("\n");
     }), VisitOrder.PreOrder);
     return sb.toString();
@@ -157,7 +157,7 @@ public class DAG {
     if (visitOrder == VisitOrder.PreOrder) {
       operatorConsumer.accept(operator);
     }
-    final Optional<List<Edge>> outEdges = getOutEdges(operator);
+    final Optional<List<Edge>> outEdges = getOutEdgesOf(operator);
     if (outEdges.isPresent()) {
       outEdges.get().stream()
           .map(outEdge -> outEdge.getDst())
