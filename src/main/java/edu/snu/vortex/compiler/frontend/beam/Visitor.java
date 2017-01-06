@@ -17,11 +17,12 @@ package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.beam.operator.BroadcastImpl;
 import edu.snu.vortex.compiler.frontend.beam.operator.DoImpl;
+import edu.snu.vortex.compiler.frontend.beam.operator.GroupByKeyImpl;
 import edu.snu.vortex.compiler.frontend.beam.operator.SourceImpl;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Broadcast;
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.component.operator.Broadcast;
+import edu.snu.vortex.compiler.ir.component.Operator;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
@@ -88,7 +89,7 @@ class Visitor implements Pipeline.PipelineVisitor {
       final SourceImpl<O> source = new SourceImpl<>(read.getSource());
       return source;
     } else if (transform instanceof GroupByKey) {
-      return new edu.snu.vortex.compiler.ir.operator.GroupByKey();
+      return new GroupByKeyImpl();
     } else if (transform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView)transform;
       final Broadcast vortexOperator = new BroadcastImpl(view.getView());
@@ -110,7 +111,7 @@ class Visitor implements Pipeline.PipelineVisitor {
   }
 
   private Edge.Type getInEdgeType(final Operator operator) {
-    if (operator instanceof edu.snu.vortex.compiler.ir.operator.GroupByKey) {
+    if (operator instanceof edu.snu.vortex.compiler.ir.component.operator.GroupByKey) {
       return Edge.Type.M2M;
     } else if (operator instanceof Broadcast) {
       return Edge.Type.O2M;

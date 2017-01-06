@@ -19,8 +19,8 @@ import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.compiler.ir.operator.Stage;
+import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.component.Stage;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,7 +46,7 @@ public class Optimizer {
       }
     });
     // Partition graph into stages
-    DAG partitionedDAG = stagePartition(dag);
+    final DAG partitionedDAG = stagePartition(dag);
     return partitionedDAG;
   }
 
@@ -63,6 +63,11 @@ public class Optimizer {
 
   ///////////////////////////////////////////////////////////////
 
+  /**
+   * This function returns a stage-partitioned dag as its result
+   * @param dag Input DAG
+   * @return stage-partitioned input DAG
+   */
   private DAG stagePartition(final DAG dag) {
     final DAGBuilder newDAGbuilder = new DAGBuilder();
     final DAGBuilder newStageDAGBuilder = new DAGBuilder();
@@ -70,21 +75,22 @@ public class Optimizer {
 
     dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
 
+    // Look for a candidate to add to the newly created stage
     for (Operator operator : topoSorted) {
-      if (isExtendable(dag, operator)) {
+      if (!dag.hasStage(operator)) {
         newStageDAGBuilder.addOperator(operator);
         break;
       }
     }
 
-    if (newStageDAGBuilder.size() == 0) {
+    if (newStageDAGBuilder.size() == 0) { // we quit if there are no more stages to make
       return dag;
-    } else {
+    } else { // otherwise, we scan through the DAG and see which operators we can add to the stage
       topoSorted.forEach(operator -> {
         if (neighbors(dag, newStageDAGBuilder).contains(operator)) {
           newStageDAGBuilder.addOperator(operator);
           newStageDAGBuilder.getOperators().forEach(o -> {
-            Optional<Edge> edge = dag.getEdgeBetween(operator, o);
+            final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
             if (edge.isPresent()) {
               newStageDAGBuilder.connectOperators(edge.get());
             }
@@ -93,53 +99,21 @@ public class Optimizer {
       });
     }
 
-    final Stage newStage = new Stage(newStageDAGBuilder.build());
-    newDAGbuilder.addOperator(newStage);
-    topoSorted.forEach(operator -> {
-      if (!newStageDAGBuilder.contains(operator)) {
-        newDAGbuilder.addOperator(operator);
-        newStageDAGBuilder.getOperators().forEach(o -> {
-          Optional<Edge> edge = dag.getEdgeBetween(operator, o);
-          if (edge.isPresent()) {
-            if (operator.equals(edge.get().getDst())) {
-              newDAGbuilder.connectOperators(newStage, operator, edge.get().getType());
-            } else if (operator.equals(edge.get().getSrc())) {
-              newDAGbuilder.connectOperators(operator, newStage, edge.get().getType());
-            }
-          }
-        });
-        newDAGbuilder.getOperators().forEach(o -> {
-          Optional<Edge> edge = dag.getEdgeBetween(operator, o);
-          if (edge.isPresent()) {
-            newDAGbuilder.connectOperators(edge.get());
-          }
-        });
-      }
-    });
+    newDAGbuilder.addDAG(dag);
+    if (dag.getStages() != null) {
+      dag.getStages().forEach(stage -> newDAGbuilder.addStage(stage));
+    }
+    newDAGbuilder.addStage(new Stage(newStageDAGBuilder.buildStageDAG()));
 
     return stagePartition(newDAGbuilder.build());
   }
 
-  private boolean isExtendable(final DAG dag, final Operator operator) {
-    final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
-    final Optional<List<Edge>> outEdges = dag.getOutEdgesOf(operator);
-
-    if (inEdges.isPresent()) {
-      if (inEdges.get().stream().filter(e ->
-              e.getType().equals(Edge.Type.O2O)).collect(Collectors.toList()).size() > 0) {
-        return true;
-      }
-    }
-    if (outEdges.isPresent()) {
-      if (outEdges.get().stream().filter(e ->
-              e.getType().equals(Edge.Type.O2O)).collect(Collectors.toList()).size() > 0) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
+  /**
+   * Gets neighboring operators (with one-to-one edges) of the DAGBuilder inside the DAG.
+   * @param dag the DAG we observe into
+   * @param builder the DAGBuilder that we find the neighbors of
+   * @return The set of neighboring operators
+   */
   private Set<Operator> neighbors(final DAG dag, final DAGBuilder builder) {
     final HashSet<Operator> neighbors = new HashSet<>();
     builder.getOperators().forEach(operator -> {

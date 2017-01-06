@@ -15,20 +15,33 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.component.Stage;
+import edu.snu.vortex.compiler.ir.component.operator.Source;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DAGBuilder {
+public final class DAGBuilder {
   private Map<String, List<Edge>> id2inEdges;
   private Map<String, List<Edge>> id2outEdges;
   private List<Operator> operators;
+  private List<Stage> stages;
 
   public DAGBuilder() {
     this.id2inEdges = new HashMap<>();
     this.id2outEdges = new HashMap<>();
     this.operators = new ArrayList<>();
+    this.stages = null;
+  }
+
+  public void addDAG(final DAG dag) {
+    dag.getOperators().forEach(o -> addOperator(o));
+    this.operators.forEach(o -> {
+      if (dag.getInEdgesOf(o).isPresent()) {
+        dag.getInEdgesOf(o).get().forEach(e -> connectOperators(e));
+      }
+    });
   }
 
   /**
@@ -38,6 +51,16 @@ public class DAGBuilder {
   public void addOperator(final Operator operator) {
     if (!this.contains(operator)) {
       operators.add(operator);
+    }
+  }
+
+  public void addStage(final Stage stage) {
+    if (this.stages == null) {
+      this.stages = new ArrayList<>();
+    }
+
+    if (!this.contains(stage)) {
+      stages.add(stage);
     }
   }
 
@@ -97,6 +120,10 @@ public class DAGBuilder {
     return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
   }
 
+  public boolean contains(Stage stage) {
+    return stages.contains(stage);
+  }
+
   /**
    * returns the number of operators in the DAGBuilder
    * @return
@@ -111,9 +138,18 @@ public class DAGBuilder {
    */
   public DAG build() {
     // TODO #22: DAG Integrity Check
-    final List<Operator> sources = operators.stream()
+    final boolean sourceCheck = operators.stream()
         .filter(operator -> !id2inEdges.containsKey(operator.getId()))
-        .collect(Collectors.toList());
-    return new DAG(sources, id2inEdges, id2outEdges);
+        .allMatch(operator -> operator instanceof Source);
+
+    if (sourceCheck) {
+      return new DAG(operators, id2inEdges, id2outEdges, stages);
+    } else {
+      throw new RuntimeException("DAG Integrity unsatisfied.");
+    }
+  }
+
+  public DAG buildStageDAG() {
+    return new DAG(operators, id2inEdges, id2outEdges, stages);
   }
 }

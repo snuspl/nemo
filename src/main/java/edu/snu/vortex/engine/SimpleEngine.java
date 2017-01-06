@@ -17,7 +17,8 @@ package edu.snu.vortex.engine;
 
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.*;
+import edu.snu.vortex.compiler.ir.component.*;
+import edu.snu.vortex.compiler.ir.component.operator.*;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;

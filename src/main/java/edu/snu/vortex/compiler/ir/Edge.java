@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.component.Operator;
 
 import java.util.HashMap;
 

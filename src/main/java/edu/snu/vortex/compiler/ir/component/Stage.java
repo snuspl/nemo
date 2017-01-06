@@ -13,19 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.compiler.ir.component;
 
 import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.IdManager;
 
-public class Stage<I, O> extends Operator<I, O> {
+import java.io.Serializable;
+
+public final class Stage implements Serializable {
+  private final String id;
   private final DAG dag;
 
   public Stage(final DAG dag) {
+    this.id = IdManager.newStageId();
     this.dag = dag;
+  }
+
+  public String getId() {
+    return id;
   }
 
   public DAG getDAG() {
     return dag;
+  }
+
+  public boolean contains(Operator operator) {
+    return this.getDAG().contains(operator);
   }
 
   @Override

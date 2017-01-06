@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.compiler.ir.component;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.IdManager;
@@ -25,7 +25,7 @@ import java.util.HashMap;
  * Physical execution plan of a user operator.
  */
 public abstract class Operator<I, O> implements Serializable {
-  private final String id;
+  final String id;
   private final HashMap<Attributes.Key, Attributes.Val> attributes;
 
   public Operator() {

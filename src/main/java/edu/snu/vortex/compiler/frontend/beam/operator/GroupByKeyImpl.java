@@ -13,36 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir;
+package edu.snu.vortex.compiler.frontend.beam.operator;
 
-/**
- * TODO #21: Refactor Attributes Class
- */
-public final class Attributes {
-  /**
-   * Attribute Keys
-   */
-  public enum Key {
-    Placement,
-    EdgePartitioning,
-    Parallelism
-  }
+import edu.snu.vortex.compiler.ir.component.operator.GroupByKey;
 
-  /**
-   * Attribute Vals
-   */
-  public interface Val {
-  }
-
-  public enum Placement implements Val {
-    Transient,
-    Reserved,
-    Compute,
-    Storage
-  }
-
-  public enum EdgePartitioning implements Val {
-    Hash,
-    Range
-  }
+public class GroupByKeyImpl<I, O> extends GroupByKey<I, O> {
 }

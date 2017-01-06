@@ -15,10 +15,13 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.component.Stage;
+import edu.snu.vortex.compiler.ir.component.operator.Source;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Physical execution plan of a user program.
@@ -26,18 +29,34 @@ import java.util.function.Consumer;
 public class DAG {
   private final Map<String, List<Edge>> id2inEdges;
   private final Map<String, List<Edge>> id2outEdges;
-  private final List<Operator> rootOperators;
+  private final List<Operator> operators;
+  private final List<Source> sources;
+  private final List<Stage> stages;
 
-  DAG(final List<Operator> rootOperators,
-             final Map<String, List<Edge>> id2inEdges,
-             final Map<String, List<Edge>> id2outEdges) {
-    this.rootOperators = rootOperators;
+  DAG(final List<Operator> operators,
+      final Map<String, List<Edge>> id2inEdges,
+      final Map<String, List<Edge>> id2outEdges,
+      final List<Stage> stages) {
+    this.operators = operators;
     this.id2inEdges = id2inEdges;
     this.id2outEdges = id2outEdges;
+    this.stages = stages;
+    this.sources = operators.stream()
+            .filter(o -> o instanceof Source)
+            .map(o -> (Source) o)
+            .collect(Collectors.toList());
   }
 
-  public List<Operator> getRootOperators() {
-    return rootOperators;
+  public List<Source> getSources() {
+    return sources;
+  }
+
+  public List<Operator> getOperators() {
+    return operators;
+  }
+
+  public List<Stage> getStages() {
+    return stages;
   }
 
   /**
@@ -95,6 +114,14 @@ public class DAG {
     }
   }
 
+  public boolean hasStage(Operator operator) {
+    if (stages != null) {
+      return getStages().stream().anyMatch(s -> s.contains(operator));
+    } else {
+      return false;
+    }
+  }
+
   /////////////// Auxiliary overriding functions
 
   @Override
@@ -106,14 +133,14 @@ public class DAG {
 
     if (id2inEdges != null ? !id2inEdges.equals(dag.id2inEdges) : dag.id2inEdges != null) return false;
     if (id2outEdges != null ? !id2outEdges.equals(dag.id2outEdges) : dag.id2outEdges != null) return false;
-    return rootOperators != null ? rootOperators.equals(dag.rootOperators) : dag.rootOperators == null;
+    return sources != null ? sources.equals(dag.sources) : dag.sources == null;
   }
 
   @Override
   public int hashCode() {
     int result = id2inEdges != null ? id2inEdges.hashCode() : 0;
     result = 31 * result + (id2outEdges != null ? id2outEdges.hashCode() : 0);
-    result = 31 * result + (rootOperators != null ? rootOperators.hashCode() : 0);
+    result = 31 * result + (sources != null ? sources.hashCode() : 0);
     return result;
   }
 
@@ -125,9 +152,39 @@ public class DAG {
       sb.append(operator.toString());
       sb.append(" / <inEdges> ");
       sb.append(this.getInEdgesOf(operator).toString());
+      if (hasStage(operator)) {
+        sb.append(" / <Stage> ");
+        sb.append(getStages().stream().filter(s -> s.contains(operator)).collect(Collectors.toList()).get(0).getId());
+      }
       sb.append("\n");
     }), VisitOrder.PreOrder);
     return sb.toString();
+  }
+
+  /**
+   * check if the DAGBuilder contains the operator
+   * @param operator
+   * @return
+   */
+  public boolean contains(Operator operator) {
+    return operators.contains(operator);
+  }
+
+  /**
+   * check if the DAGBuilder contains the edge
+   * @param edge
+   * @return
+   */
+  public boolean contains(Edge edge) {
+    return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
+  }
+
+  /**
+   * returns the number of operators in the DAGBuilder
+   * @return
+   */
+  public int size() {
+    return operators.size();
   }
 
   ////////// DFS Traversal
@@ -144,9 +201,10 @@ public class DAG {
   public void doDFS(final Consumer<Operator> function,
                            final VisitOrder visitOrder) {
     final HashSet<Operator> visited = new HashSet<>();
-    this.getRootOperators().stream()
-        .filter(source -> !visited.contains(source))
-        .forEach(source -> visit(source, function, visitOrder, visited));
+    operators.stream()
+        .filter(operator -> !id2inEdges.containsKey(operator.getId())) // root Operators
+        .filter(operator -> !visited.contains(operator))
+        .forEach(operator -> visit(operator, function, visitOrder, visited));
   }
 
   private void visit(final Operator operator,
