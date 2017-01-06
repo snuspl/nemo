@@ -44,6 +44,6 @@ public class JobLauncher {
      * Step 2: Execute
      */
     System.out.println("##### VORTEX ENGINE #####");
-    new SimpleEngine().executeDAG(dag);
+    new SimpleEngine().executeDAG(optimizedDAG);
   }
 }
