@@ -34,7 +34,7 @@ import org.apache.beam.sdk.values.PValue;
 import java.util.HashMap;
 import java.util.Map;
 
-class Visitor implements Pipeline.PipelineVisitor {
+final class Visitor implements Pipeline.PipelineVisitor {
   private final DAGBuilder builder;
   private final Map<PValue, Operator> pValueToOpOutput;
 

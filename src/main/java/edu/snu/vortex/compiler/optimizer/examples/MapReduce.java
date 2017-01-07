@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class MapReduce {
+public final class MapReduce {
   public static void main(final String[] args) {
     final EmptySource source = new EmptySource();
     final EmptyDo<String, Pair<String, Integer>, Void> map = new EmptyDo<>("MapOperator");

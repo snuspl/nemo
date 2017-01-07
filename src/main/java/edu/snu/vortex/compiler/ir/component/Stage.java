@@ -16,9 +16,15 @@
 package edu.snu.vortex.compiler.ir.component;
 
 import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAGBuilder;
+import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.IdManager;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public final class Stage implements Serializable {
   private final String id;
@@ -39,6 +45,41 @@ public final class Stage implements Serializable {
 
   public boolean contains(Operator operator) {
     return this.getDAG().contains(operator);
+  }
+
+  /**
+   * Gets neighboring (connected with one-to-one edges) operators of the stage in the fullDAG.
+   * @param stageDAGBuilder the stage DAG that we see the neighboring operators of
+   * @param fullDAG the DAG we observe into
+   * @return the set of neighboring operators of the stage in the fullDAG
+   */
+  public static Set<Operator> neighboringOperators(final DAG fullDAG, final DAGBuilder stageDAGBuilder) {
+    final HashSet<Operator> neighbors = new HashSet<>();
+    stageDAGBuilder.getOperators().forEach(operator ->
+      neighboringOperators(fullDAG, operator).forEach(neighboringOperator -> {
+        if (!stageDAGBuilder.contains(neighboringOperator)) {
+          neighbors.add(neighboringOperator);
+        }
+      }));
+    return neighbors;
+  }
+
+  private static Set<Operator> neighboringOperators(final DAG fullDAG, final Operator operator) {
+    final Optional<List<Edge>> inEdges = fullDAG.getInEdgesOf(operator);
+    final Optional<List<Edge>> outEdges = fullDAG.getOutEdgesOf(operator);
+    final HashSet<Operator> neighbors = new HashSet<>();
+
+    if (inEdges.isPresent()) {
+      inEdges.get().stream()
+          .filter(edge -> edge.getType().equals(Edge.Type.O2O))
+          .forEach(edge -> neighbors.add(edge.getSrc()));
+    }
+    if (outEdges.isPresent()) {
+      outEdges.get().stream()
+          .filter(edge -> edge.getType().equals(Edge.Type.O2O))
+          .forEach(edge -> neighbors.add(edge.getDst()));
+    }
+    return neighbors;
   }
 
   @Override

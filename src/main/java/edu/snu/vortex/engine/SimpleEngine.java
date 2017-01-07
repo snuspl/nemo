@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * Simply prints out intermediate results
  */
-public class SimpleEngine {
+public final class SimpleEngine {
 
   public void executeDAG(final DAG dag) throws Exception {
     final List<Operator> topoSorted = new LinkedList<>();

@@ -20,7 +20,6 @@ import edu.snu.vortex.compiler.ir.component.Stage;
 import edu.snu.vortex.compiler.ir.component.operator.Source;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public final class DAGBuilder {
   private Map<String, List<Edge>> id2inEdges;

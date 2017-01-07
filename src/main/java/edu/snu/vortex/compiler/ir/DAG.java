@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * Physical execution plan of a user program.
  */
-public class DAG {
+public final class DAG {
   private final Map<String, List<Edge>> id2inEdges;
   private final Map<String, List<Edge>> id2outEdges;
   private final List<Operator> operators;

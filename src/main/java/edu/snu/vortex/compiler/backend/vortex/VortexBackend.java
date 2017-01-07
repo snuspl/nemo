@@ -17,5 +17,5 @@ package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.backend.Backend;
 
-public class VortexBackend implements Backend {
+public final class VortexBackend implements Backend {
 }

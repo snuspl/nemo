@@ -23,9 +23,8 @@ import edu.snu.vortex.compiler.ir.component.Operator;
 import edu.snu.vortex.compiler.ir.component.Stage;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class Optimizer {
+public final class Optimizer {
   /**
    * TODO #29: Make Optimizer Configurable
    */
@@ -87,7 +86,7 @@ public class Optimizer {
       return dag;
     } else { // otherwise, we scan through the DAG and see which operators we can add to the stage
       topoSorted.forEach(operator -> {
-        if (neighbors(dag, newStageDAGBuilder).contains(operator)) {
+        if (Stage.neighboringOperators(dag, newStageDAGBuilder).contains(operator)) {
           newStageDAGBuilder.addOperator(operator);
           newStageDAGBuilder.getOperators().forEach(o -> {
             final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
@@ -106,42 +105,5 @@ public class Optimizer {
     newDAGbuilder.addStage(new Stage(newStageDAGBuilder.buildStageDAG()));
 
     return stagePartition(newDAGbuilder.build());
-  }
-
-  /**
-   * Gets neighboring operators (with one-to-one edges) of the DAGBuilder inside the DAG.
-   * @param dag the DAG we observe into
-   * @param builder the DAGBuilder that we find the neighbors of
-   * @return The set of neighboring operators
-   */
-  private Set<Operator> neighbors(final DAG dag, final DAGBuilder builder) {
-    final HashSet<Operator> neighbors = new HashSet<>();
-    builder.getOperators().forEach(operator -> {
-      neighbors(dag, operator).forEach(neighborOperator -> {
-        if (!builder.contains(neighborOperator)) {
-          neighbors.add(neighborOperator);
-        }
-      });
-    });
-    return neighbors;
-  }
-
-  private Set<Operator> neighbors(final DAG dag, final Operator operator) {
-    final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
-    final Optional<List<Edge>> outEdges = dag.getOutEdgesOf(operator);
-    final HashSet<Operator> neighbors = new HashSet<>();
-
-    if (inEdges.isPresent()) {
-      final List<Edge> o2oEdges = inEdges.get().stream().filter(e ->
-              e.getType().equals(Edge.Type.O2O)).collect(Collectors.toList());
-      o2oEdges.forEach(e -> neighbors.add(e.getSrc()));
-    }
-    if (outEdges.isPresent()) {
-      final List<Edge> o2oEdges = outEdges.get().stream().filter(e ->
-              e.getType().equals(Edge.Type.O2O)).collect(Collectors.toList());
-      o2oEdges.forEach(e -> neighbors.add(e.getDst()));
-    }
-
-    return neighbors;
   }
 }

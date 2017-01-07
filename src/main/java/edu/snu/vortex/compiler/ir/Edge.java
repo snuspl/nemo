@@ -22,7 +22,7 @@ import java.util.HashMap;
 /**
  * Physical execution plan of intermediate data movement.
  */
-public class Edge<I, O> {
+public final class Edge<I, O> {
   public enum Type {
     M2M,
     O2M,
