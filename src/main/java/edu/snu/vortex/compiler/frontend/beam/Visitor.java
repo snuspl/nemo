@@ -15,10 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.operator.BroadcastImpl;
-import edu.snu.vortex.compiler.frontend.beam.operator.DoImpl;
-import edu.snu.vortex.compiler.frontend.beam.operator.GroupByKeyImpl;
-import edu.snu.vortex.compiler.frontend.beam.operator.SourceImpl;
+import edu.snu.vortex.compiler.frontend.beam.operator.*;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.component.operator.Broadcast;
@@ -28,7 +25,6 @@ import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
-import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.values.PValue;
 
 import java.util.HashMap;

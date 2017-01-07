@@ -25,7 +25,7 @@ import java.util.HashMap;
  * Physical execution plan of a user operator.
  */
 public abstract class Operator<I, O> implements Serializable {
-  final String id;
+  private final String id;
   private final HashMap<Attributes.Key, Attributes.Val> attributes;
 
   public Operator() {

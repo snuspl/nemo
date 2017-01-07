@@ -114,6 +114,11 @@ public final class DAG {
     }
   }
 
+  /**
+   * check if the operator belongs to a stage in the DAG
+   * @param operator the operator that we check
+   * @return whether or not the operator belongs to a stage
+   */
   public boolean hasStage(Operator operator) {
     if (stages != null) {
       return getStages().stream().anyMatch(s -> s.contains(operator));
@@ -198,19 +203,18 @@ public final class DAG {
    * @param function
    * @param visitOrder
    */
-  public void doDFS(final Consumer<Operator> function,
-                           final VisitOrder visitOrder) {
+  public void doDFS(final Consumer<Operator> function, final VisitOrder visitOrder) {
     final HashSet<Operator> visited = new HashSet<>();
-    operators.stream()
+    getOperators().stream()
         .filter(operator -> !id2inEdges.containsKey(operator.getId())) // root Operators
         .filter(operator -> !visited.contains(operator))
-        .forEach(operator -> visit(operator, function, visitOrder, visited));
+        .forEach(operator -> visitDFS(operator, function, visitOrder, visited));
   }
 
-  private void visit(final Operator operator,
-                            final Consumer<Operator> operatorConsumer,
-                            final VisitOrder visitOrder,
-                            final HashSet<Operator> visited) {
+  private void visitDFS(final Operator operator,
+                        final Consumer<Operator> operatorConsumer,
+                        final VisitOrder visitOrder,
+                        final HashSet<Operator> visited) {
     visited.add(operator);
     if (visitOrder == VisitOrder.PreOrder) {
       operatorConsumer.accept(operator);
@@ -220,7 +224,7 @@ public final class DAG {
       outEdges.get().stream()
           .map(outEdge -> outEdge.getDst())
           .filter(outOperator -> !visited.contains(outOperator))
-          .forEach(outOperator -> visit(outOperator, operatorConsumer, visitOrder, visited));
+          .forEach(outOperator -> visitDFS(outOperator, operatorConsumer, visitOrder, visited));
     }
     if (visitOrder == VisitOrder.PostOrder) {
       operatorConsumer.accept(operator);

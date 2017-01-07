@@ -29,27 +29,35 @@ public final class Optimizer {
    * TODO #29: Make Optimizer Configurable
    */
   public DAG optimize(final DAG dag) {
-    final List<Operator> topoSorted = new LinkedList<>();
-    dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
-    // Placement
-    topoSorted.forEach(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
-      if (!inEdges.isPresent()) {
-        operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
-      } else {
-        if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
-          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved);
-        } else {
-          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
-        }
-      }
-    });
-    // Partition graph into stages
-    final DAG partitionedDAG = stagePartition(dag);
-    return partitionedDAG;
+    final DAG operatorPlacedDAG = operatorPlacement(dag);
+    final DAG stagePartitionedDAG = stagePartition(operatorPlacedDAG);
+    return stagePartitionedDAG;
   }
 
   /////////////////////////////////////////////////////////////
+
+  private DAG operatorPlacement(final DAG dag) {
+    final DAGBuilder newDAGBuilder = new DAGBuilder();
+    dag.doDFS((operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      if (!inEdges.isPresent()) {
+        newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
+      } else {
+        if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
+          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved));
+        } else {
+          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
+        }
+      }
+    }), DAG.VisitOrder.PreOrder);
+    dag.getOperators().forEach(operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      if (inEdges.isPresent()) {
+        inEdges.get().forEach(edge -> newDAGBuilder.connectOperators(edge));
+      }
+    });
+    return newDAGBuilder.build();
+  }
 
   private boolean hasM2M(final List<Edge> edges) {
     return edges.stream().filter(edge -> edge.getType() == Edge.Type.M2M).count() > 0;
