@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.compiler.ir.component.Operator;
 import edu.snu.vortex.compiler.ir.component.Stage;
-import edu.snu.vortex.compiler.ir.component.operator.Source;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -30,7 +29,6 @@ public final class DAG {
   private final Map<String, List<Edge>> id2inEdges;
   private final Map<String, List<Edge>> id2outEdges;
   private final List<Operator> operators;
-  private final List<Source> sources;
   private final List<Stage> stages;
 
   DAG(final List<Operator> operators,
@@ -41,14 +39,6 @@ public final class DAG {
     this.id2inEdges = id2inEdges;
     this.id2outEdges = id2outEdges;
     this.stages = stages;
-    this.sources = operators.stream()
-            .filter(o -> o instanceof Source)
-            .map(o -> (Source) o)
-            .collect(Collectors.toList());
-  }
-
-  public List<Source> getSources() {
-    return sources;
   }
 
   public List<Operator> getOperators() {
@@ -136,16 +126,16 @@ public final class DAG {
 
     DAG dag = (DAG) o;
 
-    if (id2inEdges != null ? !id2inEdges.equals(dag.id2inEdges) : dag.id2inEdges != null) return false;
-    if (id2outEdges != null ? !id2outEdges.equals(dag.id2outEdges) : dag.id2outEdges != null) return false;
-    return sources != null ? sources.equals(dag.sources) : dag.sources == null;
+    if (!id2inEdges.equals(dag.id2inEdges)) return false;
+    if (!id2outEdges.equals(dag.id2outEdges)) return false;
+    return operators.equals(dag.operators);
   }
 
   @Override
   public int hashCode() {
-    int result = id2inEdges != null ? id2inEdges.hashCode() : 0;
-    result = 31 * result + (id2outEdges != null ? id2outEdges.hashCode() : 0);
-    result = 31 * result + (sources != null ? sources.hashCode() : 0);
+    int result = id2inEdges.hashCode();
+    result = 31 * result + id2outEdges.hashCode();
+    result = 31 * result + operators.hashCode();
     return result;
   }
 

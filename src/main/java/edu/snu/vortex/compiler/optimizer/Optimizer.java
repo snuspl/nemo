@@ -83,28 +83,25 @@ public final class Optimizer {
     dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
 
     // Look for a candidate to add to the newly created stage
-    for (Operator operator : topoSorted) {
-      if (!dag.hasStage(operator)) {
-        newStageDAGBuilder.addOperator(operator);
-        break;
-      }
+    final Optional<Operator> candidate = topoSorted.stream().filter(operator -> !dag.hasStage(operator)).findFirst();
+
+    if (candidate.isPresent()) {
+      newStageDAGBuilder.addOperator(candidate.get());
+    } else {
+      return dag;
     }
 
-    if (newStageDAGBuilder.size() == 0) { // we quit if there are no more stages to make
-      return dag;
-    } else { // otherwise, we scan through the DAG and see which operators we can add to the stage
-      topoSorted.forEach(operator -> {
-        if (Stage.neighboringOperators(dag, newStageDAGBuilder).contains(operator)) {
-          newStageDAGBuilder.addOperator(operator);
-          newStageDAGBuilder.getOperators().forEach(o -> {
-            final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
-            if (edge.isPresent()) {
-              newStageDAGBuilder.connectOperators(edge.get());
-            }
-          });
-        }
-      });
-    }
+    topoSorted.forEach(operator -> {
+      if (Stage.neighboringOperators(dag, newStageDAGBuilder).contains(operator)) {
+        newStageDAGBuilder.addOperator(operator);
+        newStageDAGBuilder.getOperators().forEach(o -> {
+          final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
+          if (edge.isPresent()) {
+            newStageDAGBuilder.connectOperators(edge.get());
+          }
+        });
+      }
+    });
 
     newDAGbuilder.addDAG(dag);
     if (dag.getStages() != null) {
