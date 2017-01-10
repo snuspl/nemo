@@ -15,20 +15,29 @@
  */
 package edu.snu.vortex.runtime.common;
 
-public class ROpLink {
-  private String rOpLinkId;
-  private ROperator srcROper;
-  private ROperator destROper;
+
+public class RStageLink {
+  private String stageLinkId;
+  private RStage srcStage;
+  private RStage destStage;
   private RAttributes attributes;
 
-  public ROpLink(ROperator srcROper, ROperator destROper, RAttributes attributes) {
-    this.rOpLinkId = IdGenerator.generateComponentId();
-    this.srcROper = srcROper;
-    this.destROper = destROper;
+  RStageLink(RStage srcStage, RStage destStage, RAttributes attributes) {
+    this.stageLinkId = IdGenerator.generateComponentId();
+    this.srcStage = srcStage;
+    this.destStage = destStage;
     this.attributes = attributes;
   }
 
   public String getId() {
-    return rOpLinkId;
+    return stageLinkId;
+  }
+
+  public RStage getSrcStage() {
+    return srcStage;
+  }
+
+  public RStage getDestStage() {
+    return destStage;
   }
 }

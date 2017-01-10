@@ -27,6 +27,10 @@ public class ROperator<I, O> implements Serializable{
     this.attributes = attributes;
   }
 
+  public String getId() {
+    return rOpId;
+  }
+
   public void addAttrbute(final RAttributes.ROpAttribute key, final Object value) {
     attributes.put(key, value);
   }
@@ -37,5 +41,13 @@ public class ROperator<I, O> implements Serializable{
 
   public Map<RAttributes.ROpAttribute, Object> getAttributes() {
     return attributes;
+  }
+
+  public void addOutputLink(ROpLink link) {
+
+  }
+
+  public void addInputLink(ROpLink link) {
+
   }
 }

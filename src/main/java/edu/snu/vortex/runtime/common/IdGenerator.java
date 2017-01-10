@@ -15,20 +15,13 @@
  */
 package edu.snu.vortex.runtime.common;
 
-public class ROpLink {
-  private String rOpLinkId;
-  private ROperator srcROper;
-  private ROperator destROper;
-  private RAttributes attributes;
 
-  public ROpLink(ROperator srcROper, ROperator destROper, RAttributes attributes) {
-    this.rOpLinkId = IdGenerator.generateComponentId();
-    this.srcROper = srcROper;
-    this.destROper = destROper;
-    this.attributes = attributes;
-  }
+import java.util.concurrent.atomic.AtomicInteger;
 
-  public String getId() {
-    return rOpLinkId;
+public class IdGenerator {
+  private static AtomicInteger RExecPlanComponentId = new AtomicInteger(1);
+
+  public static String generateComponentId() {
+    return "runtime-comp-" + RExecPlanComponentId.getAndIncrement();
   }
 }
