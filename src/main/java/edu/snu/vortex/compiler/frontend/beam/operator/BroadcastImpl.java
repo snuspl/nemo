@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Broadcast;
+import edu.snu.vortex.compiler.ir.component.operator.Broadcast;
 import org.apache.beam.sdk.transforms.ViewFn;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class BroadcastImpl<I, O> extends Broadcast<I, O, PCollectionView> {
+public final class BroadcastImpl<I, O> extends Broadcast<I, O, PCollectionView> {
   private final PCollectionView view;
 
   public BroadcastImpl(final PCollectionView<O> view) {

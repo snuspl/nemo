@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Do;
+import edu.snu.vortex.compiler.ir.component.operator.Do;
 import edu.snu.vortex.compiler.frontend.beam.ProcessContext;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
@@ -25,7 +25,7 @@ import org.apache.beam.sdk.values.PCollectionView;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class DoImpl<I, O> extends Do<I, O, PCollectionView> {
+public final class DoImpl<I, O> extends Do<I, O, PCollectionView> {
   private final DoFn doFn;
 
   public DoImpl(final DoFn doFn) {

@@ -19,16 +19,16 @@ import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Do;
-import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.compiler.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.component.operator.Do;
+import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.component.operator.Source;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class MapReduce {
+public final class MapReduce {
   public static void main(final String[] args) {
     final EmptySource source = new EmptySource();
     final EmptyDo<String, Pair<String, Integer>, Void> map = new EmptyDo<>("MapOperator");
@@ -43,13 +43,13 @@ public class MapReduce {
     builder.connectOperators(map, reduce, Edge.Type.M2M);
     final DAG dag = builder.build();
     System.out.println("Before Optimization");
-    DAG.print(dag);
+    System.out.println(dag);
 
     // Optimize
     final List<Operator> topoSorted = new LinkedList<>();
-    DAG.doDFS(dag, (operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
+    dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
     topoSorted.forEach(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
         operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Compute);
       } else {
@@ -59,7 +59,7 @@ public class MapReduce {
 
     // After
     System.out.println("After Optimization");
-    DAG.print(dag);
+    System.out.println(dag);
   }
 
   private static class Pair<K, V> {

@@ -18,7 +18,7 @@ package edu.snu.vortex.compiler.ir;
 /**
  * TODO #21: Refactor Attributes Class
  */
-public class Attributes {
+public final class Attributes {
   /**
    * Attribute Keys
    */

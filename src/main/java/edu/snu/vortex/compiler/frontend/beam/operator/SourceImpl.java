@@ -15,13 +15,13 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.component.operator.Source;
 import org.apache.beam.sdk.io.BoundedSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SourceImpl<O> extends Source<O> {
+public final class SourceImpl<O> extends Source<O> {
   private final BoundedSource<O> source;
 
   public SourceImpl(final BoundedSource<O> source) {

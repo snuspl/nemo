@@ -17,32 +17,46 @@ package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.component.Stage;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-public class Optimizer {
+public final class Optimizer {
   /**
    * TODO #29: Make Optimizer Configurable
    */
-  public void optimize(final DAG dag) {
-    final List<Operator> topoSorted = new LinkedList<>();
-    DAG.doDFS(dag, (operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
-    topoSorted.forEach(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
+  public DAG optimize(final DAG dag) {
+    final DAG operatorPlacedDAG = operatorPlacement(dag);
+    final DAG stagePartitionedDAG = stagePartition(operatorPlacedDAG);
+    return stagePartitionedDAG;
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  private DAG operatorPlacement(final DAG dag) {
+    final DAGBuilder newDAGBuilder = new DAGBuilder();
+    dag.doDFS((operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
-        operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+        newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
       } else {
         if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
-          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved);
+          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved));
         } else {
-          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
         }
       }
+    }), DAG.VisitOrder.PreOrder);
+    dag.getOperators().forEach(operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      if (inEdges.isPresent()) {
+        inEdges.get().forEach(edge -> newDAGBuilder.connectOperators(edge));
+      }
     });
+    return newDAGBuilder.build();
   }
 
   private boolean hasM2M(final List<Edge> edges) {
@@ -52,5 +66,49 @@ public class Optimizer {
   private boolean allFromReserved(final List<Edge> edges) {
     return edges.stream()
         .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Placement.Reserved);
+  }
+
+  ///////////////////////////////////////////////////////////////
+
+  /**
+   * This function returns a stage-partitioned dag as its result
+   * @param dag Input DAG
+   * @return stage-partitioned input DAG
+   */
+  private DAG stagePartition(final DAG dag) {
+    final DAGBuilder newDAGbuilder = new DAGBuilder();
+    final DAGBuilder newStageDAGBuilder = new DAGBuilder();
+    final List<Operator> topoSorted = new LinkedList<>();
+
+    dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
+
+    // Look for a candidate to add to the newly created stage
+    final Optional<Operator> candidate = topoSorted.stream().filter(operator -> !dag.hasStage(operator)).findFirst();
+
+    if (candidate.isPresent()) {
+      newStageDAGBuilder.addOperator(candidate.get());
+    } else {
+      return dag;
+    }
+
+    topoSorted.forEach(operator -> {
+      if (Stage.neighboringOperators(dag, newStageDAGBuilder).contains(operator)) {
+        newStageDAGBuilder.addOperator(operator);
+        newStageDAGBuilder.getOperators().forEach(o -> {
+          final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
+          if (edge.isPresent()) {
+            newStageDAGBuilder.connectOperators(edge.get());
+          }
+        });
+      }
+    });
+
+    newDAGbuilder.addDAG(dag);
+    if (dag.getStages() != null) {
+      dag.getStages().forEach(stage -> newDAGbuilder.addStage(stage));
+    }
+    newDAGbuilder.addStage(new Stage(newStageDAGBuilder.buildStageDAG()));
+
+    return stagePartition(newDAGbuilder.build());
   }
 }
