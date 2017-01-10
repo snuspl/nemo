@@ -25,7 +25,8 @@ public final class Attributes {
   public enum Key {
     Placement,
     EdgePartitioning,
-    Parallelism
+    Parallelism,
+    EdgeChannel,
   }
 
   /**
@@ -38,11 +39,18 @@ public final class Attributes {
     Transient,
     Reserved,
     Compute,
-    Storage
+    Storage,
   }
 
   public enum EdgePartitioning implements Val {
     Hash,
-    Range
+    Range,
+  }
+
+  public enum EdgeChannel implements Val {
+    Memory,
+    TCPPipe,
+    File,
+    DistributedStorage,
   }
 }

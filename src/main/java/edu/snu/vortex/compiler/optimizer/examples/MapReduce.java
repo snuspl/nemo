@@ -47,7 +47,7 @@ public final class MapReduce {
 
     // Optimize
     final List<Operator> topoSorted = new LinkedList<>();
-    dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
+    dag.doDFS(operator -> topoSorted.add(operator));
     topoSorted.forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {

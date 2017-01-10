@@ -20,15 +20,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class IdManager {
   private static AtomicInteger operatorId = new AtomicInteger(1);
   private static AtomicInteger edgeId = new AtomicInteger(1);
-  private static AtomicInteger stageId = new AtomicInteger(1);
 
   public static String newOperatorId() {
     return "operator" + operatorId.getAndIncrement();
   }
   public static String newEdgeId() {
     return "edge" + edgeId.getAndIncrement();
-  }
-  public static String newStageId() {
-    return "stage" + stageId.getAndIncrement();
   }
 }

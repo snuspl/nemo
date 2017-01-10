@@ -31,13 +31,10 @@ public final class DAGBuilder {
     this.operators = new ArrayList<>();
   }
 
-  public void addDAG(final DAG dag) {
-    dag.getOperators().forEach(o -> addOperator(o));
-    this.operators.forEach(o -> {
-      if (dag.getInEdgesOf(o).isPresent()) {
-        dag.getInEdgesOf(o).get().forEach(e -> connectOperators(e));
-      }
-    });
+  public DAGBuilder(final DAG dag) {
+    this.operators = dag.getOperators();
+    this.id2inEdges = dag.getId2inEdges();
+    this.id2outEdges = dag.getId2outEdges();
   }
 
   /**
@@ -45,7 +42,9 @@ public final class DAGBuilder {
    * @param operator
    */
   public void addOperator(final Operator operator) {
-    if (!this.contains(operator)) {
+    if (this.contains(operator)) {
+      throw new RuntimeException("DAGBuilder is trying to add an operator multiple times");
+    } else {
       operators.add(operator);
     }
   }
@@ -59,17 +58,21 @@ public final class DAGBuilder {
    */
   public <I, O> Edge<I, O> connectOperators(final Operator<?, I> src, final Operator<O, ?> dst, final Edge.Type type) {
     final Edge<I, O> edge = new Edge<>(type, src, dst);
-    if (!this.contains(edge)) {
-      addToEdgeList(id2inEdges, dst.getId(), edge);
+    if (this.contains(edge)) {
+      throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
+    } else {
       addToEdgeList(id2outEdges, src.getId(), edge);
+      addToEdgeList(id2inEdges, dst.getId(), edge);
     }
     return edge;
   }
 
   public <I, O> Edge<I, O> connectOperators(final Edge edge) {
-    if (!this.contains(edge)) {
-      addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
+    if (this.contains(edge)) {
+      throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
+    } else {
       addToEdgeList(id2outEdges, edge.getSrc().getId(), edge);
+      addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
     }
     return edge;
   }

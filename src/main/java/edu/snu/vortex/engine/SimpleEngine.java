@@ -30,7 +30,7 @@ public final class SimpleEngine {
 
   public void executeDAG(final DAG dag) throws Exception {
     final List<Operator> topoSorted = new LinkedList<>();
-    dag.doDFS((node -> topoSorted.add(0, node)), DAG.VisitOrder.PostOrder);
+    dag.doDFS(node -> topoSorted.add(node));
 
     final Map<String, List<Iterable>> edgeIdToData = new HashMap<>();
     final Map<String, Object> edgeIdToBroadcast = new HashMap<>();

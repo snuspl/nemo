@@ -28,14 +28,15 @@ public final class Optimizer {
    */
   public DAG optimize(final DAG dag) {
     final DAG operatorPlacedDAG = operatorPlacement(dag);
-    return operatorPlacedDAG;
+    final DAG edgeProcessedDAG = edgeProcessing(operatorPlacedDAG);
+    return edgeProcessedDAG;
   }
 
   /////////////////////////////////////////////////////////////
 
   private DAG operatorPlacement(final DAG dag) {
     final DAGBuilder newDAGBuilder = new DAGBuilder();
-    dag.doDFS((operator -> {
+    dag.doDFS(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
         newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
@@ -46,7 +47,7 @@ public final class Optimizer {
           newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
         }
       }
-    }), DAG.VisitOrder.PreOrder);
+    });
     dag.getOperators().forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (inEdges.isPresent()) {
@@ -63,5 +64,43 @@ public final class Optimizer {
   private boolean allFromReserved(final List<Edge> edges) {
     return edges.stream()
         .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Placement.Reserved);
+  }
+
+  ///////////////////////////////////////////////////////////
+
+  private DAG edgeProcessing(final DAG dag) {
+    final DAGBuilder newDAGBuilder = new DAGBuilder();
+    dag.getOperators().forEach(operator -> {
+      newDAGBuilder.addOperator(operator);
+    });
+    dag.getOperators().forEach(operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      if (inEdges.isPresent()) {
+        inEdges.get().forEach(edge -> {
+          if (fromTransientToReserved(edge)) {
+            newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.TCPPipe));
+          } else if (fromReservedToTransient(edge)) {
+            newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File));
+          } else {
+            if (edge.getType().equals(Edge.Type.O2O)) {
+              newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory));
+            } else {
+              newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File));
+            }
+          }
+        });
+      }
+    });
+    return newDAGBuilder.build();
+  }
+
+  private boolean fromTransientToReserved(final Edge edge) {
+    return edge.getSrc().getAttr(Attributes.Key.Placement).equals(Attributes.Placement.Transient) &&
+        edge.getDst().getAttr(Attributes.Key.Placement).equals(Attributes.Placement.Reserved);
+  }
+
+  private boolean fromReservedToTransient(final Edge edge) {
+    return edge.getSrc().getAttr(Attributes.Key.Placement).equals(Attributes.Placement.Reserved) &&
+        edge.getDst().getAttr(Attributes.Key.Placement).equals(Attributes.Placement.Transient);
   }
 }
