@@ -21,6 +21,8 @@ import java.util.Map;
 public class ROperator<I, O> implements Serializable{
   private final String rOpId;
   private final Map<RAttributes.ROpAttribute, Object> attributes;
+  private Map<String, ROpLink> inputLinks;
+  private Map<String, ROpLink> outputLinks;
 
   public ROperator(final String rOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
     this.rOpId = rOpId;
@@ -44,10 +46,14 @@ public class ROperator<I, O> implements Serializable{
   }
 
   public void addOutputLink(ROpLink link) {
-
+    if (outputLinks.containsKey(link.getId()))
+      throw new RuntimeException("the given link is already in the output link list");
+    outputLinks.put(link.getId(), link);
   }
 
   public void addInputLink(ROpLink link) {
-
+    if (inputLinks.containsKey(link.getId()))
+      throw new RuntimeException("the given link is already in the input link list");
+    inputLinks.put(link.getId(), link);
   }
 }

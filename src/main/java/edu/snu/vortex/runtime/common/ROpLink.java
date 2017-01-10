@@ -31,4 +31,16 @@ public class ROpLink {
   public String getId() {
     return rOpLinkId;
   }
+
+  public ROperator getSrcROperator() {
+    return srcROper;
+  }
+
+  public ROperator getDestROperator() {
+    return destROper;
+  }
+
+  public RAttributes getAttributes() {
+    return attributes;
+  }
 }

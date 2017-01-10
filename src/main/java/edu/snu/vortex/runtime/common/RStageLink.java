@@ -40,4 +40,8 @@ public class RStageLink {
   public RStage getDestStage() {
     return destStage;
   }
+
+  public RAttributes getAttributes() {
+    return attributes;
+  }
 }
