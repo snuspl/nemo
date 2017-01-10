@@ -16,4 +16,11 @@
 package edu.snu.vortex.runtime.common;
 
 public class RAttributes {
+  public enum ROpAttribute {PARALLELISM, PARTITION, RESOURCE_TYPE}
+  public enum Partition {HASH, RANGE}
+  public enum Resource_Type {TRANSIENT, RESERVED, COMPUTE, STORAGE}
+
+  public enum ROpLinkAttribute {CHANNEL, COMM_PATTERN}
+  public enum Channel {LOCAL_MEM, TCP, FILE, DISTR_STORAGE}
+  public enum Comm_Pattern {ONE_TO_ONE, BROADCAST, SCATTER_GATHER}
 }
