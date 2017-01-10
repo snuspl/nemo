@@ -14,4 +14,4 @@ Vortex is a data-processing system composed of modular components.
 ## Examples
 * ./bin/run.sh edu.snu.vortex.examples.beam.MapReduce ./src/main/resources/sample_input ./src/main/resources/sample_output
 * ./bin/run.sh edu.snu.vortex.examples.beam.Broadcast ./src/main/resources/sample_input ./src/main/resources/sample_output
-* java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.examples.MapReduce
+* java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce
