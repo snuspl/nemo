@@ -8,7 +8,6 @@ Vortex is a data-processing system composed of modular components.
 * Engine: Physically executes the user program.
 
 ## Requirements
-* Beam 0.4.0-incubating-SNAPSHOT (You must download it from https://github.com/apache/incubator-beam and build it)
 * Java 8
 * Maven
 
