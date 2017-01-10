@@ -15,5 +15,27 @@
  */
 package edu.snu.vortex.runtime.common;
 
-public class ROperator {
+import java.io.Serializable;
+import java.util.Map;
+
+public class ROperator<I, O> implements Serializable{
+  private final String rOpId;
+  private final Map<RAttributes.ROpAttribute, Object> attributes;
+
+  public ROperator(final String rOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
+    this.rOpId = rOpId;
+    this.attributes = attributes;
+  }
+
+  public void addAttrbute(final RAttributes.ROpAttribute key, final Object value) {
+    attributes.put(key, value);
+  }
+
+  public void removeAttrbute(final RAttributes.ROpAttribute key) {
+    attributes.remove(key);
+  }
+
+  public Map<RAttributes.ROpAttribute, Object> getAttributes() {
+    return attributes;
+  }
 }

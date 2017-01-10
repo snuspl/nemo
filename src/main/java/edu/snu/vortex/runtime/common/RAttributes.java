@@ -16,7 +16,9 @@
 package edu.snu.vortex.runtime.common;
 
 public class RAttributes {
-  public enum ROpAttribute {PARALLELISM, PARTITION, RESOURCE_TYPE}
+  public enum RStageAttribute {PARALLELISM}
+
+  public enum ROpAttribute {PARTITION, RESOURCE_TYPE}
   public enum Partition {HASH, RANGE}
   public enum Resource_Type {TRANSIENT, RESERVED, COMPUTE, STORAGE}
 
