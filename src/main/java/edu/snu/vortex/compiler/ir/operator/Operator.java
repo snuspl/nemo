@@ -62,12 +62,4 @@ public abstract class Operator<I, O> implements Serializable {
     sb.append(attributes);
     return sb.toString();
   }
-
-  public static void main (String [] args) {
-    Map<Attributes.Key, Attributes.Val> test = new HashMap<>();
-    test.put(Attributes.Key.Placement, Attributes.Placement.Compute);
-
-    System.out.println(test.get(Attributes.Key.Placement));
-    System.out.println(test.get(Attributes.Key.Placement) == Attributes.Placement.Compute);
-  }
 }
