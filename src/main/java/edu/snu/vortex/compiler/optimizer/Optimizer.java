@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 
 import java.util.*;
@@ -27,34 +26,27 @@ public final class Optimizer {
    * TODO #29: Make Optimizer Configurable
    */
   public DAG optimize(final DAG dag) {
-    final DAG operatorPlacedDAG = operatorPlacement(dag);
-    final DAG edgeProcessedDAG = edgeProcessing(operatorPlacedDAG);
-    return edgeProcessedDAG;
+    operatorPlacement(dag);
+    edgeProcessing(dag);
+    return dag;
   }
 
   /////////////////////////////////////////////////////////////
 
   private DAG operatorPlacement(final DAG dag) {
-    final DAGBuilder newDAGBuilder = new DAGBuilder();
     dag.doDFS(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
-        newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
+        operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
       } else {
         if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
-          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved));
+          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved);
         } else {
-          newDAGBuilder.addOperator(operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient));
+          operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
         }
       }
     });
-    dag.getOperators().forEach(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
-      if (inEdges.isPresent()) {
-        inEdges.get().forEach(edge -> newDAGBuilder.connectOperators(edge));
-      }
-    });
-    return newDAGBuilder.build();
+    return dag;
   }
 
   private boolean hasM2M(final List<Edge> edges) {
@@ -69,29 +61,25 @@ public final class Optimizer {
   ///////////////////////////////////////////////////////////
 
   private DAG edgeProcessing(final DAG dag) {
-    final DAGBuilder newDAGBuilder = new DAGBuilder();
-    dag.getOperators().forEach(operator -> {
-      newDAGBuilder.addOperator(operator);
-    });
     dag.getOperators().forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.TCPPipe));
+            edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.TCPPipe);
           } else if (fromReservedToTransient(edge)) {
-            newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File));
+            edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File);
           } else {
             if (edge.getType().equals(Edge.Type.O2O)) {
-              newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory));
+              edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory);
             } else {
-              newDAGBuilder.connectOperators(edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File));
+              edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.File);
             }
           }
         });
       }
     });
-    return newDAGBuilder.build();
+    return dag;
   }
 
   private boolean fromTransientToReserved(final Edge edge) {

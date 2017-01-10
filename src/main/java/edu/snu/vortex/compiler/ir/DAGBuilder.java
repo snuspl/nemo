@@ -38,15 +38,14 @@ public final class DAGBuilder {
   }
 
   /**
-   * add a operator.
+   * add an operator.
    * @param operator
    */
   public void addOperator(final Operator operator) {
     if (this.contains(operator)) {
       throw new RuntimeException("DAGBuilder is trying to add an operator multiple times");
-    } else {
-      operators.add(operator);
     }
+    operators.add(operator);
   }
 
   /**
@@ -60,20 +59,18 @@ public final class DAGBuilder {
     final Edge<I, O> edge = new Edge<>(type, src, dst);
     if (this.contains(edge)) {
       throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
-    } else {
-      addToEdgeList(id2outEdges, src.getId(), edge);
-      addToEdgeList(id2inEdges, dst.getId(), edge);
     }
+    addToEdgeList(id2outEdges, src.getId(), edge);
+    addToEdgeList(id2inEdges, dst.getId(), edge);
     return edge;
   }
 
   public <I, O> Edge<I, O> connectOperators(final Edge edge) {
     if (this.contains(edge)) {
       throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
-    } else {
-      addToEdgeList(id2outEdges, edge.getSrc().getId(), edge);
-      addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
     }
+    addToEdgeList(id2outEdges, edge.getSrc().getId(), edge);
+    addToEdgeList(id2inEdges, edge.getDst().getId(), edge);
     return edge;
   }
 
@@ -127,10 +124,10 @@ public final class DAGBuilder {
         .filter(operator -> !id2inEdges.containsKey(operator.getId()))
         .allMatch(operator -> operator instanceof Source);
 
-    if (sourceCheck) {
-      return new DAG(operators, id2inEdges, id2outEdges);
-    } else {
-      throw new RuntimeException("DAG Integrity unsatisfied.");
+    if (!sourceCheck) {
+      throw new RuntimeException("DAG integrity unsatisfied: there are root operators that are not Sources.");
     }
+
+    return new DAG(operators, id2inEdges, id2outEdges);
   }
 }
