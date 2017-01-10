@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.component.operator;
-
-import edu.snu.vortex.compiler.ir.component.Operator;
+package edu.snu.vortex.compiler.ir.operator;
 
 import java.util.List;
 
-public abstract class Sink<I> extends Operator<I, Void> {
+public abstract class Source<O> extends Operator<Void, O> {
   // Maybe make the parameter a any-type hashmap(attributes/options)
-  public abstract List<Writer<I>> getWriters(final int numWriters) throws Exception;
+  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
 
-  interface Writer<I> {
-    void write(Iterable<I> data) throws Exception;
+  public interface Reader<O> {
+    Iterable<O> read() throws Exception;
   }
 }

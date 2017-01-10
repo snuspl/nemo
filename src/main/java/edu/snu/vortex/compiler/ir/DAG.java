@@ -15,12 +15,10 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.component.Operator;
-import edu.snu.vortex.compiler.ir.component.Stage;
+import edu.snu.vortex.compiler.ir.operator.Operator;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Physical execution plan of a user program.
@@ -29,24 +27,17 @@ public final class DAG {
   private final Map<String, List<Edge>> id2inEdges;
   private final Map<String, List<Edge>> id2outEdges;
   private final List<Operator> operators;
-  private final List<Stage> stages;
 
   DAG(final List<Operator> operators,
       final Map<String, List<Edge>> id2inEdges,
-      final Map<String, List<Edge>> id2outEdges,
-      final List<Stage> stages) {
+      final Map<String, List<Edge>> id2outEdges) {
     this.operators = operators;
     this.id2inEdges = id2inEdges;
     this.id2outEdges = id2outEdges;
-    this.stages = stages;
   }
 
   public List<Operator> getOperators() {
     return operators;
-  }
-
-  public List<Stage> getStages() {
-    return stages;
   }
 
   /**
@@ -104,19 +95,6 @@ public final class DAG {
     }
   }
 
-  /**
-   * check if the operator belongs to a stage in the DAG
-   * @param operator the operator that we check
-   * @return whether or not the operator belongs to a stage
-   */
-  public boolean hasStage(Operator operator) {
-    if (stages != null) {
-      return getStages().stream().anyMatch(s -> s.contains(operator));
-    } else {
-      return false;
-    }
-  }
-
   /////////////// Auxiliary overriding functions
 
   @Override
@@ -147,10 +125,6 @@ public final class DAG {
       sb.append(operator.toString());
       sb.append(" / <inEdges> ");
       sb.append(this.getInEdgesOf(operator).toString());
-      if (hasStage(operator)) {
-        sb.append(" / <Stage> ");
-        sb.append(getStages().stream().filter(s -> s.contains(operator)).collect(Collectors.toList()).get(0).getId());
-      }
       sb.append("\n");
     }), VisitOrder.PreOrder);
     return sb.toString();

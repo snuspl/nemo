@@ -19,8 +19,6 @@ import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.component.Operator;
-import edu.snu.vortex.compiler.ir.component.Stage;
 
 import java.util.*;
 
@@ -30,8 +28,7 @@ public final class Optimizer {
    */
   public DAG optimize(final DAG dag) {
     final DAG operatorPlacedDAG = operatorPlacement(dag);
-    final DAG stagePartitionedDAG = stagePartition(operatorPlacedDAG);
-    return stagePartitionedDAG;
+    return operatorPlacedDAG;
   }
 
   /////////////////////////////////////////////////////////////
@@ -66,49 +63,5 @@ public final class Optimizer {
   private boolean allFromReserved(final List<Edge> edges) {
     return edges.stream()
         .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Placement.Reserved);
-  }
-
-  ///////////////////////////////////////////////////////////////
-
-  /**
-   * This function returns a stage-partitioned dag as its result
-   * @param dag Input DAG
-   * @return stage-partitioned input DAG
-   */
-  private DAG stagePartition(final DAG dag) {
-    final DAGBuilder newDAGbuilder = new DAGBuilder();
-    final DAGBuilder newStageDAGBuilder = new DAGBuilder();
-    final List<Operator> topoSorted = new LinkedList<>();
-
-    dag.doDFS((operator -> topoSorted.add(operator)), DAG.VisitOrder.PreOrder);
-
-    // Look for a candidate to add to the newly created stage
-    final Optional<Operator> candidate = topoSorted.stream().filter(operator -> !dag.hasStage(operator)).findFirst();
-
-    if (candidate.isPresent()) {
-      newStageDAGBuilder.addOperator(candidate.get());
-    } else {
-      return dag;
-    }
-
-    topoSorted.forEach(operator -> {
-      if (Stage.neighboringOperators(dag, newStageDAGBuilder).contains(operator)) {
-        newStageDAGBuilder.addOperator(operator);
-        newStageDAGBuilder.getOperators().forEach(o -> {
-          final Optional<Edge> edge = dag.getEdgeBetween(operator, o);
-          if (edge.isPresent()) {
-            newStageDAGBuilder.connectOperators(edge.get());
-          }
-        });
-      }
-    });
-
-    newDAGbuilder.addDAG(dag);
-    if (dag.getStages() != null) {
-      dag.getStages().forEach(stage -> newDAGbuilder.addStage(stage));
-    }
-    newDAGbuilder.addStage(new Stage(newStageDAGBuilder.buildStageDAG()));
-
-    return stagePartition(newDAGbuilder.build());
   }
 }

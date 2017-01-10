@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.component.operator.GroupByKey;
+import edu.snu.vortex.compiler.ir.operator.GroupByKey;
 
 public final class GroupByKeyImpl<I, O> extends GroupByKey<I, O> {
 }

@@ -19,9 +19,9 @@ import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.component.operator.Do;
-import edu.snu.vortex.compiler.ir.component.Operator;
-import edu.snu.vortex.compiler.ir.component.operator.Source;
+import edu.snu.vortex.compiler.ir.operator.Do;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.LinkedList;
 import java.util.List;

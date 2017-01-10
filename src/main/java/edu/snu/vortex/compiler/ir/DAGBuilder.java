@@ -15,9 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.component.Operator;
-import edu.snu.vortex.compiler.ir.component.Stage;
-import edu.snu.vortex.compiler.ir.component.operator.Source;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.operator.Source;
 
 import java.util.*;
 
@@ -25,13 +24,11 @@ public final class DAGBuilder {
   private Map<String, List<Edge>> id2inEdges;
   private Map<String, List<Edge>> id2outEdges;
   private List<Operator> operators;
-  private List<Stage> stages;
 
   public DAGBuilder() {
     this.id2inEdges = new HashMap<>();
     this.id2outEdges = new HashMap<>();
     this.operators = new ArrayList<>();
-    this.stages = null;
   }
 
   public void addDAG(final DAG dag) {
@@ -50,16 +47,6 @@ public final class DAGBuilder {
   public void addOperator(final Operator operator) {
     if (!this.contains(operator)) {
       operators.add(operator);
-    }
-  }
-
-  public void addStage(final Stage stage) {
-    if (this.stages == null) {
-      this.stages = new ArrayList<>();
-    }
-
-    if (!this.contains(stage)) {
-      stages.add(stage);
     }
   }
 
@@ -119,10 +106,6 @@ public final class DAGBuilder {
     return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
   }
 
-  public boolean contains(Stage stage) {
-    return stages.contains(stage);
-  }
-
   /**
    * returns the number of operators in the DAGBuilder
    * @return
@@ -142,13 +125,9 @@ public final class DAGBuilder {
         .allMatch(operator -> operator instanceof Source);
 
     if (sourceCheck) {
-      return new DAG(operators, id2inEdges, id2outEdges, stages);
+      return new DAG(operators, id2inEdges, id2outEdges);
     } else {
       throw new RuntimeException("DAG Integrity unsatisfied.");
     }
-  }
-
-  public DAG buildStageDAG() {
-    return new DAG(operators, id2inEdges, id2outEdges, stages);
   }
 }

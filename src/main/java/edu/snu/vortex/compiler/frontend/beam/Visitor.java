@@ -18,13 +18,13 @@ package edu.snu.vortex.compiler.frontend.beam;
 import edu.snu.vortex.compiler.frontend.beam.operator.*;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.component.operator.Broadcast;
-import edu.snu.vortex.compiler.ir.component.Operator;
+import edu.snu.vortex.compiler.ir.operator.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.values.PValue;
 
 import java.util.HashMap;
@@ -107,7 +107,7 @@ final class Visitor implements Pipeline.PipelineVisitor {
   }
 
   private Edge.Type getInEdgeType(final Operator operator) {
-    if (operator instanceof edu.snu.vortex.compiler.ir.component.operator.GroupByKey) {
+    if (operator instanceof edu.snu.vortex.compiler.ir.operator.GroupByKey) {
       return Edge.Type.M2M;
     } else if (operator instanceof Broadcast) {
       return Edge.Type.O2M;
