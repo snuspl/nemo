@@ -25,11 +25,13 @@ public class RStage {
   private Map<String, ROpLink> operLinks;
   private Map<String, RStageLink> inputLinks;
   private Map<String, RStageLink> outputLinks;
+  private Map<RAttributes.RStageAttribute, Object> attributes;
 
-  public RStage() {
+  public RStage(Map<RAttributes.RStageAttribute, Object> attributes) {
     this.stageId = IdGenerator.generateComponentId();
     this.operators = new ArrayMap<>();
     this.operLinks = new ArrayMap<>();
+    this.attributes = attributes;
   }
 
   public String getId() {
@@ -42,7 +44,8 @@ public class RStage {
     operators.put(operator.getId(), operator);
   }
 
-  public void connectOperators(String srcOperId, String destOperId, RAttributes opLinkAttributs) {
+  public void connectOperators(String srcOperId, String destOperId,
+                               Map<RAttributes.ROpLinkAttribute, Object> opLinkAttributs) {
     ROperator srcOper = operators.get(srcOperId);
     ROperator destOper = operators.get(destOperId);
     if (srcOper == null || destOper == null)

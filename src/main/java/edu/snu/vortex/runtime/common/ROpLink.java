@@ -15,13 +15,16 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import java.util.Map;
+
 public class ROpLink {
   private String rOpLinkId;
   private ROperator srcROper;
   private ROperator destROper;
-  private RAttributes attributes;
+  private Map<RAttributes.ROpLinkAttribute, Object> attributes;
 
-  public ROpLink(ROperator srcROper, ROperator destROper, RAttributes attributes) {
+  public ROpLink(ROperator srcROper, ROperator destROper,
+                 Map<RAttributes.ROpLinkAttribute, Object> attributes) {
     this.rOpLinkId = IdGenerator.generateComponentId();
     this.srcROper = srcROper;
     this.destROper = destROper;
@@ -40,7 +43,7 @@ public class ROpLink {
     return destROper;
   }
 
-  public RAttributes getAttributes() {
+  public Map<RAttributes.ROpLinkAttribute, Object> getAttributes() {
     return attributes;
   }
 }

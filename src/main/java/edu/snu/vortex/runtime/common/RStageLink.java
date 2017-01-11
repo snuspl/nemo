@@ -16,17 +16,22 @@
 package edu.snu.vortex.runtime.common;
 
 
+import java.util.Set;
+
 public class RStageLink {
   private String stageLinkId;
   private RStage srcStage;
   private RStage destStage;
-  private RAttributes attributes;
+  private Set<ROpLink> rOpLinkSet;
 
-  RStageLink(RStage srcStage, RStage destStage, RAttributes attributes) {
+  RStageLink(RStage srcStage, RStage destStage) {
     this.stageLinkId = IdGenerator.generateComponentId();
     this.srcStage = srcStage;
     this.destStage = destStage;
-    this.attributes = attributes;
+  }
+
+  public void addROpLink(ROpLink rOpLink) {
+    rOpLinkSet.add(rOpLink);
   }
 
   public String getId() {
@@ -41,7 +46,4 @@ public class RStageLink {
     return destStage;
   }
 
-  public RAttributes getAttributes() {
-    return attributes;
-  }
 }
