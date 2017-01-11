@@ -28,7 +28,7 @@ public class RStage {
   private Map<RAttributes.RStageAttribute, Object> attributes;
 
   public RStage(Map<RAttributes.RStageAttribute, Object> attributes) {
-    this.stageId = IdGenerator.generateComponentId();
+    this.stageId = IdGenerator.generateRStageId();
     this.operators = new ArrayMap<>();
     this.operLinks = new ArrayMap<>();
     this.attributes = attributes;
@@ -45,13 +45,13 @@ public class RStage {
   }
 
   public void connectOperators(String srcOperId, String destOperId,
-                               Map<RAttributes.ROpLinkAttribute, Object> opLinkAttributs) {
+                               Map<RAttributes.ROpLinkAttribute, Object> opLinkAttributes) {
     ROperator srcOper = operators.get(srcOperId);
     ROperator destOper = operators.get(destOperId);
     if (srcOper == null || destOper == null)
       throw new RuntimeException("one of given operators is not in the stage");
 
-    ROpLink operLink = new ROpLink(srcOper, destOper, opLinkAttributs);
+    ROpLink operLink = new ROpLink(srcOper, destOper, opLinkAttributes);
     srcOper.addOutputLink(operLink);
     destOper.addInputLink(operLink);
     operLinks.put(operLink.getId(), operLink);

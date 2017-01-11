@@ -15,5 +15,47 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import edu.snu.vortex.runtime.exception.NoSuchRStageException;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 public class ExecutionPlan {
+  private final List<RStage> rStages;
+  private final Map<String, RStageLink> rStageLinks;
+
+  public ExecutionPlan() {
+    this.rStages = new LinkedList<>();
+    this.rStageLinks = new HashMap<>();
+  }
+  public void addRStage(final RStage rStage) {
+    rStages.add(rStage);
+  }
+
+  public void connectRStages(final RStage srcRStage, final RStage dstRStage, final ROpLink rOpLink) throws NoSuchRStageException {
+    if (!rStages.contains(srcRStage) || !rStages.contains(dstRStage)) {
+      throw new NoSuchRStageException("The requested RStage does not exist in this ExecutionPlan");
+    }
+
+    final String rStageLinkId = IdGenerator.generateRStageLinkId(srcRStage.getId(), dstRStage.getId());
+    final RStageLink rStageLink = rStageLinks.get(rStageLinkId);
+
+    if (rStageLink == null) {
+      rStageLinks.put(rStageLinkId, new RStageLink(rStageLinkId, srcRStage, dstRStage));
+    }
+    rStageLink.addROpLink(rOpLink);
+
+    srcRStage.addOutputLink(rStageLink);
+    dstRStage.addInputLink(rStageLink);
+  }
+
+  public List<RStage> getrStages() {
+    return rStages;
+  }
+
+  public Map<String, RStageLink> getrStageLinks() {
+    return rStageLinks;
+  }
 }

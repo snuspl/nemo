@@ -15,19 +15,20 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
+import java.util.HashSet;
 import java.util.Set;
 
 public class RStageLink {
   private String stageLinkId;
   private RStage srcStage;
-  private RStage destStage;
+  private RStage dstStage;
   private Set<ROpLink> rOpLinkSet;
 
-  RStageLink(RStage srcStage, RStage destStage) {
-    this.stageLinkId = IdGenerator.generateComponentId();
+  RStageLink(final String rStageLinkId, RStage srcStage, RStage dstStage) {
+    this.stageLinkId = rStageLinkId;
     this.srcStage = srcStage;
-    this.destStage = destStage;
+    this.dstStage = dstStage;
+    this.rOpLinkSet = new HashSet<>();
   }
 
   public void addROpLink(ROpLink rOpLink) {
@@ -42,8 +43,7 @@ public class RStageLink {
     return srcStage;
   }
 
-  public RStage getDestStage() {
-    return destStage;
+  public RStage getDstStage() {
+    return dstStage;
   }
-
 }

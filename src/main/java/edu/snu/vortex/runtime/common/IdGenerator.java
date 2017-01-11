@@ -19,9 +19,20 @@ package edu.snu.vortex.runtime.common;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class IdGenerator {
-  private static AtomicInteger RExecPlanComponentId = new AtomicInteger(1);
+  private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
 
-  public static String generateComponentId() {
-    return "runtime-comp-" + RExecPlanComponentId.getAndIncrement();
+  public static String generateROpId(final String irOpId) {
+    return "ROp-" + irOpId;
+  }
+  public static String generateROpLinkId() {
+    return "ROpLink-" + ROpLinkIdGenerator.getAndIncrement();
+  }
+
+  public static String generateRStageId() {
+    return "RStage-" + RStageIdGenerator.getAndIncrement();
+  }
+  public static String generateRStageLinkId(final String srcRStageId, final String dstRStageId) {
+    return "RStageLink-" + srcRStageId + '_' + dstRStageId;
   }
 }

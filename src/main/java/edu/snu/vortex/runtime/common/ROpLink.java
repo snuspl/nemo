@@ -25,7 +25,7 @@ public class ROpLink {
 
   public ROpLink(ROperator srcROper, ROperator destROper,
                  Map<RAttributes.ROpLinkAttribute, Object> attributes) {
-    this.rOpLinkId = IdGenerator.generateComponentId();
+    this.rOpLinkId = IdGenerator.generateROpLinkId();
     this.srcROper = srcROper;
     this.destROper = destROper;
     this.attributes = attributes;

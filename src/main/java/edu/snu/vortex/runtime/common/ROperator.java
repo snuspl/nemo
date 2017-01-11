@@ -24,8 +24,8 @@ public class ROperator<I, O> implements Serializable{
   private Map<String, ROpLink> inputLinks;
   private Map<String, ROpLink> outputLinks;
 
-  public ROperator(final String rOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
-    this.rOpId = rOpId;
+  public ROperator(final String irOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
+    this.rOpId = IdGenerator.generateROpId(irOpId);
     this.attributes = attributes;
   }
 
