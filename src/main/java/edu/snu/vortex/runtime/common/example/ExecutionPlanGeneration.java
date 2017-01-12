@@ -37,7 +37,7 @@ public final class ExecutionPlanGeneration {
     final Optimizer DAGOptimizer = new Optimizer();
     DAGOptimizer.optimize(dag);
     System.out.println("=== Optimized IR DAG ===");
-    DAG.print(dag);
+    System.out.println(dag);
 
     ExecutionPlan execPlan = transformToExecDAG(dag);
     System.out.println("=== Execution Plan ===");
@@ -49,13 +49,13 @@ public final class ExecutionPlanGeneration {
     OperatorCompiler compiler = new OperatorCompiler();
 
     final List<Operator> topoSorted = new LinkedList<>();
-    DAG.doDFS(dag, (operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
+    dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
     RtStage rtStage = null;
     for (int idx = 0; idx < topoSorted.size(); idx++) {
       Operator operator = topoSorted.get(idx);
       RtOperator rtOperator = compiler.convert(operator);
 
-      final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (isSource(inEdges)) { // in case of a source operator
         Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
         Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
