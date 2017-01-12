@@ -22,17 +22,17 @@ public class IdGenerator {
   private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
 
-  public static String generateROpId(final String irOpId) {
+  public static String generateRtOpId(final String irOpId) {
     return "ROp-" + irOpId;
   }
-  public static String generateROpLinkId() {
-    return "ROpLink-" + ROpLinkIdGenerator.getAndIncrement();
+  public static String generateRtOpLinkId() {
+    return "RtOpLink-" + ROpLinkIdGenerator.getAndIncrement();
   }
 
-  public static String generateRStageId() {
-    return "RStage-" + RStageIdGenerator.getAndIncrement();
+  public static String generateRtStageId() {
+    return "RtStage-" + RStageIdGenerator.getAndIncrement();
   }
-  public static String generateRStageLinkId(final String srcRStageId, final String dstRStageId) {
-    return "RStageLink-" + srcRStageId + '_' + dstRStageId;
+  public static String generateRtStageLinkId(final String srcRStageId, final String dstRStageId) {
+    return "RtStageLink-" + srcRStageId + '_' + dstRStageId;
   }
 }

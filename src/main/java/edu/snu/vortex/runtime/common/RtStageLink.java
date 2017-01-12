@@ -18,32 +18,32 @@ package edu.snu.vortex.runtime.common;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RStageLink {
-  private String stageLinkId;
-  private RStage srcStage;
-  private RStage dstStage;
-  private Set<ROpLink> rOpLinkSet;
+public class RtStageLink {
+  private String rtStageLinkId;
+  private RtStage srcStage;
+  private RtStage dstStage;
+  private Set<RtOpLink> rtOpLinkSet;
 
-  RStageLink(final String rStageLinkId, RStage srcStage, RStage dstStage) {
-    this.stageLinkId = rStageLinkId;
+  RtStageLink(final String rtStageLinkId, RtStage srcStage, RtStage dstStage) {
+    this.rtStageLinkId = rtStageLinkId;
     this.srcStage = srcStage;
     this.dstStage = dstStage;
-    this.rOpLinkSet = new HashSet<>();
+    this.rtOpLinkSet = new HashSet<>();
   }
 
-  public void addROpLink(ROpLink rOpLink) {
-    rOpLinkSet.add(rOpLink);
+  public void addROpLink(RtOpLink rtOpLink) {
+    rtOpLinkSet.add(rtOpLink);
   }
 
   public String getId() {
-    return stageLinkId;
+    return rtStageLinkId;
   }
 
-  public RStage getSrcStage() {
+  public RtStage getSrcStage() {
     return srcStage;
   }
 
-  public RStage getDstStage() {
+  public RtStage getDstStage() {
     return dstStage;
   }
 }

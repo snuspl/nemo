@@ -23,41 +23,43 @@ import java.util.List;
 import java.util.Map;
 
 public class ExecutionPlan {
-  private final List<RStage> rStages;
-  private final Map<String, RStageLink> rStageLinks;
+  private final List<RtStage> rtStages;
+  private final Map<String, RtStageLink> rtStageLinks;
 
   public ExecutionPlan() {
-    this.rStages = new LinkedList<>();
-    this.rStageLinks = new HashMap<>();
+    this.rtStages = new LinkedList<>();
+    this.rtStageLinks = new HashMap<>();
   }
-  public void addRStage(final RStage rStage) {
-    rStages.add(rStage);
+  public void addRStage(final RtStage rtStage) {
+    rtStages.add(rtStage);
   }
 
-  public void connectRStages(final RStage srcRStage, final RStage dstRStage, final ROpLink rOpLink) throws NoSuchRStageException {
-    if (!rStages.contains(srcRStage) || !rStages.contains(dstRStage)) {
-      throw new NoSuchRStageException("The requested RStage does not exist in this ExecutionPlan");
+  public void connectRStages(final RtStage srcRtStage,
+                             final RtStage dstRtStage,
+                             final RtOpLink rtOpLink) throws NoSuchRStageException {
+    if (!rtStages.contains(srcRtStage) || !rtStages.contains(dstRtStage)) {
+      throw new NoSuchRStageException("The requested RtStage does not exist in this ExecutionPlan");
     }
 
-    final String rStageLinkId = IdGenerator.generateRStageLinkId(srcRStage.getId(), dstRStage.getId());
-    RStageLink rStageLink = rStageLinks.get(rStageLinkId);
+    final String rStageLinkId = IdGenerator.generateRtStageLinkId(srcRtStage.getId(), dstRtStage.getId());
+    RtStageLink rtStageLink = rtStageLinks.get(rStageLinkId);
 
-    if (rStageLink == null) {
-      rStageLink = new RStageLink(rStageLinkId, srcRStage, dstRStage);
-      rStageLinks.put(rStageLinkId, rStageLink);
+    if (rtStageLink == null) {
+      rtStageLink = new RtStageLink(rStageLinkId, srcRtStage, dstRtStage);
+      rtStageLinks.put(rStageLinkId, rtStageLink);
     }
-    rStageLink.addROpLink(rOpLink);
+    rtStageLink.addROpLink(rtOpLink);
 
-    srcRStage.addOutputLink(rStageLink);
-    dstRStage.addInputLink(rStageLink);
+    srcRtStage.addOutputLink(rtStageLink);
+    dstRtStage.addInputLink(rtStageLink);
   }
 
-  public List<RStage> getrStages() {
-    return rStages;
+  public List<RtStage> getRtStages() {
+    return rtStages;
   }
 
-  public Map<String, RStageLink> getrStageLinks() {
-    return rStageLinks;
+  public Map<String, RtStageLink> getRtStageLinks() {
+    return rtStageLinks;
   }
 
   public void print() {

@@ -19,15 +19,15 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ROperator<I, O> implements Serializable{
+public class RtOperator<I, O> implements Serializable{
   private final String rOpId;
-  private final Map<RAttributes.ROpAttribute, Object> attributes;
-  private Map<String, ROpLink> inputLinks;
-  private Map<String, ROpLink> outputLinks;
+  private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
+  private Map<String, RtOpLink> inputLinks;
+  private Map<String, RtOpLink> outputLinks;
 
-  public ROperator(final String irOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
-    this.rOpId = IdGenerator.generateROpId(irOpId);
-    this.attributes = attributes;
+  public RtOperator(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+    this.rOpId = IdGenerator.generateRtOpId(irOpId);
+    this.rtOpAttr = rtOpAttr;
     this.inputLinks = new HashMap<>();
     this.outputLinks = new HashMap<>();
   }
@@ -36,27 +36,29 @@ public class ROperator<I, O> implements Serializable{
     return rOpId;
   }
 
-  public void addAttrbute(final RAttributes.ROpAttribute key, final Object value) {
-    attributes.put(key, value);
+  public void addAttrbute(final RtAttributes.RtOpAttribute key, final Object value) {
+    rtOpAttr.put(key, value);
   }
 
-  public void removeAttrbute(final RAttributes.ROpAttribute key) {
-    attributes.remove(key);
+  public void removeAttrbute(final RtAttributes.RtOpAttribute key) {
+    rtOpAttr.remove(key);
   }
 
-  public Map<RAttributes.ROpAttribute, Object> getAttributes() {
-    return attributes;
+  public Map<RtAttributes.RtOpAttribute, Object> getRtOpAttr() {
+    return rtOpAttr;
   }
 
-  public void addOutputLink(ROpLink link) {
-    if (outputLinks.containsKey(link.getId()))
+  public void addOutputLink(final RtOpLink rtOpLink) {
+    if (outputLinks.containsKey(rtOpLink.getRtOpLinkId())) {
       throw new RuntimeException("the given link is already in the output link list");
-    outputLinks.put(link.getId(), link);
+    }
+    outputLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
   }
 
-  public void addInputLink(ROpLink link) {
-    if (inputLinks.containsKey(link.getId()))
+  public void addInputLink(final RtOpLink rtOpLink) {
+    if (inputLinks.containsKey(rtOpLink.getRtOpLinkId())) {
       throw new RuntimeException("the given link is already in the input link list");
-    inputLinks.put(link.getId(), link);
+    }
+    inputLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
   }
 }

@@ -18,46 +18,47 @@ package edu.snu.vortex.compiler.backend.vortex;
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.common.IdGenerator;
-import edu.snu.vortex.runtime.common.RAttributes;
-import edu.snu.vortex.runtime.common.ROperator;
+import edu.snu.vortex.runtime.common.RtAttributes;
+import edu.snu.vortex.runtime.common.RtOperator;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class OperatorCompiler {
-  public ROperator convert(final Operator irOp) {
+  public RtOperator convert(final Operator irOp) {
     final Map<Attributes.Key, Attributes.Val> irOpAttributes = irOp.getAttributes();
 
-    final Map<RAttributes.ROpAttribute, Object> rOpAttributes = new HashMap<>();
+    final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();
     for (Map.Entry<Attributes.Key, Attributes.Val> attr : irOpAttributes.entrySet()) {
       switch (attr.getKey()) {
       case Placement:
         if (attr.getValue() == Attributes.Placement.Transient) {
-          rOpAttributes.put(RAttributes.ROpAttribute.RESOURCE_TYPE, RAttributes.Resource_Type.TRANSIENT);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.TRANSIENT);
         } else if (attr.getValue() == Attributes.Placement.Reserved) {
-          rOpAttributes.put(RAttributes.ROpAttribute.RESOURCE_TYPE, RAttributes.Resource_Type.RESERVED);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.RESERVED);
         } else if (attr.getValue() == Attributes.Placement.Compute) {
-          rOpAttributes.put(RAttributes.ROpAttribute.RESOURCE_TYPE, RAttributes.Resource_Type.COMPUTE);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.COMPUTE);
         } else if (attr.getValue() == Attributes.Placement.Storage) {
-          rOpAttributes.put(RAttributes.ROpAttribute.RESOURCE_TYPE, RAttributes.Resource_Type.STORAGE);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.STORAGE);
         }
         break;
       case EdgePartitioning:
         if (attr.getValue() == Attributes.EdgePartitioning.Hash) {
-          rOpAttributes.put(RAttributes.ROpAttribute.PARTITION, RAttributes.Partition.HASH);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
         } else if (attr.getValue() == Attributes.EdgePartitioning.Range) {
-          rOpAttributes.put(RAttributes.ROpAttribute.PARTITION, RAttributes.Partition.RANGE);
+          rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.RANGE);
         }
         break;
       default:
         throw new UnsupportedOperationException("Unsupported operator attribute");
       }
     }
-    final ROperator rOp = new ROperator(irOp.getId(), rOpAttributes);
+    final RtOperator rOp = new RtOperator(irOp.getId(), rOpAttributes);
     return rOp;
   }
 
+
   public String convertId(final String irOpId) {
-    return IdGenerator.generateROpId(irOpId);
+    return IdGenerator.generateRtOpId(irOpId);
   }
 }
