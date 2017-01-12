@@ -55,4 +55,8 @@ public class OperatorCompiler {
     final ROperator rOp = new ROperator(irOp.getId(), rOpAttributes);
     return rOp;
   }
+
+  public String convertId(final String irOpId) {
+    return irOpId;
+  }
 }

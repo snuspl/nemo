@@ -58,4 +58,8 @@ public class ExecutionPlan {
   public Map<String, RStageLink> getrStageLinks() {
     return rStageLinks;
   }
+
+  public void print() {
+    //TODO: print components of this execution grach in DFS gragh traversal.
+  }
 }

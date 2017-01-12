@@ -38,6 +38,14 @@ public class RStage {
     return stageId;
   }
 
+  public ROperator findOperator(String operatorId) {
+    return operators.get(operatorId);
+  }
+
+  public boolean contains(String operatorId) {
+    return operators.containsKey(operatorId);
+  }
+
   public void addOperator(ROperator operator) {
     if (operators.containsKey(operator.getId()))
       throw new RuntimeException("the given operator has been already added");
