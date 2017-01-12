@@ -23,17 +23,40 @@ import java.util.List;
 import java.util.Map;
 
 public class ExecutionPlan {
+  /**
+   * A list of {@link RtStage} to be executed in this plan, sorted in topological order.
+   */
   private final List<RtStage> rtStages;
+
+  /**
+   * Map of <ID, {@link RtStageLink}> connecting the {@link ExecutionPlan#rtStages} contained in this plan.
+   */
   private final Map<String, RtStageLink> rtStageLinks;
 
+  /**
+   * An execution plan for Vortex runtime.
+   */
   public ExecutionPlan() {
     this.rtStages = new LinkedList<>();
     this.rtStageLinks = new HashMap<>();
   }
+
+  /**
+   * Adds a {@link RtStage} to this plan. Important! The {@param rtStage} must be added in the order of execution.
+   * @param rtStage to be added
+   */
   public void addRStage(final RtStage rtStage) {
     rtStages.add(rtStage);
   }
 
+  /**
+   * Connects two {@link RtStage} in the plan.
+   * There can be multiple {@link RtOpLink} in a unique {@link RtStageLink} connecting the two stages.
+   * @param srcRtStage
+   * @param dstRtStage
+   * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRtStage} and {@param dstRtStage}.
+   * @throws NoSuchRStageException when any of the {@param srcRtStage} and {@param dstRtStage} are not yet in the plan.
+   */
   public void connectRStages(final RtStage srcRtStage,
                              final RtStage dstRtStage,
                              final RtOpLink rtOpLink) throws NoSuchRStageException {
@@ -50,8 +73,8 @@ public class ExecutionPlan {
     }
     rtStageLink.addROpLink(rtOpLink);
 
-    srcRtStage.addOutputLink(rtStageLink);
-    dstRtStage.addInputLink(rtStageLink);
+    srcRtStage.addOutputRtStageLink(rtStageLink);
+    dstRtStage.addInputRtStageLink(rtStageLink);
   }
 
   public List<RtStage> getRtStages() {

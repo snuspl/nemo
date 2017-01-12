@@ -17,15 +17,37 @@ package edu.snu.vortex.runtime.common;
 
 public class RtAttributes {
   /**
-   *
+   * Set of attributes applicable to {@link RtStage}.
    */
   public enum RtStageAttribute {PARALLELISM}
 
+  /**
+   * Set of attributes applicable to {@link RtOperator}.
+   */
   public enum RtOpAttribute {PARTITION, RESOURCE_TYPE}
+
+  /**
+   * Set of values possible when a {@link RtOperator}'s attribute key is "PARTITION".
+   */
   public enum Partition {HASH, RANGE}
+
+  /**
+   * Set of values possible when a {@link RtOperator}'s attribute key is "RESOURCE_TYPE".
+   */
   public enum Resource_Type {TRANSIENT, RESERVED, COMPUTE, STORAGE}
 
+  /**
+   * Set of attributes applicable to {@link RtOpLink}.
+   */
   public enum RtOpLinkAttribute {CHANNEL, COMM_PATTERN}
+
+  /**
+   * Set of values possible when a {@link RtOpLink}'s attribute key is "CHANNEL".
+   */
   public enum Channel {LOCAL_MEM, TCP, FILE, DISTR_STORAGE}
+
+  /**
+   * Set of values possible when a {@link RtOpLink}'s attribute key is "COMM_PATTERN".
+   */
   public enum Comm_Pattern {ONE_TO_ONE, BROADCAST, SCATTER_GATHER}
 }

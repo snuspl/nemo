@@ -66,7 +66,7 @@ public final class ExecutionPlanGeneration {
         rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
 
         rtStage = new RtStage(rStageAttr);
-        rtStage.addOperator(rtOperator);
+        rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
         System.out.println("create a new runtime stage [" + rtStage.getId() + "] (in case that the current operator is a source)");
 
@@ -77,7 +77,7 @@ public final class ExecutionPlanGeneration {
 
 
         rtStage = new RtStage(rStageAttr);
-        rtStage.addOperator(rtOperator);
+        rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
         System.out.println("create a new runtime stage [" + rtStage.getId() + "] (in case that the current operator has a M2M type in-edge.");
 
@@ -88,11 +88,11 @@ public final class ExecutionPlanGeneration {
 
             String srcROperId = compiler.convertId(edge.getSrc().getId());
             RtStage srcRtStage = findRStageOf(execPlan.getRtStages(), srcROperId);
-            RtOperator srcROper = srcRtStage.findOperator(srcROperId);
+            RtOperator srcROper = srcRtStage.getRtOpById(srcROperId);
 
             String dstROperId = compiler.convertId(edge.getDst().getId());
             RtStage dstRtStage = findRStageOf(execPlan.getRtStages(), dstROperId);
-            RtOperator dstROper = dstRtStage.findOperator(dstROperId);
+            RtOperator dstROper = dstRtStage.getRtOpById(dstROperId);
 
             Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
             rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
@@ -106,7 +106,7 @@ public final class ExecutionPlanGeneration {
         }
       }
       else {
-        rtStage.addOperator(rtOperator);
+        rtStage.addRtOp(rtOperator);
         System.out.println("add a new RtOperator [" + rtOperator.getId() + "] to the current stage [" + rtStage.getId() + "]");
 
         Iterator<Edge> edges = inEdges.get().iterator();
@@ -115,7 +115,7 @@ public final class ExecutionPlanGeneration {
           Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-          rtStage.connectOperators(compiler.convertId(edge.getSrc().getId()),
+          rtStage.connectRtOps(compiler.convertId(edge.getSrc().getId()),
                                 rtOperator.getId(),
                                 rOpLinkAttr);
         }

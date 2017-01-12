@@ -25,6 +25,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class OperatorCompiler {
+  /**
+   * Converts an {@link Operator} to its representation in {@link RtOperator}.
+   * @param irOp
+   * @return the {@link RtOperator} representation.
+   */
   public RtOperator convert(final Operator irOp) {
     final Map<Attributes.Key, Attributes.Val> irOpAttributes = irOp.getAttributes();
 
@@ -56,7 +61,6 @@ public class OperatorCompiler {
     final RtOperator rOp = new RtOperator(irOp.getId(), rOpAttributes);
     return rOp;
   }
-
 
   public String convertId(final String irOpId) {
     return IdGenerator.generateRtOpId(irOpId);

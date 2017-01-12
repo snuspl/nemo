@@ -23,6 +23,12 @@ public class RtOpLink {
   private final RtOperator dstRtOp;
   private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
 
+  /**
+   * Represents a connection/edge between two {@link RtOperator} to be executed in Vortex runtime.
+   * @param srcRtOp
+   * @param dstRtOp
+   * @param rtOpLinkAttr attributes that can be given to this {@link RtOpLink}
+   */
   public RtOpLink(final RtOperator srcRtOp,
                   final RtOperator dstRtOp,
                   final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {

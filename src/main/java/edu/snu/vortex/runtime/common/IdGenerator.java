@@ -22,16 +22,36 @@ public class IdGenerator {
   private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
 
+  /**
+   * Generates the ID for {@link RtOperator},
+   * given the ID of the corresponding {@link edu.snu.vortex.compiler.ir.operator.Operator}
+   * @param irOpId
+   * @return the generated ID
+   */
   public static String generateRtOpId(final String irOpId) {
     return "ROp-" + irOpId;
   }
+
+  /**
+   * Generates the ID for {@link RtOpLink}.
+   * @return the generated ID
+   */
   public static String generateRtOpLinkId() {
     return "RtOpLink-" + ROpLinkIdGenerator.getAndIncrement();
   }
 
+  /**
+   * Generates the ID for {@link RtStage}.
+   * @return the generated ID
+   */
   public static String generateRtStageId() {
     return "RtStage-" + RStageIdGenerator.getAndIncrement();
   }
+
+  /**
+   * Generates the ID for {@link RtStageLink}, generating a unique ID for a pair of {@link RtStage}.
+   * @return the generated ID
+   */
   public static String generateRtStageLinkId(final String srcRStageId, final String dstRStageId) {
     return "RtStageLink-" + srcRStageId + '_' + dstRStageId;
   }

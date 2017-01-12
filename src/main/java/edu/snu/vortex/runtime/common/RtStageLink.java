@@ -24,13 +24,24 @@ public class RtStageLink {
   private RtStage dstStage;
   private Set<RtOpLink> rtOpLinkSet;
 
-  RtStageLink(final String rtStageLinkId, RtStage srcStage, RtStage dstStage) {
+  /**
+   * Represents the connection/edge between two stages to be executed in Vortex runtime.
+   * A unique instance of {@link RtStageLink} must exist between {@param srcStage} and {@param dstStage}.
+   * @param rtStageLinkId ID given to this {@link RtStageLink} between
+   * @param srcStage and
+   * @param dstStage
+   */
+  public RtStageLink(final String rtStageLinkId, RtStage srcStage, RtStage dstStage) {
     this.rtStageLinkId = rtStageLinkId;
     this.srcStage = srcStage;
     this.dstStage = dstStage;
     this.rtOpLinkSet = new HashSet<>();
   }
 
+  /**
+   * Connects two operators, each in {@link RtStageLink#srcStage} and {@link RtStageLink#dstStage}.
+   * @param rtOpLink The {@link RtOpLink} between the two operators
+   */
   public void addROpLink(RtOpLink rtOpLink) {
     rtOpLinkSet.add(rtOpLink);
   }

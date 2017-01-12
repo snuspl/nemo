@@ -22,12 +22,32 @@ import java.util.Map;
 
 public class RtStage {
   private final String rtStageId;
+
+  /**
+   * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
+   */
   private final Map<String, RtOperator> rtOps;
+
+  /**
+   * Map of <ID, {@link RtOpLink}> connecting the {@link RtStage#rtOps} contained in this {@link RtStage}.
+   */
   private final Map<String, RtOpLink> rtOpLinks;
+
+  /**
+   * Map of <ID, {@link RtStageLink}> connecting previous {@link RtStage} to this {@link RtStage}.
+   */
   private final Map<String, RtStageLink> inputLinks;
+
+  /**
+   * Map of <ID, {@link RtStageLink}> connecting this {@link RtStage} to next {@link RtStage}.
+   */
   private final Map<String, RtStageLink> outputLinks;
   private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
 
+  /**
+   * Represents a stage containing operators to be executed in Vortex runtime.
+   * @param rtStageAttr attributes that can be given and applied to this {@link RtStage}
+   */
   public RtStage(final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr) {
     this.rtStageId = IdGenerator.generateRtStageId();
     this.rtOps = new ArrayMap<>();
@@ -41,7 +61,7 @@ public class RtStage {
     return rtStageId;
   }
 
-  public RtOperator findOperator(final String rtOpId) {
+  public RtOperator getRtOpById(final String rtOpId) {
     return rtOps.get(rtOpId);
   }
 
@@ -49,15 +69,15 @@ public class RtStage {
     return rtOps.containsKey(rtOpId);
   }
 
-  public void addOperator(final RtOperator rtOp) {
+  public void addRtOp(final RtOperator rtOp) {
     if (rtOps.containsKey(rtOp.getId()))
       throw new RuntimeException("the given rtOp has been already added");
     rtOps.put(rtOp.getId(), rtOp);
   }
 
-  public void connectOperators(final String srcRtOpId,
-                               final String dstRtOpId,
-                               final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {
+  public void connectRtOps(final String srcRtOpId,
+                           final String dstRtOpId,
+                           final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {
     final RtOperator srcRtOp = rtOps.get(srcRtOpId);
     final RtOperator dstRtOp = rtOps.get(dstRtOpId);
     if (srcRtOp == null || dstRtOp == null) {
@@ -70,14 +90,14 @@ public class RtStage {
     rtOpLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
   }
 
-  public void addInputLink(final RtStageLink rtStageLink) {
+  public void addInputRtStageLink(final RtStageLink rtStageLink) {
     if (inputLinks.containsKey(rtStageLink.getId())) {
       throw new RuntimeException("the given stage rtStageLink is already in the input link list");
     }
     inputLinks.put(rtStageLink.getId(), rtStageLink);
   }
 
-  public void addOutputLink(final RtStageLink rtStageLink) {
+  public void addOutputRtStageLink(final RtStageLink rtStageLink) {
     if (outputLinks.containsKey(rtStageLink.getId())) {
       throw new RuntimeException("the given stage link is already in the output link list");
     }
