@@ -19,10 +19,18 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RtOperator<I, O> implements Serializable{
+public class RtOperator<I, O> implements Serializable {
   private final String rOpId;
   private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
+
+  /**
+   * Map of <ID, {@link RtOpLink}> connecting previous {@link RtOperator} to this {@link RtOperator}.
+   */
   private Map<String, RtOpLink> inputLinks;
+
+  /**
+   * Map of <ID, {@link RtOpLink}> connecting this {@link RtOperator} to the next {@link RtOperator}.
+   */
   private Map<String, RtOpLink> outputLinks;
 
   public RtOperator(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {

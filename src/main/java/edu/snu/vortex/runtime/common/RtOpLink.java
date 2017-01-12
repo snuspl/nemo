@@ -19,9 +19,10 @@ import java.util.Map;
 
 public class RtOpLink {
   private final String rtOpLinkId;
+  private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
+
   private final RtOperator srcRtOp;
   private final RtOperator dstRtOp;
-  private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
 
   /**
    * Represents a connection/edge between two {@link RtOperator} to be executed in Vortex runtime.

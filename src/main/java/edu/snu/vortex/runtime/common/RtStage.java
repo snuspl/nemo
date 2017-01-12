@@ -22,6 +22,7 @@ import java.util.Map;
 
 public class RtStage {
   private final String rtStageId;
+  private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
 
   /**
    * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
@@ -42,7 +43,6 @@ public class RtStage {
    * Map of <ID, {@link RtStageLink}> connecting this {@link RtStage} to next {@link RtStage}.
    */
   private final Map<String, RtStageLink> outputLinks;
-  private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
 
   /**
    * Represents a stage containing operators to be executed in Vortex runtime.
