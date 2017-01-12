@@ -54,4 +54,9 @@ public class RtOpLink {
   public Map<RtAttributes.RtOpLinkAttribute, Object> getRtOpLinkAttr() {
     return rtOpLinkAttr;
   }
+
+  public void print() {
+    System.out.print("id: " + getRtOpLinkId() + ", src: " + getSrcRtOp().getId()
+        + ", dst: " + getDstRtOp().getId() + ", attributes: " + getRtOpLinkAttr());
+  }
 }

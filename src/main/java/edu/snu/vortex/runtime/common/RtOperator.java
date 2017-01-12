@@ -69,4 +69,8 @@ public class RtOperator<I, O> implements Serializable {
     }
     inputLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
   }
+
+  public void print() {
+    System.out.print("id: " + getId() + ", attributes: " + getRtOpAttr());
+  }
 }

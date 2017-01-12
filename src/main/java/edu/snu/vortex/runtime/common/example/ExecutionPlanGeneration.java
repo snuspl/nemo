@@ -33,20 +33,16 @@ public final class ExecutionPlanGeneration {
   public static void main(final String[] args) {
 
     final DAG dag = buildMapReduceIRDAG();
-//    System.out.println("original IR DAG");
-//    DAG.print(dag);
 
     final Optimizer DAGOptimizer = new Optimizer();
     DAGOptimizer.optimize(dag);
-    System.out.println("optimized IR DAG");
+    System.out.println("=== Optimized IR DAG ===");
     DAG.print(dag);
 
     ExecutionPlan execPlan = transformToExecDAG(dag);
-    System.out.println("Execution Plan");
+    System.out.println("=== Execution Plan ===");
     execPlan.print();
   }
-
-
 
   private static ExecutionPlan transformToExecDAG(DAG dag) {
     ExecutionPlan execPlan = new ExecutionPlan();
@@ -68,7 +64,6 @@ public final class ExecutionPlanGeneration {
         rtStage = new RtStage(rStageAttr);
         rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
-        System.out.println("create a new runtime stage [" + rtStage.getId() + "] (in case that the current operator is a source)");
 
       } else if (hasM2M(inEdges.get())) {
         Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
@@ -79,7 +74,6 @@ public final class ExecutionPlanGeneration {
         rtStage = new RtStage(rStageAttr);
         rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
-        System.out.println("create a new runtime stage [" + rtStage.getId() + "] (in case that the current operator has a M2M type in-edge.");
 
         Iterator<Edge> edges = inEdges.get().iterator();
         try {
@@ -107,7 +101,6 @@ public final class ExecutionPlanGeneration {
       }
       else {
         rtStage.addRtOp(rtOperator);
-        System.out.println("add a new RtOperator [" + rtOperator.getId() + "] to the current stage [" + rtStage.getId() + "]");
 
         Iterator<Edge> edges = inEdges.get().iterator();
         while(edges.hasNext()) {
