@@ -57,4 +57,11 @@ public class RtStageLink {
   public RtStage getDstStage() {
     return dstStage;
   }
+
+  public void print() {
+    System.out.print("id: " + getId()
+        + ", src: " + getSrcStage().getId() + ", dst: " + getDstStage().getId() + ", rtOpLink: {");
+    rtOpLinkSet.stream().forEach(rtOpLink -> {System.out.print("["); rtOpLink.print(); System.out.print("]");});
+    System.out.println("}");
+  }
 }

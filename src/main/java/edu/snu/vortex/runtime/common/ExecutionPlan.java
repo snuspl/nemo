@@ -15,12 +15,13 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.exception.NoSuchRStageException;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class ExecutionPlan {
   /**
@@ -87,6 +88,45 @@ public class ExecutionPlan {
 
   public void print() {
     //TODO: print components of this execution grach in DFS gragh traversal.
-    System.out.println("To be implemented.");
+    doDFS(rtStages, (rtStage -> rtStage.print()), VisitOrder.PreOrder);
+  }
+
+  ////////// DFS Traversal
+  public enum VisitOrder {
+    PreOrder,
+    PostOrder
+  }
+
+  public static void doDFS(final List<RtStage> stages,
+                           final Consumer<RtStage> function,
+                           final VisitOrder visitOrder) {
+    final HashSet<RtStage> visited = new HashSet<>();
+    stages.stream().filter(stage -> stage.getInputLinks().size() == 0)
+        .filter(source -> !visited.contains(source))
+        .forEach(source -> visit(source, function, visitOrder, visited));
+  }
+
+  private static void visit(final RtStage rtStage,
+                            final Consumer<RtStage> rtStageConsumer,
+                            final VisitOrder visitOrder,
+                            final HashSet<RtStage> visited) {
+    visited.add(rtStage);
+    if (visitOrder == VisitOrder.PreOrder) {
+      rtStageConsumer.accept(rtStage);
+    }
+    final Map<String, RtStageLink> outRtStageLinkMap = rtStage.getOutputLinks();
+    final List<RtStageLink> outRtStageLinks = new ArrayList<>();
+    outRtStageLinkMap.forEach((id, rtStagelink) -> outRtStageLinks.add(rtStagelink));
+
+    if (outRtStageLinks.size() != 0) {
+      outRtStageLinks.stream()
+          .map(outRtStageLink -> outRtStageLink.getDstStage())
+          .filter(dstRtStage -> !visited.contains(dstRtStage))
+          .forEach(outOperator -> visit(outOperator, rtStageConsumer, visitOrder, visited));
+    }
+
+    if (visitOrder == VisitOrder.PostOrder) {
+      rtStageConsumer.accept(rtStage);
+    }
   }
 }

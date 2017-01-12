@@ -17,7 +17,9 @@ package edu.snu.vortex.runtime.common;
 
 import com.google.api.client.util.ArrayMap;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RtStage {
@@ -65,6 +67,14 @@ public class RtStage {
     return rtOps.get(rtOpId);
   }
 
+  public Map<String, RtStageLink> getInputLinks() {
+    return inputLinks;
+  }
+
+  public Map<String, RtStageLink> getOutputLinks() {
+    return outputLinks;
+  }
+
   public boolean contains(final String rtOpId) {
     return rtOps.containsKey(rtOpId);
   }
@@ -102,5 +112,15 @@ public class RtStage {
       throw new RuntimeException("the given stage link is already in the output link list");
     }
     outputLinks.put(rtStageLink.getId(), rtStageLink);
+  }
+
+  public void print() {
+    System.out.print("id: " + rtStageId + ", attributes: " + rtStageAttr + ", in-Stage RtOps: {");
+    rtOps.forEach((id, rtOp) -> {System.out.print("["); rtOp.print(); System.out.print("]");});
+    System.out.print("}, in-Stage RtOpLinks: {");
+    rtOpLinks.forEach((id, rtOpLink) -> {System.out.print("["); rtOpLink.print(); System.out.print("]");});
+    System.out.print("} / inLinks: {");
+    inputLinks.forEach((id, inLink) -> {System.out.print("["); inLink.print(); System.out.print("]");});
+    System.out.println("}");
   }
 }
