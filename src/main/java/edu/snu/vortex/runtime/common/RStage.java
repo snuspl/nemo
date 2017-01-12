@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.common;
 
 import com.google.api.client.util.ArrayMap;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RStage {
@@ -32,6 +33,8 @@ public class RStage {
     this.operators = new ArrayMap<>();
     this.operLinks = new ArrayMap<>();
     this.attributes = attributes;
+    this.inputLinks = new HashMap<>();
+    this.outputLinks = new HashMap<>();
   }
 
   public String getId() {

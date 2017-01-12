@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ROperator<I, O> implements Serializable{
@@ -27,6 +28,8 @@ public class ROperator<I, O> implements Serializable{
   public ROperator(final String irOpId, final Map<RAttributes.ROpAttribute, Object> attributes) {
     this.rOpId = IdGenerator.generateROpId(irOpId);
     this.attributes = attributes;
+    this.inputLinks = new HashMap<>();
+    this.outputLinks = new HashMap<>();
   }
 
   public String getId() {

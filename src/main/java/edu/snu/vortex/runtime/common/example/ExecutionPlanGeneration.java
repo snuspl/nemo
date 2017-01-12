@@ -42,6 +42,7 @@ public final class ExecutionPlanGeneration {
     DAG.print(dag);
 
     ExecutionPlan execPlan = transformToExecDAG(dag);
+    System.out.println("Execution Plan");
     execPlan.print();
   }
 
@@ -51,13 +52,13 @@ public final class ExecutionPlanGeneration {
     ExecutionPlan execPlan = new ExecutionPlan();
     OperatorCompiler compiler = new OperatorCompiler();
 
-    //RStage rStage = new RStage();
     final List<Operator> topoSorted = new LinkedList<>();
     DAG.doDFS(dag, (operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
     RStage rStage = null;
     for (int idx = 0; idx < topoSorted.size(); idx++) {
       Operator operator = topoSorted.get(idx);
       ROperator rOperator = compiler.convert(operator);
+
       final Optional<List<Edge>> inEdges = dag.getInEdges(operator);
       if (isSource(inEdges)) { // in case of a source operator
         Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
@@ -67,15 +68,18 @@ public final class ExecutionPlanGeneration {
         rStage = new RStage(rStageAttr);
         rStage.addOperator(rOperator);
         execPlan.addRStage(rStage);
+        System.out.println("create a new runtime stage [" + rStage.getId() + "] (in case that the current operator is a source)");
 
       } else if (hasM2M(inEdges.get())) {
         Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
         Map<RAttributes.RStageAttribute, Object> rStageAttr = new HashMap<>();
         rStageAttr.put(RAttributes.RStageAttribute.PARALLELISM, parallelism);
 
+
         rStage = new RStage(rStageAttr);
         rStage.addOperator(rOperator);
         execPlan.addRStage(rStage);
+        System.out.println("create a new runtime stage [" + rStage.getId() + "] (in case that the current operator has a M2M type in-edge.");
 
         Iterator<Edge> edges = inEdges.get().iterator();
         try {
@@ -103,13 +107,17 @@ public final class ExecutionPlanGeneration {
       }
       else {
         rStage.addOperator(rOperator);
+        System.out.println("add a new ROperator [" + rOperator.getId() + "] to the current stage [" + rStage.getId() + "]");
+
         Iterator<Edge> edges = inEdges.get().iterator();
         while(edges.hasNext()) {
           Edge edge = edges.next();
           Map<RAttributes.ROpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
           rOpLinkAttr.put(RAttributes.ROpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
           rOpLinkAttr.put(RAttributes.ROpLinkAttribute.CHANNEL, RAttributes.Channel.LOCAL_MEM);
-          rStage.connectOperators(edge.getSrc().getId(), edge.getDst().getId(), rOpLinkAttr);
+          rStage.connectOperators(compiler.convertId(edge.getSrc().getId()),
+                                rOperator.getId(),
+                                rOpLinkAttr);
         }
       }
     }

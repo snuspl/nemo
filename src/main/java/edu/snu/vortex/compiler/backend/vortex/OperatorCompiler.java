@@ -17,6 +17,7 @@ package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.RAttributes;
 import edu.snu.vortex.runtime.common.ROperator;
 
@@ -57,6 +58,6 @@ public class OperatorCompiler {
   }
 
   public String convertId(final String irOpId) {
-    return irOpId;
+    return IdGenerator.generateROpId(irOpId);
   }
 }

@@ -40,10 +40,11 @@ public class ExecutionPlan {
     }
 
     final String rStageLinkId = IdGenerator.generateRStageLinkId(srcRStage.getId(), dstRStage.getId());
-    final RStageLink rStageLink = rStageLinks.get(rStageLinkId);
+    RStageLink rStageLink = rStageLinks.get(rStageLinkId);
 
     if (rStageLink == null) {
-      rStageLinks.put(rStageLinkId, new RStageLink(rStageLinkId, srcRStage, dstRStage));
+      rStageLink = new RStageLink(rStageLinkId, srcRStage, dstRStage);
+      rStageLinks.put(rStageLinkId, rStageLink);
     }
     rStageLink.addROpLink(rOpLink);
 
@@ -61,5 +62,6 @@ public class ExecutionPlan {
 
   public void print() {
     //TODO: print components of this execution grach in DFS gragh traversal.
+    System.out.println("To be implemented.");
   }
 }
