@@ -55,6 +55,16 @@ public class RtOpLink {
     return rtOpLinkAttr;
   }
 
+  @Override
+  public String toString() {
+    return "RtOpLink{" +
+        "rtOpLinkId='" + rtOpLinkId + '\'' +
+        ", rtOpLinkAttr=" + rtOpLinkAttr +
+        ", srcRtOp=" + srcRtOp.getId() +
+        ", dstRtOp=" + dstRtOp.getId() +
+        '}';
+  }
+
   public void print() {
     System.out.print("id: " + getRtOpLinkId() + ", src: " + getSrcRtOp().getId()
         + ", dst: " + getDstRtOp().getId() + ", attributes: " + getRtOpLinkAttr());

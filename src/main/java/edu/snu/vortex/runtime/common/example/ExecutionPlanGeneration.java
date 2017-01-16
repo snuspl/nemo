@@ -25,7 +25,7 @@ import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.compiler.ir.operator.Source;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.*;
-import edu.snu.vortex.runtime.exception.NoSuchRStageException;
+import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
 
 import java.util.*;
 
@@ -41,7 +41,7 @@ public final class ExecutionPlanGeneration {
 
     ExecutionPlan execPlan = transformToExecDAG(dag);
     System.out.println("=== Execution Plan ===");
-    execPlan.print();
+//    execPlan.print();
   }
 
   private static ExecutionPlan transformToExecDAG(DAG dag) {
@@ -93,9 +93,9 @@ public final class ExecutionPlanGeneration {
             rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
 
             RtOpLink rtOpLink = new RtOpLink(srcROper, dstROper, rOpLinkAttr);
-            execPlan.connectRStages(srcRtStage, dstRtStage, rtOpLink);
+            execPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
           }
-        } catch (NoSuchRStageException e) {
+        } catch (NoSuchRtStageException e) {
           throw new RuntimeException(e.getMessage());
         }
       }
@@ -108,9 +108,9 @@ public final class ExecutionPlanGeneration {
           Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-          rtStage.connectRtOps(compiler.convertId(edge.getSrc().getId()),
-                                rtOperator.getId(),
-                                rOpLinkAttr);
+//          rtStage.connectRtOps(compiler.convertId(edge.getSrc().getId()),
+//                                rtOperator.getId(),
+//                                rOpLinkAttr);
         }
       }
     }

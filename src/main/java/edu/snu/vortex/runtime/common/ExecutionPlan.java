@@ -15,19 +15,22 @@
  */
 package edu.snu.vortex.runtime.common;
 
-import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.runtime.exception.NoSuchRStageException;
+import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
+import edu.snu.vortex.utils.DAG;
+import edu.snu.vortex.utils.DAGImpl;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ExecutionPlan {
+  private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
+
   /**
    * A list of {@link RtStage} to be executed in this plan, sorted in topological order.
    */
-  private final List<RtStage> rtStages;
+  private final DAG<RtStage> rtStages;
 
   /**
    * Map of <ID, {@link RtStageLink}> connecting the {@link ExecutionPlan#rtStages} contained in this plan.
@@ -38,7 +41,7 @@ public class ExecutionPlan {
    * An execution plan for Vortex runtime.
    */
   public ExecutionPlan() {
-    this.rtStages = new LinkedList<>();
+    this.rtStages = new DAGImpl<>();
     this.rtStageLinks = new HashMap<>();
   }
 
@@ -47,7 +50,9 @@ public class ExecutionPlan {
    * @param rtStage to be added
    */
   public void addRStage(final RtStage rtStage) {
-    rtStages.add(rtStage);
+    if (!rtStages.addVertex(rtStage)) {
+      LOG.log(Level.FINE, "RtStage {0} already exists", rtStage.getId());
+    }
   }
 
   /**
@@ -56,13 +61,15 @@ public class ExecutionPlan {
    * @param srcRtStage
    * @param dstRtStage
    * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRtStage} and {@param dstRtStage}.
-   * @throws NoSuchRStageException when any of the {@param srcRtStage} and {@param dstRtStage} are not yet in the plan.
+   * @throws NoSuchRtStageException when any of the {@param srcRtStage} and {@param dstRtStage} are not yet in the plan.
    */
-  public void connectRStages(final RtStage srcRtStage,
-                             final RtStage dstRtStage,
-                             final RtOpLink rtOpLink) throws NoSuchRStageException {
-    if (!rtStages.contains(srcRtStage) || !rtStages.contains(dstRtStage)) {
-      throw new NoSuchRStageException("The requested RtStage does not exist in this ExecutionPlan");
+  public void connectRtStages(final RtStage srcRtStage,
+                              final RtStage dstRtStage,
+                              final RtOpLink rtOpLink) throws NoSuchRtStageException {
+    try {
+      rtStages.addEdge(srcRtStage, dstRtStage);
+    } catch (final NoSuchElementException e) {
+      throw new NoSuchRtStageException("The requested RtStage does not exist in this ExecutionPlan");
     }
 
     final String rStageLinkId = IdGenerator.generateRtStageLinkId(srcRtStage.getId(), dstRtStage.getId());
@@ -72,14 +79,24 @@ public class ExecutionPlan {
       rtStageLink = new RtStageLink(rStageLinkId, srcRtStage, dstRtStage);
       rtStageLinks.put(rStageLinkId, rtStageLink);
     }
-    rtStageLink.addROpLink(rtOpLink);
+    rtStageLink.addRtOpLink(rtOpLink);
 
     srcRtStage.addOutputRtStageLink(rtStageLink);
     dstRtStage.addInputRtStageLink(rtStageLink);
   }
 
+  public Set<RtStage> getNextRtStagesToExecute() {
+    return rtStages.getRootVertices();
+  }
+
+  public boolean removeCompleteStage(final RtStage rtStageToRemove) {
+    return rtStages.removeVertex(rtStageToRemove);
+  }
+
+
   public List<RtStage> getRtStages() {
-    return rtStages;
+//    return rtStages;
+    return null;
   }
 
   public Map<String, RtStageLink> getRtStageLinks() {
@@ -88,7 +105,7 @@ public class ExecutionPlan {
 
   public void print() {
     //TODO: print components of this execution grach in DFS gragh traversal.
-    doDFS(rtStages, (rtStage -> rtStage.print()), VisitOrder.PreOrder);
+//    doDFS(rtStages, (rtStage -> rtStage.print()), VisitOrder.PreOrder);
   }
 
   ////////// DFS Traversal

@@ -87,14 +87,13 @@ public class RtStage {
 
   public void connectRtOps(final String srcRtOpId,
                            final String dstRtOpId,
-                           final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {
+                           final RtOpLink rtOpLink) {
     final RtOperator srcRtOp = rtOps.get(srcRtOpId);
     final RtOperator dstRtOp = rtOps.get(dstRtOpId);
     if (srcRtOp == null || dstRtOp == null) {
       throw new RuntimeException("one of given rtOps is not in the stage");
     }
 
-    final RtOpLink rtOpLink = new RtOpLink(srcRtOp, dstRtOp, rtOpLinkAttr);
     srcRtOp.addOutputLink(rtOpLink);
     dstRtOp.addInputLink(rtOpLink);
     rtOpLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
@@ -112,6 +111,18 @@ public class RtStage {
       throw new RuntimeException("the given stage link is already in the output link list");
     }
     outputLinks.put(rtStageLink.getId(), rtStageLink);
+  }
+
+  @Override
+  public String toString() {
+    return "RtStage{" +
+        "rtStageId='" + rtStageId + '\'' +
+        ", rtStageAttr=" + rtStageAttr +
+        ", rtOps=" + rtOps +
+        ", rtOpLinks=" + rtOpLinks +
+        ", inputLinks=" + inputLinks +
+        ", outputLinks=" + outputLinks +
+        '}';
   }
 
   public void print() {

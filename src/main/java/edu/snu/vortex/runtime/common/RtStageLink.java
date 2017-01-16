@@ -47,7 +47,7 @@ public class RtStageLink {
    * Connects two operators, each in {@link RtStageLink#srcStage} and {@link RtStageLink#dstStage}.
    * @param rtOpLink The {@link RtOpLink} between the two operators
    */
-  public void addROpLink(RtOpLink rtOpLink) {
+  public void addRtOpLink(final RtOpLink rtOpLink) {
     rtOpLinkSet.add(rtOpLink);
   }
 
@@ -61,6 +61,16 @@ public class RtStageLink {
 
   public RtStage getDstStage() {
     return dstStage;
+  }
+
+  @Override
+  public String toString() {
+    return "RtStageLink{" +
+        "rtStageLinkId='" + rtStageLinkId + '\'' +
+        ", srcStage=" + srcStage.getId() +
+        ", dstStage=" + dstStage.getId() +
+        ", rtOpLinkSet=" + rtOpLinkSet +
+        '}';
   }
 
   public void print() {
