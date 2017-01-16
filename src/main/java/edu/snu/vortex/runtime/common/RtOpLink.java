@@ -64,9 +64,4 @@ public class RtOpLink {
         ", dstRtOp=" + dstRtOp.getId() +
         '}';
   }
-
-  public void print() {
-    System.out.print("id: " + getRtOpLinkId() + ", src: " + getSrcRtOp().getId()
-        + ", dst: " + getDstRtOp().getId() + ", attributes: " + getRtOpLinkAttr());
-  }
 }

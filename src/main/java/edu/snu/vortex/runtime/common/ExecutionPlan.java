@@ -93,17 +93,12 @@ public class ExecutionPlan {
     return rtStages.removeVertex(rtStageToRemove);
   }
 
-
-  public List<RtStage> getRtStages() {
-//    return rtStages;
-    return null;
-  }
-
   public Map<String, RtStageLink> getRtStageLinks() {
     return rtStageLinks;
   }
 
-  public void print() {
-//    rtStages.forEach(rtStage -> rtStage.print());
+  @Override
+  public String toString() {
+    return "RtStages: " + rtStages + " / RtStageLinks: " + rtStageLinks;
   }
 }

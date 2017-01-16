@@ -124,14 +124,4 @@ public class RtStage {
         ", outputLinks=" + outputLinks +
         '}';
   }
-
-  public void print() {
-    System.out.print("id: " + rtStageId + ", attributes: " + rtStageAttr + ", in-Stage RtOps: {");
-    rtOps.forEach((id, rtOp) -> {System.out.print("["); rtOp.print(); System.out.print("]");});
-    System.out.print("}, in-Stage RtOpLinks: {");
-    rtOpLinks.forEach((id, rtOpLink) -> {System.out.print("["); rtOpLink.print(); System.out.print("]");});
-    System.out.print("} / inLinks: {");
-    inputLinks.forEach((id, inLink) -> {System.out.print("["); inLink.print(); System.out.print("]");});
-    System.out.println("}");
-  }
 }

@@ -41,12 +41,15 @@ public final class ExecutionPlanGeneration {
 
     ExecutionPlan execPlan = transformToExecDAG(dag);
     System.out.println("=== Execution Plan ===");
-//    execPlan.print();
+    System.out.println(execPlan);
   }
 
   private static ExecutionPlan transformToExecDAG(DAG dag) {
     ExecutionPlan execPlan = new ExecutionPlan();
     OperatorCompiler compiler = new OperatorCompiler();
+
+    final List<RtStage> rtStageList = new ArrayList<>();
+    final Map<String, RtOperator> rtOperatorMap = new HashMap<>();
 
     final List<Operator> topoSorted = new LinkedList<>();
     dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
@@ -54,6 +57,7 @@ public final class ExecutionPlanGeneration {
     for (int idx = 0; idx < topoSorted.size(); idx++) {
       Operator operator = topoSorted.get(idx);
       RtOperator rtOperator = compiler.convert(operator);
+      rtOperatorMap.put(rtOperator.getId(), rtOperator);
 
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (isSource(inEdges)) { // in case of a source operator
@@ -65,15 +69,18 @@ public final class ExecutionPlanGeneration {
         rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
 
+        rtStageList.add(rtStage);
+
       } else if (hasM2M(inEdges.get())) {
         Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
         Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
         rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
 
-
         rtStage = new RtStage(rStageAttr);
         rtStage.addRtOp(rtOperator);
         execPlan.addRStage(rtStage);
+
+        rtStageList.add(rtStage);
 
         Iterator<Edge> edges = inEdges.get().iterator();
         try {
@@ -81,11 +88,11 @@ public final class ExecutionPlanGeneration {
             Edge edge = edges.next();
 
             String srcROperId = compiler.convertId(edge.getSrc().getId());
-            RtStage srcRtStage = findRStageOf(execPlan.getRtStages(), srcROperId);
+            RtStage srcRtStage = findRtStageOf(rtStageList, srcROperId);
             RtOperator srcROper = srcRtStage.getRtOpById(srcROperId);
 
             String dstROperId = compiler.convertId(edge.getDst().getId());
-            RtStage dstRtStage = findRStageOf(execPlan.getRtStages(), dstROperId);
+            RtStage dstRtStage = findRtStageOf(rtStageList, dstROperId);
             RtOperator dstROper = dstRtStage.getRtOpById(dstROperId);
 
             Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
@@ -108,9 +115,10 @@ public final class ExecutionPlanGeneration {
           Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-//          rtStage.connectRtOps(compiler.convertId(edge.getSrc().getId()),
-//                                rtOperator.getId(),
-//                                rOpLinkAttr);
+
+          String srcId = compiler.convertId(edge.getSrc().getId());
+          RtOpLink rtOpLink = new RtOpLink(rtOperatorMap.get(srcId), rtOperator, rOpLinkAttr);
+          rtStage.connectRtOps(srcId, rtOperator.getId(), rtOpLink);
         }
       }
     }
@@ -131,7 +139,7 @@ public final class ExecutionPlanGeneration {
     }
   }
 
-  private static RtStage findRStageOf(List<RtStage> rtStages, String operatorId) {
+  private static RtStage findRtStageOf(List<RtStage> rtStages, String operatorId) {
     Iterator<RtStage> iterator = rtStages.iterator();
 
     while (iterator.hasNext()) {
