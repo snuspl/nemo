@@ -46,7 +46,7 @@ public class ExecutionPlan {
   }
 
   /**
-   * Adds a {@link RtStage} to this plan. Important! The {@param rtStage} must be added in the order of execution.
+   * Adds a {@link RtStage} to this plan.
    * @param rtStage to be added
    */
   public void addRStage(final RtStage rtStage) {
@@ -61,11 +61,10 @@ public class ExecutionPlan {
    * @param srcRtStage
    * @param dstRtStage
    * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRtStage} and {@param dstRtStage}.
-   * @throws NoSuchRtStageException when any of the {@param srcRtStage} and {@param dstRtStage} are not yet in the plan.
    */
   public void connectRtStages(final RtStage srcRtStage,
                               final RtStage dstRtStage,
-                              final RtOpLink rtOpLink) throws NoSuchRtStageException {
+                              final RtOpLink rtOpLink) {
     try {
       rtStages.addEdge(srcRtStage, dstRtStage);
     } catch (final NoSuchElementException e) {

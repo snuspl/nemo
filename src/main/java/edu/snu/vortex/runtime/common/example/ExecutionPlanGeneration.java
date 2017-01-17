@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.example;
 
-import edu.snu.vortex.compiler.backend.vortex.OperatorCompiler;
+import edu.snu.vortex.compiler.backend.vortex.OperatorConverter;
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
@@ -46,7 +46,7 @@ public final class ExecutionPlanGeneration {
 
   private static ExecutionPlan transformToExecDAG(DAG dag) {
     ExecutionPlan execPlan = new ExecutionPlan();
-    OperatorCompiler compiler = new OperatorCompiler();
+    OperatorConverter compiler = new OperatorConverter();
 
     final List<RtStage> rtStageList = new ArrayList<>();
     final Map<String, RtOperator> rtOperatorMap = new HashMap<>();
@@ -126,14 +126,14 @@ public final class ExecutionPlanGeneration {
     return execPlan;
   }
 
-  private static RtAttributes.Comm_Pattern convertEdgeTypeToROpLinkAttr(Edge.Type edgeType) {
+  private static RtAttributes.CommPattern convertEdgeTypeToROpLinkAttr(Edge.Type edgeType) {
     switch (edgeType) {
       case O2O:
-        return RtAttributes.Comm_Pattern.ONE_TO_ONE;
+        return RtAttributes.CommPattern.ONE_TO_ONE;
       case O2M:
-        return RtAttributes.Comm_Pattern.BROADCAST;
+        return RtAttributes.CommPattern.BROADCAST;
       case M2M:
-        return RtAttributes.Comm_Pattern.SCATTER_GATHER;
+        return RtAttributes.CommPattern.SCATTER_GATHER;
       default:
         throw new RuntimeException("no such edge type");
     }

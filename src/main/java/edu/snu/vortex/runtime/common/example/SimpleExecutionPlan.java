@@ -26,8 +26,8 @@ public class SimpleExecutionPlan {
     final ExecutionPlan simplePlan = new ExecutionPlan();
 
     /* A simple Execution Plan composed of 3 stages, Stage A and B independent of each other,
-        while Stage C depends on both A and B.
-        Operator a2 is connected to Operator b1 and Operator c1.
+     * while Stage C depends on both A and B.
+     * Operator a2 is connected to Operator b1 and Operator c1.
      */
 
     // Make Stage A
@@ -38,13 +38,13 @@ public class SimpleExecutionPlan {
     final String mockIrOpIdA1 = "a1";
     final Map<RtAttributes.RtOpAttribute, Object> rtOpA1_Attr = new HashMap<>();
     rtOpA1_Attr.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
-    rtOpA1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.TRANSIENT);
+    rtOpA1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
     final RtOperator a1 = new RtOperator(mockIrOpIdA1, rtOpA1_Attr);
 
     final String mockIrOpIdA2 = "a2";
     final Map<RtAttributes.RtOpAttribute, Object> rtOpA2_Attr = new HashMap<>();
     rtOpA2_Attr.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.RANGE);
-    rtOpA2_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.RESERVED);
+    rtOpA2_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
     final RtOperator a2 = new RtOperator(mockIrOpIdA2, rtOpA2_Attr);
 
     a.addRtOp(a1);
@@ -52,7 +52,7 @@ public class SimpleExecutionPlan {
 
     final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkA12_Attr = new HashMap<>();
     rtOpLinkA12_Attr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-    rtOpLinkA12_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.Comm_Pattern.ONE_TO_ONE);
+    rtOpLinkA12_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.ONE_TO_ONE);
     final RtOpLink a1_a2 = new RtOpLink(a1, a2, rtOpLinkA12_Attr);
     a.connectRtOps(a1.getId(), a2.getId(), a1_a2);
 
@@ -64,7 +64,7 @@ public class SimpleExecutionPlan {
     final String mockIrOpIdB1 = "b1";
     final Map<RtAttributes.RtOpAttribute, Object> rtOpB1_Attr = new HashMap<>();
     rtOpB1_Attr.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
-    rtOpB1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.TRANSIENT);
+    rtOpB1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
     final RtOperator b1 = new RtOperator(mockIrOpIdB1, rtOpB1_Attr);
 
     b.addRtOp(b1);
@@ -77,19 +77,19 @@ public class SimpleExecutionPlan {
     final String mockIrOpIdC1 = "c1";
     final Map<RtAttributes.RtOpAttribute, Object> rtOpC1_Attr = new HashMap<>();
     rtOpC1_Attr.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
-    rtOpC1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.Resource_Type.TRANSIENT);
+    rtOpC1_Attr.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
     final RtOperator c1 = new RtOperator(mockIrOpIdC1, rtOpC1_Attr);
 
     c.addRtOp(c1);
 
     final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkA2B1_Attr = new HashMap<>();
     rtOpLinkA2B1_Attr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
-    rtOpLinkA2B1_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.Comm_Pattern.SCATTER_GATHER);
+    rtOpLinkA2B1_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.SCATTER_GATHER);
     final RtOpLink a2_c1 = new RtOpLink(a2, c1, rtOpLinkA2B1_Attr);
 
     final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkA2C1_Attr = new HashMap<>();
     rtOpLinkA2C1_Attr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
-    rtOpLinkA2C1_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.Comm_Pattern.SCATTER_GATHER);
+    rtOpLinkA2C1_Attr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.SCATTER_GATHER);
     final RtOpLink b1_c1 = new RtOpLink(b1, c1, rtOpLinkA2C1_Attr);
 
     // Add stages to the execution plan

@@ -34,7 +34,7 @@ public class RtAttributes {
   /**
    * Set of values possible when a {@link RtOperator}'s attribute key is "RESOURCE_TYPE".
    */
-  public enum Resource_Type {TRANSIENT, RESERVED, COMPUTE, STORAGE}
+  public enum ResourceType {TRANSIENT, RESERVED, COMPUTE, STORAGE}
 
   /**
    * Set of attributes applicable to {@link RtOpLink}.
@@ -49,5 +49,5 @@ public class RtAttributes {
   /**
    * Set of values possible when a {@link RtOpLink}'s attribute key is "COMM_PATTERN".
    */
-  public enum Comm_Pattern {ONE_TO_ONE, BROADCAST, SCATTER_GATHER}
+  public enum CommPattern {ONE_TO_ONE, BROADCAST, SCATTER_GATHER}
 }

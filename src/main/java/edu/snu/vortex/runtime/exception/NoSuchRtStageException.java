@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.exception;
 
-public class NoSuchRtStageException extends Exception{
+public class NoSuchRtStageException extends RuntimeException{
   public NoSuchRtStageException(String message) {
     super(message);
   }

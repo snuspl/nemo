@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package edu.snu.vortex.utils;
 
 import java.util.Set;
 
+// TODO #45: Clean up Compiler and Runtime's DAG implementations
 /**
  * This interface represents Directed Acyclic Graph (DAG).
  * It is based on the one of MIST.
