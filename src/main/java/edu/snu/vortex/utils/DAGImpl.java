@@ -21,8 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This implements DAG with adjacent list.
- * It is based on the one of MIST.
+ * Implements {@link DAG}
  * @param <V> type of the vertex
  */
 @NotThreadSafe
@@ -43,24 +42,9 @@ public final class DAGImpl<V> implements DAG<V> {
    */
   private final Map<V, Set<V>> childrenVertices = new HashMap<>();
 
-  /**
-   * A map containing <vertex, Set of its Connected Components' root vertices> mappings.
-   */
-  private final Map<V, List<V>> connectedComponentMap = new HashMap<>();
-
   @Override
   public Set<V> getRootVertices() {
     return Collections.unmodifiableSet(rootVertices);
-  }
-
-  @Override
-  public boolean isAdjacent(final V v, final V w) {
-    throw new UnsupportedOperationException("Needs to be implemented");
-  }
-
-  @Override
-  public Set<V> getNeighbors(final V v) {
-    throw new UnsupportedOperationException("Needs to be implemented");
   }
 
   @Override
@@ -69,10 +53,6 @@ public final class DAGImpl<V> implements DAG<V> {
       childrenVertices.put(v, new HashSet<>());
       parentVertices.put(v, new HashSet<>());
       rootVertices.add(v);
-
-      final List<V> connectedRootVertices = new LinkedList<>();
-      connectedRootVertices.add(v);
-      connectedComponentMap.put(v, connectedRootVertices);
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} already exists", v);
@@ -84,30 +64,19 @@ public final class DAGImpl<V> implements DAG<V> {
   public boolean removeVertex(final V v) {
     final Set<V> children = childrenVertices.remove(v);
     if (children != null) {
-      for (final V child : children) {
+      children.forEach(child -> {
         final Set<V> parents = parentVertices.get(child);
         parents.remove(v);
-        final List<V> rootsToRemove = connectedComponentMap.get(v);
         if (parents.isEmpty()) {
           rootVertices.add(child);
-          updateConnectedComponentMap(child, rootsToRemove, child);
         }
-      }
+      });
       rootVertices.remove(v);
       return true;
     } else {
       LOG.log(Level.WARNING, "The vertex {0} does exists", v);
       return false;
     }
-  }
-
-  private void updateConnectedComponentMap(final V v, final List<V> rootsToRemove, final V rootToAdd) {
-    final List<V> roots = connectedComponentMap.get(v);
-    rootsToRemove.forEach(root -> roots.remove(root));
-    roots.add(rootToAdd);
-
-    final Set<V> children = childrenVertices.get(v);
-    children.forEach(child -> updateConnectedComponentMap(child, rootsToRemove, rootToAdd));
   }
 
   @Override
@@ -119,29 +88,14 @@ public final class DAGImpl<V> implements DAG<V> {
       throw new NoSuchElementException("No dest vertex " + dst);
     }
 
-    final Set<V> children = childrenVertices.get(src);
-    final List<V> srcRoots = connectedComponentMap.get(src);
-    final List<V> dstRoots = connectedComponentMap.get(dst);
-
-    srcRoots.forEach(root -> {
-      if (dstRoots.contains(root)) {
-        throw new IllegalStateException("The edge from " + src + " to " + dst + " makes a cycle in the graph");
-      }});
-
-    if (connectedComponentMap.get(src).equals(connectedComponentMap.get(dst))) {
+    if (isADescendant(dst, src)) {
       throw new IllegalStateException("The edge from " + src + " to " + dst + " makes a cycle in the graph");
     }
 
-    if (children.add(dst)) {
-      final int inDegree = 0; //inDegrees.get(dst);
-      if (inDegree == 0) {
-//        if (rootVertices.size() == 1) {
-//          throw new IllegalStateException("The edge from " + src + " to " + dst + " makes a cycle in the graph");
-//        }
-        rootVertices.remove(dst);
-      }
-//      inDegrees.put(dst, inDegree + 1);
-      connectedComponentMap.put(dst, connectedComponentMap.get(src));
+    final Set<V> childrenOfSrc = childrenVertices.get(src);
+    if (childrenOfSrc.add(dst)) {
+      parentVertices.get(dst).add(src);
+      rootVertices.remove(dst);
       return true;
     } else {
       LOG.log(Level.WARNING, "The edge from {0} to {1} already exists", new Object[]{src, dst});
@@ -150,27 +104,45 @@ public final class DAGImpl<V> implements DAG<V> {
   }
 
   @Override
-  public boolean removeEdge(final V v, final V w) {
-    final Set<V> adjs = null; //adjacent.get(v);
-    if (adjs == null) {
-      throw new NoSuchElementException("No src vertex " + v);
+  public boolean removeEdge(final V src, final V dst) {
+    if (!childrenVertices.containsKey(src) || !parentVertices.containsKey(src)) {
+      throw new NoSuchElementException("No src vertex " + src);
+    }
+    if (!childrenVertices.containsKey(dst) || !parentVertices.containsKey(dst)) {
+      throw new NoSuchElementException("No dest vertex " + dst);
     }
 
-    if (adjs.remove(w)) {
-      final int inDegree = 0; //inDegrees.get(w);
-//      inDegrees.put(w, inDegree - 1);
-      if (inDegree == 1) {
-        rootVertices.add(w);
+    final Set<V> childrenOfSrc = childrenVertices.get(src);
+    if (childrenOfSrc.remove(dst)) {
+      final Set<V> parentsOfDst = parentVertices.get(dst);
+      parentsOfDst.remove(src);
+      if (parentsOfDst.size() == 1) {
+        rootVertices.add(dst);
       }
       return true;
     } else {
-      LOG.log(Level.WARNING, "The edge from {0} to {1} does not exists", new Object[]{v, w});
+      LOG.log(Level.WARNING, "The edge from {0} to {1} does not exists", new Object[]{src, dst});
       return false;
     }
   }
 
-  @Override
-  public int getInDegree(final V v) {
-    throw new UnsupportedOperationException("Needs to be implemented");
+  /**
+   * Checks whether a vertex is a descendant of the other.
+   * @param v the potential ancestor
+   * @param w the potential descendant
+   * @return true if it is a descendant, false otherwise
+   */
+  private boolean isADescendant(final V v, final V w) {
+    if (v.equals(w)) {
+      return true;
+    }
+
+    final Set<V> children = childrenVertices.get(v);
+    for (final V child : children) {
+      if (isADescendant(child, w)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
