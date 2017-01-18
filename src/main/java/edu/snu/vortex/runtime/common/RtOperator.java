@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RtOperator<I, O> implements Serializable {
-  private final String rOpId;
+  private final String rtOpId;
   private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
 
   /**
@@ -34,14 +34,14 @@ public class RtOperator<I, O> implements Serializable {
   private Map<String, RtOpLink> outputLinks;
 
   public RtOperator(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
-    this.rOpId = IdGenerator.generateRtOpId(irOpId);
+    this.rtOpId = IdGenerator.generateRtOpId(irOpId);
     this.rtOpAttr = rtOpAttr;
     this.inputLinks = new HashMap<>();
     this.outputLinks = new HashMap<>();
   }
 
   public String getId() {
-    return rOpId;
+    return rtOpId;
   }
 
   public void addAttrbute(final RtAttributes.RtOpAttribute key, final Object value) {
@@ -73,7 +73,7 @@ public class RtOperator<I, O> implements Serializable {
   @Override
   public String toString() {
     return "RtOperator{" +
-        "rOpId='" + rOpId + '\'' +
+        "rOpId='" + rtOpId + '\'' +
         ", rtOpAttr=" + rtOpAttr +
         ", inputLinks=" + inputLinks +
         ", outputLinks=" + outputLinks +

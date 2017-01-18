@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class IdGenerator {
+public final class IdGenerator {
   private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
 

@@ -21,11 +21,11 @@ import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleExecutionPlan {
+public final class SimpleExecutionPlan {
   public static void main (String[] args) {
     final ExecutionPlan simplePlan = new ExecutionPlan();
 
-    /* A simple Execution Plan composed of 3 stages, Stage A and B independent of each other,
+    /** A simple Execution Plan composed of 3 stages, Stage A and B independent of each other,
      * while Stage C depends on both A and B.
      * Operator a2 is connected to Operator b1 and Operator c1.
      */
@@ -93,9 +93,9 @@ public class SimpleExecutionPlan {
     final RtOpLink b1_c1 = new RtOpLink(b1, c1, rtOpLinkA2C1_Attr);
 
     // Add stages to the execution plan
-    simplePlan.addRStage(a);
-    simplePlan.addRStage(b);
-    simplePlan.addRStage(c);
+    simplePlan.addRtStage(a);
+    simplePlan.addRtStage(b);
+    simplePlan.addRtStage(c);
 
     // Connect the stages with links a2_c1 and b1_c1
     try {

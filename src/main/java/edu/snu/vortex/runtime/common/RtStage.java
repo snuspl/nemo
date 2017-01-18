@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RtStage {
+public final class RtStage {
   private final String rtStageId;
   private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
 

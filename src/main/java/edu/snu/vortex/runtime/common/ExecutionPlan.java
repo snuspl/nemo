@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ExecutionPlan {
+public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
 
   /**
@@ -48,7 +48,7 @@ public class ExecutionPlan {
    * Adds a {@link RtStage} to this plan.
    * @param rtStage to be added
    */
-  public void addRStage(final RtStage rtStage) {
+  public void addRtStage(final RtStage rtStage) {
     if (!rtStages.addVertex(rtStage)) {
       LOG.log(Level.FINE, "RtStage {0} already exists", rtStage.getId());
     }
@@ -70,12 +70,12 @@ public class ExecutionPlan {
       throw new NoSuchRtStageException("The requested RtStage does not exist in this ExecutionPlan");
     }
 
-    final String rStageLinkId = IdGenerator.generateRtStageLinkId(srcRtStage.getId(), dstRtStage.getId());
-    RtStageLink rtStageLink = rtStageLinks.get(rStageLinkId);
+    final String rtStageLinkId = IdGenerator.generateRtStageLinkId(srcRtStage.getId(), dstRtStage.getId());
+    RtStageLink rtStageLink = rtStageLinks.get(rtStageLinkId);
 
     if (rtStageLink == null) {
-      rtStageLink = new RtStageLink(rStageLinkId, srcRtStage, dstRtStage);
-      rtStageLinks.put(rStageLinkId, rtStageLink);
+      rtStageLink = new RtStageLink(rtStageLinkId, srcRtStage, dstRtStage);
+      rtStageLinks.put(rtStageLinkId, rtStageLink);
     }
     rtStageLink.addRtOpLink(rtOpLink);
 

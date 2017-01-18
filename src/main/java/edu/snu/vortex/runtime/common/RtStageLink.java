@@ -18,16 +18,16 @@ package edu.snu.vortex.runtime.common;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RtStageLink {
-  private String rtStageLinkId;
-  private RtStage srcStage;
-  private RtStage dstStage;
+public final class RtStageLink {
+  private final String rtStageLinkId;
+  private final RtStage srcStage;
+  private final RtStage dstStage;
 
   /**
    * Set of {@link RtOpLink} between pairs of {@link RtOperator},
    * each part of the pair in {@link RtStageLink#srcStage} and {@link RtStageLink#dstStage}
    */
-  private Set<RtOpLink> rtOpLinkSet;
+  private final Set<RtOpLink> rtOpLinkSet;
 
   /**
    * Represents the connection/edge between two stages to be executed in Vortex runtime.
