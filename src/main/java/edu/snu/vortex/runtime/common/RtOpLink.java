@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.common;
 
 import java.util.Map;
 
-public class RtOpLink {
+public final class RtOpLink {
   private final String rtOpLinkId;
   private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
 

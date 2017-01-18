@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common;
 
-public class RtAttributes {
+public final class RtAttributes {
   /**
    * Set of attributes applicable to {@link RtStage}.
    */

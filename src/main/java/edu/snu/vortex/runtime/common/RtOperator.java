@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RtOperator<I, O> implements Serializable {
+public final class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
   private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
 
