@@ -21,6 +21,9 @@ import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.engine.SimpleEngine;
 
+/**
+ * Job launcher:
+ */
 public final class JobLauncher {
   public static void main(final String[] args) throws Exception {
     /**

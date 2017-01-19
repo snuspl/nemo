@@ -34,25 +34,25 @@ public abstract class Operator<I, O> implements Serializable {
     this.attributes = new HashMap<>();
   }
 
-  public String getId() {
+  public final String getId() {
     return id;
   }
 
-  public Operator<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
+  public final Operator<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
     attributes.put(key, val);
     return this;
   }
 
-  public Attributes.Val getAttrByKey(final Attributes.Key key) {
+  public final Attributes.Val getAttrByKey(final Attributes.Key key) {
     return attributes.get(key);
   }
 
-  public Map<Attributes.Key, Attributes.Val> getAttributes() {
+  public final Map<Attributes.Key, Attributes.Val> getAttributes() {
     return attributes;
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("class: ");
     sb.append(this.getClass().getSimpleName());

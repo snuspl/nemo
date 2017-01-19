@@ -74,7 +74,7 @@ public final class MapReduce {
 
   private static class EmptySource extends Source {
     @Override
-    public List<Reader> getReaders(long desiredBundleSizeBytes) throws Exception {
+    public List<Reader> getReaders(final long desiredBundleSizeBytes) throws Exception {
       return null;
     }
   }

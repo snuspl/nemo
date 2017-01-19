@@ -50,7 +50,8 @@ public final class Broadcast {
             } else {
               c.output("error");
             }
-          }}));
+          }
+        }));
 
     p.run();
   }

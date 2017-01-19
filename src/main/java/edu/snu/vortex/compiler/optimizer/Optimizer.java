@@ -23,7 +23,10 @@ import java.util.*;
 
 public final class Optimizer {
   /**
+   * Optimize function.
    * TODO #29: Make Optimizer Configurable
+   * @param dag .
+   * @return optimized DAG
    */
   public DAG optimize(final DAG dag) {
     operatorPlacement(dag);

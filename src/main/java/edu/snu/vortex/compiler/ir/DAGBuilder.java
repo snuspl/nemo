@@ -93,7 +93,7 @@ public final class DAGBuilder {
    * @param operator
    * @return
    */
-  public boolean contains(Operator operator) {
+  public boolean contains(final Operator operator) {
     return operators.contains(operator);
   }
 
@@ -102,7 +102,7 @@ public final class DAGBuilder {
    * @param edge
    * @return
    */
-  public boolean contains(Edge edge) {
+  public boolean contains(final Edge edge) {
     return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
   }
 

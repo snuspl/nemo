@@ -71,14 +71,22 @@ public final class Edge<I, O> {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     Edge<?, ?> edge = (Edge<?, ?>) o;
 
-    if (type != edge.type) return false;
-    if (!src.equals(edge.src)) return false;
+    if (type != edge.type) {
+      return false;
+    }
+    if (!src.equals(edge.src)) {
+      return false;
+    }
     return dst.equals(edge.dst);
   }
 
