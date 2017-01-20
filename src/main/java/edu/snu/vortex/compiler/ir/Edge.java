@@ -58,6 +58,10 @@ public final class Edge<I, O> {
     return attributes.get(key);
   }
 
+  public HashMap<Attributes.Key, Attributes.Val> getAttributes() {
+    return attributes;
+  }
+
   public Type getType() {
     return type;
   }
