@@ -91,11 +91,13 @@ public final class VortexBackend implements Backend {
         .forEach(edge -> {
           final VirtualStage srcVStage = findVStageOf(edge.getSrc().getId());
           final VirtualStage dstVStage = findVStageOf(edge.getDst().getId());
-          final VirtualStage mergedVStage = mergeVStages(srcVStage, dstVStage);
 
-          vStages.remove(srcVStage);
-          vStages.remove(dstVStage);
-          vStages.add(mergedVStage);
+          if (srcVStage.getvStageId().compareTo(dstVStage.getvStageId()) != 0) {
+            final VirtualStage mergedVStage = mergeVStages(srcVStage, dstVStage);
+            vStages.remove(srcVStage);
+            vStages.remove(dstVStage);
+            vStages.add(mergedVStage);
+          }
 
           memChannTypeEdges.add(edge);
         });
