@@ -39,8 +39,8 @@ public final class VortexBackend implements Backend {
   }
 
   private final class VirtualStage {
-    private String vStageId;
-    private Map<String, Operator> operators;
+    private final String vStageId;
+    private final Map<String, Operator> operators;
 
     public VirtualStage() {
       vStageId = IdGenerator.newVStageId();
@@ -57,19 +57,19 @@ public final class VortexBackend implements Backend {
       return operatorList;
     }
 
-    public void addOperator(Operator operator) {
+    public void addOperator(final Operator operator) {
       operators.put(operator.getId(), operator);
     }
 
-    public void addMultipleOperators(List<Operator> operators) {
+    public void addMultipleOperators(final List<Operator> operators) {
       operators.forEach(op -> this.operators.put(op.getId(), op));
     }
 
-    public boolean contains(String operatorId) {
+    public boolean contains(final String operatorId) {
       return operators.containsKey(operatorId);
     }
 
-    public Operator find(String operatorId) {
+    public Operator find(final String operatorId) {
       return operators.get(operatorId);
     }
   }
@@ -80,7 +80,7 @@ public final class VortexBackend implements Backend {
     final List<Operator> operators = dag.getOperators();
     final List<Edge> edges = new ArrayList<>();
 
-    // create initial virtual stages for each operator
+    // create an initial virtual stage for each operator.
     operators.forEach(op -> {
       final VirtualStage vStage = new VirtualStage();
       vStage.addOperator(op);
@@ -91,6 +91,7 @@ public final class VortexBackend implements Backend {
       }
     });
 
+    // merge two virtual stages connected with a memory type edge.
     edges.stream()
         .filter(edge -> isMemChannelType(edge))
         .forEach(edge -> {
@@ -103,6 +104,7 @@ public final class VortexBackend implements Backend {
           }
         });
 
+    // create a runtime stage for each virtual stage.
     vStages.forEach(vStage -> {
       final List<Operator> operatorsInStage = vStage.getOperatorList();
       final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr = new HashMap<>();
@@ -116,6 +118,7 @@ public final class VortexBackend implements Backend {
       vStageToRtStage.put(vStage.getvStageId(), rtStage.getId());
     });
 
+    // connect two runtime operator with a memory type link in a runtime stage.
     edges.stream()
         .filter(edge -> isMemChannelType(edge))
         .forEach(edge -> {
@@ -125,12 +128,13 @@ public final class VortexBackend implements Backend {
           final String dstRtOperId = compiler.convertId(edge.getDst().getId());
 
           final Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = generateRtOpLinkAttributes(edge);
-          RtOpLink rtOpLink = new RtOpLink(rtStage.getRtOpById(srcRtOperId),
+          final RtOpLink rtOpLink = new RtOpLink(rtStage.getRtOpById(srcRtOperId),
               rtStage.getRtOpById(dstRtOperId),
               rOpLinkAttr);
           rtStage.connectRtOps(srcRtOperId, dstRtOperId, rtOpLink);
         });
 
+    // connect two runtime stages (connected with non-memory type edges) in the execution plan.
     edges.stream()
         .filter(edge -> !isMemChannelType(edge))
         .forEach(edge -> {
@@ -142,7 +146,7 @@ public final class VortexBackend implements Backend {
           final String srcRtOperId = compiler.convertId(srcOperId);
           final String dstRtOperId = compiler.convertId(dstOperId);
           final Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = generateRtOpLinkAttributes(edge);
-          RtOpLink rtOpLink = new RtOpLink(srcRtStage.getRtOpById(srcRtOperId),
+          final RtOpLink rtOpLink = new RtOpLink(srcRtStage.getRtOpById(srcRtOperId),
               dstRtStage.getRtOpById(dstRtOperId),
               rOpLinkAttr);
           execPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
@@ -151,7 +155,7 @@ public final class VortexBackend implements Backend {
     return execPlan;
   }
 
-  public Map<RtAttributes.RtOpLinkAttribute, Object> generateRtOpLinkAttributes(final Edge irEdge) {
+  private Map<RtAttributes.RtOpLinkAttribute, Object> generateRtOpLinkAttributes(final Edge irEdge) {
     final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttributes = new HashMap<>();
 
     switch (irEdge.getType()) {
@@ -191,16 +195,16 @@ public final class VortexBackend implements Backend {
     return rtOpLinkAttributes;
   }
 
-  private RtStage findRtStageById(String rtStageId) {
+  private RtStage findRtStageById(final String rtStageId) {
     return rtStages.stream().filter(rtStage -> rtStage.getId().compareTo(rtStageId) == 0).findFirst().get();
   }
 
-  private boolean isMemChannelType(Edge edge) {
+  private boolean isMemChannelType(final Edge edge) {
     return edge.getAttr(Attributes.Key.EdgeChannel) == Attributes.EdgeChannel.Memory;
   }
 
-  private VirtualStage findVStageOf(String operatorId) {
-    Iterator<VirtualStage> iterator = vStages.iterator();
+  private VirtualStage findVStageOf(final String operatorId) {
+    final Iterator<VirtualStage> iterator = vStages.iterator();
     while (iterator.hasNext()) {
       VirtualStage vStage = iterator.next();
       if (vStage.contains(operatorId))
