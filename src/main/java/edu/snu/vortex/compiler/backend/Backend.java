@@ -15,5 +15,9 @@
  */
 package edu.snu.vortex.compiler.backend;
 
+import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.runtime.common.ExecutionPlan;
+
 public interface Backend {
+  ExecutionPlan compile(DAG dag);
 }
