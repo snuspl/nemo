@@ -120,7 +120,7 @@ public final class VortexBackend implements Backend {
 
     // connect two runtime operator with a memory type link in a runtime stage.
     edges.stream()
-        .filter(edge -> isMemChannelType(edge))
+        .filter(edge -> isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
           final VirtualStage vStage = findVStageOf(edge.getSrc().getId());
           final RtStage rtStage = findRtStageById(vStageToRtStage.get(vStage.getvStageId()));
@@ -136,7 +136,7 @@ public final class VortexBackend implements Backend {
 
     // connect two runtime stages (connected with non-memory type edges) in the execution plan.
     edges.stream()
-        .filter(edge -> !isMemChannelType(edge))
+        .filter(edge -> !isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
           final String srcOperId = edge.getSrc().getId();
           final String dstOperId = edge.getDst().getId();
@@ -153,6 +153,12 @@ public final class VortexBackend implements Backend {
         });
 
     return execPlan;
+  }
+
+  private boolean isInSameStage(String operId1, String operId2) {
+    final String vStageId1 = findVStageOf(operId1).getvStageId();
+    final String vStageId2 = findVStageOf(operId2).getvStageId();
+    return (vStageId1.compareTo(vStageId2) == 0);
   }
 
   private Map<RtAttributes.RtOpLinkAttribute, Object> generateRtOpLinkAttributes(final Edge irEdge) {
