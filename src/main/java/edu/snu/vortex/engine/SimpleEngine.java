@@ -95,6 +95,9 @@ public final class SimpleEngine {
     }
   }
 
+  /**
+   * Edge direction.
+   */
   private enum EdgeDirection {
     In,
     Out

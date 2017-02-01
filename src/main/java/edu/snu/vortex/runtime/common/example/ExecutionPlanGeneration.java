@@ -33,6 +33,9 @@ import java.util.*;
  * Execution Plan generation.
  */
 public final class ExecutionPlanGeneration {
+  private ExecutionPlanGeneration() {
+  }
+
   public static void main(final String[] args) {
 
     final DAG dag = buildMapReduceIRDAG();

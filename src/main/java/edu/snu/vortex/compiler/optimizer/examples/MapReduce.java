@@ -28,7 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * A sample MapReduce application.
+ */
 public final class MapReduce {
+  private MapReduce() {
+  }
+
   public static void main(final String[] args) {
     final EmptySource source = new EmptySource();
     final EmptyDo<String, Pair<String, Integer>, Void> map = new EmptyDo<>("MapOperator");
@@ -62,6 +68,11 @@ public final class MapReduce {
     System.out.println(dag);
   }
 
+  /**
+   * A pair object.
+   * @param <K> key type.
+   * @param <V> value type.
+   */
   private static class Pair<K, V> {
     private K key;
     private V val;
@@ -72,6 +83,9 @@ public final class MapReduce {
     }
   }
 
+  /**
+   * An empty source operator.
+   */
   private static class EmptySource extends Source {
     @Override
     public List<Reader> getReaders(final long desiredBundleSizeBytes) throws Exception {
@@ -79,6 +93,12 @@ public final class MapReduce {
     }
   }
 
+  /**
+   * An empty Do operator.
+   * @param <I> input type.
+   * @param <O> ouput type.
+   * @param <T>
+   */
   private static class EmptyDo<I, O, T> extends Do<I, O, T> {
     private final String name;
 
@@ -87,7 +107,7 @@ public final class MapReduce {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
       final StringBuilder sb = new StringBuilder();
       sb.append(super.toString());
       sb.append(", name: ");

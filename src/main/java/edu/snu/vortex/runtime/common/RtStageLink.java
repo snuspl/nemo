@@ -34,7 +34,7 @@ public final class RtStageLink {
 
   /**
    * Represents the connection/edge between two stages to be executed in Vortex runtime.
-   * A unique instance of {@link RtStageLink} must exist between {@param srcStage} and
+   * A unique instance of {@link RtStageLink} must exist between srcStage and
    * {@param dstStage}.
    * @param rtStageLinkId ID given to this {@link RtStageLink} between
    * @param srcStage and

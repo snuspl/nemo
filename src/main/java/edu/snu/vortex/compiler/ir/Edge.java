@@ -21,8 +21,13 @@ import java.util.HashMap;
 
 /**
  * Physical execution plan of intermediate data movement.
+ * @param <I> input operator type.
+ * @param <O> output operator type.
  */
 public final class Edge<I, O> {
+  /**
+   * Type of edges.
+   */
   public enum Type {
     M2M,
     O2M,

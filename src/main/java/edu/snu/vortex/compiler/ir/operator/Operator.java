@@ -24,6 +24,8 @@ import java.util.Map;
 
 /**
  * Physical execution plan of a user operator.
+ * @param <I> input type.
+ * @param <O> output type.
  */
 public abstract class Operator<I, O> implements Serializable {
   private final String id;
@@ -51,8 +53,9 @@ public abstract class Operator<I, O> implements Serializable {
     return attributes;
   }
 
+  @SuppressWarnings("checkstyle:designforextension")
   @Override
-  public final String toString() {
+  public String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("class: ");
     sb.append(this.getClass().getSimpleName());

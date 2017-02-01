@@ -21,6 +21,9 @@ import edu.snu.vortex.compiler.ir.Edge;
 
 import java.util.*;
 
+/**
+ * Optimizer class.
+ */
 public final class Optimizer {
   /**
    * Optimize function.

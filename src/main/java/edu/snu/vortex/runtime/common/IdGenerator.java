@@ -25,6 +25,9 @@ public final class IdGenerator {
   private static AtomicInteger rtStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
 
+  private IdGenerator() {
+  }
+
   /**
    * Generates the ID for {@link RtOperator},
    * given the ID of the corresponding {@link edu.snu.vortex.compiler.ir.operator.Operator}.
