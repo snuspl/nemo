@@ -124,7 +124,7 @@ public final class VortexBackend implements Backend {
       vStageToRtStage.put(vStage.getVStageId(), rtStage.getId());
     });
 
-    // connect two runtime operator with a memory type link in a runtime stage.
+    // connect two runtime operator in a same runtime stage.
     edges.stream()
         .filter(edge -> isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
