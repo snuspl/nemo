@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.exception;
 
-public class NoSuchRtStageException extends RuntimeException {
-  public NoSuchRtStageException(String message) {
+public class ChannelAlreadyExistException extends RuntimeException {
+  public ChannelAlreadyExistException(String message) {
     super(message);
   }
 }

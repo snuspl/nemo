@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.runtime.common.channel;
 
-public class NoSuchRtStageException extends RuntimeException {
-  public NoSuchRtStageException(String message) {
-    super(message);
-  }
+public enum ChannelType {
+  LOGICAL,
+  LOCAL_MEMORY,
+  TCP_PIPE,
+  DISK,
+  DISTRIBUTED_STORAGE,
 }

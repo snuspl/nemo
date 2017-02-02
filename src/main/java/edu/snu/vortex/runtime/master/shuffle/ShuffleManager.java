@@ -13,10 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.runtime.master.shuffle;
 
-public class NoSuchRtStageException extends RuntimeException {
-  public NoSuchRtStageException(String message) {
-    super(message);
+public class ShuffleManager {
+  private ShuffleDataflow dataflow;
+
+  public ShuffleManager(ShuffleDataflow dataflow) {
+    this.dataflow = dataflow;
+  }
+
+  public void updateDataflow(ShuffleDataflow dataflow) {
+    this.dataflow = dataflow;
+  }
+
+  public void notify(String channelId) {
+    
   }
 }

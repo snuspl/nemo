@@ -17,14 +17,44 @@ package edu.snu.vortex.runtime.common;
 
 
 import java.util.concurrent.atomic.AtomicInteger;
+import edu.snu.vortex.runtime.common.channel.ChannelBundle;
+import edu.snu.vortex.runtime.common.channel.Channel;
 
 public final class IdGenerator {
   private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger taskId = new AtomicInteger(1);
+  private static AtomicInteger channelId = new AtomicInteger(1);
+  private static AtomicInteger bundleId = new AtomicInteger(1);
+
+
+  /**
+   * Generates the ID of a task.
+   * @return the generated ID
+   */
+  public static String generateTaskId() {
+    return "task" + taskId.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for {@link Channel}.
+   * @return the generated ID
+   */
+  public static String generateChannelId() {
+    return "channel" + channelId.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for {@link ChannelBundle}.
+   * @return the generated ID
+   */
+  public static String generateBundleId() {
+    return "bundle" + bundleId.getAndIncrement();
+  }
 
   /**
    * Generates the ID for {@link RtOperator},
-   * given the ID of the corresponding {@link edu.snu.vortex.compiler.ir.operator.Operator}
+   * given the ID of the corresponding {@link edu.snu.vortex.compiler.ir.operator.Operator}.
    * @param irOpId
    * @return the generated ID
    */
