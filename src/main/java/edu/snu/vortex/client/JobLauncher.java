@@ -24,7 +24,13 @@ import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.engine.SimpleEngine;
 import edu.snu.vortex.runtime.common.ExecutionPlan;
 
+/**
+ * Job launcher.
+ */
 public final class JobLauncher {
+  private JobLauncher() {
+  }
+
   public static void main(final String[] args) throws Exception {
     /**
      * Step 1: Compile

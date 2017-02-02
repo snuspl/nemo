@@ -17,8 +17,14 @@ package edu.snu.vortex.compiler.backend;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * An ID generator used in {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
+ */
 public final class IdGenerator {
   private static AtomicInteger virtualStageId = new AtomicInteger(1);
+
+  private IdGenerator() {
+  }
 
   public static String newVStageId() {
     return "vstage-" + virtualStageId.getAndIncrement();

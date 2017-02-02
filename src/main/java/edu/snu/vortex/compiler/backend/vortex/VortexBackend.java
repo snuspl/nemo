@@ -27,6 +27,9 @@ import java.util.*;
 
 import static edu.snu.vortex.runtime.common.RtAttributes.RtOpLinkAttribute.COMM_PATTERN;
 
+/**
+ * Backend component for Vortex Runtime.
+ */
 public final class VortexBackend implements Backend {
   private final Set<VirtualStage> vStages;
   private final Set<RtStage> rtStages;
@@ -38,16 +41,19 @@ public final class VortexBackend implements Backend {
     this.vStageToRtStage = new HashMap<>();
   }
 
+  /**
+   * Virtual stage to group operators into a single stage.
+   */
   private final class VirtualStage {
     private final String vStageId;
     private final Map<String, Operator> operators;
 
-    public VirtualStage() {
+    VirtualStage() {
       vStageId = IdGenerator.newVStageId();
       operators = new HashMap<>();
     }
 
-    public String getvStageId() {
+    public String getVStageId() {
       return vStageId;
     }
 
@@ -61,8 +67,8 @@ public final class VortexBackend implements Backend {
       operators.put(operator.getId(), operator);
     }
 
-    public void addMultipleOperators(final List<Operator> operators) {
-      operators.forEach(op -> this.operators.put(op.getId(), op));
+    public void addMultipleOperators(final List<Operator> newOperators) {
+      newOperators.forEach(op -> this.operators.put(op.getId(), op));
     }
 
     public boolean contains(final String operatorId) {
@@ -74,7 +80,7 @@ public final class VortexBackend implements Backend {
     }
   }
 
-  public ExecutionPlan compile(DAG dag) {
+  public ExecutionPlan compile(final DAG dag) {
     final ExecutionPlan execPlan = new ExecutionPlan();
     final OperatorConverter compiler = new OperatorConverter();
     final List<Operator> operators = dag.getOperators();
@@ -98,7 +104,7 @@ public final class VortexBackend implements Backend {
           final VirtualStage srcVStage = findVStageOf(edge.getSrc().getId());
           final VirtualStage dstVStage = findVStageOf(edge.getDst().getId());
 
-          if (srcVStage.getvStageId().compareTo(dstVStage.getvStageId()) != 0) {
+          if (srcVStage.getVStageId().compareTo(dstVStage.getVStageId()) != 0) {
             srcVStage.addMultipleOperators(dstVStage.getOperatorList());
             vStages.remove(dstVStage);
           }
@@ -115,7 +121,7 @@ public final class VortexBackend implements Backend {
 
       execPlan.addRtStage(rtStage);
       rtStages.add(rtStage);
-      vStageToRtStage.put(vStage.getvStageId(), rtStage.getId());
+      vStageToRtStage.put(vStage.getVStageId(), rtStage.getId());
     });
 
     // connect two runtime operator with a memory type link in a runtime stage.
@@ -123,7 +129,7 @@ public final class VortexBackend implements Backend {
         .filter(edge -> isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
           final VirtualStage vStage = findVStageOf(edge.getSrc().getId());
-          final RtStage rtStage = findRtStageById(vStageToRtStage.get(vStage.getvStageId()));
+          final RtStage rtStage = findRtStageById(vStageToRtStage.get(vStage.getVStageId()));
           final String srcRtOperId = compiler.convertId(edge.getSrc().getId());
           final String dstRtOperId = compiler.convertId(edge.getDst().getId());
 
@@ -140,8 +146,8 @@ public final class VortexBackend implements Backend {
         .forEach(edge -> {
           final String srcOperId = edge.getSrc().getId();
           final String dstOperId = edge.getDst().getId();
-          final RtStage srcRtStage = findRtStageById(vStageToRtStage.get(findVStageOf(srcOperId).getvStageId()));
-          final RtStage dstRtStage = findRtStageById(vStageToRtStage.get(findVStageOf(dstOperId).getvStageId()));
+          final RtStage srcRtStage = findRtStageById(vStageToRtStage.get(findVStageOf(srcOperId).getVStageId()));
+          final RtStage dstRtStage = findRtStageById(vStageToRtStage.get(findVStageOf(dstOperId).getVStageId()));
 
           final String srcRtOperId = compiler.convertId(srcOperId);
           final String dstRtOperId = compiler.convertId(dstOperId);
@@ -155,9 +161,9 @@ public final class VortexBackend implements Backend {
     return execPlan;
   }
 
-  private boolean isInSameStage(String operId1, String operId2) {
-    final String vStageId1 = findVStageOf(operId1).getvStageId();
-    final String vStageId2 = findVStageOf(operId2).getvStageId();
+  private boolean isInSameStage(final String operId1, final String operId2) {
+    final String vStageId1 = findVStageOf(operId1).getVStageId();
+    final String vStageId2 = findVStageOf(operId2).getVStageId();
     return (vStageId1.compareTo(vStageId2) == 0);
   }
 
@@ -181,7 +187,7 @@ public final class VortexBackend implements Backend {
     final Map<Attributes.Key, Attributes.Val> irEdgeAttributes = irEdge.getAttributes();
     irEdgeAttributes.forEach((key, val) -> {
       if (key == Attributes.Key.EdgeChannel) {
-        switch((Attributes.EdgeChannel) val) {
+        switch ((Attributes.EdgeChannel) val) {
           case File:
             rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
             break;
@@ -194,6 +200,8 @@ public final class VortexBackend implements Backend {
           case DistributedStorage:
             rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.DISTR_STORAGE);
             break;
+          default:
+            throw new RuntimeException("no such channel type");
         }
       }
     });
@@ -213,8 +221,9 @@ public final class VortexBackend implements Backend {
     final Iterator<VirtualStage> iterator = vStages.iterator();
     while (iterator.hasNext()) {
       VirtualStage vStage = iterator.next();
-      if (vStage.contains(operatorId))
+      if (vStage.contains(operatorId)) {
         return vStage;
+      }
     }
 
     return null;
