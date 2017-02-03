@@ -45,7 +45,6 @@ public final class JobLauncher {
     System.out.println("##### VORTEX COMPILER (After Optimization) #####");
     System.out.println(optimizedDAG);
 
-    // TODO #28: Implement VortexBackend
     final Backend backend = new VortexBackend();
     final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
     System.out.println("##### VORTEX COMPILER (After Backend Compilation) #####");

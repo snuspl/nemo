@@ -99,7 +99,7 @@ public final class VortexBackend implements Backend {
 
     // merge two virtual stages connected with a memory type edge.
     edges.stream()
-        .filter(edge -> isMemChannelType(edge))
+        .filter(edge -> isChannelTypeMem(edge))
         .forEach(edge -> {
           final VirtualStage srcVStage = findVStageOf(edge.getSrc().getId());
           final VirtualStage dstVStage = findVStageOf(edge.getDst().getId());
@@ -113,12 +113,10 @@ public final class VortexBackend implements Backend {
     // create a runtime stage for each virtual stage.
     vStages.forEach(vStage -> {
       final List<Operator> operatorsInStage = vStage.getOperatorList();
-      final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr = new HashMap<>();
-      rtStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM,
-          operatorsInStage.get(0).getAttrByKey(Attributes.Key.Parallelism));
+      final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr = generateRtStageAttributes(operatorsInStage);
       final RtStage rtStage = new RtStage(rtStageAttr);
-      operatorsInStage.forEach(op -> rtStage.addRtOp(compiler.convert(op)));
 
+      operatorsInStage.forEach(op -> rtStage.addRtOp(compiler.convert(op)));
       execPlan.addRtStage(rtStage);
       rtStages.add(rtStage);
       vStageToRtStage.put(vStage.getVStageId(), rtStage.getId());
@@ -126,7 +124,7 @@ public final class VortexBackend implements Backend {
 
     // connect two runtime operator in a same runtime stage.
     edges.stream()
-        .filter(edge -> isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
+        .filter(edge -> areInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
           final VirtualStage vStage = findVStageOf(edge.getSrc().getId());
           final RtStage rtStage = findRtStageById(vStageToRtStage.get(vStage.getVStageId()));
@@ -142,7 +140,7 @@ public final class VortexBackend implements Backend {
 
     // connect two runtime stages (connected with non-memory type edges) in the execution plan.
     edges.stream()
-        .filter(edge -> !isInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
+        .filter(edge -> !areInSameStage(edge.getSrc().getId(), edge.getDst().getId()))
         .forEach(edge -> {
           final String srcOperId = edge.getSrc().getId();
           final String dstOperId = edge.getDst().getId();
@@ -161,7 +159,7 @@ public final class VortexBackend implements Backend {
     return execPlan;
   }
 
-  private boolean isInSameStage(final String operId1, final String operId2) {
+  private boolean areInSameStage(final String operId1, final String operId2) {
     final String vStageId1 = findVStageOf(operId1).getVStageId();
     final String vStageId2 = findVStageOf(operId2).getVStageId();
     return (vStageId1.compareTo(vStageId2) == 0);
@@ -209,11 +207,19 @@ public final class VortexBackend implements Backend {
     return rtOpLinkAttributes;
   }
 
+  private Map<RtAttributes.RtStageAttribute, Object> generateRtStageAttributes(final List<Operator> operatorsInStage) {
+    final Map<RtAttributes.RtStageAttribute, Object> rtStageAttributes = new HashMap<>();
+    rtStageAttributes.put(RtAttributes.RtStageAttribute.PARALLELISM,
+                        operatorsInStage.get(0).getAttrByKey(Attributes.Key.Parallelism));
+
+    return rtStageAttributes;
+  }
+
   private RtStage findRtStageById(final String rtStageId) {
     return rtStages.stream().filter(rtStage -> rtStage.getId().compareTo(rtStageId) == 0).findFirst().get();
   }
 
-  private boolean isMemChannelType(final Edge edge) {
+  private boolean isChannelTypeMem(final Edge edge) {
     return edge.getAttr(Attributes.Key.EdgeChannel) == Attributes.EdgeChannel.Memory;
   }
 
