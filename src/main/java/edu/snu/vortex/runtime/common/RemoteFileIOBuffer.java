@@ -16,5 +16,5 @@
 package edu.snu.vortex.runtime.common;
 
 //TODO: implement DataBuffer interfaces.
-public final class FileIOBuffer {
+public final class RemoteFileIOBuffer {
 }
