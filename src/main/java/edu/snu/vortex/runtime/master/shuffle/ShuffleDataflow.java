@@ -37,8 +37,13 @@ public class ShuffleDataflow {
     channels.put(channelId, channel);
   }
 
+  public void removeChannel(String channelId) {
+    channels.remove(channelId);
+  }
+
   public LogicalChannel find(String channelId) {
     return channels.get(channelId);
   }
+
 
 }

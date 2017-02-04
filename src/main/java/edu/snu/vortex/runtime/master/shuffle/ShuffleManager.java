@@ -26,7 +26,4 @@ public class ShuffleManager {
     this.dataflow = dataflow;
   }
 
-  public void notify(String channelId) {
-    
-  }
 }

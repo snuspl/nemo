@@ -32,4 +32,9 @@ public abstract class Task implements Serializable {
   }
 
   public abstract void compute();
+
+  public void initializeChannels() {
+    inputChannels.forEach(bundle -> bundle.initialize());
+    outputChannels.forEach(bundle -> bundle.initialize());
+  }
 }
