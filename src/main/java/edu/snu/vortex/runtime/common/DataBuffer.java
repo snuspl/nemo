@@ -25,9 +25,11 @@ public interface DataBuffer {
 
   void seekFirst();
 
-  int getBufferSize();
+  long getBufferSize();
 
-  int getRemainingDataSize();
+  long getRemainingDataSize();
+
+  void flush();
 
   void clear();
 }

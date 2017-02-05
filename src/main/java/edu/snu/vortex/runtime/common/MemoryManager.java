@@ -28,7 +28,8 @@ public final class MemoryManager {
   private final Map<Integer, MemoryBuffer> freeMemBufferMap;
   private final Map<Integer, MemoryBuffer> usedMemBufferMap;
 
-  MemoryManager(int numMemoryBuffer, int memoryBufferSize) {
+  //TODO: (possible improvement) change to create memory buffers on demand rather than pre-allocate.
+    MemoryManager(int numMemoryBuffer, int memoryBufferSize) {
     final AtomicInteger idFactory = new AtomicInteger(0);
     freeMemBufferIdSet = new HashSet<>();
     usedMemBufferIdSet = new HashSet<>();

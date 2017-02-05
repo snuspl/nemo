@@ -13,26 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor;
+package edu.snu.vortex.runtime.common;
 
-import edu.snu.vortex.runtime.common.DataBuffer;
-import edu.snu.vortex.runtime.common.BlockId;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-/**
- * Executor-side Block Manager.
- */
-public class BlockManager {
-
-  public DataBuffer getBlockData(final BlockId blockId) {
-    throw new NotImplementedException();
-  }
-
-  public boolean putBlockData(final BlockId blockId, final DataBuffer data) {
-    throw new NotImplementedException();
-  }
-
-  public void releaseLock(final BlockId blockId) {
-    throw new NotImplementedException();
-  }
+public final class BlockId {
 }

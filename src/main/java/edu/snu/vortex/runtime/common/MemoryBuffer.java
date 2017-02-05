@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.common;
 
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public final class MemoryBuffer implements DataBuffer {
@@ -58,12 +57,16 @@ public final class MemoryBuffer implements DataBuffer {
     bufferSeek = 0;
   }
 
-  public int getBufferSize() {
+  public long getBufferSize() {
     return bufferSize;
   }
 
-  public int getRemainingDataSize() {
+  public long getRemainingDataSize() {
     return (dataSize - bufferSeek);
+  }
+
+  public void flush() {
+    // no-effect
   }
 
   public void clear() {
