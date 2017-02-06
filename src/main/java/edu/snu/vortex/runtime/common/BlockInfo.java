@@ -15,5 +15,10 @@
  */
 package edu.snu.vortex.runtime.common;
 
-public final class BlockId {
+public final class BlockInfo {
+  private final String blockId;
+
+  BlockInfo(String blockId) {
+    this.blockId = blockId;
+  }
 }

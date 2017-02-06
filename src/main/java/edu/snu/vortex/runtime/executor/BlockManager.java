@@ -16,23 +16,39 @@
 package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.runtime.common.DataBuffer;
-import edu.snu.vortex.runtime.common.BlockId;
+import edu.snu.vortex.runtime.common.BlockInfo;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Executor-side Block Manager.
  */
-public class BlockManager {
+public final class BlockManager {
 
-  public DataBuffer getBlockData(final BlockId blockId) {
+  public String createLocalBlock(final DataBuffer data) {
     throw new NotImplementedException();
   }
 
-  public boolean putBlockData(final BlockId blockId, final DataBuffer data) {
+  public String createRemoteBlockAsCheckpointSnapShot(final DataBuffer data) {
     throw new NotImplementedException();
   }
 
-  public void releaseLock(final BlockId blockId) {
+  public boolean isLocal(final String blockId) {
+    throw new NotImplementedException();
+  }
+
+  public boolean removeLocalBlock(final String blockId) {
+    throw new NotImplementedException();
+  }
+
+  public DataBuffer getBlockData(final String blockId) {
+    throw new NotImplementedException();
+  }
+
+  public boolean pullRemoteBlock(final String blockId) {
+    throw new NotImplementedException();
+  }
+
+  public BlockInfo getBlockInfo(final String blockId) {
     throw new NotImplementedException();
   }
 }

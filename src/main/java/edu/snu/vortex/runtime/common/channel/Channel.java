@@ -16,9 +16,9 @@
 package edu.snu.vortex.runtime.common.channel;
 
 
-import java.nio.ByteBuffer;
+import java.util.List;
 
-public interface Channel {
+public interface Channel<T> {
 
   /**
    * initialize the internal state and the read/writer of the channel
@@ -61,14 +61,13 @@ public interface Channel {
    * this method is available only when the channel mode is OUTPUT or INOUT.
    * @param data byte buffer of data to write
    */
-  int write(ByteBuffer data);
+  void write(List<T> data);
 
   /**
    * read data from the channel into a given byte buffer.
    * this method is available only when the channel mode is INPUT or INOUT.
-   * @param data a byte buffer to place data
-   * @return the length of data read in bytes
+   * @return the list of data read
    */
-  int read(ByteBuffer data);
+  List<T> read();
 
 }

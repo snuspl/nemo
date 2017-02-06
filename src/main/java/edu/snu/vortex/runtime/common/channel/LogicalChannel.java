@@ -17,8 +17,9 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
 import java.nio.ByteBuffer;
+import java.util.List;
 
-public class LogicalChannel implements Channel {
+public class LogicalChannel<T> implements Channel<T> {
   private String channelId;
   private String srcTaskId;
   private String dstTaskId;
@@ -65,11 +66,11 @@ public class LogicalChannel implements Channel {
     return dstTaskId;
   }
 
-  public int write(ByteBuffer data) {
+  public void write(List<T> data) {
     throw new RuntimeException("write operation is NOT supported.");
   }
 
-  public int read(ByteBuffer buffer) {
+  public List<T> read() {
     throw new RuntimeException("read operation is NOT supported.");
   }
 
