@@ -21,7 +21,7 @@ public final class DataBuffer {
   private final DataBufferType bufferType;
   private final ReadWriteBuffer buffer;
 
-  DataBuffer (String bufferId, DataBufferType bufferType, ReadWriteBuffer buffer) {
+  DataBuffer (final String bufferId, final DataBufferType bufferType, final ReadWriteBuffer buffer) {
     this.bufferId = bufferId;
     this.bufferType = bufferType;
     this.buffer = buffer;
@@ -35,11 +35,11 @@ public final class DataBuffer {
     return bufferType;
   }
 
-  public int writeNext(byte [] data, int bufSizeInByte) {
+  public int writeNext(final byte [] data, final int bufSizeInByte) {
     return buffer.writeNext(data, bufSizeInByte);
   }
 
-  public int readNext(byte [] readBuffer, int bufSizeInByte) {
+  public int readNext(final byte [] readBuffer, final int bufSizeInByte) {
     return buffer.readNext(readBuffer, bufSizeInByte);
   }
 

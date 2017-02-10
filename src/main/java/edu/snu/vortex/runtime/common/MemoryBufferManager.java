@@ -22,14 +22,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class MemoryManager {
+public final class MemoryBufferManager implements BufferAllocator {
   private final Set<Integer> freeMemBufferIdSet;
   private final Set<Integer> usedMemBufferIdSet;
   private final Map<Integer, MemoryBuffer> freeMemBufferMap;
   private final Map<Integer, MemoryBuffer> usedMemBufferMap;
 
   //TODO: (possible improvement) change to create memory buffers on demand rather than pre-allocate.
-    MemoryManager(int numMemoryBuffer, int memoryBufferSize) {
+    MemoryBufferManager(int numMemoryBuffer, int memoryBufferSize) {
     final AtomicInteger idFactory = new AtomicInteger(0);
     freeMemBufferIdSet = new HashSet<>();
     usedMemBufferIdSet = new HashSet<>();
@@ -60,7 +60,11 @@ public final class MemoryManager {
     return memoryBuffer;
   }
 
-  public void releaseBuffer(final MemoryBuffer memoryBuffer) {
+  public void releaseBuffer(final ReadWriteBuffer buffer) {
+    releaseBuffer((MemoryBuffer) buffer);
+  }
+
+  private void releaseBuffer(final MemoryBuffer memoryBuffer) {
     final Integer bufferId = memoryBuffer.getId();
 
     usedMemBufferMap.remove(bufferId);
@@ -70,7 +74,4 @@ public final class MemoryManager {
     freeMemBufferMap.put(bufferId, memoryBuffer);
     freeMemBufferIdSet.add(bufferId);
   }
-
-
-
 }

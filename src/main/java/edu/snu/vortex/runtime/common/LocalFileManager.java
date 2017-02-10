@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class LocalFileManager {
-  private final static String ROOT_DIR_NAME = "filemgr";
+  private final static String ROOT_DIR_NAME = "LocalFileManager";
   private final List<File> rootDirs;
   private final List<List<File>> subDirs;
   private final int numSubDirsPerRootDir;
 
   // TODO: change to get the list of file spaces not as parameter but within an executor configuration
-  LocalFileManager(List<File> fileSpaces, int numSubDirsPerRootDir) {
+  LocalFileManager(final List<File> fileSpaces, final int numSubDirsPerRootDir) {
     this.rootDirs = new ArrayList<>(fileSpaces.size());
     this.subDirs = new ArrayList<>(fileSpaces.size());
     this.numSubDirsPerRootDir = numSubDirsPerRootDir;
@@ -38,7 +38,7 @@ public final class LocalFileManager {
     fileSpaces.forEach(fs -> this.rootDirs.add(new File(fs, ROOT_DIR_NAME)));
   }
 
-  public File getFileByName(String fileName) throws IOException {
+  public File getFileByName(final String fileName) throws IOException {
     final int hashCode = Math.abs(fileName.hashCode());
     final int rootDirIdx = hashCode % rootDirs.size();
     final int subDirIdx = (hashCode / rootDirs.size()) % numSubDirsPerRootDir;
