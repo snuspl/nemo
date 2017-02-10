@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common;
 
 import java.nio.ByteBuffer;
 
-public final class MemoryBuffer implements DataBuffer {
+public final class MemoryBuffer implements ReadWriteBuffer {
   private final int bufferId;
   private final ByteBuffer buffer;
   private final int bufferSize;

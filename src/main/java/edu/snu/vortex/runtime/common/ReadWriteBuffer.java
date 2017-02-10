@@ -16,5 +16,20 @@
 package edu.snu.vortex.runtime.common;
 
 
-public final class FileIOManager {
+public interface ReadWriteBuffer {
+  int getId();
+
+  int writeNext(byte [] data, int bufSizeInByte);
+
+  int readNext(byte [] readBuffer, int bufSizeInByte);
+
+  void seekFirst();
+
+  long getBufferSize();
+
+  long getRemainingDataSize();
+
+  void flush();
+
+  void clear();
 }

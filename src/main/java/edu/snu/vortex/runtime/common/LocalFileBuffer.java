@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.common;
 
 import java.io.*;
 
-public final class LocalFileIOBuffer implements DataBuffer {
+public final class LocalFileBuffer implements ReadWriteBuffer {
 
   private final int bufferId;
   private final File file;
@@ -28,7 +28,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
   private BufferedOutputStream outputStream;
 
 
-  LocalFileIOBuffer(final int bufferId, final File file, final long fileMaxSize) throws FileNotFoundException {
+  LocalFileBuffer(final int bufferId, final File file, final long fileMaxSize) throws FileNotFoundException {
     this.bufferId = bufferId;
     this.file = file;
     this.fileMaxSize = fileMaxSize;
@@ -37,7 +37,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
     this.outputStream = new BufferedOutputStream(new FileOutputStream(file));
   }
 
-  LocalFileIOBuffer(final int bufferId, final File file) throws FileNotFoundException {
+  LocalFileBuffer(final int bufferId, final File file) throws FileNotFoundException {
     this(bufferId, file, Long.MAX_VALUE);
   }
 
