@@ -47,7 +47,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
   }
 
   @Override
-  public int writeNext(final byte[] data, final int bufSizeInByte) {
+  public synchronized int writeNext(final byte[] data, final int bufSizeInByte) {
     final int writeDataSize = (bufSizeInByte < (fileMaxSize - fileSize))? bufSizeInByte: (int)(fileMaxSize - fileSize);
 
     try {
@@ -61,7 +61,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
   }
 
   @Override
-  public int readNext(final byte[] readBuffer, final int bufSizeInByte) {
+  public synchronized int readNext(final byte[] readBuffer, final int bufSizeInByte) {
     final int readDataSize = (bufSizeInByte < (fileSize - fileSeek))? bufSizeInByte: (int) (fileSize - fileSeek);
 
     try {
@@ -75,7 +75,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
   }
 
   @Override
-  public void seekFirst() {
+  public synchronized void seekFirst() {
     try {
       inputStream.close();
       flush();
@@ -93,12 +93,12 @@ public final class LocalFileIOBuffer implements DataBuffer {
   }
 
   @Override
-  public long getRemainingDataSize() {
+  public synchronized long getRemainingDataSize() {
     return fileSize - fileSeek;
   }
 
   @Override
-  public void flush() {
+  public synchronized void flush() {
     try {
       outputStream.flush();
     } catch (IOException e) {
@@ -107,7 +107,7 @@ public final class LocalFileIOBuffer implements DataBuffer {
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
     try {
       outputStream.close();
       inputStream.close();
