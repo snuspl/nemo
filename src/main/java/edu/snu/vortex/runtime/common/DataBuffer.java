@@ -16,20 +16,50 @@
 package edu.snu.vortex.runtime.common;
 
 
-public interface DataBuffer {
-  int getId();
+public final class DataBuffer {
+  private final String bufferId;
+  private final DataBufferType bufferType;
+  private final ReadWriteBuffer buffer;
 
-  int writeNext(byte [] data, int bufSizeInByte);
+  DataBuffer (final String bufferId, final DataBufferType bufferType, final ReadWriteBuffer buffer) {
+    this.bufferId = bufferId;
+    this.bufferType = bufferType;
+    this.buffer = buffer;
+  }
 
-  int readNext(byte [] readBuffer, int bufSizeInByte);
+  public String getId() {
+    return bufferId;
+  }
 
-  void seekFirst();
+  public DataBufferType getType() {
+    return bufferType;
+  }
 
-  long getBufferSize();
+  public int writeNext(final byte [] data, final int bufSizeInByte) {
+    return buffer.writeNext(data, bufSizeInByte);
+  }
 
-  long getRemainingDataSize();
+  public int readNext(final byte [] readBuffer, final int bufSizeInByte) {
+    return buffer.readNext(readBuffer, bufSizeInByte);
+  }
 
-  void flush();
+  public void seekFirst() {
+    buffer.seekFirst();
+  }
 
-  void clear();
+  public long getBufferSize() {
+    return buffer.getBufferSize();
+  }
+
+  public long getRemainingDataSize() {
+    return buffer.getRemainingDataSize();
+  }
+
+  public void flush() {
+    buffer.flush();
+  }
+
+  public void clear() {
+    buffer.clear();
+  }
 }

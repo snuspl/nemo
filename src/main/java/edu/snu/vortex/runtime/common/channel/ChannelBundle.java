@@ -31,6 +31,11 @@ public class ChannelBundle {
     channels = new ArrayList<>();
   }
 
+  public ChannelBundle(List<Channel> channels) {
+    bundleId = IdGenerator.generateBundleId();
+    this.channels = channels;
+  }
+
   /**
    * return the id of this channel bundle.
    */
@@ -39,11 +44,19 @@ public class ChannelBundle {
   }
 
   /**
+   * add a channel to this channel bundle.
+   * @param channel the channel to be added.
+   */
+  public void addChannel(Channel channel) {
+    channels.add(channel);
+  }
+
+  /**
    * find a channel with the given list index
    * @param channelIndex the list index of the channel to find
    * @return the channel instance associative with the given channel index
    */
-  public Channel find(int channelIndex) {
+  public Channel findChannelByIndex(int channelIndex) {
     return channels.get(channelIndex);
   }
 
@@ -52,7 +65,7 @@ public class ChannelBundle {
    * @param channelId the id of the channel to find
    * @return the channel instance associative with the given channel id
    */
-  public Channel find(String channelId) {
+  public Channel findChannelById(String channelId) {
     Iterator<Channel> channelIter = channels.iterator();
 
     while (channelIter.hasNext()) {
@@ -65,6 +78,24 @@ public class ChannelBundle {
     return null;
   }
 
+  /**
+   * return the list of all data records from all channels.
+   * this is a sugar function which can be done with other interfaces.
+   * @return the list of data records
+   */
+  public List getDataFromAllChannels() {
+    final List data = new ArrayList<>();
+
+    channels.forEach(chann -> {
+      data.addAll(chann.read());
+    });
+
+    return data;
+  }
+
+  /**
+   * initialize the channels in this channel bundle.
+   */
   public void initialize() {
     channels.stream().forEach(channel -> channel.initialize());
   }

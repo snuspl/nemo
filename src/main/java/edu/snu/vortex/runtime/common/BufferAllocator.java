@@ -16,5 +16,18 @@
 package edu.snu.vortex.runtime.common;
 
 
-public final class FileIOManager {
+public interface BufferAllocator {
+
+  /**
+   * allocate a {@link ReadWriteBuffer} type buffer.
+   * @return an allocated buffer.
+   */
+  ReadWriteBuffer allocateBuffer();
+
+  /**
+   * release a {@link ReadWriteBuffer} type buffer.
+   * The module who implements this interface should clean up resources for the buffer properly.
+   * @param buffer a buffer to be released.
+   */
+  void releaseBuffer(ReadWriteBuffer buffer);
 }

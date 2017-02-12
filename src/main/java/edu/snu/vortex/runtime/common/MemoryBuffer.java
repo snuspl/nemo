@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common;
 
 import java.nio.ByteBuffer;
 
-public final class MemoryBuffer implements DataBuffer {
+public final class MemoryBuffer implements ReadWriteBuffer {
   private final int bufferId;
   private final ByteBuffer buffer;
   private final int bufferSize;
@@ -37,7 +37,7 @@ public final class MemoryBuffer implements DataBuffer {
     return bufferId;
   }
 
-  public int writeNext(final byte [] data, final int bufSizeInByte) {
+  public synchronized int writeNext(final byte [] data, final int bufSizeInByte) {
     int writeDataSize = (bufSizeInByte > bufferSize - dataSize)? (bufferSize - dataSize): bufSizeInByte;
     buffer.put(data, dataSize, writeDataSize);
     dataSize += dataSize;
@@ -45,7 +45,7 @@ public final class MemoryBuffer implements DataBuffer {
     return writeDataSize;
   }
 
-  public int readNext(final byte [] readBuffer, final int bufSizeInByte) {
+  public synchronized int readNext(final byte [] readBuffer, final int bufSizeInByte) {
     int readDataSize = (bufSizeInByte > dataSize - bufferSeek)? (dataSize - bufferSeek): bufSizeInByte;
     buffer.get(readBuffer, bufferSeek, readDataSize);
     bufferSeek += readDataSize;
@@ -53,7 +53,7 @@ public final class MemoryBuffer implements DataBuffer {
     return readDataSize;
   }
 
-  public void seekFirst() {
+  public synchronized void seekFirst() {
     bufferSeek = 0;
   }
 
@@ -61,7 +61,7 @@ public final class MemoryBuffer implements DataBuffer {
     return bufferSize;
   }
 
-  public long getRemainingDataSize() {
+  public synchronized long getRemainingDataSize() {
     return (dataSize - bufferSeek);
   }
 
@@ -69,7 +69,7 @@ public final class MemoryBuffer implements DataBuffer {
     // no-effect
   }
 
-  public void clear() {
+  public synchronized void clear() {
     buffer.clear();
     bufferSeek = 0;
     dataSize = 0;

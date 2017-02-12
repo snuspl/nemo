@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master.shuffle;
+package edu.snu.vortex.runtime.master.trasfer;
 
 
 import edu.snu.vortex.runtime.common.channel.LogicalChannel;
@@ -21,10 +21,10 @@ import edu.snu.vortex.runtime.exception.ChannelAlreadyExistException;
 
 import java.util.HashMap;
 
-public class ShuffleDataflow {
+public class Dataflow {
   private HashMap<String, LogicalChannel> channels;
 
-  public ShuffleDataflow() {
+  public Dataflow() {
     this.channels = new HashMap<>();
   }
 

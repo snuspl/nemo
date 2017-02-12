@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master.shuffle;
+package edu.snu.vortex.runtime.common;
 
-public class ShuffleManager {
-  private ShuffleDataflow dataflow;
-
-  public ShuffleManager(ShuffleDataflow dataflow) {
-    this.dataflow = dataflow;
-  }
-
-  public void updateDataflow(ShuffleDataflow dataflow) {
-    this.dataflow = dataflow;
-  }
-
+public enum DataBufferType {
+  LOCAL_MEMORY,
+  LOCAL_FILE,
+  REMOTE_FILE
 }

@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.master.trasfer;
 
-//TODO: implement DataBuffer interfaces.
-public final class RemoteFileIOBuffer {
+public class TransferManager {
+  private Dataflow dataflow;
+
+  public TransferManager(Dataflow dataflow) {
+    this.dataflow = dataflow;
+  }
+
+  public void updateDataflow(Dataflow dataflow) {
+    this.dataflow = dataflow;
+  }
 }

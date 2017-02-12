@@ -15,63 +15,80 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+
 import edu.snu.vortex.runtime.common.IdGenerator;
-import java.nio.ByteBuffer;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class LogicalChannel implements Channel {
-  private String channelId;
-  private String srcTaskId;
-  private String dstTaskId;
-  private ChannelType channelType;
-  private ChannelMode channelMode;
-  private ChannelState channelState;
+public final class MemoryChannel<T> implements Channel<T> {
+  private final String channelId;
+  private final String srcTaskId;
+  private final String dstTaskId;
+  private final ChannelType channelType;
+  private final ChannelState channelState;
+  private final ChannelMode channelMode;
+  private final List<T> dataRecords;
 
-  public LogicalChannel(String srcTaskId, String dstTaskId) {
+  MemoryChannel (String srcTaskId, String dstTaskId) {
     this.channelId = IdGenerator.generateChannelId();
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
-    this.channelType = ChannelType.LOGICAL;
+    this.channelType = ChannelType.LOCAL_MEMORY;
     this.channelState = ChannelState.CLOSE;
-    this.channelMode = ChannelMode.NONE;
+    this.channelMode = ChannelMode.INOUT;
+    this.dataRecords = new ArrayList<>();
   }
 
+  @Override
   public void initialize() {
-    if (channelState == ChannelState.CLOSE) {
-      channelState = ChannelState.OPEN;
-    }
+
   }
 
+  @Override
   public String getId() {
     return channelId;
   }
 
-  public ChannelType getType() {
-    return channelType;
-  }
-
-  public ChannelMode getMode() {
-    return channelMode;
-  }
-
+  @Override
   public ChannelState getState() {
     return channelState;
   }
 
+  @Override
+  public ChannelType getType() {
+    return channelType;
+  }
+
+  @Override
+  public ChannelMode getMode() {
+    return channelMode;
+  }
+
+  @Override
   public String getSrcTaskId() {
     return srcTaskId;
   }
 
+  @Override
   public String getDstTaskId() {
     return dstTaskId;
   }
 
-  public void write(List data) {
-    throw new RuntimeException("write operation is NOT supported in " + this.getClass().getSimpleName());
+  @Override
+  public synchronized void write(List<T> data) {
+    dataRecords.addAll(data);
   }
 
-  public List read() {
-    throw new RuntimeException("read operation is NOT supported in " + this.getClass().getSimpleName());
+  @Override
+  public synchronized List<T> read() {
+    return dataRecords;
   }
 
+  public boolean isEmpty() {
+    return dataRecords.isEmpty();
+  }
+  public synchronized void clear() {
+    dataRecords.clear();
+  }
 }
