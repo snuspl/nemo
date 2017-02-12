@@ -22,19 +22,19 @@ import edu.snu.vortex.runtime.common.TaskLabel;
 
 import java.util.*;
 
-public class StageManager {
-  private static StageManager singleton;
+public class TaskManager {
+  private static TaskManager singleton;
   private final Map<String, Set<String>> rsIdToTaskIdMap;
   private final Map<String, State.TaskState> taskIdToTaskStateMap;
 
-  private StageManager() {
+  private TaskManager() {
     this.rsIdToTaskIdMap = new HashMap<>();
     this.taskIdToTaskStateMap = new HashMap<>();
   }
 
-  public static StageManager getInstance(){
+  public static TaskManager getInstance(){
     if (singleton == null) {
-      singleton = new StageManager();
+      singleton = new TaskManager();
     }
     return singleton;
   }
