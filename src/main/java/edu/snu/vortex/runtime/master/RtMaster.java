@@ -18,11 +18,15 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.runtime.common.ExecutionPlan;
 import edu.snu.vortex.runtime.common.RtStage;
 import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
+import edu.snu.vortex.runtime.master.shuffle.ShuffleManager;
 
 import java.util.Set;
 
-public class Scheduler {
-  private ExecutionPlan executionPlan;
+public class RtMaster {
+  private final Scheduler scheduler;
+  private final ExecutionStateManager executionStateManager;
+  private final ShuffleManager shuffleManager;
+  private final
 
   public void submitExecutionPlan(final ExecutionPlan executionPlan) {
     this.executionPlan = executionPlan;

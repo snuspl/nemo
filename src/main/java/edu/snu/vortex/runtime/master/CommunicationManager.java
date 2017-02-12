@@ -15,38 +15,59 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtStage;
-import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
+import edu.snu.vortex.runtime.common.comm.RtControllable;
 
-import java.util.Set;
+import java.io.Serializable;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 
-public class Scheduler {
-  private ExecutionPlan executionPlan;
+public class CommunicationManager {
+  private final ExecutorService communicationThread;
+  private final BlockingDeque<RtControllable> incomingRtControllables;
+  private final BlockingDeque<RtControllable> outgoingRtControllables;
 
-  public void submitExecutionPlan(final ExecutionPlan executionPlan) {
-    this.executionPlan = executionPlan;
-
-    // call APIs of RtStage, RtOperator, RtStageLink, etc.
-    // to create tasks and specify channels
+  public CommunicationManager() {
+    communicationThread = Executors.newSingleThreadExecutor();
+    incomingRtControllables = new LinkedBlockingDeque<>();
+    outgoingRtControllables = new LinkedBlockingDeque<>();
   }
 
-  public void onReadyForNextStage() {
-    try {
-      launchNextStage();
-    } catch (EmptyExecutionPlanException e) {
-      onJobCompleted();
+  public void initialize() {
+    communicationThread.execute(new RtControllableHandler());
+  }
+
+  private void sendRtExchangeable (final String receiverId,
+                    final RtControllable.Type rtControllableType,
+                    final Serializable message) {
+    // Create RtControllable
+    final RtControllable toSend = new RtControllable("master", receiverId,
+        rtControllableType, message);
+
+    // Send RtControllable to the receiver
+    outgoingRtControllables.offer(toSend);
+  }
+
+  private void onRtControllableReceived(final RtControllable rtControllable) {
+    incomingRtControllables.offer(rtControllable);
+  }
+
+  private void sendRtControllable(final RtControllable rtControllable) {
+    outgoingRtControllables.offer(rtControllable);
+  }
+
+  private class RtControllableHandler implements Runnable {
+    @Override
+    public void run() {
+      final RtControllable rtControllable;
+      try {
+        rtControllable = incomingRtControllables.take();
+
+        // call private methods depending on the rtControllable type
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
-  }
-
-  private void launchNextStage() throws EmptyExecutionPlanException {
-    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
-
-
-
-  }
-
-  public void onJobCompleted() {
-
   }
 }

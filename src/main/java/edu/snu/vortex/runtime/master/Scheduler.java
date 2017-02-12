@@ -15,39 +15,33 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionDAG;
-import edu.snu.vortex.runtime.common.RuntimeStage;
-import edu.snu.vortex.runtime.exception.EmptyExecutionDAGException;
-import javafx.stage.Stage;
+import edu.snu.vortex.runtime.common.ExecutionPlan;
+import edu.snu.vortex.runtime.common.RtStage;
+import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
+
+import java.util.Set;
 
 public class Scheduler {
-  public static Scheduler singleton;
-  private ExecutionDAG executionDAG;
+  private ExecutionPlan executionPlan;
 
-  private Scheduler() {
-  }
+  public void submitExecutionPlan(final ExecutionPlan executionPlan) {
+    this.executionPlan = executionPlan;
 
-  public static Scheduler getInstance(){
-    if (singleton == null) {
-      singleton = new Scheduler();
-    }
-    return singleton;
-  }
-
-  public void submitExecutionDAG(final ExecutionDAG executionDAG) {
-    this.executionDAG = executionDAG;
+    // call APIs of RtStage, RtOperator, RtStageLink, etc.
+    // to create tasks and specify channels
   }
 
   public void onReadyForNextStage() {
     try {
       launchNextStage();
-    } catch (EmptyExecutionDAGException e) {
+    } catch (EmptyExecutionPlanException e) {
       onJobCompleted();
     }
   }
 
-  private void launchNextStage() throws EmptyExecutionDAGException {
-    final RuntimeStage rsToExecute = executionDAG.getNextRuntimeStage();
+  private void launchNextStage() throws EmptyExecutionPlanException {
+    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
+
 
 
   }

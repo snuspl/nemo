@@ -15,16 +15,12 @@
  */
 package edu.snu.vortex.runtime.common;
 
-import java.io.Serializable;
-import java.util.List;
-
-public class TaskGroup implements Serializable {
-  private final String taskGroupId;
-  private final List<Task> taskList;
-
-  public TaskGroup(final String taskGroupId,
-                   final List<Task> taskList) {
-    this.taskGroupId = taskGroupId;
-    this.taskList = taskList;
-  }
+/**
+ * Define all execution states to be used to monitor the job state in master.
+ * The job state can be tracked for various purposes (ex. scheduling, user monitor)
+ */
+public class ExecutionState {
+  public enum JobState {}
+  public enum StageState {SCHEDULED, RUNNING, COMPLETE}
+  public enum TaskState {SCHEDULED, RUNNING, COMPLETE}
 }

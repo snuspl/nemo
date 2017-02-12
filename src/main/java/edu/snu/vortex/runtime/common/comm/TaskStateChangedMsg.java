@@ -1,30 +1,16 @@
 package edu.snu.vortex.runtime.common.comm;
 
+import edu.snu.vortex.runtime.common.ExecutionState;
+
 import java.io.Serializable;
 
-public final class RtExchangeable implements Serializable {
-  private String senderId;
-  private String receiverId;
-  private Type type;
-  private Serializable message;
+public final class TaskStateChangedMsg implements Serializable {
+  private String taskId;
+  private ExecutionState.TaskState state;
 
-  public RtExchangeable(String executorId, String receiverId, Type type, Serializable message) {
-    this.senderId = executorId;
-    this.receiverId = receiverId;
-    this.type = type;
-    this.message = message;
-  }
-
-  public Type getType() {
-    return type;
-  }
-
-  public Serializable getMessage() {
-    return message;
-  }
-
-  public enum Type {
-    ScheduleTaskGroup,
-    TaskStateChanged
+  public TaskStateChangedMsg(final String taskId,
+                             final ExecutionState.TaskState state) {
+    this.taskId = taskId;
+    this.state = state;
   }
 }

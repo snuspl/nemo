@@ -15,26 +15,16 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
-import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-
 import java.io.Serializable;
 import java.util.List;
 
-public abstract class Task implements Serializable {
-  private final List<ChannelBundle> inputChannels;
-  private final List<ChannelBundle> outputChannels;
+public class TaskGroup implements Serializable {
+  private final String taskGroupId;
+  private final List<Task> taskList;
 
-  public Task(final List<ChannelBundle> inputChannels,
-              final List<ChannelBundle> outputChannels) {
-    this.inputChannels = inputChannels;
-    this.outputChannels = outputChannels;
-  }
-
-  public abstract void compute();
-
-  public void initializeChannels() {
-    inputChannels.forEach(bundle -> bundle.initialize());
-    outputChannels.forEach(bundle -> bundle.initialize());
+  public TaskGroup(final String taskGroupId,
+                   final List<Task> taskList) {
+    this.taskGroupId = taskGroupId;
+    this.taskList = taskList;
   }
 }

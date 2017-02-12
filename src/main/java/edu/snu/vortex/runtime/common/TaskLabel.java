@@ -15,16 +15,28 @@
  */
 package edu.snu.vortex.runtime.common;
 
-import java.io.Serializable;
+import edu.snu.vortex.compiler.ir.operator.Operator;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class TaskGroup implements Serializable {
-  private final String taskGroupId;
+public class TaskLabel {
+  /* Identical to Compiler's Operator ID*/
+  private final String taskLabelId;
   private final List<Task> taskList;
+  private final Operator operator;
 
-  public TaskGroup(final String taskGroupId,
-                   final List<Task> taskList) {
-    this.taskGroupId = taskGroupId;
-    this.taskList = taskList;
+  public TaskLabel(final int parallelism, final Operator operator) {
+    this.taskLabelId = operator.getId();
+    this.taskList = new ArrayList<>(parallelism);
+    this.operator = operator;
+  }
+
+  public List<Task> getTaskList() {
+    return taskList;
+  }
+
+  public Operator getOperator() {
+    return operator;
   }
 }

@@ -15,16 +15,21 @@
  */
 package edu.snu.vortex.runtime.common.config;
 
-public class RtConfig {
-  private final RtExecMode rtExecMode;
+public class ExecutorConfig {
+  private final RtConfig.RtExecMode rtExecMode;
+  private final int numExecutionThreads;
 
-  public RtConfig(final RtExecMode rtExecMode) {
+  public ExecutorConfig(final RtConfig.RtExecMode rtExecMode,
+                        final int numExecutionThreads) {
     this.rtExecMode = rtExecMode;
+    this.numExecutionThreads = numExecutionThreads;
   }
 
-  public RtExecMode getRtExecMode() {
+  public RtConfig.RtExecMode getRtExecMode() {
     return rtExecMode;
   }
 
-  public enum RtExecMode {STREAM, BATCH}
+  public int getNumExecutionThreads() {
+    return numExecutionThreads;
+  }
 }

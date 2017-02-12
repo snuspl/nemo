@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.ExecutionState;
 import edu.snu.vortex.runtime.common.RuntimeStage;
 import edu.snu.vortex.runtime.common.State;
 import edu.snu.vortex.runtime.common.Task;
@@ -22,21 +23,13 @@ import edu.snu.vortex.runtime.common.TaskLabel;
 
 import java.util.*;
 
-public class TaskManager {
-  private static TaskManager singleton;
+public class ExecutionStateManager {
   private final Map<String, Set<String>> rsIdToTaskIdMap;
-  private final Map<String, State.TaskState> taskIdToTaskStateMap;
+  private final Map<String, ExecutionState.TaskState> taskIdToTaskStateMap;
 
-  private TaskManager() {
+  private ExecutionStateManager() {
     this.rsIdToTaskIdMap = new HashMap<>();
     this.taskIdToTaskStateMap = new HashMap<>();
-  }
-
-  public static TaskManager getInstance(){
-    if (singleton == null) {
-      singleton = new TaskManager();
-    }
-    return singleton;
   }
 
   public void initializeRSAndTaskStates(final RuntimeStage runtimeStage) {
