@@ -24,8 +24,8 @@ import edu.snu.vortex.runtime.common.channel.Channel;
  * ID Generator.
  */
 public final class IdGenerator {
-  private static AtomicInteger RStageIdGenerator = new AtomicInteger(1);
-  private static AtomicInteger ROpLinkIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger rtStageIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskId = new AtomicInteger(1);
   private static AtomicInteger channelId = new AtomicInteger(1);
   private static AtomicInteger bundleId = new AtomicInteger(1);
