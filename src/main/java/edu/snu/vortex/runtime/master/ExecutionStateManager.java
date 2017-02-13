@@ -15,18 +15,27 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionState;
-import edu.snu.vortex.runtime.common.RtStage;
-import edu.snu.vortex.runtime.common.Task;
-import edu.snu.vortex.runtime.common.TaskLabel;
+import edu.snu.vortex.runtime.common.*;
 
 import java.util.*;
 
+/**
+ * ExecutionStateManager.
+ */
 public class ExecutionStateManager {
   private final Map<String, Set<String>> rsIdToTaskIdMap;
   private final Map<String, ExecutionState.TaskState> taskIdToTaskStateMap;
 
-  private ExecutionStateManager() {
+  private ExecutionPlan executionPlan;
+
+  public void submitExecutionPlan(final ExecutionPlan execPlan) {
+    this.executionPlan = execPlan;
+
+    // call APIs of RtStage, RtOperator, RtStageLink, etc.
+    // to create tasks and specify channels
+  }
+
+  public ExecutionStateManager() {
     this.rsIdToTaskIdMap = new HashMap<>();
     this.taskIdToTaskStateMap = new HashMap<>();
   }

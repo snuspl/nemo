@@ -23,6 +23,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
+/**
+ * CommunicationManager.
+ */
 public class CommunicationManager {
   private final ExecutorService communicationThread;
   private final BlockingDeque<RtControllable> incomingRtControllables;
@@ -34,11 +37,11 @@ public class CommunicationManager {
     outgoingRtControllables = new LinkedBlockingDeque<>();
   }
 
-  public void initialize() {
+  public final void initialize() {
     communicationThread.execute(new RtControllableHandler());
   }
 
-  private void sendRtExchangeable (final String receiverId,
+  private void sendRtControllable(final String receiverId,
                     final RtControllable.Type rtControllableType,
                     final Serializable message) {
     // Create RtControllable
@@ -57,6 +60,9 @@ public class CommunicationManager {
     outgoingRtControllables.offer(rtControllable);
   }
 
+  /**
+   * RtControllableHandler.
+   */
   private class RtControllableHandler implements Runnable {
     @Override
     public void run() {

@@ -15,11 +15,10 @@
  */
 package edu.snu.vortex.runtime.exception;
 
+/**
+ * No such rt stage exception.
+ */
 public class NoSuchRtStageException extends RuntimeException {
-  /**
-   * No such rt stage exception.
-   * @param message message
-   */
   public NoSuchRtStageException(final String message) {
     super(message);
   }

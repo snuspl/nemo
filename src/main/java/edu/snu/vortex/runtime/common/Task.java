@@ -21,6 +21,9 @@ import edu.snu.vortex.runtime.common.channel.ChannelBundle;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Task.
+ */
 public abstract class Task implements Serializable {
   private final List<ChannelBundle> inputChannels;
   private final List<ChannelBundle> outputChannels;
@@ -33,7 +36,7 @@ public abstract class Task implements Serializable {
 
   public abstract void compute();
 
-  public void initializeChannels() {
+  public final void initializeChannels() {
     inputChannels.forEach(bundle -> bundle.initialize());
     outputChannels.forEach(bundle -> bundle.initialize());
   }

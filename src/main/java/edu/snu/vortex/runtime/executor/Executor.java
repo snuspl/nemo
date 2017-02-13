@@ -17,18 +17,19 @@ package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.runtime.common.ExecutionState;
 import edu.snu.vortex.runtime.common.TaskGroup;
-import edu.snu.vortex.runtime.common.TaskLabel;
 import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.TaskStateChangedMsg;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 
-import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
+/**
+ * Executor.
+ */
 public class Executor {
   private final String executorId;
   private final RtConfig rtConfig;
@@ -53,7 +54,7 @@ public class Executor {
     initialize();
   }
 
-  public void initialize() {
+  public final void initialize() {
     schedulerThread.execute(new RtExchangeableHandler());
   }
 
@@ -61,11 +62,11 @@ public class Executor {
 
   }
 
-  public void executeStream(final List<TaskLabel> taskLabelList) {
+  public void executeStream(final TaskGroup taskGroup) {
 
   }
 
-  public void executeBatch(final List<TaskLabel> taskLabelList) {
+  public void executeBatch(final TaskGroup taskGroup) {
   }
 
   private void reportTaskStateChange(final String taskId,
@@ -77,14 +78,17 @@ public class Executor {
     outgoingRtControllables.offer(toSend);
   }
 
-  private void onRtExchangeableReceived(final RtControllable rtControllable) {
+  private void onRtControllableReceived(final RtControllable rtControllable) {
     incomingRtControllables.offer(rtControllable);
   }
 
-  private void sendRtExchangeable(final RtControllable rtControllable) {
+  private void sendRtControllable(final RtControllable rtControllable) {
     outgoingRtControllables.offer(rtControllable);
   }
 
+  /**
+   * RtExchangeableHandler.
+   */
   private class RtExchangeableHandler implements Runnable {
     @Override
     public void run() {

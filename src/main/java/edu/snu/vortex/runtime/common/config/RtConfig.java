@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.config;
 
+/**
+ * RtConfig.
+ */
 public class RtConfig {
   private final RtExecMode rtExecMode;
 
@@ -22,9 +25,12 @@ public class RtConfig {
     this.rtExecMode = rtExecMode;
   }
 
-  public RtExecMode getRtExecMode() {
+  public final RtExecMode getRtExecMode() {
     return rtExecMode;
   }
 
-  public enum RtExecMode {STREAM, BATCH}
+  /**
+   * RtExecMode.
+   */
+  public enum RtExecMode { STREAM, BATCH }
 }

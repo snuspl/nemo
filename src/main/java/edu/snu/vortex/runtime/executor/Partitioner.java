@@ -17,6 +17,6 @@ package edu.snu.vortex.runtime.executor;
 
 /**
  * Interface that {@link Partitioner} implementation should support.
- */
+*/
 public interface Partitioner {
 }

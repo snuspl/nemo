@@ -20,7 +20,18 @@ package edu.snu.vortex.runtime.common;
  * The job state can be tracked for various purposes (ex. scheduling, user monitor)
  */
 public class ExecutionState {
-  public enum JobState {}
-  public enum StageState {SCHEDULED, RUNNING, COMPLETE}
-  public enum TaskState {SCHEDULED, RUNNING, COMPLETE}
+  /**
+   * JobState.
+   */
+  public enum JobState {  }
+
+  /**
+   * StageState.
+   */
+  public enum StageState { SCHEDULED, RUNNING, COMPLETE }
+
+  /**
+   * TaskState.
+   */
+  public enum TaskState { SCHEDULED, RUNNING, COMPLETE }
 }

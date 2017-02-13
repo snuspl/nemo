@@ -21,19 +21,22 @@ import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 
 import java.util.Set;
 
+/**
+ * RtMaster.
+ */
 public class RtMaster {
 //  private final Scheduler scheduler;
 //  private final ExecutionStateManager executionStateManager;
   private ExecutionPlan executionPlan;
 
-  public void submitExecutionPlan(final ExecutionPlan executionPlan) {
-    this.executionPlan = executionPlan;
+  public final void submitExecutionPlan(final ExecutionPlan execPlan) {
+    this.executionPlan = execPlan;
 
     // call APIs of RtStage, RtOperator, RtStageLink, etc.
     // to create tasks and specify channels
   }
 
-  public void onReadyForNextStage() {
+  public final void onReadyForNextStage() {
     try {
       launchNextStage();
     } catch (EmptyExecutionPlanException e) {
@@ -43,9 +46,6 @@ public class RtMaster {
 
   private void launchNextStage() throws EmptyExecutionPlanException {
     final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
-
-
-
   }
 
   public void onJobCompleted() {

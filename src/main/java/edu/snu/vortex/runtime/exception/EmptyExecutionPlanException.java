@@ -15,8 +15,11 @@
  */
 package edu.snu.vortex.runtime.exception;
 
+/**
+ * EmptyExecutionPlanException.
+ */
 public class EmptyExecutionPlanException extends RuntimeException {
-  public EmptyExecutionPlanException(String message) {
+  public EmptyExecutionPlanException(final String message) {
     super(message);
   }
 }
