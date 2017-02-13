@@ -15,5 +15,8 @@
  */
 package edu.snu.vortex.runtime.master;
 
+/**
+ * Master-side block manager.
+ */
 public class BlockManagerMaster {
 }

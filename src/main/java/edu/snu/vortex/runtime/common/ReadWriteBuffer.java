@@ -15,21 +15,53 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
+/**
+ *
+ */
 public interface ReadWriteBuffer {
+  /**
+   * @return the buffer id.
+   */
   int getId();
 
-  int writeNext(byte [] data, int bufSizeInByte);
+  /**
+   * append byte data to the end of the buffer.
+   * @param data the data to write.
+   * @param bufSizeInByte the size of data to write in byte.
+   * @return the actual size of data written in the buffer.
+   */
+  int writeNext(byte[] data, int bufSizeInByte);
 
-  int readNext(byte [] readBuffer, int bufSizeInByte);
+  /**
+   * read byte data starting from the seek point of the buffer.
+   * @param readBuffer the buffer to store data.
+   * @param bufSizeInByte the size of the read buffer.
+   * @return the actual size of data read from the buffer.
+   */
+  int readNext(byte[] readBuffer, int bufSizeInByte);
 
+  /**
+   * set data seek to point the beginning of the buffer.
+   */
   void seekFirst();
 
+  /**
+   * @return the total size of the buffer.
+   */
   long getBufferSize();
 
+  /**
+   * @return the size of remaining data to be read.
+   */
   long getRemainingDataSize();
 
+  /**
+   * actually store cached data into the buffer.
+   */
   void flush();
 
+  /**
+   * reset the buffer to the initial state.
+   */
   void clear();
 }

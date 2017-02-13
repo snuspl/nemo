@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.common;
 
+/**
+ * The type of {@link DataBuffer}.
+ */
 public enum DataBufferType {
   LOCAL_MEMORY,
   LOCAL_FILE,

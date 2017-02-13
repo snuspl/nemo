@@ -69,8 +69,8 @@ public final class ChannelBundle {
    * @param channelId the id of the channel to find
    * @return the channel instance associative with the given channel id
    */
-  public Channel findChannelById(String channelId) {
-    Iterator<Channel> channelIter = channels.iterator();
+  public Channel findChannelById(final String channelId) {
+    final Iterator<Channel> channelIter = channels.iterator();
 
     while (channelIter.hasNext()) {
       Channel channel = channelIter.next();

@@ -32,7 +32,7 @@ public final class MemoryBufferAllocator implements BufferAllocator {
   private final Map<Integer, MemoryBuffer> freeMemBufferMap;
   private final Map<Integer, MemoryBuffer> usedMemBufferMap;
 
-  //TODO: (possible improvement) change to create memory buffers on demand rather than pre-allocate.
+  // TODO #000: (a possible improvement) change to create memory buffers on demand rather than pre-allocate.
   MemoryBufferAllocator(final int numMemoryBuffer, final int memoryBufferSize) {
     final AtomicInteger idFactory = new AtomicInteger(0);
     freeMemBufferIdSet = new HashSet<>();

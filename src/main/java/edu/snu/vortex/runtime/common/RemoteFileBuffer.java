@@ -15,6 +15,51 @@
  */
 package edu.snu.vortex.runtime.common;
 
-//TODO: implement ReadWriteBuffer interfaces.
-public final class RemoteFileBuffer {
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+
+// TODO #000: implement ReadWriteBuffer interfaces.
+
+/**
+ * A buffer backed by remote file managed in distributed filesystem.
+ */
+public final class RemoteFileBuffer implements ReadWriteBuffer {
+  @Override
+  public int getId() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public int writeNext(final byte[] data, final int bufSizeInByte) {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public int readNext(final byte[] readBuffer, final int bufSizeInByte) {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public void seekFirst() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public long getBufferSize() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public long getRemainingDataSize() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public void flush() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
+
+  @Override
+  public void clear() {
+    throw new NotImplementedException("This method has not been implemented yet.");
+  }
 }

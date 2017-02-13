@@ -16,9 +16,11 @@
 package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
-import java.nio.ByteBuffer;
 import java.util.List;
 
+/**
+ * A logical channel which doesn't support actual channel read/write operations.
+ */
 public final class LogicalChannel implements Channel {
   private String channelId;
   private String srcTaskId;
@@ -27,7 +29,7 @@ public final class LogicalChannel implements Channel {
   private ChannelMode channelMode;
   private ChannelState channelState;
 
-  public LogicalChannel(String srcTaskId, String dstTaskId) {
+  public LogicalChannel(final String srcTaskId, final String dstTaskId) {
     this.channelId = IdGenerator.generateChannelId();
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
@@ -66,7 +68,7 @@ public final class LogicalChannel implements Channel {
     return dstTaskId;
   }
 
-  public void write(List data) {
+  public void write(final List data) {
     throw new RuntimeException("write operation is NOT supported in " + this.getClass().getSimpleName());
   }
 

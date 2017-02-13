@@ -29,7 +29,7 @@ public final class LocalFileManager {
   private final List<List<File>> subDirs;
   private final int numSubDirsPerRootDir;
 
-  //TODO: change to get the list of file spaces not as parameter but within an executor configuration
+  // TODO #000: change to get the list of file spaces not as parameter but within an executor configuration
   LocalFileManager(final List<File> fileSpaces, final int numSubDirsPerRootDir) {
     this.rootDirs = new ArrayList<>(fileSpaces.size());
     this.subDirs = new ArrayList<>(fileSpaces.size());

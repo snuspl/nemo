@@ -21,6 +21,11 @@ import edu.snu.vortex.runtime.exception.ChannelAlreadyExistException;
 
 import java.util.HashMap;
 
+/**
+ * Dataflow contains a set of logical channels.
+ * {@link TransferManager} uses {@link Dataflow} as a data structure,
+ * to store information about from/to which tasks the data should transfer.
+ */
 public class Dataflow {
   private HashMap<String, LogicalChannel> channels;
 
@@ -28,7 +33,7 @@ public class Dataflow {
     this.channels = new HashMap<>();
   }
 
-  public void addChannel(LogicalChannel channel) {
+  public void addChannel(final LogicalChannel channel) {
     String channelId = channel.getId();
     if (channels.containsKey(channelId)) {
       throw new ChannelAlreadyExistException("the given channel already exists.");
@@ -37,11 +42,11 @@ public class Dataflow {
     channels.put(channelId, channel);
   }
 
-  public void removeChannel(String channelId) {
+  public void removeChannel(final String channelId) {
     channels.remove(channelId);
   }
 
-  public LogicalChannel find(String channelId) {
+  public LogicalChannel find(final String channelId) {
     return channels.get(channelId);
   }
 

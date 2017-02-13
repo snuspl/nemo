@@ -25,44 +25,41 @@ import java.util.List;
 public interface Channel<T> {
 
   /**
-   * initialize the internal state and the read/writer of the channel
+   * initialize the internal state and the read/writer of the channel.
    */
   void initialize();
 
   /**
-   * return the channel id.
    * @return the channel id.
    */
   String getId();
 
   /**
-   * return the current state of the channel.
-   * @return the state of the channel
+   * @return the {@link ChannelState} of the channel.
    */
   ChannelState getState();
 
   /**
-   * return the type {@link ChannelType} of the channel.
-   * @return the type of the channel.
+   * @return the {@link ChannelType} of the channel.
    */
   ChannelType getType();
 
   /**
-   * return the channel mode {@link ChannelMode}.
+   * @return the {@link ChannelMode} of the channel.
    */
   ChannelMode getMode();
 
   /**
-   * return the source task id of the channel
+   * @return the source task id of the channel.
    */
   String getSrcTaskId();
 
   /**
-   * return the destination task id of the channel
+   * @return the destination task id of the channel.
    */
   String getDstTaskId();
 
-  //TODO: is it better to support channel writer/reader?
+  // TODO #000: (a possible improvement) is it better to support channel writer/reader?
   /**
    * write data to the channel from a given byte buffer.
    * this method is available only when the channel mode is OUTPUT or INOUT.

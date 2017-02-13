@@ -21,13 +21,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * A buffer allocator which manages {@link LocalFileBuffer}.
+ */
 public final class LocalFileBufferAllocator implements BufferAllocator {
   private static final String LOCAL_FILE_PREFIX = "local-file-buffer-manager-";
   private final LocalFileManager fileManager;
   private final AtomicInteger idFactory = new AtomicInteger(0);
   private final Map<Integer, File> bufferIdToFileMap;
 
-  LocalFileBufferAllocator(LocalFileManager fileManager) {
+  LocalFileBufferAllocator(final LocalFileManager fileManager) {
     this.fileManager = fileManager;
     bufferIdToFileMap = new HashMap<>();
   }
@@ -46,7 +49,7 @@ public final class LocalFileBufferAllocator implements BufferAllocator {
     }
   }
 
-  public void releaseBuffer(ReadWriteBuffer fileBuffer) {
+  public void releaseBuffer(final ReadWriteBuffer fileBuffer) {
     final int bufferId = fileBuffer.getId();
     bufferIdToFileMap.remove(bufferId).delete();
   }

@@ -134,14 +134,14 @@ public final class ExecutionPlanGeneration {
 
   private static RtAttributes.CommPattern convertEdgeTypeToROpLinkAttr(final Edge.Type edgeType) {
     switch (edgeType) {
-      case O2O:
-        return RtAttributes.CommPattern.ONE_TO_ONE;
-      case O2M:
-        return RtAttributes.CommPattern.BROADCAST;
-      case M2M:
-        return RtAttributes.CommPattern.SCATTER_GATHER;
-      default:
-        throw new RuntimeException("no such edge type");
+    case O2O:
+      return RtAttributes.CommPattern.ONE_TO_ONE;
+    case O2M:
+      return RtAttributes.CommPattern.BROADCAST;
+    case M2M:
+      return RtAttributes.CommPattern.SCATTER_GATHER;
+    default:
+      throw new RuntimeException("no such edge type");
     }
   }
 

@@ -15,8 +15,11 @@
  */
 package edu.snu.vortex.runtime.exception;
 
+/**
+ * Channel already exist exception.
+ */
 public class ChannelAlreadyExistException extends RuntimeException {
-  public ChannelAlreadyExistException(String message) {
+  public ChannelAlreadyExistException(final String message) {
     super(message);
   }
 }

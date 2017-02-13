@@ -17,8 +17,7 @@ package edu.snu.vortex.runtime.common;
 
 
 import java.util.concurrent.atomic.AtomicInteger;
-import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.channel.Channel;
+
 
 /**
  * ID Generator.
@@ -30,6 +29,7 @@ public final class IdGenerator {
   private static AtomicInteger channelId = new AtomicInteger(1);
   private static AtomicInteger bundleId = new AtomicInteger(1);
 
+  private IdGenerator() { }
 
   /**
    * Generates the ID of a task.
@@ -40,7 +40,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link Channel}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.channel.Channel}.
    * @return the generated ID
    */
   public static String generateChannelId() {
@@ -48,7 +48,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link ChannelBundle}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.channel.ChannelBundle}.
    * @return the generated ID
    */
   public static String generateBundleId() {

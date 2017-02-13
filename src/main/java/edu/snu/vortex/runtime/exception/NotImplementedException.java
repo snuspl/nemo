@@ -15,12 +15,10 @@
  */
 package edu.snu.vortex.runtime.exception;
 
-
+/**
+ * Not implemented exception.
+ */
 public class NotImplementedException extends RuntimeException {
-  /**
-   * Not implemented method exception.
-   * @param message message
-   */
   public NotImplementedException(final String message) {
     super(message);
   }

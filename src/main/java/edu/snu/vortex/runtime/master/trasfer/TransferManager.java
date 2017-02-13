@@ -15,14 +15,17 @@
  */
 package edu.snu.vortex.runtime.master.trasfer;
 
+/**
+ * Master-side transfer manager.
+ */
 public class TransferManager {
   private Dataflow dataflow;
 
-  public TransferManager(Dataflow dataflow) {
+  public TransferManager(final Dataflow dataflow) {
     this.dataflow = dataflow;
   }
 
-  public void updateDataflow(Dataflow dataflow) {
-    this.dataflow = dataflow;
+  public void updateDataflow(final Dataflow updatedDataflow) {
+    this.dataflow = updatedDataflow;
   }
 }

@@ -51,7 +51,8 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
 
   @Override
   public synchronized int writeNext(final byte[] data, final int bufSizeInByte) {
-    final int writeDataSize = (bufSizeInByte < (fileMaxSize - fileSize)) ? bufSizeInByte : ((int) (fileMaxSize - fileSize));
+    final int writeDataSize = (bufSizeInByte < (fileMaxSize - fileSize)) ?
+                                bufSizeInByte : ((int) (fileMaxSize - fileSize));
 
     try {
       outputStream.write(data, 0, writeDataSize);
