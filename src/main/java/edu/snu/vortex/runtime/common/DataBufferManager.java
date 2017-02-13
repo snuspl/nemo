@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * it returns a certain type of {@link DataBuffer} backed by {@link ReadWriteBuffer}.
  */
 public final class DataBufferManager {
-  private static final AtomicInteger idFactory = new AtomicInteger(0);
+  private static AtomicInteger idFactory = new AtomicInteger(0);
   private final MemoryBufferAllocator memBufAllocator;
   private final LocalFileBufferAllocator fileBufAllocator;
   private final Map<String, ReadWriteBuffer> bufIdToRWBufMap;
@@ -53,7 +53,7 @@ public final class DataBufferManager {
       return buffer;
 
     default:
-     throw new NotImplementedException("Allocating a " + bufferType + " type buffer is not available.");
+      throw new NotImplementedException("Allocating a " + bufferType + " type buffer is not available.");
     }
   }
 
