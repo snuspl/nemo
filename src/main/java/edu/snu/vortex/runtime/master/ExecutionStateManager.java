@@ -16,8 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.ExecutionState;
-import edu.snu.vortex.runtime.common.RuntimeStage;
-import edu.snu.vortex.runtime.common.State;
+import edu.snu.vortex.runtime.common.RtStage;
 import edu.snu.vortex.runtime.common.Task;
 import edu.snu.vortex.runtime.common.TaskLabel;
 
@@ -32,32 +31,32 @@ public class ExecutionStateManager {
     this.taskIdToTaskStateMap = new HashMap<>();
   }
 
-  public void initializeRSAndTaskStates(final RuntimeStage runtimeStage) {
-    Set<String> taskIds = new HashSet<>();
-    final List<TaskLabel> taskLabelList = runtimeStage.getTaskLabelList();
-    for (final TaskLabel taskLabel: taskLabelList) {
-      for (final Task task : taskLabel.getTaskList()) {
-        final String taskId = task.getTaskId();
-        taskIdToTaskStateMap.put(taskId, State.TaskState.SCHEDULED);
-        taskIds.add(taskId);
-      }
-    }
-    rsIdToTaskIdMap.put(runtimeStage.getRsId(), taskIds);
+  public void initializeRSAndTaskStates(final RtStage runtimeStage) {
+//    Set<String> taskIds = new HashSet<>();
+//    final List<TaskLabel> taskLabelList = runtimeStage.getTaskLabelList();
+//    for (final TaskLabel taskLabel: taskLabelList) {
+//      for (final Task task : taskLabel.getTaskList()) {
+//        final String taskId = task.getTaskId();
+//        taskIdToTaskStateMap.put(taskId, State.TaskState.SCHEDULED);
+//        taskIds.add(taskId);
+//      }
+//    }
+//    rsIdToTaskIdMap.put(runtimeStage.getRsId(), taskIds);
   }
 
-  public void onTaskStateChanged(final String taskId, final State.TaskState newState) {
+  public void onTaskStateChanged(final String taskId, final ExecutionState.TaskState newState) {
     updateTaskState(taskId, newState);
 
-    if (newState == State.TaskState.COMPLETE) {
-
-    }
+//    if (newState == State.TaskState.COMPLETE) {
+//
+//    }
   }
+//
+//  private void updateStageState(final String rsId, final State.StageState newState) {
+//
+//  }
 
-  private void updateStageState(final String rsId, final State.StageState newState) {
-
-  }
-
-  private void updateTaskState(final String taskId, final State.TaskState newState) {
+  private void updateTaskState(final String taskId, final ExecutionState.TaskState newState) {
     taskIdToTaskStateMap.replace(taskId, newState);
   }
 }
