@@ -18,6 +18,9 @@ package edu.snu.vortex.runtime.common;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * TaskGroup.
+ */
 public class TaskGroup implements Serializable {
   private final String taskGroupId;
   private final List<Task> taskList;

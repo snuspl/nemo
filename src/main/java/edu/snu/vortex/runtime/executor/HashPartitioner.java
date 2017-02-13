@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-
+/**
+ * HashPartitioner.
+ */
 public class HashPartitioner implements Partitioner {
 }

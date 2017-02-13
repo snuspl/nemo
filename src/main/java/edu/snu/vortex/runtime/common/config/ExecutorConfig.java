@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.config;
 
+/**
+ * ExecutorConfig.
+ */
 public class ExecutorConfig {
   private final RtConfig.RtExecMode rtExecMode;
   private final int numExecutionThreads;
@@ -25,11 +28,7 @@ public class ExecutorConfig {
     this.numExecutionThreads = numExecutionThreads;
   }
 
-  public RtConfig.RtExecMode getRtExecMode() {
-    return rtExecMode;
-  }
-
-  public int getNumExecutionThreads() {
+  public final int getNumExecutionThreads() {
     return numExecutionThreads;
   }
 }

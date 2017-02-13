@@ -15,23 +15,15 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtStage;
 import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 
-import java.util.Set;
-
+/**
+ * Scheduler.
+ */
 public class Scheduler {
-  private ExecutionPlan executionPlan;
 
-  public void submitExecutionPlan(final ExecutionPlan executionPlan) {
-    this.executionPlan = executionPlan;
 
-    // call APIs of RtStage, RtOperator, RtStageLink, etc.
-    // to create tasks and specify channels
-  }
-
-  public void onReadyForNextStage() {
+  public final void onReadyForNextStage() {
     try {
       launchNextStage();
     } catch (EmptyExecutionPlanException e) {
@@ -40,7 +32,7 @@ public class Scheduler {
   }
 
   private void launchNextStage() throws EmptyExecutionPlanException {
-    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
+//    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
 
 
 

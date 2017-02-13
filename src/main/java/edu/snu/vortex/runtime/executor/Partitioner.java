@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-
+/**
+ * Partitioner.
+ */
 public interface Partitioner {
 }
