@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-
+/**
+ * A partitioner implementation which partitions data with a hash algorithm.
+ */
 public class HashPartitioner implements Partitioner {
 }

@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.runtime.common.DataBuffer;
 import edu.snu.vortex.runtime.common.BlockInfo;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import edu.snu.vortex.runtime.exception.NotImplementedException;
 
 /**
  * Executor-side Block Manager.
@@ -25,30 +25,30 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 public final class BlockManager {
 
   public String createLocalBlock(final DataBuffer data) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public String createRemoteBlockAsCheckpointSnapShot(final DataBuffer data) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public boolean isLocal(final String blockId) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public boolean removeLocalBlock(final String blockId) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public DataBuffer getBlockData(final String blockId) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public boolean pullRemoteBlock(final String blockId) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 
   public BlockInfo getBlockInfo(final String blockId) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("This method has not been implemented yet.");
   }
 }

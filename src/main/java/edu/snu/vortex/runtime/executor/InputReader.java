@@ -15,5 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+/**
+ * An interface for input readers.
+ */
 public interface InputReader {
 }

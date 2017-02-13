@@ -20,13 +20,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages file spaces and directory structures inside them to allocate local files.
+ */
 public final class LocalFileManager {
-  private final static String ROOT_DIR_NAME = "LocalFileManager";
+  private static final String ROOT_DIR_NAME = "LocalFileManager";
   private final List<File> rootDirs;
   private final List<List<File>> subDirs;
   private final int numSubDirsPerRootDir;
 
-  // TODO: change to get the list of file spaces not as parameter but within an executor configuration
+  //TODO: change to get the list of file spaces not as parameter but within an executor configuration
   LocalFileManager(final List<File> fileSpaces, final int numSubDirsPerRootDir) {
     this.rootDirs = new ArrayList<>(fileSpaces.size());
     this.subDirs = new ArrayList<>(fileSpaces.size());

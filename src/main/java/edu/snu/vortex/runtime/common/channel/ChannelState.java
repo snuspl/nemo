@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-
+/**
+ * The State of {@link Channel}.
+ */
 public enum ChannelState {
   OPEN,
   CLOSE

@@ -15,5 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-public class DiskOutputWriter implements OutputWriter{
+/**
+ * An output writer implementation which writes output data to on-disk files.
+ */
+public class DiskOutputWriter implements OutputWriter {
 }

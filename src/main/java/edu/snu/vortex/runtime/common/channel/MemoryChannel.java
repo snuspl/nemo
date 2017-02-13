@@ -21,6 +21,11 @@ import edu.snu.vortex.runtime.common.IdGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A memory channel which stores data records in memory (in a list).
+ * For performance it doesn't serialize data records.
+ * @param <T> the data record type
+ */
 public final class MemoryChannel<T> implements Channel<T> {
   private final String channelId;
   private final String srcTaskId;
@@ -30,7 +35,7 @@ public final class MemoryChannel<T> implements Channel<T> {
   private final ChannelMode channelMode;
   private final List<T> dataRecords;
 
-  MemoryChannel (String srcTaskId, String dstTaskId) {
+  MemoryChannel(final String srcTaskId, final String dstTaskId) {
     this.channelId = IdGenerator.generateChannelId();
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
@@ -76,7 +81,7 @@ public final class MemoryChannel<T> implements Channel<T> {
   }
 
   @Override
-  public synchronized void write(List<T> data) {
+  public synchronized void write(final List<T> data) {
     dataRecords.addAll(data);
   }
 

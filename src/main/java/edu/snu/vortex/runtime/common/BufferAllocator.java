@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
+/**
+ * The interface that buffer allocators should implement.
+ */
 public interface BufferAllocator {
 
   /**

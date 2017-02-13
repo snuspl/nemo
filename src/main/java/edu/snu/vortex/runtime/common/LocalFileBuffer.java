@@ -17,6 +17,9 @@ package edu.snu.vortex.runtime.common;
 
 import java.io.*;
 
+/**
+ * A read-write buffer backed by a local file.
+ */
 public final class LocalFileBuffer implements ReadWriteBuffer {
 
   private final int bufferId;
@@ -48,11 +51,11 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
 
   @Override
   public synchronized int writeNext(final byte[] data, final int bufSizeInByte) {
-    final int writeDataSize = (bufSizeInByte < (fileMaxSize - fileSize))? bufSizeInByte: (int)(fileMaxSize - fileSize);
+    final int writeDataSize = (bufSizeInByte < (fileMaxSize - fileSize)) ? bufSizeInByte : ((int) (fileMaxSize - fileSize));
 
     try {
       outputStream.write(data, 0, writeDataSize);
-    } catch(IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
@@ -62,11 +65,11 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
 
   @Override
   public synchronized int readNext(final byte[] readBuffer, final int bufSizeInByte) {
-    final int readDataSize = (bufSizeInByte < (fileSize - fileSeek))? bufSizeInByte: (int) (fileSize - fileSeek);
+    final int readDataSize = (bufSizeInByte < (fileSize - fileSeek)) ? bufSizeInByte : ((int) (fileSize - fileSeek));
 
     try {
       inputStream.read(readBuffer, 0, readDataSize);
-    } catch(IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
 

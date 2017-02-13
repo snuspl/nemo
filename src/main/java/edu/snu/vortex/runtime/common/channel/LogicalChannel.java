@@ -19,7 +19,7 @@ import edu.snu.vortex.runtime.common.IdGenerator;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class LogicalChannel implements Channel {
+public final class LogicalChannel implements Channel {
   private String channelId;
   private String srcTaskId;
   private String dstTaskId;

@@ -15,5 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-public class TCPOutputWriter implements OutputWriter{
+/**
+ * An output writer which writes output data into TCP channels.
+ */
+public class TCPOutputWriter implements OutputWriter {
 }

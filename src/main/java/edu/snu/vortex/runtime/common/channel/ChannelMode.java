@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-
+/**
+ * The input/output modes of {@link Channel}.
+ */
 public enum ChannelMode {
   INPUT,
   OUTPUT,

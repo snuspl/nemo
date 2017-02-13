@@ -22,22 +22,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ChannelBundle {
-  private String bundleId;
-  private List<Channel> channels;
+/**
+ * Manages a bundle of channels that transfer data records.
+ */
+public final class ChannelBundle {
+  private final String bundleId;
+  private final List<Channel> channels;
 
   public ChannelBundle() {
     bundleId = IdGenerator.generateBundleId();
     channels = new ArrayList<>();
   }
 
-  public ChannelBundle(List<Channel> channels) {
+  public ChannelBundle(final List<Channel> channels) {
     bundleId = IdGenerator.generateBundleId();
     this.channels = channels;
   }
 
   /**
    * return the id of this channel bundle.
+   * @return the channel id
    */
   public String getId() {
     return bundleId;
@@ -45,23 +49,23 @@ public class ChannelBundle {
 
   /**
    * add a channel to this channel bundle.
-   * @param channel the channel to be added.
+   * @param channel the channel to be added
    */
-  public void addChannel(Channel channel) {
+  public void addChannel(final Channel channel) {
     channels.add(channel);
   }
 
   /**
-   * find a channel with the given list index
+   * find a channel with the given list index.
    * @param channelIndex the list index of the channel to find
    * @return the channel instance associative with the given channel index
    */
-  public Channel findChannelByIndex(int channelIndex) {
+  public Channel findChannelByIndex(final int channelIndex) {
     return channels.get(channelIndex);
   }
 
   /**
-   * find a channel with the given channel id
+   * find a channel with the given channel id.
    * @param channelId the id of the channel to find
    * @return the channel instance associative with the given channel id
    */

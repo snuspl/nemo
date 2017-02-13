@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor;
+package edu.snu.vortex.runtime.exception;
 
-/**
- * An interface for output readers.
- */
-public interface OutputWriter {
 
+public class NotImplementedException extends RuntimeException {
+  /**
+   * Not implemented method exception.
+   * @param message message
+   */
+  public NotImplementedException(final String message) {
+    super(message);
+  }
 }

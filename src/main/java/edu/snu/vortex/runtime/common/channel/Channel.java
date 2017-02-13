@@ -18,6 +18,10 @@ package edu.snu.vortex.runtime.common.channel;
 
 import java.util.List;
 
+/**
+ * Channel interface that the implementations should support.
+ * @param <T> the type of data record
+ */
 public interface Channel<T> {
 
   /**
@@ -26,17 +30,20 @@ public interface Channel<T> {
   void initialize();
 
   /**
-   * return the id of the channel
+   * return the channel id.
+   * @return the channel id.
    */
   String getId();
 
   /**
-   * return the current state of the channel
+   * return the current state of the channel.
+   * @return the state of the channel
    */
   ChannelState getState();
 
   /**
    * return the type {@link ChannelType} of the channel.
+   * @return the type of the channel.
    */
   ChannelType getType();
 

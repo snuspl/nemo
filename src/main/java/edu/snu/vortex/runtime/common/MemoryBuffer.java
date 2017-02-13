@@ -18,6 +18,9 @@ package edu.snu.vortex.runtime.common;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A buffer implementation that stores byte data in a fixed size of memory segment.
+ */
 public final class MemoryBuffer implements ReadWriteBuffer {
   private final int bufferId;
   private final ByteBuffer buffer;
@@ -37,16 +40,16 @@ public final class MemoryBuffer implements ReadWriteBuffer {
     return bufferId;
   }
 
-  public synchronized int writeNext(final byte [] data, final int bufSizeInByte) {
-    int writeDataSize = (bufSizeInByte > bufferSize - dataSize)? (bufferSize - dataSize): bufSizeInByte;
+  public synchronized int writeNext(final byte[] data, final int bufSizeInByte) {
+    final int writeDataSize = (bufSizeInByte > bufferSize - dataSize) ? (bufferSize - dataSize) : bufSizeInByte;
     buffer.put(data, dataSize, writeDataSize);
     dataSize += dataSize;
 
     return writeDataSize;
   }
 
-  public synchronized int readNext(final byte [] readBuffer, final int bufSizeInByte) {
-    int readDataSize = (bufSizeInByte > dataSize - bufferSeek)? (dataSize - bufferSeek): bufSizeInByte;
+  public synchronized int readNext(final byte[] readBuffer, final int bufSizeInByte) {
+    final int readDataSize = (bufSizeInByte > dataSize - bufferSeek) ? (dataSize - bufferSeek) : bufSizeInByte;
     buffer.get(readBuffer, bufferSeek, readDataSize);
     bufferSeek += readDataSize;
 

@@ -15,13 +15,17 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
+/**
+ * A buffer that carries data, used as the unit of data handling and transfer.
+ * It is internally backed by one of the {@link ReadWriteBuffer} implementations,
+ * namely {@link MemoryBuffer}, {@link LocalFileBuffer} etc.
+ */
 public final class DataBuffer {
   private final String bufferId;
   private final DataBufferType bufferType;
   private final ReadWriteBuffer buffer;
 
-  DataBuffer (final String bufferId, final DataBufferType bufferType, final ReadWriteBuffer buffer) {
+  DataBuffer(final String bufferId, final DataBufferType bufferType, final ReadWriteBuffer buffer) {
     this.bufferId = bufferId;
     this.bufferType = bufferType;
     this.buffer = buffer;
@@ -35,11 +39,11 @@ public final class DataBuffer {
     return bufferType;
   }
 
-  public int writeNext(final byte [] data, final int bufSizeInByte) {
+  public int writeNext(final byte[] data, final int bufSizeInByte) {
     return buffer.writeNext(data, bufSizeInByte);
   }
 
-  public int readNext(final byte [] readBuffer, final int bufSizeInByte) {
+  public int readNext(final byte[] readBuffer, final int bufSizeInByte) {
     return buffer.readNext(readBuffer, bufSizeInByte);
   }
 

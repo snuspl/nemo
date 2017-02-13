@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Allocates {@link MemoryBuffer} which can be used as {@link ReadWriteBuffer}.
+ * In current implementation, it initially allocates a fixed number of fixed-size byte buffers.
+ */
 public final class MemoryBufferAllocator implements BufferAllocator {
   private final Set<Integer> freeMemBufferIdSet;
   private final Set<Integer> usedMemBufferIdSet;
@@ -29,7 +33,7 @@ public final class MemoryBufferAllocator implements BufferAllocator {
   private final Map<Integer, MemoryBuffer> usedMemBufferMap;
 
   //TODO: (possible improvement) change to create memory buffers on demand rather than pre-allocate.
-  MemoryBufferAllocator(int numMemoryBuffer, int memoryBufferSize) {
+  MemoryBufferAllocator(final int numMemoryBuffer, final int memoryBufferSize) {
     final AtomicInteger idFactory = new AtomicInteger(0);
     freeMemBufferIdSet = new HashSet<>();
     usedMemBufferIdSet = new HashSet<>();

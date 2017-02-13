@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+/**
+ * The types of {@link Channel}.
+ */
 public enum ChannelType {
   LOGICAL,
   LOCAL_MEMORY,
