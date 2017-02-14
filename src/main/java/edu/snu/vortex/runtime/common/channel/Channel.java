@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.common.channel;
 
 
-import java.util.List;
-
 /**
  * Channel interface that the implementations should support.
  * @param <T> the type of data record
@@ -59,19 +57,8 @@ public interface Channel<T> {
    */
   String getDstTaskId();
 
-  // TODO #000: (a possible improvement) is it better to support channel writer/reader?
-  /**
-   * write data to the channel from a given byte buffer.
-   * this method is available only when the channel mode is OUTPUT or INOUT.
-   * @param data byte buffer of data to write
-   */
-  void write(List<T> data);
 
-  /**
-   * read data from the channel into a given byte buffer.
-   * this method is available only when the channel mode is INPUT or INOUT.
-   * @return the list of data read
-   */
-  List<T> read();
+
+
 
 }

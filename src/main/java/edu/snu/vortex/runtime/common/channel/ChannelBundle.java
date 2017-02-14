@@ -83,21 +83,6 @@ public final class ChannelBundle {
   }
 
   /**
-   * return the list of all data records from all channels.
-   * this is a sugar function which can be done with other interfaces.
-   * @return the list of data records
-   */
-  public List getDataFromAllChannels() {
-    final List data = new ArrayList<>();
-
-    channels.forEach(chann -> {
-      data.addAll(chann.read());
-    });
-
-    return data;
-  }
-
-  /**
    * initialize the channels in this channel bundle.
    */
   public void initialize() {

@@ -15,9 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-
-import edu.snu.vortex.runtime.common.IdGenerator;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,17 +23,17 @@ import java.util.List;
  * For performance it doesn't serialize data records.
  * @param <T> the data record type
  */
-public final class MemoryChannel<T> implements Channel<T> {
+public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T> {
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
+  private ChannelState channelState;
   private final ChannelType channelType;
-  private final ChannelState channelState;
   private final ChannelMode channelMode;
   private final List<T> dataRecords;
 
-  MemoryChannel(final String srcTaskId, final String dstTaskId) {
-    this.channelId = IdGenerator.generateChannelId();
+  MemoryChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
+    this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelType = ChannelType.LOCAL_MEMORY;
@@ -47,7 +44,7 @@ public final class MemoryChannel<T> implements Channel<T> {
 
   @Override
   public void initialize() {
-
+    channelState = ChannelState.OPEN;
   }
 
   @Override
@@ -93,6 +90,7 @@ public final class MemoryChannel<T> implements Channel<T> {
   public boolean isEmpty() {
     return dataRecords.isEmpty();
   }
+
   public synchronized void clear() {
     dataRecords.clear();
   }

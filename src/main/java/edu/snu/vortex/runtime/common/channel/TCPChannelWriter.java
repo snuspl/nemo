@@ -15,54 +15,67 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+
+import java.util.List;
+
 /**
- * A logical channel which doesn't support actual channel read/write operations.
+ * An implementation of TCP channel writer.
+ * @param <T> the type of data records that transfer via the channel.
  */
-public final class LogicalChannel implements Channel {
-  private String channelId;
-  private String srcTaskId;
-  private String dstTaskId;
-  private final ChannelType channelType;
+public class TCPChannelWriter<T> implements ChannelWriter<T> {
+  private final String channelId;
+  private final String srcTaskId;
+  private final String dstTaskId;
   private final ChannelMode channelMode;
+  private final ChannelType channelType;
   private ChannelState channelState;
 
-  public LogicalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
+  TCPChannelWriter(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
-    this.channelType = ChannelType.LOGICAL;
+    this.channelMode = ChannelMode.OUTPUT;
+    this.channelType = ChannelType.TCP_PIPE;
     this.channelState = ChannelState.CLOSE;
-    this.channelMode = ChannelMode.NONE;
   }
 
+  @Override
+  public void write(final List<T> data) {
+
+  }
+
+  @Override
   public void initialize() {
-    if (channelState == ChannelState.CLOSE) {
-      channelState = ChannelState.OPEN;
-    }
+    channelState = ChannelState.OPEN;
   }
 
+  @Override
   public String getId() {
     return channelId;
   }
 
-  public ChannelType getType() {
-    return channelType;
-  }
-
-  public ChannelMode getMode() {
-    return channelMode;
-  }
-
+  @Override
   public ChannelState getState() {
     return channelState;
   }
 
+  @Override
+  public ChannelType getType() {
+    return channelType;
+  }
+
+  @Override
+  public ChannelMode getMode() {
+    return channelMode;
+  }
+
+  @Override
   public String getSrcTaskId() {
     return srcTaskId;
   }
 
+  @Override
   public String getDstTaskId() {
     return dstTaskId;
   }
-
 }
