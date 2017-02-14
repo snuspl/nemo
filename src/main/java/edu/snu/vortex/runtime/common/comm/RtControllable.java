@@ -23,31 +23,24 @@ import java.io.Serializable;
 public final class RtControllable implements Serializable {
   private final String senderId;
   private final String receiverId;
-  private final Type type;
-  private final Serializable message;
+  private final RuntimeMessages.RtControllableMsg message;
 
   public RtControllable(final String senderId, final String receiverId,
-                        final Type type, final Serializable message) {
+                        final RuntimeMessages.RtControllableMsg rtControllableMsg) {
     this.senderId = senderId;
     this.receiverId = receiverId;
-    this.type = type;
-    this.message = message;
+    this.message = rtControllableMsg;
   }
 
-  public Type getType() {
-    return type;
+  public String getSenderId() {
+    return senderId;
   }
 
-  public Serializable getMessage() {
+  public String getReceiverId() {
+    return receiverId;
+  }
+
+  public RuntimeMessages.RtControllableMsg getMessage() {
     return message;
-  }
-
-  /**
-   * RtControllable type.
-   */
-  public enum Type {
-    ScheduleTaskGroup,
-    TaskStateChanged,
-    ExecutorReady
   }
 }

@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.comm;
-
-import edu.snu.vortex.runtime.common.ExecutionState;
-
-import java.io.Serializable;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * A message format for the {@link RtControllable} to notify task state change.
+ * UnsupportedRtControllable.
  */
-public final class TaskStateChangedMsg implements Serializable {
-  private final String taskId;
-  private final ExecutionState.TaskState state;
-
-  public TaskStateChangedMsg(final String taskId,
-                             final ExecutionState.TaskState state) {
-    this.taskId = taskId;
-    this.state = state;
+public class UnsupportedRtControllable extends RuntimeException {
+  public UnsupportedRtControllable(final String message) {
+    super(message);
   }
 }

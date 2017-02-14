@@ -15,47 +15,38 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-import edu.snu.vortex.runtime.common.ExecutionState;
 import edu.snu.vortex.runtime.common.TaskGroup;
-import edu.snu.vortex.runtime.common.comm.RtControllable;
-import edu.snu.vortex.runtime.common.comm.TaskStateChangedMsg;
+import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Executor.
  */
 public class Executor {
-  private final String executorId;
   private final RtConfig rtConfig;
 
   private final ExecutorService schedulerThread;
   private final ExecutorService executeThreads;
   private final ExecutorService resubmitThread;
 
-  private final BlockingDeque<RtControllable> incomingRtControllables;
-  private final BlockingDeque<RtControllable> outgoingRtControllables;
+  private final Communicator communicator;
 
-  public Executor(final String executorId,
-                  final RtConfig.RtExecMode executionMode,
+  public Executor(final RtConfig.RtExecMode executionMode,
                   final ExecutorConfig executorConfig) {
-    this.executorId = executorId;
     this.rtConfig = new RtConfig(executionMode);
     this.schedulerThread = Executors.newSingleThreadExecutor();
     this.executeThreads = Executors.newFixedThreadPool(executorConfig.getNumExecutionThreads());
     this.resubmitThread = Executors.newSingleThreadExecutor();
-    this.incomingRtControllables = new LinkedBlockingDeque<>();
-    this.outgoingRtControllables = new LinkedBlockingDeque<>();
+    this.communicator = new Communicator();
     initialize();
   }
 
   public final void initialize() {
-    schedulerThread.execute(new RtExchangeableHandler());
+    communicator.initialize();
   }
 
   public void submitTaskGroupForExecution(final TaskGroup taskGroupToExecute) {
@@ -70,38 +61,15 @@ public class Executor {
   }
 
   private void reportTaskStateChange(final String taskId,
-                                     final ExecutionState.TaskState newState) {
-    // Create RtControllable
-    final RtControllable toSend = new RtControllable("this", "master",
-        RtControllable.Type.TaskStateChanged, new TaskStateChangedMsg(taskId, newState));
-    // Send RtExechangeable to master
-    outgoingRtControllables.offer(toSend);
+                                     final RuntimeMessages.TaskStateChangedMsg.TaskState newState) {
+    final RuntimeMessages.TaskStateChangedMsg.Builder msgBuilder
+        = RuntimeMessages.TaskStateChangedMsg.newBuilder();
+    msgBuilder.setTaskId(taskId);
+    msgBuilder.setState(newState);
+    final RuntimeMessages.RtControllableMsg.Builder builder
+        = RuntimeMessages.RtControllableMsg.newBuilder();
+    builder.setType(RuntimeMessages.Type.TaskStateChanged);
+    builder.setTaskStateChangedMsg(msgBuilder.build());
+    communicator.sendRtControllable("master", builder.build());
   }
-
-  private void onRtControllableReceived(final RtControllable rtControllable) {
-    incomingRtControllables.offer(rtControllable);
-  }
-
-  private void sendRtControllable(final RtControllable rtControllable) {
-    outgoingRtControllables.offer(rtControllable);
-  }
-
-  /**
-   * RtExchangeableHandler.
-   */
-  private class RtExchangeableHandler implements Runnable {
-    @Override
-    public void run() {
-      final RtControllable rtControllable;
-      try {
-        rtControllable = incomingRtControllables.take();
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  // sendExecutorHeartBeat handled by REEF
-  // sendRtExchangeables handled by REEF
-  // receiveRtExchangeables handled by REEF
 }
