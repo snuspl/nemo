@@ -45,6 +45,11 @@ public class TCPChannelWriter<T> implements ChannelWriter<T> {
   }
 
   @Override
+  public void flush() {
+
+  }
+
+  @Override
   public void initialize() {
     channelState = ChannelState.OPEN;
   }

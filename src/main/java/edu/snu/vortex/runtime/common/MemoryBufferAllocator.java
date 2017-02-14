@@ -15,51 +15,37 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import edu.snu.vortex.runtime.exception.InvalidParameterException;
+
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Allocates {@link MemoryBuffer} which can be used as {@link ReadWriteBuffer}.
- * In current implementation, it initially allocates a fixed number of fixed-size byte buffers.
  */
 public final class MemoryBufferAllocator implements BufferAllocator {
-  private final Set<Integer> freeMemBufferIdSet;
-  private final Set<Integer> usedMemBufferIdSet;
-  private final Map<Integer, MemoryBuffer> freeMemBufferMap;
-  private final Map<Integer, MemoryBuffer> usedMemBufferMap;
+  private final int defaultBufSize;
+  private final AtomicInteger idFactory = new AtomicInteger(0);
 
-  // TODO #000: (a possible improvement) change to create memory buffers on demand rather than pre-allocate.
-  MemoryBufferAllocator(final int numMemoryBuffer, final int memoryBufferSize) {
-    final AtomicInteger idFactory = new AtomicInteger(0);
-    freeMemBufferIdSet = new HashSet<>();
-    usedMemBufferIdSet = new HashSet<>();
-    freeMemBufferMap = new HashMap<>();
-    usedMemBufferMap = new HashMap<>();
 
-    for (int i = 0; i < numMemoryBuffer; i++) {
-      final int bufferId = idFactory.getAndIncrement();
-      freeMemBufferMap.put(bufferId, new MemoryBuffer(bufferId,
-                                                      ByteBuffer.allocate(memoryBufferSize),
-                                                      memoryBufferSize));
-      freeMemBufferIdSet.add(bufferId);
-    }
+  MemoryBufferAllocator(final int defaultBufSize) {
+    this.defaultBufSize = defaultBufSize;
   }
 
-  public MemoryBuffer allocateBuffer() {
-    final Integer freeBufferId = freeMemBufferIdSet.stream().findFirst().get();
-    if (freeBufferId == null) {
-      throw new OutOfMemoryError("no memory buffer available");
+  public long getDefaultBufSize() {
+    return (long) defaultBufSize;
+  }
+
+  public MemoryBuffer allocateBuffer(final long requiredBufSize) {
+    final Integer bufferId = idFactory.getAndIncrement();
+    if (requiredBufSize > Integer.MAX_VALUE) {
+      throw new InvalidParameterException("the required buffer size is too large.");
     }
 
-    final MemoryBuffer memoryBuffer = freeMemBufferMap.remove(freeBufferId);
-    freeMemBufferIdSet.remove(freeBufferId);
-
-    usedMemBufferMap.put(freeBufferId, memoryBuffer);
-    usedMemBufferIdSet.add(freeBufferId);
+    final int bufferSize = (int) requiredBufSize;
+    final MemoryBuffer memoryBuffer = new MemoryBuffer(bufferId,
+                                                      ByteBuffer.allocate(bufferSize),
+                                                      bufferSize);
 
     return memoryBuffer;
   }
@@ -69,13 +55,6 @@ public final class MemoryBufferAllocator implements BufferAllocator {
   }
 
   private void releaseBuffer(final MemoryBuffer memoryBuffer) {
-    final Integer bufferId = memoryBuffer.getId();
-
-    usedMemBufferMap.remove(bufferId);
-    usedMemBufferIdSet.remove(bufferId);
-
     memoryBuffer.clear();
-    freeMemBufferMap.put(bufferId, memoryBuffer);
-    freeMemBufferIdSet.add(bufferId);
   }
 }

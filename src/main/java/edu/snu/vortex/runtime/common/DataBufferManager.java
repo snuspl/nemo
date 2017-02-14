@@ -30,12 +30,29 @@ public final class DataBufferManager {
   }
 
   public DataBuffer allocateBuffer(final DataBufferType bufferType) {
+    long defaultBufSize;
+
+    switch (bufferType) {
+    case LOCAL_MEMORY:
+      defaultBufSize = memBufAllocator.getDefaultBufSize();
+      break;
+    case LOCAL_FILE:
+      defaultBufSize = fileBufAllocator.getDefaultBufSize();
+      break;
+    default:
+      throw new NotImplementedException("Allocating a " + bufferType + " type buffer is not available.");
+    }
+
+    return allocateBuffer(bufferType, defaultBufSize);
+  }
+
+  public DataBuffer allocateBuffer(final DataBufferType bufferType, final long bufferSize) {
     ReadWriteBuffer internalBuffer;
     DataBuffer buffer;
 
     switch (bufferType) {
     case LOCAL_MEMORY:
-      internalBuffer = memBufAllocator.allocateBuffer();
+      internalBuffer = memBufAllocator.allocateBuffer(bufferSize);
       buffer = new DataBuffer(generateBufferId(),
                             DataBufferType.LOCAL_MEMORY,
                             internalBuffer);
@@ -44,7 +61,7 @@ public final class DataBufferManager {
       return buffer;
 
     case LOCAL_FILE:
-      internalBuffer = fileBufAllocator.allocateBuffer();
+      internalBuffer = fileBufAllocator.allocateBuffer(bufferSize);
       buffer = new DataBuffer(generateBufferId(),
                             DataBufferType.LOCAL_FILE,
                             internalBuffer);

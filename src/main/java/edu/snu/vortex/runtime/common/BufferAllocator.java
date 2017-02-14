@@ -21,10 +21,16 @@ package edu.snu.vortex.runtime.common;
 public interface BufferAllocator {
 
   /**
+   * @return the default buffer size of the buffer allocator.
+   */
+  long getDefaultBufSize();
+
+  /**
    * allocate a {@link ReadWriteBuffer} type buffer.
+   * @param bufferSize required buffer size.
    * @return an allocated buffer.
    */
-  ReadWriteBuffer allocateBuffer();
+  ReadWriteBuffer allocateBuffer(long bufferSize);
 
   /**
    * release a {@link ReadWriteBuffer} type buffer.

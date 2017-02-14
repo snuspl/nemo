@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class LocalFileBufferAllocator implements BufferAllocator {
   private static final String LOCAL_FILE_PREFIX = "local-file-buffer-manager-";
+  private static final long DEFAULT_BUF_SIZE = Long.MAX_VALUE; // unlimited.
   private final LocalFileManager fileManager;
   private final AtomicInteger idFactory = new AtomicInteger(0);
   private final Map<Integer, File> bufferIdToFileMap;
@@ -35,12 +36,20 @@ public final class LocalFileBufferAllocator implements BufferAllocator {
     bufferIdToFileMap = new HashMap<>();
   }
 
+  public long getDefaultBufSize() {
+    return DEFAULT_BUF_SIZE;
+  }
+
   public ReadWriteBuffer allocateBuffer() {
+    return allocateBuffer(DEFAULT_BUF_SIZE);
+  }
+
+  public ReadWriteBuffer allocateBuffer(final long bufferSize) {
     final int bufferId = idFactory.getAndIncrement();
     final String fileName = LOCAL_FILE_PREFIX + bufferId;
     try {
       final File file = fileManager.getFileByName(fileName);
-      final LocalFileBuffer buffer = new LocalFileBuffer(bufferId, file);
+      final LocalFileBuffer buffer = new LocalFileBuffer(bufferId, file, bufferSize);
       bufferIdToFileMap.put(bufferId, file);
 
       return buffer;

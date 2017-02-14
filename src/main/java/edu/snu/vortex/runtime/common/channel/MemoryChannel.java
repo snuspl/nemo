@@ -83,6 +83,11 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
   }
 
   @Override
+  public void flush() {
+    // no effect
+  }
+
+  @Override
   public synchronized List<T> read() {
     return dataRecords;
   }
