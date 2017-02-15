@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
 
-import java.io.Serializable;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
