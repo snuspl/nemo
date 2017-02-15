@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.comm.RtControllable;
+import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingDeque;
@@ -42,11 +43,9 @@ public class CommunicationManager {
   }
 
   private void sendRtControllable(final String receiverId,
-                    final RtControllable.Type rtControllableType,
-                    final Serializable message) {
+                    final RuntimeMessages.RtControllableMsg message) {
     // Create RtControllable
-    final RtControllable toSend = new RtControllable("master", receiverId,
-        rtControllableType, message);
+    final RtControllable toSend = new RtControllable("master", receiverId, message);
 
     // Send RtControllable to the receiver
     outgoingRtControllables.offer(toSend);
