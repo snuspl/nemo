@@ -1,6 +1,5 @@
 package edu.snu.vortex.runtime.common;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -55,19 +54,22 @@ public class MemoryBufferTest {
     }
 
     final int writeSize = memBuffer.writeNext(writeBuffer.array(), bufferSize);
-    assertEquals(bufferSize, writeSize);
+    assertEquals("1", bufferSize, writeSize);
+
+    // Reset the buffer seek to zero to read from the beginning.
+    memBuffer.seekFirst();
 
     final int readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
-    assertEquals(bufferSize, readSize);
+    assertEquals("2", bufferSize, readSize);
 
-    assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
+    assertTrue("3", compareByteBufs(writeBuffer, readBuffer, bufferSize));
   }
 
   @Test
   public void testMultipleRead() {
     final int bufferId = 0xBFFE;
-    final int bufferSize = 0x8192;
-    final int readChunkSize = 0x1024;
+    final int bufferSize = 0x8000;
+    final int readChunkSize = 0x1000;
     final int numRounds = (bufferSize / readChunkSize);
     final ByteBuffer writeBuffer = ByteBuffer.allocate(bufferSize);
     final ByteBuffer readBuffer = ByteBuffer.allocate(bufferSize);
@@ -75,29 +77,36 @@ public class MemoryBufferTest {
     final MemoryBuffer memBuffer = allocateBuffer(bufferId, bufferSize);
     final Random rand = new Random(bufferId);
 
-    assertTrue(bufferSize % readChunkSize == 0);
+    assertTrue("1", bufferSize % readChunkSize == 0);
     for (int idx = 0; idx < bufferSize; idx++) {
       writeBuffer.put(idx, ((byte) rand.nextInt()));
     }
 
     final int writeSize = memBuffer.writeNext(writeBuffer.array(), bufferSize);
-    assertEquals(writeSize, bufferSize);
+    assertEquals("2", writeSize, bufferSize);
+
+    // Reset the buffer seek to zero to read from the beginning.
+    memBuffer.seekFirst();
 
     for (int round = 0; round < numRounds; round++) {
       final int readSize = memBuffer.readNext(readChunkBuffer.array(), readChunkSize);
-      assertEquals(readChunkSize, readSize);
-      
-      readBuffer.put(readChunkBuffer);
+      assertEquals("3", readChunkSize, readSize);
+
+      final int baseIdx = round * readChunkSize;
+      for (int idx = 0; idx < readChunkSize; idx++) {
+        readBuffer.put(baseIdx + idx, readChunkBuffer.get(idx));
+      }
     }
 
-    assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
+    assertEquals(0, memBuffer.getRemainingDataSize());
+    assertTrue("4", compareByteBufs(writeBuffer, readBuffer, bufferSize));
   }
 
   @Test
   public void testMultipleWrite() {
     final int bufferId = 0xBFFE;
-    final int bufferSize = 0x8192;
-    final int writeChunkSize = 0x1024;
+    final int bufferSize = 0x8000;
+    final int writeChunkSize = 0x1000;
     final int numRounds = (bufferSize / writeChunkSize);
     final ByteBuffer writeBuffer = ByteBuffer.allocate(bufferSize);
     final ByteBuffer readBuffer = ByteBuffer.allocate(bufferSize);
@@ -105,7 +114,7 @@ public class MemoryBufferTest {
     final MemoryBuffer memBuffer = allocateBuffer(bufferId, bufferSize);
     final Random rand = new Random(bufferId);
 
-    assertTrue(bufferSize % writeChunkSize == 0);
+    assertTrue("1", (bufferSize % writeChunkSize) == 0);
     for (int idx = 0; idx < writeChunkSize; idx++) {
       writeChunkBuffer.put(idx, ((byte) rand.nextInt()));
     }
@@ -113,18 +122,25 @@ public class MemoryBufferTest {
     // Copy the chunk into the write buffer repeatedly as many as the number of rounds.
     // And the buffer will be used for evaluation.
     for (int round = 0; round < numRounds; round++) {
-      writeBuffer.put(writeChunkBuffer);
+      final int baseIdx = round * writeChunkSize;
+      for (int idx = 0; idx < writeChunkSize; idx++) {
+        writeBuffer.put(baseIdx + idx, writeChunkBuffer.get(idx));
+      }
     }
 
     for (int round = 0; round < numRounds; round++) {
       final int writeSize = memBuffer.writeNext(writeChunkBuffer.array(), writeChunkSize);
-      assertEquals(writeChunkSize, writeSize);
+      assertEquals("2", writeChunkSize, writeSize);
     }
 
-    final int readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
-    assertEquals(bufferSize, readSize);
+    // Reset the buffer seek to zero to read from the beginning.
+    memBuffer.seekFirst();
 
-    assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
+    final int readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
+    assertEquals("3", bufferSize, readSize);
+
+    assertEquals(0, memBuffer.getRemainingDataSize());
+    assertTrue("4", compareByteBufs(writeBuffer, readBuffer, bufferSize));
   }
 
   @Test
@@ -143,16 +159,24 @@ public class MemoryBufferTest {
     final int writeSize = memBuffer.writeNext(writeBuffer.array(), bufferSize);
     assertEquals(bufferSize, writeSize);
 
+    // Reset the buffer seek to zero to read from the beginning.
+    memBuffer.seekFirst();
+
     // Read for the first time.
     int readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
     assertEquals(bufferSize, readSize);
+
+    assertEquals(0, memBuffer.getRemainingDataSize());
     assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
 
+    // Reset the buffer seek to zero to read from the beginning.
     memBuffer.seekFirst();
 
     // Read second time.
     readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
     assertEquals(bufferSize, readSize);
+
+    assertEquals(0, memBuffer.getRemainingDataSize());
     assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
   }
 

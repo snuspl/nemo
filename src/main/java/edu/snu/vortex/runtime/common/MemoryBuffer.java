@@ -42,21 +42,22 @@ public final class MemoryBuffer implements ReadWriteBuffer {
 
   public synchronized int writeNext(final byte[] data, final int bufSizeInByte) {
     final int writeDataSize = (bufSizeInByte > bufferSize - dataSize) ? (bufferSize - dataSize) : bufSizeInByte;
-    buffer.put(data, dataSize, writeDataSize);
-    dataSize += dataSize;
 
+    buffer.put(data, 0, writeDataSize);
+    dataSize += writeDataSize;
     return writeDataSize;
   }
 
   public synchronized int readNext(final byte[] readBuffer, final int bufSizeInByte) {
     final int readDataSize = (bufSizeInByte > dataSize - bufferSeek) ? (dataSize - bufferSeek) : bufSizeInByte;
-    buffer.get(readBuffer, bufferSeek, readDataSize);
-    bufferSeek += readDataSize;
 
+    buffer.get(readBuffer, 0, readDataSize);
+    bufferSeek += readDataSize;
     return readDataSize;
   }
 
   public synchronized void seekFirst() {
+    buffer.rewind();
     bufferSeek = 0;
   }
 
