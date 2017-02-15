@@ -125,4 +125,33 @@ public class MemoryBufferTest {
     assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
   }
 
+  @Test
+  public void testSeekFirst() {
+    final int bufferId = 0xBFFE;
+    final int bufferSize = 0x1000;
+    final ByteBuffer writeBuffer = ByteBuffer.allocate(bufferSize);
+    final ByteBuffer readBuffer = ByteBuffer.allocate(bufferSize);
+    final MemoryBuffer memBuffer = allocateBuffer(bufferId, bufferSize);
+    final Random rand = new Random(bufferId);
+
+    for (int idx = 0; idx < bufferSize; idx++) {
+      writeBuffer.put(idx, ((byte) rand.nextInt()));
+    }
+
+    final int writeSize = memBuffer.writeNext(writeBuffer.array(), bufferSize);
+    assertEquals(bufferSize, writeSize);
+
+    // Read for the first time.
+    int readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
+    assertEquals(bufferSize, readSize);
+    assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
+
+    memBuffer.seekFirst();
+
+    // Read second time.
+    readSize = memBuffer.readNext(readBuffer.array(), bufferSize);
+    assertEquals(bufferSize, readSize);
+    assertTrue(compareByteBufs(writeBuffer, readBuffer, bufferSize));
+  }
+
 }
