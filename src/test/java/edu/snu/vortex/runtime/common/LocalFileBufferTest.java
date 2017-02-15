@@ -16,31 +16,37 @@
 package edu.snu.vortex.runtime.common;
 
 
-import java.nio.ByteBuffer;
-
 import org.junit.Test;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Tests for {@link MemoryBuffer}.
- */
-public final class MemoryBufferTest {
+public final class LocalFileBufferTest {
   private final ReadWriteBufferCommonTest rwBufferTest = new ReadWriteBufferCommonTest();
 
-  private MemoryBuffer allocateBuffer(final int bufferId, final int bufferSize) {
-    return new MemoryBuffer(bufferId, ByteBuffer.allocate(bufferSize), bufferSize);
+  private LocalFileBuffer allocateBuffer(final int bufferId, final long bufferSize) {
+    try {
+      final File file = new File(this.getClass().getSimpleName());
+      file.createNewFile();
+      file.deleteOnExit();
+
+      return new LocalFileBuffer(bufferId, file, bufferSize);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Test
   public void testInitializeMemBuf() {
     final int bufferId = 0xBFFE;
     final int bufferSize = 0x1000;
-    final MemoryBuffer memBuffer = allocateBuffer(bufferId, bufferSize);
+    final LocalFileBuffer fileBuffer = allocateBuffer(bufferId, bufferSize);
 
-    assertEquals(bufferId, memBuffer.getId());
-    assertEquals(bufferSize, memBuffer.getBufferSize());
-    assertEquals(0, memBuffer.getRemainingDataSize());
+    assertEquals(bufferId, fileBuffer.getId());
+    assertEquals(bufferSize, fileBuffer.getBufferSize());
+    assertEquals(0, fileBuffer.getRemainingDataSize());
   }
 
   @Test
@@ -76,5 +82,6 @@ public final class MemoryBufferTest {
 
     rwBufferTest.testSeekFirst(allocateBuffer(bufferId, bufferSize));
   }
+
 
 }

@@ -93,7 +93,7 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
 
   @Override
   public long getBufferSize() {
-    return fileSize;
+    return fileMaxSize;
   }
 
   @Override
