@@ -85,6 +85,8 @@ public class MemoryBufferTest {
 
     for (int round = 0; round < numRounds; round++) {
       final int readSize = memBuffer.readNext(readChunkBuffer.array(), readChunkSize);
+      assertEquals(readChunkSize, readSize);
+      
       readBuffer.put(readChunkBuffer);
     }
 
