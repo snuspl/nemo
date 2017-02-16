@@ -40,6 +40,10 @@ public final class LocalFileBufferAllocator implements BufferAllocator {
     return DEFAULT_BUF_SIZE;
   }
 
+  /**
+   * Allocates a {@link LocalFileBuffer} with default maximal buffer size, equal to Maximal value of long integer.
+   * @return An instance of {@link LocalFileBuffer}.
+   */
   public ReadWriteBuffer allocateBuffer() {
     return allocateBuffer(DEFAULT_BUF_SIZE);
   }
@@ -59,7 +63,9 @@ public final class LocalFileBufferAllocator implements BufferAllocator {
   }
 
   public void releaseBuffer(final ReadWriteBuffer fileBuffer) {
-    final int bufferId = fileBuffer.getId();
-    bufferIdToFileMap.remove(bufferId).delete();
+    if (fileBuffer instanceof LocalFileBuffer) {
+      final int bufferId = fileBuffer.getId();
+      bufferIdToFileMap.remove(bufferId).delete();
+    }
   }
 }

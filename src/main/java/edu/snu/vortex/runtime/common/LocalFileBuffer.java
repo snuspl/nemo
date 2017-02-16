@@ -36,6 +36,7 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
     this.file = file;
     this.fileMaxSize = fileMaxSize;
     this.fileSize = 0;
+    this.fileSeek = 0;
     this.inputStream = new BufferedInputStream(new FileInputStream(file));
     this.outputStream = new BufferedOutputStream(new FileOutputStream(file));
   }
@@ -115,6 +116,13 @@ public final class LocalFileBuffer implements ReadWriteBuffer {
     try {
       outputStream.close();
       inputStream.close();
+
+
+      fileSize = 0;
+      fileSeek = 0;
+
+      inputStream = new BufferedInputStream(new FileInputStream(file));
+      outputStream = new BufferedOutputStream(new FileOutputStream(file));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

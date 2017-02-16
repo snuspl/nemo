@@ -34,7 +34,7 @@ public final class MemoryBufferTest {
 
   @Test
   public void testInitializeMemBuf() {
-    final int bufferId = 0xBFFE;
+    final int bufferId = 0xCAFE;
     final int bufferSize = 0x1000;
     final MemoryBuffer memBuffer = allocateBuffer(bufferId, bufferSize);
 
@@ -45,16 +45,16 @@ public final class MemoryBufferTest {
 
   @Test
   public void testSingleReadWrite() {
-    final int bufferId = 0xBFFE;
-    final int bufferSize = 0x1000;
+    final int bufferId = 0xCAFE;
+    final int bufferSize = 0x100000;
 
     rwBufferTest.testSingleReadWrite(allocateBuffer(bufferId, bufferSize));
   }
 
   @Test
   public void testMultipleRead() {
-    final int bufferId = 0xBFFE;
-    final int bufferSize = 0x8000;
+    final int bufferId = 0xCAFE;
+    final int bufferSize = 0x100000;
     final int readChunkSize = 0x1000;
 
     rwBufferTest.testMultipleRead(allocateBuffer(bufferId, bufferSize), readChunkSize);
@@ -62,8 +62,8 @@ public final class MemoryBufferTest {
 
   @Test
   public void testMultipleWrite() {
-    final int bufferId = 0xBFFE;
-    final int bufferSize = 0x8000;
+    final int bufferId = 0xCAFE;
+    final int bufferSize = 0x100000;
     final int writeChunkSize = 0x1000;
 
     rwBufferTest.testMultipleWrite(allocateBuffer(bufferId, bufferSize), writeChunkSize);
@@ -71,8 +71,8 @@ public final class MemoryBufferTest {
 
   @Test
   public void testSeekFirst() {
-    final int bufferId = 0xBFFE;
-    final int bufferSize = 0x8000;
+    final int bufferId = 0xCAFE;
+    final int bufferSize = 0x100000;
 
     rwBufferTest.testSeekFirst(allocateBuffer(bufferId, bufferSize));
   }
