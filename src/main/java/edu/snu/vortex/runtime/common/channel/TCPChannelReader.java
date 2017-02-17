@@ -15,19 +15,28 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+import edu.snu.vortex.runtime.common.DataBufferAllocator;
+import edu.snu.vortex.runtime.common.DataBufferType;
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.executor.SerializedInputContainer;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * An implementation of TCP channel reader.
  * @param <T> the type of data records that transfer via the channel.
  */
-public class TCPChannelReader<T> implements ChannelReader<T> {
+public final class TCPChannelReader<T> implements ChannelReader<T> {
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private ChannelState channelState;
+  private SerializedInputContainer serInputContainer;
 
   TCPChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
@@ -40,12 +49,42 @@ public class TCPChannelReader<T> implements ChannelReader<T> {
 
   @Override
   public List<T> read() {
-    return null;
+    if (!isOpen()) {
+      return null;
+    }
+
+    final List<T> data = new ArrayList<>();
+    try {
+      ObjectInputStream objInputStream = new ObjectInputStream(serInputContainer);
+      while (true) {
+        final T record = (T) objInputStream.readObject();
+        if (record != null) {
+          data.add(record);
+        } else {
+          break; // No more record to read.
+        }
+      }
+    } catch (IOException | ClassNotFoundException e) {
+      e.printStackTrace();
+      throw new RuntimeException("Failed to read data records from the channel.");
+    }
+
+    return data;
   }
 
   @Override
   public void initialize() {
+    throw new NotImplementedException("This method has yet to be implemented.");
+  }
+
+  public void initialize(final DataBufferAllocator bufferAllocator,
+                         final DataBufferType bufferType) {
+    serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
     channelState = ChannelState.OPEN;
+  }
+
+  public boolean isOpen() {
+    return getState() == ChannelState.OPEN;
   }
 
   @Override

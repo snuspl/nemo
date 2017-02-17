@@ -15,9 +15,18 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-/**
- * An interface for output readers.
- */
-public interface OutputWriter {
+import java.util.List;
 
+/**
+ * An interface for output writers.
+ * @param <T> The type of data record which will be written in this output writer.
+ */
+public interface OutputWriter<T> {
+  /**
+   * write the given records to {@link edu.snu.vortex.runtime.common.channel.ChannelWriter}.
+   * which channel writer each record will be written to will be determined
+   * according to the partitioner implementation.
+   * @param records records to be written.
+   */
+  void writeOutputRecords(List<T> records);
 }

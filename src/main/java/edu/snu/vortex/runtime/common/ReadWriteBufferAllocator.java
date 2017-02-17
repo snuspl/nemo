@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common;
 /**
  * The interface that buffer allocators should implement.
  */
-public interface BufferAllocator {
+public interface ReadWriteBufferAllocator {
 
   /**
    * @return the default buffer size of the buffer allocator.

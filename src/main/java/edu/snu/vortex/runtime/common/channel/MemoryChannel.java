@@ -42,7 +42,9 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
     this.dataRecords = new ArrayList<>();
   }
 
-  @Override
+  /**
+   * Initializes the internal state of this channel.
+   */
   public void initialize() {
     channelState = ChannelState.OPEN;
   }

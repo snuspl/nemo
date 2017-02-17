@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Allocates {@link MemoryBuffer} which can be used as {@link ReadWriteBuffer}.
  */
-public final class MemoryBufferAllocator implements BufferAllocator {
+public final class MemoryBufferAllocator implements ReadWriteBufferAllocator {
   private final int defaultBufSize;
   private final AtomicInteger idFactory = new AtomicInteger(0);
 

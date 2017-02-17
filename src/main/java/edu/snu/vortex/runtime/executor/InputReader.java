@@ -15,8 +15,17 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import java.util.List;
+
 /**
  * An interface for input readers.
+ * @param <T> The type of data records which will be read from the input reader.
  */
-public interface InputReader {
+public interface InputReader<T> {
+  /**
+   * return all records from all {@link edu.snu.vortex.runtime.common.channel.ChannelReader} bind to the input.
+   * @return list of input records.
+   */
+  List<T> readInputRecords();
+
 }
