@@ -15,67 +15,44 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
 
-import java.io.Serializable;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
 
 /**
- * Communicator.
+ * ExecutorCommunicator.
  */
-public class CommunicationManager {
-  private static final Logger LOG = Logger.getLogger(CommunicationManager.class.getName());
-  private final ExecutorService communicationThread;
-  private final BlockingDeque<RtControllable> incomingRtControllables;
-  private final BlockingDeque<RtControllable> outgoingRtControllables;
+public class MasterCommunicator extends Communicator{
+  private static final Logger LOG = Logger.getLogger(MasterCommunicator.class.getName());
 
-  public CommunicationManager() {
-    communicationThread = Executors.newSingleThreadExecutor();
-    incomingRtControllables = new LinkedBlockingDeque<>();
-    outgoingRtControllables = new LinkedBlockingDeque<>();
+  private ResourceManager resourceManager;
+
+  public MasterCommunicator() {
+    super(RtConfig.MASTER_NAME);
   }
 
-  public final void initialize() {
-    communicationThread.execute(new RtControllableHandler());
+  public void initialize(final ResourceManager resourceManager) {
+    this.resourceManager = resourceManager;
   }
 
-  private void sendRtControllable(final String receiverId,
-                                  final RuntimeDefinitions.RtControllableMsg message,
-                                  final Serializable data) {
-    // Create RtControllable
-    final RtControllable toSend = new RtControllable("master", receiverId, message, data);
-
-    // Send RtControllable to the receiver
-    outgoingRtControllables.offer(toSend);
-  }
-
-  private void onRtControllableReceived(final RtControllable rtControllable) {
-    incomingRtControllables.offer(rtControllable);
-  }
-
-  private void sendRtControllable(final RtControllable rtControllable) {
-    outgoingRtControllables.offer(rtControllable);
-  }
-
-  /**
-   * RtControllableHandler.
-   */
-  private class RtControllableHandler implements Runnable {
-    @Override
-    public void run() {
-      final RtControllable rtControllable;
-      try {
-        rtControllable = incomingRtControllables.take();
-
-        // call private methods depending on the rtControllable type
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
+  @Override
+  public void processRtControllable(final RtControllable rtControllable) {
+    final RuntimeDefinitions.RtControllableMsg message = rtControllable.getMessage();
+    switch (message.getType()) {
+    case ExecutorReady:
+      final String executorId = message.getExecutorReadyMsg().getExecutorId();
+      final Communicator newCommunicator = resourceManager.getResourceById(executorId).getExecutorCommunicator();
+      resourceManager.onResourceAllocated(executorId);
+      registerNewRemoteCommunicator(executorId, newCommunicator);
+      routingTable.forEach(((id, communicator) ->
+          communicator.registerNewRemoteCommunicator(executorId, newCommunicator)));
+      break;
+    default:
+      throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }
   }
 }
