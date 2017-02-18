@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.common.execplan;
 
 /**
  * Runtime attributes.
+ * TODO #000: Add enums to .proto
  */
 public final class RtAttributes {
   /**
