@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.example;
 
-import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
 
 import java.util.HashMap;

@@ -24,7 +24,7 @@ import edu.snu.vortex.compiler.ir.operator.Do;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.compiler.ir.operator.Source;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
 
 import java.util.*;
