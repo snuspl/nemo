@@ -37,21 +37,25 @@ public final class MemoryBufferAllocator implements BufferAllocator {
   }
 
   public MemoryBuffer allocateBuffer(final long requiredBufSize) {
-    final Integer bufferId = idFactory.getAndIncrement();
+    final int bufferId = idFactory.getAndIncrement();
     if (requiredBufSize > Integer.MAX_VALUE) {
       throw new InvalidParameterException("the required buffer size is too large.");
     }
 
     final int bufferSize = (int) requiredBufSize;
+    final ByteBuffer internalBuffer = ByteBuffer.allocate(bufferSize);
+
     final MemoryBuffer memoryBuffer = new MemoryBuffer(bufferId,
-                                                      ByteBuffer.allocate(bufferSize),
+                                                      internalBuffer,
                                                       bufferSize);
 
     return memoryBuffer;
   }
 
   public void releaseBuffer(final ReadWriteBuffer buffer) {
-    releaseBuffer((MemoryBuffer) buffer);
+    if (buffer instanceof MemoryBuffer) {
+      releaseBuffer((MemoryBuffer) buffer);
+    }
   }
 
   private void releaseBuffer(final MemoryBuffer memoryBuffer) {

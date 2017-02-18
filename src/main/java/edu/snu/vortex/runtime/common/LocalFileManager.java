@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +31,34 @@ public final class LocalFileManager {
   private final int numSubDirsPerRootDir;
 
   // TODO #000: change to get the list of file spaces not as parameter but within an executor configuration
-  LocalFileManager(final List<File> fileSpaces, final int numSubDirsPerRootDir) {
-    this.rootDirs = new ArrayList<>(fileSpaces.size());
-    this.subDirs = new ArrayList<>(fileSpaces.size());
+  LocalFileManager(final List<File> fileSpaces, final int numSubDirsPerRootDir) throws IOException {
+    final int numFileSpaces = fileSpaces.size();
+    this.rootDirs = new ArrayList<>(numFileSpaces);
+    this.subDirs = new ArrayList<>(numFileSpaces);
     this.numSubDirsPerRootDir = numSubDirsPerRootDir;
-    for (int i = 0; i < fileSpaces.size(); i++) {
-      this.subDirs.add(new ArrayList<>(numSubDirsPerRootDir));
-    }
 
-    fileSpaces.forEach(fs -> this.rootDirs.add(new File(fs, ROOT_DIR_NAME)));
+    fileSpaces.forEach(fs -> {
+      final File rootDir = new File(fs, ROOT_DIR_NAME);
+
+      rootDir.mkdir();
+      rootDir.deleteOnExit();
+      this.rootDirs.add(rootDir);
+    });
+
+    for (int i = 0; i < numFileSpaces; i++) {
+      final List<File> subDirsPerRoot = new ArrayList<>(numSubDirsPerRootDir);
+
+      for (int j = 0; j < numSubDirsPerRootDir; j++) {
+        final File newDir = new File(rootDirs.get(i), String.format("%02x", j));
+        if (!newDir.exists() && !newDir.mkdir()) {
+          throw new IOException("failed to create a directory in " + newDir.getParent());
+        }
+
+        newDir.deleteOnExit();
+        subDirsPerRoot.add(newDir);
+      }
+      this.subDirs.add(subDirsPerRoot);
+    }
   }
 
   public File getFileByName(final String fileName) throws IOException {
@@ -49,16 +69,12 @@ public final class LocalFileManager {
 
     synchronized (subDirs.get(rootDirIdx)) {
       final File subDir = subDirs.get(rootDirIdx).get(subDirIdx);
-      if (subDir != null) {
-        file = new File(subDir, fileName);
-      } else {
-        final File newDir = new File(rootDirs.get(rootDirIdx), String.format("%02x", subDirIdx));
-        if (!newDir.exists() && !newDir.mkdir()) {
-          throw new IOException("failed to create a directory in " + newDir);
-        }
-        subDirs.get(rootDirIdx).set(subDirIdx, newDir);
-        file = new File(newDir, fileName);
+      if (subDir == null) {
+        throw new FileNotFoundException("failed to find the sub directory " + subDir.getPath());
       }
+
+      file = new File(subDir, fileName);
+      file.createNewFile();
     }
 
     return file;
