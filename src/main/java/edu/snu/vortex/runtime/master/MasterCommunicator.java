@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor;
+package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.comm.RtControllable;
-import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
-import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+
+import java.io.Serializable;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
-
-import static edu.snu.vortex.runtime.common.comm.RuntimeMessages.Type.ScheduleTaskGroup;
-
+import java.util.logging.Logger;
 
 /**
  * Communicator.
  */
-public class Communicator {
+public class CommunicationManager {
+  private static final Logger LOG = Logger.getLogger(CommunicationManager.class.getName());
   private final ExecutorService communicationThread;
   private final BlockingDeque<RtControllable> incomingRtControllables;
   private final BlockingDeque<RtControllable> outgoingRtControllables;
 
-  public Communicator() {
+  public CommunicationManager() {
     communicationThread = Executors.newSingleThreadExecutor();
     incomingRtControllables = new LinkedBlockingDeque<>();
     outgoingRtControllables = new LinkedBlockingDeque<>();
@@ -44,10 +44,11 @@ public class Communicator {
     communicationThread.execute(new RtControllableHandler());
   }
 
-  public void sendRtControllable(final String receiverId,
-                                 final RuntimeMessages.RtControllableMsg rtControllableMsg) {
+  private void sendRtControllable(final String receiverId,
+                                  final RuntimeDefinitions.RtControllableMsg message,
+                                  final Serializable data) {
     // Create RtControllable
-    final RtControllable toSend = new RtControllable("master", receiverId, rtControllableMsg);
+    final RtControllable toSend = new RtControllable("master", receiverId, message, data);
 
     // Send RtControllable to the receiver
     outgoingRtControllables.offer(toSend);
@@ -55,6 +56,10 @@ public class Communicator {
 
   private void onRtControllableReceived(final RtControllable rtControllable) {
     incomingRtControllables.offer(rtControllable);
+  }
+
+  private void sendRtControllable(final RtControllable rtControllable) {
+    outgoingRtControllables.offer(rtControllable);
   }
 
   /**
@@ -73,15 +78,4 @@ public class Communicator {
       }
     }
   }
-
-  private void processRtControllable(final RtControllable rtControllable) {
-    switch (rtControllable.getMessage().getType()) {
-    case ScheduleTaskGroup:
-      break;
-    default:
-      throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
-    }
-  }
-
-  // sendExecutorHeartBeat handled by REEF
 }
