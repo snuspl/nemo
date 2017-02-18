@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
 
 import com.google.api.client.util.ArrayMap;
+import edu.snu.vortex.runtime.common.IdGenerator;
 
 import java.util.HashMap;
 import java.util.Map;
