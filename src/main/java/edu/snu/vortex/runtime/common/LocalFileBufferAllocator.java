@@ -31,7 +31,7 @@ public final class LocalFileBufferAllocator implements ReadWriteBufferAllocator 
   private final AtomicInteger idFactory = new AtomicInteger(0);
   private final Map<Integer, File> bufferIdToFileMap;
 
-  LocalFileBufferAllocator(final LocalFileManager fileManager) {
+  public LocalFileBufferAllocator(final LocalFileManager fileManager) {
     this.fileManager = fileManager;
     bufferIdToFileMap = new HashMap<>();
   }

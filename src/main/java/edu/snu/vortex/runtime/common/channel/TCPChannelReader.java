@@ -57,9 +57,9 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     try {
       ObjectInputStream objInputStream = new ObjectInputStream(serInputContainer);
       while (true) {
-        final T record = (T) objInputStream.readObject();
-        if (record != null) {
-          data.add(record);
+        final List<T> nextRecords = (List<T>) objInputStream.readObject();
+        if (nextRecords != null) {
+          data.addAll(nextRecords);
         } else {
           break; // No more record to read.
         }

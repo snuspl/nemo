@@ -28,7 +28,7 @@ public final class MemoryBufferAllocator implements ReadWriteBufferAllocator {
   private final AtomicInteger idFactory = new AtomicInteger(0);
 
 
-  MemoryBufferAllocator(final int defaultBufSize) {
+  public MemoryBufferAllocator(final int defaultBufSize) {
     this.defaultBufSize = defaultBufSize;
   }
 

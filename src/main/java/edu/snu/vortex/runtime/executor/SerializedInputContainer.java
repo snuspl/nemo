@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.DataBufferType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -74,17 +75,29 @@ public class SerializedInputContainer extends InputStream {
     return (int) data[0];
   }
 
+  public void printStatistics() {
+    final Iterator<DataBuffer> iterator = internalBuffers.iterator();
+    long totalDataSize = 0;
+
+    while (iterator.hasNext()) {
+      totalDataSize += iterator.next().getRemainingDataSize();
+    }
+
+    System.out.println("totalDataSize = " + totalDataSize + " / numBuffers = " + internalBuffers.size());
+  }
+
   public synchronized boolean isClosed() {
     return isClosed;
   }
 
   /**
-   * Add new input data into this container.
-   * Internally, the container appends a new {@link DataBuffer} to the internal buffer list.
+   * Copy new input data into this container.
+   * Internally, the container appends a new {@link DataBuffer} in which the input data is copied
+   * to the internal buffer list.
    * @param inputData Input data.
    * @param dataSize The size of the input data.
    */
-  public synchronized void addInputData(final byte[] inputData, final int dataSize) {
+  public synchronized void copyInputDataFrom(final byte[] inputData, final int dataSize) {
     final DataBuffer buffer = bufferAllocator.allocateBuffer(internalBufferType, dataSize);
     if (buffer == null) {
       throw new RuntimeException("Failed to allocate an internal buffer.");
