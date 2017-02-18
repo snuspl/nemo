@@ -15,19 +15,49 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtStage;
+import edu.snu.vortex.runtime.common.comm.RtControllable;
+import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtStage;
 import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * RtMaster.
  */
 public class RtMaster {
-//  private final Scheduler scheduler;
-//  private final ExecutionStateManager executionStateManager;
+  private static final Logger LOG = Logger.getLogger(RtMaster.class.getName());
+
+  private final RtConfig rtConfig;
+  private static final RtConfig.RtExecMode DEFAULT_RUNTIME_EXECUTION_MODE = RtConfig.RtExecMode.STREAM;
+
+  private final Scheduler scheduler;
+  private final ResourceManager resourceManager;
+  private final ExecutionStateManager executionStateManager;
+  private final MasterCommunicator masterCommunicator;
+
   private ExecutionPlan executionPlan;
+
+  public RtMaster() {
+    this.rtConfig = new RtConfig(DEFAULT_RUNTIME_EXECUTION_MODE);
+    this.scheduler = new Scheduler();
+    this.resourceManager = new ResourceManager();
+    this.executionStateManager = new ExecutionStateManager();
+    this.masterCommunicator = new MasterCommunicator();
+  }
+
+  public void initialize()  {
+    // Use default configs
+    Map<RtAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
+    defaultResources.put(RtAttributes.ResourceType.TRANSIENT, 3);
+    defaultResources.put(RtAttributes.ResourceType.RESERVED, 1);
+    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
+  }
 
   public final void submitExecutionPlan(final ExecutionPlan execPlan) {
     this.executionPlan = execPlan;
@@ -42,6 +72,10 @@ public class RtMaster {
     } catch (EmptyExecutionPlanException e) {
       onJobCompleted();
     }
+  }
+
+  public void onRtControllableReceived(final RtControllable rtControllable) {
+
   }
 
   private void launchNextStage() throws EmptyExecutionPlanException {
