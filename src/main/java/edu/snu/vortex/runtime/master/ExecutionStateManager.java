@@ -16,13 +16,17 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
+import edu.snu.vortex.runtime.common.execplan.RtStage;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * ExecutionStateManager.
  */
 public class ExecutionStateManager {
+  private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
   private final Map<String, Set<String>> rsIdToTaskIdMap;
   private final Map<String, ExecutionState.TaskState> taskIdToTaskStateMap;
 
