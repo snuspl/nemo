@@ -33,7 +33,7 @@ public final class SerializedInOutContainerTest {
   private static final String ROOT_FILE_SPACE = "./";
   private static final String FILE_SPACE_PREFIX = "file-space-";
   private static final int NUM_DATA_STRINGS_PER_DATA_SET = 0x1000;
-  private static final int NUM_DATA_SET = 0x1000;
+  private static final int NUM_DATA_SET = 0x10;
   private static final int NUM_FILE_SPACE = 0x10;
   private static final int NUM_SUB_DIRS_PER_FSPACE = 0x40;
   private static final int DEFAULT_BUF_SIZE = 0x400;
