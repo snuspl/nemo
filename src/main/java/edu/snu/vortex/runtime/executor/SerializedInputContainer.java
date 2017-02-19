@@ -34,7 +34,6 @@ public class SerializedInputContainer extends InputStream {
   private final byte[] data;
   private List<DataBuffer> internalBuffers;
   private DataBuffer currentReadBuffer;
-  private boolean isClosed;
 
   public SerializedInputContainer(final DataBufferAllocator bufferAllocator,
                            final DataBufferType internalBufferType) {
@@ -43,14 +42,11 @@ public class SerializedInputContainer extends InputStream {
     this.currentReadBuffer = null;
     this.internalBuffers = new ArrayList<>();
     this.internalBufferType = internalBufferType;
-    this.isClosed = false;
   }
 
   @Override
   public synchronized int read() throws IOException {
-    if (isClosed()) {
-      throw new IOException("This container has already been closed.");
-    } else if (currentReadBuffer == null) {
+    if (currentReadBuffer == null) {
       if (internalBuffers.isEmpty()) {
         return -1;
       }
@@ -86,10 +82,6 @@ public class SerializedInputContainer extends InputStream {
     System.out.println("totalDataSize = " + totalDataSize + " / numBuffers = " + internalBuffers.size());
   }
 
-  public synchronized boolean isClosed() {
-    return isClosed;
-  }
-
   /**
    * Copy new input data into this container.
    * Internally, the container appends a new {@link DataBuffer} in which the input data is copied
@@ -115,7 +107,6 @@ public class SerializedInputContainer extends InputStream {
 
   @Override
   public synchronized void close() {
-    isClosed = true;
-    clear();
+
   }
 }

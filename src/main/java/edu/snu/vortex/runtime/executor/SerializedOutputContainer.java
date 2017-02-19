@@ -21,7 +21,6 @@ public final class SerializedOutputContainer extends OutputStream {
   private final long internalBufferSize;
   private DataBuffer currentWriteBuffer;
   private final byte[] data;
-  private boolean isClosed;
 
 
   SerializedOutputContainer(final DataBufferAllocator bufferAllocator,
@@ -32,7 +31,6 @@ public final class SerializedOutputContainer extends OutputStream {
     this.internalBufferSize = internalBufferSize;
     this.internalBufferType = internalBufferType;
     this.data = new byte[1];
-    this.isClosed = false;
   }
 
   public SerializedOutputContainer(final DataBufferAllocator bufferAllocator,
@@ -53,10 +51,6 @@ public final class SerializedOutputContainer extends OutputStream {
 
   @Override
   public synchronized void write(final int b) throws IOException {
-    if (isClosed()) {
-      throw new IOException("This " + this.getClass().getSimpleName() + " has already been closed.");
-    }
-
     data[0] = (byte) b;
 
     if (currentWriteBuffer == null) {
@@ -101,13 +95,9 @@ public final class SerializedOutputContainer extends OutputStream {
     internalBuffers.clear();
   }
 
-  public synchronized boolean isClosed() {
-    return isClosed;
-  }
 
   @Override
   public synchronized void close() {
-    clear();
-    isClosed = true;
+
   }
 }

@@ -32,10 +32,11 @@ import static org.junit.Assert.assertTrue;
 public final class SerializedInOutContainerTest {
   private static final String ROOT_FILE_SPACE = "./";
   private static final String FILE_SPACE_PREFIX = "file-space-";
-  private static final int NUM_DATA_STRINGS = 0x400;
+  private static final int NUM_DATA_STRINGS_PER_DATA_SET = 0x1000;
+  private static final int NUM_DATA_SET = 0x1000;
   private static final int NUM_FILE_SPACE = 0x10;
   private static final int NUM_SUB_DIRS_PER_FSPACE = 0x40;
-  private static final int DEFAULT_BUF_SIZE = 0x8000;
+  private static final int DEFAULT_BUF_SIZE = 0x400;
   private static final DataBufferType DATA_BUFFER_TYPE = DataBufferType.LOCAL_MEMORY;
 
   private SerializedOutputContainer serOutputContainer;
@@ -93,42 +94,87 @@ public final class SerializedInOutContainerTest {
 
   @Test
   public void testSerializeAndDeserializeSingleListOfStrings() {
-    final List<String> originalData = generateDataset(NUM_DATA_STRINGS);
+    final List<String> originalData = generateDataset(NUM_DATA_STRINGS_PER_DATA_SET);
     byte[] byteBuffer = new byte[DEFAULT_BUF_SIZE];
 
     try {
       final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
-      out.writeObject(originalData.get(0));
+      out.writeObject(originalData);
       out.close();
 
-
-      int numChunks = 0;
-      long totalDataSize = 0;
-      while(true) {
-        final int chunkSize = serOutputContainer.copySingleDataBufferTo(byteBuffer, byteBuffer.length);
-        if (chunkSize == -1) { // The output buffer is smaller than the size of output.
-          byteBuffer = new byte[2 * byteBuffer.length];
-          continue;
-        } else if (chunkSize == 0) { // No more data to read in the output container.
-          break;
-        }
-
-        serInputContainer.copyInputDataFrom(byteBuffer, chunkSize);
-
-        numChunks++;
-        totalDataSize += chunkSize;
-      }
-
-      System.out.println("totalDataSize = " + totalDataSize + " / numChunks = " + numChunks);
-      serInputContainer.printStatistics();
+      transferDataBetweenInOutContainers(serOutputContainer, serInputContainer);
 
       final ObjectInputStream in = new ObjectInputStream(serInputContainer);
       final List<String> deserializedData = (List<String>) in.readObject();
-
-      assertTrue(compareStringLists(originalData, deserializedData));
-
-      out.close();
       in.close();
+
+      serOutputContainer.clear();
+      serInputContainer.clear();
+
+      assertTrue(compareStringLists(originalData, deserializedData)); // Evaluation.
+
+    } catch (IOException | ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+
+  }
+
+  private void transferDataBetweenInOutContainers(final SerializedOutputContainer srcContainer,
+                                                  final SerializedInputContainer dstContainer) {
+    byte[] byteBuffer = new byte[DEFAULT_BUF_SIZE];
+
+    int numChunks = 0;
+    long totalDataSize = 0;
+    while (true) {
+      final int chunkSize = srcContainer.copySingleDataBufferTo(byteBuffer, byteBuffer.length);
+      if (chunkSize == -1) { // The output buffer is smaller than the size of output.
+        byteBuffer = new byte[2 * byteBuffer.length];
+        continue;
+      } else if (chunkSize == 0) { // No more data to read in the output container.
+        break;
+      }
+
+      dstContainer.copyInputDataFrom(byteBuffer, chunkSize);
+
+      numChunks++;
+      totalDataSize += chunkSize;
+    }
+
+    System.out.println("totalDataSize = " + totalDataSize + " / numChunks = " + numChunks);
+    dstContainer.printStatistics();
+  }
+
+  @Test
+  public void testSerializeAndDeserializeMultipleListsOfStrings() {
+    final List<List<String>> originalDataSets = new ArrayList<>();
+    final List<List<String>> deserializedDataSets = new ArrayList<>();
+
+    for (int i = 0; i < NUM_DATA_SET; i++) {
+      originalDataSets.add(generateDataset(NUM_DATA_STRINGS_PER_DATA_SET));
+    }
+
+    try {
+      final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
+      for (int idx = 0; idx < NUM_DATA_SET; idx++) {
+        out.writeObject(originalDataSets.get(idx));
+      }
+      out.close();
+
+      transferDataBetweenInOutContainers(serOutputContainer, serInputContainer);
+
+      final ObjectInputStream in = new ObjectInputStream(serInputContainer);
+      for (int idx = 0; idx < NUM_DATA_SET; idx++) {
+        deserializedDataSets.add((List<String>) in.readObject());
+      }
+      in.close();
+
+      serOutputContainer.clear();
+      serInputContainer.clear();
+
+      for (int idx = 0; idx < NUM_DATA_SET; idx++) {
+        assertTrue(compareStringLists(originalDataSets.get(idx), deserializedDataSets.get(idx)));
+      }
+
     } catch (IOException | ClassNotFoundException e) {
       e.printStackTrace();
     }
