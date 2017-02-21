@@ -26,17 +26,20 @@ import java.util.logging.Logger;
 /**
  * ExecutorCommunicator.
  */
-public class MasterCommunicator extends Communicator{
+public class MasterCommunicator extends Communicator {
   private static final Logger LOG = Logger.getLogger(MasterCommunicator.class.getName());
 
   private ResourceManager resourceManager;
+  private ExecutionStateManager executionStateManager;
 
   public MasterCommunicator() {
     super(RtConfig.MASTER_NAME);
   }
 
-  public void initialize(final ResourceManager resourceManager) {
+  public void initialize(final ResourceManager resourceManager,
+                         final ExecutionStateManager executionStateManager) {
     this.resourceManager = resourceManager;
+    this.executionStateManager = executionStateManager;
   }
 
   @Override
@@ -48,9 +51,14 @@ public class MasterCommunicator extends Communicator{
       final Communicator newCommunicator = resourceManager.getResourceById(executorId).getExecutorCommunicator();
       resourceManager.onResourceAllocated(executorId);
       registerNewRemoteCommunicator(executorId, newCommunicator);
-      routingTable.forEach(((id, communicator) ->
+      getRoutingTable().forEach(((id, communicator) ->
           communicator.registerNewRemoteCommunicator(executorId, newCommunicator)));
       break;
+    case TaskStateChanged:
+      final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = message.getTaskStateChangedMsg();
+      final String taskGroupId = taskStateChangedMsg.getTaskGroupId();
+      final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
+      executionStateManager.onTaskStateChanged(taskGroupId, newState);
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }
