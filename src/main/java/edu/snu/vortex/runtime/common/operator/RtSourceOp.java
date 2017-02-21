@@ -15,15 +15,28 @@
  */
 package edu.snu.vortex.compiler.ir.operator;
 
-import java.util.Map;
+import java.util.List;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
+ * Source operator.
  * @param <O> output type.
- * @param <T> .
  */
-public abstract class RtDoOp<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public abstract class Source<O> extends Operator<Void, O> {
+  // Maybe make the parameter a any-type hashmap(attributes/options)
+
+  /**
+   * Getter for readers.
+   * @param desiredBundleSizeBytes .
+   * @return List of readers.
+   * @throws Exception .
+   */
+  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+
+  /**
+   * Interface for reader.
+   * @param <O> output type.
+   */
+  public interface Reader<O> {
+    Iterable<O> read() throws Exception;
+  }
 }

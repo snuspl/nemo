@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.runtime.common.operator;
 
-import java.util.Map;
+import edu.snu.vortex.compiler.ir.operator.Operator;
 
 /**
- * RtDoOp operator.
+ * GroupByKey operator.
  * @param <I> input type.
  * @param <O> output type.
- * @param <T> .
  */
-public abstract class RtDoOp<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public abstract class GroupByKey<I, O> extends Operator<I, O> {
 }
