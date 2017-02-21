@@ -18,10 +18,13 @@ package edu.snu.vortex.runtime.common.channel;
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.executor.DataTransferListener;
+import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedInputContainer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,8 +38,10 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   private final String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
+  private DataTransferManager transferManager;
   private ChannelState channelState;
   private SerializedInputContainer serInputContainer;
+  private int numRecordListsInContainer = 0;
 
   TCPChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
@@ -45,25 +50,21 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     this.channelMode = ChannelMode.INPUT;
     this.channelType = ChannelType.TCP_PIPE;
     this.channelState = ChannelState.CLOSE;
+    this.numRecordListsInContainer = 0;
   }
 
-  @Override
-  public List<T> read() {
-    if (!isOpen()) {
-      return null;
-    }
-
+  private List<T> deserializeDataFromContainer() {
     final List<T> data = new ArrayList<>();
+
     try {
       ObjectInputStream objInputStream = new ObjectInputStream(serInputContainer);
-      while (true) {
-        final List<T> nextRecords = (List<T>) objInputStream.readObject();
-        if (nextRecords != null) {
-          data.addAll(nextRecords);
-        } else {
-          break; // No more record to read.
-        }
+      while (numRecordListsInContainer != 0) {
+        data.addAll((List<T>) objInputStream.readObject());
+        numRecordListsInContainer--;
       }
+
+      objInputStream.close();
+
     } catch (IOException | ClassNotFoundException e) {
       e.printStackTrace();
       throw new RuntimeException("Failed to read data records from the channel.");
@@ -73,14 +74,54 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   }
 
   @Override
+  public List<T> read() {
+    if (!isOpen()) {
+      return null;
+    }
+
+    return deserializeDataFromContainer();
+  }
+
+  @Override
   public void initialize() {
     throw new NotImplementedException("This method has yet to be implemented.");
   }
 
   public void initialize(final DataBufferAllocator bufferAllocator,
-                         final DataBufferType bufferType) {
-    serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
-    channelState = ChannelState.OPEN;
+                         final DataBufferType bufferType,
+                         final DataTransferManager transferManager) {
+    this.serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
+    this.channelState = ChannelState.OPEN;
+    this.transferManager = transferManager;
+    transferManager.registerReceiverSideTransferListener(channelId, new ReceiverSideListener());
+  }
+
+  private final class ReceiverSideListener implements DataTransferListener {
+
+    @Override
+    public String getOwnerTaskId() {
+      return dstTaskId;
+    }
+
+    @Override
+    public void onDataTransferRequest(String channelId, String dstTaskId) {
+
+    }
+
+    @Override
+    public void onDataTransferReadyNotification(String channelId, String srcTaskId) {
+      transferManager.sendTransferRequestToSender(channelId, getOwnerTaskId());
+    }
+
+    @Override
+    public void onReceiveDataChunk(ByteBuffer chunk, int chunkSize) {
+      serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
+    }
+
+    @Override
+    public void onDataTransferTermination(int numObjListsInData) {
+      numRecordListsInContainer += numObjListsInData;
+    }
   }
 
   public boolean isOpen() {

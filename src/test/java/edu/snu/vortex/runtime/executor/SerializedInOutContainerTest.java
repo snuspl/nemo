@@ -95,7 +95,6 @@ public final class SerializedInOutContainerTest {
   @Test
   public void testSerializeAndDeserializeSingleListOfStrings() {
     final List<String> originalData = generateDataset(NUM_DATA_STRINGS_PER_DATA_SET);
-    byte[] byteBuffer = new byte[DEFAULT_BUF_SIZE];
 
     try {
       final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);

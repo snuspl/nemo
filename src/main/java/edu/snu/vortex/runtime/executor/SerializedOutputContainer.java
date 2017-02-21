@@ -23,9 +23,9 @@ public final class SerializedOutputContainer extends OutputStream {
   private final byte[] data;
 
 
-  SerializedOutputContainer(final DataBufferAllocator bufferAllocator,
-                           final DataBufferType internalBufferType,
-                           final long internalBufferSize) {
+  public SerializedOutputContainer(final DataBufferAllocator bufferAllocator,
+                                   final DataBufferType internalBufferType,
+                                   final long internalBufferSize) {
     this.bufferAllocator = bufferAllocator;
     this.internalBuffers = new ArrayList<>();
     this.internalBufferSize = internalBufferSize;

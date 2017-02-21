@@ -18,10 +18,13 @@ package edu.snu.vortex.runtime.common.channel;
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.executor.DataTransferListener;
+import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
@@ -29,6 +32,7 @@ import java.util.List;
  * @param <T> the type of data records that transfer via the channel.
  */
 public final class TCPChannelWriter<T> implements ChannelWriter<T> {
+  private static final long CONTAINER_INTERNAL_BUF_SIZE = 0x8000; // 32KB.
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
@@ -36,26 +40,29 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private final ChannelType channelType;
   private ChannelState channelState;
   private SerializedOutputContainer serOutputContainer;
+  private DataTransferManager transferManager;
+  private DataTransferListener dataTransferListener;
+  private int numRecordLists; // Indicates the number of data record lists serialized in the output container.
 
-  TCPChannelWriter(final String channelId, final String srcTaskId, final String dstTaskId) {
+  TCPChannelWriter(final String channelId,
+                   final String srcTaskId,
+                   final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelMode = ChannelMode.OUTPUT;
     this.channelType = ChannelType.TCP_PIPE;
     this.channelState = ChannelState.CLOSE;
+    this.numRecordLists = 0;
   }
 
-  @Override
-  public void write(final List<T> data) {
-    if (!isOpen()) {
-      return;
-    }
-
+  private void serializeDataIntoContainer(final List<T> data) {
     try {
       final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
       out.writeObject(data);
       out.close();
+
+      numRecordLists++;
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -64,11 +71,21 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   }
 
   @Override
+  public void write(final List<T> data) {
+    if (!isOpen()) {
+      return;
+    }
+
+    serializeDataIntoContainer(data);
+  }
+
+  @Override
   public void flush() {
     if (!isOpen()) {
       return;
     }
     //TODO #000: Notify the master-side shuffle manager that the data is ready.
+    transferManager.notifyTransferReadyToMaster(channelId, srcTaskId);
   }
 
   @Override
@@ -83,10 +100,61 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
    *                   that will be used in {@link SerializedOutputContainer}.
    */
   public void initialize(final DataBufferAllocator bufferAllocator,
-                         final DataBufferType bufferType
+                         final DataBufferType bufferType,
+                         final DataTransferManager transferManager
                          ) {
-    channelState = ChannelState.OPEN;
-    serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType);
+    this.channelState = ChannelState.OPEN;
+    this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, CONTAINER_INTERNAL_BUF_SIZE);
+    this.transferManager = transferManager;
+
+    transferManager.registerSenderSideTransferListener(channelId, new SenderSideTransferListener());
+  }
+
+  private final class SenderSideTransferListener implements DataTransferListener {
+
+    @Override
+    public String getOwnerTaskId() {
+      return srcTaskId;
+    }
+
+    @Override
+    public void onDataTransferRequest(String requestChannelId, String requestTaskId) {
+
+      if (channelId != requestChannelId || dstTaskId != requestTaskId) {
+        throw new RuntimeException("Received a transfer request from an invalid source.");
+      }
+
+      ByteBuffer chunk = ByteBuffer.allocate((int) CONTAINER_INTERNAL_BUF_SIZE);
+      while (true) {
+        final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
+        if (readSize == -1) {
+          chunk = ByteBuffer.allocate(2 * chunk.capacity());
+          continue;
+        } else if (readSize == 0) {
+          break;
+        }
+
+        transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
+      }
+
+      transferManager.sendDataTransferTerminationToReceiver(channelId, numRecordLists);
+      numRecordLists = 0;
+    }
+
+    @Override
+    public void onDataTransferReadyNotification(String channelId, String srcTaskId) {
+
+    }
+
+    @Override
+    public void onReceiveDataChunk(ByteBuffer chunk, int chunkSize) {
+
+    }
+
+    @Override
+    public void onDataTransferTermination(int numObjListsInData) {
+
+    }
   }
 
   public boolean isOpen() {
