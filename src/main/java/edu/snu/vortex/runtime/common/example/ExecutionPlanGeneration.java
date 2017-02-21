@@ -196,7 +196,7 @@ public final class ExecutionPlanGeneration {
   }
 
   /**
-   * Empty Source.
+   * Empty RtSourceOp.
    */
   private static class EmptySource extends Source {
     @Override
