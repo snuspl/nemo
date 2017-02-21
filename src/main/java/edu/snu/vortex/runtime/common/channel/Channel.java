@@ -23,11 +23,6 @@ package edu.snu.vortex.runtime.common.channel;
 public interface Channel<T> {
 
   /**
-   * initialize the internal state and the read/writer of the channel.
-   */
-  void initialize();
-
-  /**
    * @return the channel id.
    */
   String getId();
@@ -57,8 +52,9 @@ public interface Channel<T> {
    */
   String getDstTaskId();
 
-
-
-
+  /**
+   * Initialize the internal state of the channel.
+   */
+  void initialize();
 
 }

@@ -8,17 +8,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Manager, as a wrapping of {@link BufferAllocator} implementations, allocates data buffers with different types.
+ * {@link DataBuffer} Allocator, as a wrapping of {@link ReadWriteBufferAllocator} implementations.
+ * it allocates data buffers with different types.
  * According to {@link DataBufferType},
  * it returns a certain type of {@link DataBuffer} backed by {@link ReadWriteBuffer}.
  */
-public final class DataBufferManager {
+public final class DataBufferAllocator {
   private static AtomicInteger idFactory = new AtomicInteger(0);
   private final MemoryBufferAllocator memBufAllocator;
   private final LocalFileBufferAllocator fileBufAllocator;
   private final Map<String, ReadWriteBuffer> bufIdToRWBufMap;
 
-  DataBufferManager(final MemoryBufferAllocator memBufAlloc,
+  public DataBufferAllocator(final MemoryBufferAllocator memBufAlloc,
                     final LocalFileBufferAllocator fileBufAlloc) {
     this.memBufAllocator = memBufAlloc;
     this.fileBufAllocator = fileBufAlloc;

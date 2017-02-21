@@ -21,10 +21,10 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 
 public class BufferAllocatorCommonTest {
-  private final BufferAllocator bufferAllocator;
+  private final ReadWriteBufferAllocator bufferAllocator;
   private final ReadWriteBufferCommonTest rwBufferTests;
 
-  BufferAllocatorCommonTest(final BufferAllocator bufferAllocator) {
+  BufferAllocatorCommonTest(final ReadWriteBufferAllocator bufferAllocator) {
     this.bufferAllocator = bufferAllocator;
     this.rwBufferTests = new ReadWriteBufferCommonTest();
   }

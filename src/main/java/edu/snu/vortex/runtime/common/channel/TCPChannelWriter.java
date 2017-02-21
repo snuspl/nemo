@@ -15,20 +15,27 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+import edu.snu.vortex.runtime.common.DataBufferAllocator;
+import edu.snu.vortex.runtime.common.DataBufferType;
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 /**
  * An implementation of TCP channel writer.
  * @param <T> the type of data records that transfer via the channel.
  */
-public class TCPChannelWriter<T> implements ChannelWriter<T> {
+public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private ChannelState channelState;
+  private SerializedOutputContainer serOutputContainer;
 
   TCPChannelWriter(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
@@ -41,17 +48,49 @@ public class TCPChannelWriter<T> implements ChannelWriter<T> {
 
   @Override
   public void write(final List<T> data) {
+    if (!isOpen()) {
+      return;
+    }
 
+    try {
+      final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
+      out.writeObject(data);
+      out.close();
+
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException("Failed to write data records to the channel.");
+    }
   }
 
   @Override
   public void flush() {
-
+    if (!isOpen()) {
+      return;
+    }
+    //TODO #000: Notify the master-side shuffle manager that the data is ready.
   }
 
   @Override
   public void initialize() {
+    throw new NotImplementedException("This method has yet to be implemented.");
+  }
+
+  /**
+   * Initializes the internal state of this channel.
+   * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
+   * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
+   *                   that will be used in {@link SerializedOutputContainer}.
+   */
+  public void initialize(final DataBufferAllocator bufferAllocator,
+                         final DataBufferType bufferType
+                         ) {
     channelState = ChannelState.OPEN;
+    serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType);
+  }
+
+  public boolean isOpen() {
+    return getState() == ChannelState.OPEN;
   }
 
   @Override

@@ -15,8 +15,17 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+
+import java.util.List;
+
 /**
  * An output writer implementation which writes output data to on-disk files.
+ * @param <T> the type of data records that are written into this output writer.
  */
-public class DiskOutputWriter implements OutputWriter {
+public class DiskOutputWriter<T> implements OutputWriter<T> {
+  @Override
+  public void writeOutputRecords(final List<T> records) {
+    throw new NotImplementedException("This method has not been implemented.");
+  }
 }

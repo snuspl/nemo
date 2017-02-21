@@ -15,8 +15,17 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+
+import java.util.List;
+
 /**
  * An output writer which writes output data into TCP channels.
+ * @param <T> The type of data records which are written into this output writer.
  */
-public class TCPOutputWriter implements OutputWriter {
+public final class TCPOutputWriter<T> implements OutputWriter<T> {
+  @Override
+  public void writeOutputRecords(final List<T> records) {
+    throw new NotImplementedException("This method has not been implemented.");
+  }
 }
