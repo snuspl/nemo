@@ -69,13 +69,6 @@ public final class RtStage {
     return rtOps.get(rtOpId);
   }
 
-  public Map<String, RtStageLink> getInputLinks() {
-    return inputLinks;
-  }
-
-  public Map<String, RtStageLink> getOutputLinks() {
-    return outputLinks;
-  }
 
   public boolean contains(final String rtOpId) {
     return rtOps.containsKey(rtOpId);
@@ -114,6 +107,30 @@ public final class RtStage {
       throw new RuntimeException("the given stage link is already in the output link list");
     }
     outputLinks.put(rtStageLink.getId(), rtStageLink);
+  }
+
+  public String getRtStageId() {
+    return rtStageId;
+  }
+
+  public Map<String, RtStageLink> getInputLinks() {
+    return inputLinks;
+  }
+
+  public Map<String, RtStageLink> getOutputLinks() {
+    return outputLinks;
+  }
+
+  public Map<RtAttributes.RtStageAttribute, Object> getRtStageAttr() {
+    return rtStageAttr;
+  }
+
+  public Map<String, RtOperator> getRtOps() {
+    return rtOps;
+  }
+
+  public Map<String, RtOpLink> getRtOpLinks() {
+    return rtOpLinks;
   }
 
   @Override

@@ -26,7 +26,7 @@ import java.util.Map;
  * @param <I>
  * @param <O>
  */
-public final class RtOperator<I, O> implements Serializable {
+public abstract class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
   private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
 

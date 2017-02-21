@@ -31,7 +31,7 @@ public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
 
   /**
-   * A list of {@link RtStage} to be executed in this plan, sorted in topological order.
+   * A DAG of {@link RtStage} to be executed in this plan.
    */
   private final DAG<RtStage> rtStages;
 
