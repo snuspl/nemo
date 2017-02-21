@@ -89,14 +89,17 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
 
   public void initialize(final DataBufferAllocator bufferAllocator,
                          final DataBufferType bufferType,
-                         final DataTransferManager transferManager) {
+                         final DataTransferManager transferMgr) {
     this.serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
     this.channelState = ChannelState.OPEN;
-    this.transferManager = transferManager;
-    transferManager.registerReceiverSideTransferListener(channelId, new ReceiverSideListener());
+    this.transferManager = transferMgr;
+    transferManager.registerReceiverSideTransferListener(channelId, new ReceiverSideTransferListener());
   }
 
-  private final class ReceiverSideListener implements DataTransferListener {
+  /**
+   * A receiver side listener used in this TCP channel reader.
+   */
+  private final class ReceiverSideTransferListener implements DataTransferListener {
 
     @Override
     public String getOwnerTaskId() {
@@ -104,22 +107,22 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onDataTransferRequest(String channelId, String dstTaskId) {
+    public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
 
     }
 
     @Override
-    public void onDataTransferReadyNotification(String channelId, String srcTaskId) {
+    public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
       transferManager.sendTransferRequestToSender(channelId, getOwnerTaskId());
     }
 
     @Override
-    public void onReceiveDataChunk(ByteBuffer chunk, int chunkSize) {
+    public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
       serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
     }
 
     @Override
-    public void onDataTransferTermination(int numObjListsInData) {
+    public void onDataTransferTermination(final int numObjListsInData) {
       numRecordListsInContainer += numObjListsInData;
     }
   }

@@ -40,10 +40,10 @@ public class DataTransferManagerMaster {
   public void registerExecutorSideManager(final DataTransferManager transferManager) {
     idToTransferManagerMap.put(transferManager.getExecutorId(), transferManager);
     transferManager.getInputChannelIds().forEach(chann ->
-      inputChannelIdToTransferManagerMap.put(chann, transferManager));
+        inputChannelIdToTransferManagerMap.put(chann, transferManager));
 
     transferManager.getOutputChannelIds().forEach(chann ->
-      outputChannelIdToTransferManagerMap.put(chann, transferManager));
+        outputChannelIdToTransferManagerMap.put(chann, transferManager));
   }
 
   public void notifyTransferReadyToReceiver(final String channelId, final String sndTaskId) {
@@ -66,11 +66,11 @@ public class DataTransferManagerMaster {
     this.dataflow = updatedDataflow;
   }
 
-  public void sendDataChunkToReceiver(String channelId, ByteBuffer chunk, int chunkSize) {
+  public void sendDataChunkToReceiver(final String channelId, final ByteBuffer chunk, final int chunkSize) {
     inputChannelIdToTransferManagerMap.get(channelId).receiveDataChunk(channelId, chunk, chunkSize);
   }
 
-  public void sendDataTransferTerminationToReceiver(String channelId, int numObjListsInData) {
+  public void sendDataTransferTerminationToReceiver(final String channelId, final int numObjListsInData) {
     outputChannelIdToTransferManagerMap.get(channelId).receiveTransferTermination(channelId, numObjListsInData);
   }
 }

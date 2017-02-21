@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A Data transfer Manager.
+ */
 public class DataTransferManager {
   private final String executorId;
   private final DataTransferManagerMaster transferMaster;
@@ -89,7 +92,7 @@ public class DataTransferManager {
     transferMaster.notifyTransferRequestToSender(channelId, recvTaskId);
   }
 
-  public void notifyTransferReadyToMaster(String channelId, String sendTaskId) {
+  public void notifyTransferReadyToMaster(final String channelId, final String sendTaskId) {
     transferMaster.notifyTransferReadyToReceiver(channelId, sendTaskId);
   }
 }

@@ -98,18 +98,22 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
    * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
    * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
    *                   that will be used in {@link SerializedOutputContainer}.
+   * @param transferMgr A transfer manager.
    */
   public void initialize(final DataBufferAllocator bufferAllocator,
                          final DataBufferType bufferType,
-                         final DataTransferManager transferManager
+                         final DataTransferManager transferMgr
                          ) {
     this.channelState = ChannelState.OPEN;
     this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, CONTAINER_INTERNAL_BUF_SIZE);
-    this.transferManager = transferManager;
+    this.transferManager = transferMgr;
 
     transferManager.registerSenderSideTransferListener(channelId, new SenderSideTransferListener());
   }
 
+  /**
+   * A sender side transfer listener.
+   */
   private final class SenderSideTransferListener implements DataTransferListener {
 
     @Override
@@ -118,9 +122,9 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onDataTransferRequest(String requestChannelId, String requestTaskId) {
+    public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
 
-      if (channelId != requestChannelId || dstTaskId != requestTaskId) {
+      if (channelId != targetChannelId || dstTaskId != recvTaskId) {
         throw new RuntimeException("Received a transfer request from an invalid source.");
       }
 
@@ -142,17 +146,17 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onDataTransferReadyNotification(String channelId, String srcTaskId) {
+    public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
 
     }
 
     @Override
-    public void onReceiveDataChunk(ByteBuffer chunk, int chunkSize) {
+    public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
 
     }
 
     @Override
-    public void onDataTransferTermination(int numObjListsInData) {
+    public void onDataTransferTermination(final int numObjListsInData) {
 
     }
   }

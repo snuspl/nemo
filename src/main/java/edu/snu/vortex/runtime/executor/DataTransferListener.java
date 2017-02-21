@@ -31,15 +31,16 @@ public interface DataTransferListener extends EventListener {
   /**
    * A sender-side event handler called at a data transfer request from a destination task.
    * @param channelId The id of the channel relevant to the request.
-   * @param dstTaskId the id of the destination task which receives data.
+   * @param recvTaskId The id of the receiver task.
    */
-  void onDataTransferRequest(String channelId, String dstTaskId);
+  void onDataTransferRequest(String channelId, String recvTaskId);
 
   /**
    * A receiver-side event handler called at a data transfer ready notification.
    * @param channelId The id of the channel relevant to the request.
+   * @param sendTaskId The id of the source task which the notification is from.
    */
-  void onDataTransferReadyNotification(String channelId, String srcTaskId);
+  void onDataTransferReadyNotification(String channelId, String sendTaskId);
 
   /**
    * A receiver-side event handler called at receiving a data chunk.
