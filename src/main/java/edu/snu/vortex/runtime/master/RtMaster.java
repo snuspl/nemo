@@ -41,8 +41,6 @@ public class RtMaster {
   private final ExecutionStateManager executionStateManager;
   private final MasterCommunicator masterCommunicator;
 
-  private ExecutionPlan executionPlan;
-
   public RtMaster() {
     this.rtConfig = new RtConfig(DEFAULT_RUNTIME_EXECUTION_MODE);
     this.scheduler = new Scheduler();
@@ -59,27 +57,12 @@ public class RtMaster {
     resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
   }
 
-  public final void submitExecutionPlan(final ExecutionPlan execPlan) {
-    this.executionPlan = execPlan;
-
-    // call APIs of RtStage, RtOperator, RtStageLink, etc.
-    // to create tasks and specify channels
-  }
-
-  public final void onReadyForNextStage() {
-    try {
-      launchNextStage();
-    } catch (EmptyExecutionPlanException e) {
-      onJobCompleted();
-    }
+  public void submitExecutionPlan(final ExecutionPlan execPlan) {
+    executionStateManager.submitExecutionPlan(execPlan);
   }
 
   public void onRtControllableReceived(final RtControllable rtControllable) {
 
-  }
-
-  private void launchNextStage() throws EmptyExecutionPlanException {
-    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
   }
 
   public void onJobCompleted() {
