@@ -41,6 +41,7 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   private DataTransferManager transferManager;
   private ChannelState channelState;
   private SerializedInputContainer serInputContainer;
+  private long containerDefaultBufferSize;
   private int numRecordListsInContainer = 0;
 
   TCPChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
@@ -57,6 +58,7 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     final List<T> data = new ArrayList<>();
 
     try {
+      int i = 0;
       ObjectInputStream objInputStream = new ObjectInputStream(serInputContainer);
       while (numRecordListsInContainer != 0) {
         data.addAll((List<T>) objInputStream.readObject());
@@ -87,11 +89,21 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     throw new NotImplementedException("This method has yet to be implemented.");
   }
 
+  /**
+   * Initializes the internal state of this channel.
+   * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
+   * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
+   *                   that will be used in {@link SerializedInputContainer}.
+   * @param defaultBufferSize The buffer size used by default.
+   * @param transferMgr A transfer manager.
+   */
   public void initialize(final DataBufferAllocator bufferAllocator,
                          final DataBufferType bufferType,
+                         final long defaultBufferSize,
                          final DataTransferManager transferMgr) {
     this.serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
     this.channelState = ChannelState.OPEN;
+    this.containerDefaultBufferSize = defaultBufferSize;
     this.transferManager = transferMgr;
     transferManager.registerReceiverSideTransferListener(channelId, new ReceiverSideTransferListener());
   }
@@ -113,16 +125,20 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
 
     @Override
     public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
+      System.out.println("[" + dstTaskId + "] receive a data transfer ready notification");
+      System.out.println("[" + dstTaskId + "] send a data transfer request");
       transferManager.sendTransferRequestToSender(channelId, getOwnerTaskId());
     }
 
     @Override
     public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
+      System.out.println("[" + dstTaskId + "] receive a chunk the size of " + chunkSize + "bytes");
       serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
     }
 
     @Override
     public void onDataTransferTermination(final int numObjListsInData) {
+      System.out.println("[" + dstTaskId + "] receive a data transfer termination notification");
       numRecordListsInContainer += numObjListsInData;
     }
   }

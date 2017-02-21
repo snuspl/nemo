@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Master-side transfer manager.
  */
-public class DataTransferManagerMaster {
+public final class DataTransferManagerMaster {
   private Dataflow dataflow;
   private Map<String, DataTransferManager> idToTransferManagerMap;
   private Map<String, DataTransferManager> inputChannelIdToTransferManagerMap;
@@ -38,7 +38,7 @@ public class DataTransferManagerMaster {
   }
 
   public void registerExecutorSideManager(final DataTransferManager transferManager) {
-    idToTransferManagerMap.put(transferManager.getExecutorId(), transferManager);
+    idToTransferManagerMap.put(transferManager.getManagerId(), transferManager);
     transferManager.getInputChannelIds().forEach(chann ->
         inputChannelIdToTransferManagerMap.put(chann, transferManager));
 
@@ -47,10 +47,12 @@ public class DataTransferManagerMaster {
   }
 
   public void notifyTransferReadyToReceiver(final String channelId, final String sndTaskId) {
+    System.out.println("[TransferManagerMaster] receive data transfer ready from " + sndTaskId);
     inputChannelIdToTransferManagerMap.get(channelId).triggerTransferReadyNotifyCallback(channelId, sndTaskId);
   }
 
   public void notifyTransferRequestToSender(final String channelId, final String recvTaskId) {
+    System.out.println("[TransferManagerMaster] receive data transfer request from " + recvTaskId);
     outputChannelIdToTransferManagerMap.get(channelId).triggerTransferRequestCallback(channelId, recvTaskId);
   }
 
@@ -71,6 +73,7 @@ public class DataTransferManagerMaster {
   }
 
   public void sendDataTransferTerminationToReceiver(final String channelId, final int numObjListsInData) {
-    outputChannelIdToTransferManagerMap.get(channelId).receiveTransferTermination(channelId, numObjListsInData);
+    System.out.println("[TransferManagerMaster] receive data transfer request from channel / id: " + channelId);
+    inputChannelIdToTransferManagerMap.get(channelId).receiveTransferTermination(channelId, numObjListsInData);
   }
 }

@@ -32,7 +32,6 @@ import java.util.List;
  * @param <T> the type of data records that transfer via the channel.
  */
 public final class TCPChannelWriter<T> implements ChannelWriter<T> {
-  private static final long CONTAINER_INTERNAL_BUF_SIZE = 0x8000; // 32KB.
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
@@ -41,7 +40,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private ChannelState channelState;
   private SerializedOutputContainer serOutputContainer;
   private DataTransferManager transferManager;
-  private DataTransferListener dataTransferListener;
+  private long containerDefaultBufferSize;
   private int numRecordLists; // Indicates the number of data record lists serialized in the output container.
 
   TCPChannelWriter(final String channelId,
@@ -85,6 +84,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
       return;
     }
     //TODO #000: Notify the master-side shuffle manager that the data is ready.
+    System.out.println("[" + srcTaskId + "] notify master that data is available");
     transferManager.notifyTransferReadyToMaster(channelId, srcTaskId);
   }
 
@@ -98,14 +98,17 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
    * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
    * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
    *                   that will be used in {@link SerializedOutputContainer}.
+   * @param defaultBufferSize The buffer size used by default.
    * @param transferMgr A transfer manager.
    */
   public void initialize(final DataBufferAllocator bufferAllocator,
                          final DataBufferType bufferType,
+                         final long defaultBufferSize,
                          final DataTransferManager transferMgr
                          ) {
     this.channelState = ChannelState.OPEN;
-    this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, CONTAINER_INTERNAL_BUF_SIZE);
+    this.containerDefaultBufferSize = defaultBufferSize;
+    this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, defaultBufferSize);
     this.transferManager = transferMgr;
 
     transferManager.registerSenderSideTransferListener(channelId, new SenderSideTransferListener());
@@ -124,11 +127,13 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     @Override
     public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
 
+      System.out.println("[" + srcTaskId + "] receive a data transfer request");
       if (channelId != targetChannelId || dstTaskId != recvTaskId) {
         throw new RuntimeException("Received a transfer request from an invalid source.");
       }
 
-      ByteBuffer chunk = ByteBuffer.allocate((int) CONTAINER_INTERNAL_BUF_SIZE);
+      System.out.println("[" + srcTaskId + "] start data transfer");
+      ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
       while (true) {
         final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
         if (readSize == -1) {
@@ -138,9 +143,12 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
           break;
         }
 
+        System.out.println("[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
         transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
       }
 
+      System.out.println("[" + srcTaskId + "] terminate data transfer");
+      System.out.println("[" + srcTaskId + "] send a data transfer termination notification");
       transferManager.sendDataTransferTerminationToReceiver(channelId, numRecordLists);
       numRecordLists = 0;
     }

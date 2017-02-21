@@ -27,14 +27,14 @@ import java.util.Set;
  * A Data transfer Manager.
  */
 public class DataTransferManager {
-  private final String executorId;
+  private final String managerId;
   private final DataTransferManagerMaster transferMaster;
   private final Map<String, DataTransferListener> channelIdToSenderSideListenerMap;
   private final Map<String, DataTransferListener> channelIdToReceiverSideListenerMap;
 
-  public DataTransferManager(final String executorId,
+  public DataTransferManager(final String managerId,
                              final DataTransferManagerMaster transferMaster) {
-    this.executorId = executorId;
+    this.managerId = managerId;
     this.transferMaster = transferMaster;
     this.channelIdToSenderSideListenerMap = new HashMap<>();
     this.channelIdToReceiverSideListenerMap = new HashMap<>();
@@ -42,18 +42,18 @@ public class DataTransferManager {
     transferMaster.registerExecutorSideManager(this);
   }
 
-  public String getExecutorId() {
-    return executorId;
+  public String getManagerId() {
+    return managerId;
   }
 
   public void registerSenderSideTransferListener(final String channelId, final DataTransferListener listener) {
     channelIdToSenderSideListenerMap.put(channelId, listener);
-    transferMaster.bindOutputChannelToTransferManager(channelId, this.getExecutorId());
+    transferMaster.bindOutputChannelToTransferManager(channelId, this.getManagerId());
   }
 
   public void registerReceiverSideTransferListener(final String channelId, final DataTransferListener listener) {
     channelIdToReceiverSideListenerMap.put(channelId, listener);
-    transferMaster.bindInputChannelToTransferManager(channelId, this.getExecutorId());
+    transferMaster.bindInputChannelToTransferManager(channelId, this.getManagerId());
   }
 
   public Set<String> getOutputChannelIds() {
@@ -65,10 +65,12 @@ public class DataTransferManager {
   }
 
   public void triggerTransferReadyNotifyCallback(final String channelId, final String sendTaskId) {
+    System.out.println("[" + managerId + "] receive a data transfer ready from channel / id: " + channelId);
     channelIdToReceiverSideListenerMap.get(channelId).onDataTransferReadyNotification(channelId, sendTaskId);
   }
 
   public void triggerTransferRequestCallback(final String channelId, final String recvTaskId) {
+    System.out.println("[" + managerId + "] receive a data transfer request from channel / id: " + channelId);
     channelIdToSenderSideListenerMap.get(channelId).onDataTransferRequest(channelId, recvTaskId);
   }
 
@@ -81,18 +83,26 @@ public class DataTransferManager {
   }
 
   public void sendDataTransferTerminationToReceiver(final String channelId, final int numObjListsInData) {
+    System.out.println("[" + managerId
+        + "] send a data transfer termination notification to channel / id: " + channelId);
     transferMaster.sendDataTransferTerminationToReceiver(channelId, numObjListsInData);
   }
 
   public void receiveTransferTermination(final String channelId, final int numObjListsInData) {
+    System.out.println("[" + managerId
+        + "] receive a data transfer termination from channel / id: " + channelId);
     channelIdToReceiverSideListenerMap.get(channelId).onDataTransferTermination(numObjListsInData);
   }
 
   public void sendTransferRequestToSender(final String channelId, final String recvTaskId) {
+    System.out.println("[" + managerId
+        + "] send data transfer request to channel / id: " + channelId);
     transferMaster.notifyTransferRequestToSender(channelId, recvTaskId);
   }
 
   public void notifyTransferReadyToMaster(final String channelId, final String sendTaskId) {
+    System.out.println("[" + managerId
+        + "] send data transfer ready to TransferManagerMaster");
     transferMaster.notifyTransferReadyToReceiver(channelId, sendTaskId);
   }
 }
