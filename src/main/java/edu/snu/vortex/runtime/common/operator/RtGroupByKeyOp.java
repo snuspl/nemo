@@ -15,12 +15,18 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtOperator;
+
+import java.util.Map;
 
 /**
- * GroupByKey operator.
+ * RtGroupByKeyOp operator.
  * @param <I> input type.
  * @param <O> output type.
  */
-public abstract class GroupByKey<I, O> extends Operator<I, O> {
+public abstract class RtGroupByKeyOp<I, O> extends RtOperator<I, O> {
+  public RtGroupByKeyOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+    super(irOpId, rtOpAttr);
+  }
 }

@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.runtime.common.operator;
+
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtOperator;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Source operator.
+ * RtSourceOp operator.
  * @param <O> output type.
  */
-public abstract class Source<O> extends Operator<Void, O> {
+public abstract class RtSourceOp<O> extends RtOperator<Void, O> {
+  public RtSourceOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+    super(irOpId, rtOpAttr);
+  }
   // Maybe make the parameter a any-type hashmap(attributes/options)
 
   /**

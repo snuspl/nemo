@@ -15,15 +15,21 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtOperator;
+
+import java.util.Map;
 
 /**
- * Broadcast operator.
+ * RtBroadcastOp operator.
  * @param <I> input type.
  * @param <O> output type.
  * @param <T> .
  */
-public abstract class Broadcast<I, O, T> extends Operator<I, O> {
+public abstract class RtBroadcastOp<I, O, T> extends RtOperator<I, O> {
+  public RtBroadcastOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+    super(irOpId, rtOpAttr);
+  }
   public abstract O transform(Iterable<I> input);
 
   public abstract T getTag();

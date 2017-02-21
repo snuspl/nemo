@@ -16,15 +16,20 @@
 package edu.snu.vortex.runtime.common.operator;
 
 import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtOperator;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Sink operator.
+ * RtSinkOp operator.
  * @param <I> input type.
  */
-public abstract class Sink<I> extends Operator<I, Void> {
-  // Maybe make the parameter a any-type hashmap(attributes/options)
+public abstract class RtSinkOp<I> extends RtOperator<I, Void> {
+  public RtSinkOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+    super(irOpId, rtOpAttr);
+  }
 
   /**
    * Getter for writers.
