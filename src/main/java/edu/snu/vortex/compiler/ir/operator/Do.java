@@ -23,7 +23,7 @@ import java.util.Map;
  * @param <O> output type.
  * @param <T> .
  */
-public abstract class RtDoOp<I, O, T> extends Operator<I, O> {
+public abstract class Do<I, O, T> extends Operator<I, O> {
   // We assume for now that broadcasted data are only used in RtDoOp
   public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
 }
