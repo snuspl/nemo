@@ -36,7 +36,12 @@ public abstract class Communicator {
   private final ExecutorService outgoingRtControllableThread;
   private final BlockingDeque<RtControllable> incomingRtControllables;
   private final BlockingDeque<RtControllable> outgoingRtControllables;
-  public final Map<String, Communicator> routingTable;
+
+  public Map<String, Communicator> getRoutingTable() {
+    return routingTable;
+  }
+
+  private final Map<String, Communicator> routingTable;
 
   public Communicator(final String communicationId) {
     this.communicationId = communicationId;
@@ -104,7 +109,6 @@ public abstract class Communicator {
     }
   }
 
-  public abstract void processRtControllable(final RtControllable rtControllable);
   // sendExecutorHeartBeat handled by REEF
 
   public void terminate() {
@@ -112,4 +116,6 @@ public abstract class Communicator {
     incomingRtControllables.clear();
     outgoingRtControllables.clear();
   }
+
+  public abstract void processRtControllable(final RtControllable rtControllable);
 }
