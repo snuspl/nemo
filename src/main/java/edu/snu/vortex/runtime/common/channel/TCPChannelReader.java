@@ -27,12 +27,15 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An implementation of TCP channel reader.
  * @param <T> the type of data records that transfer via the channel.
  */
 public final class TCPChannelReader<T> implements ChannelReader<T> {
+  private static final Logger LOG = Logger.getLogger(TCPChannelReader.class.getName());
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
@@ -125,20 +128,20 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
 
     @Override
     public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
-      System.out.println("[" + dstTaskId + "] receive a data transfer ready notification");
-      System.out.println("[" + dstTaskId + "] send a data transfer request");
+      LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer ready notification");
+      LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
       transferManager.sendTransferRequestToSender(channelId, getOwnerTaskId());
     }
 
     @Override
     public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
-      System.out.println("[" + dstTaskId + "] receive a chunk the size of " + chunkSize + "bytes");
+      LOG.log(Level.INFO, "[" + dstTaskId + "] receive a chunk the size of " + chunkSize + "bytes");
       serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
     }
 
     @Override
     public void onDataTransferTermination(final int numObjListsInData) {
-      System.out.println("[" + dstTaskId + "] receive a data transfer termination notification");
+      LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer termination notification");
       numRecordListsInContainer += numObjListsInData;
     }
   }
