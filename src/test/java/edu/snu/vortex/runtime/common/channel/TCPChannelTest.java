@@ -51,8 +51,8 @@ public final class TCPChannelTest {
   private static final int NUM_FILE_SPACE = 0x10;
   private static final int NUM_SUB_DIRS_PER_FSPACE = 0x40;
 
-  private static final int NUM_DATA_STRINGS_PER_DATA_SET = 0x1000;
-  private static final int NUM_DATA_SET = 0x2;
+  private static final int NUM_DATA_STRINGS_PER_DATA_SET = 0x10000;
+  private static final int NUM_DATA_SET = 0x1;
 
 
   private List<File> createFileSpaces(final int numSubFileSpaces) {
@@ -122,13 +122,14 @@ public final class TCPChannelTest {
 
     try {
       final List<String> originalData = generateDataset(NUM_DATA_STRINGS_PER_DATA_SET);
-
+      System.out.println("[Test] write " + originalData.size() + " strings");
       channelWriter.write(originalData);
       channelWriter.flush();
 
       final List<String> receivedData = channelReader.read();
+      System.out.println("[Test] read " + receivedData.size() + " strings");
       assertTrue(compareStringLists(originalData, receivedData));
-
+      System.out.println("[Test] verified " + originalData.size() + " strings");
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
