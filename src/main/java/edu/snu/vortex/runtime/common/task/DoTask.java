@@ -12,10 +12,10 @@ public class DoTask extends Task {
   private final RtDoOp doOp;
 
   public DoTask(final List<ChannelBundle> inputChannels,
-                final RtDoOp rtDoOpOp,
+                final RtDoOp rtDoOp,
                 final List<ChannelBundle> outputChannels) {
     super(inputChannels, outputChannels);
-    this.doOp = rtDoOpOp;
+    this.doOp = rtDoOp;
   }
 
   @Override

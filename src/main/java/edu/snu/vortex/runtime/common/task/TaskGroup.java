@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common.task;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,9 +27,9 @@ public class TaskGroup implements Serializable {
   private final List<Task> taskList;
 
   public TaskGroup(final String taskGroupId,
-                   final List<Task> taskList) {
+                   final int capacity) {
     this.taskGroupId = taskGroupId;
-    this.taskList = taskList;
+    this.taskList = new ArrayList<>(capacity);
   }
 
   public String getTaskGroupId() {
@@ -37,5 +38,9 @@ public class TaskGroup implements Serializable {
 
   public List<Task> getTaskList() {
     return taskList;
+  }
+
+  public void addTask(final Task task) {
+    taskList.add(task);
   }
 }
