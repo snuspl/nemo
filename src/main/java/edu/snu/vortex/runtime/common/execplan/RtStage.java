@@ -19,6 +19,8 @@ import com.google.api.client.util.ArrayMap;
 import edu.snu.vortex.runtime.common.IdGenerator;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,6 +34,11 @@ public final class RtStage {
    * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
    */
   private final Map<String, RtOperator> rtOps;
+
+  /**
+   * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
+   */
+  private final List<RtOperator> rtOperatorList;
 
   /**
    * Map of <ID, {@link RtOpLink}> connecting the {@link RtStage#rtOps} contained in this {@link RtStage}.
@@ -55,6 +62,7 @@ public final class RtStage {
   public RtStage(final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr) {
     this.rtStageId = IdGenerator.generateRtStageId();
     this.rtOps = new ArrayMap<>();
+    this.rtOperatorList = new LinkedList<>();
     this.rtOpLinks = new ArrayMap<>();
     this.inputLinks = new HashMap<>();
     this.outputLinks = new HashMap<>();
@@ -79,13 +87,16 @@ public final class RtStage {
       throw new RuntimeException("the given rtOp has been already added");
     }
     rtOps.put(rtOp.getId(), rtOp);
+
+    if (rtOperatorList.contains(rtOp)) {
+      throw new RuntimeException("the given rtOp has been already added");
+    }
+    rtOperatorList.add(rtOp);
   }
 
-  public void connectRtOps(final String srcRtOpId,
-                           final String dstRtOpId,
+  public void connectRtOps(final RtOperator srcRtOp,
+                           final RtOperator dstRtOp,
                            final RtOpLink rtOpLink) {
-    final RtOperator srcRtOp = rtOps.get(srcRtOpId);
-    final RtOperator dstRtOp = rtOps.get(dstRtOpId);
     if (srcRtOp == null || dstRtOp == null) {
       throw new RuntimeException("one of given rtOps is not in the stage");
     }
@@ -94,6 +105,20 @@ public final class RtStage {
     dstRtOp.addInputLink(rtOpLink);
     rtOpLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
   }
+
+//  public void connectRtOps(final String srcRtOpId,
+//                           final String dstRtOpId,
+//                           final RtOpLink rtOpLink) {
+//    final RtOperator srcRtOp = rtOps.get(srcRtOpId);
+//    final RtOperator dstRtOp = rtOps.get(dstRtOpId);
+//    if (srcRtOp == null || dstRtOp == null) {
+//      throw new RuntimeException("one of given rtOps is not in the stage");
+//    }
+//
+//    srcRtOp.addOutputLink(rtOpLink);
+//    dstRtOp.addInputLink(rtOpLink);
+//    rtOpLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
+//  }
 
   public void addInputRtStageLink(final RtStageLink rtStageLink) {
     if (inputLinks.containsKey(rtStageLink.getId())) {
@@ -127,6 +152,10 @@ public final class RtStage {
 
   public Map<String, RtOperator> getRtOps() {
     return rtOps;
+  }
+
+  public List<RtOperator> getRtOperatorList() {
+    return rtOperatorList;
   }
 
   public Map<String, RtOpLink> getRtOpLinks() {

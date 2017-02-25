@@ -15,13 +15,14 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
-import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
-import edu.snu.vortex.runtime.common.execplan.RtStage;
+import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.common.operator.RtDoOp;
 import edu.snu.vortex.runtime.common.operator.RtSinkOp;
 import edu.snu.vortex.runtime.common.operator.RtSourceOp;
+import edu.snu.vortex.runtime.common.task.DoTask;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -58,10 +59,16 @@ public class ExecutionStateManager {
     final int stageParallelism = (attributes == null || attributes.isEmpty())
         ? 1 : (int) attributes.get(RtAttributes.RtStageAttribute.PARALLELISM);
 
-    rtStage.getRtOps().forEach((id, op) -> {
+    final RtStageLink stageLink = rtStage.getInputLinks();
+
+    final List<TaskGroup> taskGroups = new ArrayList<>(stageParallelism);
+    final List<RtOperator> operators = rtStage.getRtOperatorList();
+    final int taskGroupSize = operators.size();
+    operators.forEach((op) -> {
+      final TaskGroup taskGroup = new TaskGroup(IdGenerator.generateTaskGroupId(), taskGroupSize);
       for (int i = 0; i < stageParallelism; i++) {
         if (op instanceof RtDoOp) {
-
+          taskGroup.addTask(new DoTask(, op, ));
         } else if (op instanceof RtSourceOp) {
 
         } else if (op instanceof RtSinkOp) {
