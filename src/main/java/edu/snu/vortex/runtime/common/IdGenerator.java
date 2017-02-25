@@ -25,7 +25,7 @@ public final class IdGenerator {
   private static AtomicInteger rtStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
 
-  private static AtomicInteger taskId = new AtomicInteger(1);
+  private static AtomicInteger taskGroupId = new AtomicInteger(1);
   private static AtomicInteger channelId = new AtomicInteger(1);
   private static AtomicInteger bundleId = new AtomicInteger(1);
 
@@ -34,11 +34,11 @@ public final class IdGenerator {
   private IdGenerator() { }
 
   /**
-   * Generates the ID of a task.
+   * Generates the ID of a {@link edu.snu.vortex.runtime.common.task.TaskGroup}.
    * @return the generated ID
    */
-  public static String generateTaskId() {
-    return "task" + taskId.getAndIncrement();
+  public static String generateTaskGroupId() {
+    return "taskGroup-" + taskGroupId.getAndIncrement();
   }
 
   /**
