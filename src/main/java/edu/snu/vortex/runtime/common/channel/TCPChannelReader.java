@@ -122,27 +122,30 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
+    public void onDataTransferRequest(final String targetChannelId, final String sessionId) {
 
     }
 
     @Override
-    public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
+    public void onDataTransferReadyNotification(final String targetChannelId, final String sessionId) {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer ready notification");
       LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
-      transferManager.sendTransferRequestToSender(channelId, getOwnerTaskId());
+      transferManager.sendTransferRequestToSender(channelId, sessionId);
     }
 
     @Override
-    public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
+    public void onReceiveDataChunk(final String sessionId,
+                                   final int chunkId,
+                                   final ByteBuffer chunk,
+                                   final int chunkSize) {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a chunk the size of " + chunkSize + "bytes");
       serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
     }
 
     @Override
-    public void onDataTransferTermination(final int numObjListsInData) {
+    public void onDataTransferTermination(final String sessionId) {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer termination notification");
-      numRecordListsInContainer += numObjListsInData;
+      throw new NotImplementedException("This method has yet to be implemented");
     }
   }
 

@@ -41,7 +41,7 @@ public class CommunicationManager {
     communicationThread.execute(new RtControllableHandler());
   }
 
-  private void sendRtControllable(final String receiverId,
+  public void sendRtControllable(final String receiverId,
                     final RuntimeMessages.RtControllableMsg message) {
     // Create RtControllable
     final RtControllable toSend = new RtControllable("master", receiverId, message);

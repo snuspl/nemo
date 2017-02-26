@@ -31,27 +31,29 @@ public interface DataTransferListener extends EventListener {
   /**
    * A sender-side event handler called at a data transfer request from a destination task.
    * @param channelId The id of the channel relevant to the request.
-   * @param recvTaskId The id of the receiver task.
+   * @param sessionId The id of the session in which the data is going to transfer.
    */
-  void onDataTransferRequest(String channelId, String recvTaskId);
+  void onDataTransferRequest(String channelId, String sessionId);
 
   /**
    * A receiver-side event handler called at a data transfer ready notification.
    * @param channelId The id of the channel relevant to the request.
-   * @param sendTaskId The id of the source task which the notification is from.
+   * @param sessionId The id of the session in which the data is going to transfer.
    */
-  void onDataTransferReadyNotification(String channelId, String sendTaskId);
+  void onDataTransferReadyNotification(String channelId, String sessionId);
 
   /**
    * A receiver-side event handler called at receiving a data chunk.
+   * @param sessionId The id of session in which the data chunk transfers.
+   * @param chunkId The id of the received chunk (unique in a session).
    * @param chunk A chunk of data from the sender task via the channel.
    * @param chunkSize The size of the received chunk.
    */
-  void onReceiveDataChunk(ByteBuffer chunk, int chunkSize);
+  void onReceiveDataChunk(String sessionId, int chunkId, ByteBuffer chunk, int chunkSize);
 
   /**
    * A receiver-side event handler called at a data transfer termination.
-   * @param numObjListsInData The number of object lists serialized in the transferred data.
+   * @param sessionId The id of the session to be terminated.
    */
-  void onDataTransferTermination(int numObjListsInData);
+  void onDataTransferTermination(String sessionId);
 }

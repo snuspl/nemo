@@ -88,7 +88,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
     //TODO #000: Notify the master-side shuffle manager that the data is ready.
     LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
-    transferManager.notifyTransferReadyToMaster(channelId, srcTaskId);
+    transferManager.notifyTransferReadyToMaster(channelId);
   }
 
   @Override
@@ -152,22 +152,25 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
       LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer termination notification");
-      transferManager.sendDataTransferTerminationToReceiver(channelId, numRecordLists);
+      transferManager.sendDataTransferTerminationToReceiver(channelId);
       numRecordLists = 0;
     }
 
     @Override
-    public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
+    public void onDataTransferReadyNotification(final String targetChannelId, final String sessionId) {
 
     }
 
     @Override
-    public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
+    public void onReceiveDataChunk(final String sessionId,
+                                   final int chunkId,
+                                   final ByteBuffer chunk,
+                                   final int chunkSize) {
 
     }
 
     @Override
-    public void onDataTransferTermination(final int numObjListsInData) {
+    public void onDataTransferTermination(final String sessionId) {
 
     }
   }

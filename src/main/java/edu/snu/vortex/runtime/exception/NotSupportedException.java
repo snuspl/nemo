@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * Return codes from {@link edu.snu.vortex.runtime.master.transfer.DataTransferManagerMaster}.
+ * Not supported exception.
  */
-public enum DataTransferStatus {
-  SUCCESS,
-  ERROR_UNKNOWN,
-  ERROR_CHANNEL_BUSY,
-  ERROR_CHANNEL_NOT_OPEN,
-  ERROR_RESOURCE_NOT_FOUND
+public class NotSupportedException extends RuntimeException {
+  public NotSupportedException(final String message) {
+    super(message);
+  }
 }
