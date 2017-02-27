@@ -15,61 +15,104 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-import edu.snu.vortex.runtime.common.TaskGroup;
-import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
+import edu.snu.vortex.runtime.common.comm.RtControllable;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.exception.UnsupportedRtConfigException;
 
+import java.io.Serializable;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Logger;
 
 /**
  * Executor.
  */
 public class Executor {
+  private static final Logger LOG = Logger.getLogger(Executor.class.getName());
   private final RtConfig rtConfig;
 
-  private final ExecutorService schedulerThread;
   private final ExecutorService executeThreads;
   private final ExecutorService resubmitThread;
+  private final BlockingDeque<RtControllable> incomingRtControllables;
 
-  private final Communicator communicator;
+  private ExecutorCommunicator executorCommunicator;
 
   public Executor(final RtConfig.RtExecMode executionMode,
                   final ExecutorConfig executorConfig) {
     this.rtConfig = new RtConfig(executionMode);
-    this.schedulerThread = Executors.newSingleThreadExecutor();
     this.executeThreads = Executors.newFixedThreadPool(executorConfig.getNumExecutionThreads());
     this.resubmitThread = Executors.newSingleThreadExecutor();
-    this.communicator = new Communicator();
-    initialize();
+    this.incomingRtControllables = new LinkedBlockingDeque<>();
   }
 
-  public final void initialize() {
-    communicator.initialize();
+  public void initialize(final ExecutorCommunicator executorCommunicator) {
+    this.executorCommunicator = executorCommunicator;
+    executeThreads.execute(new RtControllableMsgHandler());
   }
 
-  public void submitTaskGroupForExecution(final TaskGroup taskGroupToExecute) {
-
+  public void submitTaskGroupForExecution(final RtControllable rtControllable) {
+    incomingRtControllables.offer(rtControllable);
   }
 
-  public void executeStream(final TaskGroup taskGroup) {
-
+  private void executeStream(final TaskGroup taskGroup) {
+    taskGroup.getTaskList().forEach(t -> t.compute());
+    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeDefinitions.TaskState.RUNNING);
   }
 
-  public void executeBatch(final TaskGroup taskGroup) {
+  private void executeBatch(final TaskGroup taskGroup) {
+    taskGroup.getTaskList().forEach(t -> t.compute());
+    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeDefinitions.TaskState.RUNNING);
   }
 
-  private void reportTaskStateChange(final String taskId,
-                                     final RuntimeMessages.TaskStateChangedMsg.TaskState newState) {
-    final RuntimeMessages.TaskStateChangedMsg.Builder msgBuilder
-        = RuntimeMessages.TaskStateChangedMsg.newBuilder();
-    msgBuilder.setTaskId(taskId);
+  private void reportTaskStateChange(final String taskGroupId,
+                                     final RuntimeDefinitions.TaskState newState) {
+    final RuntimeDefinitions.TaskStateChangedMsg.Builder msgBuilder
+        = RuntimeDefinitions.TaskStateChangedMsg.newBuilder();
+    msgBuilder.setTaskGroupId(taskGroupId);
     msgBuilder.setState(newState);
-    final RuntimeMessages.RtControllableMsg.Builder builder
-        = RuntimeMessages.RtControllableMsg.newBuilder();
-    builder.setType(RuntimeMessages.Type.TaskStateChanged);
+    final RuntimeDefinitions.RtControllableMsg.Builder builder
+        = RuntimeDefinitions.RtControllableMsg.newBuilder();
+    builder.setType(RuntimeDefinitions.MessageType.TaskStateChanged);
     builder.setTaskStateChangedMsg(msgBuilder.build());
-    communicator.sendRtControllable("master", builder.build());
+    executorCommunicator.sendRtControllable("master", builder.build(), new Serializable() { });
+  }
+
+  /**
+   * RtControllableMsgHandler.
+   */
+  private class RtControllableMsgHandler implements Runnable {
+
+    @Override
+    public void run() {
+      while (!executeThreads.isShutdown()) {
+        try {
+          final RtControllable rtControllableToExecute = incomingRtControllables.take();
+          final TaskGroup taskGroup = (TaskGroup) rtControllableToExecute.getData();
+          switch (rtConfig.getRtExecMode()) {
+          case STREAM:
+            executeStream(taskGroup);
+            break;
+          case BATCH:
+            executeBatch(taskGroup);
+            break;
+          default:
+            throw new UnsupportedRtConfigException("RtExecMode should be STREAM or BATCH");
+          }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
+  public void terminate() {
+    executeThreads.shutdown();
+    resubmitThread.shutdown();
+    incomingRtControllables.clear();
   }
 }

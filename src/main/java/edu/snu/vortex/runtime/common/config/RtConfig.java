@@ -20,6 +20,7 @@ package edu.snu.vortex.runtime.common.config;
  */
 public class RtConfig {
   private final RtExecMode rtExecMode;
+  public static final String MASTER_NAME = "runtime_master";
 
   public RtConfig(final RtExecMode rtExecMode) {
     this.rtExecMode = rtExecMode;

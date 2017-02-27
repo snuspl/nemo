@@ -15,37 +15,54 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtStage;
+import edu.snu.vortex.runtime.common.comm.RtControllable;
+import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
+import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RtStage;
 import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * RtMaster.
  */
 public class RtMaster {
-//  private final Scheduler scheduler;
-//  private final ExecutionStateManager executionStateManager;
-  private ExecutionPlan executionPlan;
+  private static final Logger LOG = Logger.getLogger(RtMaster.class.getName());
 
-  public final void submitExecutionPlan(final ExecutionPlan execPlan) {
-    this.executionPlan = execPlan;
+  private final RtConfig rtConfig;
+  private static final RtConfig.RtExecMode DEFAULT_RUNTIME_EXECUTION_MODE = RtConfig.RtExecMode.STREAM;
 
-    // call APIs of RtStage, RtOperator, RtStageLink, etc.
-    // to create tasks and specify channels
+  private final Scheduler scheduler;
+  private final ResourceManager resourceManager;
+  private final ExecutionStateManager executionStateManager;
+  private final MasterCommunicator masterCommunicator;
+
+  public RtMaster() {
+    this.rtConfig = new RtConfig(DEFAULT_RUNTIME_EXECUTION_MODE);
+    this.scheduler = new Scheduler();
+    this.resourceManager = new ResourceManager();
+    this.executionStateManager = new ExecutionStateManager();
+    this.masterCommunicator = new MasterCommunicator();
   }
 
-  public final void onReadyForNextStage() {
-    try {
-      launchNextStage();
-    } catch (EmptyExecutionPlanException e) {
-      onJobCompleted();
-    }
+  public void initialize()  {
+    // Use default configs
+    Map<RtAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
+    defaultResources.put(RtAttributes.ResourceType.TRANSIENT, 3);
+    defaultResources.put(RtAttributes.ResourceType.RESERVED, 1);
+    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
   }
 
-  private void launchNextStage() throws EmptyExecutionPlanException {
-    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
+  public void submitExecutionPlan(final ExecutionPlan execPlan) {
+    executionStateManager.submitExecutionPlan(execPlan);
+  }
+
+  public void onRtControllableReceived(final RtControllable rtControllable) {
+
   }
 
   public void onJobCompleted() {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.task;
 
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
@@ -39,5 +39,13 @@ public abstract class Task implements Serializable {
   public final void initializeChannels() {
     inputChannels.forEach(bundle -> bundle.initialize());
     outputChannels.forEach(bundle -> bundle.initialize());
+  }
+
+  public List<ChannelBundle> getInputChannels() {
+    return inputChannels;
+  }
+
+  public List<ChannelBundle> getOutputChannels() {
+    return outputChannels;
   }
 }

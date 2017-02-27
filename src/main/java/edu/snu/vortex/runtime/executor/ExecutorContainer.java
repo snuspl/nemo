@@ -15,28 +15,69 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.master.RtMaster;
+
+import java.io.Serializable;
+import java.util.logging.Logger;
 
 /**
  * ExecutorContainer.
  */
 public class ExecutorContainer {
+  private static final Logger LOG = Logger.getLogger(ExecutorContainer.class.getName());
   private final String executorId;
 
+  private final RtMaster master;
   private final Executor executor;
-  private final Communicator communicator;
+  private final ExecutorConfig executorConfig;
+  private final ExecutorCommunicator executorCommunicator;
 
-  public ExecutorContainer(final String executorId,
+  public ExecutorContainer(final RtMaster master,
+                           final String executorId,
                            final RtConfig.RtExecMode executionMode,
                            final ExecutorConfig executorConfig) {
+    this.master = master;
     this.executorId = executorId;
+    this.executorCommunicator = new ExecutorCommunicator(executorId);
     this.executor = new Executor(executionMode, executorConfig);
-    this.communicator = new Communicator();
+    this.executorConfig = executorConfig;
     initialize();
   }
 
-  public final void initialize() {
-    communicator.initialize();
+  public ExecutorConfig getExecutorConfig() {
+    return executorConfig;
+  }
+
+  public void initialize() {
+    executorCommunicator.initialize(executor);
+    executor.initialize(executorCommunicator);
+    sendExecutorReadyMsg();
+  }
+
+  public ExecutorCommunicator getExecutorCommunicator() {
+    return executorCommunicator;
+  }
+
+  private void sendExecutorReadyMsg() {
+    final RuntimeDefinitions.ExecutorReadyMsg.Builder msgBuilder
+        = RuntimeDefinitions.ExecutorReadyMsg.newBuilder();
+    msgBuilder.setExecutorId(executorId);
+    final RuntimeDefinitions.RtControllableMsg.Builder builder
+        = RuntimeDefinitions.RtControllableMsg.newBuilder();
+    builder.setType(RuntimeDefinitions.MessageType.ExecutorReady);
+    builder.setExecutorReadyMsg(msgBuilder.build());
+    executorCommunicator.sendRtControllable(RtConfig.MASTER_NAME, builder.build(), new Serializable() { });
+  }
+
+  public void terminate() {
+    cleanup();
+    executor.terminate();
+    executorCommunicator.terminate();
+  }
+
+  private void cleanup() {
   }
 }

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
 
+import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
@@ -30,7 +31,7 @@ public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
 
   /**
-   * A list of {@link RtStage} to be executed in this plan, sorted in topological order.
+   * A DAG of {@link RtStage} to be executed in this plan.
    */
   private final DAG<RtStage> rtStages;
 

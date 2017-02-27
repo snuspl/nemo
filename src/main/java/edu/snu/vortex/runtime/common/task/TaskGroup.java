@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.task;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,8 +27,20 @@ public class TaskGroup implements Serializable {
   private final List<Task> taskList;
 
   public TaskGroup(final String taskGroupId,
-                   final List<Task> taskList) {
+                   final int capacity) {
     this.taskGroupId = taskGroupId;
-    this.taskList = taskList;
+    this.taskList = new ArrayList<>(capacity);
+  }
+
+  public String getTaskGroupId() {
+    return taskGroupId;
+  }
+
+  public List<Task> getTaskList() {
+    return taskList;
+  }
+
+  public void addTask(final Task task) {
+    taskList.add(task);
   }
 }

@@ -3,9 +3,9 @@ syntax = "proto3";
 package protobuf;
 
 option java_package = "edu.snu.vortex.runtime.common.comm";
-option java_outer_classname = "RuntimeMessages";
+option java_outer_classname = "RuntimeDefinitions";
 
-enum Type {
+enum MessageType {
     ScheduleTaskGroup = 0;
     TaskStateChanged = 1;
     ExecutorReady = 2;
@@ -19,31 +19,36 @@ enum Type {
 
 }
 
+enum TaskState {
+    READY = 0;
+    RUNNING = 1;
+    COMPLETE = 2;
+    FAILED = 3;
+}
+
 message RtControllableMsg {
-    Type type = 1;
+    MessageType type = 1;
     oneof messageTypes {
         TaskStateChangedMsg taskStateChangedMsg = 2;
         ExecutorReadyMsg executorReadyMsg = 3;
-        TransferMgrRegisterMsg transferMgrRegisterMsg = 4;
+        ScheduleTaskGroupMsg scheduleTaskGroupMsg = 4;
         TransferMgrDeregisterMsg transferMgrDeregisterMsg = 5;
         ChannelBindMsg channelBindMsg = 6;
         ChannelUnbindMsg channelUnbindMsg = 7;
         TransferReadyMsg transferReadyMsg = 8;
         TransferRequestMsg transferRequestMsg = 9;
         TransferTerminationMsg transferTerminationMsg = 10;
+        TransferMgrRegisterMsg transferMgrRegisterMsg = 11;
     }
 }
 
-message TaskStateChangedMsg {
-    string taskId = 1;
-    TaskState state = 2;
+message ScheduleTaskGroupMsg {
+    string taskGroupId = 1;
+}
 
-    enum TaskState {
-        READY = 0;
-        RUNNING = 1;
-        COMPLETE = 2;
-        FAILED = 3;
-    }
+message TaskStateChangedMsg {
+    string taskGroupId = 1;
+    TaskState state = 2;
 }
 
 message ExecutorReadyMsg {
@@ -89,3 +94,4 @@ message TransferRequestMsg {
 message TransferTerminationMsg {
     string channelId = 1;
 }
+

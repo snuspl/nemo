@@ -23,13 +23,16 @@ import java.io.Serializable;
 public final class RtControllable implements Serializable {
   private final String senderId;
   private final String receiverId;
-  private final RuntimeMessages.RtControllableMsg message;
+  private final RuntimeDefinitions.RtControllableMsg message;
+  private final Serializable data;
 
   public RtControllable(final String senderId, final String receiverId,
-                        final RuntimeMessages.RtControllableMsg rtControllableMsg) {
+                        final RuntimeDefinitions.RtControllableMsg rtControllableMsg,
+                        final Serializable data) {
     this.senderId = senderId;
     this.receiverId = receiverId;
     this.message = rtControllableMsg;
+    this.data = data;
   }
 
   public String getSenderId() {
@@ -40,7 +43,11 @@ public final class RtControllable implements Serializable {
     return receiverId;
   }
 
-  public RuntimeMessages.RtControllableMsg getMessage() {
+  public RuntimeDefinitions.RtControllableMsg getMessage() {
     return message;
+  }
+
+  public Serializable getData() {
+    return data;
   }
 }

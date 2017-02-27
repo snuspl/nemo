@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
+
+import edu.snu.vortex.runtime.common.IdGenerator;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -24,7 +26,7 @@ import java.util.Map;
  * @param <I>
  * @param <O>
  */
-public final class RtOperator<I, O> implements Serializable {
+public abstract class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
   private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
 
