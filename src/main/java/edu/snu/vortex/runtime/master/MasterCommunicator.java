@@ -58,7 +58,7 @@ public class MasterCommunicator extends Communicator {
       final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = message.getTaskStateChangedMsg();
       final String taskGroupId = taskStateChangedMsg.getTaskGroupId();
       final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
-      executionStateManager.onTaskStateChanged(taskGroupId, newState);
+      executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }
