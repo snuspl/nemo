@@ -27,6 +27,7 @@ import java.util.*;
 public final class Optimizer {
   /**
    * Optimize function.
+   * Currently this optimizer just performs the Pado Placement Algorithm
    * TODO #29: Make Optimizer Configurable
    * @param dag .
    * @return optimized DAG

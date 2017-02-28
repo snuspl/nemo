@@ -25,6 +25,7 @@ import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.GroupByKey;
+import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PValue;
 
 import java.util.HashMap;
@@ -34,26 +35,13 @@ import java.util.Map;
  * Visitor class.
  * This class visits every operator in the dag to translate the BEAM program to the Vortex IR.
  */
-final class Visitor implements Pipeline.PipelineVisitor {
+class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
   private final Map<PValue, Operator> pValueToOpOutput;
 
   Visitor(final DAGBuilder builder) {
     this.builder = builder;
     this.pValueToOpOutput = new HashMap<>();
-  }
-
-  @Override
-  public CompositeBehavior enterCompositeTransform(final TransformHierarchy.Node beamOperator) {
-    // Print if needed for development
-    // System.out.println("enter composite " + node.getTransform());
-    return CompositeBehavior.ENTER_TRANSFORM;
-  }
-
-  @Override
-  public void leaveCompositeTransform(final TransformHierarchy.Node beamOperator) {
-    // Print if needed for development
-    // System.out.println("leave composite " + node.getTransform());
   }
 
   @Override
@@ -76,13 +64,13 @@ final class Visitor implements Pipeline.PipelineVisitor {
         .forEach(src -> builder.connectOperators(src, vortexOperator, getInEdgeType(vortexOperator)));
   }
 
-  @Override
-  public void visitValue(final PValue value, final TransformHierarchy.Node producer) {
-    // Print if needed for development
-    // System.out.println("visitv value " + value);
-    // System.out.println("visitv producer " + producer.getTransform());
-  }
-
+  /**
+   * The function creates the nodes accordingly by each of the types.
+   * @param beamOperator input beam operator.
+   * @param <I> .
+   * @param <O> .
+   * @return output IR operator.
+   */
   private <I, O> Operator createOperator(final TransformHierarchy.Node beamOperator) {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
@@ -95,6 +83,10 @@ final class Visitor implements Pipeline.PipelineVisitor {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) transform;
       final Broadcast vortexOperator = new BroadcastImpl(view.getView());
       pValueToOpOutput.put(view.getView(), vortexOperator);
+      return vortexOperator;
+    } else if (transform instanceof Window.Bound) {
+      final Window.Bound<I> window = (Window.Bound<I>) transform;
+      final BoundedWindow<I> vortexOperator = new BoundedWindowImpl<>(window.getWindowFn());
       return vortexOperator;
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());

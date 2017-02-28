@@ -19,7 +19,6 @@ import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.engine.SimpleEngine;
 
 /**
  * Job launcher.
@@ -50,6 +49,6 @@ public final class JobLauncher {
      * Step 2: Execute
      */
     System.out.println("##### VORTEX ENGINE #####");
-    new SimpleEngine().executeDAG(optimizedDAG);
+//    new SimpleEngine().executeDAG(optimizedDAG);
   }
 }
