@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.comm;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
@@ -34,7 +33,7 @@ public abstract class Communicator {
 
   private final ExecutorService incomingRtControllableThread;
   private final ExecutorService outgoingRtControllableThread;
-  private final BlockingDeque<RtControllable> incomingRtControllables;
+  private final BlockingDeque<RuntimeDefinitions.RtControllableMsg> incomingRtControllables;
   private final BlockingDeque<RtControllable> outgoingRtControllables;
 
   public Map<String, Communicator> getRoutingTable() {
@@ -60,16 +59,16 @@ public abstract class Communicator {
   }
 
   public void sendRtControllable(final String receiverId,
-                                 final RuntimeDefinitions.RtControllableMsg rtControllableMsg,
-                                 final Serializable data) {
+                                 final RuntimeDefinitions.RtControllableMsg rtControllableMsg) {
     // Create RtControllable
-    final RtControllable toSend = new RtControllable(communicationId, receiverId, rtControllableMsg, data);
+    final RtControllable toSend = new RtControllable(communicationId, receiverId, rtControllableMsg);
 
     // Send RtControllable to the receiver
     outgoingRtControllables.offer(toSend);
   }
 
-  public void onRtControllableReceived(final RtControllable rtControllable) {
+  public void onRtControllableReceived(final String senderExecutorId,
+                                       final RuntimeDefinitions.RtControllableMsg rtControllable) {
     incomingRtControllables.offer(rtControllable);
   }
 
@@ -80,7 +79,7 @@ public abstract class Communicator {
     @Override
     public void run() {
       while (!incomingRtControllableThread.isShutdown()) {
-        final RtControllable rtControllable;
+        final RuntimeDefinitions.RtControllableMsg rtControllable;
         try {
           rtControllable = incomingRtControllables.take();
           processRtControllable(rtControllable);
@@ -101,7 +100,8 @@ public abstract class Communicator {
         final RtControllable rtControllable;
         try {
           rtControllable = outgoingRtControllables.take();
-          routingTable.get(rtControllable.getReceiverId()).onRtControllableReceived(rtControllable);
+          routingTable.get(rtControllable.getReceiverId())
+              .onRtControllableReceived(communicationId, rtControllable.getMessage());
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
@@ -109,13 +109,11 @@ public abstract class Communicator {
     }
   }
 
-  // sendExecutorHeartBeat handled by REEF
-
   public void terminate() {
     incomingRtControllableThread.shutdown();
     incomingRtControllables.clear();
     outgoingRtControllables.clear();
   }
 
-  public abstract void processRtControllable(final RtControllable rtControllable);
+  public abstract void processRtControllable(final RuntimeDefinitions.RtControllableMsg rtControllable);
 }

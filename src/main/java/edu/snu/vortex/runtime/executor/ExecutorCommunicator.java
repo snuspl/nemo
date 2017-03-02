@@ -16,13 +16,14 @@
 package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.runtime.common.comm.Communicator;
-import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.RtConfig;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
+import org.apache.commons.lang.SerializationUtils;
 
-import java.io.Serializable;
 import java.util.logging.Logger;
+
 
 /**
  * ExecutorCommunicator.
@@ -49,14 +50,17 @@ public class ExecutorCommunicator extends Communicator {
         = RuntimeDefinitions.RtControllableMsg.newBuilder();
     builder.setType(RuntimeDefinitions.MessageType.ExecutorReady);
     builder.setExecutorReadyMsg(msgBuilder.build());
-    sendRtControllable(RtConfig.MASTER_NAME, builder.build(), new Serializable() { });
+    sendRtControllable(RtConfig.MASTER_NAME, builder.build());
   }
 
   @Override
-  public void processRtControllable(final RtControllable rtControllable) {
-    switch (rtControllable.getMessage().getType()) {
+  public void processRtControllable(final RuntimeDefinitions.RtControllableMsg rtControllable) {
+    switch (rtControllable.getType()) {
     case ScheduleTaskGroup:
-      executor.submitTaskGroupForExecution(rtControllable);
+      final TaskGroup toSchedule =
+          (TaskGroup) SerializationUtils.deserialize(
+              rtControllable.getScheduleTaskGroupMsg().getTaskGroup().toByteArray());
+      executor.submitTaskGroupForExecution(toSchedule);
       break;
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");

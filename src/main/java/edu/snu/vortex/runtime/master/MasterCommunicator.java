@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.comm.Communicator;
-import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
@@ -43,11 +42,10 @@ public class MasterCommunicator extends Communicator {
   }
 
   @Override
-  public void processRtControllable(final RtControllable rtControllable) {
-    final RuntimeDefinitions.RtControllableMsg message = rtControllable.getMessage();
-    switch (message.getType()) {
+  public void processRtControllable(final RuntimeDefinitions.RtControllableMsg rtControllable) {
+    switch (rtControllable.getType()) {
     case ExecutorReady:
-      final String executorId = message.getExecutorReadyMsg().getExecutorId();
+      final String executorId = rtControllable.getExecutorReadyMsg().getExecutorId();
       final Communicator newCommunicator = resourceManager.getResourceById(executorId).getExecutorCommunicator();
       resourceManager.onResourceAllocated(executorId);
       registerNewRemoteCommunicator(executorId, newCommunicator);
@@ -55,7 +53,7 @@ public class MasterCommunicator extends Communicator {
           communicator.registerNewRemoteCommunicator(executorId, newCommunicator)));
       break;
     case TaskStateChanged:
-      final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = message.getTaskStateChangedMsg();
+      final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = rtControllable.getTaskStateChangedMsg();
       final String taskGroupId = taskStateChangedMsg.getTaskGroupId();
       final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
       executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
