@@ -70,9 +70,9 @@ class Visitor extends Pipeline.PipelineVisitor.Defaults {
   /**
    * The function creates the nodes accordingly by each of the types.
    * @param beamOperator input beam operator.
-   * @param <I> .
-   * @param <O> .
-   * @return output IR operator.
+   * @param <I> input type.
+   * @param <O> output type.
+   * @return output Vortex IR operator.
    */
   private <I, O> Operator createOperator(final TransformHierarchy.Node beamOperator) {
     final PTransform transform = beamOperator.getTransform();

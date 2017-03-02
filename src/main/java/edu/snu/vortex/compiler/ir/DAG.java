@@ -195,14 +195,6 @@ public final class DAG {
   }
 
   /**
-   * Do a DFS traversal.
-   * @param function function to apply to each operator.
-   */
-  public void doDFS(final Consumer<Operator> function) {
-    doDFS(function, VisitOrder.PreOrder);
-  }
-
-  /**
    * Do a DFS traversal with a given visiting order.
    * @param function function to apply to each operator
    * @param visitOrder visiting order.

@@ -20,6 +20,9 @@ import org.apache.beam.sdk.transforms.windowing.WindowFn;
 
 /**
  * BoundedWindow operator implementation.
+ * This operator simply windows the given elements into finite windows according to a user-specified WindowFn.
+ * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
+ * TODO #36: This class is to be updated with stream processing.
  * @param <T> type.
  */
 public class BoundedWindowImpl<T> extends BoundedWindow<T> {

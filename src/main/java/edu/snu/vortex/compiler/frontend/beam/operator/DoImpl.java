@@ -76,7 +76,7 @@ public final class DoImpl<I, O> extends Do<I, O, PCollectionView> {
   }
 
   /**
-   * ProcessContext class. Reference: SimpleDoFnRunner in BEAM.
+   * ProcessContext class. Reference: SimpleDoFnRunner.DoFnProcessContext in BEAM.
    * @param <I> input type.
    * @param <O> output type.
    */

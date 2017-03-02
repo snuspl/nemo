@@ -81,9 +81,8 @@ public final class SimpleEngine {
           dag.getOutEdgesOf(node).get().stream()
               .map(outEdge -> outEdge.getId())
               .forEach(id -> edgeIdToData.put(id, output));
-//          edgeIdToData.put(getSingleEdgeId(dag, node, EdgeDirection.Out), output);
         } else {
-          edgeIdToData.put("NOEDGE", output);
+          edgeIdToData.put("NOEDGE", output); // Data that is not written to sink, but that was output by a Do operator.
         }
       } else if (node instanceof GroupByKey) {
         final List<Iterable> data = shuffle(edgeIdToData.get(getSingleEdgeId(dag, node, EdgeDirection.In)));
@@ -118,7 +117,6 @@ public final class SimpleEngine {
     final Optional<List<Edge>> optional = (ed == EdgeDirection.In) ? dag.getInEdgesOf(node) : dag.getOutEdgesOf(node);
     if (optional.isPresent()) {
       final List<Edge> edges = optional.get();
-      System.out.println(edges);
       if (edges.size() != 1) {
         throw new IllegalArgumentException();
       } else {
