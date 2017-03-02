@@ -15,12 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**

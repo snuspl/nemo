@@ -19,12 +19,9 @@ import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
 import edu.snu.vortex.runtime.common.execplan.RtAttributes;
-import edu.snu.vortex.runtime.common.execplan.RtStage;
-import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -55,6 +52,7 @@ public class RtMaster {
     defaultResources.put(RtAttributes.ResourceType.TRANSIENT, 3);
     defaultResources.put(RtAttributes.ResourceType.RESERVED, 1);
     resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
+    scheduler.initialize(masterCommunicator);
   }
 
   public void submitExecutionPlan(final ExecutionPlan execPlan) {

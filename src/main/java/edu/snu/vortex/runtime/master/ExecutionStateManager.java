@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
+import edu.snu.vortex.runtime.common.channel.ChannelBundle;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.common.operator.RtDoOp;
@@ -23,6 +24,7 @@ import edu.snu.vortex.runtime.common.operator.RtSinkOp;
 import edu.snu.vortex.runtime.common.operator.RtSourceOp;
 import edu.snu.vortex.runtime.common.task.DoTask;
 import edu.snu.vortex.runtime.common.task.TaskGroup;
+import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -32,6 +34,9 @@ import java.util.logging.Logger;
  */
 public class ExecutionStateManager {
   private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
+
+  private Scheduler scheduler;
+
   private final Map<String, Set<String>> stageToTaskGroupMap;
   private final Map<String, RuntimeDefinitions.TaskState> taskGroupIdToTaskStateMap;
 
@@ -40,6 +45,10 @@ public class ExecutionStateManager {
   public ExecutionStateManager() {
     this.stageToTaskGroupMap = new HashMap<>();
     this.taskGroupIdToTaskStateMap = new HashMap<>();
+  }
+
+  public void initialize(final Scheduler scheduler) {
+    this.scheduler = scheduler;
   }
 
   public void submitExecutionPlan(final ExecutionPlan execPlan) {
@@ -51,6 +60,8 @@ public class ExecutionStateManager {
     while (!rtStages.isEmpty()) {
       rtStages.forEach(this::convertRtStageToPhysicalPlan);
       rtStages = execPlan.getNextRtStagesToExecute();
+
+      rtStages.forEach(scheduler::launchNextStage);
     }
   }
 
@@ -59,54 +70,84 @@ public class ExecutionStateManager {
     final int stageParallelism = (attributes == null || attributes.isEmpty())
         ? 1 : (int) attributes.get(RtAttributes.RtStageAttribute.PARALLELISM);
 
-    final RtStageLink stageLink = rtStage.getInputLinks();
+//    final RtStageLink stageLink = rtStage.getInputLinks();
 
     final List<TaskGroup> taskGroups = new ArrayList<>(stageParallelism);
     final List<RtOperator> operators = rtStage.getRtOperatorList();
     final int taskGroupSize = operators.size();
-    operators.forEach((op) -> {
+
+    for (int i = 0; i < stageParallelism; i++) {
       final TaskGroup taskGroup = new TaskGroup(IdGenerator.generateTaskGroupId(), taskGroupSize);
-      for (int i = 0; i < stageParallelism; i++) {
+      operators.forEach((op) -> {
         if (op instanceof RtDoOp) {
-          taskGroup.addTask(new DoTask(, op, ));
+          op.getOutputLinks();
+
+          final DoTask task = new DoTask(null, (RtDoOp) op, null);
+          op.addTask(task);
+          taskGroup.addTask(task);
         } else if (op instanceof RtSourceOp) {
-
+          final DoTask task = new DoTask(null, (RtDoOp) op, null);
+          taskGroup.addTask(task);
         } else if (op instanceof RtSinkOp) {
-
+          final DoTask task = new DoTask(null, (RtDoOp) op, null);
+          taskGroup.addTask(task);
         } else {
-
+          final DoTask task = new DoTask(null, (RtDoOp) op, null);
+          taskGroup.addTask(task);
         }
+      });
+      rtStage.addTaskGroup(taskGroup);
+    }
+
+  }
+
+  private void convertRtOpLinkToPhysicalChannel(final Map<String, RtOpLink> rtOpLinkMap) {
+    rtOpLinkMap.forEach((id, link) -> {
+      final Map<RtAttributes.RtOpLinkAttribute, Object> linkAttributes = link.getRtOpLinkAttr();
+      final RtAttributes.CommPattern commPattern
+          = (RtAttributes.CommPattern) linkAttributes.get(RtAttributes.RtOpLinkAttribute.COMM_PATTERN);
+
+      final ChannelBundle channelBundle = new ChannelBundle();
+      switch (commPattern) {
+      case BROADCAST:
+        break;
+      case ONE_TO_ONE:
+//        link.getSrcRtOp().getTaskList().forEach(t -> t.set);
+        break;
+      case SCATTER_GATHER:
+        break;
+      default:
+        throw new UnsupportedCommPatternException("This communication pattern is unsupported");
       }
     });
   }
 
-  public void initializeRSAndTaskStates(final RtStage runtimeStage) {
-//    Set<String> taskIds = new HashSet<>();
-//    final List<TaskLabel> taskLabelList = runtimeStage.getTaskLabelList();
-//    for (final TaskLabel taskLabel: taskLabelList) {
-//      for (final Task task : taskLabel.getTaskList()) {
-//        final String taskId = task.getTaskId();
-//        taskGroupIdToTaskStateMap.put(taskId, State.TaskState.SCHEDULED);
-//        taskIds.add(taskId);
-//      }
-//    }
-//    stageToTaskGroupMap.put(runtimeStage.getRsId(), taskIds);
+  public void onTaskGroupStateChanged(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
+    updateTaskGroupState(taskGroupId, newState);
+
+    String stageId = "";
+    boolean stageComplete = true;
+    if (newState == RuntimeDefinitions.TaskState.COMPLETE) {
+      for (final Map.Entry<String, Set<String>> stage : stageToTaskGroupMap.entrySet()) {
+        if (stage.getValue().contains(taskGroupId)) {
+          stageId = stage.getKey();
+          for (final String otherTaskGroupId : stage.getValue()) {
+            if (taskGroupIdToTaskStateMap.get(otherTaskGroupId) != RuntimeDefinitions.TaskState.COMPLETE) {
+              stageComplete = false;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      if (stageComplete) {
+        // TODO #000 : what to do when a stage completes?
+        stageToTaskGroupMap.remove(stageId);
+      }
+    }
   }
 
-  public void onTaskStateChanged(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
-    updateTaskState(taskGroupId, newState);
-
-//    if (newState == State.TaskState.COMPLETE) {
-//
-//    }
-  }
-
-  private void updateTaskState(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
+  private void updateTaskGroupState(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
     taskGroupIdToTaskStateMap.replace(taskGroupId, newState);
   }
-//
-//  private void updateStageState(final String rsId, final State.StageState newState) {
-//
-//  }
-
 }

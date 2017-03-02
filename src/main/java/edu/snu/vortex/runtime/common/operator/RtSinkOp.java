@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
 

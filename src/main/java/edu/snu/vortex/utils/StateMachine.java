@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.cay.utils;
+package edu.snu.vortex.utils;
+
 
 import org.apache.reef.io.Tuple;
 
@@ -144,6 +145,9 @@ public final class StateMachine {
     return new Builder();
   }
 
+  /**
+   *
+   */
   private static final class State {
     private final Enum stateEnum;
     private final String description;
@@ -177,6 +181,9 @@ public final class StateMachine {
     }
   }
 
+  /**
+   *
+   */
   private static final class Transition {
     private final State from;
     private final State to;
