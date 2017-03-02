@@ -16,6 +16,7 @@ enum MessageType {
     TransferReady = 7;
     TransferRequest = 8;
     TransferTermination = 9;
+    TransferStart = 10;
 
 }
 
@@ -39,6 +40,7 @@ message RtControllableMsg {
         TransferRequestMsg transferRequestMsg = 9;
         TransferTerminationMsg transferTerminationMsg = 10;
         TransferMgrRegisterMsg transferMgrRegisterMsg = 11;
+        TransferStartMsg transferStartMsg = 12;
     }
 }
 
@@ -81,14 +83,18 @@ message ChannelUnbindMsg {
     ChannelType channelType = 3;
 }
 
+message TransferStartMsg {
+    string channelId = 1;
+    int32 numChunks = 2;
+}
+
 message TransferReadyMsg {
     string channelId = 1;
-    string sessionId = 2;
 }
 
 message TransferRequestMsg {
     string channelId = 1;
-    string sessionId = 2;
+    string recvExecutorId = 2;
 }
 
 message TransferTerminationMsg {

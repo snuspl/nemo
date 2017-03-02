@@ -4,6 +4,7 @@ package edu.snu.vortex.runtime.executor;
 import edu.snu.vortex.runtime.common.DataBuffer;
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
+import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -89,6 +90,24 @@ public final class SerializedOutputContainer extends OutputStream {
     return readSize;
   }
 
+/*
+  public synchronized DataBuffer getSingleDataBuffer() {
+    if (internalBuffers.isEmpty()) {
+      return null;
+    }
+
+
+    final DataBuffer buffer = internalBuffers.remove(0);
+    if (internalBuffers.isEmpty()) {
+      currentWriteBuffer = null;
+    }
+
+    buffer.seekFirst();
+
+    bufferAllocator.releaseBuffer(buffer);
+    return buffer;
+  }
+*/
   public synchronized void clear() {
     currentWriteBuffer = null;
     internalBuffers.forEach(buf -> bufferAllocator.releaseBuffer(buf));

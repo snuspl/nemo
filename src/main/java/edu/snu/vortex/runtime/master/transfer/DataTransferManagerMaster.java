@@ -17,11 +17,10 @@ package edu.snu.vortex.runtime.master.transfer;
 
 import edu.snu.vortex.runtime.common.DataTransferStatus;
 import edu.snu.vortex.runtime.common.IdGenerator;
-import edu.snu.vortex.runtime.common.comm.RuntimeMessages;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.exception.InvalidStatusException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
-import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
-import edu.snu.vortex.runtime.master.CommunicationManager;
+import edu.snu.vortex.runtime.master.MasterCommunicator;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -34,21 +33,21 @@ import java.util.logging.Logger;
  */
 public final class DataTransferManagerMaster {
   private static final Logger LOG = Logger.getLogger(DataTransferManagerMaster.class.getName());
-  private final CommunicationManager commMgr;
+  private final MasterCommunicator commMgr;
   private final Map<String, DataTransferManagerInfo> idToTransferMgrInfoMap;
   private final Map<String, ChannelInfo> idToChannelInfoMap;
 
-  public DataTransferManagerMaster(final CommunicationManager commMgr) {
+  public DataTransferManagerMaster(final MasterCommunicator commMgr) {
     this.idToTransferMgrInfoMap = new HashMap<>();
     this.idToChannelInfoMap = new HashMap<>();
     this.commMgr = commMgr;
   }
 
-  private void registerExecutorSideManager(final String transferMgrId, final String executorId) {
+  public void registerExecutorSideManager(final String transferMgrId, final String executorId) {
     idToTransferMgrInfoMap.put(transferMgrId, new DataTransferManagerInfo(transferMgrId, executorId));
   }
 
-  private void deregisterExecutorSideManager(final String transferManagerId) {
+  public void deregisterExecutorSideManager(final String transferManagerId) {
     if (!idToTransferMgrInfoMap.containsKey(transferManagerId)) {
       LOG.log(Level.WARNING, "There is no registered transfer manager whose id is " + transferManagerId);
       return;
@@ -79,7 +78,7 @@ public final class DataTransferManagerMaster {
     idToTransferMgrInfoMap.remove(transferManagerId);
   }
 
-  private DataTransferStatus notifyTransferReadyToReceiver(final String channelId) {
+  public DataTransferStatus notifyTransferReadyToReceiver(final String channelId) {
     LOG.log(Level.INFO, "[" + this.getClass().getSimpleName()
         + "] receive data transfer ready from a channel (id: " + channelId + ")");
     final ChannelInfo channInfo = idToChannelInfoMap.get(channelId);
@@ -88,12 +87,12 @@ public final class DataTransferManagerMaster {
     }
 
     final DataTransferManagerInfo transferMgrInfo = idToTransferMgrInfoMap.get(channInfo.getReaderSideTransferMgrId());
-    RuntimeMessages.TransferReadyMsg message = RuntimeMessages.TransferReadyMsg.newBuilder()
+    RuntimeDefinitions.TransferReadyMsg message = RuntimeDefinitions.TransferReadyMsg.newBuilder()
         .setChannelId(channelId)
         .setSessionId(IdGenerator.generateSessionId())
         .build();
 
-    RuntimeMessages.RtControllableMsg controllableMsg = RuntimeMessages.RtControllableMsg.newBuilder()
+    RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferReadyMsg(message).build();
 
     commMgr.sendRtControllable(transferMgrInfo.getExecutorId(), controllableMsg);
@@ -103,7 +102,7 @@ public final class DataTransferManagerMaster {
     return DataTransferStatus.SUCCESS;
   }
 
-  private void notifyTransferRequestToSender(final String channelId, final String sessionId) {
+  public void notifyTransferRequestToSender(final String channelId, final String sessionId) {
     LOG.log(Level.INFO, "[" + this.getClass().getSimpleName()
         + "] receive data transfer request from a channel (id:" + channelId + ")");
     final ChannelInfo channInfo = idToChannelInfoMap.get(channelId);
@@ -115,18 +114,18 @@ public final class DataTransferManagerMaster {
     }
 
     final DataTransferManagerInfo transferMgrInfo = idToTransferMgrInfoMap.get(channInfo.getWriterSideTransferMgrId());
-    RuntimeMessages.TransferRequestMsg message = RuntimeMessages.TransferRequestMsg.newBuilder()
+    RuntimeDefinitions.TransferRequestMsg message = RuntimeDefinitions.TransferRequestMsg.newBuilder()
         .setChannelId(channelId)
         .setSessionId(sessionId)
         .build();
 
-    RuntimeMessages.RtControllableMsg controllableMsg = RuntimeMessages.RtControllableMsg.newBuilder()
+    RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferRequestMsg(message).build();
 
     commMgr.sendRtControllable(transferMgrInfo.getExecutorId(), controllableMsg);
   }
 
-  private void bindChannelReaderToTransferManager(final String inputChannelId, final String transferManagerId) {
+  public void bindChannelReaderToTransferManager(final String inputChannelId, final String transferManagerId) {
     if (!idToTransferMgrInfoMap.containsKey(transferManagerId)) {
       throw new RuntimeException("The transfer manager with the given id (" + transferManagerId + ") is not found.");
     }
@@ -148,7 +147,7 @@ public final class DataTransferManagerMaster {
     }
   }
 
-  private DataTransferStatus bindChannelWriterToTransferManager(
+  public DataTransferStatus bindChannelWriterToTransferManager(
       final String outputChannelId,
       final String transferManagerId) {
     if (!idToTransferMgrInfoMap.containsKey(transferManagerId)) {
@@ -174,7 +173,7 @@ public final class DataTransferManagerMaster {
     return DataTransferStatus.SUCCESS;
   }
 
-  private DataTransferStatus unbindChannelReader(final String inputChannelId) {
+  public DataTransferStatus unbindChannelReader(final String inputChannelId) {
     final ChannelInfo channInfo = idToChannelInfoMap.get(inputChannelId);
     if (channInfo.isChannelBusy()) {
       return DataTransferStatus.ERROR_CHANNEL_BUSY;
@@ -185,7 +184,7 @@ public final class DataTransferManagerMaster {
     return DataTransferStatus.SUCCESS;
   }
 
-  private DataTransferStatus unbindChannelWriter(final String outputChannelId) {
+  public DataTransferStatus unbindChannelWriter(final String outputChannelId) {
     final ChannelInfo channInfo = idToChannelInfoMap.get(outputChannelId);
     if (channInfo.isChannelBusy()) {
       return DataTransferStatus.ERROR_CHANNEL_BUSY;
@@ -196,7 +195,7 @@ public final class DataTransferManagerMaster {
     return DataTransferStatus.SUCCESS;
   }
 
-  private DataTransferStatus removeChannelBindInformation(final String channelId) {
+  public DataTransferStatus removeChannelBindInformation(final String channelId) {
     final ChannelInfo channInfo = idToChannelInfoMap.get(channelId);
     if (channInfo.isChannelBusy()) {
       return DataTransferStatus.ERROR_CHANNEL_BUSY;
@@ -208,12 +207,12 @@ public final class DataTransferManagerMaster {
 
   // TODO #000: Transferring data chunks should not be intervened by {@link DataTransferManagerMaster}.
   // It would be ideal if it can be handled only by sender and receiver tasks.
-  private void sendDataChunkToReceiver(final String channelId, final ByteBuffer chunk, final int chunkSize) {
+  public void sendDataChunkToReceiver(final String channelId, final ByteBuffer chunk, final int chunkSize) {
     throw new NotSupportedException("This functionality is no longer supported.");
   }
 
 
-  private void notifyDataTransferTerminationToReceiver(final String channelId) {
+  public void notifyDataTransferTerminationToReceiver(final String channelId) {
     LOG.log(Level.INFO, "[" + this.getClass().getSimpleName()
         + "] receive data transfer termination from channel (id: " + channelId + ")");
 
@@ -224,64 +223,15 @@ public final class DataTransferManagerMaster {
 
 
     final DataTransferManagerInfo transferMgrInfo = idToTransferMgrInfoMap.get(channInfo.getReaderSideTransferMgrId());
-    RuntimeMessages.TransferTerminationMsg message = RuntimeMessages.TransferTerminationMsg.newBuilder()
+    RuntimeDefinitions.TransferTerminationMsg message = RuntimeDefinitions.TransferTerminationMsg.newBuilder()
         .setChannelId(channelId)
         .build();
 
-    RuntimeMessages.RtControllableMsg controllableMsg = RuntimeMessages.RtControllableMsg.newBuilder()
+    RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferTerminationMsg(message).build();
 
     commMgr.sendRtControllable(transferMgrInfo.getExecutorId(), controllableMsg);
-    // TODO #000: wait for the ACK from the receiver?
-
     channInfo.setChannelStateConnected();
-  }
-
-  public void processRtControllableMsg(final RuntimeMessages.RtControllableMsg message) {
-    switch (message.getType()) {
-    case TransferMgrRegister:
-      registerExecutorSideManager(message.getTransferMgrRegisterMsg().getTransferMgrId(),
-                                  message.getTransferMgrRegisterMsg().getExecutorId());
-      break;
-
-    case TransferMgrDeregister:
-      deregisterExecutorSideManager(message.getTransferMgrDeregisterMsg().getTransferMgrId());
-      break;
-
-    case ChannelBind:
-      if (message.getChannelBindMsg().getChannelType() == RuntimeMessages.ChannelType.READER) {
-        bindChannelReaderToTransferManager(message.getChannelBindMsg().getChannelId(),
-                                          message.getChannelBindMsg().getTransferMgrId());
-      } else {
-        bindChannelWriterToTransferManager(message.getChannelBindMsg().getChannelId(),
-            message.getChannelBindMsg().getTransferMgrId());
-      }
-      break;
-
-    case ChannelUnbind:
-      if (message.getChannelBindMsg().getChannelType() == RuntimeMessages.ChannelType.READER) {
-        unbindChannelReader(message.getChannelBindMsg().getChannelId());
-      } else {
-        unbindChannelWriter(message.getChannelBindMsg().getChannelId());
-      }
-      break;
-
-    case TransferReady:
-      notifyTransferReadyToReceiver(message.getTransferReadyMsg().getChannelId());
-      break;
-
-    case TransferRequest:
-      notifyTransferRequestToSender(message.getTransferRequestMsg().getChannelId(),
-                                    message.getTransferRequestMsg().getSessionId());
-      break;
-
-    case TransferTermination:
-      notifyDataTransferTerminationToReceiver(message.getTransferTerminationMsg().getChannelId());
-      break;
-
-    default:
-      throw new UnsupportedRtControllable("Unknown runtime controllable message.");
-    }
   }
 
   /**

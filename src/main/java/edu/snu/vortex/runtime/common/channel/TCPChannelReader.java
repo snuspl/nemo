@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
+import edu.snu.vortex.runtime.exception.InvalidStatusException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
@@ -116,6 +117,8 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
    */
   private final class ReceiverSideTransferListener implements DataTransferListener {
 
+    private int numChunks;
+
     @Override
     public String getOwnerTaskId() {
       return dstTaskId;
@@ -134,18 +137,26 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onReceiveDataChunk(final String sessionId,
-                                   final int chunkId,
+    public void onReceiveTransferStart(int numChunks) {
+      LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
+      this.numChunks = numChunks;
+    }
+
+    @Override
+    public void onReceiveDataChunk(final int chunkId,
                                    final ByteBuffer chunk,
                                    final int chunkSize) {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a chunk the size of " + chunkSize + "bytes");
       serInputContainer.copyInputDataFrom(chunk.array(), chunkSize);
+      numChunks--;
     }
 
     @Override
-    public void onDataTransferTermination(final String sessionId) {
+    public void onDataTransferTermination() {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer termination notification");
-      throw new NotImplementedException("This method has yet to be implemented");
+      if (numChunks != 0) {
+        throw new InvalidStatusException("There are some data chunks not delivered during the transfer.");
+      }
     }
   }
 

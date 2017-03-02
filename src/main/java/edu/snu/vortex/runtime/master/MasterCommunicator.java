@@ -19,6 +19,7 @@ import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
+import edu.snu.vortex.runtime.master.transfer.DataTransferManagerMaster;
 
 import java.util.logging.Logger;
 
@@ -30,15 +31,18 @@ public class MasterCommunicator extends Communicator {
 
   private ResourceManager resourceManager;
   private ExecutionStateManager executionStateManager;
+  private DataTransferManagerMaster transferMgrMaster;
 
   public MasterCommunicator() {
     super(RtConfig.MASTER_NAME);
   }
 
   public void initialize(final ResourceManager resourceManager,
-                         final ExecutionStateManager executionStateManager) {
+                         final ExecutionStateManager executionStateManager,
+                         final DataTransferManagerMaster transferMgrMaster) {
     this.resourceManager = resourceManager;
     this.executionStateManager = executionStateManager;
+    this.transferMgrMaster = transferMgrMaster;
   }
 
   @Override
@@ -57,6 +61,47 @@ public class MasterCommunicator extends Communicator {
       final String taskGroupId = taskStateChangedMsg.getTaskGroupId();
       final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
       executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
+      break;
+    case TransferMgrRegister:
+      transferMgrMaster.registerExecutorSideManager(
+          rtControllable.getTransferMgrRegisterMsg().getTransferMgrId(),
+          rtControllable.getTransferMgrRegisterMsg().getExecutorId());
+      break;
+    case TransferMgrDeregister:
+      transferMgrMaster.deregisterExecutorSideManager(rtControllable
+          .getTransferMgrDeregisterMsg().getTransferMgrId());
+      break;
+    case ChannelBind:
+      if (rtControllable.getChannelBindMsg().getChannelType() == RuntimeDefinitions.ChannelType.READER) {
+        transferMgrMaster.bindChannelReaderToTransferManager(
+            rtControllable.getChannelBindMsg().getChannelId(),
+            rtControllable.getChannelBindMsg().getTransferMgrId());
+      } else {
+        transferMgrMaster.bindChannelWriterToTransferManager(
+            rtControllable.getChannelBindMsg().getChannelId(),
+            rtControllable.getChannelBindMsg().getTransferMgrId());
+      }
+      break;
+    case ChannelUnbind:
+      if (rtControllable.getChannelBindMsg().getChannelType() == RuntimeDefinitions.ChannelType.READER) {
+        transferMgrMaster.unbindChannelReader(rtControllable.getChannelBindMsg().getChannelId());
+      } else {
+        transferMgrMaster.unbindChannelWriter(rtControllable.getChannelBindMsg().getChannelId());
+      }
+      break;
+    case TransferReady:
+      transferMgrMaster.notifyTransferReadyToReceiver(rtControllable.getTransferReadyMsg().getChannelId());
+      break;
+    case TransferRequest:
+      transferMgrMaster.notifyTransferRequestToSender(
+          rtControllable.getTransferRequestMsg().getChannelId(),
+          rtControllable.getTransferRequestMsg().getSessionId());
+      break;
+    case TransferTermination:
+      transferMgrMaster.notifyDataTransferTerminationToReceiver(
+          rtControllable.getTransferTerminationMsg().getChannelId());
+      break;
+
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }

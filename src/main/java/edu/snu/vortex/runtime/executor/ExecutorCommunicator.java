@@ -32,6 +32,7 @@ public class ExecutorCommunicator extends Communicator {
   private static final Logger LOG = Logger.getLogger(ExecutorCommunicator.class.getName());
 
   private Executor executor;
+  private DataTransferManager transferManager;
   private final String executorId;
 
   public ExecutorCommunicator(final String executorId) {
@@ -39,8 +40,10 @@ public class ExecutorCommunicator extends Communicator {
     this.executorId = executorId;
   }
 
-  public void initialize(final Executor executor) {
+  public void initialize(final Executor executor,
+                         final DataTransferManager transferManager) {
     this.executor = executor;
+    this.transferManager = transferManager;
 
     // Send Executor ready message to master
     final RuntimeDefinitions.ExecutorReadyMsg.Builder msgBuilder
@@ -62,6 +65,19 @@ public class ExecutorCommunicator extends Communicator {
               rtControllable.getScheduleTaskGroupMsg().getTaskGroup().toByteArray());
       executor.submitTaskGroupForExecution(toSchedule);
       break;
+    case TransferReady:
+      final RuntimeDefinitions.TransferReadyMsg transferReadyMsg = rtControllable.getTransferReadyMsg();
+      transferManager.triggerTransferReadyNotifyCallback(transferReadyMsg.getChannelId(),
+          transferReadyMsg.getSessionId());
+      break;
+    case TransferRequest:
+      final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = rtControllable.getTransferRequestMsg();
+      transferManager.triggerTransferRequestCallback(transferRequestMsg.getChannelId(),
+          transferRequestMsg.);
+    case TransferTermination:
+      final RuntimeDefinitions.TransferTerminationMsg transferTermMsg = rtControllable.getTransferTerminationMsg();
+      transferManager.receiveTransferTermination(transferTermMsg.getChannelId());
+
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }

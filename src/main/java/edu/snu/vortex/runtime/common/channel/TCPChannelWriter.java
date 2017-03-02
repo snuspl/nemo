@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.common.channel;
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
@@ -128,12 +129,11 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
+    public void onDataTransferRequest(final String targetChannelId, final String recvExecutorId) {
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] receive a data transfer request");
-      if (channelId != targetChannelId || dstTaskId != recvTaskId) {
-        throw new RuntimeException("Received a transfer request from an invalid source.");
-      }
+
+      transferManager
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
       ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
@@ -158,20 +158,24 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
     @Override
     public void onDataTransferReadyNotification(final String targetChannelId, final String sessionId) {
-
+      throw new NotSupportedException("This method should not be called at sender side.");
     }
 
     @Override
-    public void onReceiveDataChunk(final String sessionId,
-                                   final int chunkId,
+    public void onReceiveTransferStart(int numChunks) {
+      throw new NotSupportedException("This method should not be called at sender side.");
+    }
+
+    @Override
+    public void onReceiveDataChunk(final int chunkId,
                                    final ByteBuffer chunk,
                                    final int chunkSize) {
-
+      throw new NotSupportedException("This method should not be called at sender side.");
     }
 
     @Override
-    public void onDataTransferTermination(final String sessionId) {
-
+    public void onDataTransferTermination() {
+      throw new NotSupportedException("This method should not be called at sender side.");
     }
   }
 
