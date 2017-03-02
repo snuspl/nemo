@@ -28,6 +28,7 @@ public final class IdGenerator {
   private static AtomicInteger taskGroupId = new AtomicInteger(1);
   private static AtomicInteger channelId = new AtomicInteger(1);
   private static AtomicInteger bundleId = new AtomicInteger(1);
+  private static AtomicInteger sessionId = new AtomicInteger(1);
 
   private static AtomicInteger executorId = new AtomicInteger(1);
 
@@ -42,11 +43,19 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.channel.Channel}.
+   * Generates an ID for {@link edu.snu.vortex.runtime.common.channel.Channel}.
    * @return the generated ID
    */
   public static String generateChannelId() {
     return "channel" + channelId.getAndIncrement();
+  }
+
+  /**
+   * Generates a session ID.
+   * @return a generated session ID.
+   */
+  public static String generateSessionId() {
+    return "session" + sessionId.getAndIncrement();
   }
 
   /**

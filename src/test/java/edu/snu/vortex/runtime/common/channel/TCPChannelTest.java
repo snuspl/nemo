@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
-import edu.snu.vortex.runtime.master.trasfer.DataTransferManagerMaster;
+import edu.snu.vortex.runtime.master.transfer.DataTransferManagerMaster;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,10 +27,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
 
 public final class TCPChannelTest {
+  private static final Logger LOG = Logger.getLogger( TCPChannelTest.class.getName() );
   private static final long DEFAULT_BUF_SIZE = 0x8000;
   private static final String SENDER_SIDE_TRANSFER_MANAGER_ID = "SenderSideTransferManager";
   private static final String RECEIVER_SIDE_TRANSFER_MANAGER_ID = "ReceiverSideTransferManager";
@@ -95,7 +98,7 @@ public final class TCPChannelTest {
 
   @Before
   public void setup() throws IOException {
-    this.transferManagerMaster = new DataTransferManagerMaster(null);
+    this.transferManagerMaster = new DataTransferManagerMaster();
     this.senderSideTransferManager = new DataTransferManager(SENDER_SIDE_TRANSFER_MANAGER_ID,
         transferManagerMaster);
     this.receiverSideTransferManager = new DataTransferManager(RECEIVER_SIDE_TRANSFER_MANAGER_ID,
@@ -122,14 +125,14 @@ public final class TCPChannelTest {
 
     try {
       final List<String> originalData = generateDataset(NUM_DATA_STRINGS_PER_DATA_SET);
-      System.out.println("[Test] write " + originalData.size() + " strings");
+      LOG.log(Level.INFO, "[" + this.getClass().getSimpleName() + "] write " + originalData.size() + " strings");
       channelWriter.write(originalData);
       channelWriter.flush();
 
       final List<String> receivedData = channelReader.read();
-      System.out.println("[Test] read " + receivedData.size() + " strings");
+      LOG.log(Level.INFO, "[" + this.getClass().getSimpleName() + "] read " + receivedData.size() + " strings");
       assertTrue(compareStringLists(originalData, receivedData));
-      System.out.println("[Test] verified " + originalData.size() + " strings");
+      LOG.log(Level.INFO, "[" + this.getClass().getSimpleName() + "] verified " + originalData.size() + " strings");
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A buffer allocator which manages {@link LocalFileBuffer}.
  */
 public final class LocalFileBufferAllocator implements ReadWriteBufferAllocator {
-  private static final String LOCAL_FILE_PREFIX = "local-file-buffer-manager-";
+  private static final String LOCAL_FILE_PREFIX = "local-file-buffer-alloc-";
   private static final long DEFAULT_BUF_SIZE = Long.MAX_VALUE; // unlimited.
   private final LocalFileManager fileManager;
   private final AtomicInteger idFactory = new AtomicInteger(0);

@@ -26,12 +26,15 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An implementation of TCP channel writer.
  * @param <T> the type of data records that transfer via the channel.
  */
 public final class TCPChannelWriter<T> implements ChannelWriter<T> {
+  private static final Logger LOG = Logger.getLogger(TCPChannelWriter.class.getName());
   private final String channelId;
   private final String srcTaskId;
   private final String dstTaskId;
@@ -84,8 +87,8 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
       return;
     }
     //TODO #000: Notify the master-side shuffle manager that the data is ready.
-    System.out.println("[" + srcTaskId + "] notify master that data is available");
-    transferManager.notifyTransferReadyToMaster(channelId, srcTaskId);
+    LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
+    transferManager.notifyTransferReadyToMaster(channelId);
   }
 
   @Override
@@ -127,12 +130,12 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     @Override
     public void onDataTransferRequest(final String targetChannelId, final String recvTaskId) {
 
-      System.out.println("[" + srcTaskId + "] receive a data transfer request");
+      LOG.log(Level.INFO, "[" + srcTaskId + "] receive a data transfer request");
       if (channelId != targetChannelId || dstTaskId != recvTaskId) {
         throw new RuntimeException("Received a transfer request from an invalid source.");
       }
 
-      System.out.println("[" + srcTaskId + "] start data transfer");
+      LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
       ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
       while (true) {
         final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
@@ -143,28 +146,31 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
           break;
         }
 
-        System.out.println("[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
+        LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
         transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
       }
 
-      System.out.println("[" + srcTaskId + "] terminate data transfer");
-      System.out.println("[" + srcTaskId + "] send a data transfer termination notification");
-      transferManager.sendDataTransferTerminationToReceiver(channelId, numRecordLists);
+      LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
+      LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer termination notification");
+      transferManager.sendDataTransferTerminationToReceiver(channelId);
       numRecordLists = 0;
     }
 
     @Override
-    public void onDataTransferReadyNotification(final String targetChannelId, final String sendTaskId) {
+    public void onDataTransferReadyNotification(final String targetChannelId, final String sessionId) {
 
     }
 
     @Override
-    public void onReceiveDataChunk(final ByteBuffer chunk, final int chunkSize) {
+    public void onReceiveDataChunk(final String sessionId,
+                                   final int chunkId,
+                                   final ByteBuffer chunk,
+                                   final int chunkSize) {
 
     }
 
     @Override
-    public void onDataTransferTermination(final int numObjListsInData) {
+    public void onDataTransferTermination(final String sessionId) {
 
     }
   }
