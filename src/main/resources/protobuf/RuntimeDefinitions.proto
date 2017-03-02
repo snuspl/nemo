@@ -28,7 +28,7 @@ message RtControllableMsg {
 }
 
 message ScheduleTaskGroupMsg {
-    string taskGroupId = 1;
+    bytes taskGroup = 1;
 }
 
 message TaskStateChangedMsg {
