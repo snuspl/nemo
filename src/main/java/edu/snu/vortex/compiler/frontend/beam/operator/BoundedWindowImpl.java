@@ -28,8 +28,4 @@ public class BoundedWindowImpl<T> extends BoundedWindow<T> {
   public BoundedWindowImpl(final WindowFn windowFn) {
     this.windowFn = windowFn;
   }
-
-  public final Iterable<T> transform(final Iterable<T> input) {
-    return input;
-  }
 }

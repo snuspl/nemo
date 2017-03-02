@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.operator.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
+import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.GroupByKey;
@@ -38,10 +39,12 @@ import java.util.Map;
 class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
   private final Map<PValue, Operator> pValueToOpOutput;
+  private final PipelineOptions options;
 
-  Visitor(final DAGBuilder builder) {
+  Visitor(final DAGBuilder builder, final PipelineOptions options) {
     this.builder = builder;
     this.pValueToOpOutput = new HashMap<>();
+    this.options = options;
   }
 
   @Override
@@ -92,7 +95,7 @@ class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) transform;
-      final DoImpl<I, O> vortexOperator = new DoImpl<>(parDo.getNewFn());
+      final DoImpl<I, O> vortexOperator = new DoImpl<>(parDo.getNewFn(), options);
       parDo.getSideInputs().stream()
           .filter(pValueToOpOutput::containsKey)
           .map(pValueToOpOutput::get)

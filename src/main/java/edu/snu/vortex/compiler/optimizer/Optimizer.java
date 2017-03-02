@@ -41,7 +41,7 @@ public final class Optimizer {
   /////////////////////////////////////////////////////////////
 
   private DAG operatorPlacement(final DAG dag) {
-    dag.doDFS(operator -> {
+    dag.doTopological(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
         operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
