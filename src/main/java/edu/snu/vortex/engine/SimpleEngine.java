@@ -100,8 +100,9 @@ public final class SimpleEngine {
       }
 
       System.out.println("## All non-broadcast data after " + node.getId() + ": ");
-      edgeIdToData.forEach((elem, val) -> System.out.println(elem.toString() + ":" + val.toString()));
-      System.out.println("## Also, All broadcast data: " + edgeIdToBroadcast);
+      edgeIdToData.forEach((elem, val) -> System.out.println(" " + elem.toString() + ":" + val.toString()));
+      System.out.println("# Also, All broadcast data: ");
+      edgeIdToBroadcast.forEach((elem, val) -> System.out.println(" " + elem.toString() + ":" + val.toString()));
     }
   }
 
