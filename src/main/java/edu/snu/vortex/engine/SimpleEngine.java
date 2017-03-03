@@ -45,7 +45,7 @@ public final class SimpleEngine {
         dag.getOutEdgesOf(node).get().stream()
             .map(outEdge -> outEdge.getId())
             .forEach(id -> edgeIdToData.put(id, data));
-      } else if (node instanceof BoundedWindow) {
+      } else if (node instanceof Windowing) {
         final List<Iterable> mainInput = dag.getInEdgesOf(node).get().stream()
             .filter(inEdge -> !(inEdge.getSrc() instanceof Broadcast))
             .map(inEdge -> edgeIdToData.get(inEdge.getId()))

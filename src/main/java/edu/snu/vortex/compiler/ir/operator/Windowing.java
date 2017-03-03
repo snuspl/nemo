@@ -16,8 +16,8 @@
 package edu.snu.vortex.compiler.ir.operator;
 
 /**
- * BoundedWindow operator for dividing the elements into windows.
+ * Windowing operator for dividing the elements into windows.
  * @param <T> type.
  */
-public abstract class BoundedWindow<T> extends Operator<T, T> {
+public abstract class Windowing<T> extends Operator<T, T> {
 }

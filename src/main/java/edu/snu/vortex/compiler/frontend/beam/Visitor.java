@@ -36,7 +36,7 @@ import java.util.Map;
  * Visitor class.
  * This class visits every operator in the dag to translate the BEAM program to the Vortex IR.
  */
-class Visitor extends Pipeline.PipelineVisitor.Defaults {
+final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
   private final Map<PValue, Operator> pValueToOpOutput;
   private final PipelineOptions options;
@@ -89,7 +89,7 @@ class Visitor extends Pipeline.PipelineVisitor.Defaults {
       return vortexOperator;
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
-      final BoundedWindow<I> vortexOperator = new BoundedWindowImpl<>(window.getWindowFn());
+      final Windowing<I> vortexOperator = new WindowingImpl<>(window.getWindowFn());
       return vortexOperator;
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
