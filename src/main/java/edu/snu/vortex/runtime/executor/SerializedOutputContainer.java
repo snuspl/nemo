@@ -4,7 +4,6 @@ package edu.snu.vortex.runtime.executor;
 import edu.snu.vortex.runtime.common.DataBuffer;
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
-import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -133,7 +133,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] receive a data transfer request");
 
-      transferManager
+//      transferManager
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
       ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
@@ -152,7 +152,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
       LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer termination notification");
-      transferManager.sendDataTransferTerminationToReceiver(channelId);
+//      transferManager.sendDataTransferTerminationToReceiver(channelId);
       numRecordLists = 0;
     }
 
@@ -162,7 +162,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onReceiveTransferStart(int numChunks) {
+    public void onReceiveTransferStart(final int numChunks) {
       throw new NotSupportedException("This method should not be called at sender side.");
     }
 

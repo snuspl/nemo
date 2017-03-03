@@ -137,7 +137,7 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onReceiveTransferStart(int numChunks) {
+    public void onReceiveTransferStart(final int numChunks) {
       LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
       this.numChunks = numChunks;
     }
