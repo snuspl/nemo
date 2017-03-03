@@ -35,14 +35,13 @@ public class ExecutorCommunicator extends Communicator {
   private DataTransferManager transferManager;
   private final String executorId;
 
-  public ExecutorCommunicator(final String executorId) {
+  public ExecutorCommunicator(final Executor executor, final String executorId) {
     super(executorId);
+    this.executor = executor;
     this.executorId = executorId;
   }
 
-  public void initialize(final Executor executor,
-                         final DataTransferManager transferManager) {
-    this.executor = executor;
+  public void initialize(final DataTransferManager transferManager) {
     this.transferManager = transferManager;
 
     // Send Executor ready message to master
