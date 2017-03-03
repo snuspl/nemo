@@ -26,7 +26,7 @@ public interface ChannelReader<T> extends Channel<T> {
   /**
    * read data from the channel into a given byte buffer.
    * this method is available only when the channel mode is INPUT or INOUT.
-   * @return the list of data read
+   * @return The iterable of data read
    */
-  List<T> read();
+  Iterable<T> read();
 }

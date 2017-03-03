@@ -36,6 +36,16 @@ public interface DataTransferListener extends EventListener {
   void onDataTransferRequest(String channelId, String executorId);
 
   /**
+   * A sender-side event handler called when a data transfer start ACK is received.
+   */
+  void onReceiveDataTransferStartACK();
+
+  /**
+   * A sender-side event handler called when a data transfer termination ACK is received.
+   */
+  void onReceiveDataTransferTermination();
+
+  /**
    * A receiver-side event handler called at a data transfer ready notification.
    * @param channelId The id of the channel relevant to the request.
    * @param executorId The sender's executor id.

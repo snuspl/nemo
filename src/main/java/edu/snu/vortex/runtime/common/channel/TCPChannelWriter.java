@@ -17,16 +17,23 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
+import edu.snu.vortex.utils.StateMachine;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,11 +48,16 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private final String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
-  private ChannelState channelState;
   private SerializedOutputContainer serOutputContainer;
   private DataTransferManager transferManager;
   private long containerDefaultBufferSize;
-  private int numRecordLists; // Indicates the number of data record lists serialized in the output container.
+  private StateMachine stateMachine;
+  private boolean isPushBased; // indicates either push-based or pull-based.
+  private String dstExecutorId;
+  private BlockingDeque<ChannelRequest> requestQueue;
+  private CountDownLatch transferReqLatch;
+  private CountDownLatch transferStartACKLatch;
+  private CountDownLatch transferTerminationACKLatch;
 
   TCPChannelWriter(final String channelId,
                    final String srcTaskId,
@@ -55,17 +67,96 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     this.dstTaskId = dstTaskId;
     this.channelMode = ChannelMode.OUTPUT;
     this.channelType = ChannelType.TCP_PIPE;
-    this.channelState = ChannelState.CLOSE;
-    this.numRecordLists = 0;
   }
 
-  private void serializeDataIntoContainer(final List<T> data) {
+  private enum ChannelRequestType {
+    WRITE,
+    COMMIT
+  }
+
+  private class ChannelRequest {
+    public final ChannelRequestType operType;
+    public final Iterable<T> operData;
+
+    public ChannelRequest(final ChannelRequestType operType,
+                     final Iterable<T> operData) {
+      this.operData = operData;
+      this.operType = operType;
+    }
+  }
+
+  private class ChannelThread extends Thread {
+    @Override
+    public void run() {
+      try {
+        while (true) {
+          final ChannelRequest request = requestQueue.take();
+          switch (request.operType) {
+            case WRITE:
+              serializeDataIntoContainer(request.operData);
+              break;
+            case COMMIT:
+
+              if (isPushBased) {
+                final List<Enum> states = new ArrayList<>();
+                states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+                states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+                stateMachine.checkOneOfStates(states);
+
+                if (stateMachine.getCurrentState() == RuntimeDefinitions.ChannelState.DISCONNECTED) {
+                  LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
+                  transferManager.notifyTransferReadyToMaster(channelId);
+                  stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+                  waitForTransferRequest();
+                }
+
+                transferData();
+              } else {
+                throw new NotImplementedException("Pull based policy is not implemented.");
+              }
+
+              break;
+
+            default:
+              throw new InvalidParameterException("Invalid channel request.");
+          }
+        }
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
+    }
+  }
+
+  private void waitForTransferRequest() {
+    try {
+      transferReqLatch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void waitForTransferStartACK() {
+    try {
+      transferStartACKLatch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void waitForTransferTerminationACK() {
+    try {
+      transferTerminationACKLatch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void serializeDataIntoContainer(final Iterable<T> data) {
     try {
       final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
       out.writeObject(data);
       out.close();
-
-      numRecordLists++;
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -74,22 +165,13 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   }
 
   @Override
-  public void write(final List<T> data) {
-    if (!isOpen()) {
-      return;
-    }
-
-    serializeDataIntoContainer(data);
+  public void write(final Iterable<T> data) {
+    requestQueue.add(new ChannelRequest(ChannelRequestType.WRITE, data));
   }
 
   @Override
-  public void flush() {
-    if (!isOpen()) {
-      return;
-    }
-    //TODO #000: Notify the master-side shuffle manager that the data is ready.
-    LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
-    transferManager.notifyTransferReadyToMaster(channelId);
+  public void commit() {
+    requestQueue.add(new ChannelRequest(ChannelRequestType.COMMIT, null));
   }
 
   @Override
@@ -108,14 +190,106 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   public void initialize(final DataBufferAllocator bufferAllocator,
                          final DataBufferType bufferType,
                          final long defaultBufferSize,
-                         final DataTransferManager transferMgr
-                         ) {
-    this.channelState = ChannelState.OPEN;
+                         final DataTransferManager transferMgr,
+                         final boolean isPushBased) {
     this.containerDefaultBufferSize = defaultBufferSize;
     this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, defaultBufferSize);
     this.transferManager = transferMgr;
+    this.stateMachine = buildStateMachine(isPushBased);
+    this.isPushBased = isPushBased;
+    this.requestQueue = new LinkedBlockingDeque<>();
+    this.transferReqLatch = new CountDownLatch(1);
+    this.transferStartACKLatch = new CountDownLatch(1);
+    this.transferTerminationACKLatch = new CountDownLatch(1);
 
     transferManager.registerSenderSideTransferListener(channelId, new SenderSideTransferListener());
+    (new ChannelThread()).start();
+  }
+
+  private StateMachine buildStateMachine(final boolean isPushBased) {
+    final StateMachine.Builder builder = StateMachine.newBuilder();
+    StateMachine stateMachine;
+
+    if (isPushBased) {
+      stateMachine = builder
+          .addState(RuntimeDefinitions.ChannelState.DISCONNECTED, "Disconnected")
+          .addState(RuntimeDefinitions.ChannelState.SENDING, "Sending")
+          .addState(RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING, "Pended while sending")
+          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
+          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN, "Waiting for connection")
+          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
+              RuntimeDefinitions.ChannelState.WAIT_FOR_CONN, "Notify \"ready to transfer\" to master")
+          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN,
+              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND,
+              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
+              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Complete transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
+              RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING, "Another transfer request is pended during transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING,
+              RuntimeDefinitions.ChannelState.SENDING, "Start the pended transfer")
+          .setInitialState(RuntimeDefinitions.ChannelState.DISCONNECTED).build();
+    } else {
+      stateMachine = builder
+          .addState(RuntimeDefinitions.ChannelState.DISCONNECTED, "Disconnected")
+          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
+          .addState(RuntimeDefinitions.ChannelState.SENDING, "Sending")
+          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
+              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Notify \"ready to transfer\" to master")
+          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND,
+              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
+              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
+              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Complete transfer").build();
+    }
+
+    return stateMachine;
+  }
+
+  private void transferData() {
+    LOG.log(Level.INFO, "[" + srcTaskId + "] receive a data transfer request");
+
+
+    final List<Enum> states = new ArrayList<>();
+    if (isPushBased) {
+      states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+    } else {
+      states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+    }
+    states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+    stateMachine.checkOneOfStates(states);
+
+    LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
+    LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer start message to a executor (id: "
+        + dstExecutorId +")");
+    transferManager.sendDataTransferStartToReceiver(channelId, 0, dstExecutorId);
+    waitForTransferStartACK();
+
+    stateMachine.setState(RuntimeDefinitions.ChannelState.SENDING);
+
+    LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
+    ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
+    while (true) {
+      final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
+      if (readSize == -1) {
+        chunk = ByteBuffer.allocate(2 * chunk.capacity());
+        continue;
+      } else if (readSize == 0) {
+        break;
+      }
+
+      LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
+      transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
+    }
+
+    LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
+    LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer termination notification");
+    transferManager.sendDataTransferTerminationToReceiver(channelId, dstExecutorId);
+    waitForTransferTerminationACK();
+
+    stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
   }
 
   /**
@@ -131,33 +305,46 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     @Override
     public void onDataTransferRequest(final String targetChannelId, final String recvExecutorId) {
 
-      LOG.log(Level.INFO, "[" + srcTaskId + "] receive a data transfer request");
-
-      transferManager
-
-      LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
-      ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
-      while (true) {
-        final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
-        if (readSize == -1) {
-          chunk = ByteBuffer.allocate(2 * chunk.capacity());
-          continue;
-        } else if (readSize == 0) {
-          break;
-        }
-
-        LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
-        transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
+      if (isPushBased) {
+        stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+      } else {
+        final List<Enum> states = new ArrayList<>();
+        states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+        states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+        stateMachine.checkOneOfStates(states);
       }
 
-      LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
-      LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer termination notification");
-      transferManager.sendDataTransferTerminationToReceiver(channelId);
-      numRecordLists = 0;
+      dstExecutorId = recvExecutorId;
+      transferReqLatch.countDown();
+      transferReqLatch = new CountDownLatch(1);
     }
 
     @Override
-    public void onDataTransferReadyNotification(final String targetChannelId, final String sessionId) {
+    public void onReceiveDataTransferStartACK() {
+      final List<Enum> states = new ArrayList<>();
+      if (isPushBased) {
+        states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+      } else {
+        states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+      }
+
+      states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+      stateMachine.checkOneOfStates(states);
+
+      transferStartACKLatch.countDown();
+      transferStartACKLatch = new CountDownLatch(1);
+    }
+
+    @Override
+    public void onReceiveDataTransferTermination() {
+      stateMachine.checkState(RuntimeDefinitions.ChannelState.SENDING);
+
+      transferTerminationACKLatch.countDown();
+      transferTerminationACKLatch = new CountDownLatch(1);
+    }
+
+    @Override
+    public void onDataTransferReadyNotification(final String targetChannelId, final String executorId) {
       throw new NotSupportedException("This method should not be called at sender side.");
     }
 
@@ -179,18 +366,9 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
   }
 
-  public boolean isOpen() {
-    return getState() == ChannelState.OPEN;
-  }
-
   @Override
   public String getId() {
     return channelId;
-  }
-
-  @Override
-  public ChannelState getState() {
-    return channelState;
   }
 
   @Override

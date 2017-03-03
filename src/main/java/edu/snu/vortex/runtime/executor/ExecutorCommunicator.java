@@ -68,15 +68,8 @@ public class ExecutorCommunicator extends Communicator {
     case TransferReady:
       final RuntimeDefinitions.TransferReadyMsg transferReadyMsg = rtControllable.getTransferReadyMsg();
       transferManager.triggerTransferReadyNotifyCallback(transferReadyMsg.getChannelId(),
-          transferReadyMsg.getSessionId());
+          transferReadyMsg.getSendExecutorId());
       break;
-    case TransferRequest:
-      final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = rtControllable.getTransferRequestMsg();
-      transferManager.triggerTransferRequestCallback(transferRequestMsg.getChannelId(),
-          transferRequestMsg.);
-    case TransferTermination:
-      final RuntimeDefinitions.TransferTerminationMsg transferTermMsg = rtControllable.getTransferTerminationMsg();
-      transferManager.receiveTransferTermination(transferTermMsg.getChannelId());
 
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");

@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import java.util.List;
 
 /**
  * The interface of channel writers.
@@ -26,10 +25,10 @@ public interface ChannelWriter<T> extends Channel<T> {
    * write data to the channel from a given byte buffer.
    * @param data byte buffer of data to write
    */
-  void write(List<T> data);
+  void write(Iterable<T> data);
 
   /**
-   * transfer all internally buffered data into the channel immediately.
+   * commit all internally buffered data to be delivered in the next transfer.
    */
-  void flush();
+  void commit();
 }

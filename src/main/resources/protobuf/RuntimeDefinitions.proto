@@ -9,15 +9,12 @@ enum MessageType {
     ScheduleTaskGroup = 0;
     TaskStateChanged = 1;
     ExecutorReady = 2;
-    TransferMgrRegister = 3;
-    TransferMgrDeregister = 4;
-    ChannelBind = 5;
-    ChannelUnbind = 6;
-    TransferReady = 7;
-    TransferRequest = 8;
-    TransferTermination = 9;
-    TransferStart = 10;
-
+    ChannelBind = 3;
+    ChannelUnbind = 4;
+    TransferReady = 5;
+    TransferRequest = 6;
+    TransferTermination = 7;
+    TransferStart = 8;
 }
 
 enum TaskState {
@@ -27,20 +24,26 @@ enum TaskState {
     FAILED = 3;
 }
 
+enum ChannelState {
+    DISCONNECTED = 0;
+    WAIT_FOR_CONN = 1;
+    WAIT_FOR_SEND = 2;
+    SENDING = 3;
+    PENDED_WHILE_SENDING = 4;
+}
+
 message RtControllableMsg {
     MessageType type = 1;
     oneof messageTypes {
         TaskStateChangedMsg taskStateChangedMsg = 2;
         ExecutorReadyMsg executorReadyMsg = 3;
         ScheduleTaskGroupMsg scheduleTaskGroupMsg = 4;
-        TransferMgrDeregisterMsg transferMgrDeregisterMsg = 5;
-        ChannelBindMsg channelBindMsg = 6;
-        ChannelUnbindMsg channelUnbindMsg = 7;
-        TransferReadyMsg transferReadyMsg = 8;
-        TransferRequestMsg transferRequestMsg = 9;
-        TransferTerminationMsg transferTerminationMsg = 10;
-        TransferMgrRegisterMsg transferMgrRegisterMsg = 11;
-        TransferStartMsg transferStartMsg = 12;
+        ChannelBindMsg channelBindMsg = 5;
+        ChannelUnbindMsg channelUnbindMsg = 6;
+        TransferReadyMsg transferReadyMsg = 7;
+        TransferRequestMsg transferRequestMsg = 8;
+        TransferTerminationMsg transferTerminationMsg = 9;
+        TransferStartMsg transferStartMsg = 10;
     }
 }
 
@@ -57,15 +60,6 @@ message ExecutorReadyMsg {
     string executorId = 1;
 }
 
-message TransferMgrRegisterMsg {
-    string transferMgrId = 1;
-    string executorId = 2;
-}
-
-message TransferMgrDeregisterMsg {
-    string transferMgrId = 1;
-}
-
 enum ChannelType {
     READER = 0;
     WRITER = 1;
@@ -73,13 +67,12 @@ enum ChannelType {
 
 message ChannelBindMsg {
     string channelId = 1;
-    string transferMgrId = 2;
+    string executorId = 2;
     ChannelType channelType = 3;
 }
 
 message ChannelUnbindMsg {
     string channelId = 1;
-    string transferMgrId = 2;
     ChannelType channelType = 3;
 }
 
@@ -90,6 +83,7 @@ message TransferStartMsg {
 
 message TransferReadyMsg {
     string channelId = 1;
+    string sendExecutorId = 2;
 }
 
 message TransferRequestMsg {

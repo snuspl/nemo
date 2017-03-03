@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master.transfer;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * The {@link edu.snu.vortex.runtime.common.channel.Channel} state managed by {@link DataTransferManagerMaster}.
+ * Invalid status exception.
  */
-public enum ChannelState {
-  DISCONNECTED,
-  CONNECTED,
-  BUSY
+public class IllegalStatusException extends RuntimeException {
+  public IllegalStatusException(final String message) {
+    super(message);
+  }
 }

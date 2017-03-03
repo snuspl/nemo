@@ -56,6 +56,33 @@ public final class StateMachine {
     }
   }
 
+  public synchronized void checkOneOfStates(final List<Enum> possibleCurrentStates) {
+    boolean isMatched = false;
+    Iterator<Enum> iterator = possibleCurrentStates.iterator();
+
+    while(iterator.hasNext()) {
+      final Enum possibleState = iterator.next();
+      if (currentState.stateEnum.equals(possibleState)) {
+        isMatched = true;
+      }
+    }
+
+    if (!isMatched) {
+      final String possibleStateNames = new String();
+      possibleCurrentStates.forEach(state -> possibleStateNames.concat(state.name() + ", "));
+
+      final String exceptionMessage = new StringBuilder()
+          .append("The expected current state is on of (")
+          .append(possibleStateNames)
+          .append(") but the actual state is ")
+          .append(currentState).append('\n')
+          .append(getPossibleTransitionsFromCurrentState())
+          .toString();
+
+      throw new RuntimeException(exceptionMessage);
+    }
+  }
+
   /**
    * Sets the current state as a certain state.
    *

@@ -62,44 +62,26 @@ public class MasterCommunicator extends Communicator {
       final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
       executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
       break;
-    case TransferMgrRegister:
-      transferMgrMaster.registerExecutorSideManager(
-          rtControllable.getTransferMgrRegisterMsg().getTransferMgrId(),
-          rtControllable.getTransferMgrRegisterMsg().getExecutorId());
-      break;
-    case TransferMgrDeregister:
-      transferMgrMaster.deregisterExecutorSideManager(rtControllable
-          .getTransferMgrDeregisterMsg().getTransferMgrId());
-      break;
     case ChannelBind:
       if (rtControllable.getChannelBindMsg().getChannelType() == RuntimeDefinitions.ChannelType.READER) {
-        transferMgrMaster.bindChannelReaderToTransferManager(
+        transferMgrMaster.bindChannelReaderToExecutor(
             rtControllable.getChannelBindMsg().getChannelId(),
-            rtControllable.getChannelBindMsg().getTransferMgrId());
+            rtControllable.getChannelBindMsg().getExecutorId());
       } else {
-        transferMgrMaster.bindChannelWriterToTransferManager(
+        transferMgrMaster.bindChannelWriterToExecutor(
             rtControllable.getChannelBindMsg().getChannelId(),
-            rtControllable.getChannelBindMsg().getTransferMgrId());
+            rtControllable.getChannelBindMsg().getExecutorId());
       }
       break;
     case ChannelUnbind:
       if (rtControllable.getChannelBindMsg().getChannelType() == RuntimeDefinitions.ChannelType.READER) {
-        transferMgrMaster.unbindChannelReader(rtControllable.getChannelBindMsg().getChannelId());
+        transferMgrMaster.unbindChannelReader(rtControllable.getChannelUnbindMsg().getChannelId());
       } else {
-        transferMgrMaster.unbindChannelWriter(rtControllable.getChannelBindMsg().getChannelId());
+        transferMgrMaster.unbindChannelWriter(rtControllable.getChannelUnbindMsg().getChannelId());
       }
       break;
     case TransferReady:
       transferMgrMaster.notifyTransferReadyToReceiver(rtControllable.getTransferReadyMsg().getChannelId());
-      break;
-    case TransferRequest:
-      transferMgrMaster.notifyTransferRequestToSender(
-          rtControllable.getTransferRequestMsg().getChannelId(),
-          rtControllable.getTransferRequestMsg().getSessionId());
-      break;
-    case TransferTermination:
-      transferMgrMaster.notifyDataTransferTerminationToReceiver(
-          rtControllable.getTransferTerminationMsg().getChannelId());
       break;
 
     default:

@@ -17,8 +17,10 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.exception.InvalidStatusException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedInputContainer;
@@ -28,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,10 +46,10 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private DataTransferManager transferManager;
-  private ChannelState channelState;
   private SerializedInputContainer serInputContainer;
   private long containerDefaultBufferSize;
   private int numRecordListsInContainer = 0;
+  private CountDownLatch transferStartLatch;
 
   TCPChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
@@ -54,10 +57,18 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     this.dstTaskId = dstTaskId;
     this.channelMode = ChannelMode.INPUT;
     this.channelType = ChannelType.TCP_PIPE;
-    this.channelState = ChannelState.CLOSE;
+
     this.numRecordListsInContainer = 0;
   }
 
+  private class ChannelThread extends Thread {
+    @Override
+    public void run() {
+      while(true) {
+
+      }
+    }
+  }
   private List<T> deserializeDataFromContainer() {
     final List<T> data = new ArrayList<>();
 
@@ -80,10 +91,7 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   }
 
   @Override
-  public List<T> read() {
-    if (!isOpen()) {
-      return null;
-    }
+  public Iterable<T> read() {
 
     return deserializeDataFromContainer();
   }
@@ -106,10 +114,12 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
                          final long defaultBufferSize,
                          final DataTransferManager transferMgr) {
     this.serInputContainer = new SerializedInputContainer(bufferAllocator, bufferType);
-    this.channelState = ChannelState.OPEN;
     this.containerDefaultBufferSize = defaultBufferSize;
     this.transferManager = transferMgr;
+    this.transferStartLatch = new CountDownLatch(1);
+
     transferManager.registerReceiverSideTransferListener(channelId, new ReceiverSideTransferListener());
+    (new ChannelThread()).start();
   }
 
   /**
@@ -125,8 +135,18 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onDataTransferRequest(final String targetChannelId, final String sessionId) {
+    public void onDataTransferRequest(final String targetChannelId, final String executorId) {
+      throw new NotSupportedException("This method should not be called at receiver side.");
+    }
 
+    @Override
+    public void onReceiveDataTransferStartACK() {
+      throw new NotSupportedException("This method should not be called at receiver side.");
+    }
+
+    @Override
+    public void onReceiveDataTransferTermination() {
+      throw new NotSupportedException("This method should not be called at receiver side.");
     }
 
     @Override
@@ -155,23 +175,14 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
     public void onDataTransferTermination() {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer termination notification");
       if (numChunks != 0) {
-        throw new InvalidStatusException("There are some data chunks not delivered during the transfer.");
+        throw new IllegalStateException("There are some data chunks not delivered during the transfer.");
       }
     }
-  }
-
-  public boolean isOpen() {
-    return getState() == ChannelState.OPEN;
   }
 
   @Override
   public String getId() {
     return channelId;
-  }
-
-  @Override
-  public ChannelState getState() {
-    return channelState;
   }
 
   @Override
