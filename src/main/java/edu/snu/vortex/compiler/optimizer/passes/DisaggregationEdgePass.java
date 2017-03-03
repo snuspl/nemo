@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.DAG;
 /**
  * Disaggregated Resources pass for tagging edges.
  */
-public class DisaggregationEdgePass implements EdgePass {
+public final class DisaggregationEdgePass implements EdgePass {
   public DAG process(final DAG dag) throws Exception {
     return dag;
   }

@@ -15,9 +15,9 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
-import com.sun.tools.javac.util.Pair;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.optimizer.passes.*;
+import edu.snu.vortex.utils.Pair;
 
 import java.util.*;
 
@@ -28,34 +28,47 @@ public final class Optimizer {
   /**
    * Optimize function.
    * @param dag input DAG.
+   * @param policyType type of the instantiation policy that we want to use to optimize the DAG.
    * @return optimized DAG, tagged with attributes.
+   * @throws Exception throws an exception if there is an exception.
    */
   public DAG optimize(final DAG dag, final PolicyType policyType) throws Exception {
     final Policy policy = new Policy(POLICIES.get(policyType));
     return policy.process(dag);
   }
 
-  private static class Policy {
-    private final OperatorPass operPass;
+  /**
+   * Policy class.
+   * It contains an operator pass and an edge pass, and runs them sequentially to optimize the DAG.
+   */
+  private static final class Policy {
+    private final OperatorPass operatorPass;
     private final EdgePass edgePass;
 
     private Policy(final Pair<OperatorPass, EdgePass> pair) {
-      this.operPass = pair.fst;
-      this.edgePass = pair.snd;
+      this.operatorPass = pair.left();
+      this.edgePass = pair.right();
     }
 
     private DAG process(final DAG dag) throws Exception {
-      DAG operatorPlacedDAG = operPass.process(dag);
-      DAG placedDAG = edgePass.process(operatorPlacedDAG);
-      return placedDAG;
+      DAG operatorPlacedDAG = operatorPass.process(dag);
+      DAG operatorAndEdgePlacedDAG = edgePass.process(operatorPlacedDAG);
+      return operatorAndEdgePlacedDAG;
     }
   }
 
+  /**
+   * Enum for different types of instantiation policies.
+   */
   public enum PolicyType {
     Pado,
     Disaggregation,
   }
 
+  /**
+   * A HashMap to match each of instantiation policies with a combination of instantiation passes.
+   * As you can infer here, each instantiation policy is consisted of a pair of instantiation passes.
+   */
   private static final Map<PolicyType, Pair<OperatorPass, EdgePass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.Pado, Pair.of(new PadoOperatorPass(), new PadoEdgePass()));

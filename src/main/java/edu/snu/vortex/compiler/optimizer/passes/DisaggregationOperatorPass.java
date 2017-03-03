@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * Disaggregated Resources pass for tagging operators.
  */
-public class DisaggregationOperatorPass implements OperatorPass {
+public final class DisaggregationOperatorPass implements OperatorPass {
   public DAG process(final DAG dag) throws Exception {
     dag.doDFS(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);

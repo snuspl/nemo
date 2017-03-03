@@ -15,13 +15,13 @@
  */
 package edu.snu.vortex.compiler.optimizer.examples;
 
-import com.sun.tools.javac.util.Pair;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.operator.Do;
 import edu.snu.vortex.compiler.ir.operator.Source;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.utils.Pair;
 
 import java.util.List;
 import java.util.Map;
