@@ -67,13 +67,12 @@ public class ExecutorCommunicator extends Communicator {
       break;
     case TransferReady:
       final RuntimeDefinitions.TransferReadyMsg transferReadyMsg = rtControllable.getTransferReadyMsg();
-      transferManager.triggerTransferReadyNotifyCallback(transferReadyMsg.getChannelId(),
-          transferReadyMsg.getSessionId());
+//      transferManager.triggerTransferReadyNotifyCallback(transferReadyMsg.getChannelId());
       break;
     case TransferRequest:
       final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = rtControllable.getTransferRequestMsg();
-      transferManager.triggerTransferRequestCallback(transferRequestMsg.getChannelId(),
-          transferRequestMsg.);
+//      transferManager.triggerTransferRequestCallback(transferRequestMsg.getChannelId(),
+//          transferRequestMsg.);
     case TransferTermination:
       final RuntimeDefinitions.TransferTerminationMsg transferTermMsg = rtControllable.getTransferTerminationMsg();
       transferManager.receiveTransferTermination(transferTermMsg.getChannelId());
