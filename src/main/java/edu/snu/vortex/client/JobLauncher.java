@@ -39,8 +39,9 @@ public final class JobLauncher {
 
     final Optimizer optimizer = new Optimizer();
     // TODO #31: Interfaces for Runtime Optimization
-    final DAG optimizedDAG = optimizer.optimize(dag, Optimizer.PolicyType.Pado);
-    System.out.println("##### VORTEX COMPILER (After Optimization) #####");
+    final Optimizer.PolicyType optimizationPolicy = Optimizer.PolicyType.Pado;
+    final DAG optimizedDAG = optimizer.optimize(dag, optimizationPolicy);
+    System.out.println("##### VORTEX COMPILER (After Optimization for " + optimizationPolicy + ") #####");
     System.out.println(optimizedDAG);
 
     // TODO #28: Implement VortexBackend
