@@ -104,6 +104,7 @@ public final class SimpleEngine {
       System.out.println("# Also, All broadcast data: ");
       edgeIdToBroadcast.forEach((elem, val) -> System.out.println(" " + elem.toString() + ":" + val.toString()));
     }
+    System.out.println("## Job completed.");
   }
 
   /**
