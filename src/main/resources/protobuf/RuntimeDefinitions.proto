@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package protobuf;
 
+import "RuntimeStates.proto";
+
 option java_package = "edu.snu.vortex.runtime.common.comm";
 option java_outer_classname = "RuntimeDefinitions";
 
@@ -20,11 +22,9 @@ enum MessageType {
 
 }
 
-enum TaskState {
-    READY = 0;
-    RUNNING = 1;
-    COMPLETE = 2;
-    FAILED = 3;
+enum ChannelType {
+    READER = 0;
+    WRITER = 1;
 }
 
 message RtControllableMsg {
@@ -64,11 +64,6 @@ message TransferMgrRegisterMsg {
 
 message TransferMgrDeregisterMsg {
     string transferMgrId = 1;
-}
-
-enum ChannelType {
-    READER = 0;
-    WRITER = 1;
 }
 
 message ChannelBindMsg {
