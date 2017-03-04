@@ -54,7 +54,7 @@ public class RtMaster {
     Map<RuntimeAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
     defaultResources.put(RuntimeAttributes.ResourceType.TRANSIENT, 3);
     defaultResources.put(RuntimeAttributes.ResourceType.RESERVED, 1);
-    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
+    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources, masterCommunicator);
     scheduler.initialize(masterCommunicator);
     masterCommunicator.initialize(resourceManager, executionStateManager, dataTransferManagerMaster);
     dataTransferManagerMaster.initialize(masterCommunicator);

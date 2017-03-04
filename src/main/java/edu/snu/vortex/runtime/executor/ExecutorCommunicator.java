@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.task.TaskGroup;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
 import org.apache.commons.lang.SerializationUtils;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 
@@ -41,8 +42,10 @@ public class ExecutorCommunicator extends Communicator {
     this.executorId = executorId;
   }
 
-  public void initialize(final DataTransferManager transferManager) {
+  public void initialize(final DataTransferManager transferManager,
+                         final Map<String, Communicator> routingTable) {
     this.transferManager = transferManager;
+    routingTable.forEach(this::registerNewRemoteCommunicator);
 
     // Send Executor ready message to master
     final RuntimeDefinitions.ExecutorReadyMsg.Builder msgBuilder

@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.RtConfig;
@@ -59,7 +60,7 @@ public class MasterCommunicator extends Communicator {
     case TaskStateChanged:
       final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = rtControllable.getTaskStateChangedMsg();
       final String taskGroupId = taskStateChangedMsg.getTaskGroupId();
-      final RuntimeDefinitions.TaskState newState = taskStateChangedMsg.getState();
+      final RuntimeStates.TaskState newState = taskStateChangedMsg.getState();
       executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
       break;
     case TransferMgrRegister:

@@ -17,9 +17,10 @@ package edu.snu.vortex.runtime.master;
 
 
 import edu.snu.vortex.runtime.common.IdGenerator;
+import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 import edu.snu.vortex.runtime.executor.ExecutorContainer;
 
 import java.util.Collections;
@@ -29,13 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
-
 /**
  * ResourceManager.
  */
 public class ResourceManager {
   private static final Logger LOG = Logger.getLogger(ResourceManager.class.getName());
 
+  private Communicator masterCommunicator;
   private static final int DEFAULT_NUM_EXECUTION_THREADS = 2;
   private final ConcurrentMap<String, ExecutorContainer> executorPlacement;
 
@@ -45,7 +46,9 @@ public class ResourceManager {
 
   public void initialize(final RtMaster master,
                          final RtConfig.RtExecMode execMode,
-                         final Map<RtAttributes.ResourceType, Integer> numToAllocate) {
+                         final Map<RuntimeAttributes.ResourceType, Integer> numToAllocate,
+                         final MasterCommunicator masterCommunicator) {
+    this.masterCommunicator = masterCommunicator;
     numToAllocate.forEach((executorType, count) -> {
       for (int i = 0; i < count; i++) {
         allocateResource(master, execMode, executorType, DEFAULT_NUM_EXECUTION_THREADS);
@@ -60,19 +63,19 @@ public class ResourceManager {
 
   public void allocateResource(final RtMaster master,
                                final RtConfig.RtExecMode execMode,
-                               final RtAttributes.ResourceType executorType,
+                               final RuntimeAttributes.ResourceType executorType,
                                final int numExecutionThreads) {
     final String newExecutorId = IdGenerator.generateExecutorId();
     final ExecutorConfig executorConfig = new ExecutorConfig(execMode, executorType, numExecutionThreads);
     final ExecutorContainer executorContainer = new ExecutorContainer(master, newExecutorId, execMode, executorConfig);
-    executorContainer.initialize();
+    executorContainer.initialize(masterCommunicator.getRoutingTable());
     executorPlacement.put(newExecutorId, executorContainer);
   }
 
-  public Map<RtAttributes.ResourceType, String> getRunningResources() {
-    final Map<RtAttributes.ResourceType, String> executorByResourceType = new HashMap<>();
-    executorPlacement.forEach((s, executorContainer) ->
-        executorByResourceType.put(executorContainer.getExecutorConfig().getExecutorType(), s));
+  public Map<RuntimeAttributes.ResourceType, String> getRunningResources() {
+    final Map<RuntimeAttributes.ResourceType, String> executorByResourceType = new HashMap<>();
+    executorPlacement.forEach((id, executorContainer) ->
+        executorByResourceType.put(executorContainer.getExecutorConfig().getExecutorType(), id));
     return Collections.unmodifiableMap(executorByResourceType);
   }
 
