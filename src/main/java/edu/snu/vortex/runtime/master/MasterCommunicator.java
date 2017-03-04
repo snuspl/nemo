@@ -94,9 +94,8 @@ public class MasterCommunicator extends Communicator {
       transferMgrMaster.notifyTransferReadyToReceiver(rtControllable.getTransferReadyMsg().getChannelId());
       break;
     case TransferRequest:
-      transferMgrMaster.notifyTransferRequestToSender(
-          rtControllable.getTransferRequestMsg().getChannelId(),
-          rtControllable.getTransferRequestMsg().getSessionId());
+//      transferMgrMaster.notifyTransferRequestToSender(
+//          rtControllable.getTransferRequestMsg().getChannelId(),
       break;
     case TransferTermination:
       transferMgrMaster.notifyDataTransferTerminationToReceiver(

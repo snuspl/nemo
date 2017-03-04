@@ -19,7 +19,6 @@ import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
-import edu.snu.vortex.runtime.master.MasterCommunicator;
 import edu.snu.vortex.runtime.master.RtMaster;
 
 import java.util.Map;
@@ -50,7 +49,6 @@ public class ExecutorContainer {
     this.dataTransferManager =
         new DataTransferManager(executorId, executorId, RtConfig.MASTER_NAME, executorCommunicator);
     this.executorConfig = executorConfig;
-    initialize();
   }
 
   public ExecutorConfig getExecutorConfig() {
