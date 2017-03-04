@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.RtDoOp;
+import edu.snu.vortex.compiler.ir.operator.Do;
 import edu.snu.vortex.compiler.frontend.beam.ProcessContext;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
@@ -30,10 +30,10 @@ import java.util.Map;
  * @param <I> input type.
  * @param <O> output type.
  */
-public final class RtDoOpImpl<I, O> extends RtDoOp<I, O, PCollectionView> {
+public final class DoImpl<I, O> extends Do<I, O, PCollectionView> {
   private final DoFn doFn;
 
-  public RtDoOpImpl(final DoFn doFn) {
+  public DoImpl(final DoFn doFn) {
     this.doFn = doFn;
   }
 
