@@ -18,7 +18,6 @@ package edu.snu.vortex.compiler.backend.vortex;
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.common.IdGenerator;
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
 
 import java.util.HashMap;
@@ -40,15 +39,15 @@ public final class OperatorConverter {
     irOpAttributes.forEach((k, v) -> {
       switch (k) {
       case Placement:
-        if (v == Attributes.Placement.Transient) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
-        } else if (v == Attributes.Placement.Reserved) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
-        } else if (v == Attributes.Placement.Compute) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.COMPUTE);
-        } else if (v == Attributes.Placement.Storage) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.STORAGE);
-        }
+//        if (v == Attributes.Placement.Transient) {
+//          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
+//        } else if (v == Attributes.Placement.Reserved) {
+//          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
+//        } else if (v == Attributes.Placement.Compute) {
+//          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.COMPUTE);
+//        } else if (v == Attributes.Placement.Storage) {
+//          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.STORAGE);
+//        }
         break;
       case EdgePartitioning:
         if (v == Attributes.EdgePartitioning.Hash) {
@@ -61,7 +60,7 @@ public final class OperatorConverter {
         throw new UnsupportedOperationException("Unsupported operator attribute");
       }
     });
-    final RtOperator rOp = new RtOperator(irOp.getId(), rOpAttributes);
+    final RtOperator rOp = null; //new RtOperator(irOp.getId(), rOpAttributes);
     return rOp;
   }
 
