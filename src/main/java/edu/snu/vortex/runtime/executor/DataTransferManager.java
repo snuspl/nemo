@@ -17,12 +17,19 @@ package edu.snu.vortex.runtime.executor;
 
 
 
+import com.google.protobuf.ByteString;
+import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.exception.NotSupportedException;
+import org.apache.commons.lang.SerializationUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +43,11 @@ public class DataTransferManager {
   private final ExecutorCommunicator comm;
   private final Map<String, DataTransferListener> channelIdToSenderSideListenerMap;
   private final Map<String, DataTransferListener> channelIdToReceiverSideListenerMap;
+  private final Map<String, DataTransferManager> routingTable;
+  private final BlockingDeque<RtControllable> incomingMessageQueue;
+  private final BlockingDeque<RtControllable> outgoingMessageQueue;
+  private final Thread incomingMessageHandlerThread;
+  private final Thread outgoingMessegeRouterThread;
 
   public DataTransferManager(final String executorId,
                              final String masterId,
@@ -45,6 +57,101 @@ public class DataTransferManager {
     this.comm = comm;
     this.channelIdToSenderSideListenerMap = new HashMap<>();
     this.channelIdToReceiverSideListenerMap = new HashMap<>();
+    this.incomingMessageQueue = new LinkedBlockingDeque<>();
+    this.outgoingMessageQueue = new LinkedBlockingDeque<>();
+    this.routingTable = new HashMap<>();
+    this.incomingMessageHandlerThread = new Thread(new IncomingRtControllableHandler());
+    this.outgoingMessegeRouterThread = new Thread(new OutgoingRtControllableRouter());
+  }
+
+  public void initialize() {
+    routingTable.put(executorId, this);
+    incomingMessageHandlerThread.start();
+    outgoingMessegeRouterThread.start();
+  }
+
+  private class IncomingRtControllableHandler implements Runnable {
+    @Override
+    public void run() {
+      while (true) {
+        try {
+          final RtControllable rtControllable = incomingMessageQueue.take();
+          if (rtControllable.getReceiverId().compareTo(executorId) != 0) {
+            throw new InvalidParameterException("A rtControllable is delivered to a wrong executor (id: "
+                + executorId + ")");
+          }
+
+          processRtControllable(rtControllable.getMessage());
+
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
+  private class OutgoingRtControllableRouter implements Runnable {
+    @Override
+    public void run() {
+      while (true) {
+        try {
+          final RtControllable rtControllable = outgoingMessageQueue.take();
+          routingTable.get(rtControllable.getReceiverId()).receiveRtControllable(rtControllable);
+
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
+  private void processRtControllable(RuntimeDefinitions.RtControllableMsg message) {
+    switch (message.getType()) {
+      case TransferRequest:
+        final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = message.getTransferRequestMsg();
+        triggerTransferRequestCallback(transferRequestMsg.getChannelId(), transferRequestMsg.getRecvExecutorId());
+        break;
+
+      case TransferStart:
+        final RuntimeDefinitions.TransferStartMsg transferStartMsg = message.getTransferStartMsg();
+        triggerTransferStartCallback(transferStartMsg.getChannelId(), transferStartMsg.getNumChunks());
+        break;
+
+      case TransferTermination:
+        final RuntimeDefinitions.TransferTerminationMsg transferTerminationMsg = message.getTransferTerminationMsg();
+        triggerTransferTerminationCallback(transferTerminationMsg.getChannelId());
+        break;
+
+      case TransferDataChunk:
+        final RuntimeDefinitions.TransferDataChunkMsg transferDataChunkMsg = message.getTransferDataChunkMsg();
+        triggerDataChunkCallback(
+            transferDataChunkMsg.getChannelId(),
+            transferDataChunkMsg.getChunkId(),
+            transferDataChunkMsg.getChunk().asReadOnlyByteBuffer(),
+            transferDataChunkMsg.getChunkSize());
+        break;
+      default:
+        throw new NotSupportedException("The given RtControllableMsg with "
+            + message.getType() + " type cannot be processed by " + this.getClass().getSimpleName());
+    }
+  }
+
+  public void receiveRtControllable(final RtControllable rtControllable) {
+    incomingMessageQueue.offer(rtControllable);
+  }
+
+  public void sendRtControllable(final String recvExecutorId,
+                                    final RuntimeDefinitions.RtControllableMsg rtControllableMsg) {
+    final RtControllable rtControllable = new RtControllable(executorId, recvExecutorId, rtControllableMsg, null);
+
+    routingTable.get(recvExecutorId).receiveRtControllable(rtControllable);
+  }
+
+  public void registerNewTransferManager(final String executorId, final DataTransferManager newTransferMgr) {
+    if (routingTable.containsKey(executorId)) {
+      throw new IllegalStateException("The given transfer manager is already registered.");
+    }
+    routingTable.put(executorId, newTransferMgr);
   }
 
   public void registerSenderSideTransferListener(final String channelId, final DataTransferListener listener) {
@@ -101,7 +208,7 @@ public class DataTransferManager {
     RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferStartMsg(message).build();
 
-    comm.sendRtControllable(recvExecutorId, controllableMsg);
+    sendRtControllable(recvExecutorId, controllableMsg);
   }
 
   public void triggerTransferStartCallback(final String channelId,
@@ -112,11 +219,22 @@ public class DataTransferManager {
   }
 
 
-  public void sendDataChunkToReceiver(final String channelId, final ByteBuffer chunk, final int chunkSize) {
-    throw new NotImplementedException("This method has yet to be implemented.");
+  public void sendDataChunkToReceiver(final String channelId, final int chunkId,
+                                      final ByteBuffer chunk, final int chunkSize, final String recvExecutorId) {
+    final RuntimeDefinitions.TransferDataChunkMsg message = RuntimeDefinitions.TransferDataChunkMsg.newBuilder()
+        .setChannelId(channelId)
+        .setChunkId(chunkId)
+        .setChunkSize(chunkSize)
+        .setChunk(ByteString.copyFrom(chunk))
+        .build();
+
+    RuntimeDefinitions.RtControllableMsg rtControllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
+        .setTransferDataChunkMsg(message).build();
+
+    sendRtControllable(recvExecutorId, rtControllableMsg);
   }
 
-  public void receiveDataChunk(final String channelId,
+  public void triggerDataChunkCallback(final String channelId,
                                final int chunkId,
                                final ByteBuffer chunk,
                                final int chunkSize) {
@@ -134,7 +252,7 @@ public class DataTransferManager {
     RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferTerminationMsg(message).build();
 
-    comm.sendRtControllable(recvExecutorId, controllableMsg);
+    sendRtControllable(recvExecutorId, controllableMsg);
   }
 
   public void triggerTransferTerminationCallback(final String channelId) {
@@ -155,7 +273,7 @@ public class DataTransferManager {
     RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
         .setTransferRequestMsg(message).build();
 
-    comm.sendRtControllable(sendExecutorId, controllableMsg);
+    sendRtControllable(sendExecutorId, controllableMsg);
   }
 
   public void notifyTransferReadyToMaster(final String channelId) {

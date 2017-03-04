@@ -271,6 +271,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
     ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
+    int chunkId = 0;
     while (true) {
       final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
       if (readSize == -1) {
@@ -281,7 +282,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
       }
 
       LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
-      transferManager.sendDataChunkToReceiver(channelId, chunk, readSize);
+      transferManager.sendDataChunkToReceiver(channelId, chunkId++, chunk, readSize, dstExecutorId);
     }
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");

@@ -34,6 +34,7 @@ public class ExecutorContainer {
   private final Executor executor;
   private final ExecutorConfig executorConfig;
   private final ExecutorCommunicator executorCommunicator;
+  private final DataTransferManager transferManager;
 
   public ExecutorContainer(final RtMaster master,
                            final String executorId,
@@ -42,6 +43,7 @@ public class ExecutorContainer {
     this.master = master;
     this.executorId = executorId;
     this.executorCommunicator = new ExecutorCommunicator(executorId);
+    this.transferManager = new DataTransferManager(executorId, RtConfig.MASTER_NAME, executorCommunicator);
     this.executor = new Executor(executionMode, executorConfig);
     this.executorConfig = executorConfig;
     initialize();
@@ -59,6 +61,10 @@ public class ExecutorContainer {
 
   public ExecutorCommunicator getExecutorCommunicator() {
     return executorCommunicator;
+  }
+
+  public DataTransferManager getDataTransferManager() {
+    return transferManager;
   }
 
   private void sendExecutorReadyMsg() {

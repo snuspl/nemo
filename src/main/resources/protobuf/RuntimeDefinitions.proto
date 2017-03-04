@@ -15,6 +15,7 @@ enum MessageType {
     TransferRequest = 6;
     TransferTermination = 7;
     TransferStart = 8;
+    TransferDataChunk = 9;
 }
 
 enum TaskState {
@@ -44,6 +45,7 @@ message RtControllableMsg {
         TransferRequestMsg transferRequestMsg = 8;
         TransferTerminationMsg transferTerminationMsg = 9;
         TransferStartMsg transferStartMsg = 10;
+        TransferDataChunkMsg transferDataChunkMsg = 11;
     }
 }
 
@@ -95,3 +97,9 @@ message TransferTerminationMsg {
     string channelId = 1;
 }
 
+message TransferDataChunkMsg {
+    string channelId = 1;
+    int32 chunkId = 2;
+    int32 chunkSize = 3;
+    bytes chunk = 4;
+}

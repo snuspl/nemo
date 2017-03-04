@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.master.transfer;
 
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
+import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.master.MasterCommunicator;
 
 import java.util.HashMap;
@@ -31,10 +32,25 @@ public final class DataTransferManagerMaster {
   private static final Logger LOG = Logger.getLogger(DataTransferManagerMaster.class.getName());
   private final MasterCommunicator commMgr;
   private final Map<String, ChannelInfo> idToChannelInfoMap;
+  private final Map<String, DataTransferManager> executorIdToTransferMgrMap;
 
   public DataTransferManagerMaster(final MasterCommunicator commMgr) {
     this.idToChannelInfoMap = new HashMap<>();
     this.commMgr = commMgr;
+    this.executorIdToTransferMgrMap = new HashMap<>();
+  }
+
+  public void registerNewTransferManager(final String executorId, final DataTransferManager newTransferManager) {
+    if (executorIdToTransferMgrMap.containsKey(executorId)) {
+      throw new IllegalStateException("the given transfer manager is already registered.");
+    }
+
+    executorIdToTransferMgrMap.forEach((id, transferMgr) -> {
+      transferMgr.registerNewTransferManager(executorId, newTransferManager);
+      newTransferManager.registerNewTransferManager(id, transferMgr);
+    });
+
+    executorIdToTransferMgrMap.put(executorId, newTransferManager);
   }
 
   public void notifyTransferReadyToReceiver(final String channelId) {

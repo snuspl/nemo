@@ -19,6 +19,7 @@ import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
+import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.master.transfer.DataTransferManagerMaster;
 
 import java.util.logging.Logger;
@@ -51,10 +52,13 @@ public class MasterCommunicator extends Communicator {
     case ExecutorReady:
       final String executorId = rtControllable.getExecutorReadyMsg().getExecutorId();
       final Communicator newCommunicator = resourceManager.getResourceById(executorId).getExecutorCommunicator();
+      final DataTransferManager newTransferMgr = resourceManager.getResourceById(executorId).getDataTransferManager();
       resourceManager.onResourceAllocated(executorId);
       registerNewRemoteCommunicator(executorId, newCommunicator);
       getRoutingTable().forEach(((id, communicator) ->
           communicator.registerNewRemoteCommunicator(executorId, newCommunicator)));
+
+      transferMgrMaster.registerNewTransferManager(executorId, newTransferMgr);
       break;
     case TaskStateChanged:
       final RuntimeDefinitions.TaskStateChangedMsg taskStateChangedMsg = rtControllable.getTaskStateChangedMsg();
