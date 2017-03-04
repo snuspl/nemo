@@ -6,7 +6,7 @@ import edu.snu.vortex.runtime.common.operator.RtDoOp;
 import java.util.List;
 
 /**
- * DoTask.
+ * PartitionTask.
  */
 public class PartitionTask extends Task {
   private final RtDoOp doOp;
@@ -20,7 +20,6 @@ public class PartitionTask extends Task {
 
   @Override
   public void compute() {
-    doOp.compute();
   }
 }
 

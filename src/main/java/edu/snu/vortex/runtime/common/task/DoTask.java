@@ -20,7 +20,7 @@ public class DoTask extends Task {
 
   @Override
   public void compute() {
-    doOp.compute();
+    doOp.compute(null);
   }
 }
 

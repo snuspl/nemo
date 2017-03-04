@@ -20,7 +20,6 @@ public class MergeTask extends Task {
 
   @Override
   public void compute() {
-    doOp.compute();
   }
 }
 
