@@ -16,9 +16,12 @@
 package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
+import edu.snu.vortex.runtime.common.task.Task;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +31,7 @@ import java.util.Map;
  */
 public abstract class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
-  private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
+  private final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr;
 
   /**
    * Map of <ID, {@link RtOpLink}> connecting previous {@link RtOperator} to this {@link RtOperator}.
@@ -40,26 +43,29 @@ public abstract class RtOperator<I, O> implements Serializable {
    */
   private Map<String, RtOpLink> outputLinks;
 
-  public RtOperator(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  private final List<Task> taskList;
+
+  public RtOperator(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
     this.rtOpId = IdGenerator.generateRtOpId(irOpId);
     this.rtOpAttr = rtOpAttr;
     this.inputLinks = new HashMap<>();
     this.outputLinks = new HashMap<>();
+    this.taskList = new ArrayList<>();
   }
 
   public String getId() {
     return rtOpId;
   }
 
-  public void addAttrbute(final RtAttributes.RtOpAttribute key, final Object value) {
+  public void addAttrbute(final RuntimeAttributes.OperatorAttribute key, final Object value) {
     rtOpAttr.put(key, value);
   }
 
-  public void removeAttrbute(final RtAttributes.RtOpAttribute key) {
+  public void removeAttrbute(final RuntimeAttributes.OperatorAttribute key) {
     rtOpAttr.remove(key);
   }
 
-  public Map<RtAttributes.RtOpAttribute, Object> getRtOpAttr() {
+  public Map<RuntimeAttributes.OperatorAttribute, Object> getRtOpAttr() {
     return rtOpAttr;
   }
 
@@ -75,6 +81,22 @@ public abstract class RtOperator<I, O> implements Serializable {
       throw new RuntimeException("the given link is already in the input link list");
     }
     inputLinks.put(rtOpLink.getRtOpLinkId(), rtOpLink);
+  }
+
+  public Map<String, RtOpLink> getInputLinks() {
+    return inputLinks;
+  }
+
+  public Map<String, RtOpLink> getOutputLinks() {
+    return outputLinks;
+  }
+
+  public void addTask(final Task task) {
+    this.taskList.add(task);
+  }
+
+  public List<Task> getTaskList() {
+    return taskList;
   }
 
   @Override
