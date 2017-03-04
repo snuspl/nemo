@@ -26,6 +26,11 @@ enum ResourceType {
     STORAGE = 3;
 }
 
+enum PartitionType {
+    HASH = 0;
+    RANGE = 1;
+}
+
 enum ChannelType {
     LOCAL = 0;
     MEMORY = 1;
