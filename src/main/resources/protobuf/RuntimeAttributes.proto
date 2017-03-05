@@ -11,11 +11,11 @@ enum StageAttribute {
 }
 
 enum OperatorAttribute {
-    PARTITION = 0;
+    PARTITION_TYPE = 0;
 }
 
 enum OperatorLinkAttribute {
-    CHANNEL = 0;
+    CHANNEL_TYPE = 0;
     COMMUNICATION_PATTERN = 1;
 }
 

@@ -9,7 +9,7 @@ option java_outer_classname = "RuntimeDefinitions";
 
 enum MessageType {
     ScheduleTaskGroup = 0;
-    TaskStateChanged = 1;
+    TaskGroupStateChanged = 1;
     ExecutorReady = 2;
     TransferMgrRegister = 3;
     TransferMgrDeregister = 4;
@@ -30,7 +30,7 @@ enum ChannelType {
 message RtControllableMsg {
     MessageType type = 1;
     oneof messageTypes {
-        TaskStateChangedMsg taskStateChangedMsg = 2;
+        TaskGroupStateChangedMsg taskStateChangedMsg = 2;
         ExecutorReadyMsg executorReadyMsg = 3;
         ScheduleTaskGroupMsg scheduleTaskGroupMsg = 4;
         TransferMgrDeregisterMsg transferMgrDeregisterMsg = 5;
@@ -48,9 +48,9 @@ message ScheduleTaskGroupMsg {
     bytes taskGroup = 1;
 }
 
-message TaskStateChangedMsg {
+message TaskGroupStateChangedMsg {
     string taskGroupId = 1;
-    TaskState state = 2;
+    TaskGroupState state = 2;
 }
 
 message ExecutorReadyMsg {

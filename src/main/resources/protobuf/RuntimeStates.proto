@@ -5,7 +5,7 @@ package protobuf;
 option java_package = "edu.snu.vortex.runtime.common";
 option java_outer_classname = "RuntimeStates";
 
-enum TaskState {
+enum TaskGroupState {
     READY = 0;
     RUNNING = 1;
     COMPLETE = 2;
