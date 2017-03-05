@@ -16,10 +16,10 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * Unsupported runtime configuration exception.
+ * Unsupported {@link edu.snu.vortex.runtime.common.execplan.RtOperator} exception.
  */
-public class UnsupportedRtConfigException extends RuntimeException {
-  public UnsupportedRtConfigException(final String message) {
+public class UnsupportedRtOperatorException extends RuntimeException {
+  public UnsupportedRtOperatorException(final String message) {
     super(message);
   }
 }
