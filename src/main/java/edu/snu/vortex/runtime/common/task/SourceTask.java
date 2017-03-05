@@ -1,21 +1,21 @@
 package edu.snu.vortex.runtime.common.task;
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.operator.RtDoOp;
+import edu.snu.vortex.runtime.common.operator.RtSourceOp;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * SourceTask.
  */
 public class SourceTask extends Task {
-  private final RtDoOp doOp;
+  private final RtSourceOp.Reader reader;
 
-  public SourceTask(final List<ChannelBundle> inputChannels,
-                    final RtDoOp rtDoOpOp,
-                    final List<ChannelBundle> outputChannels) {
-    super(inputChannels, outputChannels);
-    this.doOp = rtDoOpOp;
+  public SourceTask(final String taskId,
+                    final RtSourceOp.Reader reader,
+                    final Map<String, ChannelBundle> outputChannels) {
+    super(taskId, null, outputChannels);
+    this.reader = reader;
   }
 
   @Override

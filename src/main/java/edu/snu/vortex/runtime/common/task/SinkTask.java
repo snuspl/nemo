@@ -1,21 +1,21 @@
 package edu.snu.vortex.runtime.common.task;
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.operator.RtSourceOp;
+import edu.snu.vortex.runtime.common.operator.RtSinkOp;
 
 import java.util.Map;
 
 /**
- * SourceTask.
+ * SinkTask.
  */
-public class SourceTask extends Task {
-  private final RtSourceOp.Reader reader;
+public class SinkTask extends Task {
+  private final RtSinkOp.Writer writer;
 
-  public SourceTask(final String taskId,
-                    final RtSourceOp.Reader reader,
-                    final Map<String, ChannelBundle> outputChannels) {
-    super(taskId, null, outputChannels);
-    this.reader = reader;
+  public SinkTask(final String taskId,
+                  final RtSinkOp.Writer writer,
+                  final Map<String, ChannelBundle> inputChannels) {
+    super(taskId, inputChannels, null);
+    this.writer = writer;
   }
 
   @Override
