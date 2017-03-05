@@ -15,18 +15,18 @@
  */
 package edu.snu.vortex.runtime.common.config;
 
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 /**
  * ExecutorConfig.
  */
 public class ExecutorConfig {
   private final RtConfig.RtExecMode rtExecMode;
-  private final RtAttributes.ResourceType executorType;
+  private final RuntimeAttributes.ResourceType executorType;
   private final int numExecutionThreads;
 
   public ExecutorConfig(final RtConfig.RtExecMode rtExecMode,
-                        final RtAttributes.ResourceType executorType,
+                        final RuntimeAttributes.ResourceType executorType,
                         final int numExecutionThreads) {
     this.rtExecMode = rtExecMode;
     this.executorType = executorType;
@@ -37,7 +37,7 @@ public class ExecutorConfig {
     return numExecutionThreads;
   }
 
-  public RtAttributes.ResourceType getExecutorType() {
+  public RuntimeAttributes.ResourceType getExecutorType() {
     return executorType;
   }
 }
