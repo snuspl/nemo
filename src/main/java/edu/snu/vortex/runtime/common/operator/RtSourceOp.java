@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -26,18 +26,15 @@ import java.util.Map;
  * @param <O> output type.
  */
 public abstract class RtSourceOp<O> extends RtOperator<Void, O> {
-  public RtSourceOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  public RtSourceOp(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
     super(irOpId, rtOpAttr);
   }
-  // Maybe make the parameter a any-type hashmap(attributes/options)
 
   /**
    * Getter for readers.
-   * @param desiredBundleSizeBytes .
    * @return List of readers.
-   * @throws Exception .
    */
-  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+  public abstract List<Reader<O>> getReaders();
 
   /**
    * Interface for reader.

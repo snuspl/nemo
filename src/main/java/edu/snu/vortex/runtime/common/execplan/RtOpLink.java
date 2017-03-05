@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public final class RtOpLink {
   private final String rtOpLinkId;
-  private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
+  private final Map<RuntimeAttributes.OperatorLinkAttribute, Object> rtOpLinkAttr;
 
   private final RtOperator srcRtOp;
   private final RtOperator dstRtOp;
@@ -37,7 +37,7 @@ public final class RtOpLink {
    */
   public RtOpLink(final RtOperator srcRtOp,
                   final RtOperator dstRtOp,
-                  final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {
+                  final Map<RuntimeAttributes.OperatorLinkAttribute, Object> rtOpLinkAttr) {
     this.rtOpLinkId = IdGenerator.generateRtOpLinkId();
     this.srcRtOp = srcRtOp;
     this.dstRtOp = dstRtOp;
@@ -56,7 +56,7 @@ public final class RtOpLink {
     return dstRtOp;
   }
 
-  public Map<RtAttributes.RtOpLinkAttribute, Object> getRtOpLinkAttr() {
+  public Map<RuntimeAttributes.OperatorLinkAttribute, Object> getRtOpLinkAttr() {
     return rtOpLinkAttr;
   }
 

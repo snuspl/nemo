@@ -65,4 +65,9 @@ public final class LogicalChannel implements Channel {
     return dstTaskId;
   }
 
+  @Override
+  public void setDstTaskId(final String newDstTaskId) {
+    dstTaskId = newDstTaskId;
+  }
+
 }

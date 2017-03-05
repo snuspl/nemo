@@ -2,12 +2,14 @@ syntax = "proto3";
 
 package protobuf;
 
+import "RuntimeStates.proto";
+
 option java_package = "edu.snu.vortex.runtime.common.comm";
 option java_outer_classname = "RuntimeDefinitions";
 
 enum MessageType {
     ScheduleTaskGroup = 0;
-    TaskStateChanged = 1;
+    TaskGroupStateChanged = 1;
     ExecutorReady = 2;
     ChannelBind = 3;
     ChannelUnbind = 4;
@@ -20,11 +22,9 @@ enum MessageType {
     TransferTerminationACK = 11;
 }
 
-enum TaskState {
-    READY = 0;
-    RUNNING = 1;
-    COMPLETE = 2;
-    FAILED = 3;
+enum ChannelType {
+    READER = 0;
+    WRITER = 1;
 }
 
 enum ChannelState {
@@ -41,7 +41,7 @@ enum ChannelState {
 message RtControllableMsg {
     MessageType type = 1;
     oneof messageTypes {
-        TaskStateChangedMsg taskStateChangedMsg = 2;
+        TaskGroupStateChangedMsg taskStateChangedMsg = 2;
         ExecutorReadyMsg executorReadyMsg = 3;
         ScheduleTaskGroupMsg scheduleTaskGroupMsg = 4;
         ChannelBindMsg channelBindMsg = 5;
@@ -60,18 +60,13 @@ message ScheduleTaskGroupMsg {
     bytes taskGroup = 1;
 }
 
-message TaskStateChangedMsg {
+message TaskGroupStateChangedMsg {
     string taskGroupId = 1;
-    TaskState state = 2;
+    TaskGroupState state = 2;
 }
 
 message ExecutorReadyMsg {
     string executorId = 1;
-}
-
-enum ChannelType {
-    READER = 0;
-    WRITER = 1;
 }
 
 message ChannelBindMsg {

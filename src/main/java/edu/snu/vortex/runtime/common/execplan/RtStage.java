@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.common.execplan;
 
 import com.google.api.client.util.ArrayMap;
 import edu.snu.vortex.runtime.common.IdGenerator;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,7 +29,7 @@ import java.util.Map;
  */
 public final class RtStage {
   private final String rtStageId;
-  private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
+  private final Map<RuntimeAttributes.StageAttribute, Object> rtStageAttr;
 
   /**
    * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
@@ -55,11 +56,13 @@ public final class RtStage {
    */
   private final Map<String, RtStageLink> outputLinks;
 
+  private List<TaskGroup> taskGroups;
+
   /**
    * Represents a stage containing operators to be executed in Vortex runtime.
    * @param rtStageAttr attributes that can be given and applied to this {@link RtStage}
    */
-  public RtStage(final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr) {
+  public RtStage(final Map<RuntimeAttributes.StageAttribute, Object> rtStageAttr) {
     this.rtStageId = IdGenerator.generateRtStageId();
     this.rtOps = new ArrayMap<>();
     this.rtOperatorList = new LinkedList<>();
@@ -67,6 +70,7 @@ public final class RtStage {
     this.inputLinks = new HashMap<>();
     this.outputLinks = new HashMap<>();
     this.rtStageAttr = rtStageAttr;
+    this.taskGroups = new LinkedList<>();
   }
 
   public String getId() {
@@ -146,7 +150,7 @@ public final class RtStage {
     return outputLinks;
   }
 
-  public Map<RtAttributes.RtStageAttribute, Object> getRtStageAttr() {
+  public Map<RuntimeAttributes.StageAttribute, Object> getRtStageAttr() {
     return rtStageAttr;
   }
 
@@ -160,6 +164,14 @@ public final class RtStage {
 
   public Map<String, RtOpLink> getRtOpLinks() {
     return rtOpLinks;
+  }
+
+  public List<TaskGroup> getTaskGroups() {
+    return taskGroups;
+  }
+
+  public void addTaskGroup(final TaskGroup taskGroup) {
+    this.taskGroups.add(taskGroup);
   }
 
   @Override

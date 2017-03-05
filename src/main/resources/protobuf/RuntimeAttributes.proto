@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package protobuf;
+
+option java_package = "edu.snu.vortex.runtime.common.execplan";
+option java_outer_classname = "RuntimeAttributes";
+
+enum StageAttribute {
+    PARALLELISM = 0;
+    RESOURCE_TYPE = 1;
+}
+
+enum OperatorAttribute {
+    PARTITION_TYPE = 0;
+}
+
+enum OperatorLinkAttribute {
+    CHANNEL_TYPE = 0;
+    COMMUNICATION_PATTERN = 1;
+}
+
+enum ResourceType {
+    TRANSIENT = 0;
+    RESERVED = 1;
+    COMPUTE = 2;
+    STORAGE = 3;
+}
+
+enum PartitionType {
+    HASH = 0;
+    RANGE = 1;
+}
+
+enum ChannelType {
+    LOCAL = 0;
+    MEMORY = 1;
+    FILE = 2;
+    DISTR_STORAGE = 3;
+}
+
+enum CommPattern {
+    ONE_TO_ONE = 0;
+    BROADCAST = 1;
+    SCATTER_GATHER = 2;
+}

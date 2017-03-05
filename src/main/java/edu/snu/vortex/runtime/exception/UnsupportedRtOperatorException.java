@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * Define all execution states to be used to monitor the job state in master.
- * The job state can be tracked for various purposes (ex. scheduling, user monitor)
+ * Unsupported {@link edu.snu.vortex.runtime.common.execplan.RtOperator} exception.
  */
-public class ExecutionState {
-  /**
-   * JobState.
-   */
-  public enum JobState {  }
-
-  /**
-   * StageState.
-   */
-  public enum StageState { SCHEDULED, RUNNING, COMPLETE }
-
-  /**
-   * TaskState.
-   */
-  public enum TaskState { SCHEDULED, RUNNING, COMPLETE }
+public class UnsupportedRtOperatorException extends RuntimeException {
+  public UnsupportedRtOperatorException(final String message) {
+    super(message);
+  }
 }

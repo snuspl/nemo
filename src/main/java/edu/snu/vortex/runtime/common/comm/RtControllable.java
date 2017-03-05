@@ -24,15 +24,12 @@ public final class RtControllable implements Serializable {
   private final String senderId;
   private final String receiverId;
   private final RuntimeDefinitions.RtControllableMsg message;
-  private final Serializable data;
 
   public RtControllable(final String senderId, final String receiverId,
-                        final RuntimeDefinitions.RtControllableMsg rtControllableMsg,
-                        final Serializable data) {
+                        final RuntimeDefinitions.RtControllableMsg rtControllableMsg) {
     this.senderId = senderId;
     this.receiverId = receiverId;
     this.message = rtControllableMsg;
-    this.data = data;
   }
 
   public String getSenderId() {
@@ -45,9 +42,5 @@ public final class RtControllable implements Serializable {
 
   public RuntimeDefinitions.RtControllableMsg getMessage() {
     return message;
-  }
-
-  public Serializable getData() {
-    return data;
   }
 }

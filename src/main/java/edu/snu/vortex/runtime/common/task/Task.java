@@ -19,17 +19,20 @@ package edu.snu.vortex.runtime.common.task;
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Task.
  */
 public abstract class Task implements Serializable {
-  private final List<ChannelBundle> inputChannels;
-  private final List<ChannelBundle> outputChannels;
+  private final String taskId;
+  private final Map<String, ChannelBundle> inputChannels;
+  private final Map<String, ChannelBundle> outputChannels;
 
-  public Task(final List<ChannelBundle> inputChannels,
-              final List<ChannelBundle> outputChannels) {
+  public Task(final String taskId,
+              final Map<String, ChannelBundle> inputChannels,
+              final Map<String, ChannelBundle> outputChannels) {
+    this.taskId = taskId;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
   }
@@ -37,15 +40,19 @@ public abstract class Task implements Serializable {
   public abstract void compute();
 
   public final void initializeChannels() {
-    inputChannels.forEach(bundle -> bundle.initialize());
-    outputChannels.forEach(bundle -> bundle.initialize());
+    inputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize());
+    outputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize());
   }
 
-  public List<ChannelBundle> getInputChannels() {
+  public String getTaskId() {
+    return taskId;
+  }
+
+  public Map<String, ChannelBundle> getInputChannels() {
     return inputChannels;
   }
 
-  public List<ChannelBundle> getOutputChannels() {
+  public Map<String, ChannelBundle> getOutputChannels() {
     return outputChannels;
   }
 }

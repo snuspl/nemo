@@ -21,9 +21,7 @@ import com.google.protobuf.ByteString;
 import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
-import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
-import org.apache.commons.lang.SerializationUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -151,7 +149,7 @@ public class DataTransferManager {
 
   public void sendRtControllable(final String recvExecutorId,
                                     final RuntimeDefinitions.RtControllableMsg rtControllableMsg) {
-    final RtControllable rtControllable = new RtControllable(executorId, recvExecutorId, rtControllableMsg, null);
+    final RtControllable rtControllable = new RtControllable(executorId, recvExecutorId, rtControllableMsg);
 
     routingTable.get(recvExecutorId).receiveRtControllable(rtControllable);
   }

@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ import java.util.Map;
  * @param <T> .
  */
 public abstract class RtBroadcastOp<I, O, T> extends RtOperator<I, O> {
-  public RtBroadcastOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  public RtBroadcastOp(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
     super(irOpId, rtOpAttr);
   }
   public abstract O transform(Iterable<I> input);

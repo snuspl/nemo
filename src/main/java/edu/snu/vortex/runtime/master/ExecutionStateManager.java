@@ -16,18 +16,25 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
+import edu.snu.vortex.runtime.common.RuntimeStates;
+import edu.snu.vortex.runtime.common.channel.Channel;
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.common.channel.LogicalChannel;
 import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.common.operator.RtDoOp;
+import edu.snu.vortex.runtime.common.operator.RtGroupByKeyOp;
 import edu.snu.vortex.runtime.common.operator.RtSinkOp;
 import edu.snu.vortex.runtime.common.operator.RtSourceOp;
-import edu.snu.vortex.runtime.common.task.DoTask;
-import edu.snu.vortex.runtime.common.task.TaskGroup;
+import edu.snu.vortex.runtime.common.task.*;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
+import edu.snu.vortex.runtime.exception.UnsupportedRtOperatorException;
 
 import java.util.*;
 import java.util.logging.Logger;
+
+import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.BROADCAST;
+import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.ONE_TO_ONE;
+import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.SCATTER_GATHER;
 
 /**
  * ExecutionStateManager.
@@ -38,9 +45,7 @@ public class ExecutionStateManager {
   private Scheduler scheduler;
 
   private final Map<String, Set<String>> stageToTaskGroupMap;
-  private final Map<String, RuntimeDefinitions.TaskState> taskGroupIdToTaskStateMap;
-
-  private ExecutionPlan executionPlan;
+  private final Map<String, RuntimeStates.TaskGroupState> taskGroupIdToTaskStateMap;
 
   public ExecutionStateManager() {
     this.stageToTaskGroupMap = new HashMap<>();
@@ -52,8 +57,6 @@ public class ExecutionStateManager {
   }
 
   public void submitExecutionPlan(final ExecutionPlan execPlan) {
-    this.executionPlan = execPlan;
-
     // call APIs of RtStage, RtOperator, RtStageLink, etc.
     // to create tasks and specify channels
     Set<RtStage> rtStages = execPlan.getNextRtStagesToExecute();
@@ -66,73 +69,143 @@ public class ExecutionStateManager {
   }
 
   private void convertRtStageToPhysicalPlan(final RtStage rtStage) {
-    final Map<RtAttributes.RtStageAttribute, Object> attributes = rtStage.getRtStageAttr();
+    final Map<RuntimeAttributes.StageAttribute, Object> attributes = rtStage.getRtStageAttr();
     final int stageParallelism = (attributes == null || attributes.isEmpty())
-        ? 1 : (int) attributes.get(RtAttributes.RtStageAttribute.PARALLELISM);
+        ? 1 : (int) attributes.get(RuntimeAttributes.StageAttribute.PARALLELISM);
 
-//    final RtStageLink stageLink = rtStage.getInputLinks();
-
-    final List<TaskGroup> taskGroups = new ArrayList<>(stageParallelism);
+    final Set<String> taskGroupIds = new HashSet<>(stageParallelism);
     final List<RtOperator> operators = rtStage.getRtOperatorList();
     final int taskGroupSize = operators.size();
 
     for (int i = 0; i < stageParallelism; i++) {
       final TaskGroup taskGroup = new TaskGroup(IdGenerator.generateTaskGroupId(), taskGroupSize);
-      operators.forEach((op) -> {
+      for (RtOperator op : operators) {
+        final Map<String, RtOpLink> inputRtOpLinks = op.getInputLinks();
+        final Map<String, RtOpLink> outputRtOpLinks = op.getOutputLinks();
+        final Task task;
+        final String taskId = IdGenerator.generateTaskId();
         if (op instanceof RtDoOp) {
-          op.getOutputLinks();
-
-          final DoTask task = new DoTask(null, (RtDoOp) op, null);
-          op.addTask(task);
-          taskGroup.addTask(task);
+          task = new DoTask(taskId, new HashMap<>(inputRtOpLinks.size()),
+              (RtDoOp) op, new HashMap<>(outputRtOpLinks.size()));
         } else if (op instanceof RtSourceOp) {
-          final DoTask task = new DoTask(null, (RtDoOp) op, null);
-          taskGroup.addTask(task);
+          final List<RtSourceOp.Reader> readers = ((RtSourceOp) op).getReaders();
+          task = new SourceTask(taskId, readers.get(i), new HashMap<>(outputRtOpLinks.size()));
         } else if (op instanceof RtSinkOp) {
-          final DoTask task = new DoTask(null, (RtDoOp) op, null);
-          taskGroup.addTask(task);
+          final List<RtSinkOp.Writer> writers = ((RtSinkOp) op).getWriters();
+          task = new SinkTask(taskId, writers.get(i), new HashMap<>(inputRtOpLinks.size()));
+        } else if (op instanceof RtGroupByKeyOp) {
+          task = new MergeTask(taskId, new HashMap<>(inputRtOpLinks.size()), new HashMap<>(outputRtOpLinks.size()));
         } else {
-          final DoTask task = new DoTask(null, (RtDoOp) op, null);
-          taskGroup.addTask(task);
+          throw new UnsupportedRtOperatorException("this operator is not yet supported");
         }
-      });
+        convertRtOpLinkToPhysicalChannel(inputRtOpLinks, outputRtOpLinks, i, stageParallelism, task);
+        op.addTask(task);
+        taskGroup.addTask(task);
+      }
+      taskGroupIdToTaskStateMap.put(taskGroup.getTaskGroupId(), RuntimeStates.TaskGroupState.READY);
+      taskGroupIds.add(taskGroup.getTaskGroupId());
       rtStage.addTaskGroup(taskGroup);
     }
-
+    stageToTaskGroupMap.put(rtStage.getId(), taskGroupIds);
   }
 
-  private void convertRtOpLinkToPhysicalChannel(final Map<String, RtOpLink> rtOpLinkMap) {
-    rtOpLinkMap.forEach((id, link) -> {
-      final Map<RtAttributes.RtOpLinkAttribute, Object> linkAttributes = link.getRtOpLinkAttr();
-      final RtAttributes.CommPattern commPattern
-          = (RtAttributes.CommPattern) linkAttributes.get(RtAttributes.RtOpLinkAttribute.COMM_PATTERN);
+  private void convertRtOpLinkToPhysicalChannel(final Map<String, RtOpLink> inputRtOpLinks,
+                                                final Map<String, RtOpLink> outputRtOpLinks,
+                                                final int parallelismIdx,
+                                                final int stageParallelism,
+                                                final Task taskToAdd) {
+    inputRtOpLinks.forEach((id, link) -> {
+      final Map<RuntimeAttributes.OperatorLinkAttribute, Object> linkAttributes = link.getRtOpLinkAttr();
+      final RuntimeAttributes.CommPattern commPattern
+          = (RuntimeAttributes.CommPattern)
+          linkAttributes.get(RuntimeAttributes.OperatorLinkAttribute.COMMUNICATION_PATTERN);
 
       final ChannelBundle channelBundle = new ChannelBundle();
+      final List<Task> srcTaskList = link.getSrcRtOp().getTaskList();
       switch (commPattern) {
       case BROADCAST:
+      case SCATTER_GATHER:
+        srcTaskList.forEach(task -> {
+          final Channel inputChannel = task.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
+          channelBundle.addChannel(inputChannel);
+          inputChannel.setDstTaskId(taskToAdd.getTaskId());
+        });
         break;
       case ONE_TO_ONE:
-//        link.getSrcRtOp().getTaskList().forEach(t -> t.set);
-        break;
-      case SCATTER_GATHER:
+        final Task srcTask = srcTaskList.get(parallelismIdx);
+        final Channel inputChannel = srcTask.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
+        channelBundle.addChannel(inputChannel);
+        inputChannel.setDstTaskId(taskToAdd.getTaskId());
         break;
       default:
         throw new UnsupportedCommPatternException("This communication pattern is unsupported");
       }
+      taskToAdd.getInputChannels().put(id, channelBundle);
+    });
+
+    outputRtOpLinks.forEach((id, link) -> {
+      final Map<RuntimeAttributes.OperatorLinkAttribute, Object> linkAttributes = link.getRtOpLinkAttr();
+      final RuntimeAttributes.CommPattern commPattern
+          = (RuntimeAttributes.CommPattern)
+          linkAttributes.get(RuntimeAttributes.OperatorLinkAttribute.COMMUNICATION_PATTERN);
+      final RuntimeAttributes.ChannelType channelType
+          = (RuntimeAttributes.ChannelType)
+          linkAttributes.get(RuntimeAttributes.OperatorLinkAttribute.CHANNEL_TYPE);
+
+      final ChannelBundle channelBundle = new ChannelBundle();
+      switch (commPattern) {
+      case BROADCAST:
+      case SCATTER_GATHER:
+        for (int i = 0; i < stageParallelism; i++) {
+          final Channel channelToAdd = createChannel(channelType, taskToAdd.getTaskId());
+          channelBundle.addChannel(channelToAdd);
+        }
+        break;
+      case ONE_TO_ONE:
+        final Channel channelToAdd = createChannel(channelType, taskToAdd.getTaskId());
+        channelBundle.addChannel(channelToAdd);
+        break;
+      default:
+        throw new UnsupportedCommPatternException("This communication pattern is unsupported");
+      }
+      taskToAdd.getOutputChannels().put(id, channelBundle);
     });
   }
 
-  public void onTaskGroupStateChanged(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
+  private Channel createChannel(final RuntimeAttributes.ChannelType channelType,
+                                final String srcTaskId) {
+    // TODO #000: create channels when the implementation is pushed.
+    final Channel channel;
+    switch (channelType) {
+    case LOCAL:
+      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      break;
+    case MEMORY:
+      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      break;
+    case FILE:
+      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      break;
+    case DISTR_STORAGE:
+      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      break;
+    default:
+      throw new UnsupportedCommPatternException("This channel type is unsupported");
+    }
+    return channel;
+  }
+
+  public void onTaskGroupStateChanged(final String taskGroupId, final RuntimeStates.TaskGroupState newState) {
     updateTaskGroupState(taskGroupId, newState);
 
     String stageId = "";
     boolean stageComplete = true;
-    if (newState == RuntimeDefinitions.TaskState.COMPLETE) {
+    if (newState == RuntimeStates.TaskGroupState.COMPLETE) {
       for (final Map.Entry<String, Set<String>> stage : stageToTaskGroupMap.entrySet()) {
         if (stage.getValue().contains(taskGroupId)) {
           stageId = stage.getKey();
           for (final String otherTaskGroupId : stage.getValue()) {
-            if (taskGroupIdToTaskStateMap.get(otherTaskGroupId) != RuntimeDefinitions.TaskState.COMPLETE) {
+            if (taskGroupIdToTaskStateMap.get(otherTaskGroupId) != RuntimeStates.TaskGroupState.COMPLETE) {
               stageComplete = false;
               break;
             }
@@ -147,7 +220,7 @@ public class ExecutionStateManager {
     }
   }
 
-  private void updateTaskGroupState(final String taskGroupId, final RuntimeDefinitions.TaskState newState) {
+  private void updateTaskGroupState(final String taskGroupId, final RuntimeStates.TaskGroupState newState) {
     taskGroupIdToTaskStateMap.replace(taskGroupId, newState);
   }
 }

@@ -15,12 +15,13 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.common.comm.Communicator;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.master.RtMaster;
 
-import java.io.Serializable;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -28,13 +29,14 @@ import java.util.logging.Logger;
  */
 public class ExecutorContainer {
   private static final Logger LOG = Logger.getLogger(ExecutorContainer.class.getName());
+
   private final String executorId;
 
   private final RtMaster master;
   private final Executor executor;
   private final ExecutorConfig executorConfig;
   private final ExecutorCommunicator executorCommunicator;
-  private final DataTransferManager transferManager;
+  private final DataTransferManager dataTransferManager;
 
   public ExecutorContainer(final RtMaster master,
                            final String executorId,
@@ -42,21 +44,25 @@ public class ExecutorContainer {
                            final ExecutorConfig executorConfig) {
     this.master = master;
     this.executorId = executorId;
-    this.executorCommunicator = new ExecutorCommunicator(executorId);
-    this.transferManager = new DataTransferManager(executorId, RtConfig.MASTER_NAME, executorCommunicator);
     this.executor = new Executor(executionMode, executorConfig);
+    this.executorCommunicator = new ExecutorCommunicator(executor, executorId);
+    this.dataTransferManager =
+        new DataTransferManager(executorId, RtConfig.MASTER_NAME, executorCommunicator);
     this.executorConfig = executorConfig;
-    initialize();
   }
 
   public ExecutorConfig getExecutorConfig() {
     return executorConfig;
   }
 
-  public void initialize() {
-    executorCommunicator.initialize(executor);
+  public void initialize(final Map<String, Communicator> routingTable) {
+    executorCommunicator.initialize(dataTransferManager, routingTable);
     executor.initialize(executorCommunicator);
     sendExecutorReadyMsg();
+  }
+
+  public String getExecutorId() {
+    return executorId;
   }
 
   public ExecutorCommunicator getExecutorCommunicator() {
@@ -64,7 +70,7 @@ public class ExecutorContainer {
   }
 
   public DataTransferManager getDataTransferManager() {
-    return transferManager;
+    return dataTransferManager;
   }
 
   private void sendExecutorReadyMsg() {
@@ -75,7 +81,7 @@ public class ExecutorContainer {
         = RuntimeDefinitions.RtControllableMsg.newBuilder();
     builder.setType(RuntimeDefinitions.MessageType.ExecutorReady);
     builder.setExecutorReadyMsg(msgBuilder.build());
-    executorCommunicator.sendRtControllable(RtConfig.MASTER_NAME, builder.build(), new Serializable() { });
+    executorCommunicator.sendRtControllable(RtConfig.MASTER_NAME, builder.build());
   }
 
   public void terminate() {

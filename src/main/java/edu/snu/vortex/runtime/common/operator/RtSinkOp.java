@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.operator;
 
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -26,23 +26,21 @@ import java.util.Map;
  * @param <I> input type.
  */
 public abstract class RtSinkOp<I> extends RtOperator<I, Void> {
-  public RtSinkOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  public RtSinkOp(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
     super(irOpId, rtOpAttr);
   }
 
   /**
    * Getter for writers.
-   * @param numWriters .
    * @return List of writers.
-   * @throws Exception .
    */
-  public abstract List<Writer<I>> getWriters(final int numWriters) throws Exception;
+  public abstract List<Writer<I>> getWriters();
 
   /**
    * Interface for writer.
    * @param <I> input type.
    */
-  interface Writer<I> {
+  public interface Writer<I> {
     void write(Iterable<I> data) throws Exception;
   }
 }

@@ -20,7 +20,7 @@ import edu.snu.vortex.runtime.exception.NotImplementedException;
 import java.util.List;
 
 /**
- * An output writer which writes output data into TCP channels.
+ * An output writer which writes output data into MEMORY channels.
  * @param <T> The type of data records which are written into this output writer.
  */
 public final class TCPOutputWriter<T> implements OutputWriter<T> {

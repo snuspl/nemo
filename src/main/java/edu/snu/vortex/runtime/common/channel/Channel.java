@@ -48,6 +48,12 @@ public interface Channel<T> {
   String getDstTaskId();
 
   /**
+   * Set the destination task id.
+   * @param newDstTaskId The id of the new destination task.
+   */
+  void setDstTaskId(String newDstTaskId);
+
+  /**
    * Initialize the internal state of the channel.
    */
   void initialize();

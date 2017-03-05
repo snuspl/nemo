@@ -1,26 +1,22 @@
 package edu.snu.vortex.runtime.common.task;
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.operator.RtDoOp;
 
-import java.util.List;
+import java.util.Map;
 
 /**
- * DoTask.
+ * MergeTask.
  */
 public class MergeTask extends Task {
-  private final RtDoOp doOp;
 
-  public MergeTask(final List<ChannelBundle> inputChannels,
-                   final RtDoOp rtDoOpOp,
-                   final List<ChannelBundle> outputChannels) {
-    super(inputChannels, outputChannels);
-    this.doOp = rtDoOpOp;
+  public MergeTask(final String taskId,
+                   final Map<String, ChannelBundle> inputChannels,
+                   final Map<String, ChannelBundle> outputChannels) {
+    super(taskId, inputChannels, outputChannels);
   }
 
   @Override
   public void compute() {
-    doOp.compute();
   }
 }
 

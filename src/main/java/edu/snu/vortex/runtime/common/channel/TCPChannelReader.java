@@ -43,7 +43,7 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   private static final Logger LOG = Logger.getLogger(TCPChannelReader.class.getName());
   private final String channelId;
   private final String srcTaskId;
-  private final String dstTaskId;
+  private String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private DataTransferManager transferManager;
@@ -272,5 +272,10 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   @Override
   public String getDstTaskId() {
     return dstTaskId;
+  }
+
+  @Override
+  public void setDstTaskId(final String newDstTaskId) {
+    dstTaskId = newDstTaskId;
   }
 }

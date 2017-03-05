@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.task.TaskGroup;
 import edu.snu.vortex.runtime.exception.UnsupportedRtControllable;
 import org.apache.commons.lang.SerializationUtils;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 
@@ -35,15 +36,16 @@ public class ExecutorCommunicator extends Communicator {
   private DataTransferManager transferManager;
   private final String executorId;
 
-  public ExecutorCommunicator(final String executorId) {
+  public ExecutorCommunicator(final Executor executor, final String executorId) {
     super(executorId);
+    this.executor = executor;
     this.executorId = executorId;
   }
 
-  public void initialize(final Executor executor,
-                         final DataTransferManager transferManager) {
-    this.executor = executor;
+  public void initialize(final DataTransferManager transferManager,
+                         final Map<String, Communicator> routingTable) {
     this.transferManager = transferManager;
+    routingTable.forEach(this::registerNewRemoteCommunicator);
 
     // Send Executor ready message to master
     final RuntimeDefinitions.ExecutorReadyMsg.Builder msgBuilder
@@ -70,7 +72,6 @@ public class ExecutorCommunicator extends Communicator {
       transferManager.triggerTransferReadyNotifyCallback(transferReadyMsg.getChannelId(),
           transferReadyMsg.getSendExecutorId());
       break;
-
     default:
       throw new UnsupportedRtControllable("This RtControllable is not supported by executors");
     }

@@ -30,14 +30,17 @@ import java.util.logging.Logger;
  */
 public final class DataTransferManagerMaster {
   private static final Logger LOG = Logger.getLogger(DataTransferManagerMaster.class.getName());
-  private final MasterCommunicator commMgr;
+  private MasterCommunicator commMgr;
   private final Map<String, ChannelInfo> idToChannelInfoMap;
   private final Map<String, DataTransferManager> executorIdToTransferMgrMap;
 
-  public DataTransferManagerMaster(final MasterCommunicator commMgr) {
+  public DataTransferManagerMaster() {
     this.idToChannelInfoMap = new HashMap<>();
-    this.commMgr = commMgr;
     this.executorIdToTransferMgrMap = new HashMap<>();
+  }
+
+  public void initialize(final MasterCommunicator masterCommunicator) {
+    this.commMgr = masterCommunicator;
   }
 
   public void registerNewTransferManager(final String executorId, final DataTransferManager newTransferManager) {

@@ -18,7 +18,8 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
-import edu.snu.vortex.runtime.common.execplan.RtAttributes;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
+import edu.snu.vortex.runtime.master.transfer.DataTransferManagerMaster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,7 @@ public class RtMaster {
   private final ResourceManager resourceManager;
   private final ExecutionStateManager executionStateManager;
   private final MasterCommunicator masterCommunicator;
+  private final DataTransferManagerMaster dataTransferManagerMaster;
 
   public RtMaster() {
     this.rtConfig = new RtConfig(DEFAULT_RUNTIME_EXECUTION_MODE);
@@ -44,15 +46,18 @@ public class RtMaster {
     this.resourceManager = new ResourceManager();
     this.executionStateManager = new ExecutionStateManager();
     this.masterCommunicator = new MasterCommunicator();
+    this.dataTransferManagerMaster = new DataTransferManagerMaster();
   }
 
   public void initialize()  {
     // Use default configs
-    Map<RtAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
-    defaultResources.put(RtAttributes.ResourceType.TRANSIENT, 3);
-    defaultResources.put(RtAttributes.ResourceType.RESERVED, 1);
-    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources);
+    Map<RuntimeAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
+    defaultResources.put(RuntimeAttributes.ResourceType.TRANSIENT, 3);
+    defaultResources.put(RuntimeAttributes.ResourceType.RESERVED, 1);
+    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources, masterCommunicator);
     scheduler.initialize(masterCommunicator);
+    masterCommunicator.initialize(resourceManager, executionStateManager, dataTransferManagerMaster);
+    dataTransferManagerMaster.initialize(masterCommunicator);
   }
 
   public void submitExecutionPlan(final ExecutionPlan execPlan) {

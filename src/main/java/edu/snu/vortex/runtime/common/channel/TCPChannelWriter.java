@@ -47,7 +47,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private static final Logger LOG = Logger.getLogger(TCPChannelWriter.class.getName());
   private final String channelId;
   private final String srcTaskId;
-  private final String dstTaskId;
+  private String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private DataTransferManager transferManager;
@@ -302,7 +302,6 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
     @Override
     public void onDataTransferRequest(final String targetChannelId, final String recvExecutorId) {
-
       if (isPushBased) {
         stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
       } else {
@@ -347,7 +346,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onReceiveTransferStart(int numChunks) {
+    public void onReceiveTransferStart(final int numChunks) {
       throw new NotSupportedException("This method should not be called at sender side.");
     }
 
@@ -387,5 +386,10 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   @Override
   public String getDstTaskId() {
     return dstTaskId;
+  }
+
+  @Override
+  public void setDstTaskId(final String newDstTaskId) {
+    dstTaskId = newDstTaskId;
   }
 }
