@@ -15,14 +15,13 @@
  */
 package edu.snu.vortex.runtime.executor;
 
-import edu.snu.vortex.runtime.common.comm.RtControllable;
+import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.common.task.TaskGroup;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.config.ExecutorConfig;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.exception.UnsupportedRtConfigException;
 
-import java.io.Serializable;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,7 +37,7 @@ public class Executor {
 
   private final ExecutorService executeThreads;
   private final ExecutorService resubmitThread;
-  private final BlockingDeque<RtControllable> incomingRtControllables;
+  private final BlockingDeque<TaskGroup> incomingTaskGroups;
 
   private ExecutorCommunicator executorCommunicator;
 
@@ -47,7 +46,7 @@ public class Executor {
     this.rtConfig = new RtConfig(executionMode);
     this.executeThreads = Executors.newFixedThreadPool(executorConfig.getNumExecutionThreads());
     this.resubmitThread = Executors.newSingleThreadExecutor();
-    this.incomingRtControllables = new LinkedBlockingDeque<>();
+    this.incomingTaskGroups = new LinkedBlockingDeque<>();
   }
 
   public void initialize(final ExecutorCommunicator executorCommunicator) {
@@ -55,31 +54,31 @@ public class Executor {
     executeThreads.execute(new RtControllableMsgHandler());
   }
 
-  public void submitTaskGroupForExecution(final RtControllable rtControllable) {
-    incomingRtControllables.offer(rtControllable);
+  public void submitTaskGroupForExecution(final TaskGroup taskGroup) {
+    incomingTaskGroups.offer(taskGroup);
   }
 
   private void executeStream(final TaskGroup taskGroup) {
     taskGroup.getTaskList().forEach(t -> t.compute());
-    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeDefinitions.TaskState.RUNNING);
+    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeStates.TaskGroupState.RUNNING);
   }
 
   private void executeBatch(final TaskGroup taskGroup) {
     taskGroup.getTaskList().forEach(t -> t.compute());
-    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeDefinitions.TaskState.RUNNING);
+    reportTaskStateChange(taskGroup.getTaskGroupId(), RuntimeStates.TaskGroupState.RUNNING);
   }
 
   private void reportTaskStateChange(final String taskGroupId,
-                                     final RuntimeDefinitions.TaskState newState) {
-    final RuntimeDefinitions.TaskStateChangedMsg.Builder msgBuilder
-        = RuntimeDefinitions.TaskStateChangedMsg.newBuilder();
+                                     final RuntimeStates.TaskGroupState newState) {
+    final RuntimeDefinitions.TaskGroupStateChangedMsg.Builder msgBuilder
+        = RuntimeDefinitions.TaskGroupStateChangedMsg.newBuilder();
     msgBuilder.setTaskGroupId(taskGroupId);
     msgBuilder.setState(newState);
     final RuntimeDefinitions.RtControllableMsg.Builder builder
         = RuntimeDefinitions.RtControllableMsg.newBuilder();
-    builder.setType(RuntimeDefinitions.MessageType.TaskStateChanged);
+    builder.setType(RuntimeDefinitions.MessageType.TaskGroupStateChanged);
     builder.setTaskStateChangedMsg(msgBuilder.build());
-    executorCommunicator.sendRtControllable("master", builder.build(), new Serializable() { });
+    executorCommunicator.sendRtControllable("master", builder.build());
   }
 
   /**
@@ -91,8 +90,7 @@ public class Executor {
     public void run() {
       while (!executeThreads.isShutdown()) {
         try {
-          final RtControllable rtControllableToExecute = incomingRtControllables.take();
-          final TaskGroup taskGroup = (TaskGroup) rtControllableToExecute.getData();
+          final TaskGroup taskGroup = incomingTaskGroups.take();
           switch (rtConfig.getRtExecMode()) {
           case STREAM:
             executeStream(taskGroup);
@@ -113,6 +111,6 @@ public class Executor {
   public void terminate() {
     executeThreads.shutdown();
     resubmitThread.shutdown();
-    incomingRtControllables.clear();
+    incomingTaskGroups.clear();
   }
 }
