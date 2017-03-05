@@ -59,6 +59,11 @@ public class DistStorageChannelReader<T> implements ChannelReader<T> {
   }
 
   @Override
+  public void setDstTaskId(final String newDstTaskId) {
+
+  }
+
+  @Override
   public void initialize() {
 
   }

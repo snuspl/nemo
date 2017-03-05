@@ -38,7 +38,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private static final Logger LOG = Logger.getLogger(TCPChannelWriter.class.getName());
   private final String channelId;
   private final String srcTaskId;
-  private final String dstTaskId;
+  private String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
   private ChannelState channelState;
@@ -211,5 +211,10 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   @Override
   public String getDstTaskId() {
     return dstTaskId;
+  }
+
+  @Override
+  public void setDstTaskId(final String newDstTaskId) {
+    dstTaskId = newDstTaskId;
   }
 }
