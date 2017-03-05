@@ -63,6 +63,11 @@ public class DistStorageChannelWriter<T> implements ChannelWriter<T> {
   }
 
   @Override
+  public void setDstTaskId(final String newDstTaskId) {
+
+  }
+
+  @Override
   public void initialize() {
 
   }

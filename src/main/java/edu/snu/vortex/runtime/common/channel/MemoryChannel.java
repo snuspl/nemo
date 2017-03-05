@@ -26,7 +26,7 @@ import java.util.List;
 public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T> {
   private final String channelId;
   private final String srcTaskId;
-  private final String dstTaskId;
+  private String dstTaskId;
   private ChannelState channelState;
   private final ChannelType channelType;
   private final ChannelMode channelMode;
@@ -77,6 +77,11 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
   @Override
   public String getDstTaskId() {
     return dstTaskId;
+  }
+
+  @Override
+  public void setDstTaskId(final String newDstTaskId) {
+    dstTaskId = newDstTaskId;
   }
 
   @Override
