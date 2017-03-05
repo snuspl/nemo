@@ -43,7 +43,7 @@ public interface DataTransferListener extends EventListener {
   /**
    * A sender-side event handler called when a data transfer termination ACK is received.
    */
-  void onReceiveDataTransferTermination();
+  void onReceiveDataTransferTerminationACK();
 
   /**
    * A receiver-side event handler called at a data transfer ready notification.

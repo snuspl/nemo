@@ -130,6 +130,15 @@ public class DataTransferManager {
             transferDataChunkMsg.getChunk().asReadOnlyByteBuffer(),
             transferDataChunkMsg.getChunkSize());
         break;
+      case TransferTerminationACK:
+        final RuntimeDefinitions.TransferTerminationACKMsg transferTerminationACKMsg
+            = message.getTransferTerminationACKMsg();
+        triggerTransferTerminationACKCallback(transferTerminationACKMsg.getChannelId());
+        break;
+      case TransferStartACK:
+        final RuntimeDefinitions.TransferStartACKMsg transferStartACKMsg = message.getTransferStartACKMsg();
+        triggerTransferStartACKCallback(transferStartACKMsg.getChannelId());
+        break;
       default:
         throw new NotSupportedException("The given RtControllableMsg with "
             + message.getType() + " type cannot be processed by " + this.getClass().getSimpleName());
@@ -182,6 +191,18 @@ public class DataTransferManager {
     comm.sendRtControllable(masterId, controllableMsg);
   }
 
+  public void triggerTransferStartACKCallback(final String channelId) {
+    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+        + "] receive a data transfer start ACK from channel (id: " + channelId + ")");
+    channelIdToReceiverSideListenerMap.get(channelId).onReceiveDataTransferStartACK();
+  }
+
+  public void triggerTransferTerminationACKCallback(final String channelId) {
+    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+        + "] receive a data transfer termination ACK from channel (id: " + channelId + ")");
+    channelIdToReceiverSideListenerMap.get(channelId).onReceiveDataTransferTerminationACK();
+  }
+
   public void triggerTransferReadyNotifyCallback(final String channelId, final String executorId) {
     LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
         + "] receive a data transfer ready from channel (id: " + channelId + ")");
@@ -220,7 +241,7 @@ public class DataTransferManager {
 
 
   public void sendDataChunkToReceiver(final String channelId, final int chunkId,
-                                      final ByteBuffer chunk, final int chunkSize, final String recvExecutorId) {
+                                      final byte [] chunk, final int chunkSize, final String recvExecutorId) {
     final RuntimeDefinitions.TransferDataChunkMsg message = RuntimeDefinitions.TransferDataChunkMsg.newBuilder()
         .setChannelId(channelId)
         .setChunkId(chunkId)
@@ -253,6 +274,34 @@ public class DataTransferManager {
         .setTransferTerminationMsg(message).build();
 
     sendRtControllable(recvExecutorId, controllableMsg);
+  }
+
+  public void sendDataTransferTerminationACKToSender(final String channelId, final String sendExecutorId) {
+    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+        + "] send a data transfer termination ACK to channel (id: " + channelId + ")");
+
+    RuntimeDefinitions.TransferTerminationACKMsg message = RuntimeDefinitions.TransferTerminationACKMsg.newBuilder()
+        .setChannelId(channelId)
+        .build();
+
+    RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
+        .setTransferTerminationACKMsg(message).build();
+
+    sendRtControllable(sendExecutorId, controllableMsg);
+  }
+
+  public void sendDataTransferStartACKToSender(final String channelId, final String sendExecutorId) {
+    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+        + "] send a data transfer start ACK to channel (id: " + channelId + ")");
+
+    RuntimeDefinitions.TransferStartACKMsg message = RuntimeDefinitions.TransferStartACKMsg.newBuilder()
+        .setChannelId(channelId)
+        .build();
+
+    RuntimeDefinitions.RtControllableMsg controllableMsg = RuntimeDefinitions.RtControllableMsg.newBuilder()
+        .setTransferStartACKMsg(message).build();
+
+    sendRtControllable(sendExecutorId, controllableMsg);
   }
 
   public void triggerTransferTerminationCallback(final String channelId) {

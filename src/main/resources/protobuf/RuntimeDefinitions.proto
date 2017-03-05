@@ -16,6 +16,8 @@ enum MessageType {
     TransferTermination = 7;
     TransferStart = 8;
     TransferDataChunk = 9;
+    TransferStartACK = 10;
+    TransferTerminationACK = 11;
 }
 
 enum TaskState {
@@ -31,6 +33,9 @@ enum ChannelState {
     WAIT_FOR_SEND = 2;
     SENDING = 3;
     PENDED_WHILE_SENDING = 4;
+    WAIT_FOR_RECV = 5;
+    RECEIVING = 6;
+    IDLE = 7;
 }
 
 message RtControllableMsg {
@@ -46,6 +51,8 @@ message RtControllableMsg {
         TransferTerminationMsg transferTerminationMsg = 9;
         TransferStartMsg transferStartMsg = 10;
         TransferDataChunkMsg transferDataChunkMsg = 11;
+        TransferTerminationACKMsg transferTerminationACKMsg = 12;
+        TransferStartACKMsg transferStartACKMsg = 13;
     }
 }
 
@@ -102,4 +109,12 @@ message TransferDataChunkMsg {
     int32 chunkId = 2;
     int32 chunkSize = 3;
     bytes chunk = 4;
+}
+
+message TransferStartACKMsg {
+    string channelId = 1;
+}
+
+message TransferTerminationACKMsg {
+    string channelId = 1;
 }

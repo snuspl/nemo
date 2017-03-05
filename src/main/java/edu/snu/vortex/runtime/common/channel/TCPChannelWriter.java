@@ -26,10 +26,12 @@ import edu.snu.vortex.runtime.executor.DataTransferManager;
 import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
 import edu.snu.vortex.utils.StateMachine;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CountDownLatch;
@@ -48,9 +50,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private final String dstTaskId;
   private final ChannelMode channelMode;
   private final ChannelType channelType;
-  private SerializedOutputContainer serOutputContainer;
   private DataTransferManager transferManager;
-  private long containerDefaultBufferSize;
   private StateMachine stateMachine;
   private boolean isPushBased; // indicates either push-based or pull-based.
   private String dstExecutorId;
@@ -58,6 +58,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private CountDownLatch transferReqLatch;
   private CountDownLatch transferStartACKLatch;
   private CountDownLatch transferTerminationACKLatch;
+  private List<byte []> serializedDataChunkList;
 
   TCPChannelWriter(final String channelId,
                    final String srcTaskId,
@@ -154,9 +155,11 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
 
   private void serializeDataIntoContainer(final Iterable<T> data) {
     try {
-      final ObjectOutputStream out = new ObjectOutputStream(serOutputContainer);
+      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      final ObjectOutputStream out = new ObjectOutputStream(bos);
       out.writeObject(data);
       out.close();
+      serializedDataChunkList.add(bos.toByteArray());
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -192,8 +195,6 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
                          final long defaultBufferSize,
                          final DataTransferManager transferMgr,
                          final boolean isPushBased) {
-    this.containerDefaultBufferSize = defaultBufferSize;
-    this.serOutputContainer = new SerializedOutputContainer(bufferAllocator, bufferType, defaultBufferSize);
     this.transferManager = transferMgr;
     this.stateMachine = buildStateMachine(isPushBased);
     this.isPushBased = isPushBased;
@@ -201,6 +202,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     this.transferReqLatch = new CountDownLatch(1);
     this.transferStartACKLatch = new CountDownLatch(1);
     this.transferTerminationACKLatch = new CountDownLatch(1);
+    this.serializedDataChunkList = new ArrayList<>();
 
     transferManager.registerSenderSideTransferListener(channelId, new SenderSideTransferListener());
     (new ChannelThread()).start();
@@ -264,25 +266,20 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
     LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer start message to a executor (id: "
         + dstExecutorId +")");
-    transferManager.sendDataTransferStartToReceiver(channelId, 0, dstExecutorId);
+    transferManager.sendDataTransferStartToReceiver(channelId, serializedDataChunkList.size(), dstExecutorId);
     waitForTransferStartACK();
 
     stateMachine.setState(RuntimeDefinitions.ChannelState.SENDING);
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
-    ByteBuffer chunk = ByteBuffer.allocate((int) containerDefaultBufferSize);
-    int chunkId = 0;
-    while (true) {
-      final int readSize = serOutputContainer.copySingleDataBufferTo(chunk.array(), chunk.capacity());
-      if (readSize == -1) {
-        chunk = ByteBuffer.allocate(2 * chunk.capacity());
-        continue;
-      } else if (readSize == 0) {
-        break;
-      }
 
-      LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + readSize + "bytes");
-      transferManager.sendDataChunkToReceiver(channelId, chunkId++, chunk, readSize, dstExecutorId);
+
+    final Iterator<byte []> iterator = serializedDataChunkList.iterator();
+    int chunkId = 0;
+    while(iterator.hasNext()) {
+      final byte [] chunk = iterator.next();
+      LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + chunk.length + "bytes");
+      transferManager.sendDataChunkToReceiver(channelId, chunkId++, chunk, chunk.length, dstExecutorId);
     }
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] terminate data transfer");
@@ -337,7 +334,7 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
     }
 
     @Override
-    public void onReceiveDataTransferTermination() {
+    public void onReceiveDataTransferTerminationACK() {
       stateMachine.checkState(RuntimeDefinitions.ChannelState.SENDING);
 
       transferTerminationACKLatch.countDown();

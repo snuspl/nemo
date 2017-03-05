@@ -28,11 +28,6 @@ public interface Channel<T> {
   String getId();
 
   /**
-   * @return the {@link ChannelState} of the channel.
-   */
-  ChannelState getState();
-
-  /**
    * @return the {@link ChannelType} of the channel.
    */
   ChannelType getType();
