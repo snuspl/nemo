@@ -112,8 +112,8 @@ public final class TCPChannelTest {
   @Test
   public void testTransferSingleDataSetViaTCPChannel() {
 
-    final TCPChannelWriter<String> channelWriter = new TCPChannelWriter<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
-    final TCPChannelReader<String> channelReader = new TCPChannelReader<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
+    final MemoryChannelWriter<String> channelWriter = new MemoryChannelWriter<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
+    final MemoryChannelReader<String> channelReader = new MemoryChannelReader<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
     channelWriter.initialize(bufferAllocator,
         DataBufferType.LOCAL_FILE,
         DEFAULT_BUF_SIZE,
@@ -142,8 +142,8 @@ public final class TCPChannelTest {
 /*
   @Test
   public void testTransferMultipleDataSetViaTCPChannel() {
-    final TCPChannelWriter<String> channelWriter = new TCPChannelWriter<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
-    final TCPChannelReader<String> channelReader = new TCPChannelReader<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
+    final MemoryChannelWriter<String> channelWriter = new MemoryChannelWriter<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
+    final MemoryChannelReader<String> channelReader = new MemoryChannelReader<>(CHANNEL_ID, SENDER_TASK_ID, RECEIVER_TASK_ID);
     channelWriter.initialize(bufferAllocator,
         DataBufferType.LOCAL_FILE,
         DEFAULT_BUF_SIZE,

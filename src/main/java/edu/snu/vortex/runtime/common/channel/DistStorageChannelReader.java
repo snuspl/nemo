@@ -34,11 +34,6 @@ public class DistStorageChannelReader<T> implements ChannelReader<T> {
   }
 
   @Override
-  public ChannelState getState() {
-    return null;
-  }
-
-  @Override
   public ChannelType getType() {
     return null;
   }

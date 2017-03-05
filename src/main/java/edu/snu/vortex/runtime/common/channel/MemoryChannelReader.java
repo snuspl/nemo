@@ -15,14 +15,11 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import edu.snu.vortex.runtime.common.DataBufferAllocator;
-import edu.snu.vortex.runtime.common.DataBufferType;
 import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
-import edu.snu.vortex.runtime.executor.SerializedInputContainer;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.io.ByteArrayInputStream;
@@ -39,8 +36,8 @@ import java.util.logging.Logger;
  * An implementation of TCP channel reader.
  * @param <T> the type of data records that transfer via the channel.
  */
-public final class TCPChannelReader<T> implements ChannelReader<T> {
-  private static final Logger LOG = Logger.getLogger(TCPChannelReader.class.getName());
+public final class MemoryChannelReader<T> implements ChannelReader<T> {
+  private static final Logger LOG = Logger.getLogger(MemoryChannelReader.class.getName());
   private final String channelId;
   private final String srcTaskId;
   private String dstTaskId;
@@ -52,8 +49,9 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   private boolean isDataAvailable;
   private Object isDataAvailableLock;
   private List<byte []> serializedDataChunkList;
+  private String senderExecutorId;
 
-  TCPChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
+  MemoryChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
@@ -91,6 +89,10 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
   @Override
   public Iterable<T> read() {
     if (!isDataAvailable()) {
+      if (!isPushBased && stateMachine.getCurrentState() != RuntimeDefinitions.ChannelState.DISCONNECTED) {
+        transferManager.sendTransferRequestToSender(channelId, senderExecutorId);
+      }
+      
       blockUntilDataiIsAvailable();
     }
 
@@ -125,16 +127,9 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
 
   /**
    * Initializes the internal state of this channel.
-   * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
-   * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
-   *                   that will be used in {@link SerializedInputContainer}.
-   * @param defaultBufferSize The buffer size used by default.
    * @param transferMgr A transfer manager.
    */
-  public void initialize(final DataBufferAllocator bufferAllocator,
-                         final DataBufferType bufferType,
-                         final long defaultBufferSize,
-                         final DataTransferManager transferMgr,
+  public void initialize(final DataTransferManager transferMgr,
                          final boolean isPushBased) {
     this.transferManager = transferMgr;
     this.isPushBased = isPushBased;
@@ -174,7 +169,6 @@ public final class TCPChannelReader<T> implements ChannelReader<T> {
    */
   private final class ReceiverSideTransferListener implements DataTransferListener {
 
-    private String senderExecutorId;
     private int numChunks;
 
     @Override

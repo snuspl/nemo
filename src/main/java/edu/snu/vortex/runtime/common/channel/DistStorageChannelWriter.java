@@ -23,22 +23,17 @@ import java.util.List;
  */
 public class DistStorageChannelWriter<T> implements ChannelWriter<T> {
   @Override
-  public void write(final List<T> data) {
+  public void write(final Iterable<T> data) {
 
   }
 
   @Override
-  public void flush() {
+  public void commit() {
 
   }
 
   @Override
   public String getId() {
-    return null;
-  }
-
-  @Override
-  public ChannelState getState() {
     return null;
   }
 

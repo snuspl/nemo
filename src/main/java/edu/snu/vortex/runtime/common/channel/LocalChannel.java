@@ -23,21 +23,19 @@ import java.util.List;
  * For performance it doesn't serialize data records.
  * @param <T> the data record type
  */
-public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T> {
+public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T> {
   private final String channelId;
   private final String srcTaskId;
   private String dstTaskId;
-  private ChannelState channelState;
   private final ChannelType channelType;
   private final ChannelMode channelMode;
   private final List<T> dataRecords;
 
-  MemoryChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
+  LocalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelType = ChannelType.LOCAL_MEMORY;
-    this.channelState = ChannelState.CLOSE;
     this.channelMode = ChannelMode.INOUT;
     this.dataRecords = new ArrayList<>();
   }
@@ -46,17 +44,11 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
    * Initializes the internal state of this channel.
    */
   public void initialize() {
-    channelState = ChannelState.OPEN;
   }
 
   @Override
   public String getId() {
     return channelId;
-  }
-
-  @Override
-  public ChannelState getState() {
-    return channelState;
   }
 
   @Override
@@ -85,16 +77,6 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
   }
 
   @Override
-  public synchronized void write(final List<T> data) {
-    dataRecords.addAll(data);
-  }
-
-  @Override
-  public void flush() {
-    // no effect
-  }
-
-  @Override
   public synchronized List<T> read() {
     return dataRecords;
   }
@@ -105,5 +87,15 @@ public final class MemoryChannel<T> implements ChannelReader<T>, ChannelWriter<T
 
   public synchronized void clear() {
     dataRecords.clear();
+  }
+
+  @Override
+  public void write(Iterable<T> data) {
+    data.forEach(record -> dataRecords.add(record));
+  }
+
+  @Override
+  public void commit() {
+
   }
 }

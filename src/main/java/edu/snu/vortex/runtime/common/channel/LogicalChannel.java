@@ -24,43 +24,39 @@ public final class LogicalChannel implements Channel {
   private String dstTaskId;
   private final ChannelType channelType;
   private final ChannelMode channelMode;
-  private ChannelState channelState;
 
   public LogicalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelType = ChannelType.LOGICAL;
-    this.channelState = ChannelState.CLOSE;
     this.channelMode = ChannelMode.NONE;
   }
 
   public void initialize() {
-    if (channelState == ChannelState.CLOSE) {
-      channelState = ChannelState.OPEN;
-    }
   }
 
+  @Override
   public String getId() {
     return channelId;
   }
 
+  @Override
   public ChannelType getType() {
     return channelType;
   }
 
+  @Override
   public ChannelMode getMode() {
     return channelMode;
   }
 
-  public ChannelState getState() {
-    return channelState;
-  }
-
+  @Override
   public String getSrcTaskId() {
     return srcTaskId;
   }
 
+  @Override
   public String getDstTaskId() {
     return dstTaskId;
   }

@@ -43,8 +43,8 @@ import java.util.logging.Logger;
  * An implementation of TCP channel writer.
  * @param <T> the type of data records that transfer via the channel.
  */
-public final class TCPChannelWriter<T> implements ChannelWriter<T> {
-  private static final Logger LOG = Logger.getLogger(TCPChannelWriter.class.getName());
+public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
+  private static final Logger LOG = Logger.getLogger(MemoryChannelWriter.class.getName());
   private final String channelId;
   private final String srcTaskId;
   private String dstTaskId;
@@ -60,9 +60,9 @@ public final class TCPChannelWriter<T> implements ChannelWriter<T> {
   private CountDownLatch transferTerminationACKLatch;
   private List<byte []> serializedDataChunkList;
 
-  TCPChannelWriter(final String channelId,
-                   final String srcTaskId,
-                   final String dstTaskId) {
+  MemoryChannelWriter(final String channelId,
+                      final String srcTaskId,
+                      final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
