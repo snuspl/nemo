@@ -35,7 +35,7 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
-    this.channelType = ChannelType.LOCAL_MEMORY;
+    this.channelType = ChannelType.LOCAL;
     this.channelMode = ChannelMode.INOUT;
     this.dataRecords = new ArrayList<>();
   }

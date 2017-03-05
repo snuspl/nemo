@@ -11,3 +11,14 @@ enum TaskGroupState {
     COMPLETE = 2;
     FAILED = 3;
 }
+
+enum ChannelState {
+    DISCONNECTED = 0;
+    WAIT_FOR_CONN = 1;
+    WAIT_FOR_SEND = 2;
+    SENDING = 3;
+    PENDED_WHILE_SENDING = 4;
+    WAIT_FOR_RECV = 5;
+    RECEIVING = 6;
+    IDLE = 7;
+}

@@ -20,8 +20,8 @@ package edu.snu.vortex.runtime.common.channel;
  */
 public enum ChannelType {
   LOGICAL,
-  LOCAL_MEMORY,
-  TCP_PIPE,
-  DISK,
+  LOCAL,
+  MEMORY,
+  FILE,
   DISTRIBUTED_STORAGE,
 }

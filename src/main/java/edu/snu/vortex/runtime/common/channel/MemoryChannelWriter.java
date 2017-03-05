@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.DataBufferAllocator;
 import edu.snu.vortex.runtime.common.DataBufferType;
-import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
@@ -67,7 +67,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelMode = ChannelMode.OUTPUT;
-    this.channelType = ChannelType.TCP_PIPE;
+    this.channelType = ChannelType.MEMORY;
   }
 
   private enum ChannelRequestType {
@@ -100,14 +100,14 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
               if (isPushBased) {
                 final List<Enum> states = new ArrayList<>();
-                states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
-                states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+                states.add(RuntimeStates.ChannelState.DISCONNECTED);
+                states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
                 stateMachine.checkOneOfStates(states);
 
-                if (stateMachine.getCurrentState() == RuntimeDefinitions.ChannelState.DISCONNECTED) {
+                if (stateMachine.getCurrentState() == RuntimeStates.ChannelState.DISCONNECTED) {
                   LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
                   transferManager.notifyTransferReadyToMaster(channelId);
-                  stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+                  stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_CONN);
                   waitForTransferRequest();
                 }
 
@@ -214,37 +214,37 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
     if (isPushBased) {
       stateMachine = builder
-          .addState(RuntimeDefinitions.ChannelState.DISCONNECTED, "Disconnected")
-          .addState(RuntimeDefinitions.ChannelState.SENDING, "Sending")
-          .addState(RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING, "Pended while sending")
-          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
-          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN, "Waiting for connection")
-          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
-              RuntimeDefinitions.ChannelState.WAIT_FOR_CONN, "Notify \"ready to transfer\" to master")
-          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN,
-              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND,
-              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
-              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Complete transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
-              RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING, "Another transfer request is pended during transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.PENDED_WHILE_SENDING,
-              RuntimeDefinitions.ChannelState.SENDING, "Start the pended transfer")
-          .setInitialState(RuntimeDefinitions.ChannelState.DISCONNECTED).build();
+          .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
+          .addState(RuntimeStates.ChannelState.SENDING, "Sending")
+          .addState(RuntimeStates.ChannelState.PENDED_WHILE_SENDING, "Pended while sending")
+          .addState(RuntimeStates.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
+          .addState(RuntimeStates.ChannelState.WAIT_FOR_CONN, "Waiting for connection")
+          .addTransition(RuntimeStates.ChannelState.DISCONNECTED,
+              RuntimeStates.ChannelState.WAIT_FOR_CONN, "Notify \"ready to transfer\" to master")
+          .addTransition(RuntimeStates.ChannelState.WAIT_FOR_CONN,
+              RuntimeStates.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeStates.ChannelState.WAIT_FOR_SEND,
+              RuntimeStates.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeStates.ChannelState.SENDING,
+              RuntimeStates.ChannelState.WAIT_FOR_SEND, "Complete transfer")
+          .addTransition(RuntimeStates.ChannelState.SENDING,
+              RuntimeStates.ChannelState.PENDED_WHILE_SENDING, "Another transfer request is pended during transfer")
+          .addTransition(RuntimeStates.ChannelState.PENDED_WHILE_SENDING,
+              RuntimeStates.ChannelState.SENDING, "Start the pended transfer")
+          .setInitialState(RuntimeStates.ChannelState.DISCONNECTED).build();
     } else {
       stateMachine = builder
-          .addState(RuntimeDefinitions.ChannelState.DISCONNECTED, "Disconnected")
-          .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
-          .addState(RuntimeDefinitions.ChannelState.SENDING, "Sending")
-          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
-              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Notify \"ready to transfer\" to master")
-          .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND,
-              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
-              RuntimeDefinitions.ChannelState.SENDING, "Start transfer")
-          .addTransition(RuntimeDefinitions.ChannelState.SENDING,
-              RuntimeDefinitions.ChannelState.WAIT_FOR_SEND, "Complete transfer").build();
+          .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
+          .addState(RuntimeStates.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
+          .addState(RuntimeStates.ChannelState.SENDING, "Sending")
+          .addTransition(RuntimeStates.ChannelState.DISCONNECTED,
+              RuntimeStates.ChannelState.WAIT_FOR_SEND, "Notify \"ready to transfer\" to master")
+          .addTransition(RuntimeStates.ChannelState.WAIT_FOR_SEND,
+              RuntimeStates.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeStates.ChannelState.DISCONNECTED,
+              RuntimeStates.ChannelState.SENDING, "Start transfer")
+          .addTransition(RuntimeStates.ChannelState.SENDING,
+              RuntimeStates.ChannelState.WAIT_FOR_SEND, "Complete transfer").build();
     }
 
     return stateMachine;
@@ -256,11 +256,11 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
     final List<Enum> states = new ArrayList<>();
     if (isPushBased) {
-      states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+      states.add(RuntimeStates.ChannelState.WAIT_FOR_CONN);
     } else {
-      states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+      states.add(RuntimeStates.ChannelState.DISCONNECTED);
     }
-    states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+    states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
     stateMachine.checkOneOfStates(states);
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
@@ -269,7 +269,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     transferManager.sendDataTransferStartToReceiver(channelId, serializedDataChunkList.size(), dstExecutorId);
     waitForTransferStartACK();
 
-    stateMachine.setState(RuntimeDefinitions.ChannelState.SENDING);
+    stateMachine.setState(RuntimeStates.ChannelState.SENDING);
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
 
@@ -287,7 +287,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     transferManager.sendDataTransferTerminationToReceiver(channelId, dstExecutorId);
     waitForTransferTerminationACK();
 
-    stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+    stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_SEND);
   }
 
   /**
@@ -303,11 +303,11 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     @Override
     public void onDataTransferRequest(final String targetChannelId, final String recvExecutorId) {
       if (isPushBased) {
-        stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+        stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_CONN);
       } else {
         final List<Enum> states = new ArrayList<>();
-        states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
-        states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+        states.add(RuntimeStates.ChannelState.DISCONNECTED);
+        states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
         stateMachine.checkOneOfStates(states);
       }
 
@@ -320,12 +320,12 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     public void onReceiveDataTransferStartACK() {
       final List<Enum> states = new ArrayList<>();
       if (isPushBased) {
-        states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_CONN);
+        states.add(RuntimeStates.ChannelState.WAIT_FOR_CONN);
       } else {
-        states.add(RuntimeDefinitions.ChannelState.DISCONNECTED);
+        states.add(RuntimeStates.ChannelState.DISCONNECTED);
       }
 
-      states.add(RuntimeDefinitions.ChannelState.WAIT_FOR_SEND);
+      states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
       stateMachine.checkOneOfStates(states);
 
       transferStartACKLatch.countDown();
@@ -334,7 +334,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
     @Override
     public void onReceiveDataTransferTerminationACK() {
-      stateMachine.checkState(RuntimeDefinitions.ChannelState.SENDING);
+      stateMachine.checkState(RuntimeStates.ChannelState.SENDING);
 
       transferTerminationACKLatch.countDown();
       transferTerminationACKLatch = new CountDownLatch(1);

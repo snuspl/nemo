@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
@@ -56,7 +56,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelMode = ChannelMode.INPUT;
-    this.channelType = ChannelType.TCP_PIPE;
+    this.channelType = ChannelType.MEMORY;
     this.isDataAvailable = false;
   }
   
@@ -89,10 +89,10 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
   @Override
   public Iterable<T> read() {
     if (!isDataAvailable()) {
-      if (!isPushBased && stateMachine.getCurrentState() != RuntimeDefinitions.ChannelState.DISCONNECTED) {
+      if (!isPushBased && stateMachine.getCurrentState() != RuntimeStates.ChannelState.DISCONNECTED) {
         transferManager.sendTransferRequestToSender(channelId, senderExecutorId);
       }
-      
+
       blockUntilDataiIsAvailable();
     }
 
@@ -144,22 +144,22 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
     final StateMachine.Builder builder = StateMachine.newBuilder();
 
     final StateMachine stateMachine = builder
-        .addState(RuntimeDefinitions.ChannelState.DISCONNECTED, "Disconnected")
-        .addState(RuntimeDefinitions.ChannelState.WAIT_FOR_RECV, "Waiting for receiving")
-        .addState(RuntimeDefinitions.ChannelState.RECEIVING, "Receiving")
-        .addState(RuntimeDefinitions.ChannelState.IDLE, "Idle")
-        .addTransition(RuntimeDefinitions.ChannelState.DISCONNECTED,
-            RuntimeDefinitions.ChannelState.WAIT_FOR_RECV, "Received \"ready to transfer\" notification")
-        .addTransition(RuntimeDefinitions.ChannelState.WAIT_FOR_RECV,
-            RuntimeDefinitions.ChannelState.RECEIVING, "Start transfer")
-        .addTransition(RuntimeDefinitions.ChannelState.IDLE,
-            RuntimeDefinitions.ChannelState.RECEIVING, "Start transfer")
-        .addTransition(RuntimeDefinitions.ChannelState.RECEIVING,
-            RuntimeDefinitions.ChannelState.IDLE, "Complete transfer")
-        .addTransition(RuntimeDefinitions.ChannelState.IDLE,
-            RuntimeDefinitions.ChannelState.WAIT_FOR_RECV,
+        .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
+        .addState(RuntimeStates.ChannelState.WAIT_FOR_RECV, "Waiting for receiving")
+        .addState(RuntimeStates.ChannelState.RECEIVING, "Receiving")
+        .addState(RuntimeStates.ChannelState.IDLE, "Idle")
+        .addTransition(RuntimeStates.ChannelState.DISCONNECTED,
+            RuntimeStates.ChannelState.WAIT_FOR_RECV, "Received \"ready to transfer\" notification")
+        .addTransition(RuntimeStates.ChannelState.WAIT_FOR_RECV,
+            RuntimeStates.ChannelState.RECEIVING, "Start transfer")
+        .addTransition(RuntimeStates.ChannelState.IDLE,
+            RuntimeStates.ChannelState.RECEIVING, "Start transfer")
+        .addTransition(RuntimeStates.ChannelState.RECEIVING,
+            RuntimeStates.ChannelState.IDLE, "Complete transfer")
+        .addTransition(RuntimeStates.ChannelState.IDLE,
+            RuntimeStates.ChannelState.WAIT_FOR_RECV,
             "Send a request for transfer (in case of pull based protocol)")
-        .setInitialState(RuntimeDefinitions.ChannelState.DISCONNECTED).build();
+        .setInitialState(RuntimeStates.ChannelState.DISCONNECTED).build();
 
     return stateMachine;
   }
@@ -197,20 +197,20 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
       LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
       senderExecutorId = executorId;
       transferManager.sendTransferRequestToSender(channelId, executorId);
-      stateMachine.setState(RuntimeDefinitions.ChannelState.WAIT_FOR_RECV);
+      stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_RECV);
     }
 
     @Override
     public void onReceiveTransferStart(int numChunks) {
       List<Enum> possibleStates = new ArrayList<>();
-      possibleStates.add(RuntimeDefinitions.ChannelState.IDLE);
-      possibleStates.add(RuntimeDefinitions.ChannelState.WAIT_FOR_RECV);
+      possibleStates.add(RuntimeStates.ChannelState.IDLE);
+      possibleStates.add(RuntimeStates.ChannelState.WAIT_FOR_RECV);
       stateMachine.checkOneOfStates(possibleStates);
 
       LOG.log(Level.INFO, "[" + dstTaskId + "] send a data transfer request");
       this.numChunks = numChunks;
       transferManager.sendDataTransferStartACKToSender(channelId, senderExecutorId);
-      stateMachine.setState(RuntimeDefinitions.ChannelState.RECEIVING);
+      stateMachine.setState(RuntimeStates.ChannelState.RECEIVING);
     }
 
     @Override
@@ -232,14 +232,14 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
     @Override
     public void onDataTransferTermination() {
       LOG.log(Level.INFO, "[" + dstTaskId + "] receive a data transfer termination notification");
-      stateMachine.checkState(RuntimeDefinitions.ChannelState.RECEIVING);
+      stateMachine.checkState(RuntimeStates.ChannelState.RECEIVING);
 
       if (numChunks != 0) {
         throw new IllegalStateException("There are some data chunks not delivered during the transfer.");
       }
 
       transferManager.sendDataTransferTerminationACKToSender(channelId, senderExecutorId);
-      stateMachine.setState(RuntimeDefinitions.ChannelState.IDLE);
+      stateMachine.setState(RuntimeStates.ChannelState.IDLE);
     }
   }
 
