@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common.operator;
 
 import edu.snu.vortex.runtime.common.execplan.RtOperator;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 import java.util.Map;
 
@@ -25,7 +26,7 @@ import java.util.Map;
  * @param <O> output type.
  */
 public abstract class RtDoOp<I, O> extends RtOperator<I, O> {
-  public RtDoOp(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  public RtDoOp(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
     super(irOpId, rtOpAttr);
   }
 

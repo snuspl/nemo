@@ -29,7 +29,7 @@ import java.util.Map;
  * @param <I>
  * @param <O>
  */
-public abstract class RtOperator<I, O> implements Serializable {
+public class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
   private final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr;
 
@@ -93,6 +93,10 @@ public abstract class RtOperator<I, O> implements Serializable {
 
   public void addTask(final Task task) {
     this.taskList.add(task);
+  }
+
+  public String getRtOpId() {
+    return rtOpId;
   }
 
   public List<Task> getTaskList() {
