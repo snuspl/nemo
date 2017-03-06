@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.optimizer.passes.*;
-import edu.snu.vortex.utils.Pair;
 
 import java.util.*;
 
@@ -39,21 +38,21 @@ public final class Optimizer {
 
   /**
    * Policy class.
-   * It contains an operator pass and an edge pass, and runs them sequentially to optimize the DAG.
+   * It runs a list of passes sequentially to optimize the DAG.
    */
   private static final class Policy {
-    private final OperatorPass operatorPass;
-    private final EdgePass edgePass;
+    private final Iterator<Pass> passes;
 
-    private Policy(final Pair<OperatorPass, EdgePass> pair) {
-      this.operatorPass = pair.left();
-      this.edgePass = pair.right();
+    private Policy(final List<Pass> passes) {
+      this.passes = passes.iterator();
     }
 
     private DAG process(final DAG dag) throws Exception {
-      DAG operatorPlacedDAG = operatorPass.process(dag);
-      DAG operatorAndEdgePlacedDAG = edgePass.process(operatorPlacedDAG);
-      return operatorAndEdgePlacedDAG;
+      DAG optimizedDAG = passes.next().process(dag);
+      while (passes.hasNext()) {
+        optimizedDAG = passes.next().process(optimizedDAG);
+      }
+      return optimizedDAG;
     }
   }
 
@@ -67,11 +66,12 @@ public final class Optimizer {
 
   /**
    * A HashMap to match each of instantiation policies with a combination of instantiation passes.
-   * As you can infer here, each instantiation policy is consisted of a pair of instantiation passes.
    */
-  private static final Map<PolicyType, Pair<OperatorPass, EdgePass>> POLICIES = new HashMap<>();
+  private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
   static {
-    POLICIES.put(PolicyType.Pado, Pair.of(new PadoOperatorPass(), new PadoEdgePass()));
-    POLICIES.put(PolicyType.Disaggregation, Pair.of(new DisaggregationOperatorPass(), new DisaggregationEdgePass()));
+    POLICIES.put(PolicyType.Pado,
+        Arrays.asList(new PadoOperatorPass(), new PadoEdgePass()));
+    POLICIES.put(PolicyType.Disaggregation,
+        Arrays.asList(new DisaggregationPass()));
   }
 }

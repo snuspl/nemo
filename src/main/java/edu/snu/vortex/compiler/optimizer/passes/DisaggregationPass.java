@@ -23,10 +23,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Disaggregated Resources pass for tagging edges.
+ * Disaggregated Resources pass for tagging operators.
  */
-public final class DisaggregationEdgePass implements EdgePass {
+public final class DisaggregationPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
+    dag.doTopological(operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Compute);
+    });
+
     dag.getOperators().forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (inEdges.isPresent()) {

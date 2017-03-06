@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * Pado pass for tagging operators.
  */
-public final class PadoOperatorPass implements OperatorPass {
+public final class PadoOperatorPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.doTopological(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);

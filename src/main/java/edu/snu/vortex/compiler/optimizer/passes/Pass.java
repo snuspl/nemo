@@ -18,8 +18,8 @@ package edu.snu.vortex.compiler.optimizer.passes;
 import edu.snu.vortex.compiler.ir.DAG;
 
 /**
- * Interface for operator optimization passes.
+ * Interface for optimization passes.
  */
-public interface OperatorPass {
+public interface Pass {
   DAG process(final DAG dag) throws Exception;
 }
