@@ -184,10 +184,6 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
   /**
    * Initializes the internal state of this channel.
-   * @param bufferAllocator The implementation of {@link DataBufferAllocator} to be used in this channel writer.
-   * @param bufferType The type of {@link edu.snu.vortex.runtime.common.DataBuffer}
-   *                   that will be used in {@link SerializedOutputContainer}.
-   * @param defaultBufferSize The buffer size used by default.
    * @param transferMgr A transfer manager.
    */
   public void initialize(final DataTransferManager transferMgr,
