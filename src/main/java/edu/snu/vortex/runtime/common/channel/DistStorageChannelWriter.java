@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import java.util.List;
 
 /**
  * Distributed storage channel writer implementation.

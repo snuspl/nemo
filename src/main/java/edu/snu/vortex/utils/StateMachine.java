@@ -60,7 +60,7 @@ public final class StateMachine {
     boolean isMatched = false;
     Iterator<Enum> iterator = possibleCurrentStates.iterator();
 
-    while(iterator.hasNext()) {
+    while (iterator.hasNext()) {
       final Enum possibleState = iterator.next();
       if (currentState.stateEnum.equals(possibleState)) {
         isMatched = true;

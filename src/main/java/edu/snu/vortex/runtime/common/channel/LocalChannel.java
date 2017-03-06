@@ -90,7 +90,7 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
   }
 
   @Override
-  public void write(Iterable<T> data) {
+  public void write(final Iterable<T> data) {
     data.forEach(record -> dataRecords.add(record));
   }
 

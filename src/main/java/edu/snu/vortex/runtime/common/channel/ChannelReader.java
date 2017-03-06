@@ -15,8 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import java.util.List;
-
 /**
  * The interface for a channel reader.
  * @param <T> the type of data records that transfer via the channel.

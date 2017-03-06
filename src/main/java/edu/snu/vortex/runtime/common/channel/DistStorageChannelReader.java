@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.common.channel;
 
 
-import java.util.List;
 
 /**
  * Distributed storage channel reader implementation.
@@ -24,7 +23,7 @@ import java.util.List;
  */
 public class DistStorageChannelReader<T> implements ChannelReader<T> {
   @Override
-  public List<T> read() {
+  public Iterable<T> read() {
     return null;
   }
 

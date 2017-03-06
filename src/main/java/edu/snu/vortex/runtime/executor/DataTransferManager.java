@@ -68,6 +68,9 @@ public class DataTransferManager {
     outgoingMessegeRouterThread.start();
   }
 
+  /**
+   * A runnable that handles incoming {@link RtControllable} messages from other {@link DataTransferManager}.
+   */
   private class IncomingRtControllableHandler implements Runnable {
     @Override
     public void run() {
@@ -88,6 +91,9 @@ public class DataTransferManager {
     }
   }
 
+  /**
+   * A runnable that routes outgoing {@link RtControllable} messages to other {@link DataTransferManager}.
+   */
   private class OutgoingRtControllableRouter implements Runnable {
     @Override
     public void run() {
@@ -103,43 +109,40 @@ public class DataTransferManager {
     }
   }
 
-  private void processRtControllable(RuntimeDefinitions.RtControllableMsg message) {
+  private void processRtControllable(final RuntimeDefinitions.RtControllableMsg message) {
     switch (message.getType()) {
-      case TransferRequest:
-        final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = message.getTransferRequestMsg();
-        triggerTransferRequestCallback(transferRequestMsg.getChannelId(), transferRequestMsg.getRecvExecutorId());
-        break;
-
-      case TransferStart:
-        final RuntimeDefinitions.TransferStartMsg transferStartMsg = message.getTransferStartMsg();
-        triggerTransferStartCallback(transferStartMsg.getChannelId(), transferStartMsg.getNumChunks());
-        break;
-
-      case TransferTermination:
-        final RuntimeDefinitions.TransferTerminationMsg transferTerminationMsg = message.getTransferTerminationMsg();
-        triggerTransferTerminationCallback(transferTerminationMsg.getChannelId());
-        break;
-
-      case TransferDataChunk:
-        final RuntimeDefinitions.TransferDataChunkMsg transferDataChunkMsg = message.getTransferDataChunkMsg();
-        triggerDataChunkCallback(
-            transferDataChunkMsg.getChannelId(),
-            transferDataChunkMsg.getChunkId(),
-            transferDataChunkMsg.getChunk().asReadOnlyByteBuffer(),
-            transferDataChunkMsg.getChunkSize());
-        break;
-      case TransferTerminationACK:
-        final RuntimeDefinitions.TransferTerminationACKMsg transferTerminationACKMsg
-            = message.getTransferTerminationACKMsg();
-        triggerTransferTerminationACKCallback(transferTerminationACKMsg.getChannelId());
-        break;
-      case TransferStartACK:
-        final RuntimeDefinitions.TransferStartACKMsg transferStartACKMsg = message.getTransferStartACKMsg();
-        triggerTransferStartACKCallback(transferStartACKMsg.getChannelId());
-        break;
-      default:
-        throw new NotSupportedException("The given RtControllableMsg with "
-            + message.getType() + " type cannot be processed by " + this.getClass().getSimpleName());
+    case TransferRequest:
+      final RuntimeDefinitions.TransferRequestMsg transferRequestMsg = message.getTransferRequestMsg();
+      triggerTransferRequestCallback(transferRequestMsg.getChannelId(), transferRequestMsg.getRecvExecutorId());
+      break;
+    case TransferStart:
+      final RuntimeDefinitions.TransferStartMsg transferStartMsg = message.getTransferStartMsg();
+      triggerTransferStartCallback(transferStartMsg.getChannelId(), transferStartMsg.getNumChunks());
+      break;
+    case TransferTermination:
+      final RuntimeDefinitions.TransferTerminationMsg transferTerminationMsg = message.getTransferTerminationMsg();
+      triggerTransferTerminationCallback(transferTerminationMsg.getChannelId());
+      break;
+    case TransferDataChunk:
+      final RuntimeDefinitions.TransferDataChunkMsg transferDataChunkMsg = message.getTransferDataChunkMsg();
+      triggerDataChunkCallback(
+          transferDataChunkMsg.getChannelId(),
+          transferDataChunkMsg.getChunkId(),
+          transferDataChunkMsg.getChunk().asReadOnlyByteBuffer(),
+          transferDataChunkMsg.getChunkSize());
+      break;
+    case TransferTerminationACK:
+      final RuntimeDefinitions.TransferTerminationACKMsg transferTerminationACKMsg
+          = message.getTransferTerminationACKMsg();
+      triggerTransferTerminationACKCallback(transferTerminationACKMsg.getChannelId());
+      break;
+    case TransferStartACK:
+      final RuntimeDefinitions.TransferStartACKMsg transferStartACKMsg = message.getTransferStartACKMsg();
+      triggerTransferStartACKCallback(transferStartACKMsg.getChannelId());
+      break;
+    default:
+      throw new NotSupportedException("The given RtControllableMsg with "
+          + message.getType() + " type cannot be processed by " + this.getClass().getSimpleName());
     }
   }
 
@@ -190,25 +193,25 @@ public class DataTransferManager {
   }
 
   public void triggerTransferStartACKCallback(final String channelId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer start ACK from channel (id: " + channelId + ")");
     channelIdToReceiverSideListenerMap.get(channelId).onReceiveDataTransferStartACK();
   }
 
   public void triggerTransferTerminationACKCallback(final String channelId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer termination ACK from channel (id: " + channelId + ")");
     channelIdToReceiverSideListenerMap.get(channelId).onReceiveDataTransferTerminationACK();
   }
 
   public void triggerTransferReadyNotifyCallback(final String channelId, final String executorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer ready from channel (id: " + channelId + ")");
     channelIdToReceiverSideListenerMap.get(channelId).onDataTransferReadyNotification(channelId, executorId);
   }
 
   public void triggerTransferRequestCallback(final String channelId, final String executorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer request from channel (id: " + channelId + ")");
     channelIdToSenderSideListenerMap.get(channelId).onDataTransferRequest(channelId, executorId);
   }
@@ -216,7 +219,7 @@ public class DataTransferManager {
   public void sendDataTransferStartToReceiver(final String channelId,
                                               final int numChunks,
                                               final String recvExecutorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send a data transfer start notification to channel (id: " + channelId + ")");
 
     RuntimeDefinitions.TransferStartMsg message = RuntimeDefinitions.TransferStartMsg.newBuilder()
@@ -232,14 +235,14 @@ public class DataTransferManager {
 
   public void triggerTransferStartCallback(final String channelId,
                                            final int numChunks) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer start notification from channel (id: " + channelId + ")");
     channelIdToReceiverSideListenerMap.get(channelId).onReceiveTransferStart(numChunks);
   }
 
 
   public void sendDataChunkToReceiver(final String channelId, final int chunkId,
-                                      final byte [] chunk, final int chunkSize, final String recvExecutorId) {
+                                      final byte[] chunk, final int chunkSize, final String recvExecutorId) {
     final RuntimeDefinitions.TransferDataChunkMsg message = RuntimeDefinitions.TransferDataChunkMsg.newBuilder()
         .setChannelId(channelId)
         .setChunkId(chunkId)
@@ -261,7 +264,7 @@ public class DataTransferManager {
   }
 
   public void sendDataTransferTerminationToReceiver(final String channelId, final String recvExecutorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send a data transfer termination notification to channel (id: " + channelId + ")");
 
     RuntimeDefinitions.TransferTerminationMsg message = RuntimeDefinitions.TransferTerminationMsg.newBuilder()
@@ -275,7 +278,7 @@ public class DataTransferManager {
   }
 
   public void sendDataTransferTerminationACKToSender(final String channelId, final String sendExecutorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send a data transfer termination ACK to channel (id: " + channelId + ")");
 
     RuntimeDefinitions.TransferTerminationACKMsg message = RuntimeDefinitions.TransferTerminationACKMsg.newBuilder()
@@ -289,7 +292,7 @@ public class DataTransferManager {
   }
 
   public void sendDataTransferStartACKToSender(final String channelId, final String sendExecutorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send a data transfer start ACK to channel (id: " + channelId + ")");
 
     RuntimeDefinitions.TransferStartACKMsg message = RuntimeDefinitions.TransferStartACKMsg.newBuilder()
@@ -303,13 +306,13 @@ public class DataTransferManager {
   }
 
   public void triggerTransferTerminationCallback(final String channelId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] receive a data transfer termination from channel (id: " + channelId + ")");
     channelIdToReceiverSideListenerMap.get(channelId).onDataTransferTermination();
   }
 
   public void sendTransferRequestToSender(final String channelId, final String sendExecutorId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send data transfer request to channel (id: " + channelId + ")");
 
     RuntimeDefinitions.TransferRequestMsg message = RuntimeDefinitions.TransferRequestMsg.newBuilder()
@@ -324,7 +327,7 @@ public class DataTransferManager {
   }
 
   public void notifyTransferReadyToMaster(final String channelId) {
-    LOG.log(Level.INFO, "[" + executorId +"::" + this.getClass().getSimpleName()
+    LOG.log(Level.INFO, "[" + executorId + "::" + this.getClass().getSimpleName()
         + "] send data transfer ready to master");
 
     RuntimeDefinitions.TransferReadyMsg message = RuntimeDefinitions.TransferReadyMsg.newBuilder()

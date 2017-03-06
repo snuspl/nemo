@@ -48,7 +48,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
   private StateMachine stateMachine;
   private boolean isDataAvailable;
   private Object isDataAvailableLock;
-  private List<byte []> serializedDataChunkList;
+  private List<byte[]> serializedDataChunkList;
   private String senderExecutorId;
 
   MemoryChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
@@ -128,6 +128,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
   /**
    * Initializes the internal state of this channel.
    * @param transferMgr A transfer manager.
+   * @param isPushBased A boolean value that indicates whether the protocol is push or pull based.
    */
   public void initialize(final DataTransferManager transferMgr,
                          final boolean isPushBased) {
@@ -143,7 +144,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
   private StateMachine buildStateMachine() {
     final StateMachine.Builder builder = StateMachine.newBuilder();
 
-    final StateMachine stateMachine = builder
+    final StateMachine newStateMachine = builder
         .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
         .addState(RuntimeStates.ChannelState.WAIT_FOR_RECV, "Waiting for receiving")
         .addState(RuntimeStates.ChannelState.RECEIVING, "Receiving")
@@ -161,7 +162,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
             "Send a request for transfer (in case of pull based protocol)")
         .setInitialState(RuntimeStates.ChannelState.DISCONNECTED).build();
 
-    return stateMachine;
+    return newStateMachine;
   }
 
   /**
@@ -201,7 +202,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
     }
 
     @Override
-    public void onReceiveTransferStart(int numChunks) {
+    public void onReceiveTransferStart(final int numChunks) {
       List<Enum> possibleStates = new ArrayList<>();
       possibleStates.add(RuntimeStates.ChannelState.IDLE);
       possibleStates.add(RuntimeStates.ChannelState.WAIT_FOR_RECV);

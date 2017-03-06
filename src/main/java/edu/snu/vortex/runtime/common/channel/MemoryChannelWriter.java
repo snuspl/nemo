@@ -15,15 +15,11 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import edu.snu.vortex.runtime.common.DataBufferAllocator;
-import edu.snu.vortex.runtime.common.DataBufferType;
-import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
-import edu.snu.vortex.runtime.executor.SerializedOutputContainer;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.io.ByteArrayOutputStream;
@@ -59,7 +55,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
   private CountDownLatch transferReqLatch;
   private CountDownLatch transferStartACKLatch;
   private CountDownLatch transferTerminationACKLatch;
-  private List<byte []> serializedDataChunkList;
+  private List<byte[]> serializedDataChunkList;
 
   MemoryChannelWriter(final String channelId,
                       final String srcTaskId,
@@ -71,52 +67,67 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     this.channelType = ChannelType.MEMORY;
   }
 
+  /**
+   * The type of incoming channel requests.
+   */
   private enum ChannelRequestType {
     WRITE,
     COMMIT
   }
 
+  /**
+   * A data structure for incoming channel requests.
+   */
   private class ChannelRequest {
-    public final ChannelRequestType operType;
-    public final Iterable<T> operData;
+    private final ChannelRequestType operType;
+    private final Iterable<T> operData;
 
-    public ChannelRequest(final ChannelRequestType operType,
-                     final Iterable<T> operData) {
+    ChannelRequest(final ChannelRequestType operType,
+                          final Iterable<T> operData) {
       this.operData = operData;
       this.operType = operType;
     }
+
+    public ChannelRequestType getOperType() {
+      return operType;
+    }
+
+    public Iterable<T> getOperData() {
+      return operData;
+    }
   }
 
+  /**
+   * A thread that handles {@link ChannelRequest}.
+   */
   private class ChannelThread extends Thread {
     @Override
     public void run() {
       try {
         while (true) {
           final ChannelRequest request = requestQueue.take();
-          switch (request.operType) {
-            case WRITE:
-              serializeDataIntoContainer(request.operData);
-              break;
-            case COMMIT:
-              if (isPushBased) {
-                final List<Enum> states = new ArrayList<>();
-                states.add(RuntimeStates.ChannelState.DISCONNECTED);
-                states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
-                stateMachine.checkOneOfStates(states);
+          switch (request.getOperType()) {
+          case WRITE:
+            serializeDataIntoContainer(request.getOperData());
+            break;
+          case COMMIT:
+            if (isPushBased) {
+              final List<Enum> states = new ArrayList<>();
+              states.add(RuntimeStates.ChannelState.DISCONNECTED);
+              states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
+              stateMachine.checkOneOfStates(states);
 
-                if (stateMachine.getCurrentState() == RuntimeStates.ChannelState.DISCONNECTED) {
-                  LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
-                  transferManager.notifyTransferReadyToMaster(channelId);
-                  stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_CONN);
-                  waitForTransferRequest();
-                }
-
+              if (stateMachine.getCurrentState() == RuntimeStates.ChannelState.DISCONNECTED) {
+                LOG.log(Level.INFO, "[" + srcTaskId + "] notify master that data is available");
+                transferManager.notifyTransferReadyToMaster(channelId);
+                stateMachine.setState(RuntimeStates.ChannelState.WAIT_FOR_CONN);
+                waitForTransferRequest();
               }
-
-              transferData();
-              break;
-            default:
-              throw new InvalidParameterException("Invalid channel request.");
+            }
+            transferData();
+            break;
+          default:
+            throw new InvalidParameterException("Invalid channel request.");
           }
         }
       } catch (InterruptedException e) {
@@ -184,6 +195,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
   /**
    * Initializes the internal state of this channel.
    * @param transferMgr A transfer manager.
+   * @param isPushBased Indicates whether the channel is push or pull based.
    */
   public void initialize(final DataTransferManager transferMgr,
                          final boolean isPushBased) {
@@ -202,10 +214,10 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
   private StateMachine buildStateMachine(final boolean isPushBased) {
     final StateMachine.Builder builder = StateMachine.newBuilder();
-    StateMachine stateMachine;
+    StateMachine newStateMachine;
 
     if (isPushBased) {
-      stateMachine = builder
+      newStateMachine = builder
           .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
           .addState(RuntimeStates.ChannelState.SENDING, "Sending")
           .addState(RuntimeStates.ChannelState.PENDED_WHILE_SENDING, "Pended while sending")
@@ -225,7 +237,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
               RuntimeStates.ChannelState.SENDING, "Start the pended transfer")
           .setInitialState(RuntimeStates.ChannelState.DISCONNECTED).build();
     } else {
-      stateMachine = builder
+      newStateMachine = builder
           .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
           .addState(RuntimeStates.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
           .addState(RuntimeStates.ChannelState.SENDING, "Sending")
@@ -239,7 +251,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
               RuntimeStates.ChannelState.WAIT_FOR_SEND, "Complete transfer").build();
     }
 
-    return stateMachine;
+    return newStateMachine;
   }
 
   private void transferData() {
@@ -257,7 +269,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
     LOG.log(Level.INFO, "[" + srcTaskId + "] send a data transfer start message to a executor (id: "
-        + dstExecutorId +")");
+        + dstExecutorId + ")");
     transferManager.sendDataTransferStartToReceiver(channelId, serializedDataChunkList.size(), dstExecutorId);
     waitForTransferStartACK();
 
@@ -266,10 +278,10 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     LOG.log(Level.INFO, "[" + srcTaskId + "] start data transfer");
 
 
-    final Iterator<byte []> iterator = serializedDataChunkList.iterator();
+    final Iterator<byte[]> iterator = serializedDataChunkList.iterator();
     int chunkId = 0;
-    while(iterator.hasNext()) {
-      final byte [] chunk = iterator.next();
+    while (iterator.hasNext()) {
+      final byte[] chunk = iterator.next();
       LOG.log(Level.INFO, "[" + srcTaskId + "] send a chunk, the size of " + chunk.length + "bytes");
       transferManager.sendDataChunkToReceiver(channelId, chunkId++, chunk, chunk.length, dstExecutorId);
     }
