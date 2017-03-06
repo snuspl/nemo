@@ -44,6 +44,7 @@ import java.util.logging.Logger;
  * @param <T> the type of data records that transfer via the channel.
  */
 public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
+  private static final int MIN_DATA_BUF_SIZE = 0x8000;
   private static final Logger LOG = Logger.getLogger(MemoryChannelWriter.class.getName());
   private final String channelId;
   private final String srcTaskId;
@@ -97,7 +98,6 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
               serializeDataIntoContainer(request.operData);
               break;
             case COMMIT:
-
               if (isPushBased) {
                 final List<Enum> states = new ArrayList<>();
                 states.add(RuntimeStates.ChannelState.DISCONNECTED);
@@ -111,13 +111,10 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
                   waitForTransferRequest();
                 }
 
-                transferData();
-              } else {
-                throw new NotImplementedException("Pull based policy is not implemented.");
               }
 
+              transferData();
               break;
-
             default:
               throw new InvalidParameterException("Invalid channel request.");
           }
@@ -155,7 +152,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
   private void serializeDataIntoContainer(final Iterable<T> data) {
     try {
-      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      final ByteArrayOutputStream bos = new ByteArrayOutputStream(MIN_DATA_BUF_SIZE);
       final ObjectOutputStream out = new ObjectOutputStream(bos);
       out.writeObject(data);
       out.close();
@@ -174,7 +171,9 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
 
   @Override
   public void commit() {
-    requestQueue.add(new ChannelRequest(ChannelRequestType.COMMIT, null));
+    if (isPushBased) {
+      requestQueue.add(new ChannelRequest(ChannelRequestType.COMMIT, null));
+    }
   }
 
   @Override
@@ -307,6 +306,10 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
       dstExecutorId = recvExecutorId;
       transferReqLatch.countDown();
       transferReqLatch = new CountDownLatch(1);
+
+      if (!isPushBased) {
+        requestQueue.add(new ChannelRequest(ChannelRequestType.COMMIT, null));
+      }
     }
 
     @Override
