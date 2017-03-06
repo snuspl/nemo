@@ -39,5 +39,6 @@ public final class DisaggregationEdgePass implements EdgePass {
         });
       }
     });
+    return dag;
   }
 }
