@@ -27,7 +27,7 @@ import java.util.Optional;
  */
 public final class PadoOperatorPass implements OperatorPass {
   public DAG process(final DAG dag) throws Exception {
-    dag.doDFS(operator -> {
+    dag.doTopological(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (!inEdges.isPresent()) {
         operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);

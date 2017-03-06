@@ -15,13 +15,29 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
+import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.Edge;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Disaggregated Resources pass for tagging edges.
  */
 public final class DisaggregationEdgePass implements EdgePass {
   public DAG process(final DAG dag) throws Exception {
-    return dag;
+    dag.getOperators().forEach(operator -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+      if (inEdges.isPresent()) {
+        inEdges.get().forEach(edge -> {
+          if (edge.getType().equals(Edge.Type.O2O)) {
+            edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory);
+          } else {
+            edge.setAttr(Attributes.Key.EdgeChannel,  Attributes.EdgeChannel.DistributedStorage);
+          }
+        });
+      }
+    });
   }
 }
