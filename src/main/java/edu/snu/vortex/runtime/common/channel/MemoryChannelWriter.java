@@ -190,10 +190,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
    * @param defaultBufferSize The buffer size used by default.
    * @param transferMgr A transfer manager.
    */
-  public void initialize(final DataBufferAllocator bufferAllocator,
-                         final DataBufferType bufferType,
-                         final long defaultBufferSize,
-                         final DataTransferManager transferMgr,
+  public void initialize(final DataTransferManager transferMgr,
                          final boolean isPushBased) {
     this.transferManager = transferMgr;
     this.stateMachine = buildStateMachine(isPushBased);
