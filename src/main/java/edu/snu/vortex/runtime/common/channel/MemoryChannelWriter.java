@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
