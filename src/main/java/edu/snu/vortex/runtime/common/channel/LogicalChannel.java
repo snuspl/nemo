@@ -33,7 +33,8 @@ public final class LogicalChannel implements Channel {
     this.channelMode = ChannelMode.NONE;
   }
 
-  public void initialize() {
+  @Override
+  public void initialize(final ChannelConfig config) {
   }
 
   @Override

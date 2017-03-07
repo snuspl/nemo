@@ -54,8 +54,9 @@ public interface Channel<T> {
   void setDstTaskId(String newDstTaskId);
 
   /**
-   * Initialize the internal state of the channel.
+   * Initialize the internal state of the channel with the given {@link ChannelConfig}.
+   * @param config The channel configuration that contains necessary information for channel initialization.
    */
-  void initialize();
+  void initialize(ChannelConfig config);
 
 }

@@ -16,49 +16,65 @@
 package edu.snu.vortex.runtime.common.channel;
 
 
+import edu.snu.vortex.runtime.exception.NotImplementedException;
 
 /**
  * Distributed storage channel reader implementation.
  * @param <T> The type of data records.
  */
 public class DistStorageChannelReader<T> implements ChannelReader<T> {
+  private final ChannelType channelType;
+  private final ChannelMode channelMode;
+  private final String channelId;
+  private final String srcTaskId;
+  private String dstTaskId;
+
+
+  public DistStorageChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
+    this.channelId = channelId;
+    this.srcTaskId = srcTaskId;
+    this.dstTaskId = dstTaskId;
+    this.channelType = ChannelType.FILE;
+    this.channelMode = ChannelMode.INPUT;
+  }
+
   @Override
   public Iterable<T> read() {
-    return null;
+    throw new NotImplementedException("This method should be implemented.");
   }
 
   @Override
   public String getId() {
-    return null;
+    return channelId;
   }
 
   @Override
   public ChannelType getType() {
-    return null;
+    return channelType;
   }
 
   @Override
   public ChannelMode getMode() {
-    return null;
+    return channelMode;
   }
 
   @Override
   public String getSrcTaskId() {
-    return null;
+    return srcTaskId;
   }
 
   @Override
   public String getDstTaskId() {
-    return null;
+    return dstTaskId;
   }
 
   @Override
   public void setDstTaskId(final String newDstTaskId) {
-
+    dstTaskId = newDstTaskId;
   }
 
   @Override
-  public void initialize() {
-
+  public void initialize(final ChannelConfig config) {
+    throw new NotImplementedException("This method should be implemented.");
   }
 }

@@ -1,6 +1,7 @@
 package edu.snu.vortex.runtime.common.task;
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
+import edu.snu.vortex.runtime.common.channel.ChannelReader;
 import edu.snu.vortex.runtime.common.operator.RtSinkOp;
 
 import java.util.Map;
@@ -13,7 +14,7 @@ public class SinkTask extends Task {
 
   public SinkTask(final String taskId,
                   final RtSinkOp.Writer writer,
-                  final Map<String, ChannelBundle> inputChannels) {
+                  final Map<String, ChannelBundle<ChannelReader>> inputChannels) {
     super(taskId, inputChannels, null);
     this.writer = writer;
   }

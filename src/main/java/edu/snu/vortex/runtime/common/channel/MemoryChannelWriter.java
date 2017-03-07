@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.RuntimeStates;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
-import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
@@ -58,7 +57,7 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
   private CountDownLatch transferTerminationACKLatch;
   private List<byte[]> serializedDataChunkList;
 
-  MemoryChannelWriter(final String channelId,
+  public MemoryChannelWriter(final String channelId,
                       final String srcTaskId,
                       final String dstTaskId) {
     this.channelId = channelId;
@@ -188,21 +187,15 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     }
   }
 
-  @Override
-  public void initialize() {
-    throw new NotImplementedException("This method has yet to be implemented.");
-  }
-
   /**
    * Initializes the internal state of this channel.
-   * @param transferMgr A transfer manager.
-   * @param isPushBased Indicates whether the channel is push or pull based.
+   * @param config The channel configuration that contains necessary information for channel initialization.
    */
-  public void initialize(final DataTransferManager transferMgr,
-                         final boolean isPushBased) {
-    this.transferManager = transferMgr;
+  @Override
+  public void initialize(final ChannelConfig config) {
+    this.transferManager = config.getDataTransferManager();
     this.stateMachine = buildStateMachine(isPushBased);
-    this.isPushBased = isPushBased;
+    this.isPushBased = config.isPushBased();
     this.requestQueue = new LinkedBlockingDeque<>();
     this.transferReqLatch = new CountDownLatch(1);
     this.transferStartACKLatch = new CountDownLatch(1);
@@ -221,7 +214,6 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
       newStateMachine = builder
           .addState(RuntimeStates.ChannelState.DISCONNECTED, "Disconnected")
           .addState(RuntimeStates.ChannelState.SENDING, "Sending")
-          .addState(RuntimeStates.ChannelState.PENDED_WHILE_SENDING, "Pended while sending")
           .addState(RuntimeStates.ChannelState.WAIT_FOR_SEND, "Waiting for sending")
           .addState(RuntimeStates.ChannelState.WAIT_FOR_CONN, "Waiting for connection")
           .addTransition(RuntimeStates.ChannelState.DISCONNECTED,
@@ -232,10 +224,6 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
               RuntimeStates.ChannelState.SENDING, "Start transfer")
           .addTransition(RuntimeStates.ChannelState.SENDING,
               RuntimeStates.ChannelState.WAIT_FOR_SEND, "Complete transfer")
-          .addTransition(RuntimeStates.ChannelState.SENDING,
-              RuntimeStates.ChannelState.PENDED_WHILE_SENDING, "Another transfer request is pended during transfer")
-          .addTransition(RuntimeStates.ChannelState.PENDED_WHILE_SENDING,
-              RuntimeStates.ChannelState.SENDING, "Start the pended transfer")
           .setInitialState(RuntimeStates.ChannelState.DISCONNECTED).build();
     } else {
       newStateMachine = builder
@@ -328,13 +316,13 @@ public final class MemoryChannelWriter<T> implements ChannelWriter<T> {
     @Override
     public void onReceiveDataTransferStartACK() {
       final List<Enum> states = new ArrayList<>();
+      states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
       if (isPushBased) {
         states.add(RuntimeStates.ChannelState.WAIT_FOR_CONN);
       } else {
         states.add(RuntimeStates.ChannelState.DISCONNECTED);
       }
 
-      states.add(RuntimeStates.ChannelState.WAIT_FOR_SEND);
       stateMachine.checkOneOfStates(states);
 
       transferStartACKLatch.countDown();

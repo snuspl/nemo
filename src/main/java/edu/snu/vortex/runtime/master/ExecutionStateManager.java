@@ -17,9 +17,7 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.RuntimeStates;
-import edu.snu.vortex.runtime.common.channel.Channel;
-import edu.snu.vortex.runtime.common.channel.ChannelBundle;
-import edu.snu.vortex.runtime.common.channel.LogicalChannel;
+import edu.snu.vortex.runtime.common.channel.*;
 import edu.snu.vortex.runtime.common.execplan.*;
 import edu.snu.vortex.runtime.common.operator.RtDoOp;
 import edu.snu.vortex.runtime.common.operator.RtGroupByKeyOp;
@@ -120,22 +118,22 @@ public class ExecutionStateManager {
           = (RuntimeAttributes.CommPattern)
           linkAttributes.get(RuntimeAttributes.OperatorLinkAttribute.COMMUNICATION_PATTERN);
 
-      final ChannelBundle channelBundle = new ChannelBundle();
+      final ChannelBundle<ChannelReader> channelBundle = new ChannelBundle();
       final List<Task> srcTaskList = link.getSrcRtOp().getTaskList();
       switch (commPattern) {
       case BROADCAST:
       case SCATTER_GATHER:
         srcTaskList.forEach(task -> {
-          final Channel inputChannel = task.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
-          channelBundle.addChannel(inputChannel);
-          inputChannel.setDstTaskId(taskToAdd.getTaskId());
+          final ChannelWriter channelWriter = task.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
+          channelBundle.addChannel(createChannelReader(channelWriter.getType(), channelWriter.getId()));
+          channelWriter.setDstTaskId(taskToAdd.getTaskId());
         });
         break;
       case ONE_TO_ONE:
         final Task srcTask = srcTaskList.get(parallelismIdx);
-        final Channel inputChannel = srcTask.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
-        channelBundle.addChannel(inputChannel);
-        inputChannel.setDstTaskId(taskToAdd.getTaskId());
+        final ChannelWriter channelWriter = srcTask.getOutputChannels().get(id).findChannelByIndex(parallelismIdx);
+        channelBundle.addChannel(createChannelReader(channelWriter.getType(), channelWriter.getId()));
+        channelWriter.setDstTaskId(taskToAdd.getTaskId());
         break;
       default:
         throw new UnsupportedCommPatternException("This communication pattern is unsupported");
@@ -152,17 +150,19 @@ public class ExecutionStateManager {
           = (RuntimeAttributes.ChannelType)
           linkAttributes.get(RuntimeAttributes.OperatorLinkAttribute.CHANNEL_TYPE);
 
-      final ChannelBundle channelBundle = new ChannelBundle();
+      final ChannelBundle<ChannelWriter> channelBundle = new ChannelBundle();
       switch (commPattern) {
       case BROADCAST:
       case SCATTER_GATHER:
         for (int i = 0; i < stageParallelism; i++) {
-          final Channel channelToAdd = createChannel(channelType, taskToAdd.getTaskId());
+          final ChannelWriter channelToAdd = createChannelWriter(convertRtAttributeToChannelType(channelType),
+              taskToAdd.getTaskId());
           channelBundle.addChannel(channelToAdd);
         }
         break;
       case ONE_TO_ONE:
-        final Channel channelToAdd = createChannel(channelType, taskToAdd.getTaskId());
+        final ChannelWriter channelToAdd = createChannelWriter(convertRtAttributeToChannelType(channelType),
+            taskToAdd.getTaskId());
         channelBundle.addChannel(channelToAdd);
         break;
       default:
@@ -172,28 +172,78 @@ public class ExecutionStateManager {
     });
   }
 
-  private Channel createChannel(final RuntimeAttributes.ChannelType channelType,
-                                final String srcTaskId) {
+  private ChannelType convertRtAttributeToChannelType(final RuntimeAttributes.ChannelType rtAttribute) {
+    switch (rtAttribute) {
+    case LOCAL:
+      return ChannelType.LOCAL;
+    case MEMORY:
+      return ChannelType.MEMORY;
+    case FILE:
+      return ChannelType.FILE;
+    case DISTR_STORAGE:
+      return ChannelType.DISTRIBUTED_STORAGE;
+    default:
+      throw new UnsupportedCommPatternException("This channel type is unsupported");
+    }
+  }
+
+  private ChannelReader createChannelReader(final ChannelType channelType,
+                                      final String srcTaskId) {
+    return createChannelReader(channelType, srcTaskId, "");
+  }
+
+  private ChannelReader createChannelReader(final ChannelType channelType,
+                                final String srcTaskId, final String dstTaskId) {
     // TODO #000: create channels when the implementation is pushed.
-    final Channel channel;
+    final ChannelReader channelReader;
     switch (channelType) {
     case LOCAL:
-      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      channelReader = new LocalChannel(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
       break;
     case MEMORY:
-      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      channelReader = new MemoryChannelReader(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
       break;
     case FILE:
-      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+      channelReader = new FileChannelReader(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
       break;
-    case DISTR_STORAGE:
-      channel = new LogicalChannel(IdGenerator.generateChannelId(), srcTaskId, "");
+    case DISTRIBUTED_STORAGE:
+      channelReader = new DistStorageChannelReader(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
       break;
     default:
       throw new UnsupportedCommPatternException("This channel type is unsupported");
     }
-    return channel;
+    return channelReader;
   }
+
+  private ChannelWriter createChannelWriter(final ChannelType channelType,
+                                            final String srcTaskId) {
+    return createChannelWriter(channelType, srcTaskId, "");
+  }
+
+  private ChannelWriter createChannelWriter(final ChannelType channelType,
+                                            final String srcTaskId, final String dstTaskId) {
+    // TODO #000: create channels when the implementation is pushed.
+    final ChannelWriter channelWriter;
+    switch (channelType) {
+    case LOCAL:
+      channelWriter = new LocalChannel(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
+      break;
+    case MEMORY:
+      channelWriter = new MemoryChannelWriter(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
+      break;
+    case FILE:
+      channelWriter = new FileChannelWriter(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
+      break;
+    case DISTRIBUTED_STORAGE:
+      channelWriter = new DistStorageChannelWriter(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
+      break;
+    default:
+      throw new UnsupportedCommPatternException("This channel type is unsupported");
+    }
+
+    return channelWriter;
+  }
+
 
   public void onTaskGroupStateChanged(final String taskGroupId, final RuntimeStates.TaskGroupState newState) {
     updateTaskGroupState(taskGroupId, newState);

@@ -24,17 +24,18 @@ import java.util.List;
 
 /**
  * Manages a bundle of channels that transfer data records.
+ * @param <T> Either {@link ChannelReader} or {@link ChannelWriter}.
  */
-public final class ChannelBundle {
+public final class ChannelBundle<T extends Channel> {
   private final String bundleId;
-  private final List<Channel> channels;
+  private final List<T> channels;
 
   public ChannelBundle() {
     bundleId = IdGenerator.generateBundleId();
     channels = new ArrayList<>();
   }
 
-  public ChannelBundle(final List<Channel> channels) {
+  public ChannelBundle(final List<T> channels) {
     bundleId = IdGenerator.generateBundleId();
     this.channels = channels;
   }
@@ -51,7 +52,7 @@ public final class ChannelBundle {
    * add a channel to this channel bundle.
    * @param channel the channel to be added
    */
-  public void addChannel(final Channel channel) {
+  public void addChannel(final T channel) {
     channels.add(channel);
   }
 
@@ -60,7 +61,7 @@ public final class ChannelBundle {
    * @param channelIndex the list index of the channel to find
    * @return the channel instance associative with the given channel index
    */
-  public Channel findChannelByIndex(final int channelIndex) {
+  public T findChannelByIndex(final int channelIndex) {
     return channels.get(channelIndex);
   }
 
@@ -69,11 +70,11 @@ public final class ChannelBundle {
    * @param channelId the id of the channel to find
    * @return the channel instance associative with the given channel id
    */
-  public Channel findChannelById(final String channelId) {
-    final Iterator<Channel> channelIter = channels.iterator();
+  public T findChannelById(final String channelId) {
+    final Iterator<T> channelIter = channels.iterator();
 
     while (channelIter.hasNext()) {
-      Channel channel = channelIter.next();
+      T channel = channelIter.next();
       if (channel.getId().compareTo(channelId) == 0) {
         return channel;
       }
@@ -84,8 +85,9 @@ public final class ChannelBundle {
 
   /**
    * initialize the channels in this channel bundle.
+   * @param config A channel configuration for {@link Channel} initialization.
    */
-  public void initialize() {
-    channels.stream().forEach(channel -> channel.initialize());
+  public void initialize(final ChannelConfig config) {
+    channels.stream().forEach(channel -> channel.initialize(config));
   }
 }

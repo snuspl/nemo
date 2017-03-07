@@ -17,6 +17,9 @@ package edu.snu.vortex.runtime.common.task;
 
 
 import edu.snu.vortex.runtime.common.channel.ChannelBundle;
+import edu.snu.vortex.runtime.common.channel.ChannelConfig;
+import edu.snu.vortex.runtime.common.channel.ChannelReader;
+import edu.snu.vortex.runtime.common.channel.ChannelWriter;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -26,12 +29,12 @@ import java.util.Map;
  */
 public abstract class Task implements Serializable {
   private final String taskId;
-  private final Map<String, ChannelBundle> inputChannels;
-  private final Map<String, ChannelBundle> outputChannels;
+  private final Map<String, ChannelBundle<ChannelReader>> inputChannels;
+  private final Map<String, ChannelBundle<ChannelWriter>> outputChannels;
 
   public Task(final String taskId,
-              final Map<String, ChannelBundle> inputChannels,
-              final Map<String, ChannelBundle> outputChannels) {
+              final Map<String, ChannelBundle<ChannelReader>> inputChannels,
+              final Map<String, ChannelBundle<ChannelWriter>> outputChannels) {
     this.taskId = taskId;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
@@ -39,20 +42,20 @@ public abstract class Task implements Serializable {
 
   public abstract void compute();
 
-  public final void initializeChannels() {
-    inputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize());
-    outputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize());
+  public final void initializeChannels(final ChannelConfig config) {
+    inputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize(config));
+    outputChannels.forEach((rtOpLinkId, bundle) -> bundle.initialize(config));
   }
 
   public String getTaskId() {
     return taskId;
   }
 
-  public Map<String, ChannelBundle> getInputChannels() {
+  public Map<String, ChannelBundle<ChannelReader>> getInputChannels() {
     return inputChannels;
   }
 
-  public Map<String, ChannelBundle> getOutputChannels() {
+  public Map<String, ChannelBundle<ChannelWriter>> getOutputChannels() {
     return outputChannels;
   }
 }

@@ -31,7 +31,7 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
   private final ChannelMode channelMode;
   private final List<T> dataRecords;
 
-  LocalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
+  public LocalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
@@ -43,7 +43,8 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
   /**
    * Initializes the internal state of this channel.
    */
-  public void initialize() {
+  @Override
+  public void initialize(final ChannelConfig config) {
   }
 
   @Override

@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.common.RuntimeStates;
-import edu.snu.vortex.runtime.exception.NotImplementedException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 import edu.snu.vortex.runtime.executor.DataTransferListener;
 import edu.snu.vortex.runtime.executor.DataTransferManager;
@@ -51,7 +50,7 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
   private List<byte[]> serializedDataChunkList;
   private String senderExecutorId;
 
-  MemoryChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
+  public MemoryChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
@@ -120,20 +119,14 @@ public final class MemoryChannelReader<T> implements ChannelReader<T> {
     isDataAvailable = false;
   }
 
-  @Override
-  public void initialize() {
-    throw new NotImplementedException("This method has yet to be implemented.");
-  }
-
   /**
    * Initializes the internal state of this channel.
-   * @param transferMgr A transfer manager.
-   * @param isPushBased A boolean value that indicates whether the protocol is push or pull based.
+   * @param config The channel configuration that contains necessary information for channel initialization.
    */
-  public void initialize(final DataTransferManager transferMgr,
-                         final boolean isPushBased) {
-    this.transferManager = transferMgr;
-    this.isPushBased = isPushBased;
+  @Override
+  public void initialize(final ChannelConfig config) {
+    this.transferManager = config.getDataTransferManager();
+    this.isPushBased = config.isPushBased();
     this.stateMachine = buildStateMachine();
     this.isDataAvailableLock = new Object();
     this.serializedDataChunkList = new ArrayList<>();
