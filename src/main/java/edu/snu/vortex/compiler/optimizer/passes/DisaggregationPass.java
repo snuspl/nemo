@@ -28,7 +28,6 @@ import java.util.Optional;
 public final class DisaggregationPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.doTopological(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Compute);
     });
 

@@ -41,17 +41,24 @@ public final class Optimizer {
    * It runs a list of passes sequentially to optimize the DAG.
    */
   private static final class Policy {
-    private final Iterator<Pass> passes;
+    private final List<Pass> passes;
 
     private Policy(final List<Pass> passes) {
-      this.passes = passes.iterator();
+      if (passes.isEmpty()) {
+        throw new NoSuchElementException("No instantiation pass supplied to the policy!");
+      }
+      this.passes = passes;
     }
 
     private DAG process(final DAG dag) throws Exception {
-      DAG optimizedDAG = passes.next().process(dag);
-      while (passes.hasNext()) {
-        optimizedDAG = passes.next().process(optimizedDAG);
-      }
+      DAG optimizedDAG = dag;
+      passes.forEach(pass -> {
+        try {
+          pass.process(optimizedDAG);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      });
       return optimizedDAG;
     }
   }
