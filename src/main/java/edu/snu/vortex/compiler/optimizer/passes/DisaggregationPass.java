@@ -36,7 +36,7 @@ public final class DisaggregationPass implements Pass {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
-          if (edge.getType().equals(Edge.Type.O2O)) {
+          if (edge.getType().equals(Edge.Type.OneToOne)) {
             edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory);
           } else {
             edge.setAttr(Attributes.Key.EdgeChannel,  Attributes.EdgeChannel.DistributedStorage);

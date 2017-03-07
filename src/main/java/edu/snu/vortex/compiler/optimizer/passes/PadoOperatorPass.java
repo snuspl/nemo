@@ -43,7 +43,7 @@ public final class PadoOperatorPass implements Pass {
   }
 
   private boolean hasM2M(final List<Edge> edges) {
-    return edges.stream().filter(edge -> edge.getType() == Edge.Type.M2M).count() > 0;
+    return edges.stream().filter(edge -> edge.getType() == Edge.Type.ScatterGather).count() > 0;
   }
 
   private boolean allFromReserved(final List<Edge> edges) {
