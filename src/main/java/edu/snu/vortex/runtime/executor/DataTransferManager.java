@@ -24,7 +24,9 @@ import edu.snu.vortex.runtime.exception.InvalidParameterException;
 import edu.snu.vortex.runtime.exception.NotSupportedException;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -45,7 +47,8 @@ public class DataTransferManager {
   private final BlockingDeque<RtControllable> incomingMessageQueue;
   private final BlockingDeque<RtControllable> outgoingMessageQueue;
   private final Thread incomingMessageHandlerThread;
-  private final Thread outgoingMessegeRouterThread;
+  private final Thread outgoingMessageRouterThread;
+  private final Map<String, List<Iterable>> localChannelIdToDataListMap;
 
   public DataTransferManager(final String executorId,
                              final String masterId,
@@ -58,14 +61,15 @@ public class DataTransferManager {
     this.incomingMessageQueue = new LinkedBlockingDeque<>();
     this.outgoingMessageQueue = new LinkedBlockingDeque<>();
     this.routingTable = new HashMap<>();
+    this.localChannelIdToDataListMap = new HashMap<>();
     this.incomingMessageHandlerThread = new Thread(new IncomingRtControllableHandler());
-    this.outgoingMessegeRouterThread = new Thread(new OutgoingRtControllableRouter());
+    this.outgoingMessageRouterThread = new Thread(new OutgoingRtControllableRouter());
   }
 
   public void initialize() {
     routingTable.put(executorId, this);
     incomingMessageHandlerThread.start();
-    outgoingMessegeRouterThread.start();
+    outgoingMessageRouterThread.start();
   }
 
   /**
@@ -155,6 +159,26 @@ public class DataTransferManager {
     final RtControllable rtControllable = new RtControllable(executorId, recvExecutorId, rtControllableMsg);
 
     routingTable.get(recvExecutorId).receiveRtControllable(rtControllable);
+  }
+
+  public void sendDataRecordsToLocalReceiver(final String channelId, final Iterable data) {
+    List<Iterable> dataList;
+
+    synchronized (localChannelIdToDataListMap) {
+      dataList = localChannelIdToDataListMap.get(channelId);
+      if (dataList == null) {
+        dataList = new ArrayList<>();
+        localChannelIdToDataListMap.put(channelId, dataList);
+      }
+
+      dataList.add(data);
+    }
+  }
+
+  public List<Iterable> receiveDataRecordsFromLocalSender(final String channelId) {
+    synchronized (localChannelIdToDataListMap) {
+      return localChannelIdToDataListMap.remove(channelId);
+    }
   }
 
   public void registerNewTransferManager(final String executorId, final DataTransferManager newTransferMgr) {

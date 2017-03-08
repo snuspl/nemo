@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
-import java.util.ArrayList;
+import edu.snu.vortex.runtime.executor.DataTransferManager;
+
 import java.util.List;
 
 /**
@@ -23,21 +24,20 @@ import java.util.List;
  * For performance it doesn't serialize data records.
  * @param <T> the data record type
  */
-public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T> {
+public final class LocalChannelReader<T> implements ChannelReader<T> {
   private final String channelId;
   private final String srcTaskId;
   private String dstTaskId;
   private final ChannelType channelType;
   private final ChannelMode channelMode;
-  private final List<T> dataRecords;
+  private DataTransferManager dataTransferManager;
 
-  public LocalChannel(final String channelId, final String srcTaskId, final String dstTaskId) {
+  public LocalChannelReader(final String channelId, final String srcTaskId, final String dstTaskId) {
     this.channelId = channelId;
     this.srcTaskId = srcTaskId;
     this.dstTaskId = dstTaskId;
     this.channelType = ChannelType.LOCAL;
     this.channelMode = ChannelMode.INOUT;
-    this.dataRecords = new ArrayList<>();
   }
 
   /**
@@ -45,6 +45,7 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
    */
   @Override
   public void initialize(final ChannelConfig config) {
+    this.dataTransferManager = config.getDataTransferManager();
   }
 
   @Override
@@ -78,25 +79,10 @@ public final class LocalChannel<T> implements ChannelReader<T>, ChannelWriter<T>
   }
 
   @Override
-  public synchronized List<T> read() {
-    return dataRecords;
+  public synchronized Iterable<T> read() {
+    final List<Iterable> dataList = dataTransferManager.receiveDataRecordsFromLocalSender(channelId);
+    return null;
   }
 
-  public boolean isEmpty() {
-    return dataRecords.isEmpty();
-  }
 
-  public synchronized void clear() {
-    dataRecords.clear();
-  }
-
-  @Override
-  public void write(final Iterable<T> data) {
-    data.forEach(record -> dataRecords.add(record));
-  }
-
-  @Override
-  public void commit() {
-
-  }
 }
