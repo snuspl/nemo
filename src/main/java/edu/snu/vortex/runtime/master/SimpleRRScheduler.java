@@ -17,14 +17,10 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 import edu.snu.vortex.runtime.common.task.TaskGroup;
-import edu.snu.vortex.runtime.executor.ExecutorContainer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.sun.tools.internal.xjc.reader.Ring.add;
-import static javax.swing.UIManager.get;
 
 /**
  * SimpleRRScheduler.

@@ -20,13 +20,10 @@ import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
 import edu.snu.vortex.runtime.common.execplan.RtStage;
 import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 import edu.snu.vortex.runtime.common.task.TaskGroup;
-import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
 import org.apache.commons.lang.SerializationUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +55,9 @@ public class Scheduler {
     taskGroupsToSchedule.addAll(taskGroups);
   }
 
+  /**
+   * TaskGroupScheduleHandler.
+   */
   private class TaskGroupScheduleHandler implements Runnable {
     @Override
     public void run() {
