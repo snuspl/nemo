@@ -22,6 +22,9 @@ public class RtConfig {
   private final RtExecMode rtExecMode;
   public static final String MASTER_NAME = "runtime_master";
 
+  public static final int DEFAULT_EXECUTOR_NUM_CORES = 4;
+  public static final int DEFAULT_EXECUTOR_CAPACITY = 10;
+
   public RtConfig(final RtExecMode rtExecMode) {
     this.rtExecMode = rtExecMode;
   }
