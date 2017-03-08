@@ -174,6 +174,10 @@ public final class RtStage {
     this.taskGroups.add(taskGroup);
   }
 
+  public void removeTaskGroup(final TaskGroup taskGroup) {
+    this.taskGroups.remove(taskGroup);
+  }
+
   @Override
   public String toString() {
     return "RtStage{" +
