@@ -30,10 +30,6 @@ import edu.snu.vortex.runtime.exception.UnsupportedRtOperatorException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.BROADCAST;
-import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.ONE_TO_ONE;
-import static edu.snu.vortex.runtime.common.execplan.RuntimeAttributes.CommPattern.SCATTER_GATHER;
-
 /**
  * ExecutionStateManager.
  */
@@ -42,11 +38,12 @@ public class ExecutionStateManager {
 
   private Scheduler scheduler;
 
-  private final Map<String, Set<String>> stageToTaskGroupMap;
+  private ExecutionPlan executionPlan;
+  private final Map<String, RtStage> rtStageMap;
   private final Map<String, RuntimeStates.TaskGroupState> taskGroupIdToTaskStateMap;
 
   public ExecutionStateManager() {
-    this.stageToTaskGroupMap = new HashMap<>();
+    this.rtStageMap = new HashMap<>();
     this.taskGroupIdToTaskStateMap = new HashMap<>();
   }
 
@@ -55,13 +52,11 @@ public class ExecutionStateManager {
   }
 
   public void submitExecutionPlan(final ExecutionPlan execPlan) {
-    // call APIs of RtStage, RtOperator, RtStageLink, etc.
-    // to create tasks and specify channels
+    this.executionPlan = execPlan;
     Set<RtStage> rtStages = execPlan.getNextRtStagesToExecute();
     while (!rtStages.isEmpty()) {
       rtStages.forEach(this::convertRtStageToPhysicalPlan);
       rtStages = execPlan.getNextRtStagesToExecute();
-
       rtStages.forEach(scheduler::launchNextStage);
     }
   }
@@ -70,13 +65,14 @@ public class ExecutionStateManager {
     final Map<RuntimeAttributes.StageAttribute, Object> attributes = rtStage.getRtStageAttr();
     final int stageParallelism = (attributes == null || attributes.isEmpty())
         ? 1 : (int) attributes.get(RuntimeAttributes.StageAttribute.PARALLELISM);
+    final RuntimeAttributes.ResourceType resourceType =
+        (RuntimeAttributes.ResourceType) attributes.get(RuntimeAttributes.StageAttribute.RESOURCE_TYPE);
 
-    final Set<String> taskGroupIds = new HashSet<>(stageParallelism);
     final List<RtOperator> operators = rtStage.getRtOperatorList();
     final int taskGroupSize = operators.size();
 
     for (int i = 0; i < stageParallelism; i++) {
-      final TaskGroup taskGroup = new TaskGroup(IdGenerator.generateTaskGroupId(), taskGroupSize);
+      final TaskGroup taskGroup = new TaskGroup(IdGenerator.generateTaskGroupId(), taskGroupSize, resourceType);
       for (RtOperator op : operators) {
         final Map<String, RtOpLink> inputRtOpLinks = op.getInputLinks();
         final Map<String, RtOpLink> outputRtOpLinks = op.getOutputLinks();
@@ -101,10 +97,9 @@ public class ExecutionStateManager {
         taskGroup.addTask(task);
       }
       taskGroupIdToTaskStateMap.put(taskGroup.getTaskGroupId(), RuntimeStates.TaskGroupState.READY);
-      taskGroupIds.add(taskGroup.getTaskGroupId());
       rtStage.addTaskGroup(taskGroup);
     }
-    stageToTaskGroupMap.put(rtStage.getId(), taskGroupIds);
+    rtStageMap.put(rtStage.getId(), rtStage);
   }
 
   private void convertRtOpLinkToPhysicalChannel(final Map<String, RtOpLink> inputRtOpLinks,
@@ -250,22 +245,25 @@ public class ExecutionStateManager {
 
     String stageId = "";
     boolean stageComplete = true;
+    RtStage taskGroupStage = null;
     if (newState == RuntimeStates.TaskGroupState.COMPLETE) {
-      for (final Map.Entry<String, Set<String>> stage : stageToTaskGroupMap.entrySet()) {
-        if (stage.getValue().contains(taskGroupId)) {
-          stageId = stage.getKey();
-          for (final String otherTaskGroupId : stage.getValue()) {
-            if (taskGroupIdToTaskStateMap.get(otherTaskGroupId) != RuntimeStates.TaskGroupState.COMPLETE) {
-              stageComplete = false;
-              break;
-            }
+      scheduler.onTaskGroupExecutionComplete(taskGroupId);
+      taskGroupIdToTaskStateMap.replace(taskGroupId, RuntimeStates.TaskGroupState.COMPLETE);
+      for (final Map.Entry<String, RtStage> stage : rtStageMap.entrySet()) {
+        taskGroupStage = stage.getValue();
+        final List<TaskGroup> taskGroups = taskGroupStage.getTaskGroups();
+        if (taskGroups.contains(taskGroupId)) {
+          taskGroups.removeIf(taskGroup -> taskGroup.getTaskGroupId().equals(taskGroupId));
+          if (!taskGroups.isEmpty()) {
+            stageComplete = false;
+            break;
           }
-          break;
         }
       }
       if (stageComplete) {
         // TODO #000 : what to do when a stage completes?
-        stageToTaskGroupMap.remove(stageId);
+        rtStageMap.remove(stageId);
+        executionPlan.removeCompleteStage(taskGroupStage);
       }
     }
   }
