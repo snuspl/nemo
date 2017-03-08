@@ -15,30 +15,91 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import com.google.protobuf.ByteString;
+import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
+import edu.snu.vortex.runtime.common.execplan.RtStage;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
 import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
+import org.apache.commons.lang.SerializationUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Scheduler.
  */
 public class Scheduler {
+  private final ExecutorService schedulerThread;
+  private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
 
+  private SchedulingPolicy schedulingPolicy;
+  private MasterCommunicator masterCommunicator;
 
-  public final void onReadyForNextStage() {
-    try {
-      launchNextStage();
-    } catch (EmptyExecutionPlanException e) {
-      onJobCompleted();
+  public Scheduler(final SchedulingPolicy schedulingPolicy) {
+    this.schedulerThread = Executors.newSingleThreadExecutor();
+    this.schedulingPolicy = schedulingPolicy;
+    this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
+  }
+
+  public void initialize(final MasterCommunicator masterCommunicator) {
+    this.masterCommunicator = masterCommunicator;
+    this.schedulerThread.execute(new TaskGroupScheduleHandler());
+  }
+
+  public void launchNextStage(final RtStage rtStage) {
+    final List<TaskGroup> taskGroups = rtStage.getTaskGroups();
+    taskGroupsToSchedule.addAll(taskGroups);
+  }
+
+  private class TaskGroupScheduleHandler implements Runnable {
+    @Override
+    public void run() {
+      while (!schedulerThread.isShutdown()) {
+        try {
+          final TaskGroup taskGroup = taskGroupsToSchedule.take();
+          final Optional<String> executorId = schedulingPolicy.attemptSchedule(taskGroup);
+          if (executorId.isPresent()) {
+            taskGroupsToSchedule.offer(taskGroup);
+          } else {
+            final RuntimeDefinitions.ScheduleTaskGroupMsg.Builder msgBuilder
+                = RuntimeDefinitions.ScheduleTaskGroupMsg.newBuilder();
+            final ByteString taskGroupBytes = ByteString.copyFrom(SerializationUtils.serialize(taskGroup));
+            msgBuilder.setTaskGroup(taskGroupBytes);
+            final RuntimeDefinitions.RtControllableMsg.Builder builder
+                = RuntimeDefinitions.RtControllableMsg.newBuilder();
+            builder.setType(RuntimeDefinitions.MessageType.ScheduleTaskGroup);
+            builder.setScheduleTaskGroupMsg(msgBuilder.build());
+            masterCommunicator.sendRtControllable(executorId.get(), builder.build());
+            schedulingPolicy.onTaskGroupLaunched(executorId.get(), taskGroup);
+          }
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
   }
 
-  private void launchNextStage() throws EmptyExecutionPlanException {
-//    final Set<RtStage> rsToExecute = executionPlan.getNextRtStagesToExecute();
-
-
-
+  public void onResourceAdded(final RuntimeAttributes.ResourceType resourceType, final String resourceId) {
+    schedulingPolicy.resourceAdded(resourceType, resourceId);
   }
 
-  public void onJobCompleted() {
+  public void onResourceDeleted(final RuntimeAttributes.ResourceType resourceType, final String resourceId) {
+    schedulingPolicy.resourceDeleted(resourceType, resourceId);
+  }
 
+  public void onTaskGroupExecutionComplete(final String taskGroupId) {
+    schedulingPolicy.onTaskGroupExecutionComplete(taskGroupId);
+  }
+
+  public void terminate() {
+    schedulerThread.shutdown();
+    taskGroupsToSchedule.clear();
   }
 }

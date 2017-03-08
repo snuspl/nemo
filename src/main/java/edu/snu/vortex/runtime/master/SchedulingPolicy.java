@@ -15,54 +15,51 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.task.Task;
-import edu.snu.vortex.runtime.executor.ExecutorContainer;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
+import edu.snu.vortex.runtime.common.task.TaskGroup;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  *
  */
 interface SchedulingPolicy {
 
+  void initialize(final Map<RuntimeAttributes.ResourceType, Set<String>> resourcesByType);
+
   /**
    *
-   * @param task to schedule
+   * @param taskGroup to schedule
    * @return executorId on which the task is scheduled
    */
-  Optional<String> trySchedule(final Task task);
+  Optional<String> attemptSchedule(final TaskGroup taskGroup);
 
   /**
    *
-   * @param executor the added executor
+   * @param resourceType added resource type
+   * @param resourceId the id
    */
-  void resourceAdded(final ExecutorContainer executor);
+  void resourceAdded(final RuntimeAttributes.ResourceType resourceType, final String resourceId);
 
   /**
    *
-   * @param executor the removed executor
+   * @param resourceType deleted resource type
+   * @param resourceId the id
    */
-  void resourceDeleted(final ExecutorContainer executor);
+  void resourceDeleted(final RuntimeAttributes.ResourceType resourceType, final String resourceId);
 
   /**
    *
-   * @param executor the executor on which the task was launched
-   * @param task the task launched
+   * @param resourceId the executor on which the taskGroup was launched
+   * @param taskGroup the taskGroup launched
    */
-  void taskLaunched(final ExecutorContainer executor, final Task task);
+  void onTaskGroupLaunched(final String resourceId, final TaskGroup taskGroup);
 
   /**
    *
-   * @param executor the executor on which the task's computation is complete
-   * @param task the computation completed task
+   * @param taskGroupId the id
    */
-  void taskComputationDone(final ExecutorContainer executor, final List<Task> task);
-
-  /**
-   *
-   * @param executor the executor on which the task finished
-   * @param task the finished task
-   */
-  void taskFinished(final ExecutorContainer executor, final List<Task> task);
+  void onTaskGroupExecutionComplete(final String taskGroupId);
 }
