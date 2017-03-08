@@ -23,12 +23,12 @@ import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 import edu.snu.vortex.runtime.executor.ExecutorContainer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
+
+import static edu.snu.vortex.compiler.ir.Attributes.EdgePartitioning.Hash;
 
 /**
  * ResourceManager.
@@ -37,6 +37,7 @@ public class ResourceManager {
   private static final Logger LOG = Logger.getLogger(ResourceManager.class.getName());
 
   private Communicator masterCommunicator;
+  private Scheduler scheduler;
   private static final int DEFAULT_NUM_EXECUTION_THREADS = 2;
   private final ConcurrentMap<String, ExecutorContainer> executorPlacement;
 
@@ -47,45 +48,55 @@ public class ResourceManager {
   public void initialize(final RtMaster master,
                          final RtConfig.RtExecMode execMode,
                          final Map<RuntimeAttributes.ResourceType, Integer> numToAllocate,
-                         final MasterCommunicator masterCommunicator) {
+                         final MasterCommunicator masterCommunicator,
+                         final Scheduler scheduler) {
     this.masterCommunicator = masterCommunicator;
     numToAllocate.forEach((executorType, count) -> {
       for (int i = 0; i < count; i++) {
         allocateResource(master, execMode, executorType, DEFAULT_NUM_EXECUTION_THREADS);
       }
     });
+    this.scheduler = scheduler;
   }
 
-  public void evictResource(final String executorId) {
-    final ExecutorContainer executorContainer = executorPlacement.remove(executorId);
+  public void evictResource(final String resourceId) {
+    final ExecutorContainer executorContainer = executorPlacement.remove(resourceId);
+    scheduler.onResourceDeleted(executorContainer.getExecutorConfig().getExecutorType(), resourceId);
     executorContainer.terminate();
   }
 
   public void allocateResource(final RtMaster master,
                                final RtConfig.RtExecMode execMode,
-                               final RuntimeAttributes.ResourceType executorType,
+                               final RuntimeAttributes.ResourceType resourceType,
                                final int numExecutionThreads) {
     final String newExecutorId = IdGenerator.generateExecutorId();
-    final ExecutorConfig executorConfig = new ExecutorConfig(execMode, executorType, numExecutionThreads);
+    final ExecutorConfig executorConfig = new ExecutorConfig(execMode, resourceType, numExecutionThreads);
     final ExecutorContainer executorContainer = new ExecutorContainer(master, newExecutorId, execMode, executorConfig);
     executorContainer.initialize(masterCommunicator.getRoutingTable());
     executorPlacement.put(newExecutorId, executorContainer);
   }
 
-  public Map<RuntimeAttributes.ResourceType, String> getRunningResources() {
-    final Map<RuntimeAttributes.ResourceType, String> executorByResourceType = new HashMap<>();
-    executorPlacement.forEach((id, executorContainer) ->
-        executorByResourceType.put(executorContainer.getExecutorConfig().getExecutorType(), id));
+  public void onResourceAllocated(final String resourceId) {
+    // TODO #000: must check for allocated resources with real RM
+    final ExecutorContainer executorContainer = executorPlacement.get(resourceId);
+    assert (executorContainer != null);
+    scheduler.onResourceAdded(executorContainer.getExecutorConfig().getExecutorType(), resourceId);
+  }
+
+  public Map<RuntimeAttributes.ResourceType, Set<String>> getRunningResources() {
+    final Map<RuntimeAttributes.ResourceType, Set<String>> executorByResourceType = new HashMap<>();
+    executorPlacement.forEach((id, executorContainer) -> {
+      final RuntimeAttributes.ResourceType executorType = executorContainer.getExecutorConfig().getExecutorType();
+      if (!executorByResourceType.containsKey(executorType)) {
+        executorByResourceType.put(executorType, new HashSet<>());
+      }
+      executorByResourceType.get(executorType).add(id);
+    });
     return Collections.unmodifiableMap(executorByResourceType);
   }
 
   public ExecutorContainer getResourceById(final String resourceId) {
     return executorPlacement.get(resourceId);
-  }
-
-  public void onResourceAllocated(final String resourceId) {
-    // TODO #000: must check for allocated resources with real RM
-    assert (executorPlacement.containsKey(resourceId));
   }
 
   public void terminate() {
