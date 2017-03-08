@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.comm.RtControllable;
 import edu.snu.vortex.runtime.common.config.RtConfig;
 import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
 import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
@@ -35,6 +34,7 @@ public class RtMaster {
   private static final RtConfig.RtExecMode DEFAULT_RUNTIME_EXECUTION_MODE = RtConfig.RtExecMode.STREAM;
 
   private final Scheduler scheduler;
+  private final SchedulingPolicy schedulingPolicy;
   private final ResourceManager resourceManager;
   private final ExecutionStateManager executionStateManager;
   private final MasterCommunicator masterCommunicator;
@@ -42,8 +42,9 @@ public class RtMaster {
 
   public RtMaster() {
     this.rtConfig = new RtConfig(DEFAULT_RUNTIME_EXECUTION_MODE);
-    this.scheduler = new Scheduler();
     this.resourceManager = new ResourceManager();
+    this.schedulingPolicy = new SimpleRRScheduler(RtConfig.DEFAULT_EXECUTOR_CAPACITY);
+    this.scheduler = new Scheduler(schedulingPolicy);
     this.executionStateManager = new ExecutionStateManager();
     this.masterCommunicator = new MasterCommunicator();
     this.dataTransferManagerMaster = new DataTransferManagerMaster();
@@ -54,8 +55,9 @@ public class RtMaster {
     Map<RuntimeAttributes.ResourceType, Integer> defaultResources = new HashMap<>();
     defaultResources.put(RuntimeAttributes.ResourceType.TRANSIENT, 3);
     defaultResources.put(RuntimeAttributes.ResourceType.RESERVED, 1);
-    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources, masterCommunicator);
     scheduler.initialize(masterCommunicator);
+    resourceManager.initialize(this, rtConfig.getRtExecMode(), defaultResources, masterCommunicator, scheduler);
+    schedulingPolicy.initialize(resourceManager.getRunningResources());
     masterCommunicator.initialize(resourceManager, executionStateManager, dataTransferManagerMaster);
     dataTransferManagerMaster.initialize(masterCommunicator);
   }
@@ -64,11 +66,6 @@ public class RtMaster {
     executionStateManager.submitExecutionPlan(execPlan);
   }
 
-  public void onRtControllableReceived(final RtControllable rtControllable) {
-
-  }
-
   public void onJobCompleted() {
-
   }
 }
