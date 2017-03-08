@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.task;
 
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +27,14 @@ import java.util.List;
 public class TaskGroup implements Serializable {
   private final String taskGroupId;
   private final List<Task> taskList;
+  private final RuntimeAttributes.ResourceType resourceType;
 
   public TaskGroup(final String taskGroupId,
-                   final int capacity) {
+                   final int capacity,
+                   final RuntimeAttributes.ResourceType resourceType) {
     this.taskGroupId = taskGroupId;
     this.taskList = new ArrayList<>(capacity);
+    this.resourceType = resourceType;
   }
 
   public String getTaskGroupId() {
@@ -42,5 +47,9 @@ public class TaskGroup implements Serializable {
 
   public void addTask(final Task task) {
     taskList.add(task);
+  }
+
+  public RuntimeAttributes.ResourceType getResourceType() {
+    return resourceType;
   }
 }

@@ -78,7 +78,6 @@ public final class DataTransferManagerMaster {
 
   }
 
-
   public void bindChannelReaderToExecutor(
       final String inputChannelId,
       final String executorId) {

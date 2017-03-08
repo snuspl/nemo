@@ -15,62 +15,90 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import com.google.protobuf.ByteString;
-import edu.snu.vortex.runtime.common.comm.RuntimeDefinitions;
-import edu.snu.vortex.runtime.common.execplan.RtStage;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 import edu.snu.vortex.runtime.common.task.TaskGroup;
-import edu.snu.vortex.runtime.exception.EmptyExecutionPlanException;
-import org.apache.commons.lang.SerializationUtils;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Scheduler.
+ * SimpleRRScheduler.
  */
-public class Scheduler {
+public class SimpleRRScheduler implements SchedulingPolicy {
 
-  private SchedulingPolicy schedulingPolicy;
-  private MasterCommunicator masterCommunicator;
-  private Map<RtAttributes.ResourceType, String> resources;
+  private final int executorSchedulerCapacity;
 
-  public Scheduler(final SchedulingPolicy schedulingPolicy) {
-    this.schedulingPolicy = schedulingPolicy;
+  private final ConcurrentMap<RuntimeAttributes.ResourceType, Set<String>> resourcesByType;
+  private final ConcurrentMap<RuntimeAttributes.ResourceType, Set<String>> scheduledResourcesByType;
+  private final ConcurrentMap<String, Set<String>> taskGroupsByExecutor;
+
+  public SimpleRRScheduler(final int executorSchedulerCapacity) {
+    this.executorSchedulerCapacity = executorSchedulerCapacity;
+    this.resourcesByType = new ConcurrentHashMap<>();
+    this.taskGroupsByExecutor = new ConcurrentHashMap<>();
+    this.scheduledResourcesByType = new ConcurrentHashMap<>();
   }
 
-  public void initialize(final MasterCommunicator masterCommunicator) {
-    this.masterCommunicator = masterCommunicator;
+  @Override
+  public void initialize(final Map<RuntimeAttributes.ResourceType, Set<String>> resourcesByType) {
+    this.resourcesByType.putAll(resourcesByType);
   }
 
-  public void launchNextStage(final RtStage rtStage) throws EmptyExecutionPlanException {
-    // TODO #000: identify where resource type is tagged - stage, taskgroup or operator
-    final RtAttributes.ResourceType resourceType =
-        (RtAttributes.ResourceType) rtStage.getRtStageAttr().get(RtAttributes.RtStageAttribute.RESOURCE_TYPE);
+  @Override
+  public Optional<String> attemptSchedule(final TaskGroup taskGroup) {
+    String candidateExecutor = selectExecutorForTaskGroup(taskGroup);
+    return Optional.of(candidateExecutor);
+  }
 
-    final List<TaskGroup> taskGroups = rtStage.getTaskGroups();
+  private String selectExecutorForTaskGroup(final TaskGroup taskGroup) {
+    // TODO #000: What if the resource type does not exist in the cluster?
+    String taskGroupExecutorId = null;
+    final Set<String> completeSetOfResources = resourcesByType.get(taskGroup.getResourceType());
+    final Set<String> usedSetOfResources = scheduledResourcesByType.get(taskGroup.getResourceType());
 
-    for (final Map.Entry<RtAttributes.ResourceType, String> entry : resources.entrySet()) {
-      if (taskGroups.isEmpty()) {
-        break;
+    if (completeSetOfResources.size() == usedSetOfResources.size()) {
+      usedSetOfResources.clear();
+    }
+
+    for (String resourceId : completeSetOfResources) {
+      if (!usedSetOfResources.contains(resourceId)) {
+        final Set<String> scheduledAndRunningTaskGroups = taskGroupsByExecutor.get(resourceId);
+        if (scheduledAndRunningTaskGroups.size() < executorSchedulerCapacity) {
+          usedSetOfResources.add(resourceId);
+          taskGroupExecutorId = resourceId;
+          scheduledAndRunningTaskGroups.add(taskGroup.getTaskGroupId());
+          break;
+        }
       }
-      if (resourceType == entry.getKey()) {
-        final TaskGroup taskGroup = taskGroups.get(0);
-        taskGroups.remove(taskGroup);
+    }
+    return taskGroupExecutorId;
+  }
 
-        final RuntimeDefinitions.ScheduleTaskGroupMsg.Builder msgBuilder
-            = RuntimeDefinitions.ScheduleTaskGroupMsg.newBuilder();
-        final ByteString taskGroupBytes = ByteString.copyFrom(SerializationUtils.serialize(taskGroup));
-        msgBuilder.setTaskGroup(taskGroupBytes);
-        final RuntimeDefinitions.RtControllableMsg.Builder builder
-            = RuntimeDefinitions.RtControllableMsg.newBuilder();
-        builder.setType(RuntimeDefinitions.MessageType.ScheduleTaskGroup);
-        builder.setScheduleTaskGroupMsg(msgBuilder.build());
-        masterCommunicator.sendRtControllable(entry.getValue(), builder.build());
+  @Override
+  public void onTaskGroupLaunched(final String resourceId, final TaskGroup taskGroup) {
+    scheduledResourcesByType.get(taskGroup.getResourceType()).add(resourceId);
+    taskGroupsByExecutor.get(resourceId).add(taskGroup.getTaskGroupId());
+  }
+
+  @Override
+  public void onTaskGroupExecutionComplete(final String taskGroupId) {
+    for (ConcurrentMap.Entry<String, Set<String>> entry : taskGroupsByExecutor.entrySet()) {
+      if (entry.getValue().remove(taskGroupId)) {
+        break;
       }
     }
   }
 
-  public void onResourceUpdated(final Map<RtAttributes.ResourceType, String> updatedMap) {
-    this.resources = updatedMap;
+  @Override
+  public void resourceAdded(final RuntimeAttributes.ResourceType resourceType, final String resourceId) {
+    resourcesByType.get(resourceType).add(resourceId);
+  }
+
+  @Override
+  public void resourceDeleted(final RuntimeAttributes.ResourceType resourceType, final String resourceId) {
+    resourcesByType.get(resourceType).remove(resourceId);
+    scheduledResourcesByType.get(resourceType).remove(resourceId);
   }
 }
+
