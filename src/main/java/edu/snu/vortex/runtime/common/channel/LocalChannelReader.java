@@ -80,8 +80,7 @@ public final class LocalChannelReader<T> implements ChannelReader<T> {
 
   @Override
   public synchronized Iterable<T> read() {
-    final List<Iterable> dataList = dataTransferManager.receiveDataRecordsFromLocalSender(channelId);
-    return null;
+    return (List<T>) dataTransferManager.receiveDataRecordsFromLocalSender(channelId);
   }
 
 

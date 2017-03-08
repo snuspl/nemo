@@ -221,7 +221,7 @@ public class ExecutionStateManager {
     final ChannelWriter channelWriter;
     switch (channelType) {
     case LOCAL:
-      channelWriter = new LocalChannelReader(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
+      channelWriter = new LocalChannelWriter(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);
       break;
     case MEMORY:
       channelWriter = new MemoryChannelWriter(IdGenerator.generateChannelId(), srcTaskId, dstTaskId);

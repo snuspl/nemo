@@ -3,6 +3,9 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.runtime.executor.DataTransferManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A local channel writer that stores data records in the local memory.
  * It does not serialize the records and passes them over to the respective {@link LocalChannelReader}
@@ -26,8 +29,10 @@ public class LocalChannelWriter<T> implements ChannelWriter<T> {
   }
 
   @Override
-  public void write(final Iterable<T> data) {
-
+  public void write(final Iterable<T> iterable) {
+    final List<T> dataList = new ArrayList<>();
+    iterable.forEach(record -> dataList.add(record));
+    dataTransferManager.sendDataRecordsToLocalReceiver(channelId, dataList);
   }
 
   @Override

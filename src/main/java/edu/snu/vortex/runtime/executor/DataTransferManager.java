@@ -48,7 +48,7 @@ public class DataTransferManager {
   private final BlockingDeque<RtControllable> outgoingMessageQueue;
   private final Thread incomingMessageHandlerThread;
   private final Thread outgoingMessageRouterThread;
-  private final Map<String, List<Iterable>> localChannelIdToDataListMap;
+  private final Map<String, List> localChannelIdToDataListMap;
 
   public DataTransferManager(final String executorId,
                              final String masterId,
@@ -161,21 +161,20 @@ public class DataTransferManager {
     routingTable.get(recvExecutorId).receiveRtControllable(rtControllable);
   }
 
-  public void sendDataRecordsToLocalReceiver(final String channelId, final Iterable data) {
-    List<Iterable> dataList;
+  public void sendDataRecordsToLocalReceiver(final String channelId, final List records) {
+
 
     synchronized (localChannelIdToDataListMap) {
-      dataList = localChannelIdToDataListMap.get(channelId);
-      if (dataList == null) {
-        dataList = new ArrayList<>();
-        localChannelIdToDataListMap.put(channelId, dataList);
+      if (!localChannelIdToDataListMap.containsKey(channelId)) {
+        localChannelIdToDataListMap.put(channelId, new ArrayList<>());
       }
 
-      dataList.add(data);
+      List dataList = localChannelIdToDataListMap.get(channelId);
+      dataList.addAll(records);
     }
   }
 
-  public List<Iterable> receiveDataRecordsFromLocalSender(final String channelId) {
+  public List receiveDataRecordsFromLocalSender(final String channelId) {
     synchronized (localChannelIdToDataListMap) {
       return localChannelIdToDataListMap.remove(channelId);
     }

@@ -95,7 +95,7 @@ public final class TCPChannelTest {
 
     return true;
   }
-
+/*
   @Before
   public void setup() throws IOException {
     this.transferManagerMaster = new DataTransferManagerMaster();
@@ -138,7 +138,7 @@ public final class TCPChannelTest {
       throw new RuntimeException(e);
     }
   }
-
+*/
 /*
   @Test
   public void testTransferMultipleDataSetViaTCPChannel() {
