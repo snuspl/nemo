@@ -7,9 +7,10 @@ option java_outer_classname = "RuntimeStates";
 
 enum TaskGroupState {
     READY = 0;
-    RUNNING = 1;
-    COMPLETE = 2;
-    FAILED = 3;
+    SCHEDULED = 1;
+    RUNNING = 2;
+    COMPLETE = 3;
+    FAILED = 4;
 }
 
 enum ChannelState {
