@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
-
-import java.util.Map;
+package edu.snu.vortex.runtime.common.channel;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
- * @param <O> output type.
- * @param <T> .
+ * The interface for a channel reader.
+ * @param <T> the type of data records that transfer via the channel.
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public interface ChannelReader<T> extends Channel<T> {
+
+  /**
+   * read data from the channel into a given byte buffer.
+   * this method is available only when the channel mode is INPUT or INOUT.
+   * @return The iterable of data read
+   */
+  Iterable<T> read();
 }

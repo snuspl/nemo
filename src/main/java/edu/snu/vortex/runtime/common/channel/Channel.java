@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2017 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.snu.vortex.runtime.common.channel;
+
+
+/**
+ * Channel interface that the implementations should support.
+ * @param <T> the type of data record
+ */
+public interface Channel<T> {
+
+  /**
+   * @return the channel id.
+   */
+  String getId();
+
+  /**
+   * @return the {@link ChannelType} of the channel.
+   */
+  ChannelType getType();
+
+  /**
+   * @return the {@link ChannelMode} of the channel.
+   */
+  ChannelMode getMode();
+
+  /**
+   * @return the source task id of the channel.
+   */
+  String getSrcTaskId();
+
+  /**
+   * @return the destination task id of the channel.
+   */
+  String getDstTaskId();
+
+  /**
+   * Set the destination task id.
+   * @param newDstTaskId The id of the new destination task.
+   */
+  void setDstTaskId(String newDstTaskId);
+
+  /**
+   * Initialize the internal state of the channel with the given {@link ChannelConfig}.
+   * @param config The channel configuration that contains necessary information for channel initialization.
+   */
+  void initialize(ChannelConfig config);
+
+}

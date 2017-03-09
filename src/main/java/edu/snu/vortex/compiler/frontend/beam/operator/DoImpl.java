@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Do operator implementation.
+ * RtDoOp operator implementation.
  * @param <I> input type.
  * @param <O> output type.
  */

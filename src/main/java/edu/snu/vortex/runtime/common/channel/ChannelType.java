@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
-
-import java.util.Map;
+package edu.snu.vortex.runtime.common.channel;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
- * @param <O> output type.
- * @param <T> .
+ * The types of {@link Channel}.
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public enum ChannelType {
+  LOGICAL,
+  LOCAL,
+  MEMORY,
+  FILE,
+  DISTRIBUTED_STORAGE,
 }

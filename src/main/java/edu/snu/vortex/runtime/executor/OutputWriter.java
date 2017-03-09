@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.runtime.executor;
 
-import java.util.Map;
+import java.util.List;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
- * @param <O> output type.
- * @param <T> .
+ * An interface for output writers.
+ * @param <T> The type of data record which will be written in this output writer.
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public interface OutputWriter<T> {
+  /**
+   * write the given records to {@link edu.snu.vortex.runtime.common.channel.ChannelWriter}.
+   * which channel writer each record will be written to will be determined
+   * according to the partitioner implementation.
+   * @param records records to be written.
+   */
+  void writeOutputRecords(List<T> records);
 }

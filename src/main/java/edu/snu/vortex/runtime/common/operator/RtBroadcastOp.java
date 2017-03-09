@@ -13,17 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.runtime.common.operator;
+
+import edu.snu.vortex.runtime.common.execplan.RtOperator;
+import edu.snu.vortex.runtime.common.execplan.RuntimeAttributes;
 
 import java.util.Map;
 
 /**
- * RtDoOp operator.
+ * RtBroadcastOp operator.
  * @param <I> input type.
  * @param <O> output type.
  * @param <T> .
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public abstract class RtBroadcastOp<I, O, T> extends RtOperator<I, O> {
+  public RtBroadcastOp(final String irOpId, final Map<RuntimeAttributes.OperatorAttribute, Object> rtOpAttr) {
+    super(irOpId, rtOpAttr);
+  }
+  public abstract O transform(Iterable<I> input);
+
+  public abstract T getTag();
 }

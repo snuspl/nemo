@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.runtime.executor;
 
-import java.util.Map;
+import edu.snu.vortex.runtime.exception.NotImplementedException;
+
+import java.util.List;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
- * @param <O> output type.
- * @param <T> .
+ * An output writer which writes output data into MEMORY channels.
+ * @param <T> The type of data records which are written into this output writer.
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public final class TCPOutputWriter<T> implements OutputWriter<T> {
+  @Override
+  public void writeOutputRecords(final List<T> records) {
+    throw new NotImplementedException("This method has not been implemented.");
+  }
 }

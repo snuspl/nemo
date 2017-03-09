@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
-
-import java.util.Map;
+package edu.snu.vortex.runtime.common.config;
 
 /**
- * RtDoOp operator.
- * @param <I> input type.
- * @param <O> output type.
- * @param <T> .
+ * RtConfig.
  */
-public abstract class Do<I, O, T> extends Operator<I, O> {
-  // We assume for now that broadcasted data are only used in RtDoOp
-  public abstract Iterable<O> transform(Iterable<I> input, Map<T, Object> broadcasted);
+public class RtConfig {
+  private final RtExecMode rtExecMode;
+  public static final String MASTER_NAME = "runtime_master";
+
+  public static final int DEFAULT_EXECUTOR_NUM_CORES = 4;
+  public static final int DEFAULT_EXECUTOR_CAPACITY = 10;
+
+  public RtConfig(final RtExecMode rtExecMode) {
+    this.rtExecMode = rtExecMode;
+  }
+
+  public final RtExecMode getRtExecMode() {
+    return rtExecMode;
+  }
+
+  /**
+   * RtExecMode.
+   */
+  public enum RtExecMode { STREAM, BATCH }
 }

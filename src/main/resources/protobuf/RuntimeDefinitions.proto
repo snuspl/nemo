@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package protobuf;
+
+import "RuntimeStates.proto";
+
+option java_package = "edu.snu.vortex.runtime.common.comm";
+option java_outer_classname = "RuntimeDefinitions";
+
+enum MessageType {
+    ScheduleTaskGroup = 0;
+    TaskGroupStateChanged = 1;
+    ExecutorReady = 2;
+    ChannelBind = 3;
+    ChannelUnbind = 4;
+    TransferReady = 5;
+    TransferRequest = 6;
+    TransferTermination = 7;
+    TransferStart = 8;
+    TransferDataChunk = 9;
+    TransferStartACK = 10;
+    TransferTerminationACK = 11;
+}
+
+enum ChannelType {
+    READER = 0;
+    WRITER = 1;
+}
+
+message RtControllableMsg {
+    MessageType type = 1;
+    oneof messageTypes {
+        TaskGroupStateChangedMsg taskStateChangedMsg = 2;
+        ExecutorReadyMsg executorReadyMsg = 3;
+        ScheduleTaskGroupMsg scheduleTaskGroupMsg = 4;
+        ChannelBindMsg channelBindMsg = 5;
+        ChannelUnbindMsg channelUnbindMsg = 6;
+        TransferReadyMsg transferReadyMsg = 7;
+        TransferRequestMsg transferRequestMsg = 8;
+        TransferTerminationMsg transferTerminationMsg = 9;
+        TransferStartMsg transferStartMsg = 10;
+        TransferDataChunkMsg transferDataChunkMsg = 11;
+        TransferTerminationACKMsg transferTerminationACKMsg = 12;
+        TransferStartACKMsg transferStartACKMsg = 13;
+    }
+}
+
+message ScheduleTaskGroupMsg {
+    bytes taskGroup = 1;
+}
+
+message TaskGroupStateChangedMsg {
+    string taskGroupId = 1;
+    TaskGroupState state = 2;
+}
+
+message ExecutorReadyMsg {
+    string executorId = 1;
+}
+
+message ChannelBindMsg {
+    string channelId = 1;
+    string executorId = 2;
+    ChannelType channelType = 3;
+}
+
+message ChannelUnbindMsg {
+    string channelId = 1;
+    ChannelType channelType = 3;
+}
+
+message TransferStartMsg {
+    string channelId = 1;
+    int32 numChunks = 2;
+}
+
+message TransferReadyMsg {
+    string channelId = 1;
+    string sendExecutorId = 2;
+}
+
+message TransferRequestMsg {
+    string channelId = 1;
+    string recvExecutorId = 2;
+}
+
+message TransferTerminationMsg {
+    string channelId = 1;
+}
+
+message TransferDataChunkMsg {
+    string channelId = 1;
+    int32 chunkId = 2;
+    int32 chunkSize = 3;
+    bytes chunk = 4;
+}
+
+message TransferStartACKMsg {
+    string channelId = 1;
+}
+
+message TransferTerminationACKMsg {
+    string channelId = 1;
+}

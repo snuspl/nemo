@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.common;
 
-
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * ID Generator.
@@ -25,11 +25,58 @@ public final class IdGenerator {
   private static AtomicInteger rtStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
 
-  private IdGenerator() {
+  private static AtomicInteger taskGroupId = new AtomicInteger(1);
+  private static AtomicInteger taskId = new AtomicInteger(1);
+  private static AtomicInteger channelId = new AtomicInteger(1);
+  private static AtomicInteger bundleId = new AtomicInteger(1);
+  private static AtomicInteger sessionId = new AtomicInteger(1);
+
+  private static AtomicInteger executorId = new AtomicInteger(1);
+
+  private IdGenerator() { }
+
+  /**
+   * Generates the ID of a {@link edu.snu.vortex.runtime.common.task.TaskGroup}.
+   * @return the generated ID
+   */
+  public static String generateTaskGroupId() {
+    return "taskGroup-" + taskGroupId.getAndIncrement();
   }
 
   /**
-   * Generates the ID for {@link RtOperator},
+   * Generates the ID of a {@link edu.snu.vortex.runtime.common.task.Task}.
+   * @return the generated ID
+   */
+  public static String generateTaskId() {
+    return "task-" + taskId.getAndIncrement();
+  }
+
+  /**
+   * Generates an ID for {@link edu.snu.vortex.runtime.common.channel.Channel}.
+   * @return the generated ID
+   */
+  public static String generateChannelId() {
+    return "channel" + channelId.getAndIncrement();
+  }
+
+  /**
+   * Generates a session ID.
+   * @return a generated session ID.
+   */
+  public static String generateSessionId() {
+    return "session" + sessionId.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.channel.ChannelBundle}.
+   * @return the generated ID
+   */
+  public static String generateBundleId() {
+    return "bundle" + bundleId.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RtOperator}.
    * given the ID of the corresponding {@link edu.snu.vortex.compiler.ir.operator.Operator}.
    * @param irOpId .
    * @return the generated ID
@@ -39,7 +86,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtOpLink}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RtOpLink).
    * @return the generated ID
    */
   public static String generateRtOpLinkId() {
@@ -47,7 +94,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtStage}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RtStage}.
    * @return the generated ID
    */
   public static String generateRtStageId() {
@@ -55,12 +102,21 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtStageLink}, generating a unique ID for a pair of {@link RtStage}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RtStageLink}.
+   * generating a unique ID for a pair of {@link edu.snu.vortex.runtime.common.execplan.RtStage).
    * @param srcRStageId .
    * @param dstRStageId .
    * @return the generated ID
    */
   public static String generateRtStageLinkId(final String srcRStageId, final String dstRStageId) {
     return "RtStageLink-" + srcRStageId + '_' + dstRStageId;
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.vortex.runtime.executor.ExecutorContainer}.
+   * @return the generated ID
+   */
+  public static String generateExecutorId() {
+    return "executor-" + executorId.getAndIncrement();
   }
 }
