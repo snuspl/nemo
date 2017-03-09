@@ -137,11 +137,11 @@ public final class ExecutionPlanGeneration {
   private static RuntimeAttributes.CommPattern convertEdgeTypeToROpLinkAttr(final Edge.Type edgeType) {
     switch (edgeType) {
     case OneToOne:
-      return RtAttributes.CommPattern.ONE_TO_ONE;
+      return RuntimeAttributes.CommPattern.ONE_TO_ONE;
     case Broadcast:
-      return RtAttributes.CommPattern.BROADCAST;
+      return RuntimeAttributes.CommPattern.BROADCAST;
     case ScatterGather:
-      return RtAttributes.CommPattern.SCATTER_GATHER;
+      return RuntimeAttributes.CommPattern.SCATTER_GATHER;
     default:
       throw new RuntimeException("no such edge type");
     }
