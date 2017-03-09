@@ -39,6 +39,15 @@ public final class OperatorConverter {
     final Map<RuntimeAttributes.OperatorAttribute, Object> rOpAttributes = new HashMap<>();
     irOpAttributes.forEach((k, v) -> {
       switch (k) {
+      case Placement:
+        if (v == Attributes.Placement.Transient) {
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
+        } else if (v == Attributes.Placement.Reserved) {
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
+        } else if (v == Attributes.Placement.Compute) {
+          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.COMPUTE);
+        }
+        break;
       case EdgePartitioning:
         if (v == Attributes.EdgePartitioning.Hash) {
           rOpAttributes.put(RuntimeAttributes.OperatorAttribute.PARTITION_TYPE, RuntimeAttributes.PartitionType.HASH);

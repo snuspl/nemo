@@ -36,12 +36,12 @@ public final class ExecutionPlanGeneration {
   private ExecutionPlanGeneration() {
   }
 
-  public static void main(final String[] args) {
+  public static void main(final String[] args) throws Exception {
 
     final DAG dag = buildMapReduceIRDAG();
 
     final Optimizer dagOptimizer = new Optimizer();
-    dagOptimizer.optimize(dag);
+    dagOptimizer.optimize(dag, Optimizer.PolicyType.Pado);
     System.out.println("=== Optimized IR DAG ===");
     System.out.println(dag);
 
@@ -58,7 +58,7 @@ public final class ExecutionPlanGeneration {
     final Map<String, RtOperator> rtOperatorMap = new HashMap<>();
 
     final List<Operator> topoSorted = new LinkedList<>();
-    dag.doDFS((operator -> topoSorted.add(0, operator)), DAG.VisitOrder.PostOrder);
+    dag.doTopological(operator -> topoSorted.add(operator));
 
     RtStage rtStage = null;
     for (int idx = 0; idx < topoSorted.size(); idx++) {
@@ -136,12 +136,12 @@ public final class ExecutionPlanGeneration {
 
   private static RuntimeAttributes.CommPattern convertEdgeTypeToROpLinkAttr(final Edge.Type edgeType) {
     switch (edgeType) {
-    case O2O:
-      return RuntimeAttributes.CommPattern.ONE_TO_ONE;
-    case O2M:
-      return RuntimeAttributes.CommPattern.BROADCAST;
-    case M2M:
-      return RuntimeAttributes.CommPattern.SCATTER_GATHER;
+    case OneToOne:
+      return RtAttributes.CommPattern.ONE_TO_ONE;
+    case Broadcast:
+      return RtAttributes.CommPattern.BROADCAST;
+    case ScatterGather:
+      return RtAttributes.CommPattern.SCATTER_GATHER;
     default:
       throw new RuntimeException("no such edge type");
     }
@@ -164,7 +164,7 @@ public final class ExecutionPlanGeneration {
     return (!edges.isPresent());
   }
   private static boolean hasM2M(final List<Edge> edges) {
-    return edges.stream().filter(edge -> edge.getType() == Edge.Type.M2M).count() > 0;
+    return edges.stream().filter(edge -> edge.getType() == Edge.Type.ScatterGather).count() > 0;
   }
 
   private static DAG buildMapReduceIRDAG() {
@@ -177,8 +177,8 @@ public final class ExecutionPlanGeneration {
     builder.addOperator(source);
     builder.addOperator(map);
     builder.addOperator(reduce);
-    builder.connectOperators(source, map, Edge.Type.O2O);
-    builder.connectOperators(map, reduce, Edge.Type.M2M);
+    builder.connectOperators(source, map, Edge.Type.OneToOne);
+    builder.connectOperators(map, reduce, Edge.Type.ScatterGather);
     return builder.build();
   }
 
