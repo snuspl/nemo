@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.beam.udf.*;
 import edu.snu.vortex.compiler.frontend.beam.udf.DoFn;
-import edu.snu.vortex.compiler.frontend.beam.udf.ViewFn;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.Operator;

@@ -15,20 +15,36 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.udf;
 
-import edu.snu.vortex.compiler.ir.operator.Windowing;
-import org.apache.beam.sdk.transforms.windowing.WindowFn;
+import edu.snu.vortex.compiler.ir.OutputCollector;
+import edu.snu.vortex.compiler.ir.UserDefinedFunction;
+
+import java.util.List;
 
 /**
  * Windowing operator implementation.
  * This operator simply windows the given elements into finite windows according to a user-specified WindowFn.
  * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
  * TODO #36: This class is to be updated with stream processing.
- * @param <T> type.
  */
-public class WindowFn<T> extends Windowing<T> {
+public class WindowFn implements UserDefinedFunction {
   private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
 
   public WindowFn(final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn) {
     this.windowFn = windowFn;
+  }
+
+  @Override
+  public void prepare(OutputCollector outputCollector) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void onData(List data, int from) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void close() {
+    throw new UnsupportedOperationException();
   }
 }
