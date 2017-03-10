@@ -46,6 +46,7 @@ public final class SimpleEngine {
       } else if (operator instanceof Operator) {
         final List<Edge> inEdges = dag.getInEdgesOf(operator).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(operator).orElse(new ArrayList<>(0)); // empty lists for sinks
+        final UserDefinedFunction udf = operator.getUDF();
 
         // TODO: do this on outEdges
         inEdges.forEach(inEdge -> {
@@ -73,7 +74,7 @@ public final class SimpleEngine {
                   return null;
                 }
               };
-              operator.onData(dataContext);
+              udf.onData(dataContext);
 
               // Save the results to each output edge
               final HashMap<Integer, List> outputMap = dataContext.getOutputs();
@@ -91,4 +92,24 @@ public final class SimpleEngine {
 
     System.out.println("## Job completed.");
   }
+
+  private enum EdgeDirection {
+    In,
+    Out
+  }
+
+  private String getSingleEdgeId(final DAG dag, final Operator node, final EdgeDirection ed) {
+    final Optional<List<Edge>> optional = (ed == EdgeDirection.In) ? dag.getInEdgesOf(node) : dag.getOutEdgesOf(node);
+    if (optional.isPresent()) {
+      final List<Edge> edges = optional.get();
+      if (edges.size() != 1) {
+        throw new IllegalArgumentException();
+      } else {
+        return edges.get(0).getId();
+      }
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
 }
