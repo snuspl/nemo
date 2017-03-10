@@ -22,7 +22,7 @@ public final class RtAttributes {
   /**
    * Set of attributes applicable to {@link RtStage}.
    */
-  public enum RtStageAttribute { PARALLELISM }
+  public enum RtStageAttribute { PARALLELISM, RESOURCE_TYPE }
 
   /**
    * Set of attributes applicable to {@link RtOperator}.

@@ -17,7 +17,8 @@ package edu.snu.vortex.compiler.ir;
 
 /**
  * Attributes class.
- * TODO #21: Refactor Attributes Class
+ * TODO #21: Refactor Attributes Class:
+ * Refer to http://stackoverflow.com/questions/19680418/how-to-use-enum-with-grouping-and-subgrouping-hierarchy-nesting
  */
 public final class Attributes {
   /**
