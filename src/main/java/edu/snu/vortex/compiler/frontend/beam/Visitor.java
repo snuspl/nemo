@@ -104,8 +104,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   }
 
   private Edge.Type getInEdgeType(final Vertex vertex) {
-    final Operator udf = vertex.getOperator();
-    if (udf instanceof MergeKV) {
+    final Operator operator = vertex.getOperator();
+    if (operator instanceof MergeKV) {
       return Edge.Type.ScatterGather;
     } else {
       return Edge.Type.OneToOne;

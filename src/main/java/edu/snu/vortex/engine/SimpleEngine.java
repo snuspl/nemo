@@ -46,7 +46,7 @@ public final class SimpleEngine {
       } else if (vertex instanceof Vertex) {
         final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
-        final Operator udf = vertex.getOperator();
+        final Operator operator = vertex.getOperator();
 
         IntStream.range(0, inEdges.size())
             .forEach(i -> {
@@ -54,7 +54,7 @@ public final class SimpleEngine {
               // TODO: Handle broadcasts differently? // Partitioning? (Number of input/outputs)
               final Edge inEdge = inEdges.get(i);
               final Iterable inData = edgeIdToData.get(inEdge.getId());
-              udf.onData(dataContext);
+              operator.onData(dataContext);
 
               // Save the results to each output edge
               final HashMap<Integer, List> outputMap = dataContext.getOutputs();

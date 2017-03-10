@@ -19,8 +19,8 @@ import java.util.HashMap;
 
 /**
  * Physical execution plan of intermediate data movement.
- * @param <I> input operator type.
- * @param <O> output operator type.
+ * @param <I> input vertex type.
+ * @param <O> output vertex type.
  */
 public final class Edge<I, O> {
   /**

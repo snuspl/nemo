@@ -134,11 +134,11 @@ public final class DAG {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    this.doTopological(operator -> {
-      sb.append("<operator> ");
-      sb.append(operator.toString());
+    this.doTopological(vertex -> {
+      sb.append("<vertex> ");
+      sb.append(vertex.toString());
       sb.append(" / <inEdges> ");
-      sb.append(this.getInEdgesOf(operator).toString());
+      sb.append(this.getInEdgesOf(vertex).toString());
       sb.append("\n");
     });
     return sb.toString();
@@ -194,34 +194,34 @@ public final class DAG {
 
   /**
    * Do a DFS traversal with a given visiting order.
-   * @param function function to apply to each operator
+   * @param function function to apply to each vertex
    * @param visitOrder visiting order.
    */
   private void doDFS(final Consumer<Vertex> function, final VisitOrder visitOrder) {
     final HashSet<Vertex> visited = new HashSet<>();
     getVertices().stream()
-        .filter(operator -> !id2inEdges.containsKey(operator.getId())) // root Operators
-        .filter(operator -> !visited.contains(operator))
-        .forEach(operator -> visitDFS(operator, function, visitOrder, visited));
+        .filter(vertex -> !id2inEdges.containsKey(vertex.getId())) // root Operators
+        .filter(vertex -> !visited.contains(vertex))
+        .forEach(vertex -> visitDFS(vertex, function, visitOrder, visited));
   }
 
   private void visitDFS(final Vertex vertex,
-                        final Consumer<Vertex> operatorConsumer,
+                        final Consumer<Vertex> vertexConsumer,
                         final VisitOrder visitOrder,
                         final HashSet<Vertex> visited) {
     visited.add(vertex);
     if (visitOrder == VisitOrder.PreOrder) {
-      operatorConsumer.accept(vertex);
+      vertexConsumer.accept(vertex);
     }
     final Optional<List<Edge>> outEdges = getOutEdgesOf(vertex);
     if (outEdges.isPresent()) {
       outEdges.get().stream()
           .map(outEdge -> outEdge.getDst())
           .filter(outOperator -> !visited.contains(outOperator))
-          .forEach(outOperator -> visitDFS(outOperator, operatorConsumer, visitOrder, visited));
+          .forEach(outOperator -> visitDFS(outOperator, vertexConsumer, visitOrder, visited));
     }
     if (visitOrder == VisitOrder.PostOrder) {
-      operatorConsumer.accept(vertex);
+      vertexConsumer.accept(vertex);
     }
   }
 }

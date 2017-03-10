@@ -25,12 +25,12 @@ import java.util.Map;
 public class Vertex implements Serializable {
   private final String id;
   private final Map<Attributes.Key, Attributes.Val> attributes;
-  private final Operator udf;
+  private final Operator operator;
 
-  public Vertex(final Operator udf) {
+  public Vertex(final Operator operator) {
     this.id = IdManager.newOperatorId();
     this.attributes = new HashMap<>();
-    this.udf = udf;
+    this.operator = operator;
   }
 
   public final String getId() {
@@ -38,7 +38,7 @@ public class Vertex implements Serializable {
   }
 
   public final Operator getOperator() {
-    return udf;
+    return operator;
   }
 
   public final Vertex setAttr(final Attributes.Key key, final Attributes.Val val) {
@@ -64,8 +64,8 @@ public class Vertex implements Serializable {
     sb.append(id);
     sb.append(", attributes: ");
     sb.append(attributes);
-    sb.append(", udf: ");
-    sb.append(udf);
+    sb.append(", operator: ");
+    sb.append(operator);
     return sb.toString();
   }
 

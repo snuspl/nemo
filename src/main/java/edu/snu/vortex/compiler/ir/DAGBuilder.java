@@ -43,11 +43,9 @@ public final class DAGBuilder {
   }
 
   /**
-   */
-  /**
    * add an edge for the given vertices.
-   * @param src source operator.
-   * @param dst destination operator.
+   * @param src source vertex.
+   * @param dst destination vertex.
    * @param type edge type.
    * @return .
    * @return
@@ -105,8 +103,8 @@ public final class DAGBuilder {
   public DAG build() {
     // TODO #22: DAG Integrity Check
     final boolean sourceCheck = vertices.stream()
-        .filter(operator -> !id2inEdges.containsKey(operator.getId()))
-        .allMatch(operator -> operator instanceof Source);
+        .filter(vertex -> !id2inEdges.containsKey(vertex.getId()))
+        .allMatch(vertex -> vertex instanceof Source);
 
     if (!sourceCheck) {
       throw new RuntimeException("DAG integrity unsatisfied: there are root vertices that are not Sources.");
