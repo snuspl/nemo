@@ -35,7 +35,7 @@ public final class DAGBuilder {
    * add an vertex.
    * @param vertex .
    */
-  public void addOperator(final Vertex vertex) {
+  public void addVertex(final Vertex vertex) {
     if (this.contains(vertex)) {
       throw new RuntimeException("DAGBuilder is trying to add an vertex multiple times");
     }
@@ -52,7 +52,7 @@ public final class DAGBuilder {
    * @return .
    * @return
    */
-  public Edge connectOperators(final Vertex src, final Vertex dst, final Edge.Type type) {
+  public Edge connectVertices(final Vertex src, final Vertex dst, final Edge.Type type) {
     final Edge edge = new Edge(type, src, dst);
     if (this.contains(edge)) {
       throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");

@@ -77,7 +77,7 @@ public final class Optimizer {
   private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.Pado,
-        Arrays.asList(new PadoOperatorPass(), new PadoEdgePass()));
+        Arrays.asList(new PadoVertexPass(), new PadoEdgePass()));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(new DisaggregationPass()));
   }

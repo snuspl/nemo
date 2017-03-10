@@ -60,7 +60,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
 
     final List<Vertex> vortexVertices = createOperator(beamOperator);
     vortexVertices.forEach(vortexOperator -> {
-      builder.addOperator(vortexOperator);
+      builder.addVertex(vortexOperator);
 
       beamOperator.getOutputs()
           .forEach(output -> pValueToOpOutput.put(output, vortexOperator));
@@ -68,7 +68,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       beamOperator.getInputs().stream()
           .filter(pValueToOpOutput::containsKey)
           .map(pValueToOpOutput::get)
-          .forEach(src -> builder.connectOperators(src, vortexOperator, getInEdgeType(vortexOperator)));
+          .forEach(src -> builder.connectVertices(src, vortexOperator, getInEdgeType(vortexOperator)));
     });
   }
 

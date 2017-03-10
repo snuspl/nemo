@@ -29,16 +29,16 @@ public final class MapReduce {
 
   public static void main(final String[] args) throws Exception {
     final EmptySource source = new EmptySource();
-    final Vertex map = new Vertex(new EmptyUDF("MapOperator"));
-    final Vertex reduce = new Vertex(new EmptyUDF("ReduceOperator"));
+    final Vertex map = new Vertex(new EmptyOperator("MapVertex"));
+    final Vertex reduce = new Vertex(new EmptyOperator("ReduceVertex"));
 
     // Before
     final DAGBuilder builder = new DAGBuilder();
-    builder.addOperator(source);
-    builder.addOperator(map);
-    builder.addOperator(reduce);
-    builder.connectOperators(source, map, Edge.Type.OneToOne);
-    builder.connectOperators(map, reduce, Edge.Type.ScatterGather);
+    builder.addVertex(source);
+    builder.addVertex(map);
+    builder.addVertex(reduce);
+    builder.connectVertices(source, map, Edge.Type.OneToOne);
+    builder.connectVertices(map, reduce, Edge.Type.ScatterGather);
     final DAG dag = builder.build();
     System.out.println("Before Optimization");
     System.out.println(dag);
@@ -53,7 +53,7 @@ public final class MapReduce {
   }
 
   /**
-   * An empty source operator.
+   * An empty source vertex.
    */
   private static class EmptySource extends Source {
     @Override
@@ -63,12 +63,12 @@ public final class MapReduce {
   }
 
   /**
-   * An empty UDF.
+   * An empty operator.
    */
-  private static class EmptyUDF implements Operator {
+  private static class EmptyOperator implements Operator {
     private final String name;
 
-    EmptyUDF(final String name) {
+    EmptyOperator(final String name) {
       this.name = name;
     }
 

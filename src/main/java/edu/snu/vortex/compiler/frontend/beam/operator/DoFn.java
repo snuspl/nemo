@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DoFn udf implementation.
+ * DoFn operator implementation.
  */
 public final class DoFn implements Operator {
   private final org.apache.beam.sdk.transforms.DoFn doFn;
