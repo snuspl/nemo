@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.ir.Attributes;
-import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.Vertex;
 import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.RtAttributes;
 import edu.snu.vortex.runtime.common.RtOperator;
@@ -25,15 +25,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Operator converter.
+ * Vertex converter.
  */
 public final class OperatorConverter {
   /**
-   * Converts an {@link Operator} to its representation in {@link RtOperator}.
+   * Converts an {@link Vertex} to its representation in {@link RtOperator}.
    * @param irOp .
    * @return the {@link RtOperator} representation.
    */
-  public RtOperator convert(final Operator irOp) {
+  public RtOperator convert(final Vertex irOp) {
     final Map<Attributes.Key, Attributes.Val> irOpAttributes = irOp.getAttributes();
 
     final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();

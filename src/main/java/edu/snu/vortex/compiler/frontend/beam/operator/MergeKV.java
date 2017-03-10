@@ -1,16 +1,13 @@
-package edu.snu.vortex.compiler.frontend.beam.udf;
+package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.UserDefinedFunction;
-import org.apache.beam.sdk.transforms.windowing.PaneInfo;
-import org.apache.beam.sdk.util.WindowedValue;
+import edu.snu.vortex.compiler.ir.Operator;
 import org.apache.beam.sdk.values.KV;
-import org.joda.time.Instant;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MergeKV implements UserDefinedFunction {
+public class MergeKV implements Operator {
   private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
@@ -26,7 +23,7 @@ public class MergeKV implements UserDefinedFunction {
   @Override
   public void onData(final List data, final int from) {
     data.forEach(element -> {
-      final KV kv = ((WindowedValue<KV>)element).getValue();
+      final KV kv = (KV)element;
       final List valueList = keyToValues.get(kv.getKey());
       if (valueList == null) {
         final List newValueList = new ArrayList();
@@ -40,9 +37,8 @@ public class MergeKV implements UserDefinedFunction {
 
   @Override
   public void close() {
-    final List<WindowedValue<KV<Object, List>>> grouped = keyToValues.entrySet().stream()
+    final List<KV<Object, List>> grouped = keyToValues.entrySet().stream()
         .map(entry -> KV.of(entry.getKey(), entry.getValue()))
-        .map(kv -> WindowedValue.of(kv, Instant.now(), new ArrayList<>(), PaneInfo.ON_TIME_AND_ONLY_FIRING))
         .collect(Collectors.toList());
     outputCollector.emit(0, grouped);
   }

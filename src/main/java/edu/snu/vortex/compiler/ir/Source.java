@@ -21,7 +21,7 @@ import java.util.List;
  * Source operator.
  * @param <O> output type.
  */
-public abstract class Source<O> extends Operator<Void, O> {
+public abstract class Source<O> extends Vertex<Void, O> {
   // Maybe make the parameter a any-type hashmap(attributes/options)
 
   /**

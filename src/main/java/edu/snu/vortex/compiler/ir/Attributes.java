@@ -37,7 +37,7 @@ public final class Attributes {
   }
 
   /**
-   * Operator attributes.
+   * Vertex attributes.
    */
   public enum Placement implements Val {
     Transient,

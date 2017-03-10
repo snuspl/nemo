@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.udf;
+package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.UserDefinedFunction;
+import edu.snu.vortex.compiler.ir.Operator;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.Aggregator;
 import org.apache.beam.sdk.transforms.Combine;
@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * DoFn udf implementation.
  */
-public final class DoFn implements UserDefinedFunction {
+public final class DoFn implements Operator {
   private final org.apache.beam.sdk.transforms.DoFn doFn;
   private final PipelineOptions options;
   private OutputCollector outputCollector;
@@ -75,6 +75,7 @@ public final class DoFn implements UserDefinedFunction {
 
   @Override
   public void close() {
+    // do nothing
   }
 
 

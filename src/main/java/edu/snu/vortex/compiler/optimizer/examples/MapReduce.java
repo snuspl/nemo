@@ -15,16 +15,10 @@
  */
 package edu.snu.vortex.compiler.optimizer.examples;
 
-import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.DAGBuilder;
-import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Do;
-import edu.snu.vortex.compiler.ir.Source;
+import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.utils.Pair;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * A sample MapReduce application.
@@ -35,8 +29,8 @@ public final class MapReduce {
 
   public static void main(final String[] args) throws Exception {
     final EmptySource source = new EmptySource();
-    final EmptyDo<String, Pair<String, Integer>, Void> map = new EmptyDo<>("MapOperator");
-    final EmptyDo<Pair<String, Iterable<Integer>>, String, Void> reduce = new EmptyDo<>("ReduceOperator");
+    final Vertex map = new Vertex(new EmptyUDF("MapOperator"));
+    final Vertex reduce = new Vertex(new EmptyUDF("ReduceOperator"));
 
     // Before
     final DAGBuilder builder = new DAGBuilder();
@@ -69,15 +63,12 @@ public final class MapReduce {
   }
 
   /**
-   * An empty Do operator.
-   * @param <I> input type.
-   * @param <O> ouput type.
-   * @param <T>
+   * An empty UDF.
    */
-  private static class EmptyDo<I, O, T> extends Do<I, O, T> {
+  private static class EmptyUDF implements Operator {
     private final String name;
 
-    EmptyDo(final String name) {
+    EmptyUDF(final String name) {
       this.name = name;
     }
 
@@ -91,8 +82,15 @@ public final class MapReduce {
     }
 
     @Override
-    public Iterable<O> transform(final Iterable<I> input, final Map<T, Object> broadcasted) {
-      return null;
+    public void prepare(OutputCollector outputCollector) {
+    }
+
+    @Override
+    public void onData(List data, int from) {
+    }
+
+    @Override
+    public void close() {
     }
   }
 }

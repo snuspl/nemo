@@ -21,46 +21,32 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 /**
- * Simply prints out intermediate results.
+ * A simple engine that prints intermediate results to stdout.
  */
 public final class SimpleEngine {
   public void executeDAG(final DAG dag) throws Exception {
-    final List<Operator> topoSorted = new LinkedList<>();
+    final List<Vertex> topoSorted = new LinkedList<>();
     dag.doTopological(node -> topoSorted.add(node));
 
     final Map<String, List<Iterable>> edgeIdToData = new HashMap<>();
     final Map<String, Object> edgeIdToBroadcast = new HashMap<>();
 
-    for (final Operator operator : topoSorted) {
-      if (operator instanceof Source) {
+    for (final Vertex vertex : topoSorted) {
+      if (vertex instanceof Source) {
         /*
-        final List<Source.Reader> readers = ((Source) operator).getReaders(10); // 10 Bytes per Reader
+        final List<Source.Reader> readers = ((Source) vertex).getReaders(10); // 10 Bytes per Reader
         final List<Iterable> data = new ArrayList<>(readers.size());
         for (final Source.Reader reader : readers) {
           data.add(reader.read());
         }
-        dag.getOutEdgesOf(operator).get().stream()
+        dag.getOutEdgesOf(vertex).get().stream()
             .map(outEdge -> outEdge.getId())
             .forEach(id -> edgeIdToData.put(id, data));
             */
-      } else if (operator instanceof Operator) {
-        final List<Edge> inEdges = dag.getInEdgesOf(operator).get(); // must be at least one edge
-        final List<Edge> outEdges = dag.getOutEdgesOf(operator).orElse(new ArrayList<>(0)); // empty lists for sinks
-        final UserDefinedFunction udf = operator.getUDF();
-
-        // TODO: do this on outEdges
-        inEdges.forEach(inEdge -> {
-          if (inEdge.getType() == Edge.Type.OneToOne) {
-
-          } else if () {
-
-          } else if () {
-
-          } else {
-            throw new UnsupportedOperationException(inEdge.getType().toString());
-          }
-
-        });
+      } else if (vertex instanceof Vertex) {
+        final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
+        final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
+        final Operator udf = vertex.getOperator();
 
         IntStream.range(0, inEdges.size())
             .forEach(i -> {
@@ -68,12 +54,6 @@ public final class SimpleEngine {
               // TODO: Handle broadcasts differently? // Partitioning? (Number of input/outputs)
               final Edge inEdge = inEdges.get(i);
               final Iterable inData = edgeIdToData.get(inEdge.getId());
-              final DataContext dataContext = new DataContext(inData, i, ou) {
-                @Override
-                public List getBroadcastedData() {
-                  return null;
-                }
-              };
               udf.onData(dataContext);
 
               // Save the results to each output edge
@@ -83,10 +63,10 @@ public final class SimpleEngine {
                 final List outData = outputMap.get(j);
                 edgeIdToData.put(outEdge.getId(), outData);
               });
-              System.out.println("Output of operator " + operator.getId() + " / index" + i + ": " + outputMap);
+              System.out.println("Output of vertex " + vertex.getId() + " / index" + i + ": " + outputMap);
             });
       } else {
-        throw new UnsupportedOperationException(operator.toString());
+        throw new UnsupportedOperationException(vertex.toString());
       }
     }
 
@@ -98,7 +78,7 @@ public final class SimpleEngine {
     Out
   }
 
-  private String getSingleEdgeId(final DAG dag, final Operator node, final EdgeDirection ed) {
+  private String getSingleEdgeId(final DAG dag, final Vertex node, final EdgeDirection ed) {
     final Optional<List<Edge>> optional = (ed == EdgeDirection.In) ? dag.getInEdgesOf(node) : dag.getOutEdgesOf(node);
     if (optional.isPresent()) {
       final List<Edge> edges = optional.get();

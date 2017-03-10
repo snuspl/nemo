@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.udf;
+package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.UserDefinedFunction;
+import edu.snu.vortex.compiler.ir.Operator;
 
 import java.util.List;
 
@@ -26,25 +26,25 @@ import java.util.List;
  * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
  * TODO #36: This class is to be updated with stream processing.
  */
-public class WindowFn implements UserDefinedFunction {
+public class WindowFn implements Operator {
   private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
+  private OutputCollector outputCollector;
 
   public WindowFn(final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn) {
     this.windowFn = windowFn;
   }
 
   @Override
-  public void prepare(OutputCollector outputCollector) {
-    throw new UnsupportedOperationException();
+  public void prepare(final OutputCollector outputCollector) {
+    this.outputCollector = outputCollector;
   }
 
   @Override
-  public void onData(List data, int from) {
-    throw new UnsupportedOperationException();
+  public void onData(final List data, final int from) {
+    outputCollector.emit(0, data);
   }
 
   @Override
   public void close() {
-    throw new UnsupportedOperationException();
   }
 }

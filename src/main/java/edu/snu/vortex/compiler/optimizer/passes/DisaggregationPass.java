@@ -31,7 +31,7 @@ public final class DisaggregationPass implements Pass {
       operator.setAttr(Attributes.Key.Placement, Attributes.Placement.Compute);
     });
 
-    dag.getOperators().forEach(operator -> {
+    dag.getVertices().forEach(operator -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {

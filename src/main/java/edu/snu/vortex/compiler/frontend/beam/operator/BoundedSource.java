@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.udf;
+package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.Source;
 

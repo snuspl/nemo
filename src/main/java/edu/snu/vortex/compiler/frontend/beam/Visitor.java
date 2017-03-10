@@ -15,23 +15,24 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.udf.*;
-import edu.snu.vortex.compiler.frontend.beam.udf.DoFn;
+import edu.snu.vortex.compiler.frontend.beam.operator.*;
+import edu.snu.vortex.compiler.frontend.beam.operator.DoFn;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.Vertex;
 import edu.snu.vortex.compiler.ir.Operator;
-import edu.snu.vortex.compiler.ir.operator.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
-import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PValue;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,7 +41,7 @@ import java.util.Map;
  */
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
-  private final Map<PValue, Operator> pValueToOpOutput;
+  private final Map<PValue, Vertex> pValueToOpOutput;
   private final PipelineOptions options;
 
   Visitor(final DAGBuilder builder, final PipelineOptions options) {
@@ -57,62 +58,55 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamOperator.toString());
     }
 
-    final Operator vortexOperator = createOperator(beamOperator);
-    builder.addOperator(vortexOperator);
+    final List<Vertex> vortexVertices = createOperator(beamOperator);
+    vortexVertices.forEach(vortexOperator -> {
+      builder.addOperator(vortexOperator);
 
-    beamOperator.getOutputs()
-        .forEach(output -> pValueToOpOutput.put(output, vortexOperator));
+      beamOperator.getOutputs()
+          .forEach(output -> pValueToOpOutput.put(output, vortexOperator));
 
-    beamOperator.getInputs().stream()
-        .filter(pValueToOpOutput::containsKey)
-        .map(pValueToOpOutput::get)
-        .forEach(src -> builder.connectOperators(src, vortexOperator, getInEdgeType(vortexOperator)));
+      beamOperator.getInputs().stream()
+          .filter(pValueToOpOutput::containsKey)
+          .map(pValueToOpOutput::get)
+          .forEach(src -> builder.connectOperators(src, vortexOperator, getInEdgeType(vortexOperator)));
+    });
   }
 
   /**
    * The function creates the nodes accordingly by each of the types.
    * @param beamOperator input beam operator.
-   * @param <I> input type.
-   * @param <O> output type.
    * @return output Vortex IR operator.
    */
-  private <I, O> Operator createOperator(final TransformHierarchy.Node beamOperator) {
+  private <I, O> List<Vertex> createOperator(final TransformHierarchy.Node beamOperator) {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) transform;
       final BoundedSource<O> source = new BoundedSource<>(read.getSource());
-      return source;
+      return Arrays.asList(source);
     } else if (transform instanceof GroupByKey) {
-      return new GroupByKeyImpl();
-    } else if (transform instanceof View.CreatePCollectionView) {
-      final View.CreatePCollectionView view = (View.CreatePCollectionView) transform;
-      final Broadcast vortexOperator = new ViewFn(view.getView());
-      pValueToOpOutput.put(view.getView(), vortexOperator);
-      return vortexOperator;
+      // TODO: Partition and Merge
+      final Vertex partitionVertex = new Vertex(new PartitionKV());
+      final Vertex mergeVertex = new Vertex(new MergeKV());
+      return Arrays.asList(partitionVertex, mergeVertex);
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
-      final Windowing<I> vortexOperator = new WindowFn<>(window.getWindowFn());
-      return vortexOperator;
+      final WindowFn vortexOperator = new WindowFn(window.getWindowFn());
+      return Arrays.asList(new Vertex(vortexOperator));
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) transform;
-      final DoFn<I, O> vortexOperator = new DoFn<>(parDo.getNewFn(), options);
-      parDo.getSideInputs().stream()
-          .filter(pValueToOpOutput::containsKey)
-          .map(pValueToOpOutput::get)
-          .forEach(src -> builder.connectOperators(src, vortexOperator, Edge.Type.OneToOne)); // Broadcasted = OneToOne
-      return vortexOperator;
+      final DoFn vortexOperator = new DoFn(parDo.getNewFn(), options);
+      return Arrays.asList(new Vertex(vortexOperator));
     } else {
       throw new UnsupportedOperationException(transform.toString());
     }
   }
 
-  private Edge.Type getInEdgeType(final Operator operator) {
-    if (operator instanceof edu.snu.vortex.compiler.ir.operator.GroupByKey) {
+  private Edge.Type getInEdgeType(final Vertex vertex) {
+    final Operator udf = vertex.getOperator();
+    if (udf instanceof MergeKV) {
       return Edge.Type.ScatterGather;
-    } else if (operator instanceof Broadcast) {
-      return Edge.Type.Broadcast;
     } else {
       return Edge.Type.OneToOne;
     }
