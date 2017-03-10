@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.udf;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.UserDefinedFunction;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.Aggregator;
 import org.apache.beam.sdk.transforms.Combine;
-import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvokers;
 import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
@@ -38,14 +37,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DoFn operator implementation.
+ * DoFn udf implementation.
  */
-public final class OpDoFn extends Operator {
-  private final DoFn doFn;
+public final class DoFn implements UserDefinedFunction {
+  private final org.apache.beam.sdk.transforms.DoFn doFn;
   private final PipelineOptions options;
   private OutputCollector outputCollector;
 
-  public OpDoFn(final DoFn doFn, final PipelineOptions options) {
+  public DoFn(final org.apache.beam.sdk.transforms.DoFn doFn, final PipelineOptions options) {
     this.doFn = doFn;
     this.options = options;
   }
@@ -93,14 +92,14 @@ public final class OpDoFn extends Operator {
    * @param <I> input type.
    * @param <O> output type.
    */
-  private static final class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext
+  private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
     private I inputElement;
     private final Map<PCollectionView, Object> sideInputs;
     private final List<O> outputs;
     private final PipelineOptions options;
 
-    ProcessContext(final DoFn<I, O> fn,
+    ProcessContext(final org.apache.beam.sdk.transforms.DoFn<I, O> fn,
                    final List<O> outputs,
                    final Map<PCollectionView, Object> sideInputs,
                    final PipelineOptions options) {
@@ -171,27 +170,27 @@ public final class OpDoFn extends Operator {
     }
 
     @Override
-    public DoFn<I, O>.Context context(final DoFn<I, O> doFn) {
+    public org.apache.beam.sdk.transforms.DoFn.Context context(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
       return this;
     }
 
     @Override
-    public DoFn<I, O>.ProcessContext processContext(final DoFn<I, O> doFn) {
+    public org.apache.beam.sdk.transforms.DoFn.ProcessContext processContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
       return this;
     }
 
     @Override
-    public DoFn<I, O>.OnTimerContext onTimerContext(final DoFn<I, O> doFn) {
+    public org.apache.beam.sdk.transforms.DoFn.OnTimerContext onTimerContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public DoFn.InputProvider<I> inputProvider() {
+    public org.apache.beam.sdk.transforms.DoFn.InputProvider<I> inputProvider() {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public DoFn.OutputReceiver<O> outputReceiver() {
+    public org.apache.beam.sdk.transforms.DoFn.OutputReceiver<O> outputReceiver() {
       throw new UnsupportedOperationException();
     }
 

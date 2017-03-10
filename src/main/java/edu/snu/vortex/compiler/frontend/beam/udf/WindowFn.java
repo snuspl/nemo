@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.udf;
 
 import edu.snu.vortex.compiler.ir.operator.Windowing;
 import org.apache.beam.sdk.transforms.windowing.WindowFn;
@@ -25,10 +25,10 @@ import org.apache.beam.sdk.transforms.windowing.WindowFn;
  * TODO #36: This class is to be updated with stream processing.
  * @param <T> type.
  */
-public class OpWindowFn<T> extends Windowing<T> {
-  private final WindowFn windowFn;
+public class WindowFn<T> extends Windowing<T> {
+  private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
 
-  public OpWindowFn(final WindowFn windowFn) {
+  public WindowFn(final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn) {
     this.windowFn = windowFn;
   }
 }

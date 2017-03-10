@@ -17,28 +17,31 @@ package edu.snu.vortex.compiler.ir;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Physical execution plan of a user operator.
- * @param <I> input type.
- * @param <O> output type.
+ * Operator.
  */
-public abstract class Operator<I, O> implements Serializable {
+public class Operator implements Serializable {
   private final String id;
   private final Map<Attributes.Key, Attributes.Val> attributes;
+  private final UserDefinedFunction udf;
 
-  public Operator() {
+  public Operator(final UserDefinedFunction udf) {
     this.id = IdManager.newOperatorId();
     this.attributes = new HashMap<>();
+    this.udf = udf;
   }
 
   public final String getId() {
     return id;
   }
 
-  public final Operator<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
+  public final UserDefinedFunction getUDF() {
+    return udf;
+  }
+
+  public final Operator setAttr(final Attributes.Key key, final Attributes.Val val) {
     attributes.put(key, val);
     return this;
   }
@@ -64,10 +67,4 @@ public abstract class Operator<I, O> implements Serializable {
     return sb.toString();
   }
 
-
-  abstract public void prepare(final OutputCollector outputCollector);
-
-  abstract public void onData(final List data, final int from);
-
-  abstract public void close();
 }

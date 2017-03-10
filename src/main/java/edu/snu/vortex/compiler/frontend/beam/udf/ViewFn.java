@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.udf;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Operator;
@@ -30,10 +30,10 @@ import java.util.stream.StreamSupport;
  * @param <I> input type.
  * @param <O> output type.
  */
-public final class OpViewFn<I, O> extends Operator {
+public final class ViewFn<I, O> extends Operator {
   private final PCollectionView view;
 
-  public OpViewFn(final PCollectionView<O> view) {
+  public ViewFn(final PCollectionView<O> view) {
     this.view = view;
   }
 
@@ -42,7 +42,7 @@ public final class OpViewFn<I, O> extends Operator {
     final List<WindowedValue<I>> windowed = StreamSupport.stream(inputs.spliterator(), false)
         .map(input -> WindowedValue.valueInGlobalWindow(input)) // We only support batch for now
         .collect(Collectors.toList());
-    final ViewFn<Iterable<WindowedValue<I>>, O> viewFn = view.getViewFn();
+    final org.apache.beam.sdk.transforms.ViewFn<Iterable<WindowedValue<I>>, O> viewFn = view.getViewFn();
     return viewFn.apply(windowed);
 
   }

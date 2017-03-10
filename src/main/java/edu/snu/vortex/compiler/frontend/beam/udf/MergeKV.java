@@ -1,11 +1,11 @@
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.udf;
 
-import edu.snu.vortex.compiler.ir.Operator;
 import edu.snu.vortex.compiler.ir.OutputCollector;
+import edu.snu.vortex.compiler.ir.UserDefinedFunction;
 
 import java.util.List;
 
-public class OpKVMerge extends Operator {
+public class MergeKV extends UserDefinedFunction {
   @Override
   public void prepare(final OutputCollector outputCollector) {
   }

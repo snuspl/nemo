@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.operator.*;
+import edu.snu.vortex.compiler.frontend.beam.udf.*;
+import edu.snu.vortex.compiler.frontend.beam.udf.DoFn;
+import edu.snu.vortex.compiler.frontend.beam.udf.ViewFn;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.Operator;
@@ -79,24 +81,24 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) transform;
-      final OpSource<O> source = new OpSource<>(read.getSource());
+      final BoundedSource<O> source = new BoundedSource<>(read.getSource());
       return source;
     } else if (transform instanceof GroupByKey) {
       return new GroupByKeyImpl();
     } else if (transform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) transform;
-      final Broadcast vortexOperator = new OpViewFn(view.getView());
+      final Broadcast vortexOperator = new ViewFn(view.getView());
       pValueToOpOutput.put(view.getView(), vortexOperator);
       return vortexOperator;
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
-      final Windowing<I> vortexOperator = new OpWindowFn<>(window.getWindowFn());
+      final Windowing<I> vortexOperator = new WindowFn<>(window.getWindowFn());
       return vortexOperator;
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) transform;
-      final OpDoFn<I, O> vortexOperator = new OpDoFn<>(parDo.getNewFn(), options);
+      final DoFn<I, O> vortexOperator = new DoFn<>(parDo.getNewFn(), options);
       parDo.getSideInputs().stream()
           .filter(pValueToOpOutput::containsKey)
           .map(pValueToOpOutput::get)
