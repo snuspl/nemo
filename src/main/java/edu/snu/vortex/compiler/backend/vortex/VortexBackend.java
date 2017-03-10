@@ -69,21 +69,9 @@ public final class VortexBackend implements Backend {
 
         if (inEdgesForStage == null || inEdgesForStage.isEmpty()) { // when we cannot connect operator in other stages
           operatorStageNumHashMap.put(operator, stageNumber.getAndIncrement());
-        } else if (inEdgesForStage.size() == 1) {
-          inEdgesForStage.forEach(edge ->
-              operatorStageNumHashMap.put(operator, operatorStageNumHashMap.get(edge.getSrc())));
         } else {
-          final Iterator<Edge> inEdgeIterator = inEdgesForStage.iterator();
-          final Integer stageValue = operatorStageNumHashMap.get(inEdgeIterator.next().getSrc());
-          operatorStageNumHashMap.put(operator, stageValue);
-          while (inEdgeIterator.hasNext()) {
-            Integer valueToFix = operatorStageNumHashMap.get(inEdgeIterator.next().getSrc());
-            operatorStageNumHashMap.forEach((key, val) -> {
-              if (val.equals(valueToFix)) {
-                operatorStageNumHashMap.replace(key, valueToFix, stageValue);
-              }
-            });
-          }
+          // We consider the first edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
+          operatorStageNumHashMap.put(operator, operatorStageNumHashMap.get(inEdgesForStage.get(0).getSrc()));
         }
       }
     });
