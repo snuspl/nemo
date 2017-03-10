@@ -58,7 +58,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamOperator.toString());
     }
 
-    final List<Vertex> vortexVertices = createOperator(beamOperator);
+    final List<Vertex> vortexVertices = createVertices(beamOperator);
     vortexVertices.forEach(vortexOperator -> {
       builder.addVertex(vortexOperator);
 
@@ -73,18 +73,17 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   }
 
   /**
-   * The function creates the nodes accordingly by each of the types.
+   * Create vertices.
    * @param beamOperator input beam operator.
-   * @return output Vortex IR operator.
+   * @return vertices.
    */
-  private <I, O> List<Vertex> createOperator(final TransformHierarchy.Node beamOperator) {
+  private <I, O> List<Vertex> createVertices(final TransformHierarchy.Node beamOperator) {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) transform;
       final BoundedSource<O> source = new BoundedSource<>(read.getSource());
       return Arrays.asList(source);
     } else if (transform instanceof GroupByKey) {
-      // TODO: Partition and Merge
       final Vertex partitionVertex = new Vertex(new PartitionKV());
       final Vertex mergeVertex = new Vertex(new MergeKV());
       return Arrays.asList(partitionVertex, mergeVertex);
