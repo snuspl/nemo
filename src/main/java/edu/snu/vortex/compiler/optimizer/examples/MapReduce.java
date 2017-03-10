@@ -19,7 +19,7 @@ import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.operator.Do;
-import edu.snu.vortex.compiler.ir.operator.Source;
+import edu.snu.vortex.compiler.ir.Source;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.utils.Pair;
 

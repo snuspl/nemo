@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
+package edu.snu.vortex.engine;
+
+import java.util.HashMap;
+import java.util.List;
 
 /**
- * Windowing operator for dividing the elements into windows.
- * @param <T> type.
+ * Data context.
  */
-public abstract class Windowing<T> extends Operator<T, T> {
+public interface DataContext {
+  List getInput();
+
+  public void output(final int index, final List output);
+
+  public HashMap<Integer, List> getOutputs();
+
+  abstract public List getBroadcastedData();
 }

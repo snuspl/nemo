@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.operator;
-
-import edu.snu.vortex.compiler.ir.Attributes;
-import edu.snu.vortex.compiler.ir.IdManager;
+package edu.snu.vortex.compiler.ir;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,4 +63,11 @@ public abstract class Operator<I, O> implements Serializable {
     sb.append(attributes);
     return sb.toString();
   }
+
+
+  abstract public void prepare(final OutputCollector outputCollector);
+
+  abstract public void onData(final List data, final int from);
+
+  abstract public void close();
 }

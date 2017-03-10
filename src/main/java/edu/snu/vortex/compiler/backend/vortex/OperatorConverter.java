@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.ir.Attributes;
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.Operator;
 import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.RtAttributes;
 import edu.snu.vortex.runtime.common.RtOperator;

@@ -18,6 +18,7 @@ package edu.snu.vortex.compiler.frontend.beam;
 import edu.snu.vortex.compiler.frontend.beam.operator.*;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.Operator;
 import edu.snu.vortex.compiler.ir.operator.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
@@ -78,24 +79,24 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) transform;
-      final SourceImpl<O> source = new SourceImpl<>(read.getSource());
+      final OpSource<O> source = new OpSource<>(read.getSource());
       return source;
     } else if (transform instanceof GroupByKey) {
       return new GroupByKeyImpl();
     } else if (transform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) transform;
-      final Broadcast vortexOperator = new BroadcastImpl(view.getView());
+      final Broadcast vortexOperator = new OpViewFn(view.getView());
       pValueToOpOutput.put(view.getView(), vortexOperator);
       return vortexOperator;
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
-      final Windowing<I> vortexOperator = new WindowingImpl<>(window.getWindowFn());
+      final Windowing<I> vortexOperator = new OpWindowFn<>(window.getWindowFn());
       return vortexOperator;
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) transform;
-      final DoImpl<I, O> vortexOperator = new DoImpl<>(parDo.getNewFn(), options);
+      final OpDoFn<I, O> vortexOperator = new OpDoFn<>(parDo.getNewFn(), options);
       parDo.getSideInputs().stream()
           .filter(pValueToOpOutput::containsKey)
           .map(pValueToOpOutput::get)

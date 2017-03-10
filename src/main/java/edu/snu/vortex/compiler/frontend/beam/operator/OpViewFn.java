@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Broadcast;
+import edu.snu.vortex.compiler.ir.OutputCollector;
+import edu.snu.vortex.compiler.ir.Operator;
 import org.apache.beam.sdk.transforms.ViewFn;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -29,24 +30,20 @@ import java.util.stream.StreamSupport;
  * @param <I> input type.
  * @param <O> output type.
  */
-public final class BroadcastImpl<I, O> extends Broadcast<I, O, PCollectionView> {
+public final class OpViewFn<I, O> extends Operator {
   private final PCollectionView view;
 
-  public BroadcastImpl(final PCollectionView<O> view) {
+  public OpViewFn(final PCollectionView<O> view) {
     this.view = view;
   }
 
   @Override
-  public O transform(final Iterable<I> inputs) {
+  public void onData(final OutputCollector outputCollector) {
     final List<WindowedValue<I>> windowed = StreamSupport.stream(inputs.spliterator(), false)
         .map(input -> WindowedValue.valueInGlobalWindow(input)) // We only support batch for now
         .collect(Collectors.toList());
     final ViewFn<Iterable<WindowedValue<I>>, O> viewFn = view.getViewFn();
     return viewFn.apply(windowed);
-  }
 
-  @Override
-  public PCollectionView getTag() {
-    return view;
   }
 }

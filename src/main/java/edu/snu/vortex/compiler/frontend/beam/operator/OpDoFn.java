@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
-import edu.snu.vortex.compiler.ir.operator.Do;
+import edu.snu.vortex.compiler.ir.OutputCollector;
+import edu.snu.vortex.compiler.ir.Operator;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.Aggregator;
 import org.apache.beam.sdk.transforms.Combine;
@@ -37,34 +38,46 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Do operator implementation.
- * @param <I> input type.
- * @param <O> output type.
+ * DoFn operator implementation.
  */
-public final class DoImpl<I, O> extends Do<I, O, PCollectionView> {
-  private final DoFn<I, O> doFn;
+public final class OpDoFn extends Operator {
+  private final DoFn doFn;
   private final PipelineOptions options;
+  private OutputCollector outputCollector;
 
-  public DoImpl(final DoFn doFn, final PipelineOptions options) {
+  public OpDoFn(final DoFn doFn, final PipelineOptions options) {
     this.doFn = doFn;
     this.options = options;
   }
 
   @Override
-  public Iterable<O> transform(final Iterable<I> input, final Map<PCollectionView, Object> broadcasted) {
-    final DoFnInvoker<I, O> invoker = DoFnInvokers.invokerFor(doFn);
-    final ArrayList<O> outputList = new ArrayList<>();
-    final ProcessContext<I, O> context = new ProcessContext<>(doFn, outputList, broadcasted, options);
-    invoker.invokeSetup();
-    invoker.invokeStartBundle(context);
-    input.forEach(element -> {
-      context.setElement(element);
-      invoker.invokeProcessElement(context);
-    });
-    invoker.invokeFinishBundle(context);
-    invoker.invokeTeardown();
-    return outputList;
+  public void prepare(final OutputCollector outputCollector) {
+    this.outputCollector = outputCollector;
   }
+
+  @Override
+  public void onData(final List data, final int from) {
+    // Beam-specific processing
+    final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
+    final ArrayList outputList = new ArrayList<>();
+    final ProcessContext beamContext = new ProcessContext<>(doFn, outputList, null, options);
+    invoker.invokeSetup();
+    invoker.invokeStartBundle(beamContext);
+    data.forEach(element -> { // No need to check for input index, since it is always 0 for DoFn
+      beamContext.setElement(element);
+      invoker.invokeProcessElement(beamContext);
+    });
+    invoker.invokeFinishBundle(beamContext);
+    invoker.invokeTeardown();
+
+    // Output
+    outputCollector.emit(0, outputList);
+  }
+
+  @Override
+  public void close() {
+  }
+
 
   @Override
   public String toString() {

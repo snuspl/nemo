@@ -15,9 +15,6 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.compiler.ir.operator.Source;
-
 import java.util.*;
 
 /**
