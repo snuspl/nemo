@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public abstract class Operator<I, O> implements Serializable {
   private final String id;
-  private final Map<Attributes.Key, Attributes.Val> attributes;
+  private final Map<Attributes.Key, Attributes> attributes;
 
   public Operator() {
     this.id = IdManager.newOperatorId();
@@ -40,16 +40,19 @@ public abstract class Operator<I, O> implements Serializable {
     return id;
   }
 
-  public final Operator<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
+  public final Operator<I, O> setAttr(final Attributes.Key key, final Attributes val) {
+    if (!val.hasKey(key)) {
+      throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
+    }
     attributes.put(key, val);
     return this;
   }
 
-  public final Attributes.Val getAttrByKey(final Attributes.Key key) {
+  public final Attributes getAttrByKey(final Attributes.Key key) {
     return attributes.get(key);
   }
 
-  public final Map<Attributes.Key, Attributes.Val> getAttributes() {
+  public final Map<Attributes.Key, Attributes> getAttributes() {
     return attributes;
   }
 

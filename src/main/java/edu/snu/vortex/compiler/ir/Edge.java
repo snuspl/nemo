@@ -35,7 +35,7 @@ public final class Edge<I, O> {
   }
 
   private final String id;
-  private final HashMap<Attributes.Key, Attributes.Val> attributes;
+  private final HashMap<Attributes.Key, Attributes> attributes;
   private final Type type;
   private final Operator<?, I> src;
   private final Operator<O, ?> dst;
@@ -54,12 +54,15 @@ public final class Edge<I, O> {
     return id;
   }
 
-  public Edge<I, O> setAttr(final Attributes.Key key, final Attributes.Val val) {
+  public Edge<I, O> setAttr(final Attributes.Key key, final Attributes val) {
+    if (!val.hasKey(key)) {
+      throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
+    }
     attributes.put(key, val);
     return this;
   }
 
-  public Attributes.Val getAttr(final Attributes.Key key) {
+  public Attributes getAttr(final Attributes.Key key) {
     return attributes.get(key);
   }
 

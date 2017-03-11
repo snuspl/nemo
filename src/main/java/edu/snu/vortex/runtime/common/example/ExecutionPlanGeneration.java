@@ -26,6 +26,7 @@ import edu.snu.vortex.compiler.ir.operator.Source;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
+import edu.snu.vortex.utils.Pair;
 
 import java.util.*;
 
@@ -178,21 +179,6 @@ public final class ExecutionPlanGeneration {
     builder.connectOperators(source, map, Edge.Type.OneToOne);
     builder.connectOperators(map, reduce, Edge.Type.ScatterGather);
     return builder.build();
-  }
-
-  /**
-   * Pair.
-   * @param <K> .
-   * @param <V> .
-   */
-  private static class Pair<K, V> {
-    private K key;
-    private V val;
-
-    Pair(final K key, final V val) {
-      this.key = key;
-      this.val = val;
-    }
   }
 
   /**
