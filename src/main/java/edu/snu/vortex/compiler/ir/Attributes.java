@@ -50,13 +50,13 @@ public enum Attributes {
     EdgeChannel,
   }
 
-  private Key key;
+  private final Key key;
 
-  Attributes(Key key) {
+  Attributes(final Key key) {
     this.key = key;
   }
 
-  public boolean hasKey(Key key) {
-    return this.key == key;
+  public boolean hasKey(final Key k) {
+    return key == k;
   }
 }
