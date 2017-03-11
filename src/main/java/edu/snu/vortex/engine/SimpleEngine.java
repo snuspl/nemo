@@ -32,7 +32,7 @@ public final class SimpleEngine {
     for (final Vertex vertex : topoSorted) {
       final Operator operator = vertex.getOperator();
       if (operator instanceof Source) {
-        final Source sourceOperator = (Source)operator;
+        final Source sourceOperator = (Source) operator;
         final List<Source.Reader> readers = sourceOperator.getReaders(10); // 10 Bytes per Reader
         final List<Iterable> data = new ArrayList<>(readers.size());
         for (final Source.Reader reader : readers) {

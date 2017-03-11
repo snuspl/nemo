@@ -75,6 +75,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   /**
    * Create vertices.
    * @param beamOperator input beam operator.
+   * @param <I> input type.
+   * @param <O> output type.
    * @return vertices.
    */
   private <I, O> List<Vertex> createVertices(final TransformHierarchy.Node beamOperator) {

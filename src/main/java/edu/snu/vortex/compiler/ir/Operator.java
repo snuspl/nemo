@@ -15,5 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
+/**
+ * Operator.
+ */
 public interface Operator {
 }

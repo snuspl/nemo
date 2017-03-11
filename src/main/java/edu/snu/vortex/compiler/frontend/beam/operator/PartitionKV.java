@@ -16,7 +16,6 @@
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.Operator;
 import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.values.KV;
 
@@ -24,12 +23,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class PartitionKV implements Transform {
+/**
+ * Partition Beam KVs.
+ */
+public final class PartitionKV implements Transform {
   private OutputCollector outputCollector;
 
   @Override
-  public void prepare(final OutputCollector outputCollector) {
-    this.outputCollector = outputCollector;
+  public void prepare(final OutputCollector oc) {
+    this.outputCollector = oc;
   }
 
   @Override
@@ -38,7 +40,7 @@ public class PartitionKV implements Transform {
     final List<List<KV>> dsts = new ArrayList<>(numOfDsts);
     IntStream.range(0, numOfDsts).forEach(x -> dsts.add(new ArrayList<>()));
     data.forEach(element -> {
-      final KV kv = (KV)element;
+      final KV kv = (KV) element;
       final int dstIndex = Math.abs(kv.getKey().hashCode() % numOfDsts);
       dsts.get(dstIndex).add(kv);
     });

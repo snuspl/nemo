@@ -26,7 +26,7 @@ import java.util.List;
  * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
  * TODO #36: This class is to be updated with stream processing.
  */
-public class WindowFn implements Transform {
+public final class WindowFn implements Transform {
   private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
   private OutputCollector outputCollector;
 
@@ -35,8 +35,8 @@ public class WindowFn implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector outputCollector) {
-    this.outputCollector = outputCollector;
+  public void prepare(final OutputCollector oc) {
+    this.outputCollector = oc;
   }
 
   @Override

@@ -28,7 +28,7 @@ public final class MapReduce {
   }
 
   public static void main(final String[] args) throws Exception {
-    final EmptySource source = new EmptySource();
+    final Vertex source = new Vertex(new EmptyOperator("Source"));
     final Vertex map = new Vertex(new EmptyOperator("MapVertex"));
     final Vertex reduce = new Vertex(new EmptyOperator("ReduceVertex"));
 
@@ -53,19 +53,9 @@ public final class MapReduce {
   }
 
   /**
-   * An empty source vertex.
-   */
-  private static class EmptySource extends Source {
-    @Override
-    public List<Reader> getReaders(final long desiredBundleSizeBytes) throws Exception {
-      return null;
-    }
-  }
-
-  /**
    * An empty operator.
    */
-  private static class EmptyOperator implements Operator {
+  private static class EmptyOperator implements Transform {
     private final String name;
 
     EmptyOperator(final String name) {
@@ -82,11 +72,11 @@ public final class MapReduce {
     }
 
     @Override
-    public void prepare(OutputCollector outputCollector) {
+    public void prepare(final OutputCollector outputCollector) {
     }
 
     @Override
-    public void onData(List data, int from) {
+    public void onData(final List data, final int from) {
     }
 
     @Override

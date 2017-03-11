@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.common;
 
 
-import edu.snu.vortex.compiler.ir.Vertex;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -31,8 +29,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtOperator},
-   * given the ID of the corresponding {@link Vertex}.
+   * Generates the ID for {@link RtOperator}.
    * @param irOpId .
    * @return the generated ID
    */

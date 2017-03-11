@@ -16,14 +16,16 @@
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.Operator;
 import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MergeKV implements Transform {
+/**
+ * Merge Beam KVs.
+ */
+public final class MergeKV implements Transform {
   private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
@@ -32,14 +34,14 @@ public class MergeKV implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector outputCollector) {
-    this.outputCollector = outputCollector;
+  public void prepare(final OutputCollector oc) {
+    this.outputCollector = oc;
   }
 
   @Override
   public void onData(final List data, final int from) {
     data.forEach(element -> {
-      final KV kv = (KV)element;
+      final KV kv = (KV) element;
       final List valueList = keyToValues.get(kv.getKey());
       if (valueList == null) {
         final List newValueList = new ArrayList();

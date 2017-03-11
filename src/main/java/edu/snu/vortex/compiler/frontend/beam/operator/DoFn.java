@@ -50,8 +50,8 @@ public final class DoFn implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector outputCollector) {
-    this.outputCollector = outputCollector;
+  public void prepare(final OutputCollector oc) {
+    this.outputCollector = oc;
   }
 
   @Override
@@ -176,12 +176,14 @@ public final class DoFn implements Transform {
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.ProcessContext processContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
+    public org.apache.beam.sdk.transforms.DoFn.ProcessContext
+        processContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
       return this;
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.OnTimerContext onTimerContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
+    public org.apache.beam.sdk.transforms.DoFn.OnTimerContext
+        onTimerContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
       throw new UnsupportedOperationException();
     }
 

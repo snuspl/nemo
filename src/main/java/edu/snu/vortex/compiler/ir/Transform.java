@@ -17,11 +17,26 @@ package edu.snu.vortex.compiler.ir;
 
 import java.util.List;
 
+/**
+ * Transform operator.
+ */
 public interface Transform extends Operator {
+  /**
+   * Prepare the operator.
+   * @param outputCollector that collects outputs.
+   */
   void prepare(final OutputCollector outputCollector);
 
+  /**
+   * On data received.
+   * @param data data received.
+   * @param from sender of the data.
+   */
   void onData(final List data, final int from);
 
+  /**
+   * Close the operator.
+   */
   void close();
 
 }
