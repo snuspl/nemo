@@ -93,7 +93,7 @@ public final class DoFn implements Transform {
    * @param <I> input type.
    * @param <O> output type.
    */
-  private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn.ProcessContext
+  private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
     private I inputElement;
     private final Map<PCollectionView, Object> sideInputs;
