@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.Transform;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ import java.util.List;
  * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
  * TODO #36: This class is to be updated with stream processing.
  */
-public class WindowFn implements Operator {
+public class WindowFn implements Transform {
   private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
   private OutputCollector outputCollector;
 

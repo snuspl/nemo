@@ -24,7 +24,7 @@ import java.util.List;
  * Source operator implementation.
  * @param <O> output type.
  */
-public final class BoundedSource<O> extends Source<O> {
+public final class BoundedSource<O> implements Source<O> {
   private final org.apache.beam.sdk.io.BoundedSource<O> source;
 
   public BoundedSource(final org.apache.beam.sdk.io.BoundedSource<O> source) {

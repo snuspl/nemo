@@ -32,7 +32,8 @@ public final class SimpleEngine {
     final Map<String, Object> edgeIdToBroadcast = new HashMap<>();
 
     for (final Vertex vertex : topoSorted) {
-      if (vertex instanceof Source) {
+      final Operator operator = vertex.getOperator();
+      if (operator instanceof Source) {
         /*
         final List<Source.Reader> readers = ((Source) vertex).getReaders(10); // 10 Bytes per Reader
         final List<Iterable> data = new ArrayList<>(readers.size());
@@ -43,7 +44,7 @@ public final class SimpleEngine {
             .map(outEdge -> outEdge.getId())
             .forEach(id -> edgeIdToData.put(id, data));
             */
-      } else if (vertex instanceof Vertex) {
+      } else if (operator instanceof Transform) {
         final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
         final Operator operator = vertex.getOperator();

@@ -17,12 +17,13 @@ package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MergeKV implements Operator {
+public class MergeKV implements Transform {
   private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 

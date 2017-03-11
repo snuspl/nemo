@@ -17,13 +17,14 @@ package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class PartitionKV implements Operator {
+public class PartitionKV implements Transform {
   private OutputCollector outputCollector;
 
   @Override

@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
 import edu.snu.vortex.compiler.ir.OutputCollector;
-import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.Aggregator;
 import org.apache.beam.sdk.transforms.Combine;
@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * DoFn operator implementation.
  */
-public final class DoFn implements Operator {
+public final class DoFn implements Transform {
   private final org.apache.beam.sdk.transforms.DoFn doFn;
   private final PipelineOptions options;
   private OutputCollector outputCollector;

@@ -17,24 +17,11 @@ package edu.snu.vortex.compiler.ir;
 
 import java.util.List;
 
-/**
- * Source operator.
- * @param <O> output type.
- */
-public interface Source<O> extends Operator {
-  /**
-   * Getter for readers.
-   * @param desiredBundleSizeBytes .
-   * @return List of readers.
-   * @throws Exception .
-   */
-  List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+public interface Transform extends Operator {
+  void prepare(final OutputCollector outputCollector);
 
-  /**
-   * Interface for reader.
-   * @param <O> output type.
-   */
-  interface Reader<O> {
-    Iterable<O> read() throws Exception;
-  }
+  void onData(final List data, final int from);
+
+  void close();
+
 }
