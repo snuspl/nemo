@@ -18,7 +18,7 @@ package edu.snu.vortex.compiler.ir;
 /**
  * Operator Vertex.
  */
-public class OperatorVertex extends Vertex {
+public final class OperatorVertex extends Vertex {
   private final Transform transform;
 
   public OperatorVertex(final Transform t) {

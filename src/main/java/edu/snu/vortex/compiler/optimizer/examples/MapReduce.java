@@ -18,8 +18,6 @@ package edu.snu.vortex.compiler.optimizer.examples;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 
-import java.util.List;
-
 /**
  * A sample MapReduce application.
  */
@@ -72,11 +70,11 @@ public final class MapReduce {
     }
 
     @Override
-    public void prepare(final OutputCollector outputCollector) {
+    public void prepare(final Context context, final OutputCollector outputCollector) {
     }
 
     @Override
-    public void onData(final List data, final String srcOperatorId) {
+    public void onData(final Iterable<Element> data, final String srcOperatorId) {
     }
 
     @Override

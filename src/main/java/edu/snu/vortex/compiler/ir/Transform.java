@@ -23,6 +23,7 @@ import java.util.List;
 public interface Transform {
   /**
    * Prepare the operator.
+   * @param context of the operator.
    * @param outputCollector that collects outputs.
    */
   void prepare(final Context context, final OutputCollector outputCollector);
@@ -39,6 +40,9 @@ public interface Transform {
    */
   void close();
 
+  /**
+   * Context of the operator.
+   */
   interface Context {
     List<String> getSourceOperatorIds();
 

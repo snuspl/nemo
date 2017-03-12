@@ -16,7 +16,10 @@
 package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.optimizer.passes.*;
+import edu.snu.vortex.compiler.optimizer.passes.DisaggregationPass;
+import edu.snu.vortex.compiler.optimizer.passes.PadoEdgePass;
+import edu.snu.vortex.compiler.optimizer.passes.PadoVertexPass;
+import edu.snu.vortex.compiler.optimizer.passes.Pass;
 
 import java.util.*;
 

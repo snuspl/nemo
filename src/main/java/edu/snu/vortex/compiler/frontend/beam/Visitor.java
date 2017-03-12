@@ -15,15 +15,18 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoFn;
+import edu.snu.vortex.compiler.frontend.beam.transform.GroupKV;
+import edu.snu.vortex.compiler.frontend.beam.transform.WindowFn;
 import edu.snu.vortex.compiler.ir.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
-import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.transforms.GroupByKey;
+import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PValue;
 

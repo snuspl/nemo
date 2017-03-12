@@ -19,6 +19,10 @@ import edu.snu.vortex.compiler.ir.Element;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.KV;
 
+/**
+ * Element implementation for Beam.
+ * @param <T> Type of the WindowedValue.
+ */
 public final class BeamElement<T> implements Element<WindowedValue<T>, Object> {
   private final WindowedValue windowedValue;
 
@@ -33,6 +37,6 @@ public final class BeamElement<T> implements Element<WindowedValue<T>, Object> {
 
   @Override
   public Object getKey() {
-    return ((KV)windowedValue.getValue()).getKey();
+    return ((KV) windowedValue.getValue()).getKey();
   }
 }

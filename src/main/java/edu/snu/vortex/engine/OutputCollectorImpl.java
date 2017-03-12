@@ -19,7 +19,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -33,12 +32,12 @@ public final class OutputCollectorImpl implements OutputCollector {
   }
 
   @Override
-  public void emit(Element output) {
+  public void emit(final Element output) {
     outputList.add(output);
   }
 
   @Override
-  public void emit(String dstOperatorId, Element output) {
+  public void emit(final String dstOperatorId, final Element output) {
     throw new UnsupportedOperationException();
   }
 

@@ -15,7 +15,10 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DAG Builder.
