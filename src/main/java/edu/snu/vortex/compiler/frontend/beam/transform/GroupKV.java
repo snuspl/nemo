@@ -15,22 +15,24 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.transform;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
+import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Merge Beam KVs.
+ * Group Beam KVs.
  */
-public final class MergeKV implements Transform {
+public final class GroupKV implements Transform {
   private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
-  public MergeKV() {
+  public GroupKV() {
     this.keyToValues = new HashMap<>();
   }
 
@@ -42,7 +44,8 @@ public final class MergeKV implements Transform {
   @Override
   public void onData(final Iterable<Element> data, final String srcOperatorId) {
     data.forEach(element -> {
-      final KV kv = (KV) element;
+      final WindowedValue<KV> wv = (WindowedValue<KV>) element;
+      final KV kv = wv.getValue();
       final List valueList = keyToValues.get(kv.getKey());
       if (valueList == null) {
         final List newValueList = new ArrayList();
@@ -56,10 +59,9 @@ public final class MergeKV implements Transform {
 
   @Override
   public void close() {
-    final List<KV<Object, List>> grouped = keyToValues.entrySet().stream()
-        .map(entry -> KV.of(entry.getKey(), entry.getValue()))
-        .collect(Collectors.toList());
-    outputCollector.emit(0, grouped);
+    keyToValues.entrySet().stream()
+        .map(entry -> WindowedValue.valueInGlobalWindow(KV.of(entry.getKey(), entry.getValue())))
+        .forEach(wv -> outputCollector.emit(new BeamElement<>(wv)));
   }
 }
 
