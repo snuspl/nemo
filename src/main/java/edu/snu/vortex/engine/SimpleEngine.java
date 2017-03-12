@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  */
 public final class SimpleEngine {
   public void executeDAG(final DAG dag) throws Exception {
-    final Map<String, List<Iterable>> edgeIdToData = new HashMap<>();
+    final Map<String, List<Iterable<Element>>> edgeIdToPartitions = new HashMap<>();
 
     final List<Vertex> topoSorted = new LinkedList<>();
     dag.doTopological(node -> topoSorted.add(node));
@@ -33,57 +33,80 @@ public final class SimpleEngine {
       if (vertex instanceof SourceVertex) {
         final SourceVertex sourceVertex = (SourceVertex) vertex;
         final List<Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per BoundedSourceReader
-        final List<Iterable> data = new ArrayList<>(readers.size());
+        final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
         for (final Reader reader : readers) {
-          data.add(reader.read());
+          partitions.add(reader.read());
         }
         dag.getOutEdgesOf(vertex).get().stream()
             .map(outEdge -> outEdge.getId())
-            .forEach(id -> edgeIdToData.put(id, data));
+            .forEach(id -> edgeIdToPartitions.put(id, partitions));
       } else if (vertex instanceof OperatorVertex) {
         final OperatorVertex operatorVertex = (OperatorVertex) vertex;
         final Transform transform = operatorVertex.getTransform();
         final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
 
-        IntStream.range(0, inEdges.size())
-            .forEach(i -> {
-              // Process each input edge
-              final Edge inEdge = inEdges.get(i);
-              final Iterable inData = edgeIdToData.get(inEdge.getId());
+        // Process each input edge
+        inEdges.forEach(inEdge -> {
+          final List<Iterable<Element>> inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
+          final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
 
-              final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
-              transform.prepare(outputCollector);
-              transform.onData(dataContext);
-              transform.close();
+          // Process each partition of an edge
+          inDataPartitions.forEach(inData -> {
+            final Transform.Context transformContext = new ContextImpl();
+            final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
+            transform.prepare(transformContext, outputCollector);
+            transform.onData(inData, inEdge.getSrc().getId());
+            transform.close();
+            outDataPartitions.add(outputCollector.getOutputList());
+          });
 
-              // Save the results to each output edge
-              final HashMap<Integer, List> outputMap = outputCollector.getOutputList();
-              IntStream.range(0, outEdges.size()).forEach(j -> {
-                final Edge outEdge = outEdges.get(j);
-                final List outData = outputMap.get(j);
-                edgeIdToData.put(outEdge.getId(), outData);
-              });
-              System.out.println("Output of vertex " + vertex.getId() + " / index" + i + ": " + outputMap);
-            });
+          // Save the results
+          if (outEdges.size() > 1) {
+            throw new UnsupportedOperationException("Multi output not supported yet");
+          } else if (outEdges.size() == 1) {
+            final Edge outEdge = outEdges.get(0);
+            edgeIdToPartitions.put(outEdge.getId(), routePartitions(outDataPartitions, outEdge));
+          } else if (outEdges.size() == 0) {
+            System.out.println("Sink Vertex");
+          } else {
+            throw new IllegalStateException("Size must not be negative");
+          }
+
+          System.out.println("Output of " + vertex.getId() + ": " + outDataPartitions);
+        });
       } else {
         throw new UnsupportedOperationException(vertex.toString());
       }
     }
 
-    System.out.println("## Job completed.");
+    System.out.println("Job completed.");
   }
 
-  private void partition(final Element element) {
-    final int numOfDsts = outputCollector.getDstOperatorIds().size();
-    final List<List<KV>> dsts = new ArrayList<>(numOfDsts);
-    IntStream.range(0, numOfDsts).forEach(x -> dsts.add(new ArrayList<>()));
-    data.forEach(element -> {
-      final KV kv = (KV) element;
-      final int dstIndex = Math.abs(kv.getKey().hashCode() % numOfDsts);
-      dsts.get(dstIndex).add(kv);
-    });
-    IntStream.range(0, numOfDsts).forEach(dstIndex -> outputCollector.emit(dstIndex, dsts.get(dstIndex)));
+  private List<Iterable<Element>> routePartitions(final List<Iterable<Element>> partitions,
+                                                  final Edge edge) {
+    final Edge.Type edgeType = edge.getType();
+    if (edgeType == Edge.Type.OneToOne) {
+      return partitions;
+    } else if (edgeType == Edge.Type.ScatterGather) {
+      final int numOfDsts = partitions.size(); // Same as the number of current partitions
+      final List<List<Element>> routedPartitions = new ArrayList<>(numOfDsts);
+      IntStream.range(0, numOfDsts).forEach(x -> routedPartitions.add(new ArrayList<>()));
 
+      // Hash-based routing
+      partitions.forEach(partition -> {
+        partition.forEach(element -> {
+          final int dstIndex = Math.abs(element.getKey().hashCode() % numOfDsts);
+          routedPartitions.get(dstIndex).add(element);
+        });
+      });
+
+      // for some reason, Java requires the type to be explicit
+      final List<Iterable<Element>> explicitlyIterables = new ArrayList<>();
+      routedPartitions.forEach(explicitlyIterables::add);
+      return explicitlyIterables;
+    } else {
+      throw new UnsupportedOperationException();
+    }
   }
 }

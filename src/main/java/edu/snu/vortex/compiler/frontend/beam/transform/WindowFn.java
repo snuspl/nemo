@@ -46,4 +46,11 @@ public final class WindowFn implements Transform {
   @Override
   public void close() {
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append(windowFn);
+    return sb.toString();
+  }
 }

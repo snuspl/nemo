@@ -46,7 +46,7 @@ public final class GroupKV implements Transform {
   @Override
   public void onData(final Iterable<Element> data, final String srcOperatorId) {
     data.forEach(element -> {
-      final WindowedValue<KV> wv = (WindowedValue<KV>) element;
+      final WindowedValue<KV> wv = (WindowedValue<KV>) element.getData();
       final KV kv = wv.getValue();
       final List valueList = keyToValues.get(kv.getKey());
       if (valueList == null) {
@@ -64,6 +64,14 @@ public final class GroupKV implements Transform {
     keyToValues.entrySet().stream()
         .map(entry -> WindowedValue.valueInGlobalWindow(KV.of(entry.getKey(), entry.getValue())))
         .forEach(wv -> outputCollector.emit(new BeamElement<>(wv)));
+    keyToValues.clear();
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("GroupKV");
+    return sb.toString();
   }
 }
 

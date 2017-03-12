@@ -13,29 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir;
+package edu.snu.vortex.engine;
+
+import edu.snu.vortex.compiler.ir.Transform;
+
+import java.util.List;
 
 /**
- * Operator Vertex.
+ * Transform Context Implementation.
  */
-public final class OperatorVertex extends Vertex {
-  private final Transform transform;
-
-  public OperatorVertex(final Transform t) {
-    super();
-    this.transform = t;
-  }
-
-  public Transform getTransform() {
-    return transform;
+public final class ContextImpl implements Transform.Context {
+  @Override
+  public List<String> getSourceOperatorIds() {
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public String toString() {
-    final StringBuilder sb = new StringBuilder();
-    sb.append(super.toString());
-    sb.append(", transform: ");
-    sb.append(transform);
-    return sb.toString();
+  public List<String> getDstOperatorIds() {
+    throw new UnsupportedOperationException();
   }
 }

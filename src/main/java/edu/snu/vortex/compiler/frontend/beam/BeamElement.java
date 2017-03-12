@@ -39,4 +39,9 @@ public final class BeamElement<T> implements Element<WindowedValue<T>, Object> {
   public Object getKey() {
     return ((KV) windowedValue.getValue()).getKey();
   }
+
+  @Override
+  public String toString() {
+    return windowedValue.toString();
+  }
 }

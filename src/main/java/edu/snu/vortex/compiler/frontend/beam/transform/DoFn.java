@@ -76,8 +76,6 @@ public final class DoFn implements Transform {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(super.toString());
-    sb.append(", doFn: ");
     sb.append(doFn);
     return sb.toString();
   }
