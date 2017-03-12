@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.transform;
 
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
@@ -89,7 +89,7 @@ public final class DoFn implements Transform {
    */
   private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
-    private WindowedValue<I> inputElement;
+    private WindowedValue<I> windowedInput;
     private final OutputCollector outputCollector;
     private final PipelineOptions options;
 
@@ -101,13 +101,13 @@ public final class DoFn implements Transform {
       this.options = options;
     }
 
-    void setElement(final WindowedValue<I> element) {
-      this.inputElement = element;
+    void setElement(final WindowedValue<I> wv) {
+      this.windowedInput = wv;
     }
 
     @Override
     public I element() {
-      return this.inputElement.getValue();
+      return this.windowedInput.getValue();
     }
 
     @Override
@@ -132,7 +132,9 @@ public final class DoFn implements Transform {
 
     @Override
     public void output(final O output) {
-      outputCollector.emit(new BeamElement(WindowedValue.of(output, this.inputElement.)));
+      final WindowedValue<O> windowedOutput =
+          WindowedValue.of(output, windowedInput.getTimestamp(), windowedInput.getWindows(), windowedInput.getPane());
+      outputCollector.emit(new BeamElement<>(windowedOutput));
     }
 
     @Override

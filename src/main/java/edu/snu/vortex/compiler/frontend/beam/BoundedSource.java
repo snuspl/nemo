@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.SourceVertex;
+import org.apache.beam.sdk.util.WindowedValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +40,7 @@ public final class BoundedSource<O> extends SourceVertex<O> {
     // Can't use lambda due to exception thrown
     final List<Reader<O>> readers = new ArrayList<>();
     for (final org.apache.beam.sdk.io.BoundedSource<O> s : source.splitIntoBundles(desiredBundleSizeBytes, null)) {
-      readers.add(new BoundedSourceReader<>(s.createReader(null)));
+      readers.add(new BoundedSourceReader(s.createReader(null)));
     }
     return readers;
   }
@@ -55,18 +58,18 @@ public final class BoundedSource<O> extends SourceVertex<O> {
    * BoundedSourceReader class.
    * @param <T> type.
    */
-  public class BoundedSourceReader<T> implements Reader<T> {
+  public class BoundedSourceReader<T> implements Reader<WindowedValue<T>> {
     private final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> beamReader;
     BoundedSourceReader(final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> beamReader) {
       this.beamReader = beamReader;
     }
 
     @Override
-    public final Iterable<T> read() throws Exception {
-      final ArrayList<T> data = new ArrayList<>();
+    public final Iterable<Element<WindowedValue<T>, ?>> read() throws Exception {
+      final ArrayList<Element<WindowedValue<T>, ?>> data = new ArrayList<>();
       try (final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> reader = beamReader) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
-          data.add(reader.getCurrent());
+          data.add(new BeamElement<>(WindowedValue.valueInGlobalWindow(reader.getCurrent())));
         }
       }
       return data;

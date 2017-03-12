@@ -58,7 +58,7 @@ public final class SimpleEngine {
               transform.close();
 
               // Save the results to each output edge
-              final HashMap<Integer, List> outputMap = outputCollector.getOutputs();
+              final HashMap<Integer, List> outputMap = outputCollector.getOutputList();
               IntStream.range(0, outEdges.size()).forEach(j -> {
                 final Edge outEdge = outEdges.get(j);
                 final List outData = outputMap.get(j);
@@ -74,7 +74,7 @@ public final class SimpleEngine {
     System.out.println("## Job completed.");
   }
 
-  private void shuffle() {
+  private void partition(final Element element) {
     final int numOfDsts = outputCollector.getDstOperatorIds().size();
     final List<List<KV>> dsts = new ArrayList<>(numOfDsts);
     IntStream.range(0, numOfDsts).forEach(x -> dsts.add(new ArrayList<>()));

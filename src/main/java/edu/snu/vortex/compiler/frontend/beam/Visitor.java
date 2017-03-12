@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.operator.*;
-import edu.snu.vortex.compiler.frontend.beam.operator.DoFn;
+import edu.snu.vortex.compiler.frontend.beam.transform.*;
+import edu.snu.vortex.compiler.frontend.beam.transform.DoFn;
 import edu.snu.vortex.compiler.ir.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;

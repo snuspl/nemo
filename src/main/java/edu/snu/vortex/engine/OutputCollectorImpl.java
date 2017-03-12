@@ -15,8 +15,10 @@
  */
 package edu.snu.vortex.engine;
 
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,33 +26,23 @@ import java.util.List;
  * Output Collector Implementation.
  */
 public final class OutputCollectorImpl implements OutputCollector {
-  private final HashMap<Integer, List> outputs;
-  private final int numOfOutputs;
+  private final List<Element> outputList;
 
-  public OutputCollectorImpl(final int numOfOutputs) {
-    this.numOfOutputs = numOfOutputs;
-    this.outputs = new HashMap<>();
-  }
-
-  public HashMap<Integer, List> getOutputs() {
-    return outputs;
+  public OutputCollectorImpl() {
+    outputList = new ArrayList<>();
   }
 
   @Override
-  public List<Integer> getDstOperatorIds() {
-    return null;
+  public void emit(Element output) {
+    outputList.add(output);
   }
 
   @Override
-  public void emit(final int dstOperatorId, final List output) {
-    if (dstOperatorId >= numOfOutputs || dstOperatorId < 0) {
-      throw new IllegalArgumentException("Index out of bounds");
-    }
+  public void emit(String dstOperatorId, Element output) {
+    throw new UnsupportedOperationException();
+  }
 
-    if (outputs.containsKey(dstOperatorId)) {
-      throw new IllegalArgumentException("Can not overwrite output");
-    }
-
-    outputs.put(dstOperatorId, output);
+  public List getOutputList() {
+    return outputList;
   }
 }

@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam.operator;
+package edu.snu.vortex.compiler.frontend.beam.transform;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
+import org.apache.beam.sdk.values.KV;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Windowing operator implementation.
- * This operator simply windows the given elements into finite windows according to a user-specified WindowFn.
- * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
- * TODO #36: This class is to be updated with stream processing.
+ * Merge Beam KVs.
  */
-public final class WindowFn implements Transform {
-  private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
+public final class MergeKV implements Transform {
+  private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
-  public WindowFn(final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn) {
-    this.windowFn = windowFn;
+  public MergeKV() {
+    this.keyToValues = new HashMap<>();
   }
 
   @Override
@@ -42,10 +41,25 @@ public final class WindowFn implements Transform {
 
   @Override
   public void onData(final Iterable<Element> data, final String srcOperatorId) {
-    data.forEach(outputCollector::emit);
+    data.forEach(element -> {
+      final KV kv = (KV) element;
+      final List valueList = keyToValues.get(kv.getKey());
+      if (valueList == null) {
+        final List newValueList = new ArrayList();
+        newValueList.add(kv.getValue());
+        keyToValues.put(kv.getKey(), newValueList);
+      } else {
+        valueList.add(kv.getValue());
+      }
+    });
   }
 
   @Override
   public void close() {
+    final List<KV<Object, List>> grouped = keyToValues.entrySet().stream()
+        .map(entry -> KV.of(entry.getKey(), entry.getValue()))
+        .collect(Collectors.toList());
+    outputCollector.emit(0, grouped);
   }
 }
+
