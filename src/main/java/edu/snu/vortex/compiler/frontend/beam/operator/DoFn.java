@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
@@ -27,15 +28,12 @@ import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.transforms.windowing.PaneInfo;
 import org.apache.beam.sdk.util.Timer;
+import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.util.WindowingInternals;
 import org.apache.beam.sdk.util.state.State;
 import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * DoFn operator implementation.
@@ -62,7 +60,7 @@ public final class DoFn implements Transform {
     invoker.invokeSetup();
     invoker.invokeStartBundle(beamContext);
     data.forEach(element -> { // No need to check for input index, since it is always 0 for DoFn
-      beamContext.setElement(element.getData());
+      beamContext.setElement((WindowedValue) element.getData());
       invoker.invokeProcessElement(beamContext);
     });
     invoker.invokeFinishBundle(beamContext);
@@ -91,7 +89,7 @@ public final class DoFn implements Transform {
    */
   private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
-    private I inputElement;
+    private WindowedValue<I> inputElement;
     private final OutputCollector outputCollector;
     private final PipelineOptions options;
 
@@ -103,13 +101,13 @@ public final class DoFn implements Transform {
       this.options = options;
     }
 
-    void setElement(final I element) {
+    void setElement(final WindowedValue<I> element) {
       this.inputElement = element;
     }
 
     @Override
     public I element() {
-      return this.inputElement;
+      return this.inputElement.getValue();
     }
 
     @Override
@@ -134,7 +132,7 @@ public final class DoFn implements Transform {
 
     @Override
     public void output(final O output) {
-      outputCollector.emit(output);
+      outputCollector.emit(new BeamElement(WindowedValue.of(output, this.inputElement.)));
     }
 
     @Override
