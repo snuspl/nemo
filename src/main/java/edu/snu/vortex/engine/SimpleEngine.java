@@ -32,9 +32,9 @@ public final class SimpleEngine {
     for (final Vertex vertex : topoSorted) {
       if (vertex instanceof SourceVertex) {
         final SourceVertex sourceVertex = (SourceVertex) vertex;
-        final List<SourceVertex.Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per Reader
+        final List<Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per BoundedSourceReader
         final List<Iterable> data = new ArrayList<>(readers.size());
-        for (final SourceVertex.Reader reader : readers) {
+        for (final Reader reader : readers) {
           data.add(reader.read());
         }
         dag.getOutEdgesOf(vertex).get().stream()
@@ -72,5 +72,18 @@ public final class SimpleEngine {
     }
 
     System.out.println("## Job completed.");
+  }
+
+  private void shuffle() {
+    final int numOfDsts = outputCollector.getDstOperatorIds().size();
+    final List<List<KV>> dsts = new ArrayList<>(numOfDsts);
+    IntStream.range(0, numOfDsts).forEach(x -> dsts.add(new ArrayList<>()));
+    data.forEach(element -> {
+      final KV kv = (KV) element;
+      final int dstIndex = Math.abs(kv.getKey().hashCode() % numOfDsts);
+      dsts.get(dstIndex).add(kv);
+    });
+    IntStream.range(0, numOfDsts).forEach(dstIndex -> outputCollector.emit(dstIndex, dsts.get(dstIndex)));
+
   }
 }

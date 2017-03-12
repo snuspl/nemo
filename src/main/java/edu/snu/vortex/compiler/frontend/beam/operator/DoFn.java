@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -50,27 +51,22 @@ public final class DoFn implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final List data, final String srcOperatorId) {
-    // Beam-specific processing
+  public void onData(final Iterable<Element> data, final String srcOperatorId) {
     final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
-    final ArrayList outputList = new ArrayList<>();
-    final ProcessContext beamContext = new ProcessContext<>(doFn, outputList, null, options);
+    final ProcessContext beamContext = new ProcessContext<>(doFn, outputCollector, options);
     invoker.invokeSetup();
     invoker.invokeStartBundle(beamContext);
     data.forEach(element -> { // No need to check for input index, since it is always 0 for DoFn
-      beamContext.setElement(element);
+      beamContext.setElement(element.getData());
       invoker.invokeProcessElement(beamContext);
     });
     invoker.invokeFinishBundle(beamContext);
     invoker.invokeTeardown();
-
-    // Output
-    outputCollector.emit(0, outputList);
   }
 
   @Override
@@ -96,17 +92,14 @@ public final class DoFn implements Transform {
   private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
     private I inputElement;
-    private final Map<PCollectionView, Object> sideInputs;
-    private final List<O> outputs;
+    private final OutputCollector outputCollector;
     private final PipelineOptions options;
 
     ProcessContext(final org.apache.beam.sdk.transforms.DoFn<I, O> fn,
-                   final List<O> outputs,
-                   final Map<PCollectionView, Object> sideInputs,
+                   final OutputCollector outputCollector,
                    final PipelineOptions options) {
       fn.super();
-      this.outputs = outputs;
-      this.sideInputs = sideInputs;
+      this.outputCollector = outputCollector;
       this.options = options;
     }
 
@@ -121,7 +114,7 @@ public final class DoFn implements Transform {
 
     @Override
     public <T> T sideInput(final PCollectionView<T> view) {
-      return (T) sideInputs.get(view);
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -141,7 +134,7 @@ public final class DoFn implements Transform {
 
     @Override
     public void output(final O output) {
-      outputs.add(output);
+      outputCollector.emit(output);
     }
 
     @Override

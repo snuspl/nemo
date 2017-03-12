@@ -80,9 +80,13 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     final PTransform transform = beamOperator.getTransform();
     if (transform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) transform;
-      final Vertex sourceVertex = new Vertex(new BoundedSource<>(read.getSource()));
+      final Vertex sourceVertex = new SourceVertex<>(new BoundedSource<>(read.getSource()));
       return Arrays.asList(sourceVertex);
     } else if (transform instanceof GroupByKey) {
+      final GroupByKey groupByKey = (GroupByKey) transform;
+      groupByKey.
+
+
       final Vertex partitionVertex = new OperatorVertex(new PartitionKV());
       final Vertex mergeVertex = new OperatorVertex(new MergeKV());
       return Arrays.asList(partitionVertex, mergeVertex);

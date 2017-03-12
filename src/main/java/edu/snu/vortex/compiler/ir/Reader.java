@@ -15,18 +15,11 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import java.util.List;
-
 /**
- * Source Vertex.
+ * Interface for reader.
  * @param <O> output type.
  */
-public abstract class SourceVertex<O> extends Vertex {
-  /**
-   * Getter for readers.
-   * @param desiredBundleSizeBytes .
-   * @return List of readers.
-   * @throws Exception .
-   */
-  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+public interface Reader<O> {
+  Iterable<O> read() throws Exception;
 }
+

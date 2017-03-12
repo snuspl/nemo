@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
+import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import java.util.List;
  * SourceVertex operator implementation.
  * @param <O> output type.
  */
-public final class BoundedSource<O> implements SourceVertex<O> {
+public final class BoundedSource<O> extends SourceVertex<O> {
   private final org.apache.beam.sdk.io.BoundedSource<O> source;
 
   public BoundedSource(final org.apache.beam.sdk.io.BoundedSource<O> source) {
@@ -32,11 +33,11 @@ public final class BoundedSource<O> implements SourceVertex<O> {
   }
 
   @Override
-  public List<SourceVertex.Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception {
+  public List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception {
     // Can't use lambda due to exception thrown
-    final List<SourceVertex.Reader<O>> readers = new ArrayList<>();
+    final List<Reader<O>> readers = new ArrayList<>();
     for (final org.apache.beam.sdk.io.BoundedSource<O> s : source.splitIntoBundles(desiredBundleSizeBytes, null)) {
-      readers.add(new Reader<>(s.createReader(null)));
+      readers.add(new BoundedSourceReader<>(s.createReader(null)));
     }
     return readers;
   }
@@ -51,13 +52,12 @@ public final class BoundedSource<O> implements SourceVertex<O> {
   }
 
   /**
-   * Reader class.
+   * BoundedSourceReader class.
    * @param <T> type.
    */
-  public class Reader<T> implements SourceVertex.Reader<T> {
+  public class BoundedSourceReader<T> implements Reader<T> {
     private final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> beamReader;
-
-    Reader(final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> beamReader) {
+    BoundedSourceReader(final org.apache.beam.sdk.io.BoundedSource.BoundedReader<T> beamReader) {
       this.beamReader = beamReader;
     }
 

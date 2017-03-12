@@ -18,5 +18,8 @@ package edu.snu.vortex.compiler.ir;
 /**
  * Element.
  */
-public interface Element {
+public interface Element<DataT, KeyT> {
+  DataT getData();
+
+  KeyT getKey();
 }

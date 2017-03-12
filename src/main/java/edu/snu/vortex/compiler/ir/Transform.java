@@ -25,17 +25,23 @@ public interface Transform {
    * Prepare the operator.
    * @param outputCollector that collects outputs.
    */
-  void prepare(final OutputCollector outputCollector);
+  void prepare(final Context context, final OutputCollector outputCollector);
 
   /**
    * On data received.
    * @param data data received.
    * @param srcOperatorId sender of the data.
    */
-  void onData(final List data, final String srcOperatorId);
+  void onData(final Iterable<Element> data, final String srcOperatorId);
 
   /**
    * Close the operator.
    */
   void close();
+
+  interface Context {
+    List<String> getSourceOperatorIds();
+
+    List<String> getDstOperatorIds();
+  }
 }

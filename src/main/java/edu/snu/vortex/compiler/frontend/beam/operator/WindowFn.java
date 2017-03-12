@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
 
@@ -35,13 +36,13 @@ public final class WindowFn implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final List data, final String srcOperatorId) {
-    outputCollector.emit(0, data);
+  public void onData(final Iterable<Element> data, final String srcOperatorId) {
+    data.forEach(outputCollector::emit);
   }
 
   @Override

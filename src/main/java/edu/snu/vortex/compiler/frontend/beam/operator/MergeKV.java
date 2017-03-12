@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.operator;
 
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.values.KV;
@@ -34,12 +35,12 @@ public final class MergeKV implements Transform {
   }
 
   @Override
-  public void prepare(final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final List data, final String srcOperatorId) {
+  public void onData(final Iterable<Element> data, final String srcOperatorId) {
     data.forEach(element -> {
       final KV kv = (KV) element;
       final List valueList = keyToValues.get(kv.getKey());

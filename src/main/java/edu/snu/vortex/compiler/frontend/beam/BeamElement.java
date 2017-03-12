@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir;
+package edu.snu.vortex.compiler.frontend.beam;
 
-import java.util.List;
+import edu.snu.vortex.compiler.ir.Element;
+import org.apache.beam.sdk.util.WindowedValue;
+import org.apache.beam.sdk.values.KV;
 
-/**
- * Source Vertex.
- * @param <O> output type.
- */
-public abstract class SourceVertex<O> extends Vertex {
-  /**
-   * Getter for readers.
-   * @param desiredBundleSizeBytes .
-   * @return List of readers.
-   * @throws Exception .
-   */
-  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+public final class BeamElement<T> implements Element<WindowedValue<T>, Object> {
+  private final WindowedValue windowedValue;
+
+  public BeamElement(final WindowedValue<T> wv) {
+    this.windowedValue = wv;
+  }
+
+  @Override
+  public WindowedValue<T> getData() {
+    return windowedValue;
+  }
+
+  @Override
+  public Object getKey() {
+    return ((KV)windowedValue.getValue()).getKey();
+  }
 }

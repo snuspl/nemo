@@ -15,13 +15,20 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import java.util.List;
-
 /**
  * Output collector.
  */
 public interface OutputCollector {
-  List<Integer> getDstOperatorIds();
+  /**
+   * Single-destination emit.
+   * @param output element.
+   */
+  void emit(final Element output);
 
-  void emit(final String dstOperatorId, final Object output);
+  /**
+   * Multi-destination emit.
+   * @param dstOperatorId destination operator id.
+   * @param output element.
+   */
+  void emit(final String dstOperatorId, final Element output);
 }
