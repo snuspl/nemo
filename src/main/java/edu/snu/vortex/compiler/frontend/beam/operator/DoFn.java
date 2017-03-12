@@ -55,7 +55,7 @@ public final class DoFn implements Transform {
   }
 
   @Override
-  public void onData(final List data, final int from) {
+  public void onData(final List data, final String srcOperatorId) {
     // Beam-specific processing
     final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
     final ArrayList outputList = new ArrayList<>();

@@ -28,9 +28,9 @@ public final class MapReduce {
   }
 
   public static void main(final String[] args) throws Exception {
-    final Vertex source = new Vertex(new EmptyOperator("Source"));
-    final Vertex map = new Vertex(new EmptyOperator("MapVertex"));
-    final Vertex reduce = new Vertex(new EmptyOperator("ReduceVertex"));
+    final Vertex source = new OperatorVertex(new EmptyTransform("SourceVertex"));
+    final Vertex map = new OperatorVertex(new EmptyTransform("MapVertex"));
+    final Vertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
 
     // Before
     final DAGBuilder builder = new DAGBuilder();
@@ -55,10 +55,10 @@ public final class MapReduce {
   /**
    * An empty operator.
    */
-  private static class EmptyOperator implements Transform {
+  private static class EmptyTransform implements Transform {
     private final String name;
 
-    EmptyOperator(final String name) {
+    EmptyTransform(final String name) {
       this.name = name;
     }
 
@@ -76,7 +76,7 @@ public final class MapReduce {
     }
 
     @Override
-    public void onData(final List data, final int from) {
+    public void onData(final List data, final String srcOperatorId) {
     }
 
     @Override

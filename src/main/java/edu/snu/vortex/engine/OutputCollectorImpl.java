@@ -37,20 +37,20 @@ public final class OutputCollectorImpl implements OutputCollector {
   }
 
   @Override
-  public List<Integer> getDestinations() {
+  public List<Integer> getDstOperatorIds() {
     return null;
   }
 
   @Override
-  public void emit(final int index, final List output) {
-    if (index >= numOfOutputs || index < 0) {
+  public void emit(final int dstOperatorId, final List output) {
+    if (dstOperatorId >= numOfOutputs || dstOperatorId < 0) {
       throw new IllegalArgumentException("Index out of bounds");
     }
 
-    if (outputs.containsKey(index)) {
+    if (outputs.containsKey(dstOperatorId)) {
       throw new IllegalArgumentException("Can not overwrite output");
     }
 
-    outputs.put(index, output);
+    outputs.put(dstOperatorId, output);
   }
 }

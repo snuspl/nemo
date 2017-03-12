@@ -35,8 +35,8 @@ public final class PartitionKV implements Transform {
   }
 
   @Override
-  public void onData(final List data, final int from) {
-    final int numOfDsts = outputCollector.getDestinations().size();
+  public void onData(final List data, final String srcOperatorId) {
+    final int numOfDsts = outputCollector.getDstOperatorIds().size();
     final List<List<KV>> dsts = new ArrayList<>(numOfDsts);
     IntStream.range(0, numOfDsts).forEach(x -> dsts.add(new ArrayList<>()));
     data.forEach(element -> {

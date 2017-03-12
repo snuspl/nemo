@@ -17,10 +17,7 @@ package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.beam.operator.*;
 import edu.snu.vortex.compiler.frontend.beam.operator.DoFn;
-import edu.snu.vortex.compiler.ir.DAGBuilder;
-import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.Vertex;
-import edu.snu.vortex.compiler.ir.Operator;
+import edu.snu.vortex.compiler.ir.*;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
@@ -86,27 +83,27 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       final Vertex sourceVertex = new Vertex(new BoundedSource<>(read.getSource()));
       return Arrays.asList(sourceVertex);
     } else if (transform instanceof GroupByKey) {
-      final Vertex partitionVertex = new Vertex(new PartitionKV());
-      final Vertex mergeVertex = new Vertex(new MergeKV());
+      final Vertex partitionVertex = new OperatorVertex(new PartitionKV());
+      final Vertex mergeVertex = new OperatorVertex(new MergeKV());
       return Arrays.asList(partitionVertex, mergeVertex);
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
       final WindowFn vortexOperator = new WindowFn(window.getWindowFn());
-      return Arrays.asList(new Vertex(vortexOperator));
+      return Arrays.asList(new OperatorVertex(vortexOperator));
     } else if (transform instanceof Write.Bound) {
       throw new UnsupportedOperationException(transform.toString());
     } else if (transform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) transform;
       final DoFn vortexOperator = new DoFn(parDo.getNewFn(), options);
-      return Arrays.asList(new Vertex(vortexOperator));
+      return Arrays.asList(new OperatorVertex(vortexOperator));
     } else {
       throw new UnsupportedOperationException(transform.toString());
     }
   }
 
   private Edge.Type getInEdgeType(final Vertex vertex) {
-    final Operator operator = vertex.getOperator();
-    if (operator instanceof MergeKV) {
+    final Transform transform = vertex.getOperator();
+    if (transform instanceof MergeKV) {
       return Edge.Type.ScatterGather;
     } else {
       return Edge.Type.OneToOne;

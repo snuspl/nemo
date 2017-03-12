@@ -18,9 +18,9 @@ package edu.snu.vortex.compiler.ir;
 import java.util.List;
 
 /**
- * Transform operator.
+ * Transform.
  */
-public interface Transform extends Operator {
+public interface Transform {
   /**
    * Prepare the operator.
    * @param outputCollector that collects outputs.
@@ -30,13 +30,12 @@ public interface Transform extends Operator {
   /**
    * On data received.
    * @param data data received.
-   * @param from sender of the data.
+   * @param srcOperatorId sender of the data.
    */
-  void onData(final List data, final int from);
+  void onData(final List data, final String srcOperatorId);
 
   /**
    * Close the operator.
    */
   void close();
-
 }

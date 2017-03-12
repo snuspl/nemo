@@ -30,19 +30,19 @@ public final class SimpleEngine {
     final List<Vertex> topoSorted = new LinkedList<>();
     dag.doTopological(node -> topoSorted.add(node));
     for (final Vertex vertex : topoSorted) {
-      final Operator operator = vertex.getOperator();
-      if (operator instanceof Source) {
-        final Source sourceOperator = (Source) operator;
-        final List<Source.Reader> readers = sourceOperator.getReaders(10); // 10 Bytes per Reader
+      if (vertex instanceof SourceVertex) {
+        final SourceVertex sourceVertex = (SourceVertex) vertex;
+        final List<SourceVertex.Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per Reader
         final List<Iterable> data = new ArrayList<>(readers.size());
-        for (final Source.Reader reader : readers) {
+        for (final SourceVertex.Reader reader : readers) {
           data.add(reader.read());
         }
         dag.getOutEdgesOf(vertex).get().stream()
             .map(outEdge -> outEdge.getId())
             .forEach(id -> edgeIdToData.put(id, data));
-      } else if (operator instanceof Transform) {
-        final Transform transformOperator = (Transform) operator;
+      } else if (vertex instanceof OperatorVertex) {
+        final OperatorVertex operatorVertex = (OperatorVertex) vertex;
+        final Transform transform = operatorVertex.getTransform();
         final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
 
@@ -53,9 +53,9 @@ public final class SimpleEngine {
               final Iterable inData = edgeIdToData.get(inEdge.getId());
 
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
-              transformOperator.prepare(outputCollector);
-              transformOperator.onData(dataContext);
-              transformOperator.close();
+              transform.prepare(outputCollector);
+              transform.onData(dataContext);
+              transform.close();
 
               // Save the results to each output edge
               final HashMap<Integer, List> outputMap = outputCollector.getOutputs();

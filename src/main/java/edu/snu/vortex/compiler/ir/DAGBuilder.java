@@ -104,7 +104,7 @@ public final class DAGBuilder {
     // TODO #22: DAG Integrity Check
     final boolean sourceCheck = vertices.stream()
         .filter(vertex -> !id2inEdges.containsKey(vertex.getId()))
-        .allMatch(vertex -> vertex instanceof Source);
+        .allMatch(vertex -> vertex instanceof SourceVertex);
 
     if (!sourceCheck) {
       throw new RuntimeException("DAG integrity unsatisfied: there are root vertices that are not Sources.");

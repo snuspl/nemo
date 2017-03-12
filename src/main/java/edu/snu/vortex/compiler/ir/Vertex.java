@@ -22,23 +22,17 @@ import java.util.Map;
 /**
  * Vertex.
  */
-public class Vertex implements Serializable {
+public abstract class Vertex implements Serializable {
   private final String id;
   private final Map<Attributes.Key, Attributes.Val> attributes;
-  private final Operator operator;
 
-  public Vertex(final Operator operator) {
+  public Vertex() {
     this.id = IdManager.newOperatorId();
     this.attributes = new HashMap<>();
-    this.operator = operator;
   }
 
   public final String getId() {
     return id;
-  }
-
-  public final Operator getOperator() {
-    return operator;
   }
 
   public final Vertex setAttr(final Attributes.Key key, final Attributes.Val val) {
@@ -64,8 +58,6 @@ public class Vertex implements Serializable {
     sb.append(id);
     sb.append(", attributes: ");
     sb.append(attributes);
-    sb.append(", operator: ");
-    sb.append(operator);
     return sb.toString();
   }
 

@@ -39,7 +39,7 @@ public final class MergeKV implements Transform {
   }
 
   @Override
-  public void onData(final List data, final int from) {
+  public void onData(final List data, final String srcOperatorId) {
     data.forEach(element -> {
       final KV kv = (KV) element;
       final List valueList = keyToValues.get(kv.getKey());

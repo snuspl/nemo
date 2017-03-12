@@ -40,7 +40,7 @@ public final class WindowFn implements Transform {
   }
 
   @Override
-  public void onData(final List data, final int from) {
+  public void onData(final List data, final String srcOperatorId) {
     outputCollector.emit(0, data);
   }
 
