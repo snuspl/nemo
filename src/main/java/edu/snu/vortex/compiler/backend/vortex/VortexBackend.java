@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.compiler.ir.Attributes.EdgeChannel.*;
+import static edu.snu.vortex.compiler.ir.Attributes.*;
 
 /**
  * Backend component for Vortex Runtime.
@@ -60,9 +60,9 @@ public final class VortexBackend implements Backend {
       } else {
         final List<Edge> inEdgesForStage = inEdges.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
-            .filter(edge -> edge.getAttr(Attributes.Key.EdgeChannel).equals(Attributes.EdgeChannel.Memory))
-            .filter(edge -> edge.getSrc().getAttrByKey(Attributes.Key.Placement)
-                .equals(edge.getDst().getAttrByKey(Attributes.Key.Placement)))
+            .filter(edge -> edge.getAttr(Attributes.Key.EdgeChannel).equals(Memory))
+            .filter(edge -> edge.getSrc().getAttr(Attributes.Key.Placement)
+                .equals(edge.getDst().getAttr(Attributes.Key.Placement)))
             .filter(edge -> operatorStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()))
             .orElse(null);
@@ -80,7 +80,7 @@ public final class VortexBackend implements Backend {
       if (!stageNumRtStageHashMap.containsKey(stageNum)) {
         final Map<RtAttributes.RtStageAttribute, Object> rtStageAttributes = new HashMap<>();
         rtStageAttributes.put(RtAttributes.RtStageAttribute.RESOURCE_TYPE,
-            operator.getAttrByKey(Attributes.Key.Placement));
+            operator.getAttr(Attributes.Key.Placement));
 
         final RtStage createdRtStage = new RtStage(rtStageAttributes);
         createdRtStage.addRtOp(converter.convert(operator));
@@ -134,8 +134,7 @@ public final class VortexBackend implements Backend {
         throw new RuntimeException("No such edge type for edge: " + edge);
     }
 
-    // TODO #21: Refactor this bit when refactoring Attributes class.
-    final Attributes.Val channelAttribute = edge.getAttr(Attributes.Key.EdgeChannel);
+    final Attributes channelAttribute = edge.getAttr(Attributes.Key.EdgeChannel);
     if (channelAttribute.equals(File)) {
       rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
     } else if (channelAttribute.equals(Memory)) {
