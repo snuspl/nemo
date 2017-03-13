@@ -23,7 +23,6 @@ import edu.snu.vortex.compiler.ir.Transform;
  * Windowing operator implementation.
  * This operator simply windows the given elements into finite windows according to a user-specified WindowFn.
  * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
- * TODO #36: This class is to be updated with stream processing.
  */
 public final class WindowFn implements Transform {
   private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
@@ -40,6 +39,7 @@ public final class WindowFn implements Transform {
 
   @Override
   public void onData(final Iterable<Element> data, final String srcOperatorId) {
+    // TODO #36: Actually assign windows
     data.forEach(outputCollector::emit);
   }
 

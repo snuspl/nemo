@@ -17,11 +17,14 @@ package edu.snu.vortex.compiler.ir;
 
 /**
  * Element.
- * @param <DataT> Type of the data.
- * @param <KeyT> Type of the key.
+ * @param <Data> data type.
+ * @param <Key> key type.
+ * @param <Value> value type.
  */
-public interface Element<DataT, KeyT> {
-  DataT getData();
+public interface Element<Data, Key, Value> {
+  Data getData();
 
-  KeyT getKey();
+  Key getKey();
+
+  Value getValue();
 }

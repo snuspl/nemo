@@ -28,7 +28,6 @@ import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.transforms.windowing.PaneInfo;
 import org.apache.beam.sdk.util.Timer;
-import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.util.WindowingInternals;
 import org.apache.beam.sdk.util.state.State;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -60,7 +59,7 @@ public final class DoFn implements Transform {
     invoker.invokeSetup();
     invoker.invokeStartBundle(beamContext);
     data.forEach(element -> { // No need to check for input index, since it is always 0 for DoFn
-      beamContext.setElement((WindowedValue) element.getData());
+      beamContext.setElement(element.getData());
       invoker.invokeProcessElement(beamContext);
     });
     invoker.invokeFinishBundle(beamContext);
@@ -87,7 +86,7 @@ public final class DoFn implements Transform {
    */
   private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
-    private WindowedValue<I> windowedInput;
+    private I input;
     private final OutputCollector outputCollector;
     private final PipelineOptions options;
 
@@ -99,13 +98,13 @@ public final class DoFn implements Transform {
       this.options = options;
     }
 
-    void setElement(final WindowedValue<I> wv) {
-      this.windowedInput = wv;
+    void setElement(final I in) {
+      this.input = in;
     }
 
     @Override
     public I element() {
-      return this.windowedInput.getValue();
+      return this.input;
     }
 
     @Override
@@ -130,9 +129,7 @@ public final class DoFn implements Transform {
 
     @Override
     public void output(final O output) {
-      final WindowedValue<O> windowedOutput =
-          WindowedValue.of(output, windowedInput.getTimestamp(), windowedInput.getWindows(), windowedInput.getPane());
-      outputCollector.emit(new BeamElement<>(windowedOutput));
+      outputCollector.emit(new BeamElement<>(output));
     }
 
     @Override

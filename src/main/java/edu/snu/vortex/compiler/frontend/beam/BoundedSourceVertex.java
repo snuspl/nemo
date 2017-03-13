@@ -19,7 +19,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import org.apache.beam.sdk.io.BoundedSource;
-import org.apache.beam.sdk.util.WindowedValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,18 +57,18 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
    * BoundedSourceReader class.
    * @param <T> type.
    */
-  public class BoundedSourceReader<T> implements Reader<WindowedValue<T>> {
+  public class BoundedSourceReader<T> implements Reader<T> {
     private final BoundedSource.BoundedReader<T> beamReader;
     BoundedSourceReader(final BoundedSource.BoundedReader<T> beamReader) {
       this.beamReader = beamReader;
     }
 
     @Override
-    public final Iterable<Element<WindowedValue<T>, ?>> read() throws Exception {
-      final ArrayList<Element<WindowedValue<T>, ?>> data = new ArrayList<>();
+    public final Iterable<Element<T, ?, ?>> read() throws Exception {
+      final ArrayList<Element<T, ?, ?>> data = new ArrayList<>();
       try (final BoundedSource.BoundedReader<T> reader = beamReader) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
-          data.add(new BeamElement<>(WindowedValue.valueInGlobalWindow(reader.getCurrent())));
+          data.add(new BeamElement<>(reader.getCurrent()));
         }
       }
       return data;

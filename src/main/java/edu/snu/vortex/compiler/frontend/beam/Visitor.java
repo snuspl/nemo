@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.beam.transform.DoFn;
-import edu.snu.vortex.compiler.frontend.beam.transform.GroupKV;
+import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyFn;
 import edu.snu.vortex.compiler.frontend.beam.transform.WindowFn;
 import edu.snu.vortex.compiler.ir.*;
 import org.apache.beam.sdk.Pipeline;
@@ -84,7 +84,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       final Vertex sourceVertex = new BoundedSourceVertex<>(read.getSource());
       return sourceVertex;
     } else if (transform instanceof GroupByKey) {
-      return new OperatorVertex(new GroupKV());
+      return new OperatorVertex(new GroupByKeyFn());
     } else if (transform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) transform;
       final WindowFn vortexOperator = new WindowFn(window.getWindowFn());
@@ -102,7 +102,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
 
   private Edge.Type getInEdgeType(final OperatorVertex vertex) {
     final Transform transform = vertex.getTransform();
-    if (transform instanceof GroupKV) {
+    if (transform instanceof GroupByKeyFn) {
       return Edge.Type.ScatterGather;
     } else {
       return Edge.Type.OneToOne;

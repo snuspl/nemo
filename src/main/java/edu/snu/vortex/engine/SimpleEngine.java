@@ -40,6 +40,8 @@ public final class SimpleEngine {
         dag.getOutEdgesOf(vertex).get().stream()
             .map(outEdge -> outEdge.getId())
             .forEach(id -> edgeIdToPartitions.put(id, partitions));
+
+        System.out.println("Output of " + vertex.getId() + ": " + partitions);
       } else if (vertex instanceof OperatorVertex) {
         final OperatorVertex operatorVertex = (OperatorVertex) vertex;
         final Transform transform = operatorVertex.getTransform();

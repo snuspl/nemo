@@ -16,32 +16,39 @@
 package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.ir.Element;
-import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.KV;
 
 /**
- * Element implementation for Beam.
- * @param <T> Type of the WindowedValue.
+ * BeamElement.
+ * @param <Data> data type.
+ * @param <Key> key type.
+ * @param <Value> value type.
  */
-public final class BeamElement<T> implements Element<WindowedValue<T>, Object> {
-  private final WindowedValue windowedValue;
+public final class BeamElement<Data, Key, Value> implements Element<Data, Key, Value> {
+  private final Data data;
 
-  public BeamElement(final WindowedValue<T> wv) {
-    this.windowedValue = wv;
+  public BeamElement(final Data d) {
+    this.data = d;
   }
 
   @Override
-  public WindowedValue<T> getData() {
-    return windowedValue;
+  public Data getData() {
+    return data;
   }
 
   @Override
-  public Object getKey() {
-    return ((KV) windowedValue.getValue()).getKey();
+  public Key getKey() {
+    return ((KV<Key, Value>) data).getKey();
   }
+
+  @Override
+  public Value getValue() {
+    return ((KV<Key, Value>) data).getValue();
+  }
+
 
   @Override
   public String toString() {
-    return windowedValue.toString();
+    return data.toString();
   }
 }

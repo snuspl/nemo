@@ -19,7 +19,6 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
-import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.ArrayList;
@@ -30,11 +29,11 @@ import java.util.Map;
 /**
  * Group Beam KVs.
  */
-public final class GroupKV implements Transform {
+public final class GroupByKeyFn implements Transform {
   private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
-  public GroupKV() {
+  public GroupByKeyFn() {
     this.keyToValues = new HashMap<>();
   }
 
@@ -46,23 +45,16 @@ public final class GroupKV implements Transform {
   @Override
   public void onData(final Iterable<Element> data, final String srcOperatorId) {
     data.forEach(element -> {
-      final WindowedValue<KV> wv = (WindowedValue<KV>) element.getData();
-      final KV kv = wv.getValue();
-      final List valueList = keyToValues.get(kv.getKey());
-      if (valueList == null) {
-        final List newValueList = new ArrayList();
-        newValueList.add(kv.getValue());
-        keyToValues.put(kv.getKey(), newValueList);
-      } else {
-        valueList.add(kv.getValue());
-      }
+      final KV kv = (KV) element.getData();
+      keyToValues.putIfAbsent(kv.getKey(), new ArrayList());
+      keyToValues.get(kv.getKey()).add(kv.getValue());
     });
   }
 
   @Override
   public void close() {
     keyToValues.entrySet().stream()
-        .map(entry -> WindowedValue.valueInGlobalWindow(KV.of(entry.getKey(), entry.getValue())))
+        .map(entry -> KV.of(entry.getKey(), entry.getValue()))
         .forEach(wv -> outputCollector.emit(new BeamElement<>(wv)));
     keyToValues.clear();
   }
@@ -70,7 +62,7 @@ public final class GroupKV implements Transform {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("GroupKV");
+    sb.append("GroupByKeyFn");
     return sb.toString();
   }
 }

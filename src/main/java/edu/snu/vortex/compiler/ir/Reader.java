@@ -20,6 +20,6 @@ package edu.snu.vortex.compiler.ir;
  * @param <O> output type.
  */
 public interface Reader<O> {
-  Iterable<Element<O, ?>> read() throws Exception;
+  Iterable<Element<O, ?, ?>> read() throws Exception;
 }
 
