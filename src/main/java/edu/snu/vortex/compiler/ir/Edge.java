@@ -16,8 +16,7 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.compiler.ir.operator.Operator;
-
-import java.util.HashMap;
+import edu.snu.vortex.compiler.ir.util.AttributesMap;
 
 /**
  * Physical execution plan of intermediate data movement.
@@ -35,7 +34,7 @@ public final class Edge<I, O> {
   }
 
   private final String id;
-  private final HashMap<Attributes.Key, Attributes> attributes;
+  private final AttributesMap attributes;
   private final Type type;
   private final Operator<?, I> src;
   private final Operator<O, ?> dst;
@@ -44,7 +43,7 @@ public final class Edge<I, O> {
        final Operator<?, I> src,
        final Operator<O, ?> dst) {
     this.id = IdManager.newEdgeId();
-    this.attributes = new HashMap<>(0);
+    this.attributes = new AttributesMap();
     this.type = type;
     this.src = src;
     this.dst = dst;
@@ -55,9 +54,6 @@ public final class Edge<I, O> {
   }
 
   public Edge<I, O> setAttr(final Attributes.Key key, final Attributes val) {
-    if (!val.hasKey(key)) {
-      throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
-    }
     attributes.put(key, val);
     return this;
   }

@@ -17,10 +17,9 @@ package edu.snu.vortex.compiler.ir.operator;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.IdManager;
+import edu.snu.vortex.compiler.ir.util.AttributesMap;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Physical execution plan of a user operator.
@@ -29,11 +28,11 @@ import java.util.Map;
  */
 public abstract class Operator<I, O> implements Serializable {
   private final String id;
-  private final Map<Attributes.Key, Attributes> attributes;
+  private final AttributesMap attributes;
 
   public Operator() {
     this.id = IdManager.newOperatorId();
-    this.attributes = new HashMap<>();
+    this.attributes = new AttributesMap();
   }
 
   public final String getId() {
@@ -41,9 +40,6 @@ public abstract class Operator<I, O> implements Serializable {
   }
 
   public final Operator<I, O> setAttr(final Attributes.Key key, final Attributes val) {
-    if (!val.hasKey(key)) {
-      throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
-    }
     attributes.put(key, val);
     return this;
   }
@@ -52,7 +48,7 @@ public abstract class Operator<I, O> implements Serializable {
     return attributes.get(key);
   }
 
-  public final Map<Attributes.Key, Attributes> getAttributes() {
+  public final AttributesMap getAttributes() {
     return attributes;
   }
 
