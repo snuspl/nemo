@@ -49,12 +49,12 @@ public final class PadoEdgePass implements Pass {
   }
 
   private boolean fromTransientToReserved(final Edge edge) {
-    return edge.getSrc().getAttrByKey(Attributes.Key.Placement).equals(Attributes.Transient) &&
-        edge.getDst().getAttrByKey(Attributes.Key.Placement).equals(Attributes.Reserved);
+    return edge.getSrc().getAttr(Attributes.Key.Placement).equals(Attributes.Transient) &&
+        edge.getDst().getAttr(Attributes.Key.Placement).equals(Attributes.Reserved);
   }
 
   private boolean fromReservedToTransient(final Edge edge) {
-    return edge.getSrc().getAttrByKey(Attributes.Key.Placement).equals(Attributes.Reserved) &&
-        edge.getDst().getAttrByKey(Attributes.Key.Placement).equals(Attributes.Transient);
+    return edge.getSrc().getAttr(Attributes.Key.Placement).equals(Attributes.Reserved) &&
+        edge.getDst().getAttr(Attributes.Key.Placement).equals(Attributes.Transient);
   }
 }

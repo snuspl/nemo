@@ -17,6 +17,7 @@ package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.util.AttributesMap;
 import edu.snu.vortex.runtime.common.IdGenerator;
 import edu.snu.vortex.runtime.common.RtAttributes;
 import edu.snu.vortex.runtime.common.RtOperator;
@@ -34,7 +35,7 @@ public final class OperatorConverter {
    * @return the {@link RtOperator} representation.
    */
   public RtOperator convert(final Operator irOp) {
-    final Map<Attributes.Key, Attributes> irOpAttributes = irOp.getAttributes();
+    final AttributesMap irOpAttributes = irOp.getAttributes();
 
     final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();
     irOpAttributes.forEach((k, v) -> {

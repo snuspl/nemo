@@ -48,6 +48,6 @@ public final class PadoOperatorPass implements Pass {
 
   private boolean allFromReserved(final List<Edge> edges) {
     return edges.stream()
-        .allMatch(edge -> edge.getSrc().getAttrByKey(Attributes.Key.Placement) == Attributes.Reserved);
+        .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Reserved);
   }
 }

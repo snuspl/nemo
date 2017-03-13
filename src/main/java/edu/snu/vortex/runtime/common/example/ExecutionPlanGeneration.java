@@ -69,7 +69,7 @@ public final class ExecutionPlanGeneration {
 
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (isSource(inEdges)) { // in case of a source operator
-        final Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
+        final Object parallelism = operator.getAttr(Attributes.Key.Parallelism);
         Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
         rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
 
@@ -80,7 +80,7 @@ public final class ExecutionPlanGeneration {
         rtStageList.add(rtStage);
 
       } else if (hasM2M(inEdges.get())) {
-        final Object parallelism = operator.getAttrByKey(Attributes.Key.Parallelism);
+        final Object parallelism = operator.getAttr(Attributes.Key.Parallelism);
         Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
         rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
 

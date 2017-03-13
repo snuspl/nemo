@@ -18,15 +18,31 @@ package edu.snu.vortex.compiler.ir.util;
 import edu.snu.vortex.compiler.ir.Attributes;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * AttributesMap Class, which uses HashMap for keeping track of attributes for operators and edges.
  */
-public final class AttributesMap extends HashMap<Attributes.Key, Attributes> {
+public final class AttributesMap {
+  private final Map<Attributes.Key, Attributes> attributes;
+
+  public AttributesMap() {
+    attributes = new HashMap<>();
+  }
+
   public Attributes put(final Attributes.Key key, final Attributes val) {
     if (!val.hasKey(key)) {
       throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
     }
-    return super.put(key, val);
+    return attributes.put(key, val);
+  }
+
+  public Attributes get(final Attributes.Key key) {
+    return attributes.get(key);
+  }
+
+  public void forEach(final BiConsumer<? super Attributes.Key, ? super Attributes> action) {
+    attributes.forEach(action);
   }
 }

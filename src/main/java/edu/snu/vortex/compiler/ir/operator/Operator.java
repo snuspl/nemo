@@ -44,7 +44,7 @@ public abstract class Operator<I, O> implements Serializable {
     return this;
   }
 
-  public final Attributes getAttrByKey(final Attributes.Key key) {
+  public final Attributes getAttr(final Attributes.Key key) {
     return attributes.get(key);
   }
 
