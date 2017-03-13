@@ -40,14 +40,12 @@ public final class VortexBackend implements Backend {
   private final HashMap<Operator, Integer> operatorStageNumHashMap;
   private static AtomicInteger stageNumber = new AtomicInteger(1);
   private final HashMap<Integer, RtStage> stageNumRtStageHashMap;
-  private final HashMap<Operator, RtStage> operatorRtStageHashMap;
 
   public VortexBackend() {
     executionPlan = new ExecutionPlan();
     converter = new OperatorConverter();
     operatorStageNumHashMap = new HashMap<>();
     stageNumRtStageHashMap = new HashMap<>();
-    operatorRtStageHashMap = new HashMap<>();
   }
 
   public ExecutionPlan compile(final DAG dag) throws Exception {
@@ -85,22 +83,19 @@ public final class VortexBackend implements Backend {
         final RtStage createdRtStage = new RtStage(rtStageAttributes);
         createdRtStage.addRtOp(converter.convert(operator));
 
-        operatorRtStageHashMap.put(operator, createdRtStage);
         stageNumRtStageHashMap.put(stageNum, createdRtStage);
         executionPlan.addRtStage(createdRtStage);
       } else {
         final RtStage destinationRtStage = stageNumRtStageHashMap.get(stageNum);
         destinationRtStage.addRtOp(converter.convert(operator));
-
-        operatorRtStageHashMap.put(operator, destinationRtStage);
       }
     });
     // Connect each operators together.
     dag.doTopological(operator -> dag.getInEdgesOf(operator).ifPresent(edges -> edges.forEach(edge -> {
         final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttributes = convertEdgeToRtOpLinkAttributes(edge);
 
-        final RtStage srcRtStage = operatorRtStageHashMap.get(edge.getSrc());
-        final RtStage dstRtStage = operatorRtStageHashMap.get(operator);
+        final RtStage srcRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(edge.getSrc()));
+        final RtStage dstRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(operator));
 
         final String srcRtOperatorId = converter.convertId(edge.getSrc().getId());
         final String dstRtOperatorId = converter.convertId(operator.getId());
