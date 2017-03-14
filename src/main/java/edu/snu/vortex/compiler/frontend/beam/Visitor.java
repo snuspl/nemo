@@ -34,8 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Visitor class.
- * This class visits every node in the dag to translate the BEAM program to the Vortex IR.
+ * Visits every node in the beam dag to translate the BEAM program to the Vortex IR.
  */
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
