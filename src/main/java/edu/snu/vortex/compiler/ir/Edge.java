@@ -62,6 +62,10 @@ public final class Edge<I, O> {
     return attributes.get(key);
   }
 
+  public AttributesMap getAttributes() {
+    return attributes;
+  }
+
   public Type getType() {
     return type;
   }

@@ -16,7 +16,6 @@
 package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.backend.Backend;
-import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.operator.Operator;
@@ -36,14 +35,12 @@ import static edu.snu.vortex.compiler.ir.Attributes.*;
  */
 public final class VortexBackend implements Backend {
   private final ExecutionPlan executionPlan;
-  private final OperatorConverter converter;
   private final HashMap<Operator, Integer> operatorStageNumHashMap;
   private static AtomicInteger stageNumber = new AtomicInteger(1);
   private final HashMap<Integer, RtStage> stageNumRtStageHashMap;
 
   public VortexBackend() {
     executionPlan = new ExecutionPlan();
-    converter = new OperatorConverter();
     operatorStageNumHashMap = new HashMap<>();
     stageNumRtStageHashMap = new HashMap<>();
   }
@@ -58,9 +55,9 @@ public final class VortexBackend implements Backend {
       } else {
         final List<Edge> inEdgesForStage = inEdges.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
-            .filter(edge -> edge.getAttr(Attributes.Key.EdgeChannel).equals(Memory))
-            .filter(edge -> edge.getSrc().getAttr(Attributes.Key.Placement)
-                .equals(edge.getDst().getAttr(Attributes.Key.Placement)))
+            .filter(edge -> edge.getAttr(Key.EdgeChannel).equals(Memory))
+            .filter(edge -> edge.getSrc().getAttr(Key.Placement)
+                .equals(edge.getDst().getAttr(Key.Placement)))
             .filter(edge -> operatorStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()))
             .orElse(null);
@@ -77,71 +74,34 @@ public final class VortexBackend implements Backend {
     operatorStageNumHashMap.forEach((operator, stageNum) -> {
       if (!stageNumRtStageHashMap.containsKey(stageNum)) {
         final Map<RtAttributes.RtStageAttribute, Object> rtStageAttributes = new HashMap<>();
-        rtStageAttributes.put(RtAttributes.RtStageAttribute.RESOURCE_TYPE,
-            operator.getAttr(Attributes.Key.Placement));
+        rtStageAttributes.put(RtAttributes.RtStageAttribute.RESOURCE_TYPE, operator.getAttr(Key.Placement));
+        rtStageAttributes.put(RtAttributes.RtStageAttribute.PARALLELISM, operator.getAttr(Key.Parallelism));
 
         final RtStage createdRtStage = new RtStage(rtStageAttributes);
-        createdRtStage.addRtOp(converter.convert(operator));
+        createdRtStage.addRtOp(DAGConverter.convertOperator(operator));
 
         stageNumRtStageHashMap.put(stageNum, createdRtStage);
         executionPlan.addRtStage(createdRtStage);
       } else {
         final RtStage destinationRtStage = stageNumRtStageHashMap.get(stageNum);
-        destinationRtStage.addRtOp(converter.convert(operator));
+        destinationRtStage.addRtOp(DAGConverter.convertOperator(operator));
       }
     });
     // Connect each operators together.
     dag.doTopological(operator -> dag.getInEdgesOf(operator).ifPresent(edges -> edges.forEach(edge -> {
-        final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttributes = convertEdgeToRtOpLinkAttributes(edge);
+      final RtStage srcRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(edge.getSrc()));
+      final RtStage dstRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(operator));
+      final RtOpLink rtOpLink = DAGConverter.convertEdge(edge, srcRtStage, dstRtStage);
 
-        final RtStage srcRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(edge.getSrc()));
-        final RtStage dstRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(operator));
+      final String srcRtOperatorId = DAGConverter.convertOperatorId(edge.getSrc().getId());
+      final String dstRtOperatorId = DAGConverter.convertOperatorId(operator.getId());
 
-        final String srcRtOperatorId = converter.convertId(edge.getSrc().getId());
-        final String dstRtOperatorId = converter.convertId(operator.getId());
-
-        final RtOpLink rtOpLink = new RtOpLink(srcRtStage.getRtOpById(srcRtOperatorId),
-            dstRtStage.getRtOpById(dstRtOperatorId),
-            rtOpLinkAttributes);
-
-        if (srcRtStage.equals(dstRtStage)) {
-          srcRtStage.connectRtOps(srcRtOperatorId, dstRtOperatorId, rtOpLink);
-        } else {
-          executionPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
-        }
+      if (srcRtStage.equals(dstRtStage)) {
+        srcRtStage.connectRtOps(srcRtOperatorId, dstRtOperatorId, rtOpLink);
+      } else {
+        executionPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
+      }
     })));
     return executionPlan;
-  }
-
-  private Map<RtAttributes.RtOpLinkAttribute, Object> convertEdgeToRtOpLinkAttributes(final Edge edge) {
-    final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttributes = new HashMap<>();
-    switch (edge.getType()) {
-      case OneToOne:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.ONE_TO_ONE);
-        break;
-      case Broadcast:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.BROADCAST);
-        break;
-      case ScatterGather:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.SCATTER_GATHER);
-        break;
-      default:
-        throw new RuntimeException("No such edge type for edge: " + edge);
-    }
-
-    final Attributes channelAttribute = edge.getAttr(Attributes.Key.EdgeChannel);
-    if (channelAttribute.equals(File)) {
-      rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
-    } else if (channelAttribute.equals(Memory)) {
-      rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-    } else if (channelAttribute.equals(TCPPipe)) {
-      rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.TCP);
-    } else if (channelAttribute.equals(DistributedStorage)) {
-      rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.DISTR_STORAGE);
-    } else {
-      throw new RuntimeException("No such channel type for edge: " + edge);
-    }
-
-    return rtOpLinkAttributes;
   }
 }

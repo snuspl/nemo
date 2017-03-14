@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.example;
 
-import edu.snu.vortex.compiler.backend.vortex.OperatorConverter;
+import edu.snu.vortex.compiler.backend.vortex.DAGConverter;
 import edu.snu.vortex.compiler.ir.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
@@ -53,7 +53,6 @@ public final class ExecutionPlanGeneration {
 
   private static ExecutionPlan transformToExecDAG(final DAG dag) {
     final ExecutionPlan execPlan = new ExecutionPlan();
-    final OperatorConverter compiler = new OperatorConverter();
 
     final List<RtStage> rtStageList = new ArrayList<>();
     final Map<String, RtOperator> rtOperatorMap = new HashMap<>();
@@ -64,7 +63,7 @@ public final class ExecutionPlanGeneration {
     RtStage rtStage = null;
     for (int idx = 0; idx < topoSorted.size(); idx++) {
       final Operator operator = topoSorted.get(idx);
-      final RtOperator rtOperator = compiler.convert(operator);
+      final RtOperator rtOperator = DAGConverter.convertOperator(operator);
       rtOperatorMap.put(rtOperator.getId(), rtOperator);
 
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
@@ -95,11 +94,11 @@ public final class ExecutionPlanGeneration {
           while (edges.hasNext()) {
             final Edge edge = edges.next();
 
-            String srcROperId = compiler.convertId(edge.getSrc().getId());
+            String srcROperId = DAGConverter.convertOperatorId(edge.getSrc().getId());
             RtStage srcRtStage = findRtStageOf(rtStageList, srcROperId);
             RtOperator srcROper = srcRtStage.getRtOpById(srcROperId);
 
-            String dstROperId = compiler.convertId(edge.getDst().getId());
+            String dstROperId = DAGConverter.convertOperatorId(edge.getDst().getId());
             RtStage dstRtStage = findRtStageOf(rtStageList, dstROperId);
             RtOperator dstROper = dstRtStage.getRtOpById(dstROperId);
 
@@ -123,7 +122,7 @@ public final class ExecutionPlanGeneration {
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
           rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
 
-          String srcId = compiler.convertId(edge.getSrc().getId());
+          String srcId = DAGConverter.convertOperatorId(edge.getSrc().getId());
           RtOpLink rtOpLink = new RtOpLink(rtOperatorMap.get(srcId), rtOperator, rOpLinkAttr);
           rtStage.connectRtOps(srcId, rtOperator.getId(), rtOpLink);
         }
