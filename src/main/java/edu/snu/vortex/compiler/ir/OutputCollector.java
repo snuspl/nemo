@@ -16,7 +16,9 @@
 package edu.snu.vortex.compiler.ir;
 
 /**
- * Output collector.
+ * Interface through which Transform emits outputs.
+ * This is to be implemented in the runtime with
+ * runtime-specific distributed data movement and storage mechanisms.
  */
 public interface OutputCollector {
   /**
@@ -27,8 +29,10 @@ public interface OutputCollector {
 
   /**
    * Multi-destination emit.
-   * @param dstOperatorId destination operator id.
+   * Currently unused, but might come in handy
+   * for operations like multi-output map.
+   * @param dstVertexId destination vertex id.
    * @param output element.
    */
-  void emit(final String dstOperatorId, final Element output);
+  void emit(final String dstVertexId, final Element output);
 }

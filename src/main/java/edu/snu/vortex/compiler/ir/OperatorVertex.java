@@ -16,7 +16,8 @@
 package edu.snu.vortex.compiler.ir;
 
 /**
- * Operator Vertex.
+ * Vertex that transforms input data.
+ * It is to be constructed in the compiler frontend with language-specific data transform logic.
  */
 public final class OperatorVertex extends Vertex {
   private final Transform transform;

@@ -35,7 +35,7 @@ public final class DAGBuilder {
   }
 
   /**
-   * add an vertex.
+   * add a vertex.
    * @param vertex .
    */
   public void addVertex(final Vertex vertex) {

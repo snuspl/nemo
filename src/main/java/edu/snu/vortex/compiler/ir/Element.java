@@ -16,7 +16,9 @@
 package edu.snu.vortex.compiler.ir;
 
 /**
- * Element.
+ * Key-value pair wrapper for a data element.
+ * This is to be implemented in the frontend
+ * with language-specific key-value pair definition.
  * @param <Data> data type.
  * @param <Key> key type.
  * @param <Value> value type.

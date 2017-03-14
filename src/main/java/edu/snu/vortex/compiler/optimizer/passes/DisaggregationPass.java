@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Disaggregated Resources pass for tagging vertexs.
+ * Disaggregated Resources pass for tagging vertices.
  */
 public final class DisaggregationPass implements Pass {
   public DAG process(final DAG dag) throws Exception {

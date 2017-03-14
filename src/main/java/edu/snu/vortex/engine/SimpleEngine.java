@@ -21,27 +21,28 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 /**
- * A simple engine that prints operator outputs to stdout.
+ * A simple engine that prints vertex outputs to stdout.
  */
 public final class SimpleEngine {
   public void executeDAG(final DAG dag) throws Exception {
     final Map<String, List<Iterable<Element>>> edgeIdToPartitions = new HashMap<>();
-
-    final List<Vertex> topoSorted = new LinkedList<>();
-    dag.doTopological(node -> topoSorted.add(node));
-    for (final Vertex vertex : topoSorted) {
+    dag.doTopological(vertex -> {
       if (vertex instanceof SourceVertex) {
-        final SourceVertex sourceVertex = (SourceVertex) vertex;
-        final List<Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per BoundedSourceReader
-        final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
-        for (final Reader reader : readers) {
-          partitions.add(reader.read());
-        }
-        dag.getOutEdgesOf(vertex).get().stream()
-            .map(outEdge -> outEdge.getId())
-            .forEach(id -> edgeIdToPartitions.put(id, partitions));
+        try {
+          final SourceVertex sourceVertex = (SourceVertex) vertex;
+          final List<Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per BoundedSourceReader
+          final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
+          for (final Reader reader : readers) {
+            partitions.add(reader.read());
+          }
+          dag.getOutEdgesOf(vertex).get().stream()
+              .map(outEdge -> outEdge.getId())
+              .forEach(id -> edgeIdToPartitions.put(id, partitions));
 
-        System.out.println("Output of " + vertex.getId() + ": " + partitions);
+          System.out.println("Output of " + vertex.getId() + ": " + partitions);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
       } else if (vertex instanceof OperatorVertex) {
         final OperatorVertex operatorVertex = (OperatorVertex) vertex;
         final Transform transform = operatorVertex.getTransform();
@@ -80,7 +81,7 @@ public final class SimpleEngine {
       } else {
         throw new UnsupportedOperationException(vertex.toString());
       }
-    }
+    });
 
     System.out.println("Job completed.");
   }

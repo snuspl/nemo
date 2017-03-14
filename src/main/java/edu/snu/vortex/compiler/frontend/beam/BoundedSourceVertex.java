@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * SourceVertex operator implementation.
+ * SourceVertex implementation for BoundedSource.
  * @param <O> output type.
  */
 public final class BoundedSourceVertex<O> extends SourceVertex<O> {

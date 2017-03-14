@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * Physical execution plan of a user program.
+ * DAG representation of a user program.
  */
 public final class DAG {
   private final Map<String, List<Edge>> id2inEdges;

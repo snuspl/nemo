@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Vertex.
+ * The top-most wrapper for a user operation in the Vortex IR.
  */
 public abstract class Vertex implements Serializable {
   private final String id;
@@ -60,5 +60,4 @@ public abstract class Vertex implements Serializable {
     sb.append(attributes);
     return sb.toString();
   }
-
 }

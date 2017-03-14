@@ -18,12 +18,13 @@ package edu.snu.vortex.compiler.ir;
 import java.util.List;
 
 /**
- * Source Vertex.
+ * Vertex that reads data from an external source.
+ * It is to be implemented in the compiler frontend with source-specific data fetching logic.
  * @param <O> output type.
  */
 public abstract class SourceVertex<O> extends Vertex {
   /**
-   * Getter for readers.
+   * Get parallel readers.
    * @param desiredBundleSizeBytes .
    * @return List of readers.
    * @throws Exception .

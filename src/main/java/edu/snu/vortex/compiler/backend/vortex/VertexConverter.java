@@ -27,14 +27,14 @@ import java.util.Map;
 /**
  * Vertex converter.
  */
-public final class OperatorConverter {
+public final class VertexConverter {
   /**
    * Converts an {@link Vertex} to its representation in {@link RtOperator}.
-   * @param irOp .
+   * @param irVertex .
    * @return the {@link RtOperator} representation.
    */
-  public RtOperator convert(final Vertex irOp) {
-    final Map<Attributes.Key, Attributes.Val> irOpAttributes = irOp.getAttributes();
+  public RtOperator convert(final Vertex irVertex) {
+    final Map<Attributes.Key, Attributes.Val> irOpAttributes = irVertex.getAttributes();
 
     final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();
     irOpAttributes.forEach((k, v) -> {
@@ -59,7 +59,7 @@ public final class OperatorConverter {
         throw new UnsupportedOperationException("Unsupported operator attribute");
       }
     });
-    final RtOperator rOp = new RtOperator(irOp.getId(), rOpAttributes);
+    final RtOperator rOp = new RtOperator(irVertex.getId(), rOpAttributes);
     return rOp;
   }
 

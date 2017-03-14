@@ -18,12 +18,14 @@ package edu.snu.vortex.compiler.ir;
 import java.util.List;
 
 /**
- * Transform.
+ * Interface for specifying 'What' to do with data.
+ * It is to be implemented in the compiler frontend, possibly for every operator in a dataflow language.
+ * 'How' and 'When' to do with its input/output data are up to the runtime.
  */
 public interface Transform {
   /**
-   * Prepare the operator.
-   * @param context of the operator.
+   * Prepare the transform.
+   * @param context of the transform.
    * @param outputCollector that collects outputs.
    */
   void prepare(final Context context, final OutputCollector outputCollector);
@@ -31,21 +33,23 @@ public interface Transform {
   /**
    * On data received.
    * @param data data received.
-   * @param srcOperatorId sender of the data.
+   * @param srcVertexId sender of the data.
    */
-  void onData(final Iterable<Element> data, final String srcOperatorId);
+  void onData(final Iterable<Element> data, final String srcVertexId);
 
   /**
-   * Close the operator.
+   * Close the transform.
    */
   void close();
 
   /**
-   * Context of the operator.
+   * Context of the transform.
+   * It is currently unused, but might come in handy
+   * when we have more sophisticated operations like Join.
    */
   interface Context {
-    List<String> getSourceOperatorIds();
+    List<String> getSrcVertexIds();
 
-    List<String> getDstOperatorIds();
+    List<String> getDstVertexIds();
   }
 }

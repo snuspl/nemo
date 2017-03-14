@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.Transform;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.Aggregator;
 import org.apache.beam.sdk.transforms.Combine;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvokers;
 import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
@@ -35,14 +36,14 @@ import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
 /**
- * DoFn operator implementation.
+ * DoFn transform implementation.
  */
-public final class DoFn implements Transform {
-  private final org.apache.beam.sdk.transforms.DoFn doFn;
+public final class DoTransform implements Transform {
+  private final DoFn doFn;
   private final PipelineOptions options;
   private OutputCollector outputCollector;
 
-  public DoFn(final org.apache.beam.sdk.transforms.DoFn doFn, final PipelineOptions options) {
+  public DoTransform(final DoFn doFn, final PipelineOptions options) {
     this.doFn = doFn;
     this.options = options;
   }
@@ -53,12 +54,12 @@ public final class DoFn implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data, final String srcOperatorId) {
+  public void onData(final Iterable<Element> data, final String srcVertexId) {
     final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
     final ProcessContext beamContext = new ProcessContext<>(doFn, outputCollector, options);
     invoker.invokeSetup();
     invoker.invokeStartBundle(beamContext);
-    data.forEach(element -> { // No need to check for input index, since it is always 0 for DoFn
+    data.forEach(element -> { // No need to check for input index, since it is always 0 for DoTransform
       beamContext.setElement(element.getData());
       invoker.invokeProcessElement(beamContext);
     });
@@ -84,13 +85,13 @@ public final class DoFn implements Transform {
    * @param <I> input type.
    * @param <O> output type.
    */
-  private static final class ProcessContext<I, O> extends org.apache.beam.sdk.transforms.DoFn<I, O>.ProcessContext
+  private static final class ProcessContext<I, O> extends DoFn<I, O>.ProcessContext
       implements DoFnInvoker.ArgumentProvider<I, O> {
     private I input;
     private final OutputCollector outputCollector;
     private final PipelineOptions options;
 
-    ProcessContext(final org.apache.beam.sdk.transforms.DoFn<I, O> fn,
+    ProcessContext(final DoFn<I, O> fn,
                    final OutputCollector outputCollector,
                    final PipelineOptions options) {
       fn.super();
@@ -159,29 +160,29 @@ public final class DoFn implements Transform {
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.Context context(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
+    public DoFn.Context context(final DoFn<I, O> doFn) {
       return this;
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.ProcessContext
-        processContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
+    public DoFn.ProcessContext
+        processContext(final DoFn<I, O> doFn) {
       return this;
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.OnTimerContext
-        onTimerContext(final org.apache.beam.sdk.transforms.DoFn<I, O> doFn) {
+    public DoFn.OnTimerContext
+        onTimerContext(final DoFn<I, O> doFn) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.InputProvider<I> inputProvider() {
+    public DoFn.InputProvider<I> inputProvider() {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public org.apache.beam.sdk.transforms.DoFn.OutputReceiver<O> outputReceiver() {
+    public DoFn.OutputReceiver<O> outputReceiver() {
       throw new UnsupportedOperationException();
     }
 

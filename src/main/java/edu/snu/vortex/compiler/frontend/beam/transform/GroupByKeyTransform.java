@@ -15,21 +15,26 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.transform;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
+import org.apache.beam.sdk.values.KV;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Windowing operator implementation.
- * This operator simply windows the given elements into finite windows according to a user-specified WindowFn.
- * As this functionality is unnecessary for batch processing workloads and for Vortex Runtime, this is left as below.
+ * Group Beam KVs.
  */
-public final class WindowFn implements Transform {
-  private final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn;
+public final class GroupByKeyTransform implements Transform {
+  private final Map<Object, List> keyToValues;
   private OutputCollector outputCollector;
 
-  public WindowFn(final org.apache.beam.sdk.transforms.windowing.WindowFn windowFn) {
-    this.windowFn = windowFn;
+  public GroupByKeyTransform() {
+    this.keyToValues = new HashMap<>();
   }
 
   @Override
@@ -38,19 +43,27 @@ public final class WindowFn implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data, final String srcOperatorId) {
-    // TODO #36: Actually assign windows
-    data.forEach(outputCollector::emit);
+  public void onData(final Iterable<Element> data, final String srcVertexId) {
+    data.forEach(element -> {
+      final KV kv = (KV) element.getData();
+      keyToValues.putIfAbsent(kv.getKey(), new ArrayList());
+      keyToValues.get(kv.getKey()).add(kv.getValue());
+    });
   }
 
   @Override
   public void close() {
+    keyToValues.entrySet().stream()
+        .map(entry -> KV.of(entry.getKey(), entry.getValue()))
+        .forEach(wv -> outputCollector.emit(new BeamElement<>(wv)));
+    keyToValues.clear();
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(windowFn);
+    sb.append("GroupByKeyTransform");
     return sb.toString();
   }
 }
+

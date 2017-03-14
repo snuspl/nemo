@@ -24,12 +24,12 @@ import java.util.List;
  */
 public final class ContextImpl implements Transform.Context {
   @Override
-  public List<String> getSourceOperatorIds() {
+  public List<String> getSrcVertexIds() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public List<String> getDstOperatorIds() {
+  public List<String> getDstVertexIds() {
     throw new UnsupportedOperationException();
   }
 }

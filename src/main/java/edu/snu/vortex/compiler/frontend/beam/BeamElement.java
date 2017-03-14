@@ -19,8 +19,8 @@ import edu.snu.vortex.compiler.ir.Element;
 import org.apache.beam.sdk.values.KV;
 
 /**
- * BeamElement.
- * @param <Data> data type.
+ * Element implementation for Beam.
+ * @param <Data> data type. It is casted as KV for Element's key-value getter methods.
  * @param <Key> key type.
  * @param <Value> value type.
  */
@@ -45,7 +45,6 @@ public final class BeamElement<Data, Key, Value> implements Element<Data, Key, V
   public Value getValue() {
     return ((KV<Key, Value>) data).getValue();
   }
-
 
   @Override
   public String toString() {

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Pado pass for tagging vertexs.
+ * Pado pass for tagging vertices.
  */
 public final class PadoVertexPass implements Pass {
   public DAG process(final DAG dag) throws Exception {

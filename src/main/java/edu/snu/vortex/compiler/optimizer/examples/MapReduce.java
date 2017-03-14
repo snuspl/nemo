@@ -51,7 +51,7 @@ public final class MapReduce {
   }
 
   /**
-   * An empty operator.
+   * An empty transform.
    */
   private static class EmptyTransform implements Transform {
     private final String name;
@@ -74,7 +74,7 @@ public final class MapReduce {
     }
 
     @Override
-    public void onData(final Iterable<Element> data, final String srcOperatorId) {
+    public void onData(final Iterable<Element> data, final String srcVertexId) {
     }
 
     @Override
