@@ -30,12 +30,12 @@ public final class PadoVertexPass implements Pass {
     dag.doTopological(vertex -> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
       if (!inEdges.isPresent()) {
-        vertex.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+        vertex.setAttr(Attributes.Key.Placement, Attributes.Transient);
       } else {
         if (hasM2M(inEdges.get()) || allFromReserved(inEdges.get())) {
-          vertex.setAttr(Attributes.Key.Placement, Attributes.Placement.Reserved);
+          vertex.setAttr(Attributes.Key.Placement, Attributes.Reserved);
         } else {
-          vertex.setAttr(Attributes.Key.Placement, Attributes.Placement.Transient);
+          vertex.setAttr(Attributes.Key.Placement, Attributes.Transient);
         }
       }
     });
@@ -48,6 +48,6 @@ public final class PadoVertexPass implements Pass {
 
   private boolean allFromReserved(final List<Edge> edges) {
     return edges.stream()
-        .allMatch(edge -> edge.getSrc().getAttrByKey(Attributes.Key.Placement) == Attributes.Placement.Reserved);
+        .allMatch(edge -> edge.getSrc().getAttr(Attributes.Key.Placement) == Attributes.Reserved);
   }
 }

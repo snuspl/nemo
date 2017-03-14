@@ -28,7 +28,7 @@ import java.util.Optional;
 public final class DisaggregationPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.doTopological(vertex -> {
-      vertex.setAttr(Attributes.Key.Placement, Attributes.Placement.Compute);
+      vertex.setAttr(Attributes.Key.Placement, Attributes.Compute);
     });
 
     dag.getVertices().forEach(vertex -> {
@@ -36,9 +36,9 @@ public final class DisaggregationPass implements Pass {
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
           if (edge.getType().equals(Edge.Type.OneToOne)) {
-            edge.setAttr(Attributes.Key.EdgeChannel, Attributes.EdgeChannel.Memory);
+            edge.setAttr(Attributes.Key.EdgeChannel, Attributes.Memory);
           } else {
-            edge.setAttr(Attributes.Key.EdgeChannel,  Attributes.EdgeChannel.DistributedStorage);
+            edge.setAttr(Attributes.Key.EdgeChannel,  Attributes.DistributedStorage);
           }
         });
       }
