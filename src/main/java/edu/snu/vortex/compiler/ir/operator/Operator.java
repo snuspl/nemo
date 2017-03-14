@@ -15,9 +15,9 @@
  */
 package edu.snu.vortex.compiler.ir.operator;
 
-import edu.snu.vortex.compiler.ir.Attributes;
+import edu.snu.vortex.attributes.Attributes;
 import edu.snu.vortex.compiler.ir.IdManager;
-import edu.snu.vortex.compiler.ir.util.AttributesMap;
+import edu.snu.vortex.attributes.AttributesMap;
 
 import java.io.Serializable;
 
@@ -43,8 +43,15 @@ public abstract class Operator<I, O> implements Serializable {
     attributes.put(key, val);
     return this;
   }
+  public final Operator<I, O> setAttr(final Attributes.IntegerKey key, final Integer val) {
+    attributes.put(key, val);
+    return this;
+  }
 
   public final Attributes getAttr(final Attributes.Key key) {
+    return attributes.get(key);
+  }
+  public final Integer getAttr(final Attributes.IntegerKey key) {
     return attributes.get(key);
   }
 

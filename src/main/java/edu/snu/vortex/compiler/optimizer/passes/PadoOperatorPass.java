@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
-import edu.snu.vortex.compiler.ir.Attributes;
+import edu.snu.vortex.attributes.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
 

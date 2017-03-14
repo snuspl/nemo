@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common;
 
 import com.google.api.client.util.ArrayMap;
+import edu.snu.vortex.attributes.AttributesMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Map;
  */
 public final class RtStage {
   private final String rtStageId;
-  private final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr;
+  private final AttributesMap rtStageAttr;
 
   /**
    * Map of <ID, {@link RtOperator}> contained in this {@link RtStage}.
@@ -51,7 +52,7 @@ public final class RtStage {
    * Represents a stage containing operators to be executed in Vortex runtime.
    * @param rtStageAttr attributes that can be given and applied to this {@link RtStage}
    */
-  public RtStage(final Map<RtAttributes.RtStageAttribute, Object> rtStageAttr) {
+  public RtStage(final AttributesMap rtStageAttr) {
     this.rtStageId = IdGenerator.generateRtStageId();
     this.rtOps = new ArrayMap<>();
     this.rtOpLinks = new ArrayMap<>();

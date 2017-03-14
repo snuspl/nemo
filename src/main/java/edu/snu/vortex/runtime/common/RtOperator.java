@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import edu.snu.vortex.attributes.Attributes;
+import edu.snu.vortex.attributes.AttributesMap;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +29,7 @@ import java.util.Map;
  */
 public final class RtOperator<I, O> implements Serializable {
   private final String rtOpId;
-  private final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr;
+  private final AttributesMap rtOpAttr;
 
   /**
    * Map of <ID, {@link RtOpLink}> connecting previous {@link RtOperator} to this {@link RtOperator}.
@@ -38,7 +41,7 @@ public final class RtOperator<I, O> implements Serializable {
    */
   private Map<String, RtOpLink> outputLinks;
 
-  public RtOperator(final String irOpId, final Map<RtAttributes.RtOpAttribute, Object> rtOpAttr) {
+  public RtOperator(final String irOpId, final AttributesMap rtOpAttr) {
     this.rtOpId = IdGenerator.generateRtOpId(irOpId);
     this.rtOpAttr = rtOpAttr;
     this.inputLinks = new HashMap<>();
@@ -49,15 +52,15 @@ public final class RtOperator<I, O> implements Serializable {
     return rtOpId;
   }
 
-  public void addAttrbute(final RtAttributes.RtOpAttribute key, final Object value) {
+  public void addAttrbute(final Attributes.Key key, final Attributes value) {
     rtOpAttr.put(key, value);
   }
 
-  public void removeAttrbute(final RtAttributes.RtOpAttribute key) {
+  public void removeAttrbute(final Attributes.Key key) {
     rtOpAttr.remove(key);
   }
 
-  public Map<RtAttributes.RtOpAttribute, Object> getRtOpAttr() {
+  public AttributesMap getRtOpAttr() {
     return rtOpAttr;
   }
 

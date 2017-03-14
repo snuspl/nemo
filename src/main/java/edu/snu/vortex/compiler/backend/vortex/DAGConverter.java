@@ -15,12 +15,11 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
+import edu.snu.vortex.attributes.Attributes;
+import edu.snu.vortex.attributes.AttributesMap;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.common.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * DAG converter for converting Operators, Edges.
@@ -34,43 +33,7 @@ public final class DAGConverter {
    * @return the {@link RtOperator} representation.
    */
   public static RtOperator convertOperator(final Operator irOp) {
-    final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();
-    irOp.getAttributes().forEach((k, v) -> {
-      switch (k) {
-      case Placement:
-        switch (v) {
-          case Transient:
-            rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
-            break;
-          case Reserved:
-            rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
-            break;
-          case Compute:
-            rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.COMPUTE);
-            break;
-          default:
-            throw new UnsupportedOperationException("Unsupported Placement attribute " + v + " for operator: " + irOp);
-        }
-        break;
-      case EdgePartitioning:
-        switch (v) {
-          case Hash:
-            rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
-            break;
-          case Range:
-            rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.RANGE);
-            break;
-          default:
-            throw new UnsupportedOperationException("Unsupported EdgePartitioning attribute " + v +
-                " for operator " + irOp);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported operator attribute" + k);
-      }
-    });
-
-    final RtOperator rOp = new RtOperator(irOp.getId(), rOpAttributes);
+    final RtOperator rOp = new RtOperator(irOp.getId(), irOp.getAttributes());
     return rOp;
   }
 
@@ -79,45 +42,20 @@ public final class DAGConverter {
   }
 
   static RtOpLink convertEdge(final Edge edge, final RtStage srcRtStage, final RtStage dstRtStage) {
-    final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttributes = new HashMap<>();
+    final AttributesMap rtOpLinkAttributes = edge.getAttributes();
     switch (edge.getType()) {
       case OneToOne:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.ONE_TO_ONE);
+        rtOpLinkAttributes.put(Attributes.Key.CommunicationPattern, Attributes.OneToOne);
         break;
       case Broadcast:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.BROADCAST);
+        rtOpLinkAttributes.put(Attributes.Key.CommunicationPattern, Attributes.Broadcast);
         break;
       case ScatterGather:
-        rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, RtAttributes.CommPattern.SCATTER_GATHER);
+        rtOpLinkAttributes.put(Attributes.Key.CommunicationPattern, Attributes.ScatterGather);
         break;
       default:
         throw new RuntimeException("No such edge type for edge: " + edge);
     }
-
-    edge.getAttributes().forEach((k, v) -> {
-      switch (k) {
-        case EdgeChannel:
-          switch (v) {
-            case File:
-              rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
-              break;
-            case Memory:
-              rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
-              break;
-            case TCPPipe:
-              rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.TCP);
-              break;
-            case DistributedStorage:
-              rtOpLinkAttributes.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.DISTR_STORAGE);
-              break;
-            default:
-              throw new RuntimeException("Unsupported EdgeChannel attribute " + v + " for edge: " + edge);
-          }
-          break;
-        default:
-          throw new UnsupportedOperationException("Unsupported edge attribute: " + k);
-      }
-    });
 
     final String srcRtOperatorId = convertOperatorId(edge.getSrc().getId());
     final String dstRtOperatorId = convertOperatorId(edge.getDst().getId());

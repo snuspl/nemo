@@ -15,12 +15,12 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
+import edu.snu.vortex.attributes.AttributesMap;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.operator.Operator;
 import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtAttributes;
 import edu.snu.vortex.runtime.common.RtOpLink;
 import edu.snu.vortex.runtime.common.RtStage;
 
@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.compiler.ir.Attributes.*;
+import static edu.snu.vortex.attributes.Attributes.*;
 
 /**
  * Backend component for Vortex Runtime.
@@ -73,9 +73,9 @@ public final class VortexBackend implements Backend {
     // Create new RtStage for each operators with distinct stages, and connect each operators with RtStages.
     operatorStageNumHashMap.forEach((operator, stageNum) -> {
       if (!stageNumRtStageHashMap.containsKey(stageNum)) {
-        final Map<RtAttributes.RtStageAttribute, Object> rtStageAttributes = new HashMap<>();
-        rtStageAttributes.put(RtAttributes.RtStageAttribute.RESOURCE_TYPE, operator.getAttr(Key.Placement));
-        rtStageAttributes.put(RtAttributes.RtStageAttribute.PARALLELISM, operator.getAttr(Key.Parallelism));
+        final AttributesMap rtStageAttributes = new AttributesMap();
+        rtStageAttributes.put(Key.Placement, operator.getAttr(Key.Placement));
+        rtStageAttributes.put(IntegerKey.Parallelism, operator.getAttr(IntegerKey.Parallelism));
 
         final RtStage createdRtStage = new RtStage(rtStageAttributes);
         createdRtStage.addRtOp(DAGConverter.convertOperator(operator));

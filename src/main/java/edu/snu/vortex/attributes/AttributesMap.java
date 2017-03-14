@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.util;
-
-import edu.snu.vortex.compiler.ir.Attributes;
+package edu.snu.vortex.attributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,20 +24,34 @@ import java.util.function.BiConsumer;
  */
 public final class AttributesMap {
   private final Map<Attributes.Key, Attributes> attributes;
+  private final Map<Attributes.IntegerKey, Integer> intAttributes;
 
   public AttributesMap() {
     attributes = new HashMap<>();
+    intAttributes = new HashMap<>();
   }
 
   public Attributes put(final Attributes.Key key, final Attributes val) {
     if (!val.hasKey(key)) {
-      throw new RuntimeException("Attribute " + val + "is not a member of Key " + key);
+      throw new RuntimeException("Attribute " + val + " is not a member of Key " + key);
     }
     return attributes.put(key, val);
   }
 
+  public Integer put(final Attributes.IntegerKey key, final Integer integer) {
+    return intAttributes.put(key, integer);
+  }
+
   public Attributes get(final Attributes.Key key) {
     return attributes.get(key);
+  }
+
+  public Integer get(final Attributes.IntegerKey key) {
+    return intAttributes.get(key);
+  }
+
+  public Attributes remove(final Attributes.Key key) {
+    return attributes.remove(key);
   }
 
   public void forEach(final BiConsumer<? super Attributes.Key, ? super Attributes> action) {

@@ -15,8 +15,9 @@
  */
 package edu.snu.vortex.compiler.ir;
 
+import edu.snu.vortex.attributes.Attributes;
 import edu.snu.vortex.compiler.ir.operator.Operator;
-import edu.snu.vortex.compiler.ir.util.AttributesMap;
+import edu.snu.vortex.attributes.AttributesMap;
 
 /**
  * Physical execution plan of intermediate data movement.

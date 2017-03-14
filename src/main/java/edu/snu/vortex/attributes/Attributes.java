@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir;
+package edu.snu.vortex.attributes;
 
 /**
  * Attributes class.
@@ -38,7 +38,14 @@ public enum Attributes {
   Memory(Key.EdgeChannel),
   TCPPipe(Key.EdgeChannel),
   File(Key.EdgeChannel),
-  DistributedStorage(Key.EdgeChannel);
+  DistributedStorage(Key.EdgeChannel),
+
+  /**
+   * Edge communication pattern attributes.
+   */
+  OneToOne(Key.CommunicationPattern),
+  Broadcast(Key.CommunicationPattern),
+  ScatterGather(Key.CommunicationPattern);
 
   /**
    * Attribute Keys.
@@ -46,8 +53,16 @@ public enum Attributes {
   public enum Key {
     Placement,
     EdgePartitioning,
-    Parallelism,
+
     EdgeChannel,
+    CommunicationPattern,
+  }
+
+  /**
+   * Attribute keys that have Integer value.
+   */
+  public enum IntegerKey {
+    Parallelism,
   }
 
   private final Key key;

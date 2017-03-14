@@ -15,14 +15,14 @@
  */
 package edu.snu.vortex.runtime.common;
 
-import java.util.Map;
+import edu.snu.vortex.attributes.AttributesMap;
 
 /**
  * Runtime Operators link.
  */
 public final class RtOpLink {
   private final String rtOpLinkId;
-  private final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr;
+  private final AttributesMap rtOpLinkAttr;
 
   private final RtOperator srcRtOp;
   private final RtOperator dstRtOp;
@@ -35,7 +35,7 @@ public final class RtOpLink {
    */
   public RtOpLink(final RtOperator srcRtOp,
                   final RtOperator dstRtOp,
-                  final Map<RtAttributes.RtOpLinkAttribute, Object> rtOpLinkAttr) {
+                  final AttributesMap rtOpLinkAttr) {
     this.rtOpLinkId = IdGenerator.generateRtOpLinkId();
     this.srcRtOp = srcRtOp;
     this.dstRtOp = dstRtOp;
@@ -54,7 +54,7 @@ public final class RtOpLink {
     return dstRtOp;
   }
 
-  public Map<RtAttributes.RtOpLinkAttribute, Object> getRtOpLinkAttr() {
+  public AttributesMap getRtOpLinkAttr() {
     return rtOpLinkAttr;
   }
 

@@ -15,8 +15,9 @@
  */
 package edu.snu.vortex.runtime.common.example;
 
+import edu.snu.vortex.attributes.AttributesMap;
 import edu.snu.vortex.compiler.backend.vortex.DAGConverter;
-import edu.snu.vortex.compiler.ir.Attributes;
+import edu.snu.vortex.attributes.Attributes;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.DAGBuilder;
 import edu.snu.vortex.compiler.ir.Edge;
@@ -68,9 +69,9 @@ public final class ExecutionPlanGeneration {
 
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
       if (isSource(inEdges)) { // in case of a source operator
-        final Object parallelism = operator.getAttr(Attributes.Key.Parallelism);
-        Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
-        rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
+        final Integer parallelism = operator.getAttr(Attributes.IntegerKey.Parallelism);
+        AttributesMap rStageAttr = new AttributesMap();
+        rStageAttr.put(Attributes.IntegerKey.Parallelism, parallelism);
 
         rtStage = new RtStage(rStageAttr);
         rtStage.addRtOp(rtOperator);
@@ -79,9 +80,9 @@ public final class ExecutionPlanGeneration {
         rtStageList.add(rtStage);
 
       } else if (hasM2M(inEdges.get())) {
-        final Object parallelism = operator.getAttr(Attributes.Key.Parallelism);
-        Map<RtAttributes.RtStageAttribute, Object> rStageAttr = new HashMap<>();
-        rStageAttr.put(RtAttributes.RtStageAttribute.PARALLELISM, parallelism);
+        final Integer parallelism = operator.getAttr(Attributes.IntegerKey.Parallelism);
+        AttributesMap rStageAttr = new AttributesMap();
+        rStageAttr.put(Attributes.IntegerKey.Parallelism, parallelism);
 
         rtStage = new RtStage(rStageAttr);
         rtStage.addRtOp(rtOperator);
@@ -102,9 +103,9 @@ public final class ExecutionPlanGeneration {
             RtStage dstRtStage = findRtStageOf(rtStageList, dstROperId);
             RtOperator dstROper = dstRtStage.getRtOpById(dstROperId);
 
-            Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
-            rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
-            rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.FILE);
+            AttributesMap rOpLinkAttr = new AttributesMap();
+            rOpLinkAttr.put(Attributes.Key.CommunicationPattern, convertEdgeTypeToROpLinkAttr(edge.getType()));
+            rOpLinkAttr.put(Attributes.Key.EdgeChannel, Attributes.File);
 
             RtOpLink rtOpLink = new RtOpLink(srcROper, dstROper, rOpLinkAttr);
             execPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
@@ -118,9 +119,9 @@ public final class ExecutionPlanGeneration {
         Iterator<Edge> edges = inEdges.get().iterator();
         while (edges.hasNext()) {
           Edge edge = edges.next();
-          Map<RtAttributes.RtOpLinkAttribute, Object> rOpLinkAttr = new HashMap<>();
-          rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.COMM_PATTERN, convertEdgeTypeToROpLinkAttr(edge.getType()));
-          rOpLinkAttr.put(RtAttributes.RtOpLinkAttribute.CHANNEL, RtAttributes.Channel.LOCAL_MEM);
+          AttributesMap rOpLinkAttr = new AttributesMap();
+          rOpLinkAttr.put(Attributes.Key.CommunicationPattern, convertEdgeTypeToROpLinkAttr(edge.getType()));
+          rOpLinkAttr.put(Attributes.Key.EdgeChannel, Attributes.Memory);
 
           String srcId = DAGConverter.convertOperatorId(edge.getSrc().getId());
           RtOpLink rtOpLink = new RtOpLink(rtOperatorMap.get(srcId), rtOperator, rOpLinkAttr);
@@ -132,14 +133,14 @@ public final class ExecutionPlanGeneration {
     return execPlan;
   }
 
-  private static RtAttributes.CommPattern convertEdgeTypeToROpLinkAttr(final Edge.Type edgeType) {
+  private static Attributes convertEdgeTypeToROpLinkAttr(final Edge.Type edgeType) {
     switch (edgeType) {
       case OneToOne:
-        return RtAttributes.CommPattern.ONE_TO_ONE;
+        return Attributes.OneToOne;
       case Broadcast:
-        return RtAttributes.CommPattern.BROADCAST;
+        return Attributes.Broadcast;
       case ScatterGather:
-        return RtAttributes.CommPattern.SCATTER_GATHER;
+        return Attributes.ScatterGather;
       default:
         throw new RuntimeException("no such edge type");
     }
