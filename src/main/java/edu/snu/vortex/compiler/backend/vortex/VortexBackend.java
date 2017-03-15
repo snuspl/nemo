@@ -53,20 +53,20 @@ public final class VortexBackend implements Backend {
       if (!inEdges.isPresent()) { // If Source vertex
         vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
       } else {
-        final List<Edge> inEdgesForStage = inEdges.map(e -> e.stream()
+        final Optional<List<Edge>> inEdgesForStage = inEdges.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
             .filter(edge -> edge.getAttr(Key.EdgeChannel).equals(Memory))
             .filter(edge -> edge.getSrc().getAttr(Key.Placement)
                 .equals(edge.getDst().getAttr(Key.Placement)))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
-            .collect(Collectors.toList()))
-            .orElse(null);
+            .collect(Collectors.toList()));
 
-        if (inEdgesForStage == null || inEdgesForStage.isEmpty()) { // when we cannot connect vertex in other stages
+        if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty()) {
+          // when we cannot connect vertex in other stages
           vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
         } else {
           // We consider the first edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
-          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(inEdgesForStage.get(0).getSrc()));
+          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(inEdgesForStage.get().get(0).getSrc()));
         }
       }
     });
