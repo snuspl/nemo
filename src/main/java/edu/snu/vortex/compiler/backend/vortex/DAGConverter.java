@@ -18,7 +18,7 @@ package edu.snu.vortex.compiler.backend.vortex;
 import edu.snu.vortex.attributes.Attributes;
 import edu.snu.vortex.attributes.AttributesMap;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.Vertex;
 import edu.snu.vortex.runtime.common.*;
 
 /**
@@ -28,12 +28,12 @@ public final class DAGConverter {
   private DAGConverter() {
   }
   /**
-   * Converts an {@link Operator} to its representation in {@link RtOperator}.
-   * @param irOp .
+   * Converts a {@link Vertex} to its representation in {@link RtOperator}.
+   * @param irVertex .
    * @return the {@link RtOperator} representation.
    */
-  public static RtOperator convertOperator(final Operator irOp) {
-    final RtOperator rOp = new RtOperator(irOp.getId(), irOp.getAttributes());
+  public static RtOperator convertOperator(final Vertex irVertex) {
+    final RtOperator rOp = new RtOperator(irVertex.getId(), irVertex.getAttributes());
     return rOp;
   }
 

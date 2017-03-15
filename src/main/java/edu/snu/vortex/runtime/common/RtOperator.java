@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Runtime Operator.
+ * Runtime Vertex.
  * @param <I>
  * @param <O>
  */
