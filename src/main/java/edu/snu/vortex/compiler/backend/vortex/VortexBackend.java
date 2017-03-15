@@ -19,7 +19,7 @@ import edu.snu.vortex.attributes.AttributesMap;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.operator.Operator;
+import edu.snu.vortex.compiler.ir.Vertex;
 import edu.snu.vortex.runtime.common.ExecutionPlan;
 import edu.snu.vortex.runtime.common.RtOpLink;
 import edu.snu.vortex.runtime.common.RtStage;
@@ -35,66 +35,66 @@ import static edu.snu.vortex.attributes.Attributes.*;
  */
 public final class VortexBackend implements Backend {
   private final ExecutionPlan executionPlan;
-  private final HashMap<Operator, Integer> operatorStageNumHashMap;
+  private final HashMap<Vertex, Integer> vertexStageNumHashMap;
   private static AtomicInteger stageNumber = new AtomicInteger(1);
   private final HashMap<Integer, RtStage> stageNumRtStageHashMap;
 
   public VortexBackend() {
     executionPlan = new ExecutionPlan();
-    operatorStageNumHashMap = new HashMap<>();
+    vertexStageNumHashMap = new HashMap<>();
     stageNumRtStageHashMap = new HashMap<>();
   }
 
   public ExecutionPlan compile(final DAG dag) throws Exception {
-    // First, traverse the DAG topologically to tag each operators with a stage number.
-    dag.doTopological(operator -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(operator);
+    // First, traverse the DAG topologically to tag each vertices with a stage number.
+    dag.doTopological(vertex -> {
+      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
 
-      if (!inEdges.isPresent()) { // If Source operator
-        operatorStageNumHashMap.put(operator, stageNumber.getAndIncrement());
+      if (!inEdges.isPresent()) { // If Source vertex
+        vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
       } else {
         final List<Edge> inEdgesForStage = inEdges.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
             .filter(edge -> edge.getAttr(Key.EdgeChannel).equals(Memory))
             .filter(edge -> edge.getSrc().getAttr(Key.Placement)
                 .equals(edge.getDst().getAttr(Key.Placement)))
-            .filter(edge -> operatorStageNumHashMap.containsKey(edge.getSrc()))
+            .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()))
             .orElse(null);
 
-        if (inEdgesForStage == null || inEdgesForStage.isEmpty()) { // when we cannot connect operator in other stages
-          operatorStageNumHashMap.put(operator, stageNumber.getAndIncrement());
+        if (inEdgesForStage == null || inEdgesForStage.isEmpty()) { // when we cannot connect vertex in other stages
+          vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
         } else {
           // We consider the first edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
-          operatorStageNumHashMap.put(operator, operatorStageNumHashMap.get(inEdgesForStage.get(0).getSrc()));
+          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(inEdgesForStage.get(0).getSrc()));
         }
       }
     });
-    // Create new RtStage for each operators with distinct stages, and connect each operators with RtStages.
-    operatorStageNumHashMap.forEach((operator, stageNum) -> {
+    // Create new RtStage for each vertices with distinct stages, and connect each vertices with RtStages.
+    vertexStageNumHashMap.forEach((vertex, stageNum) -> {
       if (!stageNumRtStageHashMap.containsKey(stageNum)) {
         final AttributesMap rtStageAttributes = new AttributesMap();
-        rtStageAttributes.put(Key.Placement, operator.getAttr(Key.Placement));
-        rtStageAttributes.put(IntegerKey.Parallelism, operator.getAttr(IntegerKey.Parallelism));
+        rtStageAttributes.put(Key.Placement, vertex.getAttr(Key.Placement));
+        rtStageAttributes.put(IntegerKey.Parallelism, vertex.getAttr(IntegerKey.Parallelism));
 
         final RtStage createdRtStage = new RtStage(rtStageAttributes);
-        createdRtStage.addRtOp(DAGConverter.convertOperator(operator));
+        createdRtStage.addRtOp(DAGConverter.convertVertex(vertex));
 
         stageNumRtStageHashMap.put(stageNum, createdRtStage);
         executionPlan.addRtStage(createdRtStage);
       } else {
         final RtStage destinationRtStage = stageNumRtStageHashMap.get(stageNum);
-        destinationRtStage.addRtOp(DAGConverter.convertOperator(operator));
+        destinationRtStage.addRtOp(DAGConverter.convertVertex(vertex));
       }
     });
-    // Connect each operators together.
-    dag.doTopological(operator -> dag.getInEdgesOf(operator).ifPresent(edges -> edges.forEach(edge -> {
-      final RtStage srcRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(edge.getSrc()));
-      final RtStage dstRtStage = stageNumRtStageHashMap.get(operatorStageNumHashMap.get(operator));
+    // Connect each vertices together.
+    dag.doTopological(vertex -> dag.getInEdgesOf(vertex).ifPresent(edges -> edges.forEach(edge -> {
+      final RtStage srcRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(edge.getSrc()));
+      final RtStage dstRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(vertex));
       final RtOpLink rtOpLink = DAGConverter.convertEdge(edge, srcRtStage, dstRtStage);
 
-      final String srcRtOperatorId = DAGConverter.convertOperatorId(edge.getSrc().getId());
-      final String dstRtOperatorId = DAGConverter.convertOperatorId(operator.getId());
+      final String srcRtOperatorId = DAGConverter.convertVertexId(edge.getSrc().getId());
+      final String dstRtOperatorId = DAGConverter.convertVertexId(vertex.getId());
 
       if (srcRtStage.equals(dstRtStage)) {
         srcRtStage.connectRtOps(srcRtOperatorId, dstRtOperatorId, rtOpLink);

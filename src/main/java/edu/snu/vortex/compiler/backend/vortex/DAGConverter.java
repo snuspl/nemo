@@ -32,13 +32,13 @@ public final class DAGConverter {
    * @param irVertex .
    * @return the {@link RtOperator} representation.
    */
-  public static RtOperator convertOperator(final Vertex irVertex) {
+  public static RtOperator convertVertex(final Vertex irVertex) {
     final RtOperator rOp = new RtOperator(irVertex.getId(), irVertex.getAttributes());
     return rOp;
   }
 
-  public static String convertOperatorId(final String irOpId) {
-    return IdGenerator.generateRtOpId(irOpId);
+  public static String convertVertexId(final String irVertexId) {
+    return IdGenerator.generateRtOpId(irVertexId);
   }
 
   static RtOpLink convertEdge(final Edge edge, final RtStage srcRtStage, final RtStage dstRtStage) {
@@ -57,8 +57,8 @@ public final class DAGConverter {
         throw new RuntimeException("No such edge type for edge: " + edge);
     }
 
-    final String srcRtOperatorId = convertOperatorId(edge.getSrc().getId());
-    final String dstRtOperatorId = convertOperatorId(edge.getDst().getId());
+    final String srcRtOperatorId = convertVertexId(edge.getSrc().getId());
+    final String dstRtOperatorId = convertVertexId(edge.getDst().getId());
 
     final RtOpLink rtOpLink = new RtOpLink(srcRtStage.getRtOpById(srcRtOperatorId),
         dstRtStage.getRtOpById(dstRtOperatorId),

@@ -20,7 +20,7 @@ package edu.snu.vortex.attributes;
  */
 public enum Attributes {
   /**
-   * Operator attributes.
+   * Vertex attributes.
    */
   Transient(Key.Placement),
   Reserved(Key.Placement),
