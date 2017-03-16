@@ -21,15 +21,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * ID Generator.
  */
-public final class IdGenerator {
+public final class RuntimeIdGenerator {
+  private static AtomicInteger executionPlanIdGenerator = new AtomicInteger(1);
   private static AtomicInteger runtimeStageIdGenerator = new AtomicInteger(1);
-  private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
 
-  private IdGenerator() {
+  private RuntimeIdGenerator() {
   }
 
   /**
-   * Generates the ID for {@link RuntimeVertex}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.ExecutionPlan}.
+   * @return the generated ID
+   */
+  public static String generateExecutionPlanId() {
+    return "ExecPlan-" + executionPlanIdGenerator.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RuntimeVertex}.
    * @param irVertexId .
    * @return the generated ID
    */
@@ -38,7 +46,7 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RuntimeEdge}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RuntimeEdge}.
    * @param irEdgeId .
    * @return the generated ID
    */
@@ -47,28 +55,10 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtOpLink}.
-   * @return the generated ID
-   */
-  public static String generateRtOpLinkId() {
-    return "RtOpLink-" + rtOpLinkIdGenerator.getAndIncrement();
-  }
-
-  /**
-   * Generates the ID for {@link RuntimeStage}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.execplan.RuntimeStage}.
    * @return the generated ID
    */
   public static String generateRuntimeStageId() {
     return "RuntimeStage-" + runtimeStageIdGenerator.getAndIncrement();
-  }
-
-  /**
-   * Generates the ID for {@link RtStageLink}, generating a unique ID for a pair of {@link RuntimeStage}.
-   * @param srcRStageId .
-   * @param dstRStageId .
-   * @return the generated ID
-   */
-  public static String generateRtStageLinkId(final String srcRStageId, final String dstRStageId) {
-    return "RtStageLink-" + srcRStageId + '_' + dstRStageId;
   }
 }
