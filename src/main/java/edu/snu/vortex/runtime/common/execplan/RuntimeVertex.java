@@ -13,22 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
+
+import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.runtime.common.RuntimeAttributes;
+import edu.snu.vortex.runtime.common.task.Task;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Runtime Vertex.
  */
 public abstract class RuntimeVertex implements Serializable {
   private final String runtimeVertexId;
+  private final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> vertexAttributes;
 
-  public RuntimeVertex(final String irVertexId) {
+  public RuntimeVertex(final String irVertexId,
+                       final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> vertexAttributes) {
     this.runtimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(irVertexId);
+    this.vertexAttributes = vertexAttributes;
   }
 
-  public String getRuntimeVertexId() {
+  public final String getId() {
     return runtimeVertexId;
   }
 

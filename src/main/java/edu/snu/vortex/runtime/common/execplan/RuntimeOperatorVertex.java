@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.compiler.ir.OperatorVertex;
+import edu.snu.vortex.runtime.common.RuntimeAttributes;
+import edu.snu.vortex.runtime.common.task.OperatorTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Runtime Operator Vertex.
@@ -27,8 +30,9 @@ public final class RuntimeOperatorVertex extends RuntimeVertex {
   private final List<OperatorTask> taskList;
   private final OperatorVertex operatorVertex;
 
-  public RuntimeOperatorVertex(final OperatorVertex operatorVertex) {
-    super(operatorVertex.getId());
+  public RuntimeOperatorVertex(final OperatorVertex operatorVertex,
+                               final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> vertexAttributes) {
+    super(operatorVertex.getId(), vertexAttributes);
     this.operatorVertex = operatorVertex;
     this.taskList = new ArrayList<>();
   }

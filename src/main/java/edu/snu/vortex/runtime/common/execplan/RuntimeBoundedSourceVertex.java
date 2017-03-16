@@ -15,31 +15,34 @@
  */
 package edu.snu.vortex.runtime.common.execplan;
 
-import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.runtime.common.task.OperatorTask;
+import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
+import edu.snu.vortex.runtime.common.RuntimeAttributes;
+import edu.snu.vortex.runtime.common.task.BoundedSourceTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Runtime Operator Vertex.
+ * Runtime Bounded Source Vertex.
  */
-public final class RuntimeOperatorVertex extends RuntimeVertex {
-  private final List<OperatorTask> taskList;
-  private final OperatorVertex operatorVertex;
+public final class RuntimeBoundedSourceVertex extends RuntimeVertex {
+  private final List<BoundedSourceTask> taskList;
+  private final BoundedSourceVertex boundedSourceVertex;
 
-  public RuntimeOperatorVertex(final OperatorVertex operatorVertex) {
-    super(operatorVertex.getId());
-    this.operatorVertex = operatorVertex;
+  public RuntimeBoundedSourceVertex(final BoundedSourceVertex boundedSourceVertex,
+                                    final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> vertexAttributes) {
+    super(boundedSourceVertex.getId(), vertexAttributes);
+    this.boundedSourceVertex = boundedSourceVertex;
     this.taskList = new ArrayList<>();
   }
 
   @Override
-  public List<OperatorTask> getTaskList() {
+  public List<BoundedSourceTask> getTaskList() {
     return null;
   }
 
-  public OperatorVertex getOperatorVertex() {
-    return operatorVertex;
+  public BoundedSourceVertex getBoundedSourceVertex() {
+    return boundedSourceVertex;
   }
 }
