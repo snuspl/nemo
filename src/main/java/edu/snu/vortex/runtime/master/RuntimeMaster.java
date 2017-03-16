@@ -30,9 +30,9 @@ public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
 
   /**
-   * A list of {@link RtStage} to be executed in this plan, sorted in topological order.
+   * A list of {@link RuntimeStage} to be executed in this plan, sorted in topological order.
    */
-  private final DAG<RtStage> rtStages;
+  private final DAG<RuntimeStage> rtStages;
 
   /**
    * Map of <ID, {@link RtStageLink}> connecting the {@link ExecutionPlan#rtStages} contained in this plan.
@@ -48,50 +48,50 @@ public final class ExecutionPlan {
   }
 
   /**
-   * Adds a {@link RtStage} to this plan.
-   * @param rtStage to be added
+   * Adds a {@link RuntimeStage} to this plan.
+   * @param runtimeStage to be added
    */
-  public void addRtStage(final RtStage rtStage) {
-    if (!rtStages.addVertex(rtStage)) {
-      LOG.log(Level.FINE, "RtStage {0} already exists", rtStage.getId());
+  public void addRtStage(final RuntimeStage runtimeStage) {
+    if (!rtStages.addVertex(runtimeStage)) {
+      LOG.log(Level.FINE, "RuntimeStage {0} already exists", runtimeStage.getId());
     }
   }
 
   /**
-   * Connects two {@link RtStage} in the plan.
+   * Connects two {@link RuntimeStage} in the plan.
    * There can be multiple {@link RtOpLink} in a unique {@link RtStageLink} connecting the two stages.
-   * @param srcRtStage .
-   * @param dstRtStage .
-   * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRtStage} and {@param dstRtStage}.
+   * @param srcRuntimeStage .
+   * @param dstRuntimeStage .
+   * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRuntimeStage} and {@param dstRuntimeStage}.
    */
-  public void connectRtStages(final RtStage srcRtStage,
-                              final RtStage dstRtStage,
+  public void connectRtStages(final RuntimeStage srcRuntimeStage,
+                              final RuntimeStage dstRuntimeStage,
                               final RtOpLink rtOpLink) {
     try {
-      rtStages.addEdge(srcRtStage, dstRtStage);
+      rtStages.addEdge(srcRuntimeStage, dstRuntimeStage);
     } catch (final NoSuchElementException e) {
-      throw new NoSuchRtStageException("The requested RtStage does not exist in this ExecutionPlan");
+      throw new NoSuchRtStageException("The requested RuntimeStage does not exist in this ExecutionPlan");
     }
 
-    final String rtStageLinkId = IdGenerator.generateRtStageLinkId(srcRtStage.getId(), dstRtStage.getId());
+    final String rtStageLinkId = IdGenerator.generateRtStageLinkId(srcRuntimeStage.getId(), dstRuntimeStage.getId());
     RtStageLink rtStageLink = rtStageLinks.get(rtStageLinkId);
 
     if (rtStageLink == null) {
-      rtStageLink = new RtStageLink(rtStageLinkId, srcRtStage, dstRtStage);
+      rtStageLink = new RtStageLink(rtStageLinkId, srcRuntimeStage, dstRuntimeStage);
       rtStageLinks.put(rtStageLinkId, rtStageLink);
     }
     rtStageLink.addRtOpLink(rtOpLink);
 
-    srcRtStage.addOutputRtStageLink(rtStageLink);
-    dstRtStage.addInputRtStageLink(rtStageLink);
+    srcRuntimeStage.addOutputRtStageLink(rtStageLink);
+    dstRuntimeStage.addInputRtStageLink(rtStageLink);
   }
 
-  public Set<RtStage> getNextRtStagesToExecute() {
+  public Set<RuntimeStage> getNextRtStagesToExecute() {
     return rtStages.getRootVertices();
   }
 
-  public boolean removeCompleteStage(final RtStage rtStageToRemove) {
-    return rtStages.removeVertex(rtStageToRemove);
+  public boolean removeCompleteStage(final RuntimeStage runtimeStageToRemove) {
+    return rtStages.removeVertex(runtimeStageToRemove);
   }
 
   public Map<String, RtStageLink> getRtStageLinks() {

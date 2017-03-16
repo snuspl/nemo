@@ -22,19 +22,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ID Generator.
  */
 public final class IdGenerator {
-  private static AtomicInteger rtStageIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger runtimeStageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger rtOpLinkIdGenerator = new AtomicInteger(1);
 
   private IdGenerator() {
   }
 
   /**
-   * Generates the ID for {@link RtOperator}.
-   * @param irOpId .
+   * Generates the ID for {@link RuntimeVertex}.
+   * @param irVertexId .
    * @return the generated ID
    */
-  public static String generateRtOpId(final String irOpId) {
-    return "ROp-" + irOpId;
+  public static String generateRuntimeVertexId(final String irVertexId) {
+    return "RVertex-" + irVertexId;
+  }
+
+  /**
+   * Generates the ID for {@link RuntimeEdge}.
+   * @param irEdgeId .
+   * @return the generated ID
+   */
+  public static String generateRuntimeEdgeId(final String irEdgeId) {
+    return "REdge-" + irEdgeId;
   }
 
   /**
@@ -46,15 +55,15 @@ public final class IdGenerator {
   }
 
   /**
-   * Generates the ID for {@link RtStage}.
+   * Generates the ID for {@link RuntimeStage}.
    * @return the generated ID
    */
-  public static String generateRtStageId() {
-    return "RtStage-" + rtStageIdGenerator.getAndIncrement();
+  public static String generateRuntimeStageId() {
+    return "RuntimeStage-" + runtimeStageIdGenerator.getAndIncrement();
   }
 
   /**
-   * Generates the ID for {@link RtStageLink}, generating a unique ID for a pair of {@link RtStage}.
+   * Generates the ID for {@link RtStageLink}, generating a unique ID for a pair of {@link RuntimeStage}.
    * @param srcRStageId .
    * @param dstRStageId .
    * @return the generated ID

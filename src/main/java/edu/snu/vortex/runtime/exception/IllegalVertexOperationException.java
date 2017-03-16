@@ -16,14 +16,14 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * No such rt stage exception.
+ * UnsupportedVertexException.
  */
-public class NoSuchRtStageException extends RuntimeException {
+public class UnsupportedVertexException extends RuntimeException {
   /**
-   * No such rt stage exception.
+   * UnsupportedVertexException.
    * @param message message
    */
-  public NoSuchRtStageException(final String message) {
+  public UnsupportedVertexException(final String message) {
     super(message);
   }
 }

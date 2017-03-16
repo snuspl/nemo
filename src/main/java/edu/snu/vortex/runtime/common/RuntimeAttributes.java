@@ -20,7 +20,7 @@ package edu.snu.vortex.runtime.common;
  */
 public final class RtAttributes {
   /**
-   * Set of attributes applicable to {@link RtStage}.
+   * Set of attributes applicable to {@link RuntimeStage}.
    */
   public enum RtStageAttribute { PARALLELISM }
 
