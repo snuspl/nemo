@@ -13,93 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.exception.NoSuchRtStageException;
-import edu.snu.vortex.utils.DAG;
-import edu.snu.vortex.utils.DAGImpl;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
 
-import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Execution Plan.
+ * Runtime Master.
  */
-public final class ExecutionPlan {
-  private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
+public final class RuntimeMaster {
+  private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
   /**
-   * A list of {@link RuntimeStage} to be executed in this plan, sorted in topological order.
+   * Submits the {@link ExecutionPlan} to Runtime.
+   * @param executionPlan to execute.
    */
-  private final DAG<RuntimeStage> rtStages;
-
-  /**
-   * Map of <ID, {@link RtStageLink}> connecting the {@link ExecutionPlan#rtStages} contained in this plan.
-   */
-  private final Map<String, RtStageLink> rtStageLinks;
-
-  /**
-   * An execution plan for Vortex runtime.
-   */
-  public ExecutionPlan() {
-    this.rtStages = new DAGImpl<>();
-    this.rtStageLinks = new HashMap<>();
-  }
-
-  /**
-   * Adds a {@link RuntimeStage} to this plan.
-   * @param runtimeStage to be added
-   */
-  public void addRtStage(final RuntimeStage runtimeStage) {
-    if (!rtStages.addVertex(runtimeStage)) {
-      LOG.log(Level.FINE, "RuntimeStage {0} already exists", runtimeStage.getId());
-    }
-  }
-
-  /**
-   * Connects two {@link RuntimeStage} in the plan.
-   * There can be multiple {@link RtOpLink} in a unique {@link RtStageLink} connecting the two stages.
-   * @param srcRuntimeStage .
-   * @param dstRuntimeStage .
-   * @param rtOpLink that connects two {@link RtOperator} each in {@param srcRuntimeStage} and {@param dstRuntimeStage}.
-   */
-  public void connectRtStages(final RuntimeStage srcRuntimeStage,
-                              final RuntimeStage dstRuntimeStage,
-                              final RtOpLink rtOpLink) {
-    try {
-      rtStages.addEdge(srcRuntimeStage, dstRuntimeStage);
-    } catch (final NoSuchElementException e) {
-      throw new NoSuchRtStageException("The requested RuntimeStage does not exist in this ExecutionPlan");
-    }
-
-    final String rtStageLinkId = IdGenerator.generateRtStageLinkId(srcRuntimeStage.getId(), dstRuntimeStage.getId());
-    RtStageLink rtStageLink = rtStageLinks.get(rtStageLinkId);
-
-    if (rtStageLink == null) {
-      rtStageLink = new RtStageLink(rtStageLinkId, srcRuntimeStage, dstRuntimeStage);
-      rtStageLinks.put(rtStageLinkId, rtStageLink);
-    }
-    rtStageLink.addRtOpLink(rtOpLink);
-
-    srcRuntimeStage.addOutputRtStageLink(rtStageLink);
-    dstRuntimeStage.addInputRtStageLink(rtStageLink);
-  }
-
-  public Set<RuntimeStage> getNextRtStagesToExecute() {
-    return rtStages.getRootVertices();
-  }
-
-  public boolean removeCompleteStage(final RuntimeStage runtimeStageToRemove) {
-    return rtStages.removeVertex(runtimeStageToRemove);
-  }
-
-  public Map<String, RtStageLink> getRtStageLinks() {
-    return rtStageLinks;
-  }
-
-  @Override
-  public String toString() {
-    return "RtStages: " + rtStages + " / RtStageLinks: " + rtStageLinks;
+  public void execute(final ExecutionPlan executionPlan) {
   }
 }
