@@ -16,14 +16,14 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * IllegalVertexOperationException.
+ * UnsupportedAttributeException.
  */
-public class IllegalEdgeOperationException extends RuntimeException {
+public class UnsupportedAttributeException extends RuntimeException {
   /**
-   * IllegalVertexOperationException.
+   * UnsupportedAttributeException.
    * @param message message
    */
-  public IllegalEdgeOperationException(final String message) {
+  public UnsupportedAttributeException(final String message) {
     super(message);
   }
 }
