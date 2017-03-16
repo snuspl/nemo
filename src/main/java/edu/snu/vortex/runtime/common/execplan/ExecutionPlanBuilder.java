@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.runtime.exception.UnsupportedVertexException;
+import edu.snu.vortex.compiler.ir.util.AttributesMap;
+import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.runtime.common.RuntimeAttributes;
+import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
+import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * ExecutionPlanBuilder.
  */
 public final class ExecutionPlanBuilder {
   private final List<RuntimeStage> runtimeStages;
+  private final Map<String, RuntimeStage> vertexIdToRuntimeStageMap;
   private RuntimeStage currentStage;
 
   public ExecutionPlanBuilder() {
     this.runtimeStages = new LinkedList<>();
+    this.vertexIdToRuntimeStageMap = new HashMap<>();
   }
 
   /**
@@ -41,78 +44,142 @@ public final class ExecutionPlanBuilder {
    * @param vertex to add.
    */
   public void addVertex(final Vertex vertex) {
+    final RuntimeVertex newVertex;
     if (vertex instanceof BoundedSourceVertex) {
-
+      newVertex = new RuntimeBoundedSourceVertex((BoundedSourceVertex) vertex,
+          convertVertexAttributes(vertex.getAttributes()));
     } else if (vertex instanceof OperatorVertex) {
-
+      newVertex = new RuntimeOperatorVertex((OperatorVertex) vertex, convertVertexAttributes(vertex.getAttributes()));
     } else {
-      throw new UnsupportedVertexException("Supported types: BoundedSourceVertex, OperatorVertex");
+      throw new IllegalVertexOperationException("Supported types: BoundedSourceVertex, OperatorVertex");
     }
+    currentStage.addRuntimeVertex(newVertex);
+    vertexIdToRuntimeStageMap.put(newVertex.getId(), currentStage);
   }
 
-  public void connectVertices(final Edge edge) {
+  // TODO #000: Must clean up IR and Runtime attributes.
+  private Map<RuntimeAttributes.RuntimeVertexAttribute, Object> convertVertexAttributes(
+      final AttributesMap irAttributes) {
+    final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> runtimeVertexAttributes = new HashMap<>();
 
+    irAttributes.forEach(((irAttributeKey, irAttributeVal) -> {
+      switch (irAttributeKey) {
+      case Parallelism:
+        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, 0);
+        break;
+      case Placement:
+        final Object runtimeAttributeVal;
+        switch (irAttributeVal) {
+        case Transient:
+          runtimeAttributeVal = RuntimeAttributes.ResourceType.TRANSIENT;
+          break;
+        case Reserved:
+          runtimeAttributeVal = RuntimeAttributes.ResourceType.RESERVED;
+          break;
+        case Compute:
+          runtimeAttributeVal = RuntimeAttributes.ResourceType.COMPUTE;
+          break;
+        default:
+          throw new UnsupportedAttributeException("this IR attribute is not supported");
+        }
+        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.RESOURCE_TYPE, runtimeAttributeVal);
+      default:
+        throw new UnsupportedAttributeException("this IR attribute is not supported");
+      }
+    }));
+    return runtimeVertexAttributes;
+  }
+
+  // TODO #000: Must clean up IR and Runtime attributes.
+  private Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> convertEdgeAttributes(
+      final AttributesMap irAttributes) {
+    final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> runtimeEdgeAttributes = new HashMap<>();
+
+    irAttributes.forEach(((irAttributeKey, irAttributeVal) -> {
+      switch (irAttributeKey) {
+      case EdgePartitioning:
+        final Object partitioningAttrVal;
+        switch (irAttributeVal) {
+        case Hash:
+          partitioningAttrVal = RuntimeAttributes.Partition.HASH;
+          break;
+        case Range:
+          partitioningAttrVal = RuntimeAttributes.Partition.RANGE;
+          break;
+        default:
+          throw new UnsupportedAttributeException("this IR attribute is not supported");
+        }
+        runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.PARTITION, partitioningAttrVal);
+      case EdgeChannel:
+        final Object channelAttrVal;
+        switch (irAttributeVal) {
+        case Memory:
+          channelAttrVal = RuntimeAttributes.Channel.LOCAL_MEM;
+          break;
+        case TCPPipe:
+          channelAttrVal = RuntimeAttributes.Channel.TCP;
+          break;
+        case File:
+          channelAttrVal = RuntimeAttributes.Channel.FILE;
+          break;
+        case DistributedStorage:
+          channelAttrVal = RuntimeAttributes.Channel.DISTR_STORAGE;
+          break;
+        default:
+          throw new UnsupportedAttributeException("this IR attribute is not supported");
+        }
+        runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.CHANNEL, channelAttrVal);
+      default:
+        throw new UnsupportedAttributeException("this IR attribute is not supported");
+      }
+    }));
+    return runtimeEdgeAttributes;
+  }
+
+  /**
+   * Connects two {@link RuntimeVertex} that belong to the same stage, using the information given in {@link Edge}.
+   * @param edge to use for the connection.
+   */
+  public void connectStageInternalVertices(final Edge edge) {
+    final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
+    final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
+
+    currentStage.connectInternalRuntimeVertices(srcRuntimeVertexId, dstRuntimeVertexId);
+  }
+
+  /**
+   * Connects two {@link RuntimeVertex} that belong to different stages, using the information given in {@link Edge}.
+   * @param edge to use for the connection.
+   */
+  public void connectStageBoundaryVertices(final Edge edge) {
+    final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
+    final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
+
+    final RuntimeEdge newEdge = new RuntimeEdge(edge.getId(), convertEdgeAttributes(edge.getAttributes()),
+        srcRuntimeVertexId, dstRuntimeVertexId);
+    vertexIdToRuntimeStageMap.get(srcRuntimeVertexId).connectRuntimeStages(srcRuntimeVertexId, newEdge);
+    vertexIdToRuntimeStageMap.get(dstRuntimeVertexId).connectRuntimeStages(dstRuntimeVertexId, newEdge);
   }
 
   /**
    * Creates and adds a new {@link RuntimeStage} to the execution plan.
    * The {@link RuntimeStage} that was previously created is finalized.
+   * Stages must be created in the order of execution.
    */
   public void createNewStage() {
     final String runtimeStageId = RuntimeIdGenerator.generateRuntimeStageId();
 
-    if (currentStage.)
-  }
-
-  /**
-   * add an edge for the given vertices.
-   * @param src source vertex.
-   * @param dst destination vertex.
-   * @param type edge type.
-   * @return .
-   * @return
-   */
-  public Edge connectVertices(final Vertex src, final Vertex dst, final Edge.Type type) {
-    final Edge edge = new Edge(type, src, dst);
-    if (this.contains(edge)) {
-      throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
+    if (currentStage.getRuntimeVertices().isEmpty()) {
+      runtimeStages.remove(currentStage);
     }
-    addToEdgeList(id2outEdges, src.getId(), edge);
-    addToEdgeList(id2inEdges, dst.getId(), edge);
-    return edge;
-  }
 
-  private void addToEdgeList(final Map<String, List<Edge>> map, final String id, final Edge edge) {
-    if (map.containsKey(id)) {
-      map.get(id).add(edge);
-    } else {
-      final List<Edge> inEdges = new ArrayList<>(1);
-      inEdges.add(edge);
-      map.put(id, inEdges);
-    }
-  }
-
-  /**
-   * check if the DAGBuilder contains the vertex.
-   * @param vertex .
-   * @return .
-   */
-  public boolean contains(final Vertex vertex) {
-    return vertices.contains(vertex);
-  }
-
-  /**
-   * check if the DAGBuilder contains the edge.
-   * @param edge .
-   * @return .
-   */
-  public boolean contains(final Edge edge) {
-    return (id2inEdges.containsValue(edge) || id2outEdges.containsValue(edge));
+    currentStage = new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId());
+    runtimeStages.add(currentStage);
   }
 
   /**
    * Builds and returns the {@link ExecutionPlan} to be submitted to Runtime.
-   * @return .
+   * @return the execution plan.
    */
   public ExecutionPlan build() {
     return new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), runtimeStages);
