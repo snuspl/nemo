@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common;
+package edu.snu.vortex.runtime.common.task;
 
 import java.io.Serializable;
 
 /**
  * Task.
  */
-public abstract class Task implements Serializable{
+public abstract class Task implements Serializable {
   private final String taskId;
 
   public Task(final String taskId) {

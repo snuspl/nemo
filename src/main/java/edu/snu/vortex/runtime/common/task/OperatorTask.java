@@ -16,10 +16,10 @@
 package edu.snu.vortex.runtime.common.task;
 
 /**
- * BoundedSourceTask.
+ * OperatorTask.
  */
-public final class BoundedSourceTask extends Task {
-  public BoundedSourceTask(final String taskId) {
+public final class OperatorTask extends Task {
+  public OperatorTask(final String taskId) {
     super(taskId);
   }
 }
