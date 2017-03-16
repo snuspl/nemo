@@ -15,56 +15,9 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
-import edu.snu.vortex.compiler.ir.Attributes;
-import edu.snu.vortex.compiler.ir.Vertex;
-import edu.snu.vortex.compiler.ir.util.AttributesMap;
-import edu.snu.vortex.runtime.common.IdGenerator;
-import edu.snu.vortex.runtime.common.RtAttributes;
-import edu.snu.vortex.runtime.common.RtOperator;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Vertex converter.
  */
 public final class VertexConverter {
-  /**
-   * Converts an {@link Vertex} to its representation in {@link RtOperator}.
-   * @param irVertex .
-   * @return the {@link RtOperator} representation.
-   */
-  public RtOperator convert(final Vertex irVertex) {
-    final AttributesMap irOpAttributes = irVertex.getAttributes();
-
-    final Map<RtAttributes.RtOpAttribute, Object> rOpAttributes = new HashMap<>();
-    irOpAttributes.forEach((k, v) -> {
-      switch (k) {
-      case Placement:
-        if (v == Attributes.Transient) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.TRANSIENT);
-        } else if (v == Attributes.Reserved) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.RESERVED);
-        } else if (v == Attributes.Compute) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.RESOURCE_TYPE, RtAttributes.ResourceType.COMPUTE);
-        }
-        break;
-      case EdgePartitioning:
-        if (v == Attributes.Hash) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.HASH);
-        } else if (v == Attributes.Range) {
-          rOpAttributes.put(RtAttributes.RtOpAttribute.PARTITION, RtAttributes.Partition.RANGE);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported operator attribute");
-      }
-    });
-    final RtOperator rOp = new RtOperator(irVertex.getId(), rOpAttributes);
-    return rOp;
-  }
-
-  public String convertId(final String irOpId) {
-    return IdGenerator.generateRtOpId(irOpId);
-  }
+  // TODO #000: Reconsider the use of this class after #79.
 }
