@@ -29,13 +29,13 @@ import java.util.*;
  * ExecutionPlanBuilder.
  */
 public final class ExecutionPlanBuilder {
-  private final List<RuntimeStage> runtimeStages;
-  private final Map<String, RuntimeStage> vertexIdToRuntimeStageMap;
-  private RuntimeStage currentStage;
+  private final List<RuntimeStageBuilder> runtimeStageBuilderList;
+  private final Map<String, RuntimeStageBuilder> vertexIdToRuntimeStageBuilderMap;
+  private RuntimeStageBuilder stageBuilder;
 
   public ExecutionPlanBuilder() {
-    this.runtimeStages = new LinkedList<>();
-    this.vertexIdToRuntimeStageMap = new HashMap<>();
+    this.runtimeStageBuilderList = new LinkedList<>();
+    this.vertexIdToRuntimeStageBuilderMap = new HashMap<>();
   }
 
   /**
@@ -45,6 +45,8 @@ public final class ExecutionPlanBuilder {
    */
   public void addVertex(final Vertex vertex) {
     final RuntimeVertex newVertex;
+
+    // TODO #100: Add Vertex Type in IR
     if (vertex instanceof BoundedSourceVertex) {
       newVertex = new RuntimeBoundedSourceVertex((BoundedSourceVertex) vertex,
           convertVertexAttributes(vertex.getAttributes()));
@@ -53,8 +55,8 @@ public final class ExecutionPlanBuilder {
     } else {
       throw new IllegalVertexOperationException("Supported types: BoundedSourceVertex, OperatorVertex");
     }
-    currentStage.addRuntimeVertex(newVertex);
-    vertexIdToRuntimeStageMap.put(newVertex.getId(), currentStage);
+    stageBuilder.addRuntimeVertex(newVertex);
+    vertexIdToRuntimeStageBuilderMap.putIfAbsent(newVertex.getId(), stageBuilder);
   }
 
   // TODO #000: Must clean up IR and Runtime attributes.
@@ -144,7 +146,7 @@ public final class ExecutionPlanBuilder {
     final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
     final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
 
-    currentStage.connectInternalRuntimeVertices(srcRuntimeVertexId, dstRuntimeVertexId);
+    stageBuilder.connectInternalRuntimeVertices(srcRuntimeVertexId, dstRuntimeVertexId);
   }
 
   /**
@@ -157,8 +159,8 @@ public final class ExecutionPlanBuilder {
 
     final RuntimeEdge newEdge = new RuntimeEdge(edge.getId(), convertEdgeAttributes(edge.getAttributes()),
         srcRuntimeVertexId, dstRuntimeVertexId);
-    vertexIdToRuntimeStageMap.get(srcRuntimeVertexId).connectRuntimeStages(srcRuntimeVertexId, newEdge);
-    vertexIdToRuntimeStageMap.get(dstRuntimeVertexId).connectRuntimeStages(dstRuntimeVertexId, newEdge);
+    vertexIdToRuntimeStageBuilderMap.get(srcRuntimeVertexId).connectRuntimeStages(srcRuntimeVertexId, newEdge);
+    vertexIdToRuntimeStageBuilderMap.get(dstRuntimeVertexId).connectRuntimeStages(dstRuntimeVertexId, newEdge);
   }
 
   /**
@@ -167,14 +169,10 @@ public final class ExecutionPlanBuilder {
    * Stages must be created in the order of execution.
    */
   public void createNewStage() {
-    final String runtimeStageId = RuntimeIdGenerator.generateRuntimeStageId();
-
-    if (currentStage.getRuntimeVertices().isEmpty()) {
-      runtimeStages.remove(currentStage);
+    if (!stageBuilder.isEmpty()) {
+      runtimeStageBuilderList.add(stageBuilder);
     }
-
-    currentStage = new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId());
-    runtimeStages.add(currentStage);
+    stageBuilder = new RuntimeStageBuilder();
   }
 
   /**
@@ -182,6 +180,6 @@ public final class ExecutionPlanBuilder {
    * @return the execution plan.
    */
   public ExecutionPlan build() {
-    return new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), runtimeStages);
+    return new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), runtimeStageBuilderList);
   }
 }

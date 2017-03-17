@@ -15,9 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.execplan;
 
-import edu.snu.vortex.runtime.exception.IllegalEdgeOperationException;
-import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
-
 import java.util.*;
 
 /**
@@ -31,51 +28,42 @@ public final class RuntimeStage {
   private final Map<String, Set<RuntimeEdge>> stageIncomingEdges;
   private final Map<String, Set<RuntimeEdge>> stageOutgoingEdges;
 
-  public RuntimeStage(final String stageId) {
+  public RuntimeStage(final String stageId,
+                      final List<RuntimeVertex> runtimeVertices,
+                      final Map<String, Set<String>> internalInEdges,
+                      final Map<String, Set<String>> internalOutEdges,
+                      final Map<String, Set<RuntimeEdge>> stageIncomingEdges,
+                      final Map<String, Set<RuntimeEdge>> stageOutgoingEdges) {
     this.stageId = stageId;
-    this.runtimeVertices = new LinkedList<>();
-    this.internalInEdges = new HashMap<>();
-    this.internalOutEdges = new HashMap<>();
-    this.stageIncomingEdges = new HashMap<>();
-    this.stageOutgoingEdges = new HashMap<>();
+    this.runtimeVertices = runtimeVertices;
+    this.internalInEdges = internalInEdges;
+    this.internalOutEdges = internalOutEdges;
+    this.stageIncomingEdges = stageIncomingEdges;
+    this.stageOutgoingEdges = stageOutgoingEdges;
   }
 
-  public void addRuntimeVertex(final RuntimeVertex vertex) {
-    runtimeVertices.add(vertex);
-  }
-
-  public void connectInternalRuntimeVertices(final String srcVertexId,
-                                             final String dstVertexId) {
-    if (runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(srcVertexId)) &&
-        runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(dstVertexId))) {
-      internalInEdges.putIfAbsent(dstVertexId, new HashSet<>());
-      internalInEdges.get(dstVertexId).add(srcVertexId);
-      internalOutEdges.putIfAbsent(srcVertexId, new HashSet<>());
-      internalOutEdges.get(srcVertexId).add(dstVertexId);
-    } else {
-      throw new IllegalVertexOperationException("either src or dst vertex is not a part of this stage");
-    }
-  }
-
-  public void connectRuntimeStages(final String endpointRuntimeVertexId,
-                                   final RuntimeEdge connectingEdge) {
-    if (runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(endpointRuntimeVertexId))) {
-      if (connectingEdge.getSrcRuntimeVertexId().equals(endpointRuntimeVertexId)) {
-        stageOutgoingEdges.putIfAbsent(endpointRuntimeVertexId, new HashSet<>());
-        stageOutgoingEdges.get(endpointRuntimeVertexId).add(connectingEdge);
-      } else if (connectingEdge.getDstRuntimeVertexId().equals(endpointRuntimeVertexId)) {
-        stageIncomingEdges.putIfAbsent(endpointRuntimeVertexId, new HashSet<>());
-        stageIncomingEdges.get(endpointRuntimeVertexId).add(connectingEdge);
-      } else {
-        throw new IllegalEdgeOperationException("this connecting edge is not applicable to this stage");
-      }
-    } else {
-      throw new IllegalVertexOperationException("the endpoint vertex is not a part of this stage");
-    }
+  public String getStageId() {
+    return stageId;
   }
 
   public List<RuntimeVertex> getRuntimeVertices() {
     return runtimeVertices;
+  }
+
+  public Map<String, Set<String>> getInternalInEdges() {
+    return internalInEdges;
+  }
+
+  public Map<String, Set<String>> getInternalOutEdges() {
+    return internalOutEdges;
+  }
+
+  public Map<String, Set<RuntimeEdge>> getStageIncomingEdges() {
+    return stageIncomingEdges;
+  }
+
+  public Map<String, Set<RuntimeEdge>> getStageOutgoingEdges() {
+    return stageOutgoingEdges;
   }
 
   @Override
