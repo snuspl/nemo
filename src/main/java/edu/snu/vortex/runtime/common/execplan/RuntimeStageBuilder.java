@@ -81,8 +81,8 @@ public final class RuntimeStageBuilder {
   }
 
   /**
-   * Builds and returns the {@link ExecutionPlan} to be submitted to Runtime.
-   * @return the execution plan.
+   * Builds and returns the {@link RuntimeStage}.
+   * @return the runtime stage.
    */
   public RuntimeStage build() {
     return new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId(),
