@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Execution Plan.
+ * Represents a job.
+ * Each execution plan consists of a list of {@link RuntimeStage} to execute, in a topological order.
+ * An execution plan is submitted to {@link edu.snu.vortex.runtime.master.RuntimeMaster} once created.
  */
 public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());

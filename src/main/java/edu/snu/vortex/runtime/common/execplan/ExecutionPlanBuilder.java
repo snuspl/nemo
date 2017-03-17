@@ -33,14 +33,17 @@ public final class ExecutionPlanBuilder {
   private final Map<String, RuntimeStageBuilder> vertexIdToRuntimeStageBuilderMap;
   private RuntimeStageBuilder stageBuilder;
 
+  /**
+   * Builds an {@link ExecutionPlan}.
+   */
   public ExecutionPlanBuilder() {
     this.runtimeStageBuilderList = new LinkedList<>();
     this.vertexIdToRuntimeStageBuilderMap = new HashMap<>();
   }
 
   /**
-   * Adds a {@link Vertex} to the execution plan.
-   * The vertices must be added in the order of execution of the plan.
+   * Adds a {@link Vertex} to the execution plan, by adding it to the stage currently being built.
+   * The vertices must be added in the order of execution.
    * @param vertex to add.
    */
   public void addVertex(final Vertex vertex) {
@@ -59,6 +62,11 @@ public final class ExecutionPlanBuilder {
     vertexIdToRuntimeStageBuilderMap.putIfAbsent(newVertex.getId(), stageBuilder);
   }
 
+  /**
+   * Converts IR's Vertex Attributes to Runtime's attributes.
+   * @param irAttributes
+   * @return a map of Runtime Vertex attributes.
+   */
   // TODO #000: Must clean up IR and Runtime attributes.
   private Map<RuntimeAttributes.RuntimeVertexAttribute, Object> convertVertexAttributes(
       final AttributesMap irAttributes) {
@@ -92,6 +100,11 @@ public final class ExecutionPlanBuilder {
     return runtimeVertexAttributes;
   }
 
+  /**
+   * Converts IR's Edge Attributes to Runtime's attributes.
+   * @param irAttributes
+   * @return a map of Runtime Edge attributes.
+   */
   // TODO #000: Must clean up IR and Runtime attributes.
   private Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> convertEdgeAttributes(
       final AttributesMap irAttributes) {

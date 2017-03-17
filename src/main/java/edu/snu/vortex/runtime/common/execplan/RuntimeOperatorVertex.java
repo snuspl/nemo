@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Runtime Operator Vertex.
+ * Represents an operator.
  */
 public final class RuntimeOperatorVertex extends RuntimeVertex {
   private final List<OperatorTask> taskList;

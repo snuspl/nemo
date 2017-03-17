@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Runtime Bounded Source Vertex.
+ * Represents a source vertex for batch execution.
  */
 public final class RuntimeBoundedSourceVertex extends RuntimeVertex {
   private final List<BoundedSourceTask> taskList;

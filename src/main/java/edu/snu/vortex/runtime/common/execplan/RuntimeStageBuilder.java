@@ -31,6 +31,9 @@ public final class RuntimeStageBuilder {
   private final Map<String, Set<RuntimeEdge>> stageIncomingEdges;
   private final Map<String, Set<RuntimeEdge>> stageOutgoingEdges;
 
+  /**
+   * Builds a {@link RuntimeStage}.
+   */
   public RuntimeStageBuilder() {
     this.runtimeVertices = new LinkedList<>();
     this.internalInEdges = new HashMap<>();
@@ -39,6 +42,10 @@ public final class RuntimeStageBuilder {
     this.stageOutgoingEdges = new HashMap<>();
   }
 
+  /**
+   * Adds a {@link RuntimeVertex} to this stage.
+   * @param vertex to add.
+   */
   public void addRuntimeVertex(final RuntimeVertex vertex) {
     if (runtimeVertices.contains(vertex)) {
       throw new IllegalVertexOperationException("this vertex already exists in the current stage.");
@@ -46,6 +53,11 @@ public final class RuntimeStageBuilder {
     runtimeVertices.add(vertex);
   }
 
+  /**
+   * Connects two {@link RuntimeVertex} in this stage.
+   * @param srcVertexId
+   * @param dstVertexId
+   */
   public void connectInternalRuntimeVertices(final String srcVertexId,
                                              final String dstVertexId) {
     if (runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(srcVertexId)) &&
@@ -59,6 +71,10 @@ public final class RuntimeStageBuilder {
     }
   }
 
+  /**
+   * Connects an external {@link RuntimeVertex} to another in this stage, using the {@link RuntimeEdge}.
+   * @param endpointRuntimeVertexId of the {@link RuntimeVertex} in this stage to be connected.
+   */
   public void connectRuntimeStages(final String endpointRuntimeVertexId,
                                    final RuntimeEdge connectingEdge) {
     if (runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(endpointRuntimeVertexId))) {
@@ -76,6 +92,9 @@ public final class RuntimeStageBuilder {
     }
   }
 
+  /**
+   * @return true if this builder contains any valid {@link RuntimeVertex}.
+   */
   public boolean isEmpty() {
     return runtimeVertices.isEmpty();
   }

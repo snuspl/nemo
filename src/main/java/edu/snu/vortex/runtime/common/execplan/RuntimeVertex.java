@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Runtime Vertex.
+ * Represents an operator of a job, tagged with attributes about the operator.
  */
 public abstract class RuntimeVertex implements Serializable {
   private final String runtimeVertexId;

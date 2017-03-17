@@ -18,14 +18,36 @@ package edu.snu.vortex.runtime.common.execplan;
 import java.util.*;
 
 /**
- * Runtime Stage.
+ * Represents a stage in Runtime's execution of a job.
+ * Each stage contains a part of a whole execution plan.
+ * Stage partitioning is determined by {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
  */
 public final class RuntimeStage {
   private final String stageId;
+
+  /**
+   * The list of {@link RuntimeVertex} to execute, sorted in the order of execution.
+   */
   private final List<RuntimeVertex> runtimeVertices;
+
+  /**
+   * {@link RuntimeVertex}'s id to the set of local incoming edges from the vertices in this stage.
+   */
   private final Map<String, Set<String>> internalInEdges;
+
+  /**
+   * {@link RuntimeVertex}'s id to the set of local outgoing edges to the vertices in this stage.
+   */
   private final Map<String, Set<String>> internalOutEdges;
+
+  /**
+   * {@link RuntimeVertex}'s id to the set of remote incoming edges from the vertices in other stages.
+   */
   private final Map<String, Set<RuntimeEdge>> stageIncomingEdges;
+
+  /**
+   * {@link RuntimeVertex}'s id to the set of remote outgoing edges to the vertices in other stages.
+   */
   private final Map<String, Set<RuntimeEdge>> stageOutgoingEdges;
 
   public RuntimeStage(final String stageId,
