@@ -39,7 +39,7 @@ public final class RuntimeBoundedSourceVertex extends RuntimeVertex {
 
   @Override
   public List<BoundedSourceTask> getTaskList() {
-    return null;
+    return taskList;
   }
 
   public BoundedSourceVertex getBoundedSourceVertex() {

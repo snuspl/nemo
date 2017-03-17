@@ -39,7 +39,7 @@ public final class RuntimeOperatorVertex extends RuntimeVertex {
 
   @Override
   public List<OperatorTask> getTaskList() {
-    return null;
+    return taskList;
   }
 
   public OperatorVertex getOperatorVertex() {

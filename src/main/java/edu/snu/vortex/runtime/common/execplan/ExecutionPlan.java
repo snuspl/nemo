@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.execplan;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -25,12 +26,17 @@ public final class ExecutionPlan {
   private static final Logger LOG = Logger.getLogger(ExecutionPlan.class.getName());
 
   private final String id;
+
+  /**
+   * The list of {@link RuntimeStage} to execute, sorted in the order of execution.
+   */
   private final List<RuntimeStage> runtimeStages;
 
   public ExecutionPlan(final String id,
-                       final List<RuntimeStage> runtimeStages) {
+                       final List<RuntimeStageBuilder> runtimeStageBuilderList) {
     this.id = id;
-    this.runtimeStages = runtimeStages;
+    this.runtimeStages = new ArrayList<>(runtimeStageBuilderList.size());
+    runtimeStageBuilderList.forEach(runtimeStageBuilder -> runtimeStages.add(runtimeStageBuilder.build()));
   }
 
   public String getId() {
