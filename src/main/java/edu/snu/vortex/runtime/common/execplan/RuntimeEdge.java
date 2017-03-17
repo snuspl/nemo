@@ -32,10 +32,10 @@ public final class RuntimeEdge {
 
   /**
    * Represents the edge between vertices in an execution plan.
-   * @param irEdgeId
+   * @param irEdgeId id of this edge.
    * @param edgeAttributes to control the data flow on this edge.
-   * @param srcRuntimeVertexId
-   * @param dstRuntimeVertexId
+   * @param srcRuntimeVertexId source vertex.
+   * @param dstRuntimeVertexId destination vertex.
    */
   public RuntimeEdge(final String irEdgeId,
                      final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes,

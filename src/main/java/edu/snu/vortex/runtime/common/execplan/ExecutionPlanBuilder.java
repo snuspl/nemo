@@ -64,7 +64,7 @@ public final class ExecutionPlanBuilder {
 
   /**
    * Converts IR's Vertex Attributes to Runtime's attributes.
-   * @param irAttributes
+   * @param irAttributes attributes to convert.
    * @return a map of Runtime Vertex attributes.
    */
   // TODO #000: Must clean up IR and Runtime attributes.
@@ -102,7 +102,7 @@ public final class ExecutionPlanBuilder {
 
   /**
    * Converts IR's Edge Attributes to Runtime's attributes.
-   * @param irAttributes
+   * @param irAttributes attributes to convert.
    * @return a map of Runtime Edge attributes.
    */
   // TODO #000: Must clean up IR and Runtime attributes.

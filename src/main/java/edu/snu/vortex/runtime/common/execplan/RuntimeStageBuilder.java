@@ -55,8 +55,8 @@ public final class RuntimeStageBuilder {
 
   /**
    * Connects two {@link RuntimeVertex} in this stage.
-   * @param srcVertexId
-   * @param dstVertexId
+   * @param srcVertexId source vertex.
+   * @param dstVertexId destination vertex.
    */
   public void connectInternalRuntimeVertices(final String srcVertexId,
                                              final String dstVertexId) {
@@ -74,6 +74,7 @@ public final class RuntimeStageBuilder {
   /**
    * Connects an external {@link RuntimeVertex} to another in this stage, using the {@link RuntimeEdge}.
    * @param endpointRuntimeVertexId of the {@link RuntimeVertex} in this stage to be connected.
+   * @param connectingEdge the edge from/to the external vertex.
    */
   public void connectRuntimeStages(final String endpointRuntimeVertexId,
                                    final RuntimeEdge connectingEdge) {
