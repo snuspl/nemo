@@ -49,9 +49,7 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
       final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
 
       if (!inEdges.isPresent()) { // If Source vertex
-        vertexStageNumHashMap.put(vertex, stageNumber.get());
-        vertexListForEachStage.add(stageNumber.get(), new ArrayList<>());
-        vertexListForEachStage.get(stageNumber.getAndIncrement()).add(vertex);
+        createNewStage(vertex);
       } else {
         final Optional<List<Edge>> inEdgesForStage = inEdges.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
@@ -62,9 +60,7 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
 
         if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty()) {
           // when we cannot connect vertex in other stages
-          vertexStageNumHashMap.put(vertex, stageNumber.get());
-          vertexListForEachStage.add(stageNumber.get(), new ArrayList<>());
-          vertexListForEachStage.get(stageNumber.getAndIncrement()).add(vertex);
+          createNewStage(vertex);
         } else {
           // We consider the first edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
           final Integer stageNum = vertexStageNumHashMap.get(inEdgesForStage.get().get(0).getSrc());
@@ -82,5 +78,11 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
       });
     });
     return executionPlanBuilder.build();
+  }
+
+  private void createNewStage(final Vertex vertex) {
+    vertexStageNumHashMap.put(vertex, stageNumber.get());
+    vertexListForEachStage.add(stageNumber.get(), new ArrayList<>());
+    vertexListForEachStage.get(stageNumber.getAndIncrement()).add(vertex);
   }
 }
