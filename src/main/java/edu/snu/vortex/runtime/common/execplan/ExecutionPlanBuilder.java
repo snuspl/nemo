@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.util.AttributesMap;
+import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.common.RuntimeAttributes;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
@@ -72,11 +72,8 @@ public final class ExecutionPlanBuilder {
       final AttributesMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> runtimeVertexAttributes = new HashMap<>();
 
-    irAttributes.forEach(((irAttributeKey, irAttributeVal) -> {
+    irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
-      case Parallelism:
-        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, 0);
-        break;
       case Placement:
         final Object runtimeAttributeVal;
         switch (irAttributeVal) {
@@ -97,6 +94,15 @@ public final class ExecutionPlanBuilder {
         throw new UnsupportedAttributeException("this IR attribute is not supported");
       }
     }));
+    irAttributes.forEachIntAttr((irAttributeKey, irAttributeVal) -> {
+      switch (irAttributeKey) {
+        case Parallelism:
+          runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, 0);
+          break;
+        default:
+          throw new UnsupportedAttributeException("this IR attribute is not supported");
+      }
+    });
     return runtimeVertexAttributes;
   }
 
@@ -110,7 +116,7 @@ public final class ExecutionPlanBuilder {
       final AttributesMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> runtimeEdgeAttributes = new HashMap<>();
 
-    irAttributes.forEach(((irAttributeKey, irAttributeVal) -> {
+    irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
       case EdgePartitioning:
         final Object partitioningAttrVal;

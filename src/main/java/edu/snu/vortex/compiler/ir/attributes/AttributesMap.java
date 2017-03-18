@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.attributes;
+package edu.snu.vortex.compiler.ir.attributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +54,11 @@ public final class AttributesMap {
     return attributes.remove(key);
   }
 
-  public void forEach(final BiConsumer<? super Attributes.Key, ? super Attributes> action) {
+  public void forEachAttr(final BiConsumer<? super Attributes.Key, ? super Attributes> action) {
     attributes.forEach(action);
+  }
+
+  public void forEachIntAttr(final BiConsumer<? super Attributes.IntegerKey, ? super Integer> action) {
+    intAttributes.forEach(action);
   }
 }

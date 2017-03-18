@@ -15,34 +15,33 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
-import edu.snu.vortex.attributes.AttributesMap;
+import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.Edge;
 import edu.snu.vortex.compiler.ir.Vertex;
-import edu.snu.vortex.runtime.common.ExecutionPlan;
-import edu.snu.vortex.runtime.common.RtOpLink;
-import edu.snu.vortex.runtime.common.RtStage;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlanBuilder;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.attributes.Attributes.*;
+import static edu.snu.vortex.compiler.ir.attributes.Attributes.*;
 
 /**
  * Backend component for Vortex Runtime.
  */
 public final class VortexBackend implements Backend {
-  private final ExecutionPlan executionPlan;
+  private final ExecutionPlanBuilder executionPlanBuilder;
   private final HashMap<Vertex, Integer> vertexStageNumHashMap;
   private static AtomicInteger stageNumber = new AtomicInteger(1);
-  private final HashMap<Integer, RtStage> stageNumRtStageHashMap;
+//  private final HashMap<Integer, RtStage> stageNumRtStageHashMap;
 
   public VortexBackend() {
-    executionPlan = new ExecutionPlan();
+    executionPlanBuilder = new ExecutionPlanBuilder();
     vertexStageNumHashMap = new HashMap<>();
-    stageNumRtStageHashMap = new HashMap<>();
+//    stageNumRtStageHashMap = new HashMap<>();
   }
 
   public ExecutionPlan compile(final DAG dag) throws Exception {
@@ -77,31 +76,31 @@ public final class VortexBackend implements Backend {
         rtStageAttributes.put(Key.Placement, vertex.getAttr(Key.Placement));
         rtStageAttributes.put(IntegerKey.Parallelism, vertex.getAttr(IntegerKey.Parallelism));
 
-        final RtStage createdRtStage = new RtStage(rtStageAttributes);
-        createdRtStage.addRtOp(DAGConverter.convertVertex(vertex));
+//        final RtStage createdRtStage = new RtStage(rtStageAttributes);
+//        createdRtStage.addRtOp(DAGConverter.convertVertex(vertex));
 
-        stageNumRtStageHashMap.put(stageNum, createdRtStage);
-        executionPlan.addRtStage(createdRtStage);
-      } else {
-        final RtStage destinationRtStage = stageNumRtStageHashMap.get(stageNum);
-        destinationRtStage.addRtOp(DAGConverter.convertVertex(vertex));
+//        stageNumRtStageHashMap.put(stageNum, createdRtStage);
+//        executionPlan.addRtStage(createdRtStage);
+//      } else {
+//        final RtStage destinationRtStage = stageNumRtStageHashMap.get(stageNum);
+//        destinationRtStage.addRtOp(DAGConverter.convertVertex(vertex));
       }
     });
     // Connect each vertices together.
     dag.doTopological(vertex -> dag.getInEdgesOf(vertex).ifPresent(edges -> edges.forEach(edge -> {
-      final RtStage srcRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(edge.getSrc()));
-      final RtStage dstRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(vertex));
-      final RtOpLink rtOpLink = DAGConverter.convertEdge(edge, srcRtStage, dstRtStage);
+//      final RtStage srcRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(edge.getSrc()));
+//      final RtStage dstRtStage = stageNumRtStageHashMap.get(vertexStageNumHashMap.get(vertex));
+//      final RtOpLink rtOpLink = DAGConverter.convertEdge(edge, srcRtStage, dstRtStage);
 
-      final String srcRtOperatorId = DAGConverter.convertVertexId(edge.getSrc().getId());
-      final String dstRtOperatorId = DAGConverter.convertVertexId(vertex.getId());
+//      final String srcRtOperatorId = DAGConverter.convertVertexId(edge.getSrc().getId());
+//      final String dstRtOperatorId = DAGConverter.convertVertexId(vertex.getId());
 
-      if (srcRtStage.equals(dstRtStage)) {
-        srcRtStage.connectRtOps(srcRtOperatorId, dstRtOperatorId, rtOpLink);
-      } else {
-        executionPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
-      }
+//      if (srcRtStage.equals(dstRtStage)) {
+//        srcRtStage.connectRtOps(srcRtOperatorId, dstRtOperatorId, rtOpLink);
+//      } else {
+//        executionPlan.connectRtStages(srcRtStage, dstRtStage, rtOpLink);
+//      }
     })));
-    return executionPlan;
+    return executionPlanBuilder.build();
   }
 }

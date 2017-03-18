@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.attributes.Attributes;
-import edu.snu.vortex.attributes.AttributesMap;
+import edu.snu.vortex.compiler.ir.attributes.Attributes;
+import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
 
 /**
  * Physical execution plan of intermediate data movement.
@@ -76,10 +76,6 @@ public final class Edge<I, O> {
 
   public Vertex getDst() {
     return dst;
-  }
-
-  public AttributesMap getAttributes() {
-    return attributes;
   }
 
   @Override

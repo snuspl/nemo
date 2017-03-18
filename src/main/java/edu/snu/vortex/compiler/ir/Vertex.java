@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.attributes.Attributes;
-import edu.snu.vortex.attributes.AttributesMap;
+import edu.snu.vortex.compiler.ir.attributes.Attributes;
+import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
 
 import java.io.Serializable;
 
