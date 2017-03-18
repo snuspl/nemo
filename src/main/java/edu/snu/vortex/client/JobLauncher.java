@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
 import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.engine.SimpleEngine;
-import edu.snu.vortex.runtime.common.ExecutionPlan;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
 
 /**
  * Job launcher.
@@ -51,7 +51,6 @@ public final class JobLauncher {
     final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
     System.out.println("##### VORTEX COMPILER (After Compilation) #####");
     System.out.println(executionPlan + "\n");
-
 
     /**
      * Step 2: Execute

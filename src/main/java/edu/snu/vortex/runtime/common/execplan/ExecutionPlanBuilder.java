@@ -39,6 +39,7 @@ public final class ExecutionPlanBuilder {
   public ExecutionPlanBuilder() {
     this.runtimeStageBuilderList = new LinkedList<>();
     this.vertexIdToRuntimeStageBuilderMap = new HashMap<>();
+    this.stageBuilder = new RuntimeStageBuilder();
   }
 
   /**
@@ -68,30 +69,31 @@ public final class ExecutionPlanBuilder {
    * @return a map of Runtime Vertex attributes.
    */
   // TODO #000: Must clean up IR and Runtime attributes.
-  private Map<RuntimeAttributes.RuntimeVertexAttribute, Object> convertVertexAttributes(
+  private static Map<RuntimeAttributes.RuntimeVertexAttribute, Object> convertVertexAttributes(
       final AttributesMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> runtimeVertexAttributes = new HashMap<>();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
-      case Placement:
-        final Object runtimeAttributeVal;
-        switch (irAttributeVal) {
-        case Transient:
-          runtimeAttributeVal = RuntimeAttributes.ResourceType.TRANSIENT;
-          break;
-        case Reserved:
-          runtimeAttributeVal = RuntimeAttributes.ResourceType.RESERVED;
-          break;
-        case Compute:
-          runtimeAttributeVal = RuntimeAttributes.ResourceType.COMPUTE;
+        case Placement:
+          final Object runtimeAttributeVal;
+          switch (irAttributeVal) {
+            case Transient:
+              runtimeAttributeVal = RuntimeAttributes.ResourceType.TRANSIENT;
+              break;
+            case Reserved:
+              runtimeAttributeVal = RuntimeAttributes.ResourceType.RESERVED;
+              break;
+            case Compute:
+              runtimeAttributeVal = RuntimeAttributes.ResourceType.COMPUTE;
+              break;
+            default:
+              throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeVal);
+          }
+          runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.RESOURCE_TYPE, runtimeAttributeVal);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
-        }
-        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.RESOURCE_TYPE, runtimeAttributeVal);
-      default:
-        throw new UnsupportedAttributeException("this IR attribute is not supported");
+          throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeKey);
       }
     }));
     irAttributes.forEachIntAttr((irAttributeKey, irAttributeVal) -> {
@@ -100,7 +102,7 @@ public final class ExecutionPlanBuilder {
           runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, 0);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
+          throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeKey);
       }
     });
     return runtimeVertexAttributes;
@@ -112,70 +114,89 @@ public final class ExecutionPlanBuilder {
    * @return a map of Runtime Edge attributes.
    */
   // TODO #000: Must clean up IR and Runtime attributes.
-  private Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> convertEdgeAttributes(
+  private static Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> convertEdgeAttributes(
       final AttributesMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> runtimeEdgeAttributes = new HashMap<>();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
-      case EdgePartitioning:
-        final Object partitioningAttrVal;
-        switch (irAttributeVal) {
-        case Hash:
-          partitioningAttrVal = RuntimeAttributes.Partition.HASH;
+        case EdgePartitioning:
+          final Object partitioningAttrVal;
+          switch (irAttributeVal) {
+            case Hash:
+              partitioningAttrVal = RuntimeAttributes.Partition.HASH;
+              break;
+            case Range:
+              partitioningAttrVal = RuntimeAttributes.Partition.RANGE;
+              break;
+            default:
+              throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeVal);
+          }
+          runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.PARTITION, partitioningAttrVal);
           break;
-        case Range:
-          partitioningAttrVal = RuntimeAttributes.Partition.RANGE;
+        case EdgeChannel:
+          final Object channelAttrVal;
+          switch (irAttributeVal) {
+            case Memory:
+              channelAttrVal = RuntimeAttributes.Channel.LOCAL_MEM;
+              break;
+            case TCPPipe:
+              channelAttrVal = RuntimeAttributes.Channel.TCP;
+              break;
+            case File:
+              channelAttrVal = RuntimeAttributes.Channel.FILE;
+              break;
+            case DistributedStorage:
+              channelAttrVal = RuntimeAttributes.Channel.DISTR_STORAGE;
+              break;
+            default:
+              throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeVal);
+          }
+          runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.CHANNEL, channelAttrVal);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
-        }
-        runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.PARTITION, partitioningAttrVal);
-      case EdgeChannel:
-        final Object channelAttrVal;
-        switch (irAttributeVal) {
-        case Memory:
-          channelAttrVal = RuntimeAttributes.Channel.LOCAL_MEM;
-          break;
-        case TCPPipe:
-          channelAttrVal = RuntimeAttributes.Channel.TCP;
-          break;
-        case File:
-          channelAttrVal = RuntimeAttributes.Channel.FILE;
-          break;
-        case DistributedStorage:
-          channelAttrVal = RuntimeAttributes.Channel.DISTR_STORAGE;
-          break;
-        default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
-        }
-        runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.CHANNEL, channelAttrVal);
-      default:
-        throw new UnsupportedAttributeException("this IR attribute is not supported");
+          throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeKey);
       }
     }));
     return runtimeEdgeAttributes;
   }
 
-  /**
-   * Connects two {@link RuntimeVertex} that belong to the same stage, using the information given in {@link Edge}.
-   * @param edge to use for the connection.
-   */
-  public void connectStageInternalVertices(final Edge edge) {
+  public void connectVertices(final Edge edge) {
     final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
     final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
 
+    if (!vertexIdToRuntimeStageBuilderMap.containsKey(srcRuntimeVertexId) ||
+        !vertexIdToRuntimeStageBuilderMap.containsKey(dstRuntimeVertexId)) {
+      throw new IllegalVertexOperationException(
+          "srcRuntimeVertex and/or dstRuntimeVertex are not yet added to the ExecutionPlanBuilder");
+    }
+
+    if (vertexIdToRuntimeStageBuilderMap.get(srcRuntimeVertexId)
+        .equals(vertexIdToRuntimeStageBuilderMap.get(dstRuntimeVertexId))) {
+      connectStageInternalVertices(srcRuntimeVertexId, dstRuntimeVertexId);
+    } else {
+      connectStageBoundaryVertices(srcRuntimeVertexId, dstRuntimeVertexId, edge);
+    }
+  }
+
+  /**
+   * Connects two {@link RuntimeVertex} that belong to the same stage, using the information given in {@link Edge}.
+   * @param srcRuntimeVertexId source vertex id.
+   * @param dstRuntimeVertexId destination vertex id.
+   */
+  private void connectStageInternalVertices(final String srcRuntimeVertexId, final String dstRuntimeVertexId) {
     stageBuilder.connectInternalRuntimeVertices(srcRuntimeVertexId, dstRuntimeVertexId);
   }
 
   /**
    * Connects two {@link RuntimeVertex} that belong to different stages, using the information given in {@link Edge}.
+   * @param srcRuntimeVertexId source vertex id.
+   * @param dstRuntimeVertexId destination vertex id.
    * @param edge to use for the connection.
    */
-  public void connectStageBoundaryVertices(final Edge edge) {
-    final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
-    final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
-
+  private void connectStageBoundaryVertices(final String srcRuntimeVertexId,
+                                           final String dstRuntimeVertexId,
+                                           final Edge edge) {
     final RuntimeEdge newEdge = new RuntimeEdge(edge.getId(), convertEdgeAttributes(edge.getAttributes()),
         srcRuntimeVertexId, dstRuntimeVertexId);
     vertexIdToRuntimeStageBuilderMap.get(srcRuntimeVertexId).connectRuntimeStages(srcRuntimeVertexId, newEdge);

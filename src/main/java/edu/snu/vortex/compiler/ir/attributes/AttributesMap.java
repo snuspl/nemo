@@ -61,4 +61,35 @@ public final class AttributesMap {
   public void forEachIntAttr(final BiConsumer<? super Attributes.IntegerKey, ? super Integer> action) {
     intAttributes.forEach(action);
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append(attributes);
+    return sb.toString();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    AttributesMap that = (AttributesMap) o;
+
+    if (!attributes.equals(that.attributes)) {
+      return false;
+    }
+    return intAttributes.equals(that.intAttributes);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = attributes.hashCode();
+    result = 31 * result + intAttributes.hashCode();
+    return result;
+  }
 }
