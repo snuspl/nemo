@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.example;
+package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.common.execplan.ExecutionPlanBuilder;
+import edu.snu.vortex.runtime.common.execplan.ExecutionPlan;
+
+import java.util.logging.Logger;
 
 /**
- * Simple Execution Plan.
+ * Runtime Master.
  */
-public final class SimpleExecutionPlan {
-  private SimpleExecutionPlan() {
-  }
+public final class RuntimeMaster {
+  private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
-  public static void main(final String[] args) {
-    // TODO #000: Move this example to a test.
-    final ExecutionPlanBuilder builder = new ExecutionPlanBuilder();
+  /**
+   * Submits the {@link ExecutionPlan} to Runtime.
+   * @param executionPlan to execute.
+   */
+  public void execute(final ExecutionPlan executionPlan) {
   }
 }

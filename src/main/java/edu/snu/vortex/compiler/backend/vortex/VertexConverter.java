@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.example;
-
-import edu.snu.vortex.runtime.common.execplan.ExecutionPlanBuilder;
+package edu.snu.vortex.compiler.backend.vortex;
 
 /**
- * Simple Execution Plan.
+ * Vertex converter.
  */
-public final class SimpleExecutionPlan {
-  private SimpleExecutionPlan() {
-  }
-
-  public static void main(final String[] args) {
-    // TODO #000: Move this example to a test.
-    final ExecutionPlanBuilder builder = new ExecutionPlanBuilder();
-  }
+public final class VertexConverter {
+  // TODO #000: Reconsider the use of this class after #79.
 }

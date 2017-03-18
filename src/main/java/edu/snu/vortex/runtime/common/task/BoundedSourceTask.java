@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.example;
-
-import edu.snu.vortex.runtime.common.execplan.ExecutionPlanBuilder;
+package edu.snu.vortex.runtime.common.task;
 
 /**
- * Simple Execution Plan.
+ * BoundedSourceTask.
  */
-public final class SimpleExecutionPlan {
-  private SimpleExecutionPlan() {
-  }
-
-  public static void main(final String[] args) {
-    // TODO #000: Move this example to a test.
-    final ExecutionPlanBuilder builder = new ExecutionPlanBuilder();
+public final class BoundedSourceTask extends Task {
+  public BoundedSourceTask(final String taskId) {
+    super(taskId);
   }
 }
