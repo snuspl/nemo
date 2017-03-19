@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.compiler.ir.attributes.Attributes.*;
+import static edu.snu.vortex.compiler.ir.attribute.Attribute.*;
 
 /**
  * Backend component for Vortex Runtime.

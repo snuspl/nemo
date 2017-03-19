@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
+import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.common.RuntimeAttributes;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
@@ -70,7 +70,7 @@ public final class ExecutionPlanBuilder {
    */
   // TODO #000: Must clean up IR and Runtime attributes.
   private static Map<RuntimeAttributes.RuntimeVertexAttribute, Object> convertVertexAttributes(
-      final AttributesMap irAttributes) {
+      final AttributeMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> runtimeVertexAttributes = new HashMap<>();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
@@ -115,7 +115,7 @@ public final class ExecutionPlanBuilder {
    */
   // TODO #000: Must clean up IR and Runtime attributes.
   private static Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> convertEdgeAttributes(
-      final AttributesMap irAttributes) {
+      final AttributeMap irAttributes) {
     final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> runtimeEdgeAttributes = new HashMap<>();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {

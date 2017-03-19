@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.attributes.Attributes;
-import edu.snu.vortex.compiler.ir.attributes.AttributesMap;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 
 /**
  * Physical execution plan of intermediate data movement.
@@ -34,7 +34,7 @@ public final class Edge<I, O> {
   }
 
   private final String id;
-  private final AttributesMap attributes;
+  private final AttributeMap attributes;
   private final Type type;
   private final Vertex src;
   private final Vertex dst;
@@ -43,7 +43,7 @@ public final class Edge<I, O> {
        final Vertex src,
        final Vertex dst) {
     this.id = IdManager.newEdgeId();
-    this.attributes = new AttributesMap();
+    this.attributes = new AttributeMap();
     this.type = type;
     this.src = src;
     this.dst = dst;
@@ -53,16 +53,16 @@ public final class Edge<I, O> {
     return id;
   }
 
-  public Edge<I, O> setAttr(final Attributes.Key key, final Attributes val) {
+  public Edge<I, O> setAttr(final Attribute.Key key, final Attribute val) {
     attributes.put(key, val);
     return this;
   }
 
-  public Attributes getAttr(final Attributes.Key key) {
+  public Attribute getAttr(final Attribute.Key key) {
     return attributes.get(key);
   }
 
-  public AttributesMap getAttributes() {
+  public AttributeMap getAttributes() {
     return attributes;
   }
 

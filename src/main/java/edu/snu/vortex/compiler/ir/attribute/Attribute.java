@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attributes;
+package edu.snu.vortex.compiler.ir.attribute;
 
 /**
  * Attributes class.
  */
-public enum Attributes {
+public enum Attribute {
   /**
    * Vertex attributes.
    */
@@ -60,7 +60,7 @@ public enum Attributes {
 
   private final Key key;
 
-  Attributes(final Key key) {
+  Attribute(final Key key) {
     this.key = key;
   }
 

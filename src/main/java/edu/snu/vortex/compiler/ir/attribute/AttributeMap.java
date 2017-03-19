@@ -13,52 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attributes;
+package edu.snu.vortex.compiler.ir.attribute;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
- * AttributesMap Class, which uses HashMap for keeping track of attributes for operators and edges.
+ * AttributeMap Class, which uses HashMap for keeping track of attributes for operators and edges.
  */
-public final class AttributesMap {
-  private final Map<Attributes.Key, Attributes> attributes;
-  private final Map<Attributes.IntegerKey, Integer> intAttributes;
+public final class AttributeMap {
+  private final Map<Attribute.Key, Attribute> attributes;
+  private final Map<Attribute.IntegerKey, Integer> intAttributes;
 
-  public AttributesMap() {
+  public AttributeMap() {
     attributes = new HashMap<>();
     intAttributes = new HashMap<>();
   }
 
-  public Attributes put(final Attributes.Key key, final Attributes val) {
+  public Attribute put(final Attribute.Key key, final Attribute val) {
     if (!val.hasKey(key)) {
       throw new RuntimeException("Attribute " + val + " is not a member of Key " + key);
     }
     return attributes.put(key, val);
   }
 
-  public Integer put(final Attributes.IntegerKey key, final Integer integer) {
+  public Integer put(final Attribute.IntegerKey key, final Integer integer) {
     return intAttributes.put(key, integer);
   }
 
-  public Attributes get(final Attributes.Key key) {
+  public Attribute get(final Attribute.Key key) {
     return attributes.get(key);
   }
 
-  public Integer get(final Attributes.IntegerKey key) {
+  public Integer get(final Attribute.IntegerKey key) {
     return intAttributes.get(key);
   }
 
-  public Attributes remove(final Attributes.Key key) {
+  public Attribute remove(final Attribute.Key key) {
     return attributes.remove(key);
   }
 
-  public void forEachAttr(final BiConsumer<? super Attributes.Key, ? super Attributes> action) {
+  public void forEachAttr(final BiConsumer<? super Attribute.Key, ? super Attribute> action) {
     attributes.forEach(action);
   }
 
-  public void forEachIntAttr(final BiConsumer<? super Attributes.IntegerKey, ? super Integer> action) {
+  public void forEachIntAttr(final BiConsumer<? super Attribute.IntegerKey, ? super Integer> action) {
     intAttributes.forEach(action);
   }
 
@@ -78,7 +78,7 @@ public final class AttributesMap {
       return false;
     }
 
-    AttributesMap that = (AttributesMap) o;
+    AttributeMap that = (AttributeMap) o;
 
     if (!attributes.equals(that.attributes)) {
       return false;
