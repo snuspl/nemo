@@ -220,6 +220,9 @@ public final class ExecutionPlanBuilder {
    * @return the execution plan.
    */
   public ExecutionPlan build() {
+    if (!stageBuilder.isEmpty()) {
+      runtimeStageBuilderList.add(stageBuilder);
+    }
     return new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), runtimeStageBuilderList);
   }
 }
