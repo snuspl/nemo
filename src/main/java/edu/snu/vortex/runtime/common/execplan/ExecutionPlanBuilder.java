@@ -25,8 +25,6 @@ import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 
 import java.util.*;
 
-import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.Parallelism;
-
 /**
  * ExecutionPlanBuilder.
  */
