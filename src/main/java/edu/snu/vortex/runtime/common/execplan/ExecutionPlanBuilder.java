@@ -209,10 +209,14 @@ public final class ExecutionPlanBuilder {
    * Stages must be created in the order of execution.
    */
   public void createNewStage() {
+    commitCurrentStage();
+    stageBuilder = new RuntimeStageBuilder();
+  }
+
+  private void commitCurrentStage() {
     if (!stageBuilder.isEmpty()) {
       runtimeStageBuilderList.add(stageBuilder);
     }
-    stageBuilder = new RuntimeStageBuilder();
   }
 
   /**
@@ -220,9 +224,7 @@ public final class ExecutionPlanBuilder {
    * @return the execution plan.
    */
   public ExecutionPlan build() {
-    if (!stageBuilder.isEmpty()) {
-      runtimeStageBuilderList.add(stageBuilder);
-    }
+    commitCurrentStage();
     return new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), runtimeStageBuilderList);
   }
 }
