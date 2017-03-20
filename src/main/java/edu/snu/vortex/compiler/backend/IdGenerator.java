@@ -15,12 +15,18 @@
  */
 package edu.snu.vortex.compiler.backend;
 
-import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.runtime.common.ExecutionPlan;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Interface for backend components.
+ * An ID generator used in {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
  */
-public interface Backend {
-  ExecutionPlan compile(DAG dag);
+public final class IdGenerator {
+  private static AtomicInteger virtualStageId = new AtomicInteger(1);
+
+  private IdGenerator() {
+  }
+
+  public static String newVStageId() {
+    return "vstage-" + virtualStageId.getAndIncrement();
+  }
 }
