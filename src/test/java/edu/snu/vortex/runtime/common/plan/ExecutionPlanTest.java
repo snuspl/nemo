@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.task;
+package edu.snu.vortex.runtime.common.execplan;
+
+import org.junit.Before;
+import org.junit.Test;
+
 
 /**
- * BoundedSourceTask.
+ * Tests {@link ExecutionPlanBuilder}
  */
-public final class BoundedSourceTask extends Task {
-  public BoundedSourceTask(final String taskId) {
-    super(taskId);
+public final class ExecutionPlanTest {
+  private ExecutionPlanBuilder builder;
+
+  @Before
+  public void setUp() {
+    builder = new ExecutionPlanBuilder();
+  }
+
+  @Test
+  public void testSimplePlan() {
+
+  }
+
+  @Test
+  public void testComplexPlan() {
+
   }
 }

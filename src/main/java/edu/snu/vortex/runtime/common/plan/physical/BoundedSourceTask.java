@@ -15,11 +15,17 @@
  */
 package edu.snu.vortex.runtime.common.task;
 
+import edu.snu.vortex.compiler.ir.Reader;
+
 /**
- * UnboundedSourceTask.
+ * BoundedSourceTask.
  */
-public final class UnboundedSourceTask extends Task {
-  public UnboundedSourceTask(final String taskId) {
-    super(taskId);
+public final class BoundedSourceTask<O> extends Task {
+  private final Reader<O> reader;
+  public BoundedSourceTask(final String taskId,
+                           final String runtimeVertexId,
+                           final Reader<O> reader) {
+    super(taskId, runtimeVertexId);
+    this.reader = reader;
   }
 }

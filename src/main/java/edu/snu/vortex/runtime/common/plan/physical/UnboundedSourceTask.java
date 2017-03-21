@@ -16,10 +16,11 @@
 package edu.snu.vortex.runtime.common.task;
 
 /**
- * OperatorTask.
+ * UnboundedSourceTask.
  */
-public final class OperatorTask extends Task {
-  public OperatorTask(final String taskId) {
-    super(taskId);
+public final class UnboundedSourceTask extends Task {
+  public UnboundedSourceTask(final String taskId,
+                             final String runtimeVertexId) {
+    super(taskId, runtimeVertexId);
   }
 }

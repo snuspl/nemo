@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.example;
+package edu.snu.vortex.runtime.common.task;
 
-import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlanBuilder;
+import edu.snu.vortex.compiler.ir.Transform;
 
 /**
- * Simple Execution Plan.
+ * OperatorTask.
  */
-public final class SimpleExecutionPlan {
-  private SimpleExecutionPlan() {
-  }
+public final class OperatorTask extends Task {
+  private final Transform transform;
 
-  public static void main(final String[] args) {
-    // TODO #000: Move this example to a test.
-    final ExecutionPlanBuilder builder = new ExecutionPlanBuilder();
+  public OperatorTask(final String taskId,
+                      final String runtimeVertexId,
+                      final Transform transform) {
+    super(taskId, runtimeVertexId);
+    this.transform = transform;
   }
 }

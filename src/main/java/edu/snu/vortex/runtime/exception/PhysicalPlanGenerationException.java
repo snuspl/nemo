@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.task;
-
-import java.io.Serializable;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * Task.
+ * PlanTranslationException.
  */
-public abstract class Task implements Serializable {
-  private final String taskId;
-
-  public Task(final String taskId) {
-    this.taskId = taskId;
+public class PlanTranslationException extends RuntimeException {
+  /**
+   * PlanTranslationException.
+   * @param message message
+   */
+  public PlanTranslationException(final String message) {
+    super(message);
   }
 }

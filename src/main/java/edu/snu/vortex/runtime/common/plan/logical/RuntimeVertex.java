@@ -40,5 +40,9 @@ public abstract class RuntimeVertex implements Serializable {
     return runtimeVertexId;
   }
 
+  public Map<RuntimeAttributes.RuntimeVertexAttribute, Object> getVertexAttributes() {
+    return vertexAttributes;
+  }
+
   public abstract List<? extends Task> getTaskList();
 }
