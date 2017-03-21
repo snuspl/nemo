@@ -15,18 +15,30 @@
  */
 package edu.snu.vortex.runtime.common.plan.physical;
 
+import edu.snu.vortex.runtime.common.RuntimeAttributes;
+
 import java.io.Serializable;
 
 /**
- * Task.
+ * Represents the information for a physical channel between tasks.
  */
-public abstract class Task implements Serializable {
-  private final String taskId;
-  private final String runtimeVertexId;
+public class ChannelInfo implements Serializable {
+  private final String srcTaskId;
+  private final String dstTaskId;
 
-  public Task(final String taskId,
-              final String runtimeVertexId) {
-    this.taskId = taskId;
-    this.runtimeVertexId = runtimeVertexId;
+  // TODO #75: Refactor RuntimeAttributes.
+  private final RuntimeAttributes.Channel channelType;
+
+  /**
+   * @param srcTaskId id of the source task.
+   * @param dstTaskId id of the destination task.
+   * @param channelType type of the channel.
+   */
+  public ChannelInfo(final String srcTaskId,
+                     final String dstTaskId,
+                     final RuntimeAttributes.Channel channelType) {
+    this.srcTaskId = srcTaskId;
+    this.dstTaskId = dstTaskId;
+    this.channelType = channelType;
   }
 }
