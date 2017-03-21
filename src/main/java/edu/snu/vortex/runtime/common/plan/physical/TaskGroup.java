@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.task;
+package edu.snu.vortex.runtime.common.plan.physical;
 
-import edu.snu.vortex.runtime.common.execplan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeEdge;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
 
@@ -31,12 +31,12 @@ public final class TaskGroup implements Serializable {
   private final DAG<Task> taskDAG;
 
   /**
-   * {@link edu.snu.vortex.runtime.common.execplan.RuntimeVertex}'s id to the set of remote incoming edges.
+   * {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}'s id to the set of remote incoming edges.
    */
   private final Map<String, Set<RuntimeEdge>> incomingEdges;
 
   /**
-   * {@link edu.snu.vortex.runtime.common.execplan.RuntimeVertex}'s id to the set of remote outgoing edges.
+   * {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}'s id to the set of remote outgoing edges.
    */
   private final Map<String, Set<RuntimeEdge>> outgoingEdges;
 
@@ -49,11 +49,11 @@ public final class TaskGroup implements Serializable {
     this.taskDAG = new DAGImpl<>();
   }
 
-  public void addTask(final Task srcTask, final Task dstTask) {
-    taskDAG.addVertex(dstTask);
+  public void addTask(final Task task) {
+    taskDAG.addVertex(task);
+  }
 
-    if (srcTask != null) {
-      taskDAG.addEdge(srcTask, dstTask);
-    }
+  public void connectTasks(final Task srcTask, final Task dstTask) {
+    taskDAG.addEdge(srcTask, dstTask);
   }
 }
