@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.task;
+package edu.snu.vortex.runtime.common.plan.physical;
 
 import java.io.Serializable;
 
@@ -28,5 +28,13 @@ public abstract class Task implements Serializable {
               final String runtimeVertexId) {
     this.taskId = taskId;
     this.runtimeVertexId = runtimeVertexId;
+  }
+
+  public final String getTaskId() {
+    return taskId;
+  }
+
+  public final String getRuntimeVertexId() {
+    return runtimeVertexId;
   }
 }
