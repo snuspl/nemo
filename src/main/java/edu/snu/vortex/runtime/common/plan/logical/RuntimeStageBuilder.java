@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.execplan;
+package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.exception.IllegalEdgeOperationException;
@@ -98,7 +98,7 @@ public final class RuntimeStageBuilder {
       if (connectingEdge.getSrcRuntimeVertex().equals(endpointRuntimeVertex)) {
         stageOutgoingEdges.putIfAbsent(endpointRuntimeVertex.getId(), new HashSet<>());
         stageOutgoingEdges.get(endpointRuntimeVertex.getId()).add(connectingEdge);
-      } else if (connectingEdge.getDstRuntimeVertex().equals(endpointRuntimeVertex.getId())) {
+      } else if (connectingEdge.getDstRuntimeVertex().equals(endpointRuntimeVertex)) {
         stageIncomingEdges.putIfAbsent(endpointRuntimeVertex.getId(), new HashSet<>());
         stageIncomingEdges.get(endpointRuntimeVertex.getId()).add(connectingEdge);
       } else {
