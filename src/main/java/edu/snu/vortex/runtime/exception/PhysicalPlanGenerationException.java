@@ -16,14 +16,14 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * PlanTranslationException.
+ * PhysicalPlanGenerationException.
  */
-public class PlanTranslationException extends RuntimeException {
+public class PhysicalPlanGenerationException extends RuntimeException {
   /**
-   * PlanTranslationException.
+   * PhysicalPlanGenerationException.
    * @param message message
    */
-  public PlanTranslationException(final String message) {
+  public PhysicalPlanGenerationException(final String message) {
     super(message);
   }
 }
