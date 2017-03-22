@@ -76,6 +76,6 @@ public final class RuntimeIdGenerator {
    * @return the generated ID
    */
   public static String generateTaskGroupId() {
-    return "Task-" + taskGroupIdGenerator.getAndIncrement();
+    return "TaskGroup-" + taskGroupIdGenerator.getAndIncrement();
   }
 }
