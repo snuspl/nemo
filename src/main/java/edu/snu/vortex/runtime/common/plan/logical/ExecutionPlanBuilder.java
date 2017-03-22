@@ -156,7 +156,21 @@ public final class ExecutionPlanBuilder {
         runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.CHANNEL, channelAttrVal);
         break;
       case CommunicationPattern:
-        // TODO #75: Refactor Runtime attributes
+        final Object commPatternAttrVal;
+        switch (irAttributeVal) {
+        case OneToOne:
+          commPatternAttrVal = RuntimeAttributes.CommPattern.ONE_TO_ONE;
+          break;
+        case ScatterGather:
+          commPatternAttrVal = RuntimeAttributes.CommPattern.SCATTER_GATHER;
+          break;
+        case Broadcast:
+          commPatternAttrVal = RuntimeAttributes.CommPattern.BROADCAST;
+          break;
+        default:
+          throw new UnsupportedAttributeException("this IR attribute is not supported");
+        }
+        runtimeEdgeAttributes.put(RuntimeAttributes.RuntimeEdgeAttribute.COMM_PATTERN, commPatternAttrVal);
         break;
       default:
         throw new UnsupportedAttributeException("this IR attribute is not supported");
