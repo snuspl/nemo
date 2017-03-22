@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.plan;
+package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
