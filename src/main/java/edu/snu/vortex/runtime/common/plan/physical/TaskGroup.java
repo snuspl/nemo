@@ -15,13 +15,11 @@
  */
 package edu.snu.vortex.runtime.common.plan.physical;
 
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeEdge;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
 /**
  * TaskGroup.
@@ -31,29 +29,32 @@ public final class TaskGroup implements Serializable {
   private final DAG<Task> taskDAG;
 
   /**
-   * {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}'s id to the set of remote incoming edges.
+   * List of information on incoming edges to the stage.
    */
-  private final Map<String, Set<RuntimeEdge>> incomingEdges;
+  private final List<StageBoundaryEdgeInfo> incomingEdges;
 
   /**
-   * {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}'s id to the set of remote outgoing edges.
+   * List of information on outgoing edges from the stage.
    */
-  private final Map<String, Set<RuntimeEdge>> outgoingEdges;
+  private final List<StageBoundaryEdgeInfo> outgoingEdges;
 
   public TaskGroup(final String taskGroupId,
-                   final Map<String, Set<RuntimeEdge>>  incomingEdges,
-                   final Map<String, Set<RuntimeEdge>>  outgoingEdges) {
+                   final DAG<Task> taskDAG,
+                   final List<StageBoundaryEdgeInfo> incomingEdges,
+                   final List<StageBoundaryEdgeInfo> outgoingEdges) {
     this.taskGroupId = taskGroupId;
+    this.taskDAG = taskDAG;
     this.incomingEdges = incomingEdges;
     this.outgoingEdges = outgoingEdges;
-    this.taskDAG = new DAGImpl<>();
   }
 
-  public void addTask(final Task task) {
-    taskDAG.addVertex(task);
-  }
-
-  public void connectTasks(final Task srcTask, final Task dstTask) {
-    taskDAG.addEdge(srcTask, dstTask);
+  @Override
+  public String toString() {
+    return "TaskGroup{" +
+        "taskGroupId='" + taskGroupId + '\'' +
+        ",\n taskDAG=" + taskDAG +
+        ",\n incomingEdges=" + incomingEdges +
+        ",\n outgoingEdges=" + outgoingEdges +
+        '}';
   }
 }
