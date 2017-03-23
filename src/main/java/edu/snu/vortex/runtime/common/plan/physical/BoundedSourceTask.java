@@ -25,8 +25,9 @@ public final class BoundedSourceTask<O> extends Task {
   private final Reader<O> reader;
   public BoundedSourceTask(final String taskId,
                            final String runtimeVertexId,
+                           final int index,
                            final Reader<O> reader) {
-    super(taskId, runtimeVertexId);
+    super(taskId, runtimeVertexId, index);
     this.reader = reader;
   }
 }

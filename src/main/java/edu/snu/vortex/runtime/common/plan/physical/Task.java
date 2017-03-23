@@ -23,11 +23,14 @@ import java.io.Serializable;
 public abstract class Task implements Serializable {
   private final String taskId;
   private final String runtimeVertexId;
+  private final int index;
 
   public Task(final String taskId,
-              final String runtimeVertexId) {
+              final String runtimeVertexId,
+              final int index) {
     this.taskId = taskId;
     this.runtimeVertexId = runtimeVertexId;
+    this.index = index;
   }
 
   public final String getTaskId() {
@@ -36,5 +39,9 @@ public abstract class Task implements Serializable {
 
   public final String getRuntimeVertexId() {
     return runtimeVertexId;
+  }
+
+  public final int getIndex() {
+    return index;
   }
 }

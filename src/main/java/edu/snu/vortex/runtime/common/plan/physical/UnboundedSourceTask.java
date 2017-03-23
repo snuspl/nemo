@@ -20,7 +20,8 @@ package edu.snu.vortex.runtime.common.plan.physical;
  */
 public final class UnboundedSourceTask extends Task {
   public UnboundedSourceTask(final String taskId,
-                             final String runtimeVertexId) {
-    super(taskId, runtimeVertexId);
+                             final String runtimeVertexId,
+                             final int index) {
+    super(taskId, runtimeVertexId, index);
   }
 }
