@@ -71,8 +71,8 @@ public final class PhysicalPlanTest {
   }
 
   @Test
-  public void testPlan2() {
-    // Tests a plan of 4 stages.
+  public void testComplexPlan() {
+    // Tests a plan of 5 stages.
     final Transform t = mock(Transform.class);
     final Vertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
@@ -91,12 +91,20 @@ public final class PhysicalPlanTest {
     v4.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final Vertex v5 = new OperatorVertex(t);
-    v5.setAttr(Attribute.IntegerKey.Parallelism, 4);
+    v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v5.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final Vertex v6 = new OperatorVertex(t);
     v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
+
+    final Vertex v7 = new OperatorVertex(t);
+    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
+
+    final Vertex v8 = new OperatorVertex(t);
+    v8.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v8.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final DAGBuilder tempDAGBuilder = new DAGBuilder();
     tempDAGBuilder.addVertex(v1);
@@ -105,6 +113,8 @@ public final class PhysicalPlanTest {
     tempDAGBuilder.addVertex(v4);
     tempDAGBuilder.addVertex(v5);
     tempDAGBuilder.addVertex(v6);
+    tempDAGBuilder.addVertex(v7);
+    tempDAGBuilder.addVertex(v8);
 
     final Edge e1 = tempDAGBuilder.connectVertices(v1, v2, Edge.Type.OneToOne);
     e1.setAttr(Attribute.Key.EdgeChannel, Attribute.Memory);
@@ -126,6 +136,18 @@ public final class PhysicalPlanTest {
     e5.setAttr(Attribute.Key.EdgeChannel, Attribute.File);
     e5.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
+    final Edge e6 = tempDAGBuilder.connectVertices(v4, v8, Edge.Type.OneToOne);
+    e6.setAttr(Attribute.Key.EdgeChannel, Attribute.File);
+    e6.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+
+    final Edge e7 = tempDAGBuilder.connectVertices(v7, v5, Edge.Type.OneToOne);
+    e7.setAttr(Attribute.Key.EdgeChannel, Attribute.TCPPipe);
+    e7.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+
+    final Edge e8 = tempDAGBuilder.connectVertices(v5, v8, Edge.Type.OneToOne);
+    e8.setAttr(Attribute.Key.EdgeChannel, Attribute.Memory);
+    e8.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+
     // Stage 1 = {v1, v2, v3}
     builder.createNewStage();
     builder.addVertex(v1);
@@ -139,12 +161,20 @@ public final class PhysicalPlanTest {
     builder.addVertex(v4);
     builder.connectVertices(e3);
 
-    // Stage 3 = {v5}
+    // Stage 3 = {v7}
+    builder.createNewStage();
+    builder.addVertex(v7);
+
+    // Stage 4 = {v5, v8}
     builder.createNewStage();
     builder.addVertex(v5);
+    builder.addVertex(v8);
     builder.connectVertices(e4);
+    builder.connectVertices(e6);
+    builder.connectVertices(e7);
+    builder.connectVertices(e8);
 
-    // Stage 4 = {v6}
+    // Stage 5 = {v6}
     builder.createNewStage();
     builder.addVertex(v6);
     builder.connectVertices(e5);
