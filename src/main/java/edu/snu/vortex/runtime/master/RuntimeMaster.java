@@ -24,6 +24,8 @@ import edu.snu.vortex.runtime.exception.IllegalEdgeOperationException;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
 import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
+import edu.snu.vortex.utils.DAG;
+import edu.snu.vortex.utils.DAGImpl;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -42,31 +44,38 @@ public final class RuntimeMaster {
     generatePhysicalPlan(executionPlan);
   }
 
-  private Map<String, List<TaskGroup>> generatePhysicalPlan(final ExecutionPlan executionPlan) {
-    final Map<String, List<TaskGroup>> physicalExecutionPlan = new HashMap<>();
+  /**
+   * Generates the {@link PhysicalPlan} to be executed.
+   * @param executionPlan that should be converted to a physical plan
+   * @return {@link PhysicalPlan} to execute.
+   */
+  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan) {
+    final PhysicalPlanBuilder physicalPlanBuilder = new PhysicalPlanBuilder(executionPlan.getId());
 
     try {
-      // a temporary map to easily find the runtime vertex given the id.
-      final Map<String, RuntimeVertex> runtimeVertexMap = new HashMap<>();
+      final Map<String, Task> runtimeVertexIdToTask = new HashMap<>();
 
       for (final RuntimeStage runtimeStage : executionPlan.getRuntimeStages()) {
         final List<RuntimeVertex> runtimeVertices = runtimeStage.getRuntimeVertices();
-        final Map<String, Set<RuntimeEdge>> incomingEdges = runtimeStage.getStageIncomingEdges();
-        final Map<String, Set<RuntimeEdge>> outgoingEdges = runtimeStage.getStageOutgoingEdges();
+
+        final List<StageBoundaryEdgeInfo> incomingEdgeInfos =
+            createStageBoundaryEdgeInfo(runtimeStage.getStageIncomingEdges(), true);
+        final List<StageBoundaryEdgeInfo> outgoingEdgeInfos =
+            createStageBoundaryEdgeInfo(runtimeStage.getStageOutgoingEdges(), false);
 
         // TODO #103: Integrity check in execution plan.
         // This code simply assumes that all vertices follow the first vertex's parallelism.
         final int parallelism = (int) runtimeVertices.get(0).getVertexAttributes()
             .get(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM);
-        final List<TaskGroup> taskGroupList = new ArrayList<>(parallelism);
+
+        // Begin building a new stage in the physical plan.
+        physicalPlanBuilder.createNewStage(runtimeStage.getStageId(), parallelism);
 
         for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
-          final TaskGroup newTaskGroup =
-              new TaskGroup(RuntimeIdGenerator.generateTaskGroupId(), incomingEdges, outgoingEdges);
-
+          final DAG<Task> taskDAG = new DAGImpl<>();
           Task newTaskToAdd;
+
           for (final RuntimeVertex vertex : runtimeVertices) {
-            runtimeVertexMap.put(vertex.getId(), vertex);
             if (vertex instanceof RuntimeBoundedSourceVertex) {
               final RuntimeBoundedSourceVertex boundedSourceVertex = (RuntimeBoundedSourceVertex) vertex;
 
@@ -74,81 +83,54 @@ public final class RuntimeMaster {
               // This code assumes that the issue #104 has been resolved.
               final List<Reader> readers = boundedSourceVertex.getBoundedSourceVertex().getReaders(parallelism);
               newTaskToAdd = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(),
-                  boundedSourceVertex.getId(), readers.get(taskGroupIdx));
+                  boundedSourceVertex.getId(), taskGroupIdx, readers.get(taskGroupIdx));
             } else if (vertex instanceof RuntimeOperatorVertex) {
               final RuntimeOperatorVertex operatorVertex = (RuntimeOperatorVertex) vertex;
-              newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(), operatorVertex.getId(),
+              newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(), operatorVertex.getId(), taskGroupIdx,
                   operatorVertex.getOperatorVertex().getTransform());
             } else {
               throw new IllegalVertexOperationException("This vertex type is not supported");
             }
-            vertex.addTask(newTaskToAdd);
-            newTaskGroup.addTask(newTaskToAdd);
+            taskDAG.addVertex(newTaskToAdd);
+            runtimeVertexIdToTask.put(vertex.getId(), newTaskToAdd);
           }
-          taskGroupList.add(newTaskGroup);
-        }
 
-        // Now that all tasks have been created, connect the internal edges in the task group.
-        // Notice that it suffices to iterate over only the internalInEdges.
-        final Map<String, Set<String>> internalInEdges = runtimeStage.getInternalInEdges();
-        for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
+          // Now that all tasks have been created, connect the internal edges in the task group.
+          // Notice that it suffices to iterate over only the internalInEdges.
+          final Map<String, Set<String>> internalInEdges = runtimeStage.getInternalInEdges();
           for (final Map.Entry<String, Set<String>> entry : internalInEdges.entrySet()) {
-            for (final String srcVertexId : entry.getValue()) {
-              taskGroupList.get(taskGroupIdx)
-                  .connectTasks(runtimeVertexMap.get(srcVertexId).getTaskList().get(taskGroupIdx),
-                      runtimeVertexMap.get(entry.getKey()).getTaskList().get(taskGroupIdx));
-            }
+            final Set<String> dstVertexIds = entry.getValue();
+            dstVertexIds.forEach(id -> {
+              taskDAG.addEdge(runtimeVertexIdToTask.get(id), runtimeVertexIdToTask.get(entry.getKey()));
+            });
           }
+          final TaskGroup newTaskGroup =
+              new TaskGroup(RuntimeIdGenerator.generateTaskGroupId(), taskDAG, incomingEdgeInfos, outgoingEdgeInfos);
+          physicalPlanBuilder.addTaskGroupToStage(runtimeStage.getStageId(), newTaskGroup);
+          runtimeVertexIdToTask.clear();
         }
-
-        // Now that all tasks have been created, connect the external outgoing edges from/to the task group.
-        // Notice that it suffices to iterate over only the outgoingEdges.
-        for (final Map.Entry<String, Set<RuntimeEdge>> entry : outgoingEdges.entrySet()) {
-          for (final RuntimeEdge edge : entry.getValue()) {
-            // skip if this edge has already been looked at by previous stages.
-            if (edge.getChannelInfos().isEmpty()) {
-              final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes = edge.getEdgeAttributes();
-              final RuntimeAttributes.Channel channelType =
-                  (RuntimeAttributes.Channel) edgeAttributes.get(RuntimeAttributes.RuntimeEdgeAttribute.CHANNEL);
-              final RuntimeAttributes.CommPattern commPattern = (RuntimeAttributes.CommPattern)
-                  edgeAttributes.get(RuntimeAttributes.RuntimeEdgeAttribute.COMM_PATTERN);
-
-              final List<? extends Task> srcTaskList = edge.getSrcRuntimeVertex().getTaskList();
-              final List<? extends Task> dstTaskList = edge.getDstRuntimeVertex().getTaskList();
-
-              switch (commPattern) {
-              case ONE_TO_ONE:
-                if (srcTaskList.size() == dstTaskList.size()) {
-                  for (int taskIdx = 0; taskIdx < srcTaskList.size(); taskIdx++) {
-                    edge.addChannelInfo(new ChannelInfo(srcTaskList.get(taskIdx).getTaskId(),
-                        dstTaskList.get(taskIdx).getTaskId(), channelType));
-                  }
-                } else {
-                  throw new IllegalEdgeOperationException(
-                      "there must be an equal number of src/dst tasks for this edge type");
-                }
-                break;
-              case SCATTER_GATHER:
-                for (final Task srcTask : srcTaskList) {
-                  for (final Task dstTask : dstTaskList) {
-                    edge.addChannelInfo(new ChannelInfo(srcTask.getTaskId(), dstTask.getTaskId(), channelType));
-                  }
-                }
-                break;
-              case BROADCAST:
-                throw new UnsupportedAttributeException("\"BROADCAST\" edge attribute is not yet supported");
-              default:
-                throw new UnsupportedAttributeException("this edge attribute is not yet supported");
-              }
-            }
-          }
-        }
-
-        physicalExecutionPlan.put(runtimeStage.getStageId(), taskGroupList);
       }
     } catch (final Exception e) {
       throw new PhysicalPlanGenerationException(e.getMessage());
     }
-    return physicalExecutionPlan;
+    return physicalPlanBuilder.build();
+  }
+
+  private List<StageBoundaryEdgeInfo> createStageBoundaryEdgeInfo(
+      final Map<String, Set<RuntimeEdge>> stageBoundaryRuntimeEdges, boolean isIncomingEdges) {
+    final List<StageBoundaryEdgeInfo> stageBoundaryEdgeInfos = new LinkedList<>();
+    for (final Set<RuntimeEdge> edgeSet : stageBoundaryRuntimeEdges.values()) {
+      edgeSet.forEach(runtimeEdge -> {
+        final RuntimeVertex endpointVertex;
+        if (isIncomingEdges) {
+          endpointVertex = runtimeEdge.getSrcRuntimeVertex();
+        } else {
+          endpointVertex = runtimeEdge.getDstRuntimeVertex();
+        }
+        stageBoundaryEdgeInfos.add(new StageBoundaryEdgeInfo(runtimeEdge.getId(), runtimeEdge.getEdgeAttributes(),
+            endpointVertex.getId(), endpointVertex.getVertexAttributes()));
+      });
+    }
+    return stageBoundaryEdgeInfos;
   }
 }
