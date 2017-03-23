@@ -20,10 +20,8 @@ import edu.snu.vortex.runtime.common.RuntimeAttributes;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.exception.IllegalEdgeOperationException;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
-import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
 
@@ -71,10 +69,12 @@ public final class RuntimeMaster {
         // Begin building a new stage in the physical plan.
         physicalPlanBuilder.createNewStage(runtimeStage.getStageId(), parallelism);
 
+        // (parallelism) number of task groups will be created.
         for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
           final DAG<Task> taskDAG = new DAGImpl<>();
           Task newTaskToAdd;
 
+          // Iterate over the vertices contained in this stage to convert to tasks.
           for (final RuntimeVertex vertex : runtimeVertices) {
             if (vertex instanceof RuntimeBoundedSourceVertex) {
               final RuntimeBoundedSourceVertex boundedSourceVertex = (RuntimeBoundedSourceVertex) vertex;
@@ -104,6 +104,8 @@ public final class RuntimeMaster {
               taskDAG.addEdge(runtimeVertexIdToTask.get(id), runtimeVertexIdToTask.get(entry.getKey()));
             });
           }
+
+          // Create the task group to add for this stage.
           final TaskGroup newTaskGroup =
               new TaskGroup(RuntimeIdGenerator.generateTaskGroupId(), taskDAG, incomingEdgeInfos, outgoingEdgeInfos);
           physicalPlanBuilder.addTaskGroupToStage(runtimeStage.getStageId(), newTaskGroup);
@@ -116,8 +118,14 @@ public final class RuntimeMaster {
     return physicalPlanBuilder.build();
   }
 
+  /**
+   * Creates a list of information on stage boundary edges for task groups.
+   * @param stageBoundaryRuntimeEdges a map of endpoint vertex id to the incoming/outgoing edges from/to this stage.
+   * @param isIncomingEdges true if the map is for incoming, false if it is for outgoing edges.
+   * @return a list of information on the stage boundary edges.
+   */
   private List<StageBoundaryEdgeInfo> createStageBoundaryEdgeInfo(
-      final Map<String, Set<RuntimeEdge>> stageBoundaryRuntimeEdges, boolean isIncomingEdges) {
+      final Map<String, Set<RuntimeEdge>> stageBoundaryRuntimeEdges, final boolean isIncomingEdges) {
     final List<StageBoundaryEdgeInfo> stageBoundaryEdgeInfos = new LinkedList<>();
     for (final Set<RuntimeEdge> edgeSet : stageBoundaryRuntimeEdges.values()) {
       edgeSet.forEach(runtimeEdge -> {

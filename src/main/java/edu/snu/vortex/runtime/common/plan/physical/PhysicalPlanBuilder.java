@@ -26,6 +26,7 @@ public final class PhysicalPlanBuilder {
 
   /**
    * Builds a {@link PhysicalPlan}.
+   * @param executionPlanId ID of the execution plan this physical plan corresponds to.
    */
   public PhysicalPlanBuilder(final String executionPlanId) {
     this.physicalPlanId = executionPlanId;

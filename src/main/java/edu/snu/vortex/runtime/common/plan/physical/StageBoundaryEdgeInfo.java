@@ -22,12 +22,21 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Stage Boundary Edge Info.
+ * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeEdge}.
  */
 public final class StageBoundaryEdgeInfo implements Serializable {
   private final String stageBoundaryEdgeInfoId;
   private final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes;
+
+  /**
+   * The ID of the endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the stage.
+   * The vertex is connected to a vertex of another stage connected by the edge this class represents.
+   */
   private final String externalEndpointVertexId;
+
+  /**
+   * Vertex attributes of the endpoint vertex.
+   */
   private final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> externalEndpointVertexAttr;
 
   public StageBoundaryEdgeInfo(final String runtimeEdgeId,

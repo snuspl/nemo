@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.utils.DAG;
-import edu.snu.vortex.utils.DAGImpl;
 
 import java.io.Serializable;
 import java.util.List;

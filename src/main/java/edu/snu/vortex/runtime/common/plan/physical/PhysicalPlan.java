@@ -15,21 +15,21 @@
  */
 package edu.snu.vortex.runtime.common.plan.physical;
 
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeStage;
-
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Represents a job.
- * Each execution plan consists of a list of {@link RuntimeStage} to execute, in a topological order.
- * An execution plan is submitted to {@link edu.snu.vortex.runtime.master.RuntimeMaster} once created.
+ * A job's physical plan corresponding to an {@link edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan}.
  */
 public final class PhysicalPlan {
   private static final Logger LOG = Logger.getLogger(PhysicalPlan.class.getName());
 
   private final String id;
+
+  /**
+   * The map of {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeStage} id to the task groups to execute.
+   */
   private final Map<String, List<TaskGroup>> physicalPlan;
 
   public PhysicalPlan(final String id,
