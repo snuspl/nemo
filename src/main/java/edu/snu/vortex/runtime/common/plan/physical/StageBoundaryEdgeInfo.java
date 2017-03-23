@@ -22,10 +22,10 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Runtime Edge Info.
+ * Stage Boundary Edge Info.
  */
 public final class StageBoundaryEdgeInfo implements Serializable {
-  private final String stageBoundaryEdgeInfo;
+  private final String stageBoundaryEdgeInfoId;
   private final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes;
   private final String externalEndpointVertexId;
   private final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> externalEndpointVertexAttr;
@@ -34,14 +34,14 @@ public final class StageBoundaryEdgeInfo implements Serializable {
                          final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes,
                          final String externalEndpointVertexId,
                          final Map<RuntimeAttributes.RuntimeVertexAttribute, Object> externalEndpointVertexAttr) {
-    this.stageBoundaryEdgeInfo = runtimeEdgeId;
+    this.stageBoundaryEdgeInfoId = runtimeEdgeId;
     this.edgeAttributes = edgeAttributes;
     this.externalEndpointVertexId = externalEndpointVertexId;
     this.externalEndpointVertexAttr = externalEndpointVertexAttr;
   }
 
-  public String getStageBoundaryEdgeInfo() {
-    return stageBoundaryEdgeInfo;
+  public String getStageBoundaryEdgeInfoId() {
+    return stageBoundaryEdgeInfoId;
   }
 
   public Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> getEdgeAttributes() {
