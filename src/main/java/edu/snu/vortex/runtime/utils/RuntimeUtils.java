@@ -23,7 +23,14 @@ import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Runtime utility functions.
+ */
 public final class RuntimeUtils {
+
+  private RuntimeUtils() {
+
+  }
 
   /**
    * Converts IR's Vertex Attributes to Runtime's attributes.
