@@ -47,14 +47,4 @@ public final class TaskGroup implements Serializable {
     this.incomingEdges = incomingEdges;
     this.outgoingEdges = outgoingEdges;
   }
-
-  @Override
-  public String toString() {
-    return "TaskGroup{" +
-        "taskGroupId='" + taskGroupId + '\'' +
-        ",\n taskDAG=" + taskDAG +
-        ",\n incomingEdges=" + incomingEdges +
-        ",\n outgoingEdges=" + outgoingEdges +
-        '}';
-  }
 }
