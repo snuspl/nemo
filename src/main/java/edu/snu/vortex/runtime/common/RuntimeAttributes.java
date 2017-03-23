@@ -32,12 +32,17 @@ public final class RuntimeAttributes {
   /**
    * Set of attributes applicable to {@link edu.snu.vortex.runtime.common.execplan.RuntimeEdge}.
    */
-  public enum RuntimeEdgeAttribute { CHANNEL, COMM_PATTERN, PARTITION }
+  public enum RuntimeEdgeAttribute { CHANNEL_DATA_PLACEMENT, CHANNEL_TRANSFER_POLICY, COMM_PATTERN, PARTITION }
 
   /**
-   * Set of values possible when {@link RuntimeEdgeAttribute} is "CHANNEL".
+   * Set of values possible when {@link RuntimeEdgeAttribute} is "CHANNEL_DATA_PLACEMENT".
    */
-  public enum Channel { LOCAL_MEM, TCP, FILE, DISTR_STORAGE }
+  public enum ChannelDataPlacement { LOCAL, MEMORY, FILE, DISTR_STORAGE }
+
+  /**
+   * Set of values possible when {@link RuntimeEdgeAttribute} is "CHANNEL_TRANSFER_POLICY".
+   */
+  public enum ChannelTransferPolicy { PUSH, PULL }
 
   /**
    * Set of values possible when {@link RuntimeEdgeAttribute} is "COMM_PATTERN".
