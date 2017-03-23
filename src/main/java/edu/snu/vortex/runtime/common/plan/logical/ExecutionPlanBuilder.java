@@ -100,7 +100,7 @@ public final class ExecutionPlanBuilder {
     irAttributes.forEachIntAttr((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
       case Parallelism:
-        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, 0);
+        runtimeVertexAttributes.put(RuntimeAttributes.RuntimeVertexAttribute.PARALLELISM, irAttributeVal);
         break;
       default:
         throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeKey);
