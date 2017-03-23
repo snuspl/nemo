@@ -18,11 +18,8 @@ package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.common.RuntimeAttributes;
-import edu.snu.vortex.runtime.common.plan.physical.ChannelInfo;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Runtime Edge.
@@ -32,7 +29,6 @@ public final class RuntimeEdge {
   private final Map<RuntimeAttributes.RuntimeEdgeAttribute, Object> edgeAttributes;
   private final RuntimeVertex srcRuntimeVertex;
   private final RuntimeVertex dstRuntimeVertex;
-  private final Set<ChannelInfo> channelInfos;
 
   /**
    * Represents the edge between vertices in a logical plan.
@@ -49,7 +45,6 @@ public final class RuntimeEdge {
     this.edgeAttributes = edgeAttributes;
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.dstRuntimeVertex = dstRuntimeVertex;
-    this.channelInfos = new HashSet<>();
   }
 
   public String getId() {
@@ -66,13 +61,5 @@ public final class RuntimeEdge {
 
   public RuntimeVertex getDstRuntimeVertex() {
     return dstRuntimeVertex;
-  }
-
-  public void addChannelInfo(final ChannelInfo channelInfo) {
-    channelInfos.add(channelInfo);
-  }
-
-  public Set<ChannelInfo> getChannelInfos() {
-    return channelInfos;
   }
 }
