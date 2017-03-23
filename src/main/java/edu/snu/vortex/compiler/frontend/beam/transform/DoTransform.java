@@ -35,12 +35,15 @@ import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
+import java.util.Map;
+
 /**
  * DoFn transform implementation.
  */
 public final class DoTransform implements Transform {
   private final DoFn doFn;
   private final PipelineOptions options;
+  private Map<PCollectionView, Object> sideInputs;
   private OutputCollector outputCollector;
 
   public DoTransform(final DoFn doFn, final PipelineOptions options) {
@@ -51,14 +54,16 @@ public final class DoTransform implements Transform {
   @Override
   public void prepare(final Context context, final OutputCollector oc) {
     this.outputCollector = oc;
+    this.sideInputs = context.getSideInputs();
   }
 
   @Override
   public void onData(final Iterable<Element> data, final String srcVertexId) {
+    final ProcessContext beamContext = new ProcessContext<>(doFn, this.outputCollector, this.sideInputs, options);
     final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
-    final ProcessContext beamContext = new ProcessContext<>(doFn, outputCollector, options);
     invoker.invokeSetup();
     invoker.invokeStartBundle(beamContext);
+    System.out.println("*****DataToProcess: " + data + " for DoFn: " + doFn);
     data.forEach(element -> { // No need to check for input index, since it is always 0 for DoTransform
       beamContext.setElement(element.getData());
       invoker.invokeProcessElement(beamContext);
@@ -76,7 +81,7 @@ public final class DoTransform implements Transform {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(doFn);
+    sb.append("DoTransform:" + doFn);
     return sb.toString();
   }
 
@@ -89,13 +94,16 @@ public final class DoTransform implements Transform {
       implements DoFnInvoker.ArgumentProvider<I, O> {
     private I input;
     private final OutputCollector outputCollector;
+    private final Map<PCollectionView, Object> sideInputs;
     private final PipelineOptions options;
 
     ProcessContext(final DoFn<I, O> fn,
                    final OutputCollector outputCollector,
+                   final Map<PCollectionView, Object> sideInputs,
                    final PipelineOptions options) {
       fn.super();
       this.outputCollector = outputCollector;
+      this.sideInputs = sideInputs;
       this.options = options;
     }
 
@@ -110,7 +118,7 @@ public final class DoTransform implements Transform {
 
     @Override
     public <T> T sideInput(final PCollectionView<T> view) {
-      throw new UnsupportedOperationException();
+      return (T) sideInputs.get(view);
     }
 
     @Override
