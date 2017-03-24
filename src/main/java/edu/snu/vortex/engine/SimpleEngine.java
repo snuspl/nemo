@@ -38,7 +38,7 @@ public final class SimpleEngine {
           final List<Reader> readers = sourceVertex.getReaders(10); // 10 Bytes per BoundedSourceReader
           final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
 
-          System.out.println("Begin processing SourceVertex: " + sourceVertex);
+          System.out.println("Begin processing SourceVertex: " + sourceVertex.getId());
 
           for (final Reader reader : readers) {
             partitions.add(reader.read());
@@ -79,7 +79,8 @@ public final class SimpleEngine {
             final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
 
             // Process each partition of an edge
-            System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " + operatorVertex);
+            System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
+                operatorVertex.getId());
 
             inDataPartitions.forEach(inData -> {
               final Transform.Context transformContext = new ContextImpl(broadcastedInput);

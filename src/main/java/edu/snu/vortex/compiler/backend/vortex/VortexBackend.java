@@ -35,12 +35,14 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   private final ExecutionPlanBuilder executionPlanBuilder;
   private final HashMap<Vertex, Integer> vertexStageNumHashMap;
   private final List<List<Vertex>> vertexListForEachStage;
+  private final HashMap<Integer, Integer> dependencyInfo;
   private static AtomicInteger stageNumber = new AtomicInteger(0);
 
   public VortexBackend() {
     executionPlanBuilder = new ExecutionPlanBuilder();
     vertexStageNumHashMap = new HashMap<>();
     vertexListForEachStage = new ArrayList<>();
+    dependencyInfo = new HashMap<>();
   }
 
   public ExecutionPlan compile(final DAG dag) throws Exception {
@@ -57,13 +59,19 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()));
+        final Optional<Edge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
+            !dependencyInfo.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
+            .orElse(Optional.empty());
 
-        if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty()) {
+        if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
           // when we cannot connect vertex in other stages
           createNewStage(vertex);
+          inEdges.ifPresent(edges -> edges.forEach(inEdge -> {
+            dependencyInfo.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
+          }));
         } else {
-          // We consider the first edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
-          final Integer stageNum = vertexStageNumHashMap.get(inEdgesForStage.get().get(0).getSrc());
+          // We consider the last edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
+          final Integer stageNum = vertexStageNumHashMap.get(edgeToConnect.get().getSrc());
           vertexStageNumHashMap.put(vertex, stageNum);
           vertexListForEachStage.get(stageNum).add(vertex);
         }
