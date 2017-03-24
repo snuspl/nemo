@@ -70,7 +70,6 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
             dependencyInfo.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
           }));
         } else {
-          // We consider the last edge we find. Connecting all one-to-one memory edges into a stage may create cycles.
           final Integer stageNum = vertexStageNumHashMap.get(edgeToConnect.get().getSrc());
           vertexStageNumHashMap.put(vertex, stageNum);
           vertexListForEachStage.get(stageNum).add(vertex);

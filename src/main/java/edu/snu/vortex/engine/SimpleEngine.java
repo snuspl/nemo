@@ -67,15 +67,15 @@ public final class SimpleEngine {
 
         // Process each input edge
         inEdges.forEach(inEdge -> {
-          if (edgeIdToPartitions.get(inEdge.getId()) != null && !edgeIdToPartitions.get(inEdge.getId()).isEmpty()) {
-            final List<Iterable<Element>> inDataPartitions;
-            if (operatorVertex.getTransform() instanceof BroadcastTransform) {
-              final List<Element> iterableList = new ArrayList<>();
-              edgeIdToPartitions.get(inEdge.getId()).forEach(iterable -> iterable.forEach(iterableList::add));
-              inDataPartitions = Arrays.asList(iterableList);
-            } else {
-              inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
-            }
+          final List<Iterable<Element>> inDataPartitions;
+          if (operatorVertex.getTransform() instanceof BroadcastTransform) {
+            final List<Element> iterableList = new ArrayList<>();
+            edgeIdToPartitions.get(inEdge.getId()).forEach(iterable -> iterable.forEach(iterableList::add));
+            inDataPartitions = Arrays.asList(iterableList);
+          } else {
+            inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
+          }
+          if (inDataPartitions != null && !inDataPartitions.isEmpty()) {
             final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
 
             // Process each partition of an edge
@@ -142,7 +142,7 @@ public final class SimpleEngine {
 
       // for some reason, Java requires the type to be explicit
       final List<Iterable<Element>> explicitlyIterables = new ArrayList<>();
-      routedPartitions.forEach(explicitlyIterables::add);
+      explicitlyIterables.addAll(routedPartitions);
       return explicitlyIterables;
     } else {
       throw new UnsupportedOperationException();
