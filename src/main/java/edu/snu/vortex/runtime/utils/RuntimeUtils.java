@@ -126,19 +126,37 @@ public final class RuntimeUtils {
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelDataPlacement, channelPlacementAttrVal);
           break;
         case EdgeChannelTransferPolicy:
-          final Object channelTransferPolicy;
+          final Object channelTransferPolicyAttrVal;
           switch (irAttributeVal) {
             case Pull:
-              channelTransferPolicy = RuntimeAttribute.PULL;
+              channelTransferPolicyAttrVal = RuntimeAttribute.PULL;
               break;
             case Push:
-              channelTransferPolicy = RuntimeAttribute.PUSH;
+              channelTransferPolicyAttrVal = RuntimeAttribute.PUSH;
               break;
             default:
               throw new UnsupportedAttributeException("this IR attribute is not supported");
           }
 
-          runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelTransferPolicy, channelTransferPolicy);
+          runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelTransferPolicy, channelTransferPolicyAttrVal);
+          break;
+        case CommunicationPattern:
+          final Object commPatternAttrVal;
+          switch (irAttributeVal) {
+            case OneToOne:
+              commPatternAttrVal = RuntimeAttribute.ONE_TO_ONE;
+              break;
+            case Broadcast:
+              commPatternAttrVal = RuntimeAttribute.BROADCAST;
+              break;
+            case ScatterGather:
+              commPatternAttrVal = RuntimeAttribute.SCATTER_GATHER;
+              break;
+            default:
+              throw new UnsupportedAttributeException("this IR attribute is not supported");
+          }
+
+          runtimeEdgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPatternAttrVal);
           break;
         default:
           throw new UnsupportedAttributeException("this IR attribute is not supported");

@@ -44,7 +44,7 @@ public enum Attribute {
    * Edge channel transfer policy attributes.
    */
   Pull(Key.EdgeChannelTransferPolicy),
-  Push(Key.EdgeChannelTransferPolicy);
+  Push(Key.EdgeChannelTransferPolicy),
 
   /**
    * Edge communication pattern attributes.
@@ -59,7 +59,6 @@ public enum Attribute {
   public enum Key {
     Placement,
     EdgePartitioning,
-
     EdgeChannelDataPlacement,
     EdgeChannelTransferPolicy,
     CommunicationPattern,
