@@ -32,14 +32,18 @@ public final class PadoEdgePass implements Pass {
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            edge.setAttr(Attribute.Key.EdgeChannel, Attribute.TCPPipe);
+            edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.Memory);
+            edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Push);
           } else if (fromReservedToTransient(edge)) {
-            edge.setAttr(Attribute.Key.EdgeChannel, Attribute.File);
+            edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.File);
+            edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Push);
           } else {
             if (edge.getType().equals(Edge.Type.OneToOne)) {
-              edge.setAttr(Attribute.Key.EdgeChannel, Attribute.Memory);
+              edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.Local);
+              edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Pull);
             } else {
-              edge.setAttr(Attribute.Key.EdgeChannel, Attribute.File);
+              edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.File);
+              edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Pull);
             }
           }
         });

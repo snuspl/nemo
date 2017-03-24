@@ -33,12 +33,18 @@ public enum Attribute {
   Range(Key.EdgePartitioning),
 
   /**
-   * Edge attributes.
+   * Edge channel data placement attributes.
    */
-  Memory(Key.EdgeChannel),
-  TCPPipe(Key.EdgeChannel),
-  File(Key.EdgeChannel),
-  DistributedStorage(Key.EdgeChannel);
+  Local(Key.EdgeChannelDataPlacement),
+  Memory(Key.EdgeChannelDataPlacement),
+  File(Key.EdgeChannelDataPlacement),
+  DistributedStorage(Key.EdgeChannelDataPlacement),
+
+  /**
+   * Edge channel transfer policy attributes.
+   */
+  Pull(Key.EdgeChannelTransferPolicy),
+  Push(Key.EdgeChannelTransferPolicy);
 
   /**
    * Attribute Keys.
@@ -47,7 +53,8 @@ public enum Attribute {
     Placement,
     EdgePartitioning,
 
-    EdgeChannel,
+    EdgeChannelDataPlacement,
+    EdgeChannelTransferPolicy,
     CommunicationPattern,
   }
 
