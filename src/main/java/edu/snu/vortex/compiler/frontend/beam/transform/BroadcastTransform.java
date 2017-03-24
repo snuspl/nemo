@@ -15,10 +15,17 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.transform;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
+import org.apache.beam.sdk.transforms.ViewFn;
+import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Broadcast transform implementation.
@@ -38,7 +45,11 @@ public final class BroadcastTransform implements Transform {
 
   @Override
   public void onData(final Iterable<Element> data, final String srcVertexId) {
-    data.forEach(outputCollector::emit);
+    final List<WindowedValue> windowed = StreamSupport.stream(data.spliterator(), false)
+        .map(element -> WindowedValue.valueInGlobalWindow(element.getData()))
+        .collect(Collectors.toList());
+    final ViewFn viewFn = this.pCollectionView.getViewFn();
+    outputCollector.emit(new BeamElement(viewFn.apply(windowed)));
   }
 
   public PCollectionView getTag() {
