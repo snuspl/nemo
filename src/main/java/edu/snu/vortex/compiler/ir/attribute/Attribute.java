@@ -47,6 +47,13 @@ public enum Attribute {
   Push(Key.EdgeChannelTransferPolicy);
 
   /**
+   * Edge communication pattern attributes.
+   */
+  OneToOne(Key.CommunicationPattern),
+  Broadcast(Key.CommunicationPattern),
+  ScatterGather(Key.CommunicationPattern);
+
+  /**
    * Attribute Keys.
    */
   public enum Key {
