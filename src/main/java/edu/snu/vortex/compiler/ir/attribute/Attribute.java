@@ -35,6 +35,17 @@ public enum Attribute {
 
   /**
    * Edge channel data placement attributes.
+   * Local: Intermediate data are placed without serialization
+   * and the receiver on the same machine task will take the data.
+   *
+   * Memory: Intermediate data are serialized and stored in sender task's memory,
+   * until they are sent to the receiver task.
+   *
+   * File: Intermediate data are serialized and stored in local file,
+   * until they are sent to the receiver task.
+   *
+   * DistributedStorage: Intermediate data are serialized and stored in a distributed storage,
+   * until the receiver task takes them.
    */
   Local(Key.EdgeChannelDataPlacement),
   Memory(Key.EdgeChannelDataPlacement),
