@@ -30,8 +30,8 @@ public enum Attribute {
   /**
    * Edge partitioning attributes.
    */
-  Hash(Key.EdgePartitioning),
-  Range(Key.EdgePartitioning),
+  Hash(Key.Partitioning),
+  Range(Key.Partitioning),
 
   /**
    * Edge channel data placement attributes.
@@ -47,16 +47,16 @@ public enum Attribute {
    * DistributedStorage: Intermediate data are serialized and stored in a distributed storage,
    * until the receiver task takes them.
    */
-  Local(Key.EdgeChannelDataPlacement),
-  Memory(Key.EdgeChannelDataPlacement),
-  File(Key.EdgeChannelDataPlacement),
-  DistributedStorage(Key.EdgeChannelDataPlacement),
+  Local(Key.ChannelDataPlacement),
+  Memory(Key.ChannelDataPlacement),
+  File(Key.ChannelDataPlacement),
+  DistributedStorage(Key.ChannelDataPlacement),
 
   /**
    * Edge channel transfer policy attributes.
    */
-  Pull(Key.EdgeChannelTransferPolicy),
-  Push(Key.EdgeChannelTransferPolicy),
+  Pull(Key.ChannelTransferPolicy),
+  Push(Key.ChannelTransferPolicy),
 
   /**
    * Edge communication pattern attributes.
@@ -70,9 +70,9 @@ public enum Attribute {
    */
   public enum Key {
     Placement,
-    EdgePartitioning,
-    EdgeChannelDataPlacement,
-    EdgeChannelTransferPolicy,
+    Partitioning,
+    ChannelDataPlacement,
+    ChannelTransferPolicy,
     CommunicationPattern,
   }
 

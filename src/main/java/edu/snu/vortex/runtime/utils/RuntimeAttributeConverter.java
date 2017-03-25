@@ -23,7 +23,7 @@ import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 
 
 /**
- * Runtime utility functions.
+ * Runtime attribute converter functions.
  */
 public final class RuntimeAttributeConverter {
 
@@ -92,7 +92,7 @@ public final class RuntimeAttributeConverter {
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
-        case EdgePartitioning:
+        case Partitioning:
           final RuntimeAttribute partitioningAttrVal;
           switch (irAttributeVal) {
             case Hash:
@@ -108,7 +108,7 @@ public final class RuntimeAttributeConverter {
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.Partition, partitioningAttrVal);
           break;
-        case EdgeChannelDataPlacement:
+        case ChannelDataPlacement:
           final RuntimeAttribute channelPlacementAttrVal;
           switch (irAttributeVal) {
             case Local:
@@ -130,7 +130,7 @@ public final class RuntimeAttributeConverter {
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelDataPlacement, channelPlacementAttrVal);
           break;
-        case EdgeChannelTransferPolicy:
+        case ChannelTransferPolicy:
           final RuntimeAttribute channelTransferPolicyAttrVal;
           switch (irAttributeVal) {
             case Pull:

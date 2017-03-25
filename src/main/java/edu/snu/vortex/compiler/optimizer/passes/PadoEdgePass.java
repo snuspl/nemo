@@ -32,18 +32,18 @@ public final class PadoEdgePass implements Pass {
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.Memory);
-            edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Push);
+            edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+            edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
           } else if (fromReservedToTransient(edge)) {
-            edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.File);
-            edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Pull);
+            edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.File);
+            edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
           } else {
             if (edge.getType().equals(Edge.Type.OneToOne)) {
-              edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.Local);
-              edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Pull);
+              edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
+              edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
             } else {
-              edge.setAttr(Attribute.Key.EdgeChannelDataPlacement, Attribute.File);
-              edge.setAttr(Attribute.Key.EdgeChannelTransferPolicy, Attribute.Pull);
+              edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.File);
+              edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
             }
           }
         });
