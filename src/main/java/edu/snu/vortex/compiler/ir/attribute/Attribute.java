@@ -20,11 +20,12 @@ package edu.snu.vortex.compiler.ir.attribute;
  */
 public enum Attribute {
   /**
-   * Vertex attributes.
+   * Vertex placement attributes.
    */
   Transient(Key.Placement),
   Reserved(Key.Placement),
   Compute(Key.Placement),
+  Storage(Key.Placement),
 
   /**
    * Edge partitioning attributes.

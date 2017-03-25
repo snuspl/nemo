@@ -16,22 +16,20 @@
 package edu.snu.vortex.runtime.common.execplan;
 
 import edu.snu.vortex.runtime.common.*;
-import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.task.Task;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents an operator of a job, tagged with attributes about the operator.
  */
 public abstract class RuntimeVertex implements Serializable {
   private final String runtimeVertexId;
-  private final Map<RuntimeAttribute.Key, Object> vertexAttributes;
+  private final RuntimeAttributeMap vertexAttributes;
 
   public RuntimeVertex(final String irVertexId,
-                       final Map<RuntimeAttribute.Key, Object> vertexAttributes) {
+                       final RuntimeAttributeMap vertexAttributes) {
     this.runtimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(irVertexId);
     this.vertexAttributes = vertexAttributes;
   }

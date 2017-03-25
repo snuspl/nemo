@@ -27,49 +27,66 @@ public enum RuntimeAttribute {
   /**
    * Vertex resource type attributes.
    */
-  TRANSIENT(Key.ResourceType),
-  RESERVED(Key.ResourceType),
-  COMPUTE(Key.ResourceType),
-  STORAGE(Key.ResourceType),
+  Transient(Key.ResourceType),
+  Reserved(Key.ResourceType),
+  Compute(Key.ResourceType),
+  Storage(Key.ResourceType),
 
 
   /**
    * Channel data placement attributes.
+   * Local: Intermediate data are placed without serialization
+   * and the receiver on the same machine task will take the data.
+   *
+   * Memory: Intermediate data are serialized and stored in sender task's memory,
+   * until they are sent to the receiver task.
+   *
+   * File: Intermediate data are serialized and stored in local file,
+   * until they are sent to the receiver task.
+   *
+   * DistributedStorage: Intermediate data are serialized and stored in a distributed storage,
+   * until they are taken by the receiver task.
    */
-  LOCAL(Key.ChannelDataPlacement),
-  MEMORY(Key.ChannelDataPlacement),
-  FILE(Key.ChannelDataPlacement),
-  DISTR_STORAGE(Key.ChannelDataPlacement),
+  Local(Key.ChannelDataPlacement),
+  Memory(Key.ChannelDataPlacement),
+  File(Key.ChannelDataPlacement),
+  DistributedStorage(Key.ChannelDataPlacement),
 
   /**
    * Channel transfer policy attributes.
    */
-  PUSH(Key.ChannelTransferPolicy),
-  PULL(Key.ChannelTransferPolicy),
+  Push(Key.ChannelTransferPolicy),
+  Pull(Key.ChannelTransferPolicy),
 
   /**
    * Edge communication pattern attributes.
    */
-  ONE_TO_ONE(Key.CommPattern),
-  BROADCAST(Key.CommPattern),
-  SCATTER_GATHER(Key.CommPattern),
+  OneToOne(Key.CommPattern),
+  Broadcast(Key.CommPattern),
+  ScatterGather(Key.CommPattern),
 
   /**
    * Edge partition type attributes.
    */
-  HASH(Key.Partition),
-  RANGE(Key.Partition);
+  Hash(Key.Partition),
+  Range(Key.Partition);
 
-/**
- * Runtime attribute Keys.
- */
+  /**
+   * Runtime attribute keys.
+   */
   public enum Key {
-    Parallelism,
     ResourceType,
     ChannelDataPlacement,
     ChannelTransferPolicy,
     Partition,
     CommPattern,
+  }
+
+  /**
+   * Runtime attribute keys that have an integer as its value.
+   */
+  public enum IntegerKey {
+    Parallelism,
   }
 
   private final RuntimeAttribute.Key key;

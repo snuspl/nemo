@@ -17,16 +17,13 @@ package edu.snu.vortex.runtime.common.execplan;
 
 
 import edu.snu.vortex.runtime.common.*;
-import edu.snu.vortex.runtime.common.RuntimeAttribute;
-
-import java.util.Map;
 
 /**
  * Runtime Edge.
  */
 public final class RuntimeEdge {
   private final String runtimeEdgeId;
-  private final Map<RuntimeAttribute.Key, Object> edgeAttributes;
+  private final RuntimeAttributeMap edgeAttributes;
   private final String srcRuntimeVertexId;
   private final String dstRuntimeVertexId;
 
@@ -38,7 +35,7 @@ public final class RuntimeEdge {
    * @param dstRuntimeVertexId destination vertex.
    */
   public RuntimeEdge(final String irEdgeId,
-                     final Map<RuntimeAttribute.Key, Object> edgeAttributes,
+                     final RuntimeAttributeMap edgeAttributes,
                      final String srcRuntimeVertexId,
                      final String dstRuntimeVertexId) {
     this.runtimeEdgeId = RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId);
@@ -51,7 +48,7 @@ public final class RuntimeEdge {
     return runtimeEdgeId;
   }
 
-  public Map<RuntimeAttribute.Key, Object> getEdgeAttributes() {
+  public RuntimeAttributeMap getEdgeAttributes() {
     return edgeAttributes;
   }
 

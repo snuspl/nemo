@@ -18,60 +18,63 @@ package edu.snu.vortex.runtime.utils;
 
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Runtime utility functions.
  */
-public final class RuntimeUtils {
+public final class RuntimeAttributeConverter {
 
-  private RuntimeUtils() {
+  private RuntimeAttributeConverter() {
 
   }
 
   /**
    * Converts IR's Vertex Attributes to Runtime's attributes.
    * @param irAttributes attributes to convert.
-   * @return a map of Runtime Vertex attributes.
+   * @return a map of Runtime attributes.
    */
-  public static Map<RuntimeAttribute.Key, Object> convertVertexAttributes(
+  public static RuntimeAttributeMap convertVertexAttributes(
       final AttributeMap irAttributes) {
-    final Map<RuntimeAttribute.Key, Object> runtimeVertexAttributes = new HashMap<>();
+    final RuntimeAttributeMap runtimeVertexAttributes = new RuntimeAttributeMap();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
         case Placement:
-          final Object runtimeAttributeVal;
+          final RuntimeAttribute runtimeAttributeVal;
           switch (irAttributeVal) {
             case Transient:
-              runtimeAttributeVal = RuntimeAttribute.TRANSIENT;
+              runtimeAttributeVal = RuntimeAttribute.Transient;
               break;
             case Reserved:
-              runtimeAttributeVal = RuntimeAttribute.RESERVED;
+              runtimeAttributeVal = RuntimeAttribute.Reserved;
               break;
             case Compute:
-              runtimeAttributeVal = RuntimeAttribute.COMPUTE;
+              runtimeAttributeVal = RuntimeAttribute.Compute;
+              break;
+            case Storage:
+              runtimeAttributeVal = RuntimeAttribute.Storage;
               break;
             default:
-              throw new UnsupportedAttributeException("this IR attribute is not supported");
+              throw new UnsupportedAttributeException(
+                  "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
           }
-          runtimeVertexAttributes.put(RuntimeAttribute.Key.ChannelDataPlacement, runtimeAttributeVal);
+          runtimeVertexAttributes.put(RuntimeAttribute.Key.ResourceType, runtimeAttributeVal);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
+          throw new UnsupportedAttributeException("this IR attribute (" + irAttributeKey + ") is not supported.");
       }
     }));
 
     irAttributes.forEachIntAttr((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
         case Parallelism:
-          runtimeVertexAttributes.put(RuntimeAttribute.Key.Parallelism, 0);
+          runtimeVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, 0);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported: " + irAttributeKey);
+          throw new UnsupportedAttributeException("this IR attribute (" + irAttributeKey + ") is not supported.");
       }
     });
 
@@ -81,85 +84,90 @@ public final class RuntimeUtils {
   /**
    * Converts IR's Edge Attributes to Runtime's attributes.
    * @param irAttributes attributes to convert.
-   * @return a map of Runtime Edge attributes.
+   * @return a map of Runtime attributes.
    */
-  public static Map<RuntimeAttribute.Key, Object> convertEdgeAttributes(
+  public static RuntimeAttributeMap convertEdgeAttributes(
       final AttributeMap irAttributes) {
-    final Map<RuntimeAttribute.Key, Object> runtimeEdgeAttributes = new HashMap<>();
+    final RuntimeAttributeMap runtimeEdgeAttributes = new RuntimeAttributeMap();
 
     irAttributes.forEachAttr(((irAttributeKey, irAttributeVal) -> {
       switch (irAttributeKey) {
         case EdgePartitioning:
-          final Object partitioningAttrVal;
+          final RuntimeAttribute partitioningAttrVal;
           switch (irAttributeVal) {
             case Hash:
-              partitioningAttrVal = RuntimeAttribute.HASH;
+              partitioningAttrVal = RuntimeAttribute.Hash;
               break;
             case Range:
-              partitioningAttrVal = RuntimeAttribute.RANGE;
+              partitioningAttrVal = RuntimeAttribute.Range;
               break;
             default:
-              throw new UnsupportedAttributeException("this IR attribute is not supported");
+              throw new UnsupportedAttributeException(
+                  "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
           }
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.Partition, partitioningAttrVal);
           break;
         case EdgeChannelDataPlacement:
-          final Object channelPlacementAttrVal;
+          final RuntimeAttribute channelPlacementAttrVal;
           switch (irAttributeVal) {
             case Local:
-              channelPlacementAttrVal = RuntimeAttribute.LOCAL;
+              channelPlacementAttrVal = RuntimeAttribute.Local;
               break;
             case Memory:
-              channelPlacementAttrVal = RuntimeAttribute.MEMORY;
+              channelPlacementAttrVal = RuntimeAttribute.Memory;
               break;
             case File:
-              channelPlacementAttrVal = RuntimeAttribute.FILE;
+              channelPlacementAttrVal = RuntimeAttribute.File;
               break;
             case DistributedStorage:
-              channelPlacementAttrVal = RuntimeAttribute.DISTR_STORAGE;
+              channelPlacementAttrVal = RuntimeAttribute.DistributedStorage;
               break;
             default:
-              throw new UnsupportedAttributeException("this IR attribute is not supported");
+              throw new UnsupportedAttributeException(
+                  "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
           }
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelDataPlacement, channelPlacementAttrVal);
           break;
         case EdgeChannelTransferPolicy:
-          final Object channelTransferPolicyAttrVal;
+          final RuntimeAttribute channelTransferPolicyAttrVal;
           switch (irAttributeVal) {
             case Pull:
-              channelTransferPolicyAttrVal = RuntimeAttribute.PULL;
+              channelTransferPolicyAttrVal = RuntimeAttribute.Pull;
               break;
             case Push:
-              channelTransferPolicyAttrVal = RuntimeAttribute.PUSH;
+              channelTransferPolicyAttrVal = RuntimeAttribute.Push;
               break;
             default:
-              throw new UnsupportedAttributeException("this IR attribute is not supported");
+              throw new UnsupportedAttributeException(
+                  "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
           }
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelTransferPolicy, channelTransferPolicyAttrVal);
           break;
         case CommunicationPattern:
-          final Object commPatternAttrVal;
+          final RuntimeAttribute commPatternAttrVal;
           switch (irAttributeVal) {
             case OneToOne:
-              commPatternAttrVal = RuntimeAttribute.ONE_TO_ONE;
+              commPatternAttrVal = RuntimeAttribute.OneToOne;
               break;
             case Broadcast:
-              commPatternAttrVal = RuntimeAttribute.BROADCAST;
+              commPatternAttrVal = RuntimeAttribute.Broadcast;
               break;
             case ScatterGather:
-              commPatternAttrVal = RuntimeAttribute.SCATTER_GATHER;
+              commPatternAttrVal = RuntimeAttribute.ScatterGather;
               break;
             default:
-              throw new UnsupportedAttributeException("this IR attribute is not supported");
+              throw new UnsupportedAttributeException(
+                  "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
+
           }
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPatternAttrVal);
           break;
         default:
-          throw new UnsupportedAttributeException("this IR attribute is not supported");
+          throw new UnsupportedAttributeException("This IR attribute (" + irAttributeKey + ") is not supported");
       }
     }));
     return runtimeEdgeAttributes;

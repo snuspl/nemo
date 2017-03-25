@@ -19,7 +19,7 @@ import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.runtime.common.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
-import edu.snu.vortex.runtime.utils.RuntimeUtils;
+import edu.snu.vortex.runtime.utils.RuntimeAttributeConverter;
 
 import java.util.*;
 
@@ -51,10 +51,10 @@ public final class ExecutionPlanBuilder {
     // TODO #100: Add Vertex Type in IR
     if (vertex instanceof BoundedSourceVertex) {
       newVertex = new RuntimeBoundedSourceVertex((BoundedSourceVertex) vertex,
-          RuntimeUtils.convertVertexAttributes(vertex.getAttributes()));
+          RuntimeAttributeConverter.convertVertexAttributes(vertex.getAttributes()));
     } else if (vertex instanceof OperatorVertex) {
       newVertex = new RuntimeOperatorVertex((OperatorVertex) vertex,
-          RuntimeUtils.convertVertexAttributes(vertex.getAttributes()));
+          RuntimeAttributeConverter.convertVertexAttributes(vertex.getAttributes()));
     } else {
       throw new IllegalVertexOperationException("Supported types: BoundedSourceVertex, OperatorVertex");
     }
@@ -99,7 +99,7 @@ public final class ExecutionPlanBuilder {
                                            final String dstRuntimeVertexId,
                                            final Edge edge) {
     final RuntimeEdge newEdge = new RuntimeEdge(edge.getId(),
-        RuntimeUtils.convertEdgeAttributes(edge.getAttributes()),
+        RuntimeAttributeConverter.convertEdgeAttributes(edge.getAttributes()),
         srcRuntimeVertexId, dstRuntimeVertexId);
     vertexIdToRuntimeStageBuilderMap.get(srcRuntimeVertexId).connectRuntimeStages(srcRuntimeVertexId, newEdge);
     vertexIdToRuntimeStageBuilderMap.get(dstRuntimeVertexId).connectRuntimeStages(dstRuntimeVertexId, newEdge);
