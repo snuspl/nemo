@@ -13,30 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.execplan;
-
-import edu.snu.vortex.runtime.common.*;
-import edu.snu.vortex.runtime.common.task.Task;
+package edu.snu.vortex.runtime.common.plan.physical;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
- * Represents an operator of a job, tagged with attributes about the operator.
+ * Task.
  */
-public abstract class RuntimeVertex implements Serializable {
+public abstract class Task implements Serializable {
+  private final String taskId;
   private final String runtimeVertexId;
-  private final RuntimeAttributeMap vertexAttributes;
+  private final int index;
 
-  public RuntimeVertex(final String irVertexId,
-                       final RuntimeAttributeMap vertexAttributes) {
-    this.runtimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(irVertexId);
-    this.vertexAttributes = vertexAttributes;
+  public Task(final String taskId,
+              final String runtimeVertexId,
+              final int index) {
+    this.taskId = taskId;
+    this.runtimeVertexId = runtimeVertexId;
+    this.index = index;
   }
 
-  public final String getId() {
+  public final String getTaskId() {
+    return taskId;
+  }
+
+  public final String getRuntimeVertexId() {
     return runtimeVertexId;
   }
 
-  public abstract List<? extends Task> getTaskList();
+  public final int getIndex() {
+    return index;
+  }
 }

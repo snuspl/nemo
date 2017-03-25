@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.example;
 
-import edu.snu.vortex.runtime.common.execplan.ExecutionPlanBuilder;
+import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlanBuilder;
 
 /**
  * Simple Execution Plan.
