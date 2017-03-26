@@ -25,8 +25,7 @@ final class LocalMessageDispatcher {
 
   <T extends Serializable> MessageSender<T> setupListener(
       final EndpointAddress endpointAddress, final String name, final MessageListener<T> listener) {
-    final MessageAddress messageAddress = new MessageAddress(
-        endpointAddress.getHost(), endpointAddress.getPort(), name);
+    final MessageAddress messageAddress = new MessageAddress(endpointAddress, name);
     if (messageListenerMap.putIfAbsent(messageAddress, listener) != null) {
       throw new RuntimeException(messageAddress + " was already used");
     }

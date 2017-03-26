@@ -24,7 +24,11 @@ public final class MessageAddress implements Serializable {
   }
 
   public MessageAddress(final String host, final int port, final String name) {
-    this.endpointAddress = new EndpointAddress(host, port);
+    this(new EndpointAddress(host, port), name);
+  }
+
+  public MessageAddress(final EndpointAddress endpointAddress, final String name) {
+    this.endpointAddress = endpointAddress;
     this.name = name;
   }
 
