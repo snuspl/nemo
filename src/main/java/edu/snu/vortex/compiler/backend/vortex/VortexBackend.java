@@ -36,13 +36,14 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   private final HashMap<Vertex, Integer> vertexStageNumHashMap;
   private final List<List<Vertex>> vertexListForEachStage;
   private final HashMap<Integer, Integer> dependencyInfo;
-  private static AtomicInteger stageNumber = new AtomicInteger(0);
+  private final AtomicInteger stageNumber;
 
   public VortexBackend() {
     executionPlanBuilder = new ExecutionPlanBuilder();
     vertexStageNumHashMap = new HashMap<>();
     vertexListForEachStage = new ArrayList<>();
     dependencyInfo = new HashMap<>();
+    stageNumber = new AtomicInteger(0);
   }
 
   public ExecutionPlan compile(final DAG dag) throws Exception {
