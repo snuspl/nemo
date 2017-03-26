@@ -26,11 +26,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public final class MapReduceTest {
-  private final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
+public final class BroadcastTest {
+  private final String broadcast = "edu.snu.vortex.examples.beam.Broadcast";
   private final String input = "./src/main/resources/sample_input";
   private final String output = "./src/main/resources/test_output";
-  private final String[] args = {mapReduce, input, output};
+  private final String[] args = {broadcast, input, output};
 
   @Test
   public void test() throws Exception {
