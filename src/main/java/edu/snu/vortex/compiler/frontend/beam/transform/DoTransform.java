@@ -35,6 +35,7 @@ import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -54,7 +55,8 @@ public final class DoTransform implements Transform {
   @Override
   public void prepare(final Context context, final OutputCollector oc) {
     this.outputCollector = oc;
-    this.sideInputs = context.getSideInputs();
+    this.sideInputs = new HashMap<>();
+    context.getSideInputs().forEach((k, v) -> this.sideInputs.put(((BroadcastTransform) k).getTag(), v));
   }
 
   @Override

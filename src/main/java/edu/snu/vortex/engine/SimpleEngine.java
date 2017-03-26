@@ -17,7 +17,6 @@ package edu.snu.vortex.engine;
 
 import edu.snu.vortex.compiler.frontend.beam.transform.BroadcastTransform;
 import edu.snu.vortex.compiler.ir.*;
-import org.apache.beam.sdk.values.PCollectionView;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -58,11 +57,11 @@ public final class SimpleEngine {
         final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
         final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
 
-        final Map<PCollectionView, Object> broadcastedInput = new HashMap<>();
+        final Map<Transform, Object> broadcastedInput = new HashMap<>();
         inEdges.stream()
             .filter(edge -> edge.getType().equals(Edge.Type.Broadcast))
             .forEach(edge -> broadcastedInput.put(
-                ((BroadcastTransform) ((OperatorVertex) edge.getSrc()).getTransform()).getTag(),
+                ((OperatorVertex) edge.getSrc()).getTransform(),
                 edgeIdToBroadcast.get(edge.getId())));
 
         // Process each input edge

@@ -22,14 +22,14 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Test MapReduce program with JobLauncher.
+ * Test Broadcast program with JobLauncher.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class BroadcastTest {
   private final String broadcast = "edu.snu.vortex.examples.beam.Broadcast";
   private final String input = "./src/main/resources/sample_input";
-  private final String output = "./src/main/resources/test_output";
+  private final String output = "./src/main/resources/sample_output";
   private final String[] args = {broadcast, input, output};
 
   @Test

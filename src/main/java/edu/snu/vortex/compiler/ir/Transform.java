@@ -15,8 +15,6 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import org.apache.beam.sdk.values.PCollectionView;
-
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +53,6 @@ public interface Transform {
 
     List<String> getDstVertexIds();
 
-    Map<PCollectionView, Object> getSideInputs();
+    Map<Transform, Object> getSideInputs();
   }
 }

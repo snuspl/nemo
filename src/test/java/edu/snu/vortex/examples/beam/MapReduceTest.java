@@ -29,7 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public final class MapReduceTest {
   private final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
   private final String input = "./src/main/resources/sample_input";
-  private final String output = "./src/main/resources/test_output";
+  private final String output = "./src/main/resources/sample_output";
   private final String[] args = {mapReduce, input, output};
 
   @Test

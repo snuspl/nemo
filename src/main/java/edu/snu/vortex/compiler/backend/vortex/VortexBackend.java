@@ -35,14 +35,14 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   private final ExecutionPlanBuilder executionPlanBuilder;
   private final HashMap<Vertex, Integer> vertexStageNumHashMap;
   private final List<List<Vertex>> vertexListForEachStage;
-  private final HashMap<Integer, Integer> dependencyInfo;
+  private final HashMap<Integer, Integer> stageDependencyMap;
   private final AtomicInteger stageNumber;
 
   public VortexBackend() {
     executionPlanBuilder = new ExecutionPlanBuilder();
     vertexStageNumHashMap = new HashMap<>();
     vertexListForEachStage = new ArrayList<>();
-    dependencyInfo = new HashMap<>();
+    stageDependencyMap = new HashMap<>();
     stageNumber = new AtomicInteger(0);
   }
 
@@ -61,14 +61,14 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()));
         final Optional<Edge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
-            !dependencyInfo.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
+            !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
             .orElse(Optional.empty());
 
         if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
           // when we cannot connect vertex in other stages
           createNewStage(vertex);
           inEdges.ifPresent(edges -> edges.forEach(inEdge -> {
-            dependencyInfo.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
+            stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
           }));
         } else {
           final Integer stageNum = vertexStageNumHashMap.get(edgeToConnect.get().getSrc());

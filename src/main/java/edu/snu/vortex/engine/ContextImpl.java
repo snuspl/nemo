@@ -16,7 +16,6 @@
 package edu.snu.vortex.engine;
 
 import edu.snu.vortex.compiler.ir.Transform;
-import org.apache.beam.sdk.values.PCollectionView;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,13 +25,13 @@ import java.util.Map;
  * Transform Context Implementation.
  */
 public final class ContextImpl implements Transform.Context {
-  private final Map<PCollectionView, Object> sideInputs;
+  private final Map<Transform, Object> sideInputs;
 
   ContextImpl() {
     this.sideInputs = new HashMap<>();
   }
 
-  ContextImpl(final Map<PCollectionView, Object> sideInputs) {
+  ContextImpl(final Map<Transform, Object> sideInputs) {
     this.sideInputs = sideInputs;
   }
 
@@ -47,7 +46,7 @@ public final class ContextImpl implements Transform.Context {
   }
 
   @Override
-  public Map<PCollectionView, Object> getSideInputs() {
+  public Map<Transform, Object> getSideInputs() {
     return this.sideInputs;
   }
 }
