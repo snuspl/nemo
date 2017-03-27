@@ -83,7 +83,6 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
         }
       }
     });
-    vertexListForEachStage.forEach(l -> System.out.println(l.stream().map(Vertex::getId).collect(Collectors.toList())));
     // Create new Stage for each vertices with distinct stages, and connect each vertices together.
     vertexListForEachStage.forEach(list -> {
       executionPlanBuilder.createNewStage();
