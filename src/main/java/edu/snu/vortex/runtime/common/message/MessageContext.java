@@ -8,11 +8,11 @@ import java.io.Serializable;
 public interface MessageContext {
 
   /**
-   * Return the name of sender.
+   * Return the identifier of sender.
    *
-   * @return sender name
+   * @return sender id
    */
-  String getSenderName();
+  String getSenderId();
 
   /**
    * Send back a reply message.

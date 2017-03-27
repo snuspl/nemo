@@ -11,28 +11,28 @@ import java.util.concurrent.Future;
  */
 final class LocalMessageSender<T extends Serializable> implements MessageSender<T> {
 
-  private final String senderNodeName;
-  private final String targetNodeName;
-  private final String messageTypeName;
+  private final String senderId;
+  private final String targetId;
+  private final String messageTypeId;
   private final LocalMessageDispatcher dispatcher;
 
-  LocalMessageSender(final String senderNodeName,
-                     final String targetNodeName,
-                     final String messageTypeName,
+  LocalMessageSender(final String senderId,
+                     final String targetId,
+                     final String messageTypeId,
                      final LocalMessageDispatcher dispatcher) {
-    this.senderNodeName = senderNodeName;
-    this.targetNodeName = targetNodeName;
-    this.messageTypeName = messageTypeName;
+    this.senderId = senderId;
+    this.targetId = targetId;
+    this.messageTypeId = messageTypeId;
     this.dispatcher = dispatcher;
   }
 
   @Override
   public void send(final T message) {
-    dispatcher.dispatchSendMessage(targetNodeName, messageTypeName, message);
+    dispatcher.dispatchSendMessage(targetId, messageTypeId, message);
   }
 
   @Override
-  public <U extends Serializable> Future<U> ask(final T message) {
-    return dispatcher.dispatchAskMessage(senderNodeName, targetNodeName, messageTypeName, message);
+  public <U extends Serializable> Future<U> request(final T message) {
+    return dispatcher.dispatchRequestMessage(senderId, targetId, messageTypeId, message);
   }
 }

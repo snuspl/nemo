@@ -11,29 +11,29 @@ import java.util.concurrent.Future;
  */
 public final class LocalMessageEnvironment implements MessageEnvironment {
 
-  private final String currentNodeName;
+  private final String currentNodeId;
   private final LocalMessageDispatcher dispatcher;
 
-  public LocalMessageEnvironment(final String currentNodeName, final LocalMessageDispatcher dispatcher) {
-    this.currentNodeName = currentNodeName;
+  public LocalMessageEnvironment(final String currentNodeId, final LocalMessageDispatcher dispatcher) {
+    this.currentNodeId = currentNodeId;
     this.dispatcher = dispatcher;
   }
 
   @Override
   public <T extends Serializable> MessageSender<T> setupListener(
-      final String messageTypeName, final MessageListener<T> listener) {
-    return dispatcher.setupListener(currentNodeName, messageTypeName, listener);
+      final String messageTypeId, final MessageListener<T> listener) {
+    return dispatcher.setupListener(currentNodeId, messageTypeId, listener);
   }
 
   @Override
   public <T extends Serializable> Future<MessageSender<T>> asyncConnect(
-      final String targetNodeName, final String messageTypeName) {
+      final String targetId, final String messageTypeId) {
     return CompletableFuture.completedFuture(new LocalMessageSender<T>(
-        currentNodeName, targetNodeName, messageTypeName, dispatcher));
+        currentNodeId, targetId, messageTypeId, dispatcher));
   }
 
   @Override
-  public String getCurrentNodeName() {
-    return currentNodeName;
+  public String getCurrentId() {
+    return currentNodeId;
   }
 }

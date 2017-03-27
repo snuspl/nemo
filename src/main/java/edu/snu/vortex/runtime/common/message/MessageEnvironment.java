@@ -10,31 +10,31 @@ import java.util.concurrent.Future;
 public interface MessageEnvironment {
 
   /**
-   * Set up a {@link MessageListener} with a message type name.
+   * Set up a {@link MessageListener} with a message type id.
    *
-   * @param messageTypeName name of the message type name which would be handled by message listener
+   * @param messageTypeId an identifier of the message type which would be handled by message listener
    * @param listener a message listener
    * @param <T> message type
    * @return a message sender to the locally set up listener.
    */
-  <T extends Serializable> MessageSender<T> setupListener(String messageTypeName, MessageListener<T> listener);
+  <T extends Serializable> MessageSender<T> setupListener(String messageTypeId, MessageListener<T> listener);
 
   /**
-   * Asynchronously connect to the node named 'targetNodeName' and return a future of {@link MessageSender} that sends
-   * messages with 'messageTypeName'.
+   * Asynchronously connect to the node called 'targetId' and return a future of {@link MessageSender} that sends
+   * messages with 'messageTypeId'.
    *
-   * @param targetNodeName a target node name
-   * @param messageTypeName a message type name
+   * @param targetId a target id
+   * @param messageTypeId a message type id
    * @param <T> message type
    * @return a message sender
    */
-  <T extends Serializable> Future<MessageSender<T>> asyncConnect(String targetNodeName, String messageTypeName);
+  <T extends Serializable> Future<MessageSender<T>> asyncConnect(String targetId, String messageTypeId);
 
   /**
-   * Return a name of current node.
+   * Return an id of current node.
    *
-   * @return a name
+   * @return an identifier
    */
-  String getCurrentNodeName();
+  String getCurrentId();
 
 }

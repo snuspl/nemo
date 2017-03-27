@@ -15,53 +15,53 @@ import java.util.concurrent.Future;
  */
 final class LocalMessageDispatcher {
 
-  private final ConcurrentMap<String, ConcurrentMap<String, MessageListener>> nodeNameToMessageListenersMap;
+  private final ConcurrentMap<String, ConcurrentMap<String, MessageListener>> nodeIdToMessageListenersMap;
 
   LocalMessageDispatcher() {
-    this.nodeNameToMessageListenersMap = new ConcurrentHashMap<>();
+    this.nodeIdToMessageListenersMap = new ConcurrentHashMap<>();
   }
 
   <T extends Serializable> MessageSender<T> setupListener(
-      final String currentNodeName, final String messageTypeName, final MessageListener<T> listener) {
+      final String currentNodeId, final String messageTypeId, final MessageListener<T> listener) {
 
-    ConcurrentMap<String, MessageListener> messageTypeToListenerMap = nodeNameToMessageListenersMap
-        .get(currentNodeName);
+    ConcurrentMap<String, MessageListener> messageTypeToListenerMap = nodeIdToMessageListenersMap.get(currentNodeId);
 
     if (messageTypeToListenerMap == null) {
       messageTypeToListenerMap = new ConcurrentHashMap<>();
-      final ConcurrentMap<String, MessageListener> map = nodeNameToMessageListenersMap.putIfAbsent(
-          currentNodeName, messageTypeToListenerMap);
+      final ConcurrentMap<String, MessageListener> map = nodeIdToMessageListenersMap.putIfAbsent(
+          currentNodeId, messageTypeToListenerMap);
       if (map != null) {
         messageTypeToListenerMap = map;
       }
     }
 
-    if (messageTypeToListenerMap.putIfAbsent(messageTypeName, listener) != null) {
-      throw new RuntimeException(messageTypeName + " was already used in " + currentNodeName);
+    if (messageTypeToListenerMap.putIfAbsent(messageTypeId, listener) != null) {
+      throw new LocalDispatcherException(
+          messageTypeId + " was already used in " + currentNodeId);
     }
 
-    return new LocalMessageSender<>(currentNodeName, currentNodeName, messageTypeName, this);
+    return new LocalMessageSender<>(currentNodeId, currentNodeId, messageTypeId, this);
   }
 
   <T extends Serializable> void dispatchSendMessage(
-      final String targetNodeName, final String messageTypeName, final T message) {
-    final MessageListener listener = nodeNameToMessageListenersMap.get(targetNodeName).get(messageTypeName);
+      final String targetId, final String messageTypeId, final T message) {
+    final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);
     if (listener == null) {
-      throw new RuntimeException("There was no set up listener for " + messageTypeName + " in " + targetNodeName);
+      throw new LocalDispatcherException("There was no set up listener for " + messageTypeId + " in " + targetId);
     }
     listener.onSendMessage(message);
   }
 
-  <T extends Serializable, U extends Serializable> Future<U> dispatchAskMessage(
-      final String senderNodeName, final String targetNodeName, final String messageTypeName, final T message) {
+  <T extends Serializable, U extends Serializable> Future<U> dispatchRequestMessage(
+      final String senderId, final String targetId, final String messageTypeId, final T message) {
 
-    final MessageListener listener = nodeNameToMessageListenersMap.get(targetNodeName).get(messageTypeName);
+    final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);
     if (listener == null) {
-      throw new RuntimeException("There was no set up listener for " + messageTypeName + " in " + targetNodeName);
+      throw new LocalDispatcherException("There was no set up listener for " + messageTypeId + " in " + targetId);
     }
 
-    final LocalMessageContext context = new LocalMessageContext(senderNodeName);
-    listener.onAskMessage(message, context);
+    final LocalMessageContext context = new LocalMessageContext(senderId);
+    listener.onRequestMessage(message, context);
 
     final Optional<Throwable> throwable = context.getThrowable();
     final Optional<Object> replyMessage = context.getReplyMessage();
@@ -74,5 +74,14 @@ final class LocalMessageDispatcher {
     }
 
     return future;
+  }
+
+  /**
+   * A runtime exception in {@link LocalMessageDispatcher}.
+   */
+  private final class LocalDispatcherException extends RuntimeException {
+    LocalDispatcherException(final String message) {
+      super(message);
+    }
   }
 }

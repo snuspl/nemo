@@ -10,21 +10,21 @@ import java.util.Optional;
  */
 final class LocalMessageContext implements MessageContext {
 
-  private final String senderName;
+  private final String senderId;
   private Throwable throwable;
   private Object replyMessage;
 
-  LocalMessageContext(final String senderName) {
-    this.senderName = senderName;
+  LocalMessageContext(final String senderId) {
+    this.senderId = senderId;
   }
 
   @Override
-  public String getSenderName() {
-    return senderName;
+  public String getSenderId() {
+    return senderId;
   }
 
   @Override
-  public <U extends Serializable> void reply(final U message) {
+  public <T extends Serializable> void reply(final T message) {
     this.replyMessage = message;
   }
 

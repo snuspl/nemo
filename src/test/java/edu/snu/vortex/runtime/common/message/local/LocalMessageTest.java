@@ -16,13 +16,13 @@ public class LocalMessageTest {
   public void testLocalMessages() throws Exception {
     final LocalMessageDispatcher dispatcher = new LocalMessageDispatcher();
 
-    final String driverNodeName = "DRIVER_NODE";
-    final String executorOneNodeName = "EXECUTOR_ONE_NODE";
-    final String executorTwoNodeName = "EXECUTOR_TWO_NODE";
+    final String driverNodeId = "DRIVER_NODE";
+    final String executorOneNodeId = "EXECUTOR_ONE_NODE";
+    final String executorTwoNodeId = "EXECUTOR_TWO_NODE";
 
-    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverNodeName, dispatcher);
-    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneNodeName, dispatcher);
-    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoNodeName, dispatcher);
+    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverNodeId, dispatcher);
+    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneNodeId, dispatcher);
+    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoNodeId, dispatcher);
 
     final AtomicInteger toDriverMessageUsingSend = new AtomicInteger();
 
@@ -33,7 +33,7 @@ public class LocalMessageTest {
       }
 
       @Override
-      public void onAskMessage(final ToDriver message, final MessageContext messageContext) {
+      public void onRequestMessage(final ToDriver message, final MessageContext messageContext) {
         if (message instanceof ExecutorStarted) {
           messageContext.reply(true);
         } else if (message instanceof MakeException) {
@@ -49,19 +49,19 @@ public class LocalMessageTest {
       }
 
       @Override
-      public void onAskMessage(SecondToDriver message, MessageContext messageContext) {
+      public void onRequestMessage(SecondToDriver message, MessageContext messageContext) {
       }
     });
 
     // Test sending message from executors to the driver.
 
     final Future<MessageSender<ToDriver>> messageSenderFuture1 = executorOneEnv.asyncConnect(
-        driverNodeName, "ToDriver");
+        driverNodeId, "ToDriver");
     Assert.assertTrue(messageSenderFuture1.isDone());
     final MessageSender<ToDriver> messageSender1 = messageSenderFuture1.get();
 
     final Future<MessageSender<ToDriver>> messageSenderFuture2 = executorTwoEnv.asyncConnect(
-        driverNodeName, "ToDriver");
+        driverNodeId, "ToDriver");
     Assert.assertTrue(messageSenderFuture2.isDone());
     final MessageSender<ToDriver> messageSender2 = messageSenderFuture2.get();
 
@@ -69,10 +69,10 @@ public class LocalMessageTest {
     messageSender2.send(new ExecutorStarted());
 
     Assert.assertEquals(2, toDriverMessageUsingSend.get());
-    Assert.assertTrue(messageSender1.<Boolean>ask(new ExecutorStarted()).get());
-    Assert.assertTrue(messageSender2.<Boolean>ask(new ExecutorStarted()).get());
+    Assert.assertTrue(messageSender1.<Boolean>request(new ExecutorStarted()).get());
+    Assert.assertTrue(messageSender2.<Boolean>request(new ExecutorStarted()).get());
     try {
-      messageSender1.<Boolean>ask(new MakeException()).get();
+      messageSender1.<Boolean>request(new MakeException()).get();
       throw new RuntimeException(); // Expected not reached here.
     } catch (final Exception e) {
     }
@@ -83,12 +83,12 @@ public class LocalMessageTest {
     executorTwoEnv.setupListener("BetweenExecutors", new SimpleMessageListener());
 
     final MessageSender<BetweenExecutors> oneToTwo = executorOneEnv.<BetweenExecutors>asyncConnect(
-        executorTwoNodeName, "BetweenExecutors").get();
+        executorTwoNodeId, "BetweenExecutors").get();
     final MessageSender<BetweenExecutors> twoToOne = executorOneEnv.<BetweenExecutors>asyncConnect(
-        executorOneNodeName, "BetweenExecutors").get();
+        executorOneNodeId, "BetweenExecutors").get();
 
-    Assert.assertEquals("oneToTwo", oneToTwo.<String>ask(new SimpleMessage("oneToTwo")).get());
-    Assert.assertEquals("twoToOne", twoToOne.<String>ask(new SimpleMessage("twoToOne")).get());
+    Assert.assertEquals("oneToTwo", oneToTwo.<String>request(new SimpleMessage("oneToTwo")).get());
+    Assert.assertEquals("twoToOne", twoToOne.<String>request(new SimpleMessage("twoToOne")).get());
   }
 
   final class SimpleMessageListener implements MessageListener<SimpleMessage> {
@@ -100,7 +100,7 @@ public class LocalMessageTest {
     }
 
     @Override
-    public void onAskMessage(final SimpleMessage message, final MessageContext messageContext) {
+    public void onRequestMessage(final SimpleMessage message, final MessageContext messageContext) {
       messageContext.reply(message.getData());
     }
   }
