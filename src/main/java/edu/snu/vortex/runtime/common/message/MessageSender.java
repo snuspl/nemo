@@ -18,8 +18,8 @@ public interface MessageSender<T extends Serializable> {
   void send(T message);
 
   /**
-   * Send a message to corresponding {@link MessageListener}.onAskMessage and return reply. If there was an exception,
-   * the returned future would be failed.
+   * Send a message to corresponding {@link MessageListener}.onAskMessage and return a reply message. If there was
+   * an exception, the returned future would be failed.
    *
    * @param message a message
    * @param <U> reply message type.

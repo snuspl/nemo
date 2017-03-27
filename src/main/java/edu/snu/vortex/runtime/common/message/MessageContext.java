@@ -3,16 +3,16 @@ package edu.snu.vortex.runtime.common.message;
 import java.io.Serializable;
 
 /**
- * This class transfers a reply message from {@link MessageListener}.
+ * This class sends a reply message from {@link MessageListener}.
  */
 public interface MessageContext {
 
   /**
-   * Return an endpoint address of the sender.
+   * Return the name of sender.
    *
-   * @return an endpoint address
+   * @return sender name
    */
-  EndpointAddress getSenderAddress();
+  String getSenderName();
 
   /**
    * Send back a reply message.

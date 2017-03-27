@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * Handles messages from {@link MessageSender}. Multiple MessageListeners can be setup using {@link MessageEnvironment}
- * while they are identified by their unique names.
+ * while they are identified by their unique message type names.
  *
  * @param <T> message type
  */
@@ -17,7 +17,7 @@ public interface MessageListener<T extends Serializable> {
   void onSendMessage(T message);
 
   /**
-   * Received a message, and return a response with {@link MessageContext}.
+   * Received a message, and return a response using {@link MessageContext}.
    * @param message a message
    * @param messageContext a message context
    */

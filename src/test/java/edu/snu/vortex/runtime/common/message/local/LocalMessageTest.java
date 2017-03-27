@@ -16,13 +16,13 @@ public class LocalMessageTest {
   public void testLocalMessages() throws Exception {
     final LocalMessageDispatcher dispatcher = new LocalMessageDispatcher();
 
-    final EndpointAddress driverEndpointAddress = new EndpointAddress("127.0.0.1", 0);
-    final EndpointAddress executorOneEndpointAddress = new EndpointAddress("127.0.0.1", 1);
-    final EndpointAddress executorTwoEndpointAddress = new EndpointAddress("127.0.0.1", 2);
+    final String driverNodeName = "DRIVER_NODE";
+    final String executorOneNodeName = "EXECUTOR_ONE_NODE";
+    final String executorTwoNodeName = "EXECUTOR_TWO_NODE";
 
-    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverEndpointAddress, dispatcher);
-    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneEndpointAddress, dispatcher);
-    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoEndpointAddress, dispatcher);
+    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverNodeName, dispatcher);
+    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneNodeName, dispatcher);
+    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoNodeName, dispatcher);
 
     final AtomicInteger toDriverMessageUsingSend = new AtomicInteger();
 
@@ -56,12 +56,12 @@ public class LocalMessageTest {
     // Test sending message from executors to the driver.
 
     final Future<MessageSender<ToDriver>> messageSenderFuture1 = executorOneEnv.asyncConnect(
-        new MessageAddress(driverEndpointAddress, "ToDriver"));
+        driverNodeName, "ToDriver");
     Assert.assertTrue(messageSenderFuture1.isDone());
     final MessageSender<ToDriver> messageSender1 = messageSenderFuture1.get();
 
     final Future<MessageSender<ToDriver>> messageSenderFuture2 = executorTwoEnv.asyncConnect(
-        new MessageAddress(driverEndpointAddress, "ToDriver"));
+        driverNodeName, "ToDriver");
     Assert.assertTrue(messageSenderFuture2.isDone());
     final MessageSender<ToDriver> messageSender2 = messageSenderFuture2.get();
 
@@ -83,9 +83,9 @@ public class LocalMessageTest {
     executorTwoEnv.setupListener("BetweenExecutors", new SimpleMessageListener());
 
     final MessageSender<BetweenExecutors> oneToTwo = executorOneEnv.<BetweenExecutors>asyncConnect(
-        new MessageAddress(executorTwoEndpointAddress, "BetweenExecutors")).get();
+        executorTwoNodeName, "BetweenExecutors").get();
     final MessageSender<BetweenExecutors> twoToOne = executorOneEnv.<BetweenExecutors>asyncConnect(
-        new MessageAddress(executorTwoEndpointAddress, "BetweenExecutors")).get();
+        executorOneNodeName, "BetweenExecutors").get();
 
     Assert.assertEquals("oneToTwo", oneToTwo.<String>ask(new SimpleMessage("oneToTwo")).get());
     Assert.assertEquals("twoToOne", twoToOne.<String>ask(new SimpleMessage("twoToOne")).get());

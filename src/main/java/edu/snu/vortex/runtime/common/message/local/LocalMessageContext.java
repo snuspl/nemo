@@ -1,6 +1,5 @@
 package edu.snu.vortex.runtime.common.message.local;
 
-import edu.snu.vortex.runtime.common.message.EndpointAddress;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 
 import java.io.Serializable;
@@ -11,17 +10,17 @@ import java.util.Optional;
  */
 final class LocalMessageContext implements MessageContext {
 
-  private final EndpointAddress senderAddress;
+  private final String senderName;
   private Throwable throwable;
   private Object replyMessage;
 
-  LocalMessageContext(final EndpointAddress senderAddress) {
-    this.senderAddress = senderAddress;
+  LocalMessageContext(final String senderName) {
+    this.senderName = senderName;
   }
 
   @Override
-  public EndpointAddress getSenderAddress() {
-    return senderAddress;
+  public String getSenderName() {
+    return senderName;
   }
 
   @Override

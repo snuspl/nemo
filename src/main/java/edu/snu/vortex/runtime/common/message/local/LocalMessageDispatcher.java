@@ -1,7 +1,5 @@
 package edu.snu.vortex.runtime.common.message.local;
 
-import edu.snu.vortex.runtime.common.message.EndpointAddress;
-import edu.snu.vortex.runtime.common.message.MessageAddress;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 
@@ -17,38 +15,52 @@ import java.util.concurrent.Future;
  */
 final class LocalMessageDispatcher {
 
-  private final ConcurrentMap<MessageAddress, MessageListener> messageListenerMap;
+  private final ConcurrentMap<String, ConcurrentMap<String, MessageListener>> nodeNameToMessageListenersMap;
 
   LocalMessageDispatcher() {
-    this.messageListenerMap = new ConcurrentHashMap<>();
+    this.nodeNameToMessageListenersMap = new ConcurrentHashMap<>();
   }
 
   <T extends Serializable> MessageSender<T> setupListener(
-      final EndpointAddress endpointAddress, final String name, final MessageListener<T> listener) {
-    final MessageAddress messageAddress = new MessageAddress(endpointAddress, name);
-    if (messageListenerMap.putIfAbsent(messageAddress, listener) != null) {
-      throw new RuntimeException(messageAddress + " was already used");
+      final String currentNodeName, final String messageTypeName, final MessageListener<T> listener) {
+
+    ConcurrentMap<String, MessageListener> messageTypeToListenerMap = nodeNameToMessageListenersMap
+        .get(currentNodeName);
+
+    if (messageTypeToListenerMap == null) {
+      messageTypeToListenerMap = new ConcurrentHashMap<>();
+      final ConcurrentMap<String, MessageListener> map = nodeNameToMessageListenersMap.putIfAbsent(
+          currentNodeName, messageTypeToListenerMap);
+      if (map != null) {
+        messageTypeToListenerMap = map;
+      }
     }
 
-    return new LocalMessageSender<>(endpointAddress, messageAddress, this);
+    if (messageTypeToListenerMap.putIfAbsent(messageTypeName, listener) != null) {
+      throw new RuntimeException(messageTypeName + " was already used in " + currentNodeName);
+    }
+
+    return new LocalMessageSender<>(currentNodeName, currentNodeName, messageTypeName, this);
   }
 
-  <T extends Serializable> void dispatchSendMessage(final MessageAddress targetAddress, final T message) {
-    final MessageListener listener = messageListenerMap.get(targetAddress);
+  <T extends Serializable> void dispatchSendMessage(
+      final String targetNodeName, final String messageTypeName, final T message) {
+    final MessageListener listener = nodeNameToMessageListenersMap.get(targetNodeName).get(messageTypeName);
     if (listener == null) {
-      throw new RuntimeException("There was no set up listener for " + targetAddress);
+      throw new RuntimeException("There was no set up listener for " + messageTypeName + " in " + targetNodeName);
     }
     listener.onSendMessage(message);
   }
 
   <T extends Serializable, U extends Serializable> Future<U> dispatchAskMessage(
-      final EndpointAddress senderAddress, final MessageAddress targetAddress, final T message) {
-    final MessageListener listener = messageListenerMap.get(targetAddress);
+      final String senderNodeName, final String targetNodeName, final String messageTypeName, final T message) {
+
+    final MessageListener listener = nodeNameToMessageListenersMap.get(targetNodeName).get(messageTypeName);
     if (listener == null) {
-      throw new RuntimeException("There was no set up listener for " + targetAddress);
+      throw new RuntimeException("There was no set up listener for " + messageTypeName + " in " + targetNodeName);
     }
 
-    final LocalMessageContext context = new LocalMessageContext(senderAddress);
+    final LocalMessageContext context = new LocalMessageContext(senderNodeName);
     listener.onAskMessage(message, context);
 
     final Optional<Throwable> throwable = context.getThrowable();

@@ -10,29 +10,31 @@ import java.util.concurrent.Future;
 public interface MessageEnvironment {
 
   /**
-   * Set up a {@link MessageListener} with a name.
+   * Set up a {@link MessageListener} with a message type name.
    *
-   * @param name name of the message listener
+   * @param messageTypeName name of the message type name which would be handled by message listener
    * @param listener a message listener
    * @param <T> message type
    * @return a message sender to the locally set up listener.
    */
-  <T extends Serializable> MessageSender<T> setupListener(String name, MessageListener<T> listener);
+  <T extends Serializable> MessageSender<T> setupListener(String messageTypeName, MessageListener<T> listener);
 
   /**
-   * Asynchronously connect to the {@link MessageAddress} and return a future.
+   * Asynchronously connect to the node named 'targetNodeName' and return a future of {@link MessageSender} that sends
+   * messages with 'messageTypeName'.
    *
-   * @param targetAddress a target address
+   * @param targetNodeName a target node name
+   * @param messageTypeName a message type name
    * @param <T> message type
    * @return a message sender
    */
-  <T extends Serializable> Future<MessageSender<T>> asyncConnect(MessageAddress targetAddress);
+  <T extends Serializable> Future<MessageSender<T>> asyncConnect(String targetNodeName, String messageTypeName);
 
   /**
-   * Return an endpoint of current node.
+   * Return a name of current node.
    *
-   * @return an endpoint
+   * @return a name
    */
-  EndpointAddress getCurrentAddress();
+  String getCurrentNodeName();
 
 }
