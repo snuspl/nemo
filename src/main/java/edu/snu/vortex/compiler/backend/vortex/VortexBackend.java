@@ -71,20 +71,19 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
             stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
           }));
         } else {
-          final Integer stageNum = vertexStageNumHashMap.get(edgeToConnect.get().getSrc());
-          vertexStageNumHashMap.put(vertex, stageNum);
-          vertexListForEachStage.get(stageNum).add(vertex);
+          final Vertex vertexToConnect = edgeToConnect.get().getSrc();
+          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(vertexToConnect));
+          final Optional<List<Vertex>> list =
+              vertexListForEachStage.stream().filter(l -> l.contains(vertexToConnect)).findFirst();
+          list.ifPresent(lst -> {
+            vertexListForEachStage.remove(lst);
+            lst.add(vertex);
+            vertexListForEachStage.add(lst);
+          });
         }
       }
     });
-    // Sort topologically
-    dag.doTopological(vertex -> {
-      final Optional<List<Vertex>> list = vertexListForEachStage.stream().filter(l -> l.contains(vertex)).findFirst();
-      list.ifPresent(l -> {
-        vertexListForEachStage.remove(l);
-        vertexListForEachStage.add(l);
-      });
-    });
+    vertexListForEachStage.forEach(l -> System.out.println(l.stream().map(Vertex::getId).collect(Collectors.toList())));
     // Create new Stage for each vertices with distinct stages, and connect each vertices together.
     vertexListForEachStage.forEach(list -> {
       executionPlanBuilder.createNewStage();
@@ -97,8 +96,9 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   }
 
   private void createNewStage(final Vertex vertex) {
-    vertexStageNumHashMap.put(vertex, stageNumber.get());
-    vertexListForEachStage.add(stageNumber.get(), new ArrayList<>());
-    vertexListForEachStage.get(stageNumber.getAndIncrement()).add(vertex);
+    vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
+    final List<Vertex> newList = new ArrayList<>();
+    newList.add(vertex);
+    vertexListForEachStage.add(newList);
   }
 }
