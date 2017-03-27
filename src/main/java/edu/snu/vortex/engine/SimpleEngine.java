@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.engine;
 
-import edu.snu.vortex.compiler.frontend.beam.transform.BroadcastTransform;
 import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,8 +43,7 @@ public final class SimpleEngine {
             partitions.add(reader.read());
           }
           dag.getOutEdgesOf(vertex).get().stream()
-              .map(outEdge -> outEdge.getId())
-              .forEach(id -> edgeIdToPartitions.put(id, partitions));
+              .forEach(outEdge -> edgeIdToPartitions.put(outEdge.getId(), routePartitions(partitions, outEdge)));
 
           System.out.println(" Output of {" + vertex.getId() + "} for edges " + dag.getOutEdgesOf(vertex).get().stream()
               .map(Edge::getId).collect(Collectors.toList()) + ": " + partitions);
@@ -59,21 +58,14 @@ public final class SimpleEngine {
 
         final Map<Transform, Object> broadcastedInput = new HashMap<>();
         inEdges.stream()
-            .filter(edge -> edge.getType().equals(Edge.Type.Broadcast))
+            .filter(edge -> edge.getAttr(Attribute.Key.SideInput) == Attribute.SideInput)
             .forEach(edge -> broadcastedInput.put(
                 ((OperatorVertex) edge.getSrc()).getTransform(),
                 edgeIdToBroadcast.get(edge.getId())));
 
         // Process each input edge
         inEdges.forEach(inEdge -> {
-          final List<Iterable<Element>> inDataPartitions;
-          if (operatorVertex.getTransform() instanceof BroadcastTransform) {
-            final List<Element> iterableList = new ArrayList<>();
-            edgeIdToPartitions.get(inEdge.getId()).forEach(iterable -> iterable.forEach(iterableList::add));
-            inDataPartitions = Arrays.asList(iterableList);
-          } else {
-            inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
-          }
+          final List<Iterable<Element>> inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
           if (inDataPartitions != null && !inDataPartitions.isEmpty()) {
             final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
 
@@ -93,7 +85,7 @@ public final class SimpleEngine {
             // Save the results
             if (outEdges.size() > 0) {
               outEdges.forEach(outEdge -> {
-                if (outEdge.getType() == Edge.Type.Broadcast) {
+                if (outEdge.getAttr(Attribute.Key.SideInput) == Attribute.SideInput) {
                   if (outDataPartitions.size() != 1) {
                     throw new RuntimeException("Size of out data partitions of a broadcast operator must match 1");
                   }
@@ -126,6 +118,10 @@ public final class SimpleEngine {
     final Edge.Type edgeType = edge.getType();
     if (edgeType == Edge.Type.OneToOne) {
       return partitions;
+    } else if (edgeType == Edge.Type.Broadcast) {
+      final List<Element> iterableList = new ArrayList<>();
+      partitions.forEach(iterable -> iterable.forEach(iterableList::add));
+      return Arrays.asList(iterableList);
     } else if (edgeType == Edge.Type.ScatterGather) {
       final int numOfDsts = partitions.size(); // Same as the number of current partitions
       final List<List<Element>> routedPartitions = new ArrayList<>(numOfDsts);

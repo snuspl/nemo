@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.WindowTransform;
 import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
@@ -104,7 +105,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
-          .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex)));
+          .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex))
+              .setAttr(Attribute.Key.SideInput, Attribute.SideInput));
       return vortexVertex;
     } else {
       throw new UnsupportedOperationException(beamTransform.toString());
@@ -114,7 +116,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private Edge.Type getEdgeType(final Vertex src, final Vertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform) {
       return Edge.Type.ScatterGather;
-    } else if (src instanceof OperatorVertex && ((OperatorVertex) src).getTransform() instanceof BroadcastTransform) {
+    } else if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof BroadcastTransform) {
       return Edge.Type.Broadcast;
     } else {
       return Edge.Type.OneToOne;

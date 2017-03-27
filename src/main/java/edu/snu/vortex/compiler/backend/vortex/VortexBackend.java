@@ -77,6 +77,14 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
         }
       }
     });
+    // Sort topologically
+    dag.doTopological(vertex -> {
+      final Optional<List<Vertex>> list = vertexListForEachStage.stream().filter(l -> l.contains(vertex)).findFirst();
+      list.ifPresent(l -> {
+        vertexListForEachStage.remove(l);
+        vertexListForEachStage.add(l);
+      });
+    });
     // Create new Stage for each vertices with distinct stages, and connect each vertices together.
     vertexListForEachStage.forEach(list -> {
       executionPlanBuilder.createNewStage();
