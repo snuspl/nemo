@@ -18,6 +18,7 @@ package edu.snu.vortex.examples.beam;
 import com.github.fommil.netlib.BLAS;
 import com.github.fommil.netlib.LAPACK;
 import edu.snu.vortex.compiler.frontend.beam.Runner;
+import edu.snu.vortex.compiler.frontend.beam.coder.PairCoder;
 import edu.snu.vortex.utils.Pair;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
@@ -240,7 +241,7 @@ public final class AlternatingLeastSquare {
     options.setJobName("ALS");
 
     final Pipeline p = Pipeline.create(options);
-//    p.getCoderRegistry().registerCoder(Pair.class, PairCoder.class);
+    p.getCoderRegistry().registerCoder(Pair.class, PairCoder.class);
 
     // Read raw data
     final PCollection<String> rawData = p.apply(TextIO.Read.from(inputFilePath));
