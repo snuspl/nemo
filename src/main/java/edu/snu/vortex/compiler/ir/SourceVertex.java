@@ -25,9 +25,9 @@ import java.util.List;
 public abstract class SourceVertex<O> extends Vertex {
   /**
    * Get parallel readers.
-   * @param desiredBundleSizeBytes .
+   * @param desiredSplitNumber number of splits desired.
    * @return List of readers.
    * @throws Exception .
    */
-  public abstract List<Reader<O>> getReaders(final long desiredBundleSizeBytes) throws Exception;
+  public abstract List<Reader<O>> getReaders(final long desiredSplitNumber) throws Exception;
 }
