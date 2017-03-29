@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.common.channel;
 
 import edu.snu.vortex.compiler.ir.Element;
 
-import java.util.List;
 
 /**
  * Input channel interface.

@@ -18,15 +18,13 @@ package edu.snu.vortex.runtime.common.channel;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Channel configuration for {@link Channel} initialization.
  */
 public final class ChannelConfig {
-  final RuntimeAttribute channelType;
-  final RuntimeAttribute transferPolicy;
+  private final RuntimeAttribute channelType;
+  private final RuntimeAttribute transferPolicy;
 
   public ChannelConfig(final RuntimeAttribute channelType,
                        final RuntimeAttribute transferPolicy) {
