@@ -36,6 +36,8 @@ import static org.apache.beam.sdk.util.Structs.addBoolean;
 
 /**
  * Coder for {@link edu.snu.vortex.utils.Pair}.
+ * @param <A> type for the left coder.
+ * @param <B> type for the right coder.
  */
 public final class PairCoder<A, B> extends StandardCoder<Pair<A, B>> {
   private final Coder<A> leftCoder;
@@ -71,13 +73,13 @@ public final class PairCoder<A, B> extends StandardCoder<Pair<A, B>> {
   //=====================================================================================================
 
   @Override
-  public void encode(final Pair<A, B> Pair, final OutputStream outStream, final Context context) throws IOException {
-    if (Pair == null) {
+  public void encode(final Pair<A, B> pair, final OutputStream outStream, final Context context) throws IOException {
+    if (pair == null) {
       throw new CoderException("cannot encode a null KV");
     }
     final Context nestedContext = context.nested();
-    leftCoder.encode(Pair.left(), outStream, nestedContext);
-    rightCoder.encode(Pair.right(), outStream, nestedContext);
+    leftCoder.encode(pair.left(), outStream, nestedContext);
+    rightCoder.encode(pair.right(), outStream, nestedContext);
   }
 
   @Override

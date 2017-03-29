@@ -259,7 +259,6 @@ public final class AlternatingLeastSquare {
     // Create Initial Item Matrix
     PCollectionView<Map<Integer, float[]>> itemMatrix = parsedItemData
         .apply(ParDo.of(new DoFn<KV<Integer, Pair<int[], float[]>>, KV<Integer, float[]>>() {
-
           @ProcessElement
           public void processElement(final ProcessContext c) throws Exception {
             final float[] result = new float[numFeatures];
