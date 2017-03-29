@@ -15,8 +15,36 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.exception.InvalidParameterException;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Configuration for {@link Channel} initialization.
+ * Channel configuration for {@link Channel} initialization.
  */
 public final class ChannelConfig {
+  final RuntimeAttribute channelType;
+  final RuntimeAttribute transferPolicy;
+
+  public ChannelConfig(final RuntimeAttribute channelType,
+                       final RuntimeAttribute transferPolicy) {
+    if (!channelType.hasKey(RuntimeAttribute.Key.ChannelDataPlacement)) {
+      throw new InvalidParameterException("The given RuntimeAttribute value is invalid as channel type.");
+    } else if (!transferPolicy.hasKey(RuntimeAttribute.Key.ChannelTransferPolicy)) {
+      throw new InvalidParameterException("The given RuntimeAttribute value is invalid as transfer policy.");
+    }
+
+    this.channelType = channelType;
+    this.transferPolicy = transferPolicy;
+  }
+
+  public RuntimeAttribute getChannelType() {
+    return channelType;
+  }
+
+  public RuntimeAttribute getTransferPolicy() {
+    return transferPolicy;
+  }
 }

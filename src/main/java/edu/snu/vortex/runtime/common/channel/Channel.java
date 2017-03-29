@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.channel;
 
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
+
 /**
  * Channel interface, common part of {@link OutputChannel} and {@link InputChannel}.
  */
@@ -25,11 +27,14 @@ public interface Channel {
   String getId();
 
   /**
-   * @param key a key for either {@link ChannelType}.
-   * @return the channel type respective to the given key.
+   * @return the channel type, one of ChannelDataPlacement attribute in {@link RuntimeAttribute}.
    */
-  ChannelType getType(ChannelType.Key key);
+  RuntimeAttribute getType();
 
+  /**
+   * @return the channel's transfer policy, one of ChannelTransferPolicy attribute in {@link RuntimeAttribute}.
+   */
+  RuntimeAttribute getTransferPolicy();
 
   /**
    * @return the source task id of the channel.

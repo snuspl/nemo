@@ -33,16 +33,16 @@ public interface InputChannel extends Channel {
   /**
    * read data transferred from the respective {@link OutputChannel}.
    * if no data available, it immediately returns with null.
-   * @return a list of data elements.
+   * @return an iterable of data elements.
    */
-  List<Element> read();
+  Iterable<Element> read();
 
   /**
    * read data transferred from the respective {@link OutputChannel}.
    * if there is no data to read, it will be blocked until data get available.
    * @param timeout the timeout in millisecond.
    *                if the value is the maximum value of {@link Long}, it wait without timeout.
-   * @return a list of data elements.
+   * @return an iterable of data elements.
    */
-  List<Element> read(long timeout);
+  Iterable<Element> read(long timeout);
 }
