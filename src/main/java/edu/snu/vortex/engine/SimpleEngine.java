@@ -102,7 +102,9 @@ public final class SimpleEngine {
             }
 
             System.out.println(" Output of {" + vertex.getId() + "} for edges " +
-                outEdges.stream().map(Edge::getId).collect(Collectors.toList()) + ": " + outDataPartitions);
+                outEdges.stream().map(Edge::getId).collect(Collectors.toList()) + ": " +
+                (outDataPartitions.toString().length() > 5000 ?
+                    outDataPartitions.toString().substring(0, 5000) + "..." : outDataPartitions.toString()));
           }
         });
       } else {

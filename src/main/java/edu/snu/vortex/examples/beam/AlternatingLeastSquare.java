@@ -43,7 +43,7 @@ public final class AlternatingLeastSquare {
   }
 
   /**
-   * .
+   * Method for parsing the input line.
    */
   public static final class ParseLine extends DoFn<String, KV<Integer, Pair<int[], float[]>>> {
     private final boolean isUserData;
@@ -84,7 +84,7 @@ public final class AlternatingLeastSquare {
   }
 
   /**
-   * .
+   * Combiner for the training data.
    */
   public static final class TrainingDataCombiner extends
       Combine.KeyedCombineFn<Integer, Pair<int[], float[]>, List<Pair<int[], float[]>>, Pair<int[], float[]>> {
@@ -96,37 +96,35 @@ public final class AlternatingLeastSquare {
 
     @Override
     public List<Pair<int[], float[]>> addInput(final Integer key,
-                                                final List<Pair<int[], float[]>> accumulator,
-                                                final Pair<int[], float[]> value) {
+                                               final List<Pair<int[], float[]>> accumulator,
+                                               final Pair<int[], float[]> value) {
       accumulator.add(value);
       return accumulator;
     }
 
     @Override
     public List<Pair<int[], float[]>> mergeAccumulators(final Integer key,
-                                                         final Iterable<List<Pair<int[], float[]>>> accumulators) {
+                                                        final Iterable<List<Pair<int[], float[]>>> accumulators) {
       final List<Pair<int[], float[]>> merged = new LinkedList<>();
-      for (final List<Pair<int[], float[]>> acc : accumulators) {
-        merged.addAll(acc);
-      }
+      accumulators.forEach(merged::addAll);
       return merged;
     }
 
     @Override
-    public  Pair<int[], float[]> extractOutput(final Integer key,
-                                                final List<Pair<int[], float[]>> accumulator) {
+    public Pair<int[], float[]> extractOutput(final Integer key,
+                                              final List<Pair<int[], float[]>> accumulator) {
       int dimension = 0;
-      for (final Pair<int[], float[]> kv : accumulator) {
-        dimension += kv.left().length;
+      for (final Pair<int[], float[]> pair : accumulator) {
+        dimension += pair.left().length;
       }
 
       final int[] intArr = new int[dimension];
       final float[] floatArr = new float[dimension];
 
       int itr = 0;
-      for (final Pair<int[], float[]> kv : accumulator) {
-        final int[] ints = kv.left();
-        final float[] floats = kv.right();
+      for (final Pair<int[], float[]> pair : accumulator) {
+        final int[] ints = pair.left();
+        final float[] floats = pair.right();
         for (int i = 0; i < ints.length; i++) {
           intArr[itr] = ints[i];
           floatArr[itr] = floats[i];
@@ -139,7 +137,7 @@ public final class AlternatingLeastSquare {
   }
 
   /**
-   * .
+   * DoFn for calculating next matrix at each iteration.
    */
   public static final class CalculateNextMatrix extends DoFn<KV<Integer, Pair<int[], float[]>>, KV<Integer, float[]>> {
     private static final LAPACK NETLIB_LAPACK = LAPACK.getInstance();
@@ -223,6 +221,55 @@ public final class AlternatingLeastSquare {
     }
   }
 
+  /**
+   * Combiner for trained data.
+   */
+  public static final class TrainedDataCombiner extends
+      Combine.KeyedCombineFn<Integer, float[], List<float[]>, float[]> {
+
+    @Override
+    public List<float[]> createAccumulator(final Integer key) {
+      return new LinkedList<>();
+    }
+
+    @Override
+    public List<float[]> addInput(final Integer key,
+                                  final List<float[]> accumulator,
+                                  final float[] value) {
+      accumulator.add(value);
+      return accumulator;
+    }
+
+    @Override
+    public List<float[]> mergeAccumulators(final Integer key,
+                                           final Iterable<List<float[]>> accumulators) {
+      final List<float[]> merged = new LinkedList<>();
+      accumulators.forEach(merged::addAll);
+      return merged;
+    }
+
+    @Override
+    public float[] extractOutput(final Integer key,
+                                 final List<float[]> accumulator) {
+      int dimension = 0;
+      for (final float[] array : accumulator) {
+        dimension += array.length;
+      }
+
+      final float[] floatArr = new float[dimension];
+
+      int itr = 0;
+      for (final float[] array : accumulator) {
+        for (int i = 0; i < array.length; i++) {
+          floatArr[itr] = array[i];
+          itr++;
+        }
+      }
+
+      return floatArr;
+    }
+  }
+
   public static void main(final String[] args) {
     final long start = System.currentTimeMillis();
     System.out.println(Arrays.toString(args));
@@ -283,11 +330,11 @@ public final class AlternatingLeastSquare {
 
     for (int i = 0; i < numItr; i++) {
       userMatrix = parsedUserData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrix))
-          .withSideInputs(itemMatrix)).apply(View.asMap());
+          .withSideInputs(itemMatrix)).apply(Combine.perKey(new TrainedDataCombiner())).apply(View.asMap());
 
 
       itemMatrix = parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrix))
-          .withSideInputs(userMatrix)).apply(View.asMap());
+          .withSideInputs(userMatrix)).apply(Combine.perKey(new TrainedDataCombiner())).apply(View.asMap());
     }
 
     p.run();
