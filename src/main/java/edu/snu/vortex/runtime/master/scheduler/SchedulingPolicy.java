@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.ExecutorState;
+import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 
 import java.util.Optional;
 
@@ -32,13 +32,13 @@ interface SchedulingPolicy {
    */
   Optional<String> attemptSchedule(final TaskGroup taskGroup);
 
-  void onExecutorAdded(final ExecutorState executor);
+  void onExecutorAdded(final ExecutorRepresenter executor);
 
-  void onExecutorDeleted(final ExecutorState executor);
+  void onExecutorDeleted(final ExecutorRepresenter executor);
 
-  void onTaskGroupScheduled(final ExecutorState executor, final TaskGroup taskGroup);
+  void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup);
 
-  void onTaskGroupLaunched(final ExecutorState executor, final TaskGroup taskGroup);
+  void onTaskGroupLaunched(final ExecutorRepresenter executor, final TaskGroup taskGroup);
 
-  void onTaskGroupExecutionComplete(final ExecutorState executor, final String taskGroupId);
+  void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId);
 }

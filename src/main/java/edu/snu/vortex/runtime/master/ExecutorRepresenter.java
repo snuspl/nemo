@@ -28,7 +28,7 @@ import java.util.Set;
  *    c) Task groups scheduled/launched for the executor.
  *    d) (Please add other information as we implement more features).
  */
-public final class ExecutorState {
+public final class ExecutorRepresenter {
 
   private final String executorId;
   private final RuntimeAttribute resourceType;
@@ -36,9 +36,9 @@ public final class ExecutorState {
   private final Set<String> scheduledTaskGroups;
   private final Set<String> runningTaskGroups;
 
-  public ExecutorState(final String executorId,
-                       final RuntimeAttribute resourceType,
-                       final int executorCapacity) {
+  public ExecutorRepresenter(final String executorId,
+                             final RuntimeAttribute resourceType,
+                             final int executorCapacity) {
     this.executorId = executorId;
     this.resourceType = resourceType;
     this.executorCapacity = executorCapacity;

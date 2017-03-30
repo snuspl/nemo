@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.ExecutorState;
+import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 
 import java.util.Optional;
 
@@ -37,27 +37,27 @@ public final class BatchScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public void onExecutorAdded(final ExecutorState executor) {
+  public void onExecutorAdded(final ExecutorRepresenter executor) {
 
   }
 
   @Override
-  public void onExecutorDeleted(final ExecutorState executor) {
+  public void onExecutorDeleted(final ExecutorRepresenter executor) {
 
   }
 
   @Override
-  public void onTaskGroupScheduled(final ExecutorState executor, final TaskGroup taskGroup) {
+  public void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
 
   }
 
   @Override
-  public void onTaskGroupLaunched(final ExecutorState executor, final TaskGroup taskGroup) {
+  public void onTaskGroupLaunched(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
 
   }
 
   @Override
-  public void onTaskGroupExecutionComplete(final ExecutorState executor, final String taskGroupId) {
+  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
 
   }
 }
