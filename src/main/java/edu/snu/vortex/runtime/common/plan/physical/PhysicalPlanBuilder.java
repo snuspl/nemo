@@ -22,7 +22,8 @@ import java.util.*;
  */
 public final class PhysicalPlanBuilder {
   private String physicalPlanId;
-  private final Map<String, List<TaskGroup>> stageIdToTaskGroups;
+  private final List<List<TaskGroup>> taskGroupsByStage;
+  private List<TaskGroup> currentStageTaskGroups;
 
   /**
    * Builds a {@link PhysicalPlan}.
@@ -30,20 +31,19 @@ public final class PhysicalPlanBuilder {
    */
   public PhysicalPlanBuilder(final String executionPlanId) {
     this.physicalPlanId = executionPlanId;
-    this.stageIdToTaskGroups = new HashMap<>();
+    this.taskGroupsByStage = new LinkedList<>();
   }
 
-  public void createNewStage(final String runtimeStageId,
-                             final int parallelism) {
-    stageIdToTaskGroups.put(runtimeStageId, new ArrayList<>(parallelism));
+  public void createNewStage(final int parallelism) {
+    currentStageTaskGroups = new ArrayList<>(parallelism);
+    taskGroupsByStage.add(currentStageTaskGroups);
   }
 
-  public void addTaskGroupToStage(final String runtimeStageId,
-                                  final TaskGroup taskGroup) {
-    stageIdToTaskGroups.get(runtimeStageId).add(taskGroup);
+  public void addTaskGroupToCurrentStage(final TaskGroup taskGroup) {
+    currentStageTaskGroups.add(taskGroup);
   }
 
   public PhysicalPlan build() {
-    return new PhysicalPlan(physicalPlanId, stageIdToTaskGroups);
+    return new PhysicalPlan(physicalPlanId, taskGroupsByStage);
   }
 }
