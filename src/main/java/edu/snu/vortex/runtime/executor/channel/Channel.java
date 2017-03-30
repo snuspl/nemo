@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.channel;
+package edu.snu.vortex.runtime.executor.channel;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 
@@ -37,14 +37,14 @@ public interface Channel {
   RuntimeAttribute getTransferPolicy();
 
   /**
-   * @return the source task id of the channel.
+   * @return the source vertex id of the channel.
    */
-  String getSrcTaskId();
+  String getSrcVertexId();
 
   /**
-   * @return the destination task id of the channel.
+   * @return the destination vertex id of the channel.
    */
-  String getDstTaskId();
+  String getDstVertexId();
 
   /**
    * Initialize the internal state of the channel.

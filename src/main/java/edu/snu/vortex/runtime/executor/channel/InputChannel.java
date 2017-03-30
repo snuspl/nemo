@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.channel;
+package edu.snu.vortex.runtime.executor.channel;
 
 
 import edu.snu.vortex.compiler.ir.Element;
+
+import javax.annotation.Nullable;
 
 
 /**
@@ -34,6 +36,7 @@ public interface InputChannel extends Channel {
    * if no data available, it immediately returns with null.
    * @return an iterable of data elements.
    */
+  @Nullable
   Iterable<Element> read();
 
   /**

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.channel;
+package edu.snu.vortex.runtime.executor.channel;
 
 /**
- * Output channel states.
+ * Input channel states.
  */
-public enum OutputChannelState {
+public enum InputChannelState {
   //TODO #087: need to organize channel states.
 }

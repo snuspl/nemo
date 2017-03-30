@@ -13,36 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.channel;
+package edu.snu.vortex.runtime.executor.channel;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.exception.InvalidParameterException;
+import edu.snu.vortex.runtime.executor.PartitionSelector;
 
 
 /**
  * Channel configuration for {@link Channel} initialization.
  */
 public final class ChannelConfig {
-  private final RuntimeAttribute channelType;
   private final RuntimeAttribute transferPolicy;
+  private final PartitionSelector partitionSelector;
+  private final int dataChunkSize;
 
-  public ChannelConfig(final RuntimeAttribute channelType,
-                       final RuntimeAttribute transferPolicy) {
-    if (!channelType.hasKey(RuntimeAttribute.Key.ChannelDataPlacement)) {
-      throw new InvalidParameterException("The given RuntimeAttribute value is invalid as channel type.");
-    } else if (!transferPolicy.hasKey(RuntimeAttribute.Key.ChannelTransferPolicy)) {
+  /**
+   * Contains information and components necessary to configure {@link Channel}.
+   * @param partitionSelector a partition selector that determines
+   *                          into which partitions {@link OutputChannel}'s given records.
+   * @param transferPolicy the transfer policy of the channel (either 'Pull' or 'Push').
+   * @param dataChunkSize indicates in what size the data is chunked and transferred.
+   */
+  public ChannelConfig(final PartitionSelector partitionSelector,
+                       final RuntimeAttribute transferPolicy,
+                       final int dataChunkSize) {
+    if (!transferPolicy.hasKey(RuntimeAttribute.Key.ChannelTransferPolicy)) {
       throw new InvalidParameterException("The given RuntimeAttribute value is invalid as transfer policy.");
     }
 
-    this.channelType = channelType;
     this.transferPolicy = transferPolicy;
+    this.partitionSelector = partitionSelector;
+    this.dataChunkSize = dataChunkSize;
   }
 
-  public RuntimeAttribute getChannelType() {
-    return channelType;
+  public PartitionSelector getPartitionSelector() {
+    return partitionSelector;
   }
 
   public RuntimeAttribute getTransferPolicy() {
     return transferPolicy;
+  }
+
+  public int getDataChunkSize() {
+    return dataChunkSize;
   }
 }

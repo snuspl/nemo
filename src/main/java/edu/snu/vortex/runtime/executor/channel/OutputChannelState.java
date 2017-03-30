@@ -13,28 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.common.channel;
-
-import edu.snu.vortex.compiler.ir.Element;
+package edu.snu.vortex.runtime.executor.channel;
 
 /**
- * Output channel interface.
+ * Output channel states.
  */
-public interface OutputChannel extends Channel {
-
-  /**
-   * @return the state of the output channel.
-   */
-  OutputChannelState getState();
-
-  /**
-   * write data to the channel.
-   * @param data An iterable for elements to be written.
-   */
-  void write(Iterable<Element> data);
-
-  /**
-   * transfer all internally buffered data to the respective {@link InputChannel} immediately.
-   */
-  void flush();
+public enum OutputChannelState {
+  //TODO #087: need to organize channel states.
 }

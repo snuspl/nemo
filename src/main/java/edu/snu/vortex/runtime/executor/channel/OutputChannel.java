@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor;
+package edu.snu.vortex.runtime.executor.channel;
 
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.common.channel.InputChannel;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Record reader collects and returns data records from {@link InputChannel}.
+ * Output channel interface.
  */
-public final class RecordReader {
-  private final List<InputChannel> inputChannels;
+public interface OutputChannel extends Channel {
 
-  public RecordReader(final List<InputChannel> inputChannels) {
-    this.inputChannels = inputChannels;
-  }
+  /**
+   * @return the state of the output channel.
+   */
+  OutputChannelState getState();
 
-  public List<Element> getRecords() {
-    final List<Element> records = new ArrayList<>();
-    inputChannels.forEach(channel -> {
-      channel.read().forEach(record -> records.add(record));
-    });
+  /**
+   * write data to the channel.
+   * @param data An iterable for elements to be written.
+   */
+  void write(Iterable<Element> data);
 
-    return records;
-  }
+  /**
+   * transfer all internally buffered data to the respective {@link InputChannel} immediately.
+   */
+  void flush();
 }
