@@ -67,6 +67,6 @@ public final class StateMachineTest {
     PREPARING,
     SEASONING,
     COOKING,
-    READY_TO_EAT;
+    READY_TO_EAT
   }
 }
