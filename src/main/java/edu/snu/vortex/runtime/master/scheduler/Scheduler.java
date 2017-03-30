@@ -19,7 +19,7 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.SchedulingException;
-import edu.snu.vortex.runtime.master.ExecutorInfo;
+import edu.snu.vortex.runtime.master.ExecutorState;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +40,7 @@ public final class Scheduler {
 
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
-  private final Map<String, ExecutorInfo> executorInfos;
+  private final Map<String, ExecutorState> executorInfos;
   private SchedulingPolicy schedulingPolicy;
   private List<List<TaskGroup>> taskGroupsByStage;
 

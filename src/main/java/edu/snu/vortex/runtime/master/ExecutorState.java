@@ -21,14 +21,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Contains information regarding an executor.
+ * Contains information/state regarding an executor.
  * Such information may include:
  *    a) The executor's resource type.
  *    b) The executor's capacity (ex. number of cores).
  *    c) Task groups scheduled/launched for the executor.
  *    d) (Please add other information as we implement more features).
  */
-public final class ExecutorInfo {
+public final class ExecutorState {
 
   private final String executorId;
   private final RuntimeAttribute resourceType;
@@ -36,9 +36,9 @@ public final class ExecutorInfo {
   private final Set<String> scheduledTaskGroups;
   private final Set<String> runningTaskGroups;
 
-  public ExecutorInfo(final String executorId,
-                      final RuntimeAttribute resourceType,
-                      final int executorCapacity) {
+  public ExecutorState(final String executorId,
+                       final RuntimeAttribute resourceType,
+                       final int executorCapacity) {
     this.executorId = executorId;
     this.resourceType = resourceType;
     this.executorCapacity = executorCapacity;
