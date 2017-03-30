@@ -75,11 +75,11 @@ public final class SimpleEngine {
 
             final Transform.Context transformContext = new ContextImpl(broadcastedInput);
             final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
+            transform.prepare(transformContext, outputCollector);
             inDataPartitions.forEach(inData -> {
-              transform.prepare(transformContext, outputCollector);
               transform.onData(inData, inEdge.getSrc().getId());
-              transform.close();
             });
+            transform.close();
             outDataPartitions.add(outputCollector.getOutputList());
 
             // Save the results
