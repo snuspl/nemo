@@ -20,8 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import java.util.List;
 
 /**
- * This writer writes data records into appropriate partitions determined by {@link PartitionSelector}.
- *
+ * This record writer writes data records into appropriate partitions determined by {@link PartitionSelector}.
  */
 public final class RecordWriter {
   private List<Partition> partitions;
@@ -35,7 +34,7 @@ public final class RecordWriter {
     this.numPartitions = partitions.size();
   }
 
-  public void write(Iterable<Element> records) {
+  public void write(final List<Element> records) {
     records.forEach(record -> {
       for (int targetPartition : selector.selectPartitions(record, numPartitions)) {
         partitions.get(targetPartition).add(record);
@@ -45,7 +44,7 @@ public final class RecordWriter {
     partitions.forEach(partition -> partition.writeToChannel());
   }
 
-  public void broadcast(Iterable<Element> records) {
+  public void broadcast(final List<Element> records) {
     partitions.forEach(partition -> {
       partition.add(records);
       partition.writeToChannel();

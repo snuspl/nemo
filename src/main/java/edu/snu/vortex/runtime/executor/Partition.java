@@ -33,11 +33,11 @@ public final class Partition {
     this.records = new ArrayList<>();
   }
 
-  public void add(Element record) {
+  public void add(final Element record) {
     records.add(record);
   }
 
-  public void add(Iterable<Element> newRecords) {
+  public void add(final List<Element> newRecords) {
     newRecords.forEach(record -> records.add(record));
   }
 

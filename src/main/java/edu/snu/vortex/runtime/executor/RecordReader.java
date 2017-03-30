@@ -21,6 +21,9 @@ import edu.snu.vortex.runtime.common.channel.InputChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Record reader collects and returns data records from {@link InputChannel}.
+ */
 public final class RecordReader {
   private final List<InputChannel> inputChannels;
 
@@ -28,7 +31,7 @@ public final class RecordReader {
     this.inputChannels = inputChannels;
   }
 
-  public List<Element> read() {
+  public List<Element> getRecords() {
     final List<Element> records = new ArrayList<>();
     inputChannels.forEach(channel -> {
       channel.read().forEach(record -> records.add(record));
