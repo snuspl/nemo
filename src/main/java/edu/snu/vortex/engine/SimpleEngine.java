@@ -73,14 +73,14 @@ public final class SimpleEngine {
             System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
                 operatorVertex.getId());
 
+            final Transform.Context transformContext = new ContextImpl(broadcastedInput);
+            final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
             inDataPartitions.forEach(inData -> {
-              final Transform.Context transformContext = new ContextImpl(broadcastedInput);
-              final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
               transform.onData(inData, inEdge.getSrc().getId());
               transform.close();
-              outDataPartitions.add(outputCollector.getOutputList());
             });
+            outDataPartitions.add(outputCollector.getOutputList());
 
             // Save the results
             if (outEdges.size() > 0) {

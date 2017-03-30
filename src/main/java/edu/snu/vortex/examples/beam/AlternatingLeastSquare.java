@@ -30,10 +30,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionView;
 import org.netlib.util.intW;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Sample Alternating Least Square application.
@@ -215,58 +212,7 @@ public final class AlternatingLeastSquare {
 
     @FinishBundle
     public void finishBundle(final Context c) {
-      for (final KV<Integer, float[]> result : results) {
-        c.output(result);
-      }
-    }
-  }
-
-  /**
-   * Combiner for trained data.
-   */
-  public static final class TrainedDataCombiner extends
-      Combine.KeyedCombineFn<Integer, float[], List<float[]>, float[]> {
-
-    @Override
-    public List<float[]> createAccumulator(final Integer key) {
-      return new LinkedList<>();
-    }
-
-    @Override
-    public List<float[]> addInput(final Integer key,
-                                  final List<float[]> accumulator,
-                                  final float[] value) {
-      accumulator.add(value);
-      return accumulator;
-    }
-
-    @Override
-    public List<float[]> mergeAccumulators(final Integer key,
-                                           final Iterable<List<float[]>> accumulators) {
-      final List<float[]> merged = new LinkedList<>();
-      accumulators.forEach(merged::addAll);
-      return merged;
-    }
-
-    @Override
-    public float[] extractOutput(final Integer key,
-                                 final List<float[]> accumulator) {
-      int dimension = 0;
-      for (final float[] array : accumulator) {
-        dimension += array.length;
-      }
-
-      final float[] floatArr = new float[dimension];
-
-      int itr = 0;
-      for (final float[] array : accumulator) {
-        for (int i = 0; i < array.length; i++) {
-          floatArr[itr] = array[i];
-          itr++;
-        }
-      }
-
-      return floatArr;
+      results.forEach(c::output);
     }
   }
 
@@ -330,11 +276,10 @@ public final class AlternatingLeastSquare {
 
     for (int i = 0; i < numItr; i++) {
       userMatrix = parsedUserData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrix))
-          .withSideInputs(itemMatrix)).apply(Combine.perKey(new TrainedDataCombiner())).apply(View.asMap());
-
+          .withSideInputs(itemMatrix)).apply(View.asMap());
 
       itemMatrix = parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrix))
-          .withSideInputs(userMatrix)).apply(Combine.perKey(new TrainedDataCombiner())).apply(View.asMap());
+          .withSideInputs(userMatrix)).apply(View.asMap());
     }
 
     p.run();
