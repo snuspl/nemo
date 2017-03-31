@@ -19,16 +19,16 @@ package edu.snu.vortex.runtime.executor;
 import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * Interface of partition selectors that determine which partitions a given record should be written into.
+ * Interface of channel selectors that determine which channels a given record should be written into.
  */
-public interface PartitionSelector {
+public interface ChannelSelector {
   /**
    * Returns the partition indexes, to which the given record should be written.
    *
    * @param record        the record to determine which partitions it is written into.
-   * @param numPartitions the total number of partitions.
-   * @return a (possibly empty) array of integer numbers which indicate the indices of the partitions through
+   * @param numChannels the total number of channels.
+   * @return a (possibly empty) array of integer numbers which indicate the indices of the channels to
    * which the record shall be written.
    */
-  int[] selectPartitions(Element record, int numPartitions);
+  int[] selectChannels(Element record, int numChannels);
 }

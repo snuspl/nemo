@@ -17,22 +17,22 @@ package edu.snu.vortex.runtime.executor.channel;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 
-import java.util.List;
 
 /**
- * Channel interface, common part of {@link OutputChannel} and {@link InputChannel}.
+ * Channel interface, a common part of {@link OutputChannel} and {@link InputChannel}.
  * Channel implementations should manage data transfers.
  */
 public interface Channel {
+
   /**
    * @return the channel id.
    */
   String getId();
 
   /**
-   * @return the channel type, one of ChannelDataPlacement attribute in {@link RuntimeAttribute}.
+   * @return the channel data placement type, one of ChannelDataPlacement attributes in {@link RuntimeAttribute}.
    */
-  RuntimeAttribute getType();
+  RuntimeAttribute getDataPlacementType();
 
   /**
    * @return the channel's transfer policy, one of ChannelTransferPolicy attribute in {@link RuntimeAttribute}.
@@ -45,9 +45,9 @@ public interface Channel {
   String getSrcTaskId();
 
   /**
-   * @return the destination tasks' ids of the channel.
+   * @return the destination task's id of the channel.
    */
-  List<String> getDstTaskIds();
+  String getDstTaskId();
 
   /**
    * Initialize the internal state of the channel.
