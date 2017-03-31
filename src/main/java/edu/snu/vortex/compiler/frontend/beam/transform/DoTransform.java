@@ -36,7 +36,6 @@ import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
