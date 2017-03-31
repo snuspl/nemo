@@ -27,11 +27,6 @@ import javax.annotation.Nullable;
 public interface InputChannel extends Channel {
 
   /**
-   * @return the state of this input channel.
-   */
-  InputChannelState getState();
-
-  /**
    * read data transferred from the respective {@link OutputChannel}.
    * if no data available, it immediately returns with null.
    * @return an iterable of data elements.

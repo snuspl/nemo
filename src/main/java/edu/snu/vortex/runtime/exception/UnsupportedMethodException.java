@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.channel;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * Output channel states.
+ * UnsupportedMethodException.
+ * Thrown when a unsupported method in a class is called.
  */
-public enum OutputChannelState {
-  //TODO #087: need to organize channel states.
+public final class UnsupportedMethodException extends RuntimeException {
+  /**
+   * UnsupportedMethodException.
+   * @param message message
+   */
+  public UnsupportedMethodException(final String message) {
+    super(message);
+  }
 }

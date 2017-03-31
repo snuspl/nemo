@@ -23,12 +23,11 @@ import edu.snu.vortex.compiler.ir.Element;
  */
 public interface ChannelSelector {
   /**
-   * Returns the partition indexes, to which the given record should be written.
+   * Returns the channel indexes, to which the given record should be written.
    *
    * @param record        the record to determine which partitions it is written into.
-   * @param numChannels the total number of channels.
    * @return a (possibly empty) array of integer numbers which indicate the indices of the channels to
    * which the record shall be written.
    */
-  int[] selectChannels(Element record, int numChannels);
+  int[] selectChannels(Element record);
 }

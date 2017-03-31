@@ -18,6 +18,8 @@ package edu.snu.vortex.runtime.executor.channel;
 /**
  * Input channel states.
  */
-public enum InputChannelState {
+public enum ChannelState {
   //TODO #087: need to organize channel states.
+  Open,
+  Close
 }

@@ -23,11 +23,6 @@ import edu.snu.vortex.compiler.ir.Element;
 public interface OutputChannel extends Channel {
 
   /**
-   * @return the state of the output channel.
-   */
-  OutputChannelState getState();
-
-  /**
    * write data to the channel.
    * @param data An iterable for elements to be written.
    */
