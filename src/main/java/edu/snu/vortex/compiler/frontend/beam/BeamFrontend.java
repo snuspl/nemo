@@ -17,6 +17,7 @@ package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.ir.DAG;
+import org.apache.beam.sdk.options.PipelineOptions;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -27,6 +28,7 @@ import java.util.Arrays;
  */
 public final class BeamFrontend implements Frontend {
   private static DAG dag;
+  private static PipelineOptions options;
 
   @Override
   public DAG compile(final String[] args) throws Exception {
@@ -50,10 +52,15 @@ public final class BeamFrontend implements Frontend {
     return dag;
   }
 
-  static void supplyDAGFromRunner(final DAG supplied) {
+  static void supplyDAGFromRunner(final DAG supplied, final PipelineOptions opts) {
     if (dag != null) {
       throw new IllegalArgumentException("Cannot supply DAG twice");
     }
     dag = supplied;
+    options = opts;
+  }
+
+  public static PipelineOptions getOptions() {
+    return options;
   }
 }

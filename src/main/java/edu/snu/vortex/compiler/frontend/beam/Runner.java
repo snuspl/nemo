@@ -37,10 +37,10 @@ public final class Runner extends PipelineRunner<Result> {
 
   public Result run(final Pipeline pipeline) {
     final DAGBuilder builder = new DAGBuilder();
-    final Visitor visitor = new Visitor(builder, options);
+    final Visitor visitor = new Visitor(builder);
     pipeline.traverseTopologically(visitor);
     final DAG dag = builder.build();
-    BeamFrontend.supplyDAGFromRunner(dag);
+    BeamFrontend.supplyDAGFromRunner(dag, options);
     return new Result();
   }
 }

@@ -24,7 +24,6 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
-import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -42,12 +41,10 @@ import java.util.Map;
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
   private final Map<PValue, Vertex> pValueToVertex;
-  private final PipelineOptions options;
 
-  Visitor(final DAGBuilder builder, final PipelineOptions options) {
+  Visitor(final DAGBuilder builder) {
     this.builder = builder;
     this.pValueToVertex = new HashMap<>();
-    this.options = options;
   }
 
   @Override
@@ -100,7 +97,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamTransform.toString());
     } else if (beamTransform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
-      final DoTransform vortexTransform = new DoTransform(parDo.getNewFn(), options);
+      final DoTransform vortexTransform = new DoTransform(parDo.getNewFn());
       final Vertex vortexVertex = new OperatorVertex(vortexTransform);
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)

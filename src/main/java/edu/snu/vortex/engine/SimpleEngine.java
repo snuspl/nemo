@@ -17,6 +17,7 @@ package edu.snu.vortex.engine;
 
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -73,14 +74,15 @@ public final class SimpleEngine {
             System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
                 operatorVertex.getId());
 
-            final Transform.Context transformContext = new ContextImpl(broadcastedInput);
-            final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
-            transform.prepare(transformContext, outputCollector);
             inDataPartitions.forEach(inData -> {
-              transform.onData(inData, inEdge.getSrc().getId());
+              final Transform.Context transformContext = new ContextImpl(broadcastedInput);
+              final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
+              final SimpleTask task = new SimpleTask(transform);
+              task.getTransform().prepare(transformContext, outputCollector);
+              task.getTransform().onData(inData, inEdge.getSrc().getId());
+              task.getTransform().close();
+              outDataPartitions.add(outputCollector.getOutputList());
             });
-            transform.close();
-            outDataPartitions.add(outputCollector.getOutputList());
 
             // Save the results
             if (outEdges.size() > 0) {
@@ -143,6 +145,21 @@ public final class SimpleEngine {
       return explicitlyIterables;
     } else {
       throw new UnsupportedOperationException();
+    }
+  }
+
+  /**
+   * A Simple Task class to simulate multi-threaded tasks for different transforms.
+   */
+  private final class SimpleTask {
+    private final Transform transform;
+
+    SimpleTask(final Transform transform) {
+      this.transform = SerializationUtils.clone(transform);
+    }
+
+    public Transform getTransform() {
+      return transform;
     }
   }
 }
