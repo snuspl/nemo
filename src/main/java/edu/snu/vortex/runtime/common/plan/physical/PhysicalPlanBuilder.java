@@ -22,6 +22,10 @@ import java.util.*;
  */
 public final class PhysicalPlanBuilder {
   private String physicalPlanId;
+
+  /**
+   * A list of stages. Each stage is represented by a list task groups to be executed for the stage.
+   */
   private final List<List<TaskGroup>> taskGroupsByStage;
   private List<TaskGroup> currentStageTaskGroups;
 
