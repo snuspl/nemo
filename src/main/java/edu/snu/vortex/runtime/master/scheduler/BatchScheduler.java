@@ -32,6 +32,11 @@ public final class BatchScheduler implements SchedulingPolicy {
   }
 
   @Override
+  public long getScheduleTimeout() {
+    return 0;
+  }
+
+  @Override
   public Optional<String> attemptSchedule(final TaskGroup taskGroup) {
     return null;
   }
@@ -57,7 +62,7 @@ public final class BatchScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
+  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
 
   }
 }
