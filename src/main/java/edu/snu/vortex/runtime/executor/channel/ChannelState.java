@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.executor.channel;
 
 /**
- * Input channel states.
+ * Channel states both for {@link InputChannel} and {@link OutputChannel}.
  */
 public enum ChannelState {
   //TODO #087: need to organize channel states.
