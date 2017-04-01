@@ -29,6 +29,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -77,7 +78,7 @@ public final class Scheduler {
    * This can be called anytime during this scheduler's lifetime and the policy will change flexibly.
    * @param schedulingPolicy The attribute for the scheduling policy.
    */
-  public void setSchedulingPolicy(final RuntimeAttribute schedulingPolicy) {
+  private void setSchedulingPolicy(final RuntimeAttribute schedulingPolicy) {
     switch (schedulingPolicy) {
     case Batch:
       this.schedulingPolicy = new BatchScheduler();
@@ -97,7 +98,9 @@ public final class Scheduler {
         try {
           final TaskGroup taskGroup = taskGroupsToSchedule.take();
           final Optional<String> executorId = schedulingPolicy.attemptSchedule(taskGroup);
-          if (executorId.isPresent()) {
+          if (!executorId.isPresent()) {
+            LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
+                schedulingPolicy.getScheduleTimeout());
             taskGroupsToSchedule.offer(taskGroup);
           } else {
             // TODO #90: Integrate Components for Single-Machine End-to-End Execution
