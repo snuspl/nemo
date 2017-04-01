@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir;
+package edu.snu.vortex.runtime.executor.channel;
 
-import java.io.Serializable;
+import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * Interface through which Transform emits outputs.
- * This is to be implemented in the runtime with
- * runtime-specific distributed data movement and storage mechanisms.
+ * Output channel interface.
  */
-public interface OutputCollector extends Serializable {
-  /**
-   * Single-destination emit.
-   * @param output element.
-   */
-  void emit(final Element output);
+public interface OutputChannel extends Channel {
 
   /**
-   * Multi-destination emit.
-   * Currently unused, but might come in handy
-   * for operations like multi-output map.
-   * @param dstVertexId destination vertex id.
-   * @param output element.
+   * write data to the channel.
+   * @param data An iterable for elements to be written.
    */
-  void emit(final String dstVertexId, final Element output);
+  void write(Iterable<Element> data);
+
+  /**
+   * transfer all internally buffered data to the respective {@link InputChannel} immediately.
+   */
+  void flush();
 }
