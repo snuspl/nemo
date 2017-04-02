@@ -42,7 +42,7 @@ public final class RuntimeMaster {
   private final Scheduler scheduler;
 
   public RuntimeMaster() {
-    this.scheduler = new Scheduler();
+    this.scheduler = new Scheduler(RuntimeAttribute.Batch);
   }
 
   /**
@@ -119,7 +119,8 @@ public final class RuntimeMaster {
 
           // Create the task group to add for this stage.
           final TaskGroup newTaskGroup =
-              new TaskGroup(RuntimeIdGenerator.generateTaskGroupId(), taskDAG, incomingEdgeInfos, outgoingEdgeInfos);
+              new TaskGroup(RuntimeIdGenerator.generateTaskGroupId(), taskDAG, resourceType,
+                  incomingEdgeInfos, outgoingEdgeInfos);
           physicalPlanBuilder.addTaskGroupToCurrentStage(newTaskGroup);
           runtimeVertexIdToTask.clear();
         }

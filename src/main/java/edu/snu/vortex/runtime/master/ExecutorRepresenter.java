@@ -57,5 +57,13 @@ public final class ExecutorRepresenter {
   public void onTaskGroupCompleted(final String taskGroupId) {
 
   }
+
+  public String getExecutorId() {
+    return executorId;
+  }
+
+  public RuntimeAttribute getResourceType() {
+    return resourceType;
+  }
 }
 
