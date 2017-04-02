@@ -73,6 +73,7 @@ public enum RuntimeAttribute {
   /**
    * Scheduler type attributes.
    */
+  SamplePolicy(Key.SchedulingPolicy),
   Batch(Key.SchedulingPolicy);
 
   /**
