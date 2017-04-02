@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Optional;
 /**
  * Defines the policy by which {@link Scheduler} assigns task groups to executors.
  */
-interface SchedulingPolicy {
+public interface SchedulingPolicy {
 
   /**
    * Returns this scheduling policy's timeout before an executor assignment.
@@ -84,6 +84,5 @@ interface SchedulingPolicy {
    * @param executor where the taskGroup's execution has completed.
    * @param taskGroup whose execution has completed.
    */
-
   void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup);
 }
