@@ -41,18 +41,18 @@ public final class Scheduler {
 
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
-  private final Map<String, ExecutorRepresenter> executorInfos;
+  private final Map<String, ExecutorRepresenter> executorRepresenterMap;
   private SchedulingPolicy schedulingPolicy;
   private List<List<TaskGroup>> taskGroupsByStage;
 
-  public Scheduler() {
+  public Scheduler(final RuntimeAttribute schedulingPolicy) {
     this.schedulerThread = Executors.newSingleThreadExecutor();
     this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
-    this.executorInfos = new HashMap<>();
+    this.executorRepresenterMap = new HashMap<>();
     schedulerThread.execute(new TaskGroupScheduleHandler());
 
     // The default policy is initialized and set here.
-    setSchedulingPolicy(RuntimeAttribute.Batch);
+    setSchedulingPolicy(schedulingPolicy);
   }
 
   /**
@@ -64,11 +64,16 @@ public final class Scheduler {
   }
 
   // TODO #90: Integrate Components for Single-Machine End-to-End Execution
+  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+    schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroup);
+    scheduleNextStage();
+  }
+
   /**
    * Schedules the next stage to execute.
    * It takes the list for task groups for the stage and adds them where the scheduler thread continuously polls from.
    */
-  public void scheduleNextStage() {
+  private void scheduleNextStage() {
     final List<TaskGroup> taskGroupList = taskGroupsByStage.remove(0);
     taskGroupsToSchedule.addAll(taskGroupList);
   }
@@ -83,6 +88,9 @@ public final class Scheduler {
     case Batch:
       this.schedulingPolicy = new BatchScheduler();
       break;
+    case SamplePolicy:
+      this.schedulingPolicy = SampleScheduler.newInstance();
+      break;
     default:
       throw new SchedulingException("The scheduling policy is unsupported by runtime");
     }
@@ -96,16 +104,16 @@ public final class Scheduler {
     public void run() {
       while (!schedulerThread.isShutdown()) {
         try {
-          final TaskGroup taskGroup = taskGroupsToSchedule.take();
+          final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();
           final Optional<String> executorId = schedulingPolicy.attemptSchedule(taskGroup);
           if (!executorId.isPresent()) {
             LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
                 schedulingPolicy.getScheduleTimeout());
-            taskGroupsToSchedule.offer(taskGroup);
+            taskGroupsToSchedule.addLast(taskGroup);
           } else {
             // TODO #90: Integrate Components for Single-Machine End-to-End Execution
             // Must send this taskGroup to the destination executor.
-            schedulingPolicy.onTaskGroupScheduled(executorInfos.get(executorId.get()), taskGroup);
+            schedulingPolicy.onTaskGroupScheduled(executorRepresenterMap.get(executorId.get()), taskGroup);
           }
         } catch (final Exception e) {
           throw new SchedulingException(e.getMessage());
