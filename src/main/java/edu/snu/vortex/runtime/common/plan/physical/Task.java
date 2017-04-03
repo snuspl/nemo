@@ -46,7 +46,7 @@ public abstract class Task implements Serializable {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     final StringBuffer sb = new StringBuffer("Task{");
     sb.append("taskId='").append(taskId).append('\'');
     sb.append(", runtimeVertexId='").append(runtimeVertexId).append('\'');
