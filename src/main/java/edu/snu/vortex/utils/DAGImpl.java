@@ -149,4 +149,13 @@ public final class DAGImpl<V> implements DAG<V> {
     }
     return false;
   }
+
+  @Override
+  public String toString() {
+    return "DAGImpl{" +
+        "rootVertices=" + rootVertices +
+        ", parentVertices=" + parentVertices +
+        ", childrenVertices=" + childrenVertices +
+        '}';
+  }
 }

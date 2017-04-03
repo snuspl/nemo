@@ -62,4 +62,14 @@ public final class StageBoundaryEdgeInfo implements Serializable {
   public RuntimeAttributeMap getExternalEndpointVertexAttr() {
     return externalEndpointVertexAttr;
   }
+
+  @Override
+  public String toString() {
+    return "StageBoundaryEdgeInfo{" +
+        "stageBoundaryEdgeInfoId='" + stageBoundaryEdgeInfoId + '\'' +
+        ", edgeAttributes=" + edgeAttributes +
+        ", externalEndpointVertexId='" + externalEndpointVertexId + '\'' +
+        ", externalEndpointVertexAttr=" + externalEndpointVertexAttr +
+        '}';
+  }
 }

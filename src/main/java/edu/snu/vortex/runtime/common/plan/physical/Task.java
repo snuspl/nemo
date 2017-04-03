@@ -44,4 +44,13 @@ public abstract class Task implements Serializable {
   public final int getIndex() {
     return index;
   }
+
+  @Override
+  public final String toString() {
+    return "Task{" +
+        "taskId='" + taskId + '\'' +
+        ", runtimeVertexId='" + runtimeVertexId + '\'' +
+        ", index=" + index +
+        '}';
+  }
 }

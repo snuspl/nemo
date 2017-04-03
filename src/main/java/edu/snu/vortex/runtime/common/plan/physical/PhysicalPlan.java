@@ -44,4 +44,12 @@ public final class PhysicalPlan {
   public List<List<TaskGroup>> getTaskGroupsByStage() {
     return taskGroupsByStage;
   }
+
+  @Override
+  public String toString() {
+    return "PhysicalPlan{" +
+        "id='" + id + '\'' +
+        ", taskGroupsByStage=" + taskGroupsByStage +
+        '}';
+  }
 }
