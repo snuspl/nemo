@@ -65,11 +65,12 @@ public final class StageBoundaryEdgeInfo implements Serializable {
 
   @Override
   public String toString() {
-    return "StageBoundaryEdgeInfo{" +
-        "stageBoundaryEdgeInfoId='" + stageBoundaryEdgeInfoId + '\'' +
-        ", edgeAttributes=" + edgeAttributes +
-        ", externalEndpointVertexId='" + externalEndpointVertexId + '\'' +
-        ", externalEndpointVertexAttr=" + externalEndpointVertexAttr +
-        '}';
+    final StringBuffer sb = new StringBuffer("StageBoundaryEdgeInfo{");
+    sb.append("stageBoundaryEdgeInfoId='").append(stageBoundaryEdgeInfoId).append('\'');
+    sb.append(", edgeAttributes=").append(edgeAttributes);
+    sb.append(", externalEndpointVertexId='").append(externalEndpointVertexId).append('\'');
+    sb.append(", externalEndpointVertexAttr=").append(externalEndpointVertexAttr);
+    sb.append('}');
+    return sb.toString();
   }
 }

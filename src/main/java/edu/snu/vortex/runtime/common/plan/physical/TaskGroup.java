@@ -57,12 +57,13 @@ public final class TaskGroup implements Serializable {
 
   @Override
   public String toString() {
-    return "TaskGroup{" +
-        "taskGroupId='" + taskGroupId + '\'' +
-        ", taskDAG=" + taskDAG +
-        ", resourceType=" + resourceType +
-        ", incomingEdges=" + incomingEdges +
-        ", outgoingEdges=" + outgoingEdges +
-        '}';
+    final StringBuffer sb = new StringBuffer("TaskGroup{");
+    sb.append("taskGroupId='").append(taskGroupId).append('\'');
+    sb.append(", taskDAG=").append(taskDAG);
+    sb.append(", resourceType=").append(resourceType);
+    sb.append(", incomingEdges=").append(incomingEdges);
+    sb.append(", outgoingEdges=").append(outgoingEdges);
+    sb.append('}');
+    return sb.toString();
   }
 }

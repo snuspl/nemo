@@ -152,10 +152,11 @@ public final class DAGImpl<V> implements DAG<V> {
 
   @Override
   public String toString() {
-    return "DAGImpl{" +
-        "rootVertices=" + rootVertices +
-        ", parentVertices=" + parentVertices +
-        ", childrenVertices=" + childrenVertices +
-        '}';
+    final StringBuffer sb = new StringBuffer("DAGImpl{");
+    sb.append("rootVertices=").append(rootVertices);
+    sb.append(", parentVertices=").append(parentVertices);
+    sb.append(", childrenVertices=").append(childrenVertices);
+    sb.append('}');
+    return sb.toString();
   }
 }

@@ -47,9 +47,10 @@ public final class PhysicalPlan {
 
   @Override
   public String toString() {
-    return "PhysicalPlan{" +
-        "id='" + id + '\'' +
-        ", taskGroupsByStage=" + taskGroupsByStage +
-        '}';
+    final StringBuffer sb = new StringBuffer("PhysicalPlan{");
+    sb.append("id='").append(id).append('\'');
+    sb.append(", taskGroupsByStage=").append(taskGroupsByStage);
+    sb.append('}');
+    return sb.toString();
   }
 }
