@@ -91,11 +91,13 @@ public class LocalFileManagerTest {
     try {
       final File file1 = localFileManager.getFileByName(fileName);
       final FileOutputStream out = new FileOutputStream(file1);
+      file1.deleteOnExit();
       out.write(writeBuffer);
       out.close();
 
       final File file2 = localFileManager.getFileByName(fileName);
       final FileInputStream in = new FileInputStream(file2);
+      file2.deleteOnExit();
       in.read(readBuffer);
       in.close();
 
