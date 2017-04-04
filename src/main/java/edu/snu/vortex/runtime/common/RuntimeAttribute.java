@@ -71,6 +71,12 @@ public enum RuntimeAttribute {
   Range(Key.Partition),
 
   /**
+   * Edge type to specify edges that transfer SideInputs.
+   */
+  SideInput(Key.SideInput),
+
+
+  /**
    * Scheduler type attributes.
    */
   SamplePolicy(Key.SchedulingPolicy),
@@ -84,6 +90,7 @@ public enum RuntimeAttribute {
     ChannelDataPlacement,
     ChannelTransferPolicy,
     Partition,
+    SideInput,
     CommPattern,
     SchedulingPolicy
   }

@@ -16,11 +16,9 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.runtime.common.plan.physical.BoundedSourceTask;
-import edu.snu.vortex.runtime.common.plan.physical.OperatorTask;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.common.plan.physical.Task;
-import org.apache.commons.lang3.SerializationUtils;
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -30,80 +28,51 @@ import java.util.stream.IntStream;
  */
 public final class SimpleEngine {
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
-    final Map<String, List<Iterable<Element>>> stageEdgeIdToPartitions = new HashMap<>();
-    final Map<String, Object> stageEdgeIdToBroadcast = new HashMap<>();
+    final Map<String, List<LocalChannel>> stageEdgeIdToChannels = new HashMap<>();
 
     physicalPlan.getTaskGroupsByStage().forEach(stage -> {
       stage.forEach(taskGroup -> {
+
         Set<Task> currentTaskSet = taskGroup.getTaskDAG().getRootVertices();
         while (currentTaskSet != null) {
+          final List<Iterable<Element>> partitions = new ArrayList<>();
 
-        }
-
-
-        final Task task = null;
-        if (task instanceof BoundedSourceTask) {
-          try {
-            final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
-            final Reader reader = boundedSourceTask.getReader();
-
-            final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
-
-            System.out.println("Begin processing SourceVertex: " + sourceVertex.getId());
-
-            for (final Reader reader : readers) {
-              partitions.add(reader.read());
-            }
-            dag.getOutEdgesOf(vertex).get().stream()
-                .forEach(outEdge -> edgeIdToPartitions.put(outEdge.getId(), routePartitions(partitions, outEdge)));
-
-            System.out.println(" Output of {" + vertex.getId() + "} for edges " + dag.getOutEdgesOf(vertex).get().stream()
-                .map(Edge::getId).collect(Collectors.toList()) + ": " + partitions);
-            */
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        } else if (task instanceof OperatorTask) {
-          final OperatorTask operatorTask = (OperatorTask) task;
-          final Transform transform = operatorTask.getTransform();
-
-          /*
-          final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
-          final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
-
-          final Map<Transform, Object> broadcastedInput = new HashMap<>();
-          inEdges.stream()
-              .filter(edge -> edge.getAttr(Attribute.Key.SideInput) == Attribute.SideInput)
-              .forEach(edge -> broadcastedInput.put(
-                  ((OperatorVertex) edge.getSrc()).getTransform(),
-                  edgeIdToBroadcast.get(edge.getId())));
-
-          // Process each input edge
-          inEdges.forEach(inEdge -> {
-            final List<Iterable<Element>> inDataPartitions = edgeIdToPartitions.get(inEdge.getId());
-            if (inDataPartitions != null && !inDataPartitions.isEmpty()) {
-              final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
-
-              // Process each partition of an edge
-              System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
-                  operatorVertex.getId());
-
-              inDataPartitions.forEach(inData -> {
-                final Transform.Context transformContext = new ContextImpl(broadcastedInput);
+          // compute a partition in sequence
+          Iterable<Element> data = null;
+          Task lastTask = null;
+          for (final Task task : currentTaskSet) {
+            if (task instanceof BoundedSourceTask) {
+              try {
+                final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
+                final Reader reader = boundedSourceTask.getReader();
+                data = reader.read();
+                System.out.println(" Output of {" + task.getTaskId() + "}: ");
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            } else if (task instanceof OperatorTask) {
+              final OperatorTask operatorTask = (OperatorTask) task;
+              final Transform transform = operatorTask.getTransform();
+              if (lastTask == null) {
+                final List<StageBoundaryEdgeInfo> stageBoundaryEdgeInfoList = taskGroup.getIncomingEdges();
+                stageBoundaryEdgeInfoList.forEach(edge -> {
+                  final String edgeId = edge.getStageBoundaryEdgeInfoId();
+                  edge.getExternalEndpointVertexId();
+                });
+              } else {
+                final Transform.Context transformContext = new ContextImpl(null);
                 final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
-                final SimpleTask task = new SimpleTask(transform);
-                task.getTransform().prepare(transformContext, outputCollector);
-                task.getTransform().onData(inData, inEdge.getSrc().getId());
-                task.getTransform().close();
-                outDataPartitions.add(outputCollector.getOutputList());
-              });
+                transform.prepare(transformContext, outputCollector);
+                transform.onData(data, lastTask.getRuntimeVertexId());
+                transform.close();
+                data = outputCollector.getOutputList();
+              }
 
-              // Save the results
-              if (outEdges.size() > 0) {
+              if (finalTask && someOuterStageEdge) {
                 outEdges.forEach(outEdge -> {
-                  if (outEdge.getAttr(Attribute.Key.SideInput) == Attribute.SideInput) {
+                  if (outEdge.getAttr(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput) {
                     if (outDataPartitions.size() != 1) {
-                      throw new RuntimeException("Size of out data partitions of a broadcast operator must match 1");
+                      throw new RuntimeException("broadcast operator must match 1");
                     }
                     outDataPartitions.get(0).forEach(element ->
                         edgeIdToBroadcast.put(outEdge.getId(), element.getData()));
@@ -111,22 +80,19 @@ public final class SimpleEngine {
                     edgeIdToPartitions.put(outEdge.getId(), routePartitions(outDataPartitions, outEdge));
                   }
                 });
-              } else if (outEdges.size() == 0) {
-                System.out.println("Sink Vertex");
-              } else {
-                throw new IllegalStateException("Size must not be negative");
+
               }
 
-              System.out.println(" Output of {" + vertex.getId() + "} for edges " +
-                  outEdges.stream().map(Edge::getId).collect(Collectors.toList()) + ": " +
-                  (outDataPartitions.toString().length() > 5000 ?
-                      outDataPartitions.toString().substring(0, 5000) + "..." : outDataPartitions.toString()));
+            } else {
+              throw new UnsupportedOperationException(task.toString());
             }
-          });
-          */
-        } else {
-          throw new UnsupportedOperationException(task.toString());
+            lastTask = task;
+            System.out.println(" Output of {" + task.getTaskId() + "}: " +
+                (data.toString().length() > 5000 ?
+                    data.toString().substring(0, 5000) + "..." : data.toString()));
+          }
         }
+
       });
     });
 
@@ -161,21 +127,6 @@ public final class SimpleEngine {
       return explicitlyIterables;
     } else {
       throw new UnsupportedOperationException(edgeType + " is an unsupported type of edge.");
-    }
-  }
-
-  /**
-   * A Simple Task class to simulate multi-threaded tasks for different transforms.
-   */
-  private final class SimpleTask {
-    private final Transform transform;
-
-    SimpleTask(final Transform transform) {
-      this.transform = SerializationUtils.clone(transform);
-    }
-
-    public Transform getTransform() {
-      return transform;
     }
   }
 }

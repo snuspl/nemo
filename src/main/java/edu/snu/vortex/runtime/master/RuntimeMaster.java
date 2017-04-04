@@ -53,11 +53,13 @@ public final class RuntimeMaster {
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
     // scheduler.scheduleJob(physicalPlan);
+    /*
     try {
       new SimpleEngine().executePhysicalPlan(physicalPlan);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+    */
   }
 
   /**

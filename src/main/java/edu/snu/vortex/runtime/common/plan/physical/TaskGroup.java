@@ -59,6 +59,14 @@ public final class TaskGroup implements Serializable {
     return taskDAG;
   }
 
+  public List<StageBoundaryEdgeInfo> getIncomingEdges() {
+    return incomingEdges;
+  }
+
+  public List<StageBoundaryEdgeInfo> getOutgoingEdges() {
+    return outgoingEdges;
+  }
+
   @Override
   public String toString() {
     final StringBuffer sb = new StringBuffer("TaskGroup{");
