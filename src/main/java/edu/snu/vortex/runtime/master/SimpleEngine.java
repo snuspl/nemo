@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.plan.physical.BoundedSourceTask;
 import edu.snu.vortex.runtime.common.plan.physical.OperatorTask;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
@@ -24,7 +23,6 @@ import edu.snu.vortex.runtime.common.plan.physical.Task;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -32,16 +30,23 @@ import java.util.stream.IntStream;
  */
 public final class SimpleEngine {
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
-    final Map<String, List<Iterable<Element>>> edgeIdToPartitions = new HashMap<>();
-    final Map<String, Object> edgeIdToBroadcast = new HashMap<>();
+    final Map<String, List<Iterable<Element>>> stageEdgeIdToPartitions = new HashMap<>();
+    final Map<String, Object> stageEdgeIdToBroadcast = new HashMap<>();
 
     physicalPlan.getTaskGroupsByStage().forEach(stage -> {
       stage.forEach(taskGroup -> {
+        Set<Task> currentTaskSet = taskGroup.getTaskDAG().getRootVertices();
+        while (currentTaskSet != null) {
+
+        }
+
+
         final Task task = null;
         if (task instanceof BoundedSourceTask) {
           try {
-            final SourceVertex sourceVertex = (SourceVertex) vertex;
-            final List<Reader> readers = sourceVertex.getReaders(10); // 10 splits
+            final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
+            final Reader reader = boundedSourceTask.getReader();
+
             final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
 
             System.out.println("Begin processing SourceVertex: " + sourceVertex.getId());
@@ -54,12 +59,15 @@ public final class SimpleEngine {
 
             System.out.println(" Output of {" + vertex.getId() + "} for edges " + dag.getOutEdgesOf(vertex).get().stream()
                 .map(Edge::getId).collect(Collectors.toList()) + ": " + partitions);
+            */
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
         } else if (task instanceof OperatorTask) {
-          final OperatorVertex operatorVertex = (OperatorVertex) vertex;
-          final Transform transform = operatorVertex.getTransform();
+          final OperatorTask operatorTask = (OperatorTask) task;
+          final Transform transform = operatorTask.getTransform();
+
+          /*
           final List<Edge> inEdges = dag.getInEdgesOf(vertex).get(); // must be at least one edge
           final List<Edge> outEdges = dag.getOutEdgesOf(vertex).orElse(new ArrayList<>(0)); // empty lists for sinks
 
@@ -115,6 +123,7 @@ public final class SimpleEngine {
                       outDataPartitions.toString().substring(0, 5000) + "..." : outDataPartitions.toString()));
             }
           });
+          */
         } else {
           throw new UnsupportedOperationException(task.toString());
         }

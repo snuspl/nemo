@@ -55,6 +55,10 @@ public final class TaskGroup implements Serializable {
     return resourceType;
   }
 
+  public DAG<Task> getTaskDAG() {
+    return taskDAG;
+  }
+
   @Override
   public String toString() {
     final StringBuffer sb = new StringBuffer("TaskGroup{");
