@@ -17,11 +17,11 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
-import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
@@ -52,7 +52,12 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
-    scheduler.scheduleJob(physicalPlan);
+    // scheduler.scheduleJob(physicalPlan);
+    try {
+      new SimpleEngine().executePhysicalPlan(physicalPlan);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -75,11 +80,13 @@ public final class RuntimeMaster {
             createStageBoundaryEdgeInfo(runtimeStage.getStageOutgoingEdges(), false);
 
         // TODO #103: Integrity check in execution plan.
-        // This code simply assumes that all vertices follow the first vertex's parallelism.
-        final int parallelism = runtimeVertices.get(0).getVertexAttributes()
-            .get(RuntimeAttribute.IntegerKey.Parallelism);
-        final RuntimeAttribute resourceType = runtimeVertices.get(0).getVertexAttributes()
-            .get(RuntimeAttribute.Key.ResourceType);
+        // This code simply assumes that all vertices follow the first vertex's attributes.
+        final RuntimeAttributeMap firstVertexAttrs = runtimeVertices.get(0).getVertexAttributes();
+        Integer parallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
+        if (parallelism == null) {
+          parallelism = 1; // if no parallelism is not set, we set it to 1
+        }
+        final RuntimeAttribute resourceType = firstVertexAttrs.get(RuntimeAttribute.Key.ResourceType);
 
         // Begin building a new stage in the physical plan.
         physicalPlanBuilder.createNewStage(parallelism);
@@ -95,6 +102,7 @@ public final class RuntimeMaster {
               final RuntimeBoundedSourceVertex boundedSourceVertex = (RuntimeBoundedSourceVertex) vertex;
 
               final List<Reader> readers = boundedSourceVertex.getBoundedSourceVertex().getReaders(parallelism);
+              parallelism = readers.size(); // Adjust the desired parallelism to the actual parallelism
               newTaskToAdd = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(),
                   boundedSourceVertex.getId(), taskGroupIdx, readers.get(taskGroupIdx));
             } else if (vertex instanceof RuntimeOperatorVertex) {
@@ -127,7 +135,8 @@ public final class RuntimeMaster {
         }
       }
     } catch (final Exception e) {
-      throw new PhysicalPlanGenerationException(e.getMessage());
+      throw new RuntimeException(e);
+      // throw new PhysicalPlanGenerationException(e.getMessage());
     }
     final PhysicalPlan physicalPlan = physicalPlanBuilder.build();
     LOG.log(Level.INFO, physicalPlan.toString());
