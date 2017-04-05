@@ -131,7 +131,7 @@ public final class DAGImpl<V> implements DAG<V> {
   }
 
   @Override
-  public Set<V> getParents(V v) {
+  public Set<V> getParents(final V v) {
     if (!parentVertices.containsKey(v)) {
       throw new NoSuchElementException("No vertex " + v);
     }
@@ -139,7 +139,7 @@ public final class DAGImpl<V> implements DAG<V> {
   }
 
   @Override
-  public Set<V> getChildren(V v) {
+  public Set<V> getChildren(final V v) {
     if (!childrenVertices.containsKey(v)) {
       throw new NoSuchElementException("No vertex " + v);
     }
