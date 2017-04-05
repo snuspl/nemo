@@ -51,6 +51,9 @@ public final class JobLauncher {
 
     final Optimizer.PolicyType optimizationPolicy;
     switch (policyName) {
+      case "none":
+        optimizationPolicy = Optimizer.PolicyType.None;
+        break;
       case "pado":
         optimizationPolicy = Optimizer.PolicyType.Pado;
         break;
@@ -62,6 +65,7 @@ public final class JobLauncher {
       default:
         throw new RuntimeException("No such policy: " + policyName);
     }
+
     final DAG optimizedDAG = optimizer.optimize(dag, optimizationPolicy);
     System.out.println("##### VORTEX COMPILER (After Optimization for " + optimizationPolicy + ") #####");
     System.out.println(optimizedDAG);
