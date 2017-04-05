@@ -15,20 +15,27 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.Reader;
+import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.executor.channel.LocalChannel;
+import edu.snu.vortex.utils.DAG;
 
 import java.util.*;
 import java.util.stream.IntStream;
 
+/**
+ * Simple Runtime that prints intermediate results to stdout.
+ */
 public final class SimpleRuntime {
+  private static final String HACK_DUMMY_CHAND_ID = "HACK";
 
   /**
    * WARNING: Because the current physical plan is missing some critical information,
-   * I used hacks to make this work at least with a simple MapReduce application.
-   * Notice that a slight variation in the application will make the code fail,
+   * I used hacks to make this work at least with the Beam applications we currently have.
+   * Nevertheless, a slight variation in the applications will make the code fail
    * and we need to eventually fix the issues in a more proper way.
    * Please also refer to SimpleEngineBackup, which do not have these issues.
    *
@@ -40,20 +47,23 @@ public final class SimpleRuntime {
    * The information on which task in a taskgroup is connected to other stages is missing.
    * As a workaround, I just assumed that the first task is connected to the incoming edges,
    * and the last task is connected to the outgoing edges.
+   *
+   * @param physicalPlan Physical Plan.
+   * @throws Exception during execution.
    */
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
     final Map<String, List<LocalChannel>> edgeIdToChannels = new HashMap<>();
 
     physicalPlan.getTaskGroupsByStage().forEach(stage -> {
       stage.forEach(taskGroup -> {
+        final DAG<Task> taskDAG = taskGroup.getTaskDAG();
 
-        Set<Task> currentTaskSet = taskGroup.getTaskDAG().getRootVertices();
-        while (currentTaskSet != null) {
-
-          // compute tasks in a taskgroup
-          Iterable<Element> data = null;
-          Task lastTask = null;
-          int taskIndex = 0;
+        // compute tasks in a taskgroup, supposedly 'rootVertices' at a time
+        boolean firstTask = true;
+        Task finalTask = null;
+        Iterable<Element> data = null;
+        Set<Task> currentTaskSet = taskDAG.getRootVertices();
+        while (!currentTaskSet.isEmpty()) {
           for (final Task task : currentTaskSet) {
             if (task instanceof BoundedSourceTask) {
               try {
@@ -67,47 +77,53 @@ public final class SimpleRuntime {
             } else if (task instanceof OperatorTask) {
               final OperatorTask operatorTask = (OperatorTask) task;
               final Transform transform = operatorTask.getTransform();
-              if (taskIndex == 0) {
+
+              if (firstTask) {
+                // We fetch 'data' from the incoming stage
                 final List<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges();
                 if (inEdges.size() > 1) {
                   throw new UnsupportedOperationException("Multi inedge not yet supported");
                 }
                 final StageBoundaryEdgeInfo inEdge = inEdges.get(0);
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
-
-
-
               } else {
-                final Transform.Context transformContext = new ContextImpl(null);
+                final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
                 final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
                 transform.prepare(transformContext, outputCollector);
-                transform.onData(data, lastTask.getRuntimeVertexId());
+                transform.onData(data, null); // fix null
                 transform.close();
                 data = outputCollector.getOutputList();
               }
+
             } else {
               throw new UnsupportedOperationException(task.toString());
             }
 
-            // If it is the final task in a stage
-            if (taskIndex == currentTaskSet.size()-1) {
-              final List<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges();
-              if (outEdges.size() > 1) {
-                throw new UnsupportedOperationException("Multi outedge not yet supported");
-              }
-              final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
-              writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
-            }
-
             // Update some hacky variables
-            taskIndex++;
-            lastTask = task;
+            firstTask = false;
+            finalTask = task;
             System.out.println(" Output of {" + task.getTaskId() + "}: " +
                 (data.toString().length() > 5000 ?
                     data.toString().substring(0, 5000) + "..." : data.toString()));
           }
+
+          // this is the only way to 'traverse' the DAG<Task>.....
+          currentTaskSet.forEach(task -> taskDAG.removeVertex(task));
+
+          // get the next 'rootVertices'
+          currentTaskSet = taskDAG.getRootVertices();
         }
 
+        // We're out of the loop - meaning that we have processed all of this DAG<Task>
+        final List<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges();
+        if (outEdges.size() > 1) {
+          throw new UnsupportedOperationException("Multi outedge not yet supported");
+        } else if (outEdges.size() == 0) {
+          System.out.println("No out edge");
+        } else {
+          final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
+          writeToChannels(finalTask.getIndex(), edgeIdToChannels, outEdge, data);
+        }
       });
     });
 
@@ -119,15 +135,15 @@ public final class SimpleRuntime {
                                final StageBoundaryEdgeInfo edge,
                                final Iterable<Element> data) {
     final int dstParallelism = edge.getExternalEndpointVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
-
-
-    edgeIdToChannels.putIfAbsent(edge.getStageBoundaryEdgeInfoId(), new ArrayList<>(dstParallelism));
-
-    final List<LocalChannel> dstChannels = edgeIdToChannels.get(edge.getStageBoundaryEdgeInfoId());
-    if (dstChannels == null) {
-      IntStream.range(0, dstParallelism).map(x -> routedPartitions.add(new ArrayList<>()));
-
-    }
+    final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
+      final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);
+      IntStream.range(0, dstParallelism).forEach(x -> {
+        final LocalChannel newChannel = new LocalChannel(HACK_DUMMY_CHAND_ID);
+        newChannel.initialize(null);
+        newChannels.add(newChannel);
+      });
+      return newChannels;
+    });
 
     final RuntimeAttribute attribute = edge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
     switch (attribute) {
