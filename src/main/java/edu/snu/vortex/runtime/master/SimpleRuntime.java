@@ -24,6 +24,7 @@ import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 import edu.snu.vortex.utils.DAG;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -59,12 +60,12 @@ public final class SimpleRuntime {
         final DAG<Task> taskDAG = taskGroup.getTaskDAG();
 
         // compute tasks in a taskgroup, supposedly 'rootVertices' at a time
-        boolean firstTask = true;
-        Task finalTask = null;
         Iterable<Element> data = null;
         Set<Task> currentTaskSet = taskDAG.getRootVertices();
         while (!currentTaskSet.isEmpty()) {
           for (final Task task : currentTaskSet) {
+            final String vertexId = task.getRuntimeVertexId();
+
             if (task instanceof BoundedSourceTask) {
               try {
                 final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
@@ -75,33 +76,46 @@ public final class SimpleRuntime {
                 throw new RuntimeException(e);
               }
             } else if (task instanceof OperatorTask) {
-              final OperatorTask operatorTask = (OperatorTask) task;
-              final Transform transform = operatorTask.getTransform();
 
-              if (firstTask) {
-                // We fetch 'data' from the incoming stage
-                final List<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges();
-                if (inEdges.size() > 1) {
-                  throw new UnsupportedOperationException("Multi inedge not yet supported");
-                }
+              // It the current task has any incoming edges, it reads data from the channels associated to the edges.
+              // After that, it applies its transform function to the data read.
+              final List<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges()
+                  .stream().filter(edge -> edge.getExternalEndpointVertexId().equals(vertexId))
+                  .collect(Collectors.toList());
+              if (inEdges.size() > 1) {
+                throw new UnsupportedOperationException("Multi inedge not yet supported");
+              } else if (inEdges.size() == 1) { // We fetch 'data' from the incoming stage
                 final StageBoundaryEdgeInfo inEdge = inEdges.get(0);
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
-              } else {
-                final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
-                final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
-                transform.prepare(transformContext, outputCollector);
-                transform.onData(data, null); // fix null
-                transform.close();
-                data = outputCollector.getOutputList();
               }
+
+              final OperatorTask operatorTask = (OperatorTask) task;
+              final Transform transform = operatorTask.getTransform();
+              final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
+              final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
+              transform.prepare(transformContext, outputCollector);
+              transform.onData(data, null); // fix null
+              transform.close();
+              data = outputCollector.getOutputList();
 
             } else {
               throw new UnsupportedOperationException(task.toString());
             }
 
-            // Update some hacky variables
-            firstTask = false;
-            finalTask = task;
+            // If the current task has any outgoing edges, it writes data to channels associated to the edges.
+            final List<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges()
+                .stream().filter(outEdge -> outEdge.getExternalEndpointVertexId().equals(vertexId))
+                .collect(Collectors.toList());
+
+            if (outEdges.size() > 1) {
+              throw new UnsupportedOperationException("Multi outedge not yet supported");
+            } else if (outEdges.size() == 0) {
+              System.out.println("No out edge");
+            } else {
+              final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
+              writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
+            }
+
             System.out.println(" Output of {" + task.getTaskId() + "}: " +
                 (data.toString().length() > 5000 ?
                     data.toString().substring(0, 5000) + "..." : data.toString()));
@@ -113,21 +127,23 @@ public final class SimpleRuntime {
           // get the next 'rootVertices'
           currentTaskSet = taskDAG.getRootVertices();
         }
-
-        // We're out of the loop - meaning that we have processed all of this DAG<Task>
-        final List<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges();
-        if (outEdges.size() > 1) {
-          throw new UnsupportedOperationException("Multi outedge not yet supported");
-        } else if (outEdges.size() == 0) {
-          System.out.println("No out edge");
-        } else {
-          final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
-          writeToChannels(finalTask.getIndex(), edgeIdToChannels, outEdge, data);
-        }
       });
     });
 
     System.out.println("Job completed.");
+  }
+
+  private List<StageBoundaryEdgeInfo> findAttachedIncomingEdges(final Task task, final TaskGroup taskGroup) {
+    final String vertexId = task.getRuntimeVertexId();
+    final List<StageBoundaryEdgeInfo> inEdges = new ArrayList<>();
+
+    taskGroup.getIncomingEdges().forEach(inEdge -> {
+      if (inEdge.getExternalEndpointVertexId().equals(vertexId)) {
+        inEdges.add(inEdge);
+      }
+    });
+
+    return inEdges;
   }
 
   private void writeToChannels(final int srcTaskIndex,
