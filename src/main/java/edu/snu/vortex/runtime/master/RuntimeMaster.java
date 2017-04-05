@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
+import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
@@ -52,6 +53,7 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
+    System.out.println(physicalPlan);
     // scheduler.scheduleJob(physicalPlan);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);
@@ -74,9 +76,9 @@ public final class RuntimeMaster {
       for (final RuntimeStage runtimeStage : executionPlan.getRuntimeStages()) {
         final List<RuntimeVertex> runtimeVertices = runtimeStage.getRuntimeVertices();
 
-        final List<StageBoundaryEdgeInfo> incomingEdgeInfos =
+        final Map<String, Set<StageBoundaryEdgeInfo>> incomingEdgeInfos =
             createStageBoundaryEdgeInfo(runtimeStage.getStageIncomingEdges(), true);
-        final List<StageBoundaryEdgeInfo> outgoingEdgeInfos =
+        final Map<String, Set<StageBoundaryEdgeInfo>> outgoingEdgeInfos =
             createStageBoundaryEdgeInfo(runtimeStage.getStageOutgoingEdges(), false);
 
         // TODO #103: Integrity check in execution plan.
@@ -135,8 +137,7 @@ public final class RuntimeMaster {
         }
       }
     } catch (final Exception e) {
-      throw new RuntimeException(e);
-      // throw new PhysicalPlanGenerationException(e.getMessage());
+      throw new PhysicalPlanGenerationException(e.getMessage());
     }
     final PhysicalPlan physicalPlan = physicalPlanBuilder.build();
     LOG.log(Level.INFO, physicalPlan.toString());
@@ -145,15 +146,17 @@ public final class RuntimeMaster {
 
   /**
    * Creates a list of information on stage boundary edges for task groups.
-   * @param stageBoundaryRuntimeEdges a map of endpoint vertex id to the incoming/outgoing edges from/to this stage.
+   * @param stageBoundaryRuntimeEdges a map of this stage's vertex id to the incoming/outgoing edges from/to this stage.
    * @param isIncomingEdges true if the map is for incoming, false if it is for outgoing edges.
-   * @return a list of information on the stage boundary edges.
+   * @return a map of information on the stage boundary edges.
    */
-  private List<StageBoundaryEdgeInfo> createStageBoundaryEdgeInfo(
+  private Map<String, Set<StageBoundaryEdgeInfo>> createStageBoundaryEdgeInfo(
       final Map<String, Set<RuntimeEdge>> stageBoundaryRuntimeEdges, final boolean isIncomingEdges) {
-    final List<StageBoundaryEdgeInfo> stageBoundaryEdgeInfos = new LinkedList<>();
-    for (final Set<RuntimeEdge> edgeSet : stageBoundaryRuntimeEdges.values()) {
-      edgeSet.forEach(runtimeEdge -> {
+    final Map<String, Set<StageBoundaryEdgeInfo>> boundaryEdgeMap = new HashMap<>();
+
+    for (final Map.Entry<String, Set<RuntimeEdge>> entry : stageBoundaryRuntimeEdges.entrySet()) {
+      final Set<StageBoundaryEdgeInfo> stageBoundaryEdgeInfos = new HashSet<>();
+      entry.getValue().forEach(runtimeEdge -> {
         final RuntimeVertex endpointVertex;
         if (isIncomingEdges) {
           endpointVertex = runtimeEdge.getSrcRuntimeVertex();
@@ -163,7 +166,8 @@ public final class RuntimeMaster {
         stageBoundaryEdgeInfos.add(new StageBoundaryEdgeInfo(runtimeEdge.getId(), runtimeEdge.getEdgeAttributes(),
             endpointVertex.getId(), endpointVertex.getVertexAttributes()));
       });
+      boundaryEdgeMap.put(entry.getKey(), stageBoundaryEdgeInfos);
     }
-    return stageBoundaryEdgeInfos;
+    return boundaryEdgeMap;
   }
 }
