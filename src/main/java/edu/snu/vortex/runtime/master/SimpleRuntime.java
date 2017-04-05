@@ -147,7 +147,9 @@ public final class SimpleRuntime {
                                final Map<String, List<LocalChannel>> edgeIdToChannels,
                                final StageBoundaryEdgeInfo edge,
                                final Iterable<Element> data) {
-    final int dstParallelism = 1; //edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+    // TODO #131: Optimizer Pass for Required Attributes
+    // dstParallelism = edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+    final int dstParallelism = 1;
 
     final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
       final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);
@@ -168,17 +170,15 @@ public final class SimpleRuntime {
         dstChannels.forEach(chan -> chan.write(data));
         break;
       case ScatterGather:
-//        if (edge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition) == RuntimeAttribute.Hash) {
-          final List<List<Element>> routedPartitions = new ArrayList<>(dstParallelism);
-          IntStream.range(0, dstParallelism).forEach(x -> routedPartitions.add(new ArrayList<>()));
-          data.forEach(element -> {
-            final int dstIndex = Math.abs(element.getKey().hashCode() % dstParallelism);
-            routedPartitions.get(dstIndex).add(element);
-          });
-          IntStream.range(0, dstParallelism).forEach(x -> dstChannels.get(x).write(routedPartitions.get(x)));
-//        } else {
-//          throw new UnsupportedOperationException(edge.toString());
-//        }
+        // TODO #131: Optimizer Pass for Required Attributes
+        // this implementation assumes the Hash partitioning mechanism.
+        final List<List<Element>> routedPartitions = new ArrayList<>(dstParallelism);
+        IntStream.range(0, dstParallelism).forEach(x -> routedPartitions.add(new ArrayList<>()));
+        data.forEach(element -> {
+          final int dstIndex = Math.abs(element.getKey().hashCode() % dstParallelism);
+          routedPartitions.get(dstIndex).add(element);
+        });
+        IntStream.range(0, dstParallelism).forEach(x -> dstChannels.get(x).write(routedPartitions.get(x)));
         break;
       default:
         throw new UnsupportedOperationException(edge.toString());
