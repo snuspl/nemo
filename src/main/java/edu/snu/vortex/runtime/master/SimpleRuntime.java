@@ -44,11 +44,6 @@ public final class SimpleRuntime {
    * The dependency information between tasks in a stage is missing,
    * so I just assumed that a stage is a sequence of tasks that only have 0 or 1 child/parent.
    *
-   * Hack #2
-   * The information on which task in a taskgroup is connected to other stages is missing.
-   * As a workaround, I just assumed that the first task is connected to the incoming edges,
-   * and the last task is connected to the outgoing edges.
-   *
    * @param physicalPlan Physical Plan.
    * @throws Exception during execution.
    */
@@ -78,17 +73,20 @@ public final class SimpleRuntime {
 
               // It the current task has any incoming edges, it reads data from the channels associated to the edges.
               // After that, it applies its transform function to the data read.
-              final List<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges()
-                  .stream().filter(edge -> edge.getExternalEndpointVertexId().equals(vertexId))
-                  .collect(Collectors.toList());
+              List<StageBoundaryEdgeInfo> inEdges;
+              final Set<StageBoundaryEdgeInfo> inEdgeSet = taskGroup.getIncomingEdges().get(vertexId);
+              if (inEdgeSet != null) {
+                inEdges = inEdgeSet.stream().collect(Collectors.toList());
+              } else {
+                inEdges = new ArrayList<>();
+              }
+
               if (inEdges.size() > 1) {
                 throw new UnsupportedOperationException("Multi inedge not yet supported");
               } else if (inEdges.size() == 1) { // We fetch 'data' from the incoming stage
                 final StageBoundaryEdgeInfo inEdge = inEdges.get(0);
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
                 System.out.println("A task (id: " + task.getTaskId() + ") reads data");
-              } else {
-                System.out.println("A task (id: " + task.getTaskId() + ") doesn't read data");
               }
 
               final OperatorTask operatorTask = (OperatorTask) task;
@@ -96,11 +94,9 @@ public final class SimpleRuntime {
               final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
-              System.out.println(task.getTaskId() + ": " + data.toString());
               transform.onData(data, null); // fix null
               transform.close();
               data = outputCollector.getOutputList();
-              System.out.println(task.getTaskId() + ": " + data.toString());
 
             } else {
               throw new UnsupportedOperationException(task.toString());
@@ -111,9 +107,15 @@ public final class SimpleRuntime {
                     data.toString().substring(0, 5000) + "..." : data.toString()));
 
             // If the current task has any outgoing edges, it writes data to channels associated to the edges.
-            final List<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges()
-                .stream().filter(outEdge -> outEdge.getExternalEndpointVertexId().equals(vertexId))
-                .collect(Collectors.toList());
+            final List<StageBoundaryEdgeInfo> outEdges;
+            final Set<StageBoundaryEdgeInfo> outEdgeSet = taskGroup.getOutgoingEdges().get(vertexId);
+
+            if (outEdgeSet != null) {
+              outEdges = outEdgeSet.stream().collect(Collectors.toList());
+            } else {
+              outEdges = new ArrayList<>();
+            }
+
             outEdges.forEach(edge -> System.out.println(edge.toString()));
 
             if (outEdges.size() > 1) {
@@ -121,7 +123,6 @@ public final class SimpleRuntime {
             } else if (outEdges.size() == 0) {
               System.out.println("No out edge");
             } else {
-              System.out.println("A task (id: " + task.getTaskId() + ") writes data");
               final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
               writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
             }
@@ -139,24 +140,12 @@ public final class SimpleRuntime {
     System.out.println("Job completed.");
   }
 
-  private List<StageBoundaryEdgeInfo> findAttachedIncomingEdges(final Task task, final TaskGroup taskGroup) {
-    final String vertexId = task.getRuntimeVertexId();
-    final List<StageBoundaryEdgeInfo> inEdges = new ArrayList<>();
-
-    taskGroup.getIncomingEdges().forEach(inEdge -> {
-      if (inEdge.getExternalEndpointVertexId().equals(vertexId)) {
-        inEdges.add(inEdge);
-      }
-    });
-
-    return inEdges;
-  }
-
   private void writeToChannels(final int srcTaskIndex,
                                final Map<String, List<LocalChannel>> edgeIdToChannels,
                                final StageBoundaryEdgeInfo edge,
                                final Iterable<Element> data) {
-    final int dstParallelism = edge.getExternalEndpointVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+    final int dstParallelism = 1; //edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+
     final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
       final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);
       IntStream.range(0, dstParallelism).forEach(x -> {
@@ -176,7 +165,7 @@ public final class SimpleRuntime {
         dstChannels.forEach(chan -> chan.write(data));
         break;
       case ScatterGather:
-        if (edge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition) == RuntimeAttribute.Hash) {
+//        if (edge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition) == RuntimeAttribute.Hash) {
           final List<List<Element>> routedPartitions = new ArrayList<>(dstParallelism);
           IntStream.range(0, dstParallelism).forEach(x -> routedPartitions.add(new ArrayList<>()));
           data.forEach(element -> {
@@ -184,62 +173,13 @@ public final class SimpleRuntime {
             routedPartitions.get(dstIndex).add(element);
           });
           IntStream.range(0, dstParallelism).forEach(x -> dstChannels.get(x).write(routedPartitions.get(x)));
-        } else {
-          throw new UnsupportedOperationException(edge.toString());
-        }
+//        } else {
+//          throw new UnsupportedOperationException(edge.toString());
+//        }
+        break;
       default:
         throw new UnsupportedOperationException(edge.toString());
     }
   }
 }
-
-/*
-PhysicalPlan {id='ExecPlan-1',
-    taskGroupsByStage=[
-      [TaskGroup{taskGroupId='TaskGroup-1',
-                  taskDAG=DAGImpl{
-                      rootVertices=[
-                          Task{taskId='Task-1', runtimeVertexId='RVertex-vertex1', index=0}],
-                      parentVertices={
-                          Task{taskId='Task-2', runtimeVertexId='RVertex-vertex2', index=0}=[Task{taskId='Task-1', runtimeVertexId='RVertex-vertex1', index=0}],
-                          Task{taskId='Task-1', runtimeVertexId='RVertex-vertex1', index=0}=[]},
-                      childrenVertices={
-                          Task{taskId='Task-2', runtimeVertexId='RVertex-vertex2', index=0}=[],
-                          Task{taskId='Task-1', runtimeVertexId='RVertex-vertex1', index=0}=[Task{taskId='Task-2', runtimeVertexId='RVertex-vertex2', index=0}]}},
-                      resourceType=Transient,
-                      incomingEdges=[],
-                      outgoingEdges=[
-                          StageBoundaryEdgeInfo{stageBoundaryEdgeInfoId='REdge-edge2',
-                                                edgeAttributes={ChannelTransferPolicy=Push,
-                                                                CommPattern=ScatterGather,
-                                                                ChannelDataPlacement=Memory},
-                                                externalEndpointVertexId='RVertex-vertex3',
-                                                externalEndpointVertexAttr={ResourceType=Reserved}}]
-                          }
-                      ],
-      [TaskGroup{taskGroupId='TaskGroup-2',
-                  taskDAG=DAGImpl{
-                    rootVertices=[
-                        Task{taskId='Task-3', runtimeVertexId='RVertex-vertex3', index=0}],
-                    parentVertices={
-                        Task{taskId='Task-3', runtimeVertexId='RVertex-vertex3', index=0}=[],
-                        Task{taskId='Task-4', runtimeVertexId='RVertex-vertex4', index=0}=[Task{taskId='Task-3', runtimeVertexId='RVertex-vertex3', index=0}],
-                        Task{taskId='Task-5', runtimeVertexId='RVertex-vertex5', index=0}=[Task{taskId='Task-4', runtimeVertexId='RVertex-vertex4', index=0}]},
-                    childrenVertices={
-                        Task{taskId='Task-3', runtimeVertexId='RVertex-vertex3', index=0}=[Task{taskId='Task-4', runtimeVertexId='RVertex-vertex4', index=0}],
-                        Task{taskId='Task-4', runtimeVertexId='RVertex-vertex4', index=0}=[Task{taskId='Task-5', runtimeVertexId='RVertex-vertex5', index=0}],
-                        Task{taskId='Task-5', runtimeVertexId='RVertex-vertex5', index=0}=[]}
-                  },
-                  resourceType=Reserved,
-                  incomingEdges=[
-                    StageBoundaryEdgeInfo{stageBoundaryEdgeInfoId='REdge-edge2',
-                                          edgeAttributes={ChannelTransferPolicy=Push, CommPattern=ScatterGather, ChannelDataPlacement=Memory},
-                                          externalEndpointVertexId='RVertex-vertex2',
-                                          externalEndpointVertexAttr={ResourceType=Transient}}],
-                  outgoingEdges=[]}
-      ]
-    ]
-}
-
-*/
 
