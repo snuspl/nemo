@@ -55,7 +55,7 @@ public final class RuntimeMaster {
     // scheduler.scheduleJob(physicalPlan);
     /*
     try {
-      new SimpleEngine().executePhysicalPlan(physicalPlan);
+      new SimpleRuntime().executePhysicalPlan(physicalPlan);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
