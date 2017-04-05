@@ -86,7 +86,6 @@ public final class SimpleRuntime {
               } else if (inEdges.size() == 1) { // We fetch 'data' from the incoming stage
                 final StageBoundaryEdgeInfo inEdge = inEdges.get(0);
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
-                System.out.println("A task (id: " + task.getTaskId() + ") reads data");
               }
 
               final OperatorTask operatorTask = (OperatorTask) task;
@@ -107,7 +106,7 @@ public final class SimpleRuntime {
                     data.toString().substring(0, 5000) + "..." : data.toString()));
 
             // If the current task has any outgoing edges, it writes data to channels associated to the edges.
-            final List<StageBoundaryEdgeInfo> outEdges;
+            List<StageBoundaryEdgeInfo> outEdges;
             final Set<StageBoundaryEdgeInfo> outEdgeSet = taskGroup.getOutgoingEdges().get(vertexId);
 
             if (outEdgeSet != null) {
@@ -118,13 +117,17 @@ public final class SimpleRuntime {
 
             outEdges.forEach(edge -> System.out.println(edge.toString()));
 
-            if (outEdges.size() > 1) {
-              throw new UnsupportedOperationException("Multi outedge not yet supported");
-            } else if (outEdges.size() == 0) {
-              System.out.println("No out edge");
-            } else {
-              final StageBoundaryEdgeInfo outEdge = outEdges.get(0);
-              writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
+            if (outEdges.size() > 0) {
+              final Iterator<StageBoundaryEdgeInfo> iterator = outEdges.iterator();
+              while (iterator.hasNext()) {
+                final StageBoundaryEdgeInfo outEdge = iterator.next();
+                if (outEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput) {
+                  //TODO #000: need to handle a side input.
+                  throw new UnsupportedOperationException("Side input not yet supported");
+                } else {
+                  writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
+                }
+              }
             }
           }
 
