@@ -56,7 +56,8 @@ public final class SimpleRuntime {
 
         // compute tasks in a taskgroup, supposedly 'rootVertices' at a time
         Iterable<Element> data = null;
-        Set<Task> currentTaskSet = taskDAG.getRootVertices();
+        Set<Task> currentTaskSet = new HashSet<>();
+        currentTaskSet.addAll(taskDAG.getRootVertices());
         while (!currentTaskSet.isEmpty()) {
           for (final Task task : currentTaskSet) {
             final String vertexId = task.getRuntimeVertexId();
@@ -126,7 +127,8 @@ public final class SimpleRuntime {
           currentTaskSet.forEach(task -> taskDAG.removeVertex(task));
 
           // get the next 'rootVertices'
-          currentTaskSet = taskDAG.getRootVertices();
+          currentTaskSet.clear();
+          currentTaskSet.addAll(taskDAG.getRootVertices());
         }
       });
     });
