@@ -139,8 +139,13 @@ public final class SimpleRuntime {
                                final StageBoundaryEdgeInfo edge,
                                final Iterable<Element> data) {
     // TODO #131: Optimizer Pass for Required Attributes
-    // dstParallelism = edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
-    final int dstParallelism = 1;
+    final int dstParallelism;
+    if (edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism) == null) {
+      dstParallelism = 1;
+    } else {
+      dstParallelism = edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+    }
+
 
     final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
       final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);

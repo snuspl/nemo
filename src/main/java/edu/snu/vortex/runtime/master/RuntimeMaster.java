@@ -27,7 +27,6 @@ import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
 
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
