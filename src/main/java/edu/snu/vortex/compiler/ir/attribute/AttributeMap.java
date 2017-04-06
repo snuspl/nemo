@@ -54,6 +54,10 @@ public final class AttributeMap {
     this.intAttributes.put(Attribute.IntegerKey.Parallelism, 1);
   }
 
+  public String getId() {
+    return id;
+  }
+
   public Attribute put(final Attribute.Key key, final Attribute val) {
     if (!val.hasKey(key)) {
       throw new RuntimeException("Attribute " + val + " is not a member of Key " + key);
@@ -88,7 +92,11 @@ public final class AttributeMap {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
+    sb.append("{");
     sb.append(attributes);
+    sb.append(", ");
+    sb.append(intAttributes);
+    sb.append("}");
     return sb.toString();
   }
 
