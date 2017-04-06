@@ -64,7 +64,7 @@ public enum RuntimeAttribute {
   Range(Key.Partition),
 
   /**
-   * Edge type to specify edges that transfer SideInputs
+   * Edge type to specify edges that transfer SideInputs.
    */
   SideInput(Key.SideInput),
 
