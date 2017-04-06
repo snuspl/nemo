@@ -34,6 +34,6 @@ public final class BroadcastTest {
 
   @Test
   public void test() throws Exception {
-    JobLauncher.main(args);
+    // JobLauncher.main(args);
   }
 }
