@@ -23,7 +23,6 @@ import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.DAG;
 import edu.snu.vortex.utils.DAGImpl;
 
@@ -41,10 +40,10 @@ import java.util.logging.Logger;
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
-  private final Scheduler scheduler;
+  // private final Scheduler scheduler;
 
   public RuntimeMaster() {
-    this.scheduler = new Scheduler(RuntimeAttribute.Batch);
+    // this.scheduler = new Scheduler(RuntimeAttribute.Batch);
   }
 
   /**
@@ -53,7 +52,6 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
-    System.out.println(physicalPlan);
     // scheduler.scheduleJob(physicalPlan);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);
@@ -140,7 +138,6 @@ public final class RuntimeMaster {
       throw new PhysicalPlanGenerationException(e.getMessage());
     }
     final PhysicalPlan physicalPlan = physicalPlanBuilder.build();
-    LOG.log(Level.INFO, physicalPlan.toString());
     return physicalPlan;
   }
 

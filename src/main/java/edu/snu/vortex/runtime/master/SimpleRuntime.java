@@ -40,8 +40,8 @@ public final class SimpleRuntime {
    * and we need to eventually fix the issues in a more proper way.
    * Please also refer to SimpleEngineBackup, which do not have these issues.
    *
-   * Hack #1
-   * The dependency information between tasks in a stage is missing,
+   * TODO #132: Refactor DAG
+   * Hack: The dependency information between tasks in a stage is missing,
    * so I just assumed that a stage is a sequence of tasks that only have 0 or 1 child/parent.
    *
    * @param physicalPlan Physical Plan.
@@ -73,18 +73,25 @@ public final class SimpleRuntime {
 
               // It the current task has any incoming edges, it reads data from the channels associated to the edges.
               // After that, it applies its transform function to the data read.
-              List<StageBoundaryEdgeInfo> inEdges;
-              final Set<StageBoundaryEdgeInfo> inEdgeSet = taskGroup.getIncomingEdges().get(vertexId);
-              if (inEdgeSet != null) {
-                inEdges = inEdgeSet.stream().collect(Collectors.toList());
+              final Set<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges().get(vertexId);
+              final Set<StageBoundaryEdgeInfo> sideInputInEdges;
+              final Set<StageBoundaryEdgeInfo> nonSideInputInEdges;
+              if (inEdges != null) {
+                sideInputInEdges = inEdges.stream()
+                    .filter(edge ->
+                        edge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput)
+                    .collect(Collectors.toSet());
+                nonSideInputInEdges = new HashSet<>(inEdges);
+                nonSideInputInEdges.removeAll(sideInputInEdges);
               } else {
-                inEdges = new ArrayList<>();
+                sideInputInEdges = new HashSet<>(0);
+                nonSideInputInEdges = new HashSet<>(0);
               }
 
-              if (inEdges.size() > 1) {
+              if (nonSideInputInEdges.size() > 1) {
                 throw new UnsupportedOperationException("Multi inedge not yet supported");
-              } else if (inEdges.size() == 1) { // We fetch 'data' from the incoming stage
-                final StageBoundaryEdgeInfo inEdge = inEdges.get(0);
+              } else if (nonSideInputInEdges.size() == 1) { // We fetch 'data' from the incoming stage
+                final StageBoundaryEdgeInfo inEdge = nonSideInputInEdges.iterator().next();
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
               }
 
@@ -106,28 +113,12 @@ public final class SimpleRuntime {
                     data.toString().substring(0, 5000) + "..." : data.toString()));
 
             // If the current task has any outgoing edges, it writes data to channels associated to the edges.
-            List<StageBoundaryEdgeInfo> outEdges;
-            final Set<StageBoundaryEdgeInfo> outEdgeSet = taskGroup.getOutgoingEdges().get(vertexId);
-
-            if (outEdgeSet != null) {
-              outEdges = outEdgeSet.stream().collect(Collectors.toList());
-            } else {
-              outEdges = new ArrayList<>();
-            }
-
-            outEdges.forEach(edge -> System.out.println(edge.toString()));
-
-            if (outEdges.size() > 0) {
-              final Iterator<StageBoundaryEdgeInfo> iterator = outEdges.iterator();
-              while (iterator.hasNext()) {
-                final StageBoundaryEdgeInfo outEdge = iterator.next();
-                if (outEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput) {
-                  //TODO #000: need to handle a side input.
-                  throw new UnsupportedOperationException("Side input not yet supported");
-                } else {
-                  writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, data);
-                }
-              }
+            final Set<StageBoundaryEdgeInfo> outEdges = taskGroup.getOutgoingEdges().get(vertexId);
+            if (outEdges != null) {
+              final Iterable<Element> finalData = data;
+              outEdges.forEach(outEdge -> {
+                writeToChannels(task.getIndex(), edgeIdToChannels, outEdge, finalData);
+              });
             }
           }
 
