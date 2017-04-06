@@ -26,6 +26,8 @@ import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 
 import java.util.Arrays;
 
+import static edu.snu.vortex.compiler.optimizer.Optimizer.POLICY_NAME;
+
 /**
  * Job launcher.
  */
@@ -49,23 +51,7 @@ public final class JobLauncher {
     System.out.println("##### VORTEX COMPILER (Before Optimization) #####");
     System.out.println(dag);
 
-    final Optimizer.PolicyType optimizationPolicy;
-    switch (policyName) {
-      case "none":
-        optimizationPolicy = Optimizer.PolicyType.None;
-        break;
-      case "pado":
-        optimizationPolicy = Optimizer.PolicyType.Pado;
-        break;
-      case "disaggregation":
-        optimizationPolicy = Optimizer.PolicyType.Disaggregation;
-        break;
-      case "runtime_opt":
-      // TODO #31: Interfaces for Runtime Optimization
-      default:
-        throw new RuntimeException("No such policy: " + policyName);
-    }
-
+    final Optimizer.PolicyType optimizationPolicy = POLICY_NAME.get(policyName);
     final DAG optimizedDAG = optimizer.optimize(dag, optimizationPolicy);
     System.out.println("##### VORTEX COMPILER (After Optimization for " + optimizationPolicy + ") #####");
     System.out.println(optimizedDAG);
