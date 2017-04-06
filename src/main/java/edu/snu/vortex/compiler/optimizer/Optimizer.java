@@ -16,10 +16,7 @@
 package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.optimizer.passes.DisaggregationPass;
-import edu.snu.vortex.compiler.optimizer.passes.PadoEdgePass;
-import edu.snu.vortex.compiler.optimizer.passes.PadoVertexPass;
-import edu.snu.vortex.compiler.optimizer.passes.Pass;
+import edu.snu.vortex.compiler.optimizer.passes.*;
 
 import java.util.*;
 
@@ -80,8 +77,8 @@ public final class Optimizer {
   private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.Pado,
-        Arrays.asList(new PadoVertexPass(), new PadoEdgePass()));
+        Arrays.asList(new PadoVertexPass(), new PadoEdgePass(), new ParallelismPass()));
     POLICIES.put(PolicyType.Disaggregation,
-        Arrays.asList(new DisaggregationPass()));
+        Arrays.asList(new DisaggregationPass(), new ParallelismPass()));
   }
 }
