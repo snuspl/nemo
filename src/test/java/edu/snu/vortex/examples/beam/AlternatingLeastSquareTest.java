@@ -36,6 +36,6 @@ public final class AlternatingLeastSquareTest {
 
   @Test
   public void test() throws Exception {
-    // JobLauncher.main(args);
+    JobLauncher.main(args);
   }
 }
