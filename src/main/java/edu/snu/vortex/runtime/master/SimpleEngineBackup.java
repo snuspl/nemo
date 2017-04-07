@@ -20,13 +20,17 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * A simple engine that prints vertex outputs to stdout.
+ * A simple engine that logs vertex outputs.
  */
 public final class SimpleEngineBackup {
+  private static final Logger LOG = Logger.getLogger(SimpleEngineBackup.class.getName());
+
   public void executeDAG(final DAG dag) throws Exception {
     final Map<String, List<Iterable<Element>>> edgeIdToPartitions = new HashMap<>();
     final Map<String, Object> edgeIdToBroadcast = new HashMap<>();
@@ -38,7 +42,7 @@ public final class SimpleEngineBackup {
           final List<Reader> readers = sourceVertex.getReaders(10); // 10 splits
           final List<Iterable<Element>> partitions = new ArrayList<>(readers.size());
 
-          System.out.println("Begin processing SourceVertex: " + sourceVertex.getId());
+          LOG.log(Level.INFO, "Begin processing SourceVertex: " + sourceVertex.getId());
 
           for (final Reader reader : readers) {
             partitions.add(reader.read());
@@ -46,8 +50,8 @@ public final class SimpleEngineBackup {
           dag.getOutEdgesOf(vertex).get().stream()
               .forEach(outEdge -> edgeIdToPartitions.put(outEdge.getId(), routePartitions(partitions, outEdge)));
 
-          System.out.println(" Output of {" + vertex.getId() + "} for edges " + dag.getOutEdgesOf(vertex).get().stream()
-              .map(Edge::getId).collect(Collectors.toList()) + ": " + partitions);
+          LOG.log(Level.INFO, " Output of {" + vertex.getId() + "} for edges " + dag.getOutEdgesOf(vertex)
+              .get().stream().map(Edge::getId).collect(Collectors.toList()) + ": " + partitions);
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
@@ -71,7 +75,7 @@ public final class SimpleEngineBackup {
             final List<Iterable<Element>> outDataPartitions = new ArrayList<>();
 
             // Process each partition of an edge
-            System.out.println("Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
+            LOG.log(Level.INFO, "Begin processing {" + inEdge.getId() + "} for OperatorVertex: " +
                 operatorVertex.getId());
 
             inDataPartitions.forEach(inData -> {
@@ -98,12 +102,12 @@ public final class SimpleEngineBackup {
                 }
               });
             } else if (outEdges.size() == 0) {
-              System.out.println("Sink Vertex");
+              LOG.log(Level.INFO, "Sink Vertex");
             } else {
               throw new IllegalStateException("Size must not be negative");
             }
 
-            System.out.println(" Output of {" + vertex.getId() + "} for edges " +
+            LOG.log(Level.INFO, " Output of {" + vertex.getId() + "} for edges " +
                 outEdges.stream().map(Edge::getId).collect(Collectors.toList()) + ": " +
                 (outDataPartitions.toString().length() > 5000 ?
                     outDataPartitions.toString().substring(0, 5000) + "..." : outDataPartitions.toString()));
@@ -114,7 +118,7 @@ public final class SimpleEngineBackup {
       }
     });
 
-    System.out.println("Job completed.");
+    LOG.log(Level.INFO, "Job completed.");
   }
 
   private List<Iterable<Element>> routePartitions(final List<Iterable<Element>> partitions,

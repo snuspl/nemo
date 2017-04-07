@@ -24,25 +24,26 @@ import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 import edu.snu.vortex.utils.DAG;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Simple Runtime that prints intermediate results to stdout.
+ * Simple Runtime that logs intermediate results.
  */
 public final class SimpleRuntime {
+  private static final Logger LOG = Logger.getLogger(SimpleRuntime.class.getName());
+
+  // TODO #91: Implement Channels
   private static final String HACK_DUMMY_CHAND_ID = "HACK";
 
   /**
-   * WARNING: Because the current physical plan is missing some critical information,
-   * I used hacks to make this work at least with the Beam applications we currently have.
-   * Nevertheless, a slight variation in the applications will make the code fail
-   * and we need to eventually fix the issues in a more proper way.
-   * Please also refer to SimpleEngineBackup, which do not have these issues.
-   *
+   * Physical DAG and Logical DAG have incomplete data structures.
+   * As a result the dependency information between tasks within a stage in Physical DAG is lost in the translation.
+   * So for now we just assume that a stage is a sequence of tasks that only have 0 or 1 child/parent.
+   * This hack will be fixed by the following to do.
    * TODO #132: Refactor DAG
-   * Hack: The dependency information between tasks in a stage is missing,
-   * so I just assumed that a stage is a sequence of tasks that only have 0 or 1 child/parent.
    *
    * @param physicalPlan Physical Plan.
    * @throws Exception during execution.
@@ -52,10 +53,11 @@ public final class SimpleRuntime {
 
     physicalPlan.getTaskGroupsByStage().forEach(stage -> {
       stage.forEach(taskGroup -> {
-        final DAG<Task> taskDAG = taskGroup.getTaskDAG();
 
         // compute tasks in a taskgroup, supposedly 'rootVertices' at a time
-        Iterable<Element> data = null;
+        // (another shortcoming of the current physical DAG)
+        final DAG<Task> taskDAG = taskGroup.getTaskDAG();
+        Iterable<Element> data = null; // hack (TODO #132: Refactor DAG)
         Set<Task> currentTaskSet = new HashSet<>();
         currentTaskSet.addAll(taskDAG.getRootVertices());
         while (!currentTaskSet.isEmpty()) {
@@ -71,7 +73,6 @@ public final class SimpleRuntime {
                 throw new RuntimeException(e);
               }
             } else if (task instanceof OperatorTask) {
-
               // It the current task has any incoming edges, it reads data from the channels associated to the edges.
               // After that, it applies its transform function to the data read.
               final Set<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges().get(vertexId);
@@ -101,7 +102,7 @@ public final class SimpleRuntime {
               final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
-              transform.onData(data, null); // fix null
+              transform.onData(data, null); // hack (TODO #132: Refactor DAG)
               transform.close();
               data = outputCollector.getOutputList();
 
@@ -109,7 +110,7 @@ public final class SimpleRuntime {
               throw new UnsupportedOperationException(task.toString());
             }
 
-            System.out.println(" Output of {" + task.getTaskId() + "}: " +
+            LOG.log(Level.INFO, " Output of {" + task.getTaskId() + "}: " +
                 (data.toString().length() > 5000 ?
                     data.toString().substring(0, 5000) + "..." : data.toString()));
 
@@ -132,8 +133,6 @@ public final class SimpleRuntime {
         }
       });
     });
-
-    System.out.println("Job completed.");
   }
 
   private void writeToChannels(final int srcTaskIndex,
@@ -144,6 +143,9 @@ public final class SimpleRuntime {
     final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
       final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);
       IntStream.range(0, dstParallelism).forEach(x -> {
+        // This is a hack to make the runtime work for now
+        // In the future, channels should be passed to tasks via their methods (e.g., Task#compute)
+        // TODO #91: Implement Channels
         final LocalChannel newChannel = new LocalChannel(HACK_DUMMY_CHAND_ID);
         newChannel.initialize(null);
         newChannels.add(newChannel);
