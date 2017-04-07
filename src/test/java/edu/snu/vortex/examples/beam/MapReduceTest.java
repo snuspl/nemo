@@ -28,9 +28,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceTest {
   private final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
+  private final String optimizationPolicy = "pado";
   private final String input = "./src/main/resources/sample_input_mr";
   private final String output = "./src/main/resources/sample_output";
-  private final String[] args = {mapReduce, input, output};
+  private final String[] args = {mapReduce, optimizationPolicy, input, output};
 
   @Test
   public void test() throws Exception {

@@ -75,7 +75,6 @@ public enum RuntimeAttribute {
    */
   SideInput(Key.SideInput),
 
-
   /**
    * Scheduler type attributes.
    */
@@ -92,7 +91,7 @@ public enum RuntimeAttribute {
     Partition,
     SideInput,
     CommPattern,
-    SchedulingPolicy
+    SchedulingPolicy,
   }
 
   /**
@@ -113,6 +112,3 @@ public enum RuntimeAttribute {
   }
 
 }
-
-
-
