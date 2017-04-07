@@ -23,12 +23,14 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 import edu.snu.vortex.utils.DAG;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * Simple Runtime that logs intermediate results.
@@ -77,31 +79,8 @@ public final class SimpleRuntime {
               // It the current task has any incoming edges, it reads data from the channels associated to the edges.
               // After that, it applies its transform function to the data read.
               final Set<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges().get(vertexId);
-              final Map<Transform, Object> sideInputs;
-              final Set<StageBoundaryEdgeInfo> nonSideInputEdges;
-              if (inEdges != null) {
-                sideInputs = new HashMap<>();
-                inEdges.stream()
-                    .filter(inEdge ->
-                        inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput)
-                    .forEach(inEdge -> {
-                      sideInputs.put(
-                          ((RuntimeOperatorVertex) inEdge.getExternalVertex()).getOperatorVertex().getTransform(),
-                          edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read());
-                      System.out.println("sideinputs: " + sideInputs);
-                      System.out.println("read: " +
-                          edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read());
-                    });
-                nonSideInputEdges = inEdges.stream()
-                    .filter(inEdge ->
-                        inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) != RuntimeAttribute.SideInput)
-                    .collect(Collectors.toSet());
-              } else {
-                sideInputs = new HashMap<>(0);
-                nonSideInputEdges = new HashSet<>(0);
-              }
-              System.out.println("sideinputs: " + sideInputs);
-
+              final Map<Transform, Object> sideInputs = getSideInputs(inEdges, task, edgeIdToChannels);
+              final Set<StageBoundaryEdgeInfo> nonSideInputEdges = getNonSideInputEdges(inEdges);
               if (nonSideInputEdges.size() > 1) {
                 // TODO #13: Implement Join Node
                 throw new UnsupportedOperationException("Multi inedge not yet supported");
@@ -111,7 +90,10 @@ public final class SimpleRuntime {
               }
 
               final OperatorTask operatorTask = (OperatorTask) task;
-              final Transform transform = operatorTask.getTransform();
+
+              // TODO #18: Support code/data serialization
+              final Transform transform = SerializationUtils.clone(operatorTask.getTransform());
+
               final Transform.Context transformContext = new ContextImpl(sideInputs);
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
@@ -146,6 +128,46 @@ public final class SimpleRuntime {
         }
       });
     });
+  }
+
+  private Set<StageBoundaryEdgeInfo> getNonSideInputEdges(final Set<StageBoundaryEdgeInfo> inEdges) {
+    if (inEdges != null) {
+      return inEdges.stream()
+          .filter(inEdge ->
+              inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) != RuntimeAttribute.SideInput)
+          .collect(Collectors.toSet());
+    } else {
+      return new HashSet<>(0);
+    }
+  }
+
+  private Map<Transform, Object> getSideInputs(final Set<StageBoundaryEdgeInfo> inEdges,
+                                               final Task task,
+                                               final Map<String, List<LocalChannel>> edgeIdToChannels) {
+    if (inEdges != null) {
+      // We assume that all sideinputs are fetched from outside of the task's stage TODO #132: Refactor DAG
+      final Map<Transform, Object> sideInputs = new HashMap<>();
+      inEdges.stream()
+          .filter(inEdge ->
+              inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput)
+          .forEach(inEdge -> {
+            final Iterable<Element> elementSideInput =
+                edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
+            final List<Object> objectSideInput = StreamSupport
+                .stream(elementSideInput.spliterator(), false)
+                .map(element -> element.getData())
+                .collect(Collectors.toList());
+            if (objectSideInput.size() != 1) {
+              throw new RuntimeException("Size of out data partitions of a broadcast operator must match 1");
+            }
+            sideInputs.put(
+                ((RuntimeOperatorVertex) inEdge.getExternalVertex()).getOperatorVertex().getTransform(),
+                objectSideInput.get(0));
+          });
+      return sideInputs;
+    } else {
+      return new HashMap<>(0);
+    }
   }
 
   private void writeToChannels(final int srcTaskIndex,
