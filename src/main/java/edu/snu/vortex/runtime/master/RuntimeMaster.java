@@ -39,9 +39,11 @@ import java.util.logging.Logger;
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
+  // TODO #93: Implement Batch Scheduler
   // private final Scheduler scheduler;
 
   public RuntimeMaster() {
+    // TODO #93: Implement Batch Scheduler
     // this.scheduler = new Scheduler(RuntimeAttribute.Batch);
   }
 
@@ -51,6 +53,7 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
+    // TODO #93: Implement Batch Scheduler
     // scheduler.scheduleJob(physicalPlan);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);
