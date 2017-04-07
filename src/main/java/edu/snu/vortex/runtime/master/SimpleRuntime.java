@@ -54,6 +54,7 @@ public final class SimpleRuntime {
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
     final Map<String, List<LocalChannel>> edgeIdToChannels = new HashMap<>();
 
+    // TODO #93: Implement Batch Scheduler
     physicalPlan.getTaskGroupsByStage().forEach(stage -> {
       stage.forEach(taskGroup -> {
 
@@ -67,6 +68,7 @@ public final class SimpleRuntime {
           for (final Task task : currentTaskSet) {
             final String vertexId = task.getRuntimeVertexId();
 
+            // TODO #141: Remove instanceof
             if (task instanceof BoundedSourceTask) {
               try {
                 final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
