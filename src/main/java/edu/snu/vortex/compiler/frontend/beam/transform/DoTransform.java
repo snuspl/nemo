@@ -30,7 +30,6 @@ import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.transforms.windowing.PaneInfo;
 import org.apache.beam.sdk.util.Timer;
-import org.apache.beam.sdk.util.WindowingInternals;
 import org.apache.beam.sdk.util.state.State;
 import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
@@ -207,11 +206,6 @@ public final class DoTransform implements Transform {
     @Override
     public DoFn.OutputReceiver<O> outputReceiver() {
       throw new UnsupportedOperationException("outputReceiver() in ProcessContext under DoTransform");
-    }
-
-    @Override
-    public WindowingInternals<I, O> windowingInternals() {
-      throw new UnsupportedOperationException("windowingInternals() in ProcessContext under DoTransform");
     }
 
     @Override
