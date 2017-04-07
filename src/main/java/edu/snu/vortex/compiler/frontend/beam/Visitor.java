@@ -100,7 +100,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamTransform.toString());
     } else if (beamTransform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
-      final DoTransform vortexTransform = new DoTransform(parDo.getNewFn(), options);
+      final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
       final Vertex vortexVertex = new OperatorVertex(vortexTransform);
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)
