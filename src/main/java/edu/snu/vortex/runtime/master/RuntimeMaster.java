@@ -81,10 +81,7 @@ public final class RuntimeMaster {
         // TODO #103: Integrity check in execution plan.
         // This code simply assumes that all vertices follow the first vertex's attributes.
         final RuntimeAttributeMap firstVertexAttrs = runtimeVertices.get(0).getVertexAttributes();
-        Integer parallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
-        if (parallelism == null) {
-          parallelism = 1; // if no parallelism is not set, we set it to 1
-        }
+        final Integer parallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
         final RuntimeAttribute resourceType = firstVertexAttrs.get(RuntimeAttribute.Key.ResourceType);
 
         // Begin building a new stage in the physical plan.
@@ -101,7 +98,9 @@ public final class RuntimeMaster {
               final RuntimeBoundedSourceVertex boundedSourceVertex = (RuntimeBoundedSourceVertex) vertex;
 
               final List<Reader> readers = boundedSourceVertex.getBoundedSourceVertex().getReaders(parallelism);
-              parallelism = readers.size(); // Adjust the desired parallelism to the actual parallelism
+              if (readers.size() != parallelism) {
+                throw new RuntimeException("Actual parallelism differs from the one specified by IR");
+              }
               newTaskToAdd = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(),
                   boundedSourceVertex.getId(), taskGroupIdx, readers.get(taskGroupIdx));
             } else if (vertex instanceof RuntimeOperatorVertex) {
