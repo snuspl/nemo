@@ -199,7 +199,7 @@ public final class DoTransform implements Transform {
     }
 
     @Override
-    public <RestrictionT> RestrictionTracker<RestrictionT> restrictionTracker() {
+    public RestrictionTracker<?> restrictionTracker() {
       throw new UnsupportedOperationException("restrictionTracker() in ProcessContext under DoTransform");
     }
 
