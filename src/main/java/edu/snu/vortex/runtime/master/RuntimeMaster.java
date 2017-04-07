@@ -71,34 +71,42 @@ public final class RuntimeMaster {
       final Map<String, Task> runtimeVertexIdToTask = new HashMap<>();
 
       for (final RuntimeStage runtimeStage : executionPlan.getRuntimeStages()) {
-        final List<RuntimeVertex> runtimeVertices = runtimeStage.getRuntimeVertices();
+        final List<RuntimeVertex> stageVertices = runtimeStage.getRuntimeVertices();
 
         final Map<String, Set<StageBoundaryEdgeInfo>> incomingEdgeInfos =
             createStageBoundaryEdgeInfo(runtimeStage.getStageIncomingEdges(), true);
         final Map<String, Set<StageBoundaryEdgeInfo>> outgoingEdgeInfos =
             createStageBoundaryEdgeInfo(runtimeStage.getStageOutgoingEdges(), false);
 
-        // TODO #103: Integrity check in execution plan.
-        // This code simply assumes that all vertices follow the first vertex's attributes.
-        final RuntimeAttributeMap firstVertexAttrs = runtimeVertices.get(0).getVertexAttributes();
-        final Integer parallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
+        final RuntimeAttributeMap firstVertexAttrs = stageVertices.get(0).getVertexAttributes();
+        final Integer stageParallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
+        stageVertices.forEach(runtimeVertex -> {
+          if (!stageParallelism.equals(runtimeVertex
+              .getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism))) {
+            // This check should be done in the compiler backend
+            // TODO #103: Integrity check in execution plan.
+            throw new RuntimeException("All vertices in a stage should have same parallelism");
+          }
+        });
+
+
         final RuntimeAttribute resourceType = firstVertexAttrs.get(RuntimeAttribute.Key.ResourceType);
 
         // Begin building a new stage in the physical plan.
-        physicalPlanBuilder.createNewStage(parallelism);
+        physicalPlanBuilder.createNewStage(stageParallelism);
 
         // (parallelism) number of task groups will be created.
-        for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
+        for (int taskGroupIdx = 0; taskGroupIdx < stageParallelism; taskGroupIdx++) {
           final DAG<Task> taskDAG = new DAGImpl<>();
           Task newTaskToAdd;
 
           // Iterate over the vertices contained in this stage to convert to tasks.
-          for (final RuntimeVertex vertex : runtimeVertices) {
+          for (final RuntimeVertex vertex : stageVertices) {
             if (vertex instanceof RuntimeBoundedSourceVertex) {
               final RuntimeBoundedSourceVertex boundedSourceVertex = (RuntimeBoundedSourceVertex) vertex;
 
-              final List<Reader> readers = boundedSourceVertex.getBoundedSourceVertex().getReaders(parallelism);
-              if (readers.size() != parallelism) {
+              final List<Reader> readers = boundedSourceVertex.getBoundedSourceVertex().getReaders(stageParallelism);
+              if (readers.size() != stageParallelism) {
                 throw new RuntimeException("Actual parallelism differs from the one specified by IR");
               }
               newTaskToAdd = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(),
