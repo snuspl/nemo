@@ -66,6 +66,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
 
     if (vortexVertex instanceof OperatorVertex) {
       beamNode.getInputs().stream()
+          .map(taggedPValue -> taggedPValue.getValue())
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
           .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex)));
