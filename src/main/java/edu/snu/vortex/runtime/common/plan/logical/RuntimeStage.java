@@ -92,7 +92,7 @@ public final class RuntimeStage {
   public String toString() {
     return "RuntimeStage{" +
         "stageId='" + stageId + '\'' +
-        ", runtimeVertices=" + runtimeVertices.size() +
+        ", runtimeVertices=" + runtimeVertices +
         '}';
   }
 }

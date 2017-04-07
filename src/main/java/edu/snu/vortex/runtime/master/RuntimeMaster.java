@@ -170,7 +170,7 @@ public final class RuntimeMaster {
           endpointVertex = runtimeEdge.getDstRuntimeVertex();
         }
         stageBoundaryEdgeInfos.add(new StageBoundaryEdgeInfo(runtimeEdge.getId(), runtimeEdge.getEdgeAttributes(),
-            endpointVertex.getId(), endpointVertex.getVertexAttributes()));
+            endpointVertex, endpointVertex.getVertexAttributes()));
       });
       boundaryEdgeMap.put(entry.getKey(), stageBoundaryEdgeInfos);
     }

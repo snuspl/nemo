@@ -17,6 +17,8 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
+
 import java.io.Serializable;
 
 /**
@@ -27,10 +29,10 @@ public final class StageBoundaryEdgeInfo implements Serializable {
   private final RuntimeAttributeMap edgeAttributes;
 
   /**
-   * The ID of the endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
+   * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
    * The vertex is connected to a vertex of this stage connected by the edge this class represents.
    */
-  private final String externalVertexId;
+  private final RuntimeVertex externalVertex;
 
   /**
    * Vertex attributes of the endpoint vertex.
@@ -38,12 +40,12 @@ public final class StageBoundaryEdgeInfo implements Serializable {
   private final RuntimeAttributeMap externalVertexAttr;
 
   public StageBoundaryEdgeInfo(final String runtimeEdgeId,
-                         final RuntimeAttributeMap edgeAttributes,
-                         final String externalVertexId,
-                         final RuntimeAttributeMap externalVertexAttr) {
+                               final RuntimeAttributeMap edgeAttributes,
+                               final RuntimeVertex externalVertex,
+                               final RuntimeAttributeMap externalVertexAttr) {
     this.stageBoundaryEdgeInfoId = runtimeEdgeId;
     this.edgeAttributes = edgeAttributes;
-    this.externalVertexId = externalVertexId;
+    this.externalVertex = externalVertex;
     this.externalVertexAttr = externalVertexAttr;
   }
 
@@ -55,8 +57,8 @@ public final class StageBoundaryEdgeInfo implements Serializable {
     return edgeAttributes;
   }
 
-  public String getExternalVertexId() {
-    return externalVertexId;
+  public RuntimeVertex getExternalVertex() {
+    return externalVertex;
   }
 
   public RuntimeAttributeMap getExternalVertexAttr() {
@@ -68,7 +70,7 @@ public final class StageBoundaryEdgeInfo implements Serializable {
     final StringBuffer sb = new StringBuffer("StageBoundaryEdgeInfo{");
     sb.append("stageBoundaryEdgeInfoId='").append(stageBoundaryEdgeInfoId).append('\'');
     sb.append(", edgeAttributes=").append(edgeAttributes);
-    sb.append(", externalVertexId='").append(externalVertexId).append('\'');
+    sb.append(", externalVertexId='").append(externalVertex).append('\'');
     sb.append(", externalVertexAttr=").append(externalVertexAttr);
     sb.append('}');
     return sb.toString();

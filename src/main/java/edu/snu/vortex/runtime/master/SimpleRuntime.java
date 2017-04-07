@@ -19,6 +19,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 import edu.snu.vortex.utils.DAG;
@@ -76,31 +77,42 @@ public final class SimpleRuntime {
               // It the current task has any incoming edges, it reads data from the channels associated to the edges.
               // After that, it applies its transform function to the data read.
               final Set<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges().get(vertexId);
-              final Set<StageBoundaryEdgeInfo> sideInputInEdges;
-              final Set<StageBoundaryEdgeInfo> nonSideInputInEdges;
+              final Map<Transform, Object> sideInputs;
+              final Set<StageBoundaryEdgeInfo> nonSideInputEdges;
               if (inEdges != null) {
-                sideInputInEdges = inEdges.stream()
-                    .filter(edge ->
-                        edge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput)
+                sideInputs = new HashMap<>();
+                inEdges.stream()
+                    .filter(inEdge ->
+                        inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) == RuntimeAttribute.SideInput)
+                    .forEach(inEdge -> {
+                      sideInputs.put(
+                          ((RuntimeOperatorVertex) inEdge.getExternalVertex()).getOperatorVertex().getTransform(),
+                          edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read());
+                      System.out.println("sideinputs: " + sideInputs);
+                      System.out.println("read: " +
+                          edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read());
+                    });
+                nonSideInputEdges = inEdges.stream()
+                    .filter(inEdge ->
+                        inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) != RuntimeAttribute.SideInput)
                     .collect(Collectors.toSet());
-                nonSideInputInEdges = new HashSet<>(inEdges);
-                nonSideInputInEdges.removeAll(sideInputInEdges);
               } else {
-                sideInputInEdges = new HashSet<>(0);
-                nonSideInputInEdges = new HashSet<>(0);
+                sideInputs = new HashMap<>(0);
+                nonSideInputEdges = new HashSet<>(0);
               }
+              System.out.println("sideinputs: " + sideInputs);
 
-              if (nonSideInputInEdges.size() > 1) {
+              if (nonSideInputEdges.size() > 1) {
                 // TODO #13: Implement Join Node
                 throw new UnsupportedOperationException("Multi inedge not yet supported");
-              } else if (nonSideInputInEdges.size() == 1) { // We fetch 'data' from the incoming stage
-                final StageBoundaryEdgeInfo inEdge = nonSideInputInEdges.iterator().next();
+              } else if (nonSideInputEdges.size() == 1) { // We fetch 'data' from the incoming stage
+                final StageBoundaryEdgeInfo inEdge = nonSideInputEdges.iterator().next();
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
               }
 
               final OperatorTask operatorTask = (OperatorTask) task;
               final Transform transform = operatorTask.getTransform();
-              final Transform.Context transformContext = new ContextImpl(new HashMap<>()); // fix empty map
+              final Transform.Context transformContext = new ContextImpl(sideInputs);
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
               transform.onData(data, null); // hack (TODO #132: Refactor DAG)
@@ -125,7 +137,7 @@ public final class SimpleRuntime {
             }
           }
 
-          // this is the only way to 'traverse' the DAG<Task>.....
+          // this is the only way to 'traverse' the DAG<Task>..... (TODO #132: Refactor DAG)
           currentTaskSet.forEach(task -> taskDAG.removeVertex(task));
 
           // get the next 'rootVertices'
