@@ -171,6 +171,7 @@ public final class PhysicalPlanTest {
 
     // Stage 3 = {v7}
     // Commented out since SimpleRuntime does not yet support multi-input.
+    // TODO #13: Implement Join Node
 //    builder.createNewStage();
 //    builder.addVertex(v7);
 
@@ -182,6 +183,7 @@ public final class PhysicalPlanTest {
     builder.connectVertices(e6);
 
     // Commented out since SimpleRuntime does not yet support multi-input.
+    // TODO #13: Implement Join Node
 //    builder.connectVertices(e7);
 //    builder.connectVertices(e8);
 

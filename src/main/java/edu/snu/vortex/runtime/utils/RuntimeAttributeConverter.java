@@ -146,7 +146,6 @@ public final class RuntimeAttributeConverter {
 
           runtimeEdgeAttributes.put(RuntimeAttribute.Key.ChannelTransferPolicy, channelTransferPolicyAttrVal);
           break;
-
         case CommunicationPattern:
           final RuntimeAttribute commPatternAttrVal;
           switch (irAttributeVal) {

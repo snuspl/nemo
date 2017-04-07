@@ -91,6 +91,7 @@ public final class SimpleRuntime {
               }
 
               if (nonSideInputInEdges.size() > 1) {
+                // TODO #13: Implement Join Node
                 throw new UnsupportedOperationException("Multi inedge not yet supported");
               } else if (nonSideInputInEdges.size() == 1) { // We fetch 'data' from the incoming stage
                 final StageBoundaryEdgeInfo inEdge = nonSideInputInEdges.iterator().next();
