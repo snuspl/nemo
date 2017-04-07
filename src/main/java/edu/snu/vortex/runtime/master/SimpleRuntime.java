@@ -140,15 +140,7 @@ public final class SimpleRuntime {
                                final Map<String, List<LocalChannel>> edgeIdToChannels,
                                final StageBoundaryEdgeInfo edge,
                                final Iterable<Element> data) {
-    // TODO #131: Optimizer Pass for Required Attributes
-    final int dstParallelism;
-    if (edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism) == null) {
-      dstParallelism = 1;
-    } else {
-      dstParallelism = edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
-    }
-
-
+    final int dstParallelism = edge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
     final List<LocalChannel> dstChannels = edgeIdToChannels.computeIfAbsent(edge.getStageBoundaryEdgeInfoId(), s -> {
       final List<LocalChannel> newChannels = new ArrayList<>(dstParallelism);
       IntStream.range(0, dstParallelism).forEach(x -> {
@@ -168,15 +160,22 @@ public final class SimpleRuntime {
         dstChannels.forEach(chan -> chan.write(data));
         break;
       case ScatterGather:
-        // TODO #131: Optimizer Pass for Required Attributes
-        // this implementation assumes the Hash partitioning mechanism.
-        final List<List<Element>> routedPartitions = new ArrayList<>(dstParallelism);
-        IntStream.range(0, dstParallelism).forEach(x -> routedPartitions.add(new ArrayList<>()));
-        data.forEach(element -> {
-          final int dstIndex = Math.abs(element.getKey().hashCode() % dstParallelism);
-          routedPartitions.get(dstIndex).add(element);
-        });
-        IntStream.range(0, dstParallelism).forEach(x -> dstChannels.get(x).write(routedPartitions.get(x)));
+        final RuntimeAttribute partitioningAttribute = edge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition);
+        switch (partitioningAttribute) {
+          case Hash:
+            final List<List<Element>> routedPartitions = new ArrayList<>(dstParallelism);
+            IntStream.range(0, dstParallelism).forEach(x -> routedPartitions.add(new ArrayList<>()));
+            data.forEach(element -> {
+              final int dstIndex = Math.abs(element.getKey().hashCode() % dstParallelism);
+              routedPartitions.get(dstIndex).add(element);
+            });
+            IntStream.range(0, dstParallelism).forEach(x -> dstChannels.get(x).write(routedPartitions.get(x)));
+            break;
+          case Range:
+            throw new UnsupportedOperationException("Range partitioning not yet supported");
+          default:
+            throw new RuntimeException("Unknown attribute: " + partitioningAttribute);
+        }
         break;
       default:
         throw new UnsupportedOperationException(edge.toString());
