@@ -62,7 +62,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     builder.addVertex(vortexVertex);
 
     beamNode.getOutputs()
-        .forEach(output -> pValueToVertex.put(output, vortexVertex));
+        .forEach(output -> pValueToVertex.put(output.getValue(), vortexVertex));
 
     if (vortexVertex instanceof OperatorVertex) {
       beamNode.getInputs().stream()
