@@ -97,6 +97,10 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
       return new OperatorVertex(vortexTransform);
+    } else if (beamTransform instanceof Window.Assign) {
+      final Window.Assign<I> window = (Window.Assign<I>) beamTransform;
+      final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
+      return new OperatorVertex(vortexTransform);
     } else if (beamTransform instanceof Write) {
       throw new UnsupportedOperationException(beamTransform.toString());
     } else if (beamTransform instanceof ParDo.Bound) {
