@@ -58,13 +58,6 @@ public enum RuntimeAttribute {
   Pull(Key.ChannelTransferPolicy),
 
   /**
-   * Edge communication pattern attributes.
-   */
-  OneToOne(Key.CommPattern),
-  Broadcast(Key.CommPattern),
-  ScatterGather(Key.CommPattern),
-
-  /**
    * Edge partition type attributes.
    */
   Hash(Key.Partition),
@@ -74,6 +67,13 @@ public enum RuntimeAttribute {
    * Edge type to specify edges that transfer SideInputs.
    */
   SideInput(Key.SideInput),
+
+  /**
+   * Edge communication pattern attributes.
+   */
+  OneToOne(Key.CommPattern),
+  Broadcast(Key.CommPattern),
+  ScatterGather(Key.CommPattern),
 
   /**
    * Scheduler type attributes.
