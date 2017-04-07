@@ -199,16 +199,6 @@ public final class DoTransform implements Transform {
     }
 
     @Override
-    public DoFn.InputProvider<I> inputProvider() {
-      throw new UnsupportedOperationException("inputProvider() in ProcessContext under DoTransform");
-    }
-
-    @Override
-    public DoFn.OutputReceiver<O> outputReceiver() {
-      throw new UnsupportedOperationException("outputReceiver() in ProcessContext under DoTransform");
-    }
-
-    @Override
     public <RestrictionT> RestrictionTracker<RestrictionT> restrictionTracker() {
       throw new UnsupportedOperationException("restrictionTracker() in ProcessContext under DoTransform");
     }
