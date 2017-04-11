@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.utils;
 
-import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
+import java.util.logging.Logger;
 
-/**
- * IllegalEdgeOperationException.
- * Thrown when an operation is conducted with a {@link StageEdge}
- * that is unknown/invalid/out of scope.
- */
-public final class IllegalEdgeOperationException extends RuntimeException {
+public abstract class NewDAG<V, E> {
   /**
-   * IllegalEdgeOperationException.
-   * @param message message
+   * Logger.
    */
-  public IllegalEdgeOperationException(final String message) {
-    super(message);
-  }
+  private static final Logger LOG = Logger.getLogger(NewDAG.class.getName());
+
+
 }

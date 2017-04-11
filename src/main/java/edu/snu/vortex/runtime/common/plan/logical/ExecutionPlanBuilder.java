@@ -111,7 +111,7 @@ public final class ExecutionPlanBuilder {
       throw new IllegalVertexOperationException("unable to locate srcRuntimeVertex and/or dstRuntimeVertex");
     }
 
-    final RuntimeEdge newEdge = new RuntimeEdge(edge.getId(),
+    final StageEdge newEdge = new StageEdge(edge.getId(),
         RuntimeAttributeConverter.convertEdgeAttributes(edge.getAttributes()),
         srcRuntimeVertex, dstRuntimeVertex);
 

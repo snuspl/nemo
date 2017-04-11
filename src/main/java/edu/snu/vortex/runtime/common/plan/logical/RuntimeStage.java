@@ -43,19 +43,19 @@ public final class RuntimeStage {
   /**
    * {@link RuntimeVertex}'s id to the set of remote incoming edges from the vertices in other stages.
    */
-  private final Map<String, Set<RuntimeEdge>> stageIncomingEdges;
+  private final Map<String, Set<StageEdge>> stageIncomingEdges;
 
   /**
    * {@link RuntimeVertex}'s id to the set of remote outgoing edges to the vertices in other stages.
    */
-  private final Map<String, Set<RuntimeEdge>> stageOutgoingEdges;
+  private final Map<String, Set<StageEdge>> stageOutgoingEdges;
 
   public RuntimeStage(final String stageId,
                       final List<RuntimeVertex> runtimeVertices,
                       final Map<String, Set<String>> internalInEdges,
                       final Map<String, Set<String>> internalOutEdges,
-                      final Map<String, Set<RuntimeEdge>> stageIncomingEdges,
-                      final Map<String, Set<RuntimeEdge>> stageOutgoingEdges) {
+                      final Map<String, Set<StageEdge>> stageIncomingEdges,
+                      final Map<String, Set<StageEdge>> stageOutgoingEdges) {
     this.stageId = stageId;
     this.runtimeVertices = runtimeVertices;
     this.internalInEdges = internalInEdges;
@@ -80,11 +80,11 @@ public final class RuntimeStage {
     return internalOutEdges;
   }
 
-  public Map<String, Set<RuntimeEdge>> getStageIncomingEdges() {
+  public Map<String, Set<StageEdge>> getStageIncomingEdges() {
     return stageIncomingEdges;
   }
 
-  public Map<String, Set<RuntimeEdge>> getStageOutgoingEdges() {
+  public Map<String, Set<StageEdge>> getStageOutgoingEdges() {
     return stageOutgoingEdges;
   }
 

@@ -157,10 +157,10 @@ public final class RuntimeMaster {
    * @return a map of information on the stage boundary edges.
    */
   private Map<String, Set<StageBoundaryEdgeInfo>> createStageBoundaryEdgeInfo(
-      final Map<String, Set<RuntimeEdge>> stageBoundaryRuntimeEdges, final boolean isIncomingEdges) {
+      final Map<String, Set<StageEdge>> stageBoundaryRuntimeEdges, final boolean isIncomingEdges) {
     final Map<String, Set<StageBoundaryEdgeInfo>> boundaryEdgeMap = new HashMap<>();
 
-    for (final Map.Entry<String, Set<RuntimeEdge>> entry : stageBoundaryRuntimeEdges.entrySet()) {
+    for (final Map.Entry<String, Set<StageEdge>> entry : stageBoundaryRuntimeEdges.entrySet()) {
       final Set<StageBoundaryEdgeInfo> stageBoundaryEdgeInfos = new HashSet<>();
       entry.getValue().forEach(runtimeEdge -> {
         final RuntimeVertex endpointVertex;

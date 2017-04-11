@@ -28,8 +28,8 @@ public final class RuntimeStageBuilder {
   private final List<RuntimeVertex> runtimeVertices;
   private final Map<String, Set<String>> internalInEdges;
   private final Map<String, Set<String>> internalOutEdges;
-  private final Map<String, Set<RuntimeEdge>> stageIncomingEdges;
-  private final Map<String, Set<RuntimeEdge>> stageOutgoingEdges;
+  private final Map<String, Set<StageEdge>> stageIncomingEdges;
+  private final Map<String, Set<StageEdge>> stageOutgoingEdges;
 
   /**
    * Builds a {@link RuntimeStage}.
@@ -88,12 +88,12 @@ public final class RuntimeStageBuilder {
   }
 
   /**
-   * Connects an external {@link RuntimeVertex} to another in this stage, using the {@link RuntimeEdge}.
+   * Connects an external {@link RuntimeVertex} to another in this stage, using the {@link StageEdge}.
    * @param endpointRuntimeVertex the {@link RuntimeVertex} in this stage to be connected.
    * @param connectingEdge the edge from/to the external vertex.
    */
   public void connectRuntimeStages(final RuntimeVertex endpointRuntimeVertex,
-                                   final RuntimeEdge connectingEdge) {
+                                   final StageEdge connectingEdge) {
     if (runtimeVertices.contains(endpointRuntimeVertex)) {
       if (connectingEdge.getSrcRuntimeVertex().equals(endpointRuntimeVertex)) {
         stageOutgoingEdges.putIfAbsent(endpointRuntimeVertex.getId(), new HashSet<>());

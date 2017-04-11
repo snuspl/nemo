@@ -19,10 +19,10 @@ package edu.snu.vortex.runtime.common.plan.logical;
 import edu.snu.vortex.runtime.common.*;
 
 /**
- * Runtime Edge.
+ * Stage Edge.
  */
-public final class RuntimeEdge {
-  private final String runtimeEdgeId;
+public final class StageEdge {
+  private final String stageEdgeId;
   private final RuntimeAttributeMap edgeAttributes;
   private final RuntimeVertex srcRuntimeVertex;
   private final RuntimeVertex dstRuntimeVertex;
@@ -34,18 +34,18 @@ public final class RuntimeEdge {
    * @param srcRuntimeVertex source vertex.
    * @param dstRuntimeVertex destination vertex.
    */
-  public RuntimeEdge(final String irEdgeId,
-                     final RuntimeAttributeMap edgeAttributes,
-                     final RuntimeVertex srcRuntimeVertex,
-                     final RuntimeVertex dstRuntimeVertex) {
-    this.runtimeEdgeId = RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId);
+  public StageEdge(final String irEdgeId,
+                   final RuntimeAttributeMap edgeAttributes,
+                   final RuntimeVertex srcRuntimeVertex,
+                   final RuntimeVertex dstRuntimeVertex) {
+    this.stageEdgeId = RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId);
     this.edgeAttributes = edgeAttributes;
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.dstRuntimeVertex = dstRuntimeVertex;
   }
 
   public String getId() {
-    return runtimeEdgeId;
+    return stageEdgeId;
   }
 
   public RuntimeAttributeMap getEdgeAttributes() {
