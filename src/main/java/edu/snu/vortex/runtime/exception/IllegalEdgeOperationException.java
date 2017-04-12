@@ -15,11 +15,10 @@
  */
 package edu.snu.vortex.runtime.exception;
 
-import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 
 /**
  * IllegalEdgeOperationException.
- * Thrown when an operation is conducted with a {@link StageEdge}
+ * Thrown when an operation is conducted with a {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}
  * that is unknown/invalid/out of scope.
  */
 public final class IllegalEdgeOperationException extends RuntimeException {

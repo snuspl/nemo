@@ -18,12 +18,11 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
-import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 
 import java.io.Serializable;
 
 /**
- * Contains information stage boundary {@link StageEdge}.
+ * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
 public final class StageBoundaryEdgeInfo implements Serializable {
   private final String stageBoundaryEdgeInfoId;
