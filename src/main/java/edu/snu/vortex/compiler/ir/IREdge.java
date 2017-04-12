@@ -40,7 +40,7 @@ public final class IREdge<I, O> {
   private final IRVertex src;
   private final IRVertex dst;
 
-  IREdge(final Type type,
+  public IREdge(final Type type,
          final IRVertex src,
          final IRVertex dst) {
     this.id = IdManager.newEdgeId();
