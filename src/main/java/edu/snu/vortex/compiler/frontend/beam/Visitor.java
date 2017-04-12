@@ -41,7 +41,7 @@ import java.util.Map;
  */
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder builder;
-  private final Map<PValue, Vertex> pValueToVertex;
+  private final Map<PValue, IRVertex> pValueToVertex;
   private final PipelineOptions options;
 
   Visitor(final DAGBuilder builder, final PipelineOptions options) {
@@ -58,18 +58,18 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamNode.toString());
     }
 
-    final Vertex vortexVertex = convertToVertex(beamNode);
-    builder.addVertex(vortexVertex);
+    final IRVertex vortexIRVertex = convertToVertex(beamNode);
+    builder.addVertex(vortexIRVertex);
 
     beamNode.getOutputs()
-        .forEach(output -> pValueToVertex.put(output.getValue(), vortexVertex));
+        .forEach(output -> pValueToVertex.put(output.getValue(), vortexIRVertex));
 
-    if (vortexVertex instanceof OperatorVertex) {
+    if (vortexIRVertex instanceof OperatorVertex) {
       beamNode.getInputs().stream()
           .map(taggedPValue -> taggedPValue.getValue())
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
-          .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex)));
+          .forEach(src -> builder.connectVertices(src, vortexIRVertex, getEdgeType(src, vortexIRVertex)));
     }
   }
 
@@ -80,7 +80,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
    * @param <O> output type.
    * @return newly created vertex.
    */
-  private <I, O> Vertex convertToVertex(final TransformHierarchy.Node beamNode) {
+  private <I, O> IRVertex convertToVertex(final TransformHierarchy.Node beamNode) {
     final PTransform beamTransform = beamNode.getTransform();
     if (beamTransform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) beamTransform;
@@ -90,9 +90,9 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     } else if (beamTransform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) beamTransform;
       final BroadcastTransform vortexTransform = new BroadcastTransform(view.getView());
-      final Vertex vortexVertex = new OperatorVertex(vortexTransform);
-      pValueToVertex.put(view.getView(), vortexVertex);
-      return vortexVertex;
+      final IRVertex vortexIRVertex = new OperatorVertex(vortexTransform);
+      pValueToVertex.put(view.getView(), vortexIRVertex);
+      return vortexIRVertex;
     } else if (beamTransform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
@@ -106,25 +106,25 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     } else if (beamTransform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
       final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
-      final Vertex vortexVertex = new OperatorVertex(vortexTransform);
+      final IRVertex vortexIRVertex = new OperatorVertex(vortexTransform);
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
-          .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex))
+          .forEach(src -> builder.connectVertices(src, vortexIRVertex, getEdgeType(src, vortexIRVertex))
               .setAttr(Attribute.Key.SideInput, Attribute.SideInput));
-      return vortexVertex;
+      return vortexIRVertex;
     } else {
       throw new UnsupportedOperationException(beamTransform.toString());
     }
   }
 
-  private Edge.Type getEdgeType(final Vertex src, final Vertex dst) {
+  private IREdge.Type getEdgeType(final IRVertex src, final IRVertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform) {
-      return Edge.Type.ScatterGather;
+      return IREdge.Type.ScatterGather;
     } else if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof BroadcastTransform) {
-      return Edge.Type.Broadcast;
+      return IREdge.Type.Broadcast;
     } else {
-      return Edge.Type.OneToOne;
+      return IREdge.Type.OneToOne;
     }
   }
 }

@@ -24,7 +24,7 @@ import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
  * @param <I> input vertex type.
  * @param <O> output vertex type.
  */
-public final class Edge<I, O> {
+public final class IREdge<I, O> {
   /**
    * Type of edges.
    */
@@ -37,12 +37,12 @@ public final class Edge<I, O> {
   private final String id;
   private final AttributeMap attributes;
   private final Type type;
-  private final Vertex src;
-  private final Vertex dst;
+  private final IRVertex src;
+  private final IRVertex dst;
 
-  Edge(final Type type,
-       final Vertex src,
-       final Vertex dst) {
+  IREdge(final Type type,
+         final IRVertex src,
+         final IRVertex dst) {
     this.id = IdManager.newEdgeId();
     this.attributes = AttributeMap.of(this);
     this.src = src;
@@ -67,7 +67,7 @@ public final class Edge<I, O> {
     return id;
   }
 
-  public Edge<I, O> setAttr(final Attribute.Key key, final Attribute val) {
+  public IREdge<I, O> setAttr(final Attribute.Key key, final Attribute val) {
     attributes.put(key, val);
     return this;
   }
@@ -84,11 +84,11 @@ public final class Edge<I, O> {
     return type;
   }
 
-  public Vertex getSrc() {
+  public IRVertex getSrc() {
     return src;
   }
 
-  public Vertex getDst() {
+  public IRVertex getDst() {
     return dst;
   }
 
@@ -101,15 +101,15 @@ public final class Edge<I, O> {
       return false;
     }
 
-    Edge<?, ?> edge = (Edge<?, ?>) o;
+    IREdge<?, ?> IREdge = (IREdge<?, ?>) o;
 
-    if (type != edge.type) {
+    if (type != IREdge.type) {
       return false;
     }
-    if (!src.equals(edge.src)) {
+    if (!src.equals(IREdge.src)) {
       return false;
     }
-    return dst.equals(edge.dst);
+    return dst.equals(IREdge.dst);
   }
 
   @Override

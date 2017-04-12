@@ -25,11 +25,11 @@ import static org.junit.Assert.assertTrue;
  * Tests for DAGBuilder.
  */
 public class DAGBuilderTest {
-  private final Vertex source = new BoundedSourceVertex<>(new TestUtil.EmptyBoundedSource("Source"));
-  private final Vertex map1 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
-  private final Vertex groupByKey = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey"));
-  private final Vertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
-  private final Vertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
+  private final IRVertex source = new BoundedSourceVertex<>(new TestUtil.EmptyBoundedSource("Source"));
+  private final IRVertex map1 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
+  private final IRVertex groupByKey = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey"));
+  private final IRVertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
+  private final IRVertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
 
   @Test
   public void addVertex() {
@@ -48,7 +48,7 @@ public class DAGBuilderTest {
 
     builder.addVertex(source);
     builder.addVertex(map1);
-    builder.connectVertices(source, map1, Edge.Type.OneToOne);
+    builder.connectVertices(source, map1, IREdge.Type.OneToOne);
     final DAG dag = builder.build();
 
     assertTrue(dag.getInEdgesOf(map1).isPresent());
@@ -67,10 +67,10 @@ public class DAGBuilderTest {
     builder.addVertex(combine);
     builder.addVertex(map2);
 
-    builder.connectVertices(source, map1, Edge.Type.OneToOne);
-    builder.connectVertices(map1, groupByKey, Edge.Type.ScatterGather);
-    builder.connectVertices(groupByKey, combine, Edge.Type.OneToOne);
-    builder.connectVertices(combine, map2, Edge.Type.OneToOne);
+    builder.connectVertices(source, map1, IREdge.Type.OneToOne);
+    builder.connectVertices(map1, groupByKey, IREdge.Type.ScatterGather);
+    builder.connectVertices(groupByKey, combine, IREdge.Type.OneToOne);
+    builder.connectVertices(combine, map2, IREdge.Type.OneToOne);
 
     final DAG dag = builder.build();
 

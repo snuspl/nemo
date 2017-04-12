@@ -17,7 +17,7 @@ package edu.snu.vortex.compiler.optimizer.passes;
 
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.IREdge;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +28,7 @@ import java.util.Optional;
 public final class PadoVertexPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.doTopological(vertex -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
+      final Optional<List<IREdge>> inEdges = dag.getInEdgesOf(vertex);
       if (!inEdges.isPresent()) {
         vertex.setAttr(Attribute.Key.Placement, Attribute.Transient);
       } else {
@@ -42,12 +42,12 @@ public final class PadoVertexPass implements Pass {
     return dag;
   }
 
-  private boolean hasM2M(final List<Edge> edges) {
-    return edges.stream().filter(edge -> edge.getType() == Edge.Type.ScatterGather).count() > 0;
+  private boolean hasM2M(final List<IREdge> IREdges) {
+    return IREdges.stream().filter(edge -> edge.getType() == IREdge.Type.ScatterGather).count() > 0;
   }
 
-  private boolean allFromReserved(final List<Edge> edges) {
-    return edges.stream()
+  private boolean allFromReserved(final List<IREdge> IREdges) {
+    return IREdges.stream()
         .allMatch(edge -> edge.getSrc().getAttr(Attribute.Key.Placement) == Attribute.Reserved);
   }
 }

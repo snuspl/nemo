@@ -19,7 +19,7 @@ package edu.snu.vortex.runtime.common.plan.logical;
 import edu.snu.vortex.runtime.common.*;
 
 /**
- * Stage Edge.
+ * Stage IREdge.
  */
 public final class StageEdge {
   private final String stageEdgeId;

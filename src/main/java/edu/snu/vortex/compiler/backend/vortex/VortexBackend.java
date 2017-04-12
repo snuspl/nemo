@@ -17,8 +17,8 @@ package edu.snu.vortex.compiler.backend.vortex;
 
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.Edge;
-import edu.snu.vortex.compiler.ir.Vertex;
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlanBuilder;
 
@@ -33,8 +33,8 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.*;
  */
 public final class VortexBackend implements Backend<ExecutionPlan> {
   private final ExecutionPlanBuilder executionPlanBuilder;
-  private final HashMap<Vertex, Integer> vertexStageNumHashMap;
-  private final List<List<Vertex>> vertexListForEachStage;
+  private final HashMap<IRVertex, Integer> vertexStageNumHashMap;
+  private final List<List<IRVertex>> vertexListForEachStage;
   private final HashMap<Integer, Integer> stageDependencyMap;
   private final AtomicInteger stageNumber;
 
@@ -49,19 +49,19 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   public ExecutionPlan compile(final DAG dag) throws Exception {
     // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
     dag.doTopological(vertex -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
+      final Optional<List<IREdge>> inEdges = dag.getInEdgesOf(vertex);
 
       if (!inEdges.isPresent()) { // If Source vertex
         createNewStage(vertex);
       } else {
-        final Optional<List<Edge>> inEdgesForStage = inEdges.map(e -> e.stream()
-            .filter(edge -> edge.getType().equals(Edge.Type.OneToOne))
+        final Optional<List<IREdge>> inEdgesForStage = inEdges.map(e -> e.stream()
+            .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne))
             .filter(edge -> edge.getAttr(Key.ChannelDataPlacement).equals(Local))
             .filter(edge -> edge.getAttr(Key.SideInput) != SideInput) // remove with TODO #132: Refactor DAG
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()));
-        final Optional<Edge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
+        final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
             !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
             .orElse(Optional.empty());
 
@@ -72,10 +72,10 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
             stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
           }));
         } else {
-          final Vertex vertexToConnect = edgeToConnect.get().getSrc();
-          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(vertexToConnect));
-          final Optional<List<Vertex>> list =
-              vertexListForEachStage.stream().filter(l -> l.contains(vertexToConnect)).findFirst();
+          final IRVertex IRVertexToConnect = edgeToConnect.get().getSrc();
+          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(IRVertexToConnect));
+          final Optional<List<IRVertex>> list =
+              vertexListForEachStage.stream().filter(l -> l.contains(IRVertexToConnect)).findFirst();
           list.ifPresent(lst -> {
             vertexListForEachStage.remove(lst);
             lst.add(vertex);
@@ -95,10 +95,10 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
     return executionPlanBuilder.build();
   }
 
-  private void createNewStage(final Vertex vertex) {
-    vertexStageNumHashMap.put(vertex, stageNumber.getAndIncrement());
-    final List<Vertex> newList = new ArrayList<>();
-    newList.add(vertex);
+  private void createNewStage(final IRVertex IRVertex) {
+    vertexStageNumHashMap.put(IRVertex, stageNumber.getAndIncrement());
+    final List<IRVertex> newList = new ArrayList<>();
+    newList.add(IRVertex);
     vertexListForEachStage.add(newList);
   }
 }

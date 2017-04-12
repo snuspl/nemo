@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.optimizer.passes;
 
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 
@@ -30,7 +30,7 @@ public final class ParallelismPass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.doTopological(vertex -> {
       try {
-        final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
+        final Optional<List<IREdge>> inEdges = dag.getInEdgesOf(vertex);
         if (!inEdges.isPresent() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
           vertex.setAttr(Attribute.IntegerKey.Parallelism, sourceVertex.getReaders(1).size());

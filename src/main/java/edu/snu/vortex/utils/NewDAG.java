@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.utils;
 
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -24,7 +27,7 @@ import java.util.logging.Logger;
  * @param <V> the vertex type
  * @param <E> the edge type
  */
-public final class NewDAG<V, E> {
+public abstract class NewDAG<V, E extends IREdge> {
   private static final Logger LOG = Logger.getLogger(NewDAG.class.getName());
 
   private final Set<V> vertices;
@@ -61,7 +64,27 @@ public final class NewDAG<V, E> {
     if (vertices.contains(src) && vertices.contains(dst)) {
       incomingEdges.get(dst).add(edge);
       outgoingEdges.get(src).add(edge);
+    } else {
+      throw new IllegalVertexOperationException("The DAG does not contain either src or dst");
     }
+  }
+
+  public Set<V> getVertices() {
+    return vertices;
+  }
+
+  public Set<E> getIncomingEdges(final V v) {
+    if (!vertices.contains(v)) {
+      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
+    }
+    return incomingEdges.get(v);
+  }
+
+  public Set<E> getOutgoingEdges(final V v) {
+    if (!vertices.contains(v)) {
+      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
+    }
+    return outgoingEdges.get(v);
   }
 
   /**
@@ -76,32 +99,33 @@ public final class NewDAG<V, E> {
 
   }
 
-//  private void doDFS(final Consumer<V> function, final TraversalOrder traversalOrder) {
-//    final Set<V> visited = new HashSet<>();
-//    getVertices().stream()
-//        .filter(vertex -> !id2inEdges.containsKey(vertex.getId())) // root Operators
-//        .filter(vertex -> !visited.contains(vertex))
-//        .forEach(vertex -> visitDFS(vertex, function, traversalOrder, visited));
-//  }
-//
-//  private void visitDFS(final V vertex,
-//                        final Consumer<V> vertexConsumer,
-//                        final TraversalOrder traversalOrder,
-//                        final HashSet<V> visited) {
-//    visited.add(vertex);
-//    if (traversalOrder == TraversalOrder.PreOrder) {
-//      vertexConsumer.accept(vertex);
-//    }
-//    final Optional<List<E>> outEdges = getOutEdgesOf(vertex);
-//    if (outEdges.isPresent()) {
-//      outEdges.get().stream()
-//          .map(outEdge -> outEdge.getDst())
-//          .filter(outOperator -> !visited.contains(outOperator))
-//          .forEach(outOperator -> visitDFS(outOperator, vertexConsumer, traversalOrder, visited));
-//    }
-//    if (traversalOrder == TraversalOrder.PostOrder) {
-//      vertexConsumer.accept(vertex);
-//    }
-//  }
+  private void doDFS(final Consumer<V> function, final TraversalOrder traversalOrder) {
+    final Set<V> visited = new HashSet<>();
+    getVertices().stream()
+        .filter(vertex -> !incomingEdges.containsKey(vertex)) // root Operators
+        .filter(vertex -> !visited.contains(vertex))
+        .forEach(vertex -> visitDFS(vertex, function, traversalOrder, visited));
+  }
 
+  private void visitDFS(final V vertex,
+                        final Consumer<V> vertexConsumer,
+                        final TraversalOrder traversalOrder,
+                        final Set<V> visited) {
+    visited.add(vertex);
+    if (traversalOrder == TraversalOrder.PreOrder) {
+      vertexConsumer.accept(vertex);
+    }
+    final Set<E> outgoingEdges = getOutgoingEdges(vertex);
+    if (!outgoingEdges.isEmpty()) {
+      outgoingEdges.stream()
+          .map(outEdge -> outEdge.getDst())
+          .filter(outOperator -> !visited.contains(outOperator))
+          .forEach(outOperator -> visitDFS(outOperator, vertexConsumer, traversalOrder, visited));
+    }
+    if (traversalOrder == TraversalOrder.PostOrder) {
+      vertexConsumer.accept(vertex);
+    }
+  }
+
+  public abstract NewDAG convert(final NewDAG<V, E> dag);
 }

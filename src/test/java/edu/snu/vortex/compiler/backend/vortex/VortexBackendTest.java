@@ -29,11 +29,11 @@ import static org.junit.Assert.assertTrue;
  * Test Vortex Backend.
  */
 public final class VortexBackendTest {
-  private final Vertex source = new BoundedSourceVertex<>(new TestUtil.EmptyBoundedSource("Source"));
-  private final Vertex map1 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
-  private final Vertex groupByKey = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey"));
-  private final Vertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
-  private final Vertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
+  private final IRVertex source = new BoundedSourceVertex<>(new TestUtil.EmptyBoundedSource("Source"));
+  private final IRVertex map1 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
+  private final IRVertex groupByKey = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey"));
+  private final IRVertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
+  private final IRVertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
 
   private final DAGBuilder builder = new DAGBuilder();
   private DAG dag;
@@ -45,10 +45,10 @@ public final class VortexBackendTest {
     builder.addVertex(groupByKey);
     builder.addVertex(combine);
     builder.addVertex(map2);
-    builder.connectVertices(source, map1, Edge.Type.OneToOne);
-    builder.connectVertices(map1, groupByKey, Edge.Type.ScatterGather);
-    builder.connectVertices(groupByKey, combine, Edge.Type.OneToOne);
-    builder.connectVertices(combine, map2, Edge.Type.OneToOne);
+    builder.connectVertices(source, map1, IREdge.Type.OneToOne);
+    builder.connectVertices(map1, groupByKey, IREdge.Type.ScatterGather);
+    builder.connectVertices(groupByKey, combine, IREdge.Type.OneToOne);
+    builder.connectVertices(combine, map2, IREdge.Type.OneToOne);
 
     this.dag = builder.build();
     this.dag = new Optimizer().optimize(dag, Optimizer.PolicyType.Pado);

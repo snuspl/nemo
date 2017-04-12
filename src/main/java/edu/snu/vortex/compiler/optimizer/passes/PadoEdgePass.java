@@ -17,7 +17,7 @@ package edu.snu.vortex.compiler.optimizer.passes;
 
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.DAG;
-import edu.snu.vortex.compiler.ir.Edge;
+import edu.snu.vortex.compiler.ir.IREdge;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +28,7 @@ import java.util.Optional;
 public final class PadoEdgePass implements Pass {
   public DAG process(final DAG dag) throws Exception {
     dag.getVertices().forEach(vertex -> {
-      final Optional<List<Edge>> inEdges = dag.getInEdgesOf(vertex);
+      final Optional<List<IREdge>> inEdges = dag.getInEdgesOf(vertex);
       if (inEdges.isPresent()) {
         inEdges.get().forEach(edge -> {
           if (fromTransientToReserved(edge)) {
@@ -38,7 +38,7 @@ public final class PadoEdgePass implements Pass {
             edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.File);
             edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
           } else {
-            if (edge.getType().equals(Edge.Type.OneToOne)) {
+            if (edge.getType().equals(IREdge.Type.OneToOne)) {
               edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
               edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
             } else {
@@ -52,13 +52,13 @@ public final class PadoEdgePass implements Pass {
     return dag;
   }
 
-  private boolean fromTransientToReserved(final Edge edge) {
-    return edge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Transient) &&
-        edge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved);
+  private boolean fromTransientToReserved(final IREdge IREdge) {
+    return IREdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Transient) &&
+        IREdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved);
   }
 
-  private boolean fromReservedToTransient(final Edge edge) {
-    return edge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved) &&
-        edge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Transient);
+  private boolean fromReservedToTransient(final IREdge IREdge) {
+    return IREdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved) &&
+        IREdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Transient);
   }
 }

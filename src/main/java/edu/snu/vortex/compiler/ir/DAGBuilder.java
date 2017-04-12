@@ -21,9 +21,9 @@ import java.util.*;
  * DAG Builder.
  */
 public final class DAGBuilder {
-  private Map<String, List<Edge>> id2inEdges;
-  private Map<String, List<Edge>> id2outEdges;
-  private List<Vertex> vertices;
+  private Map<String, List<IREdge>> id2inEdges;
+  private Map<String, List<IREdge>> id2outEdges;
+  private List<IRVertex> vertices;
 
   public DAGBuilder() {
     this.id2inEdges = new HashMap<>();
@@ -32,14 +32,14 @@ public final class DAGBuilder {
   }
 
   /**
-   * add a vertex.
-   * @param vertex .
+   * add a IRVertex.
+   * @param IRVertex .
    */
-  public void addVertex(final Vertex vertex) {
-    if (this.contains(vertex)) {
-      throw new RuntimeException("DAGBuilder is trying to add an vertex multiple times");
+  public void addVertex(final IRVertex IRVertex) {
+    if (this.contains(IRVertex)) {
+      throw new RuntimeException("DAGBuilder is trying to add an IRVertex multiple times");
     }
-    vertices.add(vertex);
+    vertices.add(IRVertex);
   }
 
   /**
@@ -49,43 +49,43 @@ public final class DAGBuilder {
    * @param type edge type.
    * @return the created edge.
    */
-  public Edge connectVertices(final Vertex src, final Vertex dst, final Edge.Type type) {
-    final Edge edge = new Edge(type, src, dst);
-    if (this.contains(edge)) {
-      throw new RuntimeException("DAGBuilder is trying to add an edge multiple times");
+  public IREdge connectVertices(final IRVertex src, final IRVertex dst, final IREdge.Type type) {
+    final IREdge IREdge = new IREdge(type, src, dst);
+    if (this.contains(IREdge)) {
+      throw new RuntimeException("DAGBuilder is trying to add an IREdge multiple times");
     }
-    addToEdgeList(id2outEdges, src.getId(), edge);
-    addToEdgeList(id2inEdges, dst.getId(), edge);
-    return edge;
+    addToEdgeList(id2outEdges, src.getId(), IREdge);
+    addToEdgeList(id2inEdges, dst.getId(), IREdge);
+    return IREdge;
   }
 
-  private void addToEdgeList(final Map<String, List<Edge>> map, final String id, final Edge edge) {
+  private void addToEdgeList(final Map<String, List<IREdge>> map, final String id, final IREdge IREdge) {
     if (map.containsKey(id)) {
-      map.get(id).add(edge);
+      map.get(id).add(IREdge);
     } else {
-      final List<Edge> inEdges = new ArrayList<>(1);
-      inEdges.add(edge);
-      map.put(id, inEdges);
+      final List<IREdge> inIREdges = new ArrayList<>(1);
+      inIREdges.add(IREdge);
+      map.put(id, inIREdges);
     }
   }
 
   /**
-   * check if the DAGBuilder contains the vertex.
-   * @param vertex .
+   * check if the DAGBuilder contains the IRVertex.
+   * @param IRVertex .
    * @return .
    */
-  public boolean contains(final Vertex vertex) {
-    return vertices.contains(vertex);
+  public boolean contains(final IRVertex IRVertex) {
+    return vertices.contains(IRVertex);
   }
 
   /**
-   * check if the DAGBuilder contains the edge.
-   * @param edge .
+   * check if the DAGBuilder contains the IREdge.
+   * @param IREdge .
    * @return .
    */
-  public boolean contains(final Edge edge) {
-    return (id2inEdges.values().stream().filter(list -> list.contains(edge)).count() > 0 ||
-        id2outEdges.values().stream().filter(list -> list.contains(edge)).count() > 0);
+  public boolean contains(final IREdge IREdge) {
+    return (id2inEdges.values().stream().filter(list -> list.contains(IREdge)).count() > 0 ||
+        id2outEdges.values().stream().filter(list -> list.contains(IREdge)).count() > 0);
   }
 
   /**

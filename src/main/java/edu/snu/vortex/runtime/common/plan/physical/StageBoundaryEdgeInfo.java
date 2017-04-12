@@ -35,7 +35,7 @@ public final class StageBoundaryEdgeInfo implements Serializable {
   private final RuntimeVertex externalVertex;
 
   /**
-   * Vertex attributes of the endpoint vertex.
+   * IRVertex attributes of the endpoint vertex.
    */
   private final RuntimeAttributeMap externalVertexAttr;
 

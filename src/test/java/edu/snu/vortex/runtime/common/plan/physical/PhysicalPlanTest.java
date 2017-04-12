@@ -19,12 +19,9 @@ import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlanBuilder;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeStage;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -47,19 +44,19 @@ public final class PhysicalPlanTest {
     builder.createNewStage();
 
     final Transform t = mock(Transform.class);
-    final Vertex v1 = new OperatorVertex(t);
+    final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     builder.addVertex(v1);
 
     builder.createNewStage();
-    final Vertex v2 = new OperatorVertex(t);
+    final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
     builder.addVertex(v2);
 
     final DAGBuilder tempDAGBuilder = new DAGBuilder();
     tempDAGBuilder.addVertex(v1);
     tempDAGBuilder.addVertex(v2);
-    final Edge e = tempDAGBuilder.connectVertices(v1, v2, Edge.Type.ScatterGather);
+    final IREdge e = tempDAGBuilder.connectVertices(v1, v2, IREdge.Type.ScatterGather);
     e.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
     e.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
     builder.connectVertices(e);
@@ -74,35 +71,35 @@ public final class PhysicalPlanTest {
   public void testComplexPlan() {
     // Tests a plan of 5 stages.
     final Transform t = mock(Transform.class);
-    final Vertex v1 = new OperatorVertex(t);
+    final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v2 = new OperatorVertex(t);
+    final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v3 = new OperatorVertex(t);
+    final IRVertex v3 = new OperatorVertex(t);
     v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v4 = new OperatorVertex(t);
+    final IRVertex v4 = new OperatorVertex(t);
     v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v4.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v5 = new OperatorVertex(t);
+    final IRVertex v5 = new OperatorVertex(t);
     v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v5.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v6 = new OperatorVertex(t);
+    final IRVertex v6 = new OperatorVertex(t);
     v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
 
-    final Vertex v7 = new OperatorVertex(t);
+    final IRVertex v7 = new OperatorVertex(t);
     v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final Vertex v8 = new OperatorVertex(t);
+    final IRVertex v8 = new OperatorVertex(t);
     v8.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v8.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
@@ -116,42 +113,42 @@ public final class PhysicalPlanTest {
     tempDAGBuilder.addVertex(v7);
     tempDAGBuilder.addVertex(v8);
 
-    final Edge e1 = tempDAGBuilder.connectVertices(v1, v2, Edge.Type.OneToOne);
+    final IREdge e1 = tempDAGBuilder.connectVertices(v1, v2, IREdge.Type.OneToOne);
     e1.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
     e1.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e1.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final Edge e2 = tempDAGBuilder.connectVertices(v1, v3, Edge.Type.OneToOne);
+    final IREdge e2 = tempDAGBuilder.connectVertices(v1, v3, IREdge.Type.OneToOne);
     e2.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
     e2.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e2.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final Edge e3 = tempDAGBuilder.connectVertices(v2, v4, Edge.Type.ScatterGather);
+    final IREdge e3 = tempDAGBuilder.connectVertices(v2, v4, IREdge.Type.ScatterGather);
     e3.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
     e3.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
     e3.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
 
-    final Edge e4 = tempDAGBuilder.connectVertices(v3, v5, Edge.Type.ScatterGather);
+    final IREdge e4 = tempDAGBuilder.connectVertices(v3, v5, IREdge.Type.ScatterGather);
     e4.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
     e4.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
     e4.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
 
-    final Edge e5 = tempDAGBuilder.connectVertices(v4, v6, Edge.Type.OneToOne);
+    final IREdge e5 = tempDAGBuilder.connectVertices(v4, v6, IREdge.Type.OneToOne);
     e5.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.File);
     e5.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e5.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final Edge e6 = tempDAGBuilder.connectVertices(v4, v8, Edge.Type.OneToOne);
+    final IREdge e6 = tempDAGBuilder.connectVertices(v4, v8, IREdge.Type.OneToOne);
     e6.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.File);
     e6.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e6.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final Edge e7 = tempDAGBuilder.connectVertices(v7, v5, Edge.Type.OneToOne);
+    final IREdge e7 = tempDAGBuilder.connectVertices(v7, v5, IREdge.Type.OneToOne);
     e7.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
     e7.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
     e7.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final Edge e8 = tempDAGBuilder.connectVertices(v5, v8, Edge.Type.OneToOne);
+    final IREdge e8 = tempDAGBuilder.connectVertices(v5, v8, IREdge.Type.OneToOne);
     e8.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
     e8.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e8.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);

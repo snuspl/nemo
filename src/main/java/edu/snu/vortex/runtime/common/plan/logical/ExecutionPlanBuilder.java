@@ -41,20 +41,20 @@ public final class ExecutionPlanBuilder {
   }
 
   /**
-   * Adds a {@link Vertex} to the execution plan, by adding it to the stage currently being built.
+   * Adds a {@link IRVertex} to the execution plan, by adding it to the stage currently being built.
    * The vertices must be added in the order of execution.
-   * @param vertex to add.
+   * @param IRVertex to add.
    */
-  public void addVertex(final Vertex vertex) {
+  public void addVertex(final IRVertex IRVertex) {
     final RuntimeVertex newVertex;
 
-    // TODO #100: Add Vertex Type in IR
-    if (vertex instanceof BoundedSourceVertex) {
-      newVertex = new RuntimeBoundedSourceVertex((BoundedSourceVertex) vertex,
-          RuntimeAttributeConverter.convertVertexAttributes(vertex.getAttributes()));
-    } else if (vertex instanceof OperatorVertex) {
-      newVertex = new RuntimeOperatorVertex((OperatorVertex) vertex,
-          RuntimeAttributeConverter.convertVertexAttributes(vertex.getAttributes()));
+    // TODO #100: Add IRVertex Type in IR
+    if (IRVertex instanceof BoundedSourceVertex) {
+      newVertex = new RuntimeBoundedSourceVertex((BoundedSourceVertex) IRVertex,
+          RuntimeAttributeConverter.convertVertexAttributes(IRVertex.getAttributes()));
+    } else if (IRVertex instanceof OperatorVertex) {
+      newVertex = new RuntimeOperatorVertex((OperatorVertex) IRVertex,
+          RuntimeAttributeConverter.convertVertexAttributes(IRVertex.getAttributes()));
     } else {
       throw new IllegalVertexOperationException("Supported types: BoundedSourceVertex, OperatorVertex");
     }
@@ -62,9 +62,9 @@ public final class ExecutionPlanBuilder {
     vertexIdToRuntimeStageBuilderMap.putIfAbsent(newVertex.getId(), stageBuilder);
   }
 
-  public void connectVertices(final Edge edge) {
-    final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getSrc().getId());
-    final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(edge.getDst().getId());
+  public void connectVertices(final IREdge IREdge) {
+    final String srcRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(IREdge.getSrc().getId());
+    final String dstRuntimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(IREdge.getDst().getId());
 
     final RuntimeStageBuilder srcRuntimeStageBuilder = vertexIdToRuntimeStageBuilderMap.get(srcRuntimeVertexId);
     final RuntimeStageBuilder dstRuntimeStageBuilder = vertexIdToRuntimeStageBuilderMap.get(dstRuntimeVertexId);
@@ -78,12 +78,12 @@ public final class ExecutionPlanBuilder {
       connectStageInternalVertices(srcRuntimeVertexId, dstRuntimeVertexId);
     } else {
       connectStageBoundaryVertices(srcRuntimeStageBuilder, dstRuntimeStageBuilder,
-          srcRuntimeVertexId, dstRuntimeVertexId, edge);
+          srcRuntimeVertexId, dstRuntimeVertexId, IREdge);
     }
   }
 
   /**
-   * Connects two {@link RuntimeVertex} that belong to the same stage, using the information given in {@link Edge}.
+   * Connects two {@link RuntimeVertex} that belong to the same stage, using the information given in {@link IREdge}.
    * @param srcRuntimeVertexId source vertex id.
    * @param dstRuntimeVertexId destination vertex id.
    */
@@ -92,18 +92,18 @@ public final class ExecutionPlanBuilder {
   }
 
   /**
-   * Connects two {@link RuntimeVertex} that belong to different stages, using the information given in {@link Edge}.
+   * Connects two {@link RuntimeVertex} that belong to different stages, using the information given in {@link IREdge}.
    * @param srcStageBuilder the source stage builder.
    * @param dstStageBuilder the destination stage builder.
    * @param srcRuntimeVertexId source vertex id.
    * @param dstRuntimeVertexId destination vertex id.
-   * @param edge to use for the connection.
+   * @param IREdge to use for the connection.
    */
   private void connectStageBoundaryVertices(final RuntimeStageBuilder srcStageBuilder,
                                             final RuntimeStageBuilder dstStageBuilder,
                                             final String srcRuntimeVertexId,
                                             final String dstRuntimeVertexId,
-                                            final Edge edge) {
+                                            final IREdge IREdge) {
     final RuntimeVertex srcRuntimeVertex = srcStageBuilder.getRuntimeVertexById(srcRuntimeVertexId);
     final RuntimeVertex dstRuntimeVertex = dstStageBuilder.getRuntimeVertexById(dstRuntimeVertexId);
 
@@ -111,8 +111,8 @@ public final class ExecutionPlanBuilder {
       throw new IllegalVertexOperationException("unable to locate srcRuntimeVertex and/or dstRuntimeVertex");
     }
 
-    final StageEdge newEdge = new StageEdge(edge.getId(),
-        RuntimeAttributeConverter.convertEdgeAttributes(edge.getAttributes()),
+    final StageEdge newEdge = new StageEdge(IREdge.getId(),
+        RuntimeAttributeConverter.convertEdgeAttributes(IREdge.getAttributes()),
         srcRuntimeVertex, dstRuntimeVertex);
 
     srcStageBuilder.connectRuntimeStages(srcRuntimeVertex, newEdge);

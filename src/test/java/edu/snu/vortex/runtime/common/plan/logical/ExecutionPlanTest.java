@@ -16,9 +16,6 @@
 package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
-import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlanBuilder;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeStage;
 import org.junit.Before;
 import org.junit.Test;
 import java.util.List;
@@ -43,17 +40,17 @@ public final class ExecutionPlanTest {
     builder.createNewStage();
 
     final Transform t = mock(Transform.class);
-    final Vertex v1 = new OperatorVertex(t);
+    final IRVertex v1 = new OperatorVertex(t);
     builder.addVertex(v1);
 
     builder.createNewStage();
-    final Vertex v2 = new OperatorVertex(t);
+    final IRVertex v2 = new OperatorVertex(t);
     builder.addVertex(v2);
 
     final DAGBuilder tempDAGBuilder = new DAGBuilder();
     tempDAGBuilder.addVertex(v1);
     tempDAGBuilder.addVertex(v2);
-    final Edge e = tempDAGBuilder.connectVertices(v1, v2, Edge.Type.ScatterGather);
+    final IREdge e = tempDAGBuilder.connectVertices(v1, v2, IREdge.Type.ScatterGather);
     builder.connectVertices(e);
 
     final ExecutionPlan plan = builder.build();
@@ -70,12 +67,12 @@ public final class ExecutionPlanTest {
   public void testPlan2() {
     // Tests a plan of 4 stages.
     final Transform t = mock(Transform.class);
-    final Vertex v1 = new OperatorVertex(t);
-    final Vertex v2 = new OperatorVertex(t);
-    final Vertex v3 = new OperatorVertex(t);
-    final Vertex v4 = new OperatorVertex(t);
-    final Vertex v5 = new OperatorVertex(t);
-    final Vertex v6 = new OperatorVertex(t);
+    final IRVertex v1 = new OperatorVertex(t);
+    final IRVertex v2 = new OperatorVertex(t);
+    final IRVertex v3 = new OperatorVertex(t);
+    final IRVertex v4 = new OperatorVertex(t);
+    final IRVertex v5 = new OperatorVertex(t);
+    final IRVertex v6 = new OperatorVertex(t);
 
     final DAGBuilder tempDAGBuilder = new DAGBuilder();
     tempDAGBuilder.addVertex(v1);
@@ -85,11 +82,11 @@ public final class ExecutionPlanTest {
     tempDAGBuilder.addVertex(v5);
     tempDAGBuilder.addVertex(v6);
 
-    final Edge e1 = tempDAGBuilder.connectVertices(v1, v2, Edge.Type.OneToOne);
-    final Edge e2 = tempDAGBuilder.connectVertices(v1, v3, Edge.Type.OneToOne);
-    final Edge e3 = tempDAGBuilder.connectVertices(v2, v4, Edge.Type.ScatterGather);
-    final Edge e4 = tempDAGBuilder.connectVertices(v3, v5, Edge.Type.ScatterGather);
-    final Edge e5 = tempDAGBuilder.connectVertices(v4, v6, Edge.Type.OneToOne);
+    final IREdge e1 = tempDAGBuilder.connectVertices(v1, v2, IREdge.Type.OneToOne);
+    final IREdge e2 = tempDAGBuilder.connectVertices(v1, v3, IREdge.Type.OneToOne);
+    final IREdge e3 = tempDAGBuilder.connectVertices(v2, v4, IREdge.Type.ScatterGather);
+    final IREdge e4 = tempDAGBuilder.connectVertices(v3, v5, IREdge.Type.ScatterGather);
+    final IREdge e5 = tempDAGBuilder.connectVertices(v4, v6, IREdge.Type.OneToOne);
 
     // Stage 1 = {v1, v2, v3}
     builder.createNewStage();

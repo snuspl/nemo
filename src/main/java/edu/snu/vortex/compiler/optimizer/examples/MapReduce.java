@@ -31,17 +31,17 @@ public final class MapReduce {
   }
 
   public static void main(final String[] args) throws Exception {
-    final Vertex source = new OperatorVertex(new EmptyTransform("SourceVertex"));
-    final Vertex map = new OperatorVertex(new EmptyTransform("MapVertex"));
-    final Vertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
+    final IRVertex source = new OperatorVertex(new EmptyTransform("SourceVertex"));
+    final IRVertex map = new OperatorVertex(new EmptyTransform("MapVertex"));
+    final IRVertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
 
     // Before
     final DAGBuilder builder = new DAGBuilder();
     builder.addVertex(source);
     builder.addVertex(map);
     builder.addVertex(reduce);
-    builder.connectVertices(source, map, Edge.Type.OneToOne);
-    builder.connectVertices(map, reduce, Edge.Type.ScatterGather);
+    builder.connectVertices(source, map, IREdge.Type.OneToOne);
+    builder.connectVertices(map, reduce, IREdge.Type.ScatterGather);
     final DAG dag = builder.build();
     LOG.log(Level.INFO, "Before Optimization");
     LOG.log(Level.INFO, dag.toString());
