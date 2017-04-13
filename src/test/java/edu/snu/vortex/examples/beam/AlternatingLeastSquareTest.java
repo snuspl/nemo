@@ -35,10 +35,10 @@ public final class AlternatingLeastSquareTest {
 
   @Test
   public void test() throws Exception {
-    final String[] args = ArgGen.concat(
-        ArgGen.genUserMain(als),
-        ArgGen.genOptimizationPolicy(optimizationPolicy),
-        ArgGen.genUserArgs(input, numFeatures, numIteration));
-    JobLauncher.main(args);
+    final ArgBuilder builder = new ArgBuilder()
+        .addUserMain(als)
+        .addOptimizationPolicy(optimizationPolicy)
+        .addUserArgs(input, numFeatures, numIteration);
+    JobLauncher.main(builder.build());
   }
 }

@@ -15,29 +15,35 @@
  */
 package edu.snu.vortex.examples.beam;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-public class ArgGen {
-  public static List<String> genUserMain(final String main) {
-    return Arrays.asList("-user_main", main);
+public class ArgBuilder {
+  private List<List<String>> args = new ArrayList<>();
+
+  public ArgBuilder addUserMain(final String main) {
+    args.add(Arrays.asList("-user_main", main));
+    return this;
   }
 
-  public static List<String> genUserArgs(final String... args) {
+  public ArgBuilder addUserArgs(final String... userArgs) {
     final StringJoiner joiner = new StringJoiner(" ");
-    Arrays.stream(args).forEach(joiner::add);
-    return Arrays.asList("-user_args", joiner.toString());
+    Arrays.stream(userArgs).forEach(joiner::add);
+    args.add(Arrays.asList("-user_args", joiner.toString()));
+    return this;
   }
 
-  public static List<String> genOptimizationPolicy(final String policy) {
-    return Arrays.asList("-optimization_policy", policy);
+  public ArgBuilder addOptimizationPolicy(final String policy) {
+    args.add(Arrays.asList("-optimization_policy", policy));
+    return this;
   }
 
-  public static String[] concat(final List<String>... args) {
+  public String[] build() {
     // new String[0] is good for performance
     // see http://stackoverflow.com/questions/4042434/converting-arrayliststring-to-string-in-java
-    return Arrays.stream(args).flatMap(List::stream).collect(Collectors.toList()).toArray(new String[0]);
+    return args.stream().flatMap(List::stream).collect(Collectors.toList()).toArray(new String[0]);
   }
 }

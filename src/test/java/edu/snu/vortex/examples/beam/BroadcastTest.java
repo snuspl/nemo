@@ -34,10 +34,10 @@ public final class BroadcastTest {
 
   @Test
   public void test() throws Exception {
-    final String[] args = ArgGen.concat(
-        ArgGen.genUserMain(broadcast),
-        ArgGen.genOptimizationPolicy(optimizationPolicy),
-        ArgGen.genUserArgs(input, output));
-    JobLauncher.main(args);
+    final ArgBuilder builder = new ArgBuilder()
+        .addUserMain(broadcast)
+        .addOptimizationPolicy(optimizationPolicy)
+        .addUserArgs(input, output);
+    JobLauncher.main(builder.build());
   }
 }

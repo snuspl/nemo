@@ -34,10 +34,10 @@ public final class MapReduceDisaggregationTest {
 
   @Test
   public void test() throws Exception {
-    final String[] args = ArgGen.concat(
-        ArgGen.genUserMain(mapReduce),
-        ArgGen.genOptimizationPolicy(optimizationPolicy),
-        ArgGen.genUserArgs(input, output));
-    JobLauncher.main(args);
+    final ArgBuilder builder = new ArgBuilder()
+        .addUserMain(mapReduce)
+        .addOptimizationPolicy(optimizationPolicy)
+        .addUserArgs(input, output);
+    JobLauncher.main(builder.build());
   }
 }
