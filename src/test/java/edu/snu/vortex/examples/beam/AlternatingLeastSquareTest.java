@@ -35,7 +35,7 @@ public final class AlternatingLeastSquareTest {
 
   @Test
   public void test() throws Exception {
-    final String[] args = ArgGen.getFinalArgs(
+    final String[] args = ArgGen.concat(
         ArgGen.genUserMain(als),
         ArgGen.genOptimizationPolicy(optimizationPolicy),
         ArgGen.genUserArgs(input, numFeatures, numIteration));

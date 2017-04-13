@@ -35,7 +35,7 @@ public class ArgGen {
     return Arrays.asList("-optimization_policy", policy);
   }
 
-  public static String[] getFinalArgs(final List<String>... args) {
+  public static String[] concat(final List<String>... args) {
     // new String[0] is good for performance
     // see http://stackoverflow.com/questions/4042434/converting-arrayliststring-to-string-in-java
     return Arrays.stream(args).flatMap(List::stream).collect(Collectors.toList()).toArray(new String[0]);

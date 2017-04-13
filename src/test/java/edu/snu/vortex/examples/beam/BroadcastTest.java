@@ -35,7 +35,7 @@ public final class BroadcastTest {
 
   @Test
   public void test() throws Exception {
-    final String[] args = ArgGen.getFinalArgs(
+    final String[] args = ArgGen.concat(
         ArgGen.genUserMain(broadcast),
         ArgGen.genOptimizationPolicy(optimizationPolicy),
         ArgGen.genUserArgs(input, output));
