@@ -31,10 +31,13 @@ public final class MapReduceTest {
   private final String optimizationPolicy = "pado";
   private final String input = "./src/main/resources/sample_input_mr";
   private final String output = "./src/main/resources/sample_output";
-  private final String[] args = {mapReduce, optimizationPolicy, input, output};
 
   @Test
   public void test() throws Exception {
+    final String[] args = ArgGen.getFinalArgs(
+        ArgGen.genUserMain(mapReduce),
+        ArgGen.genOptimizationPolicy(optimizationPolicy),
+        ArgGen.genUserArgs(input, output));
     JobLauncher.main(args);
   }
 }
