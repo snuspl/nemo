@@ -40,13 +40,16 @@ import java.util.logging.Logger;
 /**
  * Sample Multinomial Logistic Regression application.
  */
-public class MultinomialLogisticRegression {
+public final class MultinomialLogisticRegression {
   private static final Logger LOG = Logger.getLogger(MultinomialLogisticRegression.class.getName());
 
   private MultinomialLogisticRegression() {
   }
 
-  public static class CalculateGradient extends DoFn<String, KV<Integer, double[]>> {
+  /**
+   * Calculate Gradient.
+   */
+  public static final class CalculateGradient extends DoFn<String, KV<Integer, double[]>> {
     private double[][] gradients;
     private final int numClasses;
     private final int numFeatures;
@@ -200,7 +203,10 @@ public class MultinomialLogisticRegression {
     }
   }
 
-  public static class CombineFunction2 extends Combine.BinaryCombineFn<double[]> {
+  /**
+   * Combine Function.
+   */
+  public static final class CombineFunction2 extends Combine.BinaryCombineFn<double[]> {
     @Override
     public double[] apply(final double[] left, final double[] right) {
       for (int i = 0; i < left.length; i++) {
@@ -210,7 +216,10 @@ public class MultinomialLogisticRegression {
     }
   }
 
-  public static class CombineFunction implements SerializableFunction<Iterable<double[]>, double[]> {
+  /**
+   * Combine Function.
+   */
+  public static final class CombineFunction implements SerializableFunction<Iterable<double[]>, double[]> {
     @Override
     public double[] apply(final Iterable<double[]> gradients) {
       double[] ret = null;
