@@ -36,13 +36,13 @@ public final class AttributeMap {
     intAttributes = new HashMap<>();
   }
 
-  public static AttributeMap of(final IREdge IREdge) {
-    final AttributeMap map = new AttributeMap(IREdge.getId());
+  public static AttributeMap of(final IREdge irEdge) {
+    final AttributeMap map = new AttributeMap(irEdge.getId());
     map.setDefaultEdgeValues();
     return map;
   }
-  public static AttributeMap of(final IRVertex IRVertex) {
-    final AttributeMap map = new AttributeMap(IRVertex.getId());
+  public static AttributeMap of(final IRVertex irVertex) {
+    final AttributeMap map = new AttributeMap(irVertex.getId());
     map.setDefaultVertexValues();
     return map;
   }

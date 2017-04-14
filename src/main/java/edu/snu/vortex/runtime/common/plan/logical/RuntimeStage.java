@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.plan.logical;
 
-import java.util.*;
+import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.Edge;
 
 /**
  * Represents a stage in Runtime's execution of a job.
@@ -25,77 +26,27 @@ import java.util.*;
 public final class RuntimeStage {
   private final String stageId;
 
-  /**
-   * The list of {@link RuntimeVertex} to execute, sorted in the order of execution.
-   */
-  private final List<RuntimeVertex> runtimeVertices;
-
-  /**
-   * {@link RuntimeVertex}'s id to the set of local incoming edges from the vertices in this stage.
-   */
-  private final Map<String, Set<String>> internalInEdges;
-
-  /**
-   * {@link RuntimeVertex}'s id to the set of local outgoing edges to the vertices in this stage.
-   */
-  private final Map<String, Set<String>> internalOutEdges;
-
-  /**
-   * {@link RuntimeVertex}'s id to the set of remote incoming edges from the vertices in other stages.
-   */
-  private final Map<String, Set<StageEdge>> stageIncomingEdges;
-
-  /**
-   * {@link RuntimeVertex}'s id to the set of remote outgoing edges to the vertices in other stages.
-   */
-  private final Map<String, Set<StageEdge>> stageOutgoingEdges;
+  private final DAG<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAG;
 
   public RuntimeStage(final String stageId,
-                      final List<RuntimeVertex> runtimeVertices,
-                      final Map<String, Set<String>> internalInEdges,
-                      final Map<String, Set<String>> internalOutEdges,
-                      final Map<String, Set<StageEdge>> stageIncomingEdges,
-                      final Map<String, Set<StageEdge>> stageOutgoingEdges) {
+                      final DAG<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAG) {
     this.stageId = stageId;
-    this.runtimeVertices = runtimeVertices;
-    this.internalInEdges = internalInEdges;
-    this.internalOutEdges = internalOutEdges;
-    this.stageIncomingEdges = stageIncomingEdges;
-    this.stageOutgoingEdges = stageOutgoingEdges;
+    this.stageInternalDAG = stageInternalDAG;
+  }
+
+  public DAG<RuntimeVertex, Edge<RuntimeVertex>> getStageInternalDAG() {
+    return stageInternalDAG;
   }
 
   public String getStageId() {
     return stageId;
   }
 
-  public List<RuntimeVertex> getRuntimeVertices() {
-    return runtimeVertices;
-  }
-
-  public Map<String, Set<String>> getInternalInEdges() {
-    return internalInEdges;
-  }
-
-  public Map<String, Set<String>> getInternalOutEdges() {
-    return internalOutEdges;
-  }
-
-  public Map<String, Set<StageEdge>> getStageIncomingEdges() {
-    return stageIncomingEdges;
-  }
-
-  public Map<String, Set<StageEdge>> getStageOutgoingEdges() {
-    return stageOutgoingEdges;
-  }
-
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder();
-    sb.append("RuntimeStage{");
-    sb.append("stageId='");
-    sb.append(stageId);
-    sb.append("\', runtimeVertices=");
-    sb.append(runtimeVertices);
+    final StringBuffer sb = new StringBuffer("RuntimeStage{");
+    sb.append("stageId='").append(stageId).append('\'');
+    sb.append(", stageInternalDAG=").append(stageInternalDAG);
     sb.append('}');
     return sb.toString();
   }

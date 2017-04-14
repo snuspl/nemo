@@ -17,6 +17,9 @@ package edu.snu.vortex.compiler.optimizer.examples;
 
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.Edge;
+import edu.snu.vortex.utils.dag.DAGBuilder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,12 +39,17 @@ public final class MapReduce {
     final IRVertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
 
     // Before
-    final DAGBuilder builder = new DAGBuilder();
+    final DAGBuilder<IRVertex, Edge<IRVertex>> builder = new DAGBuilder();
     builder.addVertex(source);
     builder.addVertex(map);
     builder.addVertex(reduce);
-    builder.connectVertices(source, map, IREdge.Type.OneToOne);
-    builder.connectVertices(map, reduce, IREdge.Type.ScatterGather);
+
+    final IREdge edge1 = new IREdge(IREdge.Type.OneToOne, source, map);
+    builder.connectVertices(edge1);
+
+    final IREdge edge2 = new IREdge(IREdge.Type.ScatterGather, map, reduce);
+    builder.connectVertices(edge2);
+
     final DAG dag = builder.build();
     LOG.log(Level.INFO, "Before Optimization");
     LOG.log(Level.INFO, dag.toString());

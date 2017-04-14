@@ -16,56 +16,33 @@
 package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
-import edu.snu.vortex.utils.DAG;
+import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.Edge;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * TaskGroup.
  */
 public final class TaskGroup implements Serializable {
   private final String taskGroupId;
-  private final DAG<Task> taskDAG;
+  private final DAG<Task, Edge<Task>> taskDAG;
   private final RuntimeAttribute resourceType;
 
-  /**
-   * Map of this stage's vertex ID to the information on the set of incoming edges to the stage.
-   */
-  private final Map<String, Set<StageBoundaryEdgeInfo>> incomingEdges;
-
-  /**
-   * Map of this stage's vertex ID to the information on the set of outgoing edges from the stage.
-   */
-  private final Map<String, Set<StageBoundaryEdgeInfo>> outgoingEdges;
-
   public TaskGroup(final String taskGroupId,
-                   final DAG<Task> taskDAG,
-                   final RuntimeAttribute resourceType,
-                   final Map<String, Set<StageBoundaryEdgeInfo>> incomingEdges,
-                   final Map<String, Set<StageBoundaryEdgeInfo>> outgoingEdges) {
+                   final DAG<Task, Edge<Task>> taskDAG,
+                   final RuntimeAttribute resourceType) {
     this.taskGroupId = taskGroupId;
     this.taskDAG = taskDAG;
     this.resourceType = resourceType;
-    this.incomingEdges = incomingEdges;
-    this.outgoingEdges = outgoingEdges;
   }
 
   public RuntimeAttribute getResourceType() {
     return resourceType;
   }
 
-  public DAG<Task> getTaskDAG() {
+  public DAG<Task, Edge<Task>> getTaskDAG() {
     return taskDAG;
-  }
-
-  public Map<String, Set<StageBoundaryEdgeInfo>> getIncomingEdges() {
-    return incomingEdges;
-  }
-
-  public Map<String, Set<StageBoundaryEdgeInfo>> getOutgoingEdges() {
-    return outgoingEdges;
   }
 
   @Override
@@ -74,8 +51,6 @@ public final class TaskGroup implements Serializable {
     sb.append("taskGroupId='").append(taskGroupId).append('\'');
     sb.append(", taskDAG=").append(taskDAG);
     sb.append(", resourceType=").append(resourceType);
-    sb.append(", incomingEdges=").append(incomingEdges);
-    sb.append(", outgoingEdges=").append(outgoingEdges);
     sb.append('}');
     return sb.toString();
   }

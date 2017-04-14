@@ -18,13 +18,14 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
+import edu.snu.vortex.utils.dag.Edge;
 
 import java.io.Serializable;
 
 /**
  * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
-public final class StageBoundaryEdgeInfo implements Serializable {
+public final class StageBoundaryEdgeInfo extends Edge<PhysicalStage> implements Serializable {
   private final String stageBoundaryEdgeInfoId;
   private final RuntimeAttributeMap edgeAttributes;
 
@@ -32,7 +33,13 @@ public final class StageBoundaryEdgeInfo implements Serializable {
    * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
    * The vertex is connected to a vertex of this stage connected by the edge this class represents.
    */
-  private final RuntimeVertex externalVertex;
+  private final RuntimeVertex srcVertex;
+
+  /**
+   * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
+   * The vertex is connected to a vertex of this stage connected by the edge this class represents.
+   */
+  private final RuntimeVertex dstVertex;
 
   /**
    * IRVertex attributes of the endpoint vertex.
@@ -41,11 +48,16 @@ public final class StageBoundaryEdgeInfo implements Serializable {
 
   public StageBoundaryEdgeInfo(final String runtimeEdgeId,
                                final RuntimeAttributeMap edgeAttributes,
-                               final RuntimeVertex externalVertex,
-                               final RuntimeAttributeMap externalVertexAttr) {
+                               final RuntimeVertex srcVertex,
+                               final RuntimeVertex dstVertex,
+                               final RuntimeAttributeMap externalVertexAttr,
+                               final PhysicalStage srcStage,
+                               final PhysicalStage dstStage) {
+    super(srcStage, dstStage);
     this.stageBoundaryEdgeInfoId = runtimeEdgeId;
     this.edgeAttributes = edgeAttributes;
-    this.externalVertex = externalVertex;
+    this.srcVertex = srcVertex;
+    this.dstVertex = dstVertex;
     this.externalVertexAttr = externalVertexAttr;
   }
 
@@ -57,8 +69,12 @@ public final class StageBoundaryEdgeInfo implements Serializable {
     return edgeAttributes;
   }
 
-  public RuntimeVertex getExternalVertex() {
-    return externalVertex;
+  public RuntimeVertex getSrcVertex() {
+    return srcVertex;
+  }
+
+  public RuntimeVertex getDstVertex() {
+    return dstVertex;
   }
 
   public RuntimeAttributeMap getExternalVertexAttr() {
@@ -69,8 +85,10 @@ public final class StageBoundaryEdgeInfo implements Serializable {
   public String toString() {
     final StringBuffer sb = new StringBuffer("StageBoundaryEdgeInfo{");
     sb.append("stageBoundaryEdgeInfoId='").append(stageBoundaryEdgeInfoId).append('\'');
+    sb.append(", src='").append(getSrc().getId());
+    sb.append(", dst='").append(getDst().getId());
     sb.append(", edgeAttributes=").append(edgeAttributes);
-    sb.append(", externalVertexId='").append(externalVertex).append('\'');
+    sb.append(", externalVertexId='").append(srcVertex).append('\'');
     sb.append(", externalVertexAttr=").append(externalVertexAttr);
     sb.append('}');
     return sb.toString();

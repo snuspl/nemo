@@ -13,71 +13,134 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.utils;
+package edu.snu.vortex.utils.dag;
 
-import java.util.Set;
+import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
-// TODO #45: Clean up Compiler and Runtime's DAG implementations
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.logging.Logger;
+
 /**
- * This interface represents Directed Acyclic Graph (DAG).
- * It is based on the one of MIST.
- * @param <V> type of the vertex
+ * DAG implementation.
+ * @param <V> the vertex type
+ * @param <E> the edge type
  */
-public interface DAG<V> {
+public final class DAG<V, E extends Edge<V>> {
+  private static final Logger LOG = Logger.getLogger(DAG.class.getName());
+
+  private final Set<V> vertices;
+  private final Map<V, Set<E>> incomingEdges;
+  private final Map<V, Set<E>> outgoingEdges;
+
+  public DAG(final Set<V> vertices,
+             final Map<V, Set<E>> incomingEdges,
+             final Map<V, Set<E>> outgoingEdges) {
+    this.vertices = vertices;
+    this.incomingEdges = incomingEdges;
+    this.outgoingEdges = outgoingEdges;
+  }
+
+  public <V2, E2 extends Edge<V2>> DAG<V2, E2> convert(final Function<DAG<V, E>, DAG<V2, E2>> function) {
+    return function.apply(this);
+  }
+
+  public Set<V> getVertices() {
+    return vertices;
+  }
+
+  public Set<E> getIncomingEdges(final V v) {
+    if (!vertices.contains(v)) {
+      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
+    }
+    return incomingEdges.get(v);
+  }
+
+  public Set<E> getOutgoingEdges(final V v) {
+    if (!vertices.contains(v)) {
+      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
+    }
+    return outgoingEdges.get(v);
+  }
 
   /**
-   * Gets root vertices for graph traversal.
-   * @return set of root vertices
+   * Indicates the traversal order of this DAG.
    */
-  Set<V> getRootVertices();
+  public enum TraversalOrder {
+    PreOrder,
+    PostOrder
+  }
 
   /**
-   * Adds the vertex v, if it is not there.
-   * @param v vertex
-   * @return true if the vertex is added, false if the vertex already exists
+   * Gets the DAG's vertices in topologically sorted order.
+   * @return the sorted list of vertices in topological order.
    */
-  boolean addVertex(V v);
+  public List<V> getTopologicalSort() {
+    final List<V> sortedList = new ArrayList<>(vertices.size());
+    topologicalDo(v -> sortedList.add(v));
+    return sortedList;
+  }
 
   /**
-   * Removes the vertex v, if it is there.
-   * It also removes remaining edges linked with the vertex.
-   * @param v vertex
-   * @return true if the vertex is removed, false if the vertex does not exist
+   * Applies the function to each node in the DAG in a topological order.
+   * @param function to apply.
    */
-  boolean removeVertex(V v);
+  public void topologicalDo(final Consumer<V> function) {
+    final Stack<V> stack = new Stack<>();
+    dfsTraverse(op -> stack.push(op), TraversalOrder.PostOrder);
+    while (!stack.isEmpty()) {
+      function.accept(stack.pop());
+    }
+  }
 
   /**
-   * Adds the edge from the vertices v to w, if it is not there.
-   * @param v src vertex
-   * @param w dest vertex
-   * @return true if the edge is added, false if the edge already exists between v and w
-   * @throws java.util.NoSuchElementException if the vertex v or w does not exist
-   * @throws IllegalStateException if the added edge generates a cycle in the graph
+   * Traverses the DAG by DFS, applying the given function.
+   * @param function to apply.
+   * @param traversalOrder which the DFS should be conducted.
    */
-  boolean addEdge(V v, V w);
+  private void dfsTraverse(final Consumer<V> function, final TraversalOrder traversalOrder) {
+    final Set<V> visited = new HashSet<>();
+    getVertices().stream()
+        .filter(vertex -> incomingEdges.get(vertex).isEmpty()) // root Operators
+        .filter(vertex -> !visited.contains(vertex))
+        .forEach(vertex -> dfsDo(vertex, function, traversalOrder, visited));
+  }
 
   /**
-   * Removes the edge from the vertices v to w, if it is there.
-   * @param v src vertex
-   * @param w dest vertex
-   * @return true if the edge is removed, false if the edge does not exist between v and w
-   * @throws java.util.NoSuchElementException if the vertex v or w do not exist
+   * A recursive helper function for {@link #dfsTraverse(Consumer, TraversalOrder)}.
+   * @param vertex the root vertex of the remaining DAG.
+   * @param vertexConsumer the function to apply.
+   * @param traversalOrder which the DFS should be conducted.
+   * @param visited the set of nodes visited.
    */
-  boolean removeEdge(V v, V w);
+  private void dfsDo(final V vertex,
+                     final Consumer<V> vertexConsumer,
+                     final TraversalOrder traversalOrder,
+                     final Set<V> visited) {
+    visited.add(vertex);
+    if (traversalOrder == TraversalOrder.PreOrder) {
+      vertexConsumer.accept(vertex);
+    }
+    final Set<E> outEdges = getOutgoingEdges(vertex);
+    if (!outEdges.isEmpty()) {
+      outEdges.stream()
+          .map(outEdge -> outEdge.getDst())
+          .filter(outOperator -> !visited.contains(outOperator))
+          .forEach(outOperator -> dfsDo(outOperator, vertexConsumer, traversalOrder, visited));
+    }
+    if (traversalOrder == TraversalOrder.PostOrder) {
+      vertexConsumer.accept(vertex);
+    }
+  }
 
-  /**
-   * Returns the incoming edges to the vertex v.
-   * @param v vertex
-   * @return the set of parent vertices for this vertex.
-   * @throws java.util.NoSuchElementException if the vertex v does not exist
-   */
-  Set<V> getParents(V v);
-
-  /**
-   * Returns the outgoing edges from the vertex v.
-   * @param v vertex
-   * @return the set of children vertices for this vertex.
-   * @throws java.util.NoSuchElementException if the vertex v does not exist
-   */
-  Set<V> getChildren(V v);
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("DAG{");
+    sb.append("vertices=").append(vertices);
+    sb.append(", incomingEdges=").append(incomingEdges);
+    sb.append(", outgoingEdges=").append(outgoingEdges);
+    sb.append('}');
+    return sb.toString();
+  }
 }

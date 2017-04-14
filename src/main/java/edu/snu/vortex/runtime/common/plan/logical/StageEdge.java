@@ -17,11 +17,12 @@ package edu.snu.vortex.runtime.common.plan.logical;
 
 
 import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.utils.dag.Edge;
 
 /**
- * Stage IREdge.
+ * Stage Edge.
  */
-public final class StageEdge {
+public final class StageEdge extends Edge<RuntimeStage> {
   private final String stageEdgeId;
   private final RuntimeAttributeMap edgeAttributes;
   private final RuntimeVertex srcRuntimeVertex;
@@ -31,13 +32,18 @@ public final class StageEdge {
    * Represents the edge between vertices in a logical plan.
    * @param irEdgeId id of this edge.
    * @param edgeAttributes to control the data flow on this edge.
-   * @param srcRuntimeVertex source vertex.
-   * @param dstRuntimeVertex destination vertex.
+   * @param srcRuntimeStage source runtime stage.
+   * @param dstRuntimeStage destination runtime stage.
+   * @param srcRuntimeVertex source vertex (in srcRuntimeStage).
+   * @param dstRuntimeVertex destination vertex (in dstRuntimeStage).
    */
   public StageEdge(final String irEdgeId,
                    final RuntimeAttributeMap edgeAttributes,
+                   final RuntimeStage srcRuntimeStage,
+                   final RuntimeStage dstRuntimeStage,
                    final RuntimeVertex srcRuntimeVertex,
                    final RuntimeVertex dstRuntimeVertex) {
+    super(srcRuntimeStage, dstRuntimeStage);
     this.stageEdgeId = RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId);
     this.edgeAttributes = edgeAttributes;
     this.srcRuntimeVertex = srcRuntimeVertex;

@@ -18,13 +18,14 @@ package edu.snu.vortex.compiler.ir;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
+import edu.snu.vortex.utils.dag.Edge;
 
 /**
  * Physical execution plan of intermediate data movement.
  * @param <I> input vertex type.
  * @param <O> output vertex type.
  */
-public final class IREdge<I, O> {
+public final class IREdge<I, O> extends Edge<IRVertex> {
   /**
    * Type of edges.
    */
@@ -37,16 +38,13 @@ public final class IREdge<I, O> {
   private final String id;
   private final AttributeMap attributes;
   private final Type type;
-  private final IRVertex src;
-  private final IRVertex dst;
 
   public IREdge(final Type type,
          final IRVertex src,
          final IRVertex dst) {
+    super(src, dst);
     this.id = IdManager.newEdgeId();
     this.attributes = AttributeMap.of(this);
-    this.src = src;
-    this.dst = dst;
     this.type = type;
     switch (this.getType()) {
       case OneToOne:
@@ -84,12 +82,12 @@ public final class IREdge<I, O> {
     return type;
   }
 
-  public IRVertex getSrc() {
-    return src;
+  public IRVertex getSrcIRVertex() {
+    return super.getSrc();
   }
 
-  public IRVertex getDst() {
-    return dst;
+  public IRVertex getDstIRVertex() {
+    return super.getSrc();
   }
 
   @Override
@@ -101,22 +99,22 @@ public final class IREdge<I, O> {
       return false;
     }
 
-    IREdge<?, ?> IREdge = (IREdge<?, ?>) o;
+    IREdge<?, ?> irEdge = (IREdge<?, ?>) o;
 
-    if (type != IREdge.type) {
+    if (type != irEdge.type) {
       return false;
     }
-    if (!src.equals(IREdge.src)) {
+    if (!getSrc().equals(irEdge.getSrc())) {
       return false;
     }
-    return dst.equals(IREdge.dst);
+    return getDst().equals(irEdge.getDst());
   }
 
   @Override
   public int hashCode() {
     int result = type.hashCode();
-    result = 31 * result + src.hashCode();
-    result = 31 * result + dst.hashCode();
+    result = 31 * result + getSrc().hashCode();
+    result = 31 * result + getDst().hashCode();
     return result;
   }
 
@@ -126,9 +124,9 @@ public final class IREdge<I, O> {
     sb.append("id: ");
     sb.append(id);
     sb.append(", src: ");
-    sb.append(src.getId());
+    sb.append(getSrc().getId());
     sb.append(", dst: ");
-    sb.append(dst.getId());
+    sb.append(getDst().getId());
     sb.append(", attributes: ");
     sb.append(attributes);
     sb.append(", type: ");

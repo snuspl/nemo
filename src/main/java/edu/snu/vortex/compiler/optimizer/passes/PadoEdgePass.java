@@ -15,22 +15,22 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.ir.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.utils.dag.DAG;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 /**
  * Pado pass for tagging edges.
  */
 public final class PadoEdgePass implements Pass {
-  public DAG process(final DAG dag) throws Exception {
+  public <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
     dag.getVertices().forEach(vertex -> {
-      final Optional<List<IREdge>> inEdges = dag.getInEdgesOf(vertex);
-      if (inEdges.isPresent()) {
-        inEdges.get().forEach(edge -> {
+      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdges(vertex);
+      if (!inEdges.isEmpty()) {
+        inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {
             edge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
             edge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
@@ -52,13 +52,13 @@ public final class PadoEdgePass implements Pass {
     return dag;
   }
 
-  private boolean fromTransientToReserved(final IREdge IREdge) {
-    return IREdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Transient) &&
-        IREdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved);
+  private boolean fromTransientToReserved(final IREdge irEdge) {
+    return irEdge.getSrcIRVertex().getAttr(Attribute.Key.Placement).equals(Attribute.Transient) &&
+        irEdge.getDstIRVertex().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved);
   }
 
-  private boolean fromReservedToTransient(final IREdge IREdge) {
-    return IREdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved) &&
-        IREdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Transient);
+  private boolean fromReservedToTransient(final IREdge irEdge) {
+    return irEdge.getSrcIRVertex().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved) &&
+        irEdge.getDstIRVertex().getAttr(Attribute.Key.Placement).equals(Attribute.Transient);
   }
 }

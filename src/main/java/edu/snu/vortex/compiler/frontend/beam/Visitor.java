@@ -21,6 +21,8 @@ import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.WindowTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.utils.dag.Edge;
+import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
@@ -40,11 +42,11 @@ import java.util.Map;
  * Visits every node in the beam dag to translate the BEAM program to the Vortex IR.
  */
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
-  private final DAGBuilder builder;
+  private final DAGBuilder<IRVertex, Edge<IRVertex>> builder;
   private final Map<PValue, IRVertex> pValueToVertex;
   private final PipelineOptions options;
 
-  Visitor(final DAGBuilder builder, final PipelineOptions options) {
+  Visitor(final DAGBuilder<IRVertex, Edge<IRVertex>> builder, final PipelineOptions options) {
     this.builder = builder;
     this.pValueToVertex = new HashMap<>();
     this.options = options;
@@ -59,7 +61,6 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
     }
 
     final IRVertex vortexIRVertex = convertToVertex(beamNode);
-    builder.addVertex(vortexIRVertex);
 
     beamNode.getOutputs()
         .forEach(output -> pValueToVertex.put(output.getValue(), vortexIRVertex));
@@ -69,7 +70,10 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
           .map(taggedPValue -> taggedPValue.getValue())
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
-          .forEach(src -> builder.connectVertices(src, vortexIRVertex, getEdgeType(src, vortexIRVertex)));
+          .forEach(src -> {
+            final IREdge edge = new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex);
+            builder.connectVertices(edge);
+          });
     }
   }
 
@@ -82,40 +86,50 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
    */
   private <I, O> IRVertex convertToVertex(final TransformHierarchy.Node beamNode) {
     final PTransform beamTransform = beamNode.getTransform();
+    final IRVertex vortexIRVertex;
     if (beamTransform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) beamTransform;
-      return new BoundedSourceVertex<>(read.getSource());
+      vortexIRVertex = new BoundedSourceVertex<>(read.getSource());
+      builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof GroupByKey) {
-      return new OperatorVertex(new GroupByKeyTransform());
+      vortexIRVertex = new OperatorVertex(new GroupByKeyTransform());
+      builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) beamTransform;
       final BroadcastTransform vortexTransform = new BroadcastTransform(view.getView());
-      final IRVertex vortexIRVertex = new OperatorVertex(vortexTransform);
+      vortexIRVertex = new OperatorVertex(vortexTransform);
       pValueToVertex.put(view.getView(), vortexIRVertex);
-      return vortexIRVertex;
+      builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
-      return new OperatorVertex(vortexTransform);
+      vortexIRVertex = new OperatorVertex(vortexTransform);
+      builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Window.Assign) {
       final Window.Assign<I> window = (Window.Assign<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
-      return new OperatorVertex(vortexTransform);
+      vortexIRVertex = new OperatorVertex(vortexTransform);
+      builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Write) {
       throw new UnsupportedOperationException(beamTransform.toString());
     } else if (beamTransform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
       final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
-      final IRVertex vortexIRVertex = new OperatorVertex(vortexTransform);
+      vortexIRVertex = new OperatorVertex(vortexTransform);
+      builder.addVertex(vortexIRVertex);
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
-          .forEach(src -> builder.connectVertices(src, vortexIRVertex, getEdgeType(src, vortexIRVertex))
-              .setAttr(Attribute.Key.SideInput, Attribute.SideInput));
-      return vortexIRVertex;
+          .forEach(src -> {
+            final IREdge<I, O> edge =
+                new IREdge<I, O>(getEdgeType(src, vortexIRVertex), src, vortexIRVertex)
+                    .setAttr(Attribute.Key.SideInput, Attribute.SideInput);
+            builder.connectVertices(edge);
+          });
     } else {
       throw new UnsupportedOperationException(beamTransform.toString());
     }
+    return vortexIRVertex;
   }
 
   private IREdge.Type getEdgeType(final IRVertex src, final IRVertex dst) {

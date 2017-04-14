@@ -15,164 +15,30 @@
  */
 package edu.snu.vortex.utils.dag;
 
-import javax.annotation.concurrent.NotThreadSafe;
-import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Implements {@link DAG}.
- * @param <V> type of the vertex
+ * Connects two vertices of a DAG.
+ * This class can be extended for various DAG representations.
+ *
+ * @param <V> the vertex type.
  */
-@NotThreadSafe
-public final class DAGImpl<V> implements DAG<V> {
-  /**
-   * Logger.
-   */
-  private static final Logger LOG = Logger.getLogger(DAGImpl.class.getName());
-  /**
-   * A set of root vertices.
-   */
-  private final Set<V> rootVertices = new HashSet<>();
+public class Edge<V> {
+  private static final Logger LOG = Logger.getLogger(Edge.class.getName());
 
-  /**
-   * A map containing <vertex, Set of its parent vertices> mappings.
-   */
-  private final Map<V, Set<V>> parentVertices = new HashMap<>();
+  private V src;
+  private V dst;
 
-  /**
-   * A map containing <vertex, Set of its children vertices> mappings.
-   */
-  private final Map<V, Set<V>> childrenVertices = new HashMap<>();
-
-  @Override
-  public Set<V> getRootVertices() {
-    return Collections.unmodifiableSet(rootVertices);
+  public Edge(final V src, final V dst) {
+    this.src = src;
+    this.dst = dst;
   }
 
-  @Override
-  public boolean addVertex(final V v) {
-    if (!childrenVertices.containsKey(v) && !parentVertices.containsKey(v)) {
-      childrenVertices.put(v, new HashSet<>());
-      parentVertices.put(v, new HashSet<>());
-      rootVertices.add(v);
-      return true;
-    } else {
-      LOG.log(Level.WARNING, "The vertex {0} already exists", v);
-      return false;
-    }
+  public final V getSrc() {
+    return src;
   }
 
-  @Override
-  public boolean removeVertex(final V v) {
-    final Set<V> children = childrenVertices.remove(v);
-    if (children != null) {
-      children.forEach(child -> {
-        final Set<V> parents = parentVertices.get(child);
-        parents.remove(v);
-        if (parents.isEmpty()) {
-          rootVertices.add(child);
-        }
-      });
-      rootVertices.remove(v);
-      return true;
-    } else {
-      LOG.log(Level.WARNING, "The vertex {0} does exists", v);
-      return false;
-    }
-  }
-
-  @Override
-  public boolean addEdge(final V src, final V dst) {
-    if (!childrenVertices.containsKey(src) || !parentVertices.containsKey(src)) {
-      throw new NoSuchElementException("No src vertex " + src);
-    }
-    if (!childrenVertices.containsKey(dst) || !parentVertices.containsKey(dst)) {
-      throw new NoSuchElementException("No dest vertex " + dst);
-    }
-
-    if (isADescendant(dst, src)) {
-      throw new IllegalStateException("The edge from " + src + " to " + dst
-          + " makes a cycle in the graph");
-    }
-
-    final Set<V> childrenOfSrc = childrenVertices.get(src);
-    if (childrenOfSrc.add(dst)) {
-      parentVertices.get(dst).add(src);
-      rootVertices.remove(dst);
-      return true;
-    } else {
-      LOG.log(Level.WARNING, "The edge from {0} to {1} already exists", new Object[]{src, dst});
-      return false;
-    }
-  }
-
-  @Override
-  public boolean removeEdge(final V src, final V dst) {
-    if (!childrenVertices.containsKey(src) || !parentVertices.containsKey(src)) {
-      throw new NoSuchElementException("No src vertex " + src);
-    }
-    if (!childrenVertices.containsKey(dst) || !parentVertices.containsKey(dst)) {
-      throw new NoSuchElementException("No dest vertex " + dst);
-    }
-
-    final Set<V> childrenOfSrc = childrenVertices.get(src);
-    if (childrenOfSrc.remove(dst)) {
-      final Set<V> parentsOfDst = parentVertices.get(dst);
-      parentsOfDst.remove(src);
-      if (parentsOfDst.size() == 1) {
-        rootVertices.add(dst);
-      }
-      return true;
-    } else {
-      LOG.log(Level.WARNING, "The edge from {0} to {1} does not exists", new Object[]{src, dst});
-      return false;
-    }
-  }
-
-  @Override
-  public Set<V> getParents(final V v) {
-    if (!parentVertices.containsKey(v)) {
-      throw new NoSuchElementException("No vertex " + v);
-    }
-    return parentVertices.get(v);
-  }
-
-  @Override
-  public Set<V> getChildren(final V v) {
-    if (!childrenVertices.containsKey(v)) {
-      throw new NoSuchElementException("No vertex " + v);
-    }
-    return childrenVertices.get(v);
-  }
-
-  /**
-   * Checks whether a vertex is a descendant of the other.
-   * @param v the potential ancestor
-   * @param w the potential descendant
-   * @return true if it is a descendant, false otherwise
-   */
-  private boolean isADescendant(final V v, final V w) {
-    if (v.equals(w)) {
-      return true;
-    }
-
-    final Set<V> children = childrenVertices.get(v);
-    for (final V child : children) {
-      if (isADescendant(child, w)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    final StringBuffer sb = new StringBuffer("DAGImpl{");
-    sb.append("rootVertices=").append(rootVertices);
-    sb.append(", parentVertices=").append(parentVertices);
-    sb.append(", childrenVertices=").append(childrenVertices);
-    sb.append('}');
-    return sb.toString();
+  public final V getDst() {
+    return dst;
   }
 }

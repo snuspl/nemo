@@ -16,30 +16,20 @@
 package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.runtime.exception.IllegalEdgeOperationException;
-import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
-
-import java.util.*;
+import edu.snu.vortex.utils.dag.Edge;
+import edu.snu.vortex.utils.dag.DAGBuilder;
 
 /**
  * Runtime Stage Builder.
  */
 public final class RuntimeStageBuilder {
-  private final List<RuntimeVertex> runtimeVertices;
-  private final Map<String, Set<String>> internalInEdges;
-  private final Map<String, Set<String>> internalOutEdges;
-  private final Map<String, Set<StageEdge>> stageIncomingEdges;
-  private final Map<String, Set<StageEdge>> stageOutgoingEdges;
+  private final DAGBuilder<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAGBuilder;
 
   /**
    * Builds a {@link RuntimeStage}.
    */
   public RuntimeStageBuilder() {
-    this.runtimeVertices = new LinkedList<>();
-    this.internalInEdges = new HashMap<>();
-    this.internalOutEdges = new HashMap<>();
-    this.stageIncomingEdges = new HashMap<>();
-    this.stageOutgoingEdges = new HashMap<>();
+    this.stageInternalDAGBuilder = new DAGBuilder<>();
   }
 
   /**
@@ -47,73 +37,25 @@ public final class RuntimeStageBuilder {
    * @param vertex to add.
    */
   public void addRuntimeVertex(final RuntimeVertex vertex) {
-    if (runtimeVertices.contains(vertex)) {
-      throw new IllegalVertexOperationException("this vertex already exists in the current stage.");
-    }
-    runtimeVertices.add(vertex);
-  }
-
-  /**
-   * Searches for the {@link RuntimeVertex} with the given id.
-   * @param runtimeVertexId to search.
-   * @return the {@link RuntimeVertex}
-   */
-  public RuntimeVertex getRuntimeVertexById(final String runtimeVertexId) {
-    RuntimeVertex foundRuntimeVertex = null;
-    for (final RuntimeVertex vertex : runtimeVertices) {
-      if (vertex.getId().equals(runtimeVertexId)) {
-        foundRuntimeVertex = vertex;
-        break;
-      }
-    }
-    return foundRuntimeVertex;
+    stageInternalDAGBuilder.addVertex(vertex);
   }
 
   /**
    * Connects two {@link RuntimeVertex} in this stage.
-   * @param srcVertexId source vertex.
-   * @param dstVertexId destination vertex.
+   * @param srcVertex source vertex.
+   * @param dstVertex destination vertex.
    */
-  public void connectInternalRuntimeVertices(final String srcVertexId,
-                                             final String dstVertexId) {
-    if (runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(srcVertexId)) &&
-        runtimeVertices.stream().anyMatch(vertex -> vertex.getId().equals(dstVertexId))) {
-      internalInEdges.putIfAbsent(dstVertexId, new HashSet<>());
-      internalInEdges.get(dstVertexId).add(srcVertexId);
-      internalOutEdges.putIfAbsent(srcVertexId, new HashSet<>());
-      internalOutEdges.get(srcVertexId).add(dstVertexId);
-    } else {
-      throw new IllegalVertexOperationException("either src or dst vertex is not a part of this stage");
-    }
-  }
-
-  /**
-   * Connects an external {@link RuntimeVertex} to another in this stage, using the {@link StageEdge}.
-   * @param endpointRuntimeVertex the {@link RuntimeVertex} in this stage to be connected.
-   * @param connectingEdge the edge from/to the external vertex.
-   */
-  public void connectRuntimeStages(final RuntimeVertex endpointRuntimeVertex,
-                                   final StageEdge connectingEdge) {
-    if (runtimeVertices.contains(endpointRuntimeVertex)) {
-      if (connectingEdge.getSrcRuntimeVertex().equals(endpointRuntimeVertex)) {
-        stageOutgoingEdges.putIfAbsent(endpointRuntimeVertex.getId(), new HashSet<>());
-        stageOutgoingEdges.get(endpointRuntimeVertex.getId()).add(connectingEdge);
-      } else if (connectingEdge.getDstRuntimeVertex().equals(endpointRuntimeVertex)) {
-        stageIncomingEdges.putIfAbsent(endpointRuntimeVertex.getId(), new HashSet<>());
-        stageIncomingEdges.get(endpointRuntimeVertex.getId()).add(connectingEdge);
-      } else {
-        throw new IllegalEdgeOperationException("this connecting edge is not applicable to this stage");
-      }
-    } else {
-      throw new IllegalVertexOperationException("the endpoint vertex is not a part of this stage");
-    }
+  public void connectInternalRuntimeVertices(final RuntimeVertex srcVertex,
+                                             final RuntimeVertex dstVertex) {
+    final Edge<RuntimeVertex> edge = new Edge<>(srcVertex, dstVertex);
+    stageInternalDAGBuilder.connectVertices(edge);
   }
 
   /**
    * @return true if this builder contains any valid {@link RuntimeVertex}.
    */
   public boolean isEmpty() {
-    return runtimeVertices.isEmpty();
+    return stageInternalDAGBuilder.isEmpty();
   }
 
   /**
@@ -121,7 +63,6 @@ public final class RuntimeStageBuilder {
    * @return the runtime stage.
    */
   public RuntimeStage build() {
-    return new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId(),
-        runtimeVertices, internalInEdges, internalOutEdges, stageIncomingEdges, stageOutgoingEdges);
+    return new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId(), stageInternalDAGBuilder.build());
   }
 }

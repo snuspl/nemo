@@ -15,11 +15,13 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
-import edu.snu.vortex.compiler.ir.DAG;
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.utils.dag.DAG;
 
 /**
  * Interface for optimization passes.
  */
 public interface Pass {
-  DAG process(final DAG dag) throws Exception;
+  <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception;
 }
