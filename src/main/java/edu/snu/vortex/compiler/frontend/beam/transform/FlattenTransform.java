@@ -15,26 +15,21 @@
  */
 package edu.snu.vortex.compiler.frontend.beam.transform;
 
-import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.OutputCollector;
 import edu.snu.vortex.compiler.ir.Transform;
-import org.apache.beam.sdk.values.KV;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
- * Group Beam KVs.
+ * Flatten transform implementation.
  */
-public final class GroupByKeyTransform implements Transform {
-  private final Map<Object, List> keyToValues;
+public final class FlattenTransform implements Transform {
+  private final ArrayList<Element> collectedElements;
   private OutputCollector outputCollector;
 
-  public GroupByKeyTransform() {
-    this.keyToValues = new HashMap<>();
+  public FlattenTransform() {
+    this.collectedElements = new ArrayList<>();
   }
 
   @Override
@@ -44,27 +39,20 @@ public final class GroupByKeyTransform implements Transform {
 
   @Override
   public void onData(final Iterable<Element> data, final String srcVertexId) {
-    data.forEach(element -> {
-      final KV kv = (KV) element.getData();
-      keyToValues.putIfAbsent(kv.getKey(), new ArrayList());
-      keyToValues.get(kv.getKey()).add(kv.getValue());
-    });
+    data.forEach(collectedElements::add);
   }
 
   @Override
   public void close() {
-    keyToValues.entrySet().stream()
-        .map(entry -> KV.of(entry.getKey(), entry.getValue()))
-        .forEach(wv -> outputCollector.emit(new BeamElement<>(wv)));
-    keyToValues.clear();
+    collectedElements.forEach(outputCollector::emit);
+    collectedElements.clear();
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("GroupByKeyTransform:");
+    sb.append("FlattenTransform:");
     sb.append(super.toString());
     return sb.toString();
   }
 }
-

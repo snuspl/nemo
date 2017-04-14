@@ -84,8 +84,13 @@ public final class SimpleRuntime {
               final Map<Transform, Object> sideInputs = getSideInputs(inEdges, task, edgeIdToChannels);
               final Set<StageBoundaryEdgeInfo> nonSideInputEdges = getNonSideInputEdges(inEdges);
               if (nonSideInputEdges.size() > 1) {
-                // TODO #13: Implement Join Node
-                throw new UnsupportedOperationException("Multi inedge not yet supported");
+                // We flatten the data that come in through multiple non-sideInput inEdges.
+                final ArrayList<Element> flattenedData = new ArrayList<>();
+                nonSideInputEdges.forEach(stageBoundaryEdgeInfo -> {
+                  edgeIdToChannels.get(stageBoundaryEdgeInfo.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read()
+                      .forEach(flattenedData::add);
+                });
+                data = flattenedData;
               } else if (nonSideInputEdges.size() == 1) { // We fetch 'data' from the incoming stage
                 final StageBoundaryEdgeInfo inEdge = nonSideInputEdges.iterator().next();
                 data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
@@ -102,7 +107,6 @@ public final class SimpleRuntime {
               transform.onData(data, null); // hack (TODO #132: Refactor DAG)
               transform.close();
               data = outputCollector.getOutputList();
-
             } else {
               throw new UnsupportedOperationException(task.toString());
             }

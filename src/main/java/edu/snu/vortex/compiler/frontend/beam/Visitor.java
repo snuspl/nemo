@@ -15,10 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import edu.snu.vortex.compiler.frontend.beam.transform.BroadcastTransform;
-import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
-import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
-import edu.snu.vortex.compiler.frontend.beam.transform.WindowTransform;
+import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import org.apache.beam.sdk.Pipeline;
@@ -26,10 +23,7 @@ import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
-import org.apache.beam.sdk.transforms.GroupByKey;
-import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.View;
+import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PValue;
 
@@ -54,7 +48,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   public void visitPrimitiveTransform(final TransformHierarchy.Node beamNode) {
 //    Print if needed for development
 //    LOG.log(Level.INFO, "visitp " + beamNode.getTransform());
-    if (beamNode.getOutputs().size() > 1 || beamNode.getInputs().size() > 1) {
+    if (beamNode.getOutputs().size() > 1) {
       throw new UnsupportedOperationException(beamNode.toString());
     }
 
@@ -113,6 +107,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
           .forEach(src -> builder.connectVertices(src, vortexVertex, getEdgeType(src, vortexVertex))
               .setAttr(Attribute.Key.SideInput, Attribute.SideInput));
       return vortexVertex;
+    } else if (beamTransform instanceof Flatten.PCollections) {
+      return new OperatorVertex(new FlattenTransform());
     } else {
       throw new UnsupportedOperationException(beamTransform.toString());
     }

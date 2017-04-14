@@ -299,7 +299,7 @@ public final class MultinomialLogisticRegression {
             @ProcessElement
             public void processElement(final ProcessContext c) throws Exception {
               final KV<Integer, CoGbkResult> kv = c.element();
-              final double[] gradientArr = kv.getValue().getOnly(gradientTag);
+              final double[] gradientArr = kv.getValue().getOnly(gradientTag, new double[128]);
               final double[] prevModelArr = kv.getValue().getOnly(modelTag);
               final double[] gradient;
               final double[] prevModel;
