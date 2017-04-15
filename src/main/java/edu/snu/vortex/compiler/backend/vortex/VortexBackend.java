@@ -27,7 +27,6 @@ import edu.snu.vortex.utils.dag.DAG;
  * Backend component for Vortex Runtime.
  */
 public final class VortexBackend implements Backend<ExecutionPlan> {
-
   public VortexBackend() {
   }
 
@@ -36,5 +35,4 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
         irDAG.convert(new LogicalDAGGenerator<>()));
     return executionPlan;
   }
-
 }
