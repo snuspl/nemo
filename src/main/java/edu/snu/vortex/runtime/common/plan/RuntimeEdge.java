@@ -23,19 +23,27 @@ import edu.snu.vortex.utils.dag.Edge;
  * @param <V> the vertex type.
  */
 public class RuntimeEdge<V> extends Edge<V> {
+  private final String runtimeEdgeId;
   private final RuntimeAttributeMap edgeAttributes;
 
   /**
    * Constructs the edge given the below parameters.
+   * @param runtimeEdgeId the id of this edge.
    * @param edgeAttributes to control the data flow on this edge.
    * @param src the source vertex.
    * @param dst the destination vertex.
    */
-  public RuntimeEdge(final RuntimeAttributeMap edgeAttributes,
+  public RuntimeEdge(final String runtimeEdgeId,
+                     final RuntimeAttributeMap edgeAttributes,
                      final V src,
                      final V dst) {
     super(src, dst);
+    this.runtimeEdgeId = runtimeEdgeId;
     this.edgeAttributes = edgeAttributes;
+  }
+
+  public final String getRuntimeEdgeId() {
+    return runtimeEdgeId;
   }
 
   public final RuntimeAttributeMap getEdgeAttributes() {
