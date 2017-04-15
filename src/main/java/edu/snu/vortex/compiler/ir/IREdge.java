@@ -87,7 +87,7 @@ public final class IREdge<I, O> extends Edge<IRVertex> {
   }
 
   public IRVertex getDstIRVertex() {
-    return super.getSrc();
+    return super.getDst();
   }
 
   @Override
