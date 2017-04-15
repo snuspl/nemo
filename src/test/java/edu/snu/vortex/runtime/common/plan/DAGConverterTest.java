@@ -16,10 +16,7 @@
 package edu.snu.vortex.runtime.common.plan;
 
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
-import edu.snu.vortex.compiler.ir.IREdge;
-import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.Transform;
+import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
@@ -34,17 +31,19 @@ import org.apache.beam.sdk.io.BoundedSource;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link LogicalDAGGenerator} and {@link PhysicalDAGGenerator}
  */
 public final class DAGConverterTest<I, O> {
   private DAGBuilder<IRVertex, IREdge<I, O>> irDAGBuilder;
-  private final RuntimeMaster runtimeMaster = new RuntimeMaster();
 
   @Before
   public void setUp() {
@@ -99,9 +98,19 @@ public final class DAGConverterTest<I, O> {
   }
 
   @Test
-  public void testComplexPlan() {
+  public void testComplexPlan() throws Exception {
     // Tests a plan of 4 stages.
     final BoundedSource s = mock(BoundedSource.class);
+    final BoundedSource.BoundedReader r = mock(BoundedSource.BoundedReader.class);
+    final List<BoundedSource.BoundedReader> dummyReaderList = new ArrayList<>(3);
+    dummyReaderList.add(r);
+    dummyReaderList.add(r);
+    dummyReaderList.add(r);
+    when(s.getEstimatedSizeBytes(null)).thenReturn(9L);
+    when(s.createReader(null)).thenReturn(r);
+    when(s.splitIntoBundles(3L, null)).thenReturn(dummyReaderList);
+
+
     final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
@@ -211,7 +220,7 @@ public final class DAGConverterTest<I, O> {
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
     final DAG<RuntimeStage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
-    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+//    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
     final List<RuntimeStage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
@@ -225,12 +234,10 @@ public final class DAGConverterTest<I, O> {
 //    assertEquals(logicalDAG.getIncomingEdges(runtimeStage2).size(), 1);
 //    assertEquals(logicalDAG.getIncomingEdges(runtimeStage3).size(), 1);
 //    assertEquals(logicalDAG.getIncomingEdges(runtimeStage4).size(), 1);
-//    assertEquals(logicalDAG.getIncomingEdges(runtimeStage5).size(), 1);
 //    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage1).size(), 2);
 //    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage2).size(), 0);
 //    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage3).size(), 1);
 //    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage4).size(), 0);
-//    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage5).size(), 0);
 
     // Test Physical DAG
 //    final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
