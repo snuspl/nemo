@@ -15,15 +15,16 @@
  */
 package edu.snu.vortex.runtime.common.plan.logical;
 
+import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.utils.dag.Edge;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
 /**
  * Runtime Stage Builder.
  */
 public final class RuntimeStageBuilder {
-  private final DAGBuilder<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAGBuilder;
+  private final DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAGBuilder;
 
   /**
    * Builds a {@link RuntimeStage}.
@@ -42,12 +43,14 @@ public final class RuntimeStageBuilder {
 
   /**
    * Connects two {@link RuntimeVertex} in this stage.
+   * @param edgeAttributes edge attributes of the edge.
    * @param srcVertex source vertex.
    * @param dstVertex destination vertex.
    */
-  public void connectInternalRuntimeVertices(final RuntimeVertex srcVertex,
+  public void connectInternalRuntimeVertices(final RuntimeAttributeMap edgeAttributes,
+                                             final RuntimeVertex srcVertex,
                                              final RuntimeVertex dstVertex) {
-    final Edge<RuntimeVertex> edge = new Edge<>(srcVertex, dstVertex);
+    final RuntimeEdge<RuntimeVertex> edge = new RuntimeEdge<>(edgeAttributes, srcVertex, dstVertex);
     stageInternalDAGBuilder.connectVertices(edge);
   }
 

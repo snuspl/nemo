@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.plan.logical;
 
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.Edge;
 
 /**
  * Represents a stage in Runtime's execution of a job.
@@ -26,15 +26,15 @@ import edu.snu.vortex.utils.dag.Edge;
 public final class RuntimeStage {
   private final String stageId;
 
-  private final DAG<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAG;
+  private final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAG;
 
   public RuntimeStage(final String stageId,
-                      final DAG<RuntimeVertex, Edge<RuntimeVertex>> stageInternalDAG) {
+                      final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAG) {
     this.stageId = stageId;
     this.stageInternalDAG = stageInternalDAG;
   }
 
-  public DAG<RuntimeVertex, Edge<RuntimeVertex>> getStageInternalDAG() {
+  public DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> getStageInternalDAG() {
     return stageInternalDAG;
   }
 
