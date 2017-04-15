@@ -59,7 +59,7 @@ public final class RuntimeMaster {
    * @return {@link PhysicalPlan} to execute.
    */
   private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan) {
-    final DAG<RuntimeStage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
+    final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
 
     final PhysicalPlan physicalPlan = new PhysicalPlan(executionPlan.getId(),
         logicalDAG.convert(new PhysicalDAGGenerator()));

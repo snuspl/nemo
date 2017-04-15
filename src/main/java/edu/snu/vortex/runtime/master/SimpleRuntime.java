@@ -19,11 +19,11 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.executor.channel.LocalChannel;
 import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.Edge;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
@@ -65,7 +65,7 @@ public final class SimpleRuntime {
 
       // compute tasks in a taskgroup, supposedly 'rootVertices' at a time
       // (another shortcoming of the current physical DAG)
-      final DAG<Task, Edge<Task>> taskDAG = taskGroup.getTaskDAG();
+      final DAG<Task, RuntimeEdge<Task>> taskDAG = taskGroup.getTaskDAG();
       final List<Task> sortedTasks = taskDAG.getTopologicalSort();
       sortedTasks.forEach(task -> {
         Iterable<Element> data = null; // hack (TODO #132: Refactor DAG)

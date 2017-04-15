@@ -18,15 +18,12 @@ package edu.snu.vortex.runtime.common.plan;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeStage;
+import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
-import edu.snu.vortex.utils.dag.Edge;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,19 +64,19 @@ public final class DAGConverterTest<I, O> {
     irDAGBuilder.connectVertices(e);
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
-    final DAG<RuntimeStage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
     final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
-    final List<RuntimeStage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
-    final RuntimeStage runtimeStage1 = sortedLogicalDAG.get(0);
-    final RuntimeStage runtimeStage2 = sortedLogicalDAG.get(1);
+    final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
+    final Stage stage1 = sortedLogicalDAG.get(0);
+    final Stage stage2 = sortedLogicalDAG.get(1);
 
     assertEquals(logicalDAG.getVertices().size(), 2);
-    assertEquals(logicalDAG.getIncomingEdges(runtimeStage1).size(), 0);
-    assertEquals(logicalDAG.getIncomingEdges(runtimeStage2).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage1).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage2).size(), 0);
+    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
+    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
+    assertEquals(logicalDAG.getOutgoingEdges(stage1).size(), 1);
+    assertEquals(logicalDAG.getOutgoingEdges(stage2).size(), 0);
 
     // Test Physical DAG
     final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
@@ -219,25 +216,25 @@ public final class DAGConverterTest<I, O> {
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
-    final DAG<RuntimeStage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
 //    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
-    final List<RuntimeStage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
-    final RuntimeStage runtimeStage1 = sortedLogicalDAG.get(0);
-    final RuntimeStage runtimeStage2 = sortedLogicalDAG.get(1);
-    final RuntimeStage runtimeStage3 = sortedLogicalDAG.get(2);
-    final RuntimeStage runtimeStage4 = sortedLogicalDAG.get(3);
+    final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
+    final Stage stage1 = sortedLogicalDAG.get(0);
+    final Stage stage2 = sortedLogicalDAG.get(1);
+    final Stage stage3 = sortedLogicalDAG.get(2);
+    final Stage stage4 = sortedLogicalDAG.get(3);
 
     assertEquals(logicalDAG.getVertices().size(), 4);
-//    assertEquals(logicalDAG.getIncomingEdges(runtimeStage1).size(), 0);
-//    assertEquals(logicalDAG.getIncomingEdges(runtimeStage2).size(), 1);
-//    assertEquals(logicalDAG.getIncomingEdges(runtimeStage3).size(), 1);
-//    assertEquals(logicalDAG.getIncomingEdges(runtimeStage4).size(), 1);
-//    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage1).size(), 2);
-//    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage2).size(), 0);
-//    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage3).size(), 1);
-//    assertEquals(logicalDAG.getOutgoingEdges(runtimeStage4).size(), 0);
+//    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
+//    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
+//    assertEquals(logicalDAG.getIncomingEdges(stage3).size(), 1);
+//    assertEquals(logicalDAG.getIncomingEdges(stage4).size(), 1);
+//    assertEquals(logicalDAG.getOutgoingEdges(stage1).size(), 2);
+//    assertEquals(logicalDAG.getOutgoingEdges(stage2).size(), 0);
+//    assertEquals(logicalDAG.getOutgoingEdges(stage3).size(), 1);
+//    assertEquals(logicalDAG.getOutgoingEdges(stage4).size(), 0);
 
     // Test Physical DAG
 //    final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
