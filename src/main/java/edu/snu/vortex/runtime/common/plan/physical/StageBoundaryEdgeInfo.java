@@ -26,8 +26,6 @@ import java.io.Serializable;
  * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
 public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> implements Serializable {
-  private final String stageBoundaryEdgeInfoId;
-
   /**
    * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
    * The vertex is connected to a vertex of this stage connected by the edge this class represents.
@@ -52,15 +50,10 @@ public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> impl
                                final RuntimeAttributeMap externalVertexAttr,
                                final PhysicalStage srcStage,
                                final PhysicalStage dstStage) {
-    super(edgeAttributes, srcStage, dstStage);
-    this.stageBoundaryEdgeInfoId = runtimeEdgeId;
+    super(runtimeEdgeId, edgeAttributes, srcStage, dstStage);
     this.srcVertex = srcVertex;
     this.dstVertex = dstVertex;
     this.externalVertexAttr = externalVertexAttr;
-  }
-
-  public String getStageBoundaryEdgeInfoId() {
-    return stageBoundaryEdgeInfoId;
   }
 
   public RuntimeVertex getSrcVertex() {
@@ -78,7 +71,7 @@ public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> impl
   @Override
   public String toString() {
     final StringBuffer sb = new StringBuffer("StageBoundaryEdgeInfo{");
-    sb.append("stageBoundaryEdgeInfoId='").append(stageBoundaryEdgeInfoId).append('\'');
+    sb.append("runtimeEdgeId='").append(getRuntimeEdgeId()).append('\'');
     sb.append(", src='").append(getSrc().getId());
     sb.append(", dst='").append(getDst().getId());
     sb.append(", externalVertexId='").append(srcVertex).append('\'');
