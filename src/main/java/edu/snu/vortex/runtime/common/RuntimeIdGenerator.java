@@ -15,8 +15,6 @@
  */
 package edu.snu.vortex.runtime.common;
 
-import edu.snu.vortex.runtime.common.plan.logical.Stage;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -58,7 +56,16 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link Stage}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge}.
+   * @param irEdgeId .
+   * @return the generated ID
+   */
+  public static String generateRuntimeEdgeId(final String irEdgeId) {
+    return "REdge-" + irEdgeId;
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.Stage}.
    * @return the generated ID
    */
   public static String generateStageId() {
