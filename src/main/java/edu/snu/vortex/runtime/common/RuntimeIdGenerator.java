@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.common;
 
+import edu.snu.vortex.runtime.common.plan.logical.Stage;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class RuntimeIdGenerator {
   private static AtomicInteger executionPlanIdGenerator = new AtomicInteger(1);
-  private static AtomicInteger runtimeStageIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger stageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(1);
 
@@ -51,16 +53,16 @@ public final class RuntimeIdGenerator {
    * @param irEdgeId .
    * @return the generated ID
    */
-  public static String generateRuntimeEdgeId(final String irEdgeId) {
-    return "REdge-" + irEdgeId;
+  public static String generateStageEdgeId(final String irEdgeId) {
+    return "SEdge-" + irEdgeId;
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeStage}.
+   * Generates the ID for {@link Stage}.
    * @return the generated ID
    */
-  public static String generateRuntimeStageId() {
-    return "RuntimeStage-" + runtimeStageIdGenerator.getAndIncrement();
+  public static String generateStageId() {
+    return "Stage-" + stageIdGenerator.getAndIncrement();
   }
 
   /**
