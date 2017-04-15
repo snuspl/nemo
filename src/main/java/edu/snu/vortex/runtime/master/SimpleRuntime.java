@@ -85,6 +85,7 @@ public final class SimpleRuntime {
               final Set<StageBoundaryEdgeInfo> nonSideInputEdges = getNonSideInputEdges(inEdges);
               if (nonSideInputEdges.size() > 1) {
                 // We flatten the data that come in through multiple non-sideInput inEdges.
+                // Flatten is a primitive transform used in CoGroupByKey.
                 final ArrayList<Element> flattenedData = new ArrayList<>();
                 nonSideInputEdges.forEach(stageBoundaryEdgeInfo -> {
                   edgeIdToChannels.get(stageBoundaryEdgeInfo.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read()
