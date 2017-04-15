@@ -20,10 +20,10 @@ import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
-import edu.snu.vortex.utils.dag.Edge;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
@@ -37,7 +37,7 @@ import java.util.function.Function;
  * A function that converts a runtime's logical DAG to physical DAG.
  */
 public final class PhysicalDAGGenerator
-    implements Function<DAG<RuntimeStage, StageEdge>, DAG<PhysicalStage, StageBoundaryEdgeInfo>> {
+    implements Function<DAG<Stage, StageEdge>, DAG<PhysicalStage, StageBoundaryEdgeInfo>> {
 
   private final DAGBuilder<PhysicalStage, StageBoundaryEdgeInfo> physicalDAGBuilder;
 
@@ -46,15 +46,15 @@ public final class PhysicalDAGGenerator
   }
 
   @Override
-  public DAG<PhysicalStage, StageBoundaryEdgeInfo> apply(final DAG<RuntimeStage, StageEdge> logicalDAG) {
+  public DAG<PhysicalStage, StageBoundaryEdgeInfo> apply(final DAG<Stage, StageEdge> logicalDAG) {
     final Map<String, PhysicalStage> runtimeStageIdToPhysicalStageMap = new HashMap<>();
 
     try {
       final Map<String, Task> runtimeVertexIdToTask = new HashMap<>();
       PhysicalStageBuilder physicalStageBuilder;
-      for (final RuntimeStage runtimeStage : logicalDAG.getVertices()) {
-        final DAGBuilder<Task, Edge<Task>> stageInternalDAGBuilder = new DAGBuilder<>();
-        final Set<RuntimeVertex> stageVertices = runtimeStage.getStageInternalDAG().getVertices();
+      for (final Stage stage : logicalDAG.getVertices()) {
+        final DAGBuilder<Task, RuntimeEdge<Task>> stageInternalDAGBuilder = new DAGBuilder<>();
+        final Set<RuntimeVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
         final RuntimeAttributeMap firstVertexAttrs = stageVertices.iterator().next().getVertexAttributes();
         int stageParallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
@@ -70,7 +70,7 @@ public final class PhysicalDAGGenerator
         final RuntimeAttribute resourceType = firstVertexAttrs.get(RuntimeAttribute.Key.ResourceType);
 
         // Begin building a new stage in the physical plan.
-        physicalStageBuilder = new PhysicalStageBuilder(runtimeStage.getStageId(), stageParallelism);
+        physicalStageBuilder = new PhysicalStageBuilder(stage.getStageId(), stageParallelism);
 
         // (parallelism) number of task groups will be created.
         for (int taskGroupIdx = 0; taskGroupIdx < stageParallelism; taskGroupIdx++) {
@@ -101,11 +101,12 @@ public final class PhysicalDAGGenerator
 
           // Now that all tasks have been created, connect the internal edges in the task group.
           // Notice that it suffices to iterate over only the internalInEdges.
-          final DAG<RuntimeVertex, Edge<RuntimeVertex>> internalInEdges = runtimeStage.getStageInternalDAG();
+          final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> internalInEdges = stage.getStageInternalDAG();
           internalInEdges.getVertices().forEach(runtimeVertex -> {
-            final Set<Edge<RuntimeVertex>> inEdges = internalInEdges.getIncomingEdges(runtimeVertex);
+            final Set<RuntimeEdge<RuntimeVertex>> inEdges = internalInEdges.getIncomingEdges(runtimeVertex);
             inEdges.forEach(edge -> stageInternalDAGBuilder
-                .connectVertices(new Edge<>(runtimeVertexIdToTask.get(edge.getSrc().getId()),
+                .connectVertices(new RuntimeEdge<>(edge.getEdgeAttributes(),
+                    runtimeVertexIdToTask.get(edge.getSrc().getId()),
                     runtimeVertexIdToTask.get(edge.getDst().getId()))));
 
           });
@@ -119,12 +120,12 @@ public final class PhysicalDAGGenerator
         }
         final PhysicalStage physicalStage = physicalStageBuilder.build();
         physicalDAGBuilder.addVertex(physicalStage);
-        runtimeStageIdToPhysicalStageMap.put(runtimeStage.getStageId(), physicalStage);
+        runtimeStageIdToPhysicalStageMap.put(stage.getStageId(), physicalStage);
       }
 
       // Connect PhysicalStage
-      for (final RuntimeStage runtimeStage : logicalDAG.getVertices()) {
-        logicalDAG.getIncomingEdges(runtimeStage).forEach(stageEdge -> {
+      for (final Stage stage : logicalDAG.getVertices()) {
+        logicalDAG.getIncomingEdges(stage).forEach(stageEdge -> {
           final PhysicalStage srcStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getSrc().getStageId());
           final PhysicalStage dstStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getDst().getStageId());
 
@@ -135,7 +136,7 @@ public final class PhysicalDAGGenerator
         });
       }
     } catch (final Exception e) {
-      throw new PhysicalPlanGenerationException(e.getMessage());
+      throw new PhysicalPlanGenerationException(e);
     }
     return physicalDAGBuilder.build();
   }

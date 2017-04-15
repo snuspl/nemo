@@ -21,15 +21,15 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
 /**
- * Runtime Stage Builder.
+ * Stage Builder.
  */
-public final class RuntimeStageBuilder {
+public final class StageBuilder {
   private final DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAGBuilder;
 
   /**
-   * Builds a {@link RuntimeStage}.
+   * Builds a {@link Stage}.
    */
-  public RuntimeStageBuilder() {
+  public StageBuilder() {
     this.stageInternalDAGBuilder = new DAGBuilder<>();
   }
 
@@ -62,10 +62,10 @@ public final class RuntimeStageBuilder {
   }
 
   /**
-   * Builds and returns the {@link RuntimeStage}.
+   * Builds and returns the {@link Stage}.
    * @return the runtime stage.
    */
-  public RuntimeStage build() {
-    return new RuntimeStage(RuntimeIdGenerator.generateRuntimeStageId(), stageInternalDAGBuilder.build());
+  public Stage build() {
+    return new Stage(RuntimeIdGenerator.generateStageId(), stageInternalDAGBuilder.build());
   }
 }

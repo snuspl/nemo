@@ -40,7 +40,7 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.SideInput;
  * @param <O> Output type of IREdge.
  */
 public final class LogicalDAGGenerator<I, O>
-    implements Function<DAG<IRVertex, IREdge<I, O>>, DAG<RuntimeStage, StageEdge>> {
+    implements Function<DAG<IRVertex, IREdge<I, O>>, DAG<Stage, StageEdge>> {
 
   /**
    * The IR DAG to convert.
@@ -50,7 +50,7 @@ public final class LogicalDAGGenerator<I, O>
   /**
    * The builder for the logical DAG.
    */
-  private final DAGBuilder<RuntimeStage, StageEdge> logicalDAGBuilder;
+  private final DAGBuilder<Stage, StageEdge> logicalDAGBuilder;
 
   private final HashMap<IRVertex, Integer> vertexStageNumHashMap;
   private final List<List<IRVertex>> vertexListForEachStage;
@@ -66,7 +66,7 @@ public final class LogicalDAGGenerator<I, O>
   }
 
   @Override
-  public DAG<RuntimeStage, StageEdge> apply(final DAG<IRVertex, IREdge<I, O>> inputDAG) {
+  public DAG<Stage, StageEdge> apply(final DAG<IRVertex, IREdge<I, O>> inputDAG) {
     this.irDAG = inputDAG;
 
     stagePartitionIrDAG();
@@ -79,18 +79,18 @@ public final class LogicalDAGGenerator<I, O>
     final Set<RuntimeVertex> currentStageVertices = new HashSet<>();
     final Set<StageEdgeBuilder> currentStageIncomingEdges = new HashSet<>();
     final Map<String, RuntimeVertex> irVertexIdToRuntimeVertexMap = new HashMap<>();
-    final Map<String, RuntimeStage> runtimeVertexIdToRuntimeStageMap = new HashMap<>();
+    final Map<String, Stage> runtimeVertexIdToRuntimeStageMap = new HashMap<>();
 
     for (final List<IRVertex> stageVertices : vertexListForEachStage) {
       // Create a new runtime stage builder.
-      final RuntimeStageBuilder runtimeStageBuilder = new RuntimeStageBuilder();
+      final StageBuilder stageBuilder = new StageBuilder();
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {
 
         // Convert the vertex into a runtime vertex, and add to the logical DAG
         final RuntimeVertex runtimeVertex = convertVertex(irVertex);
-        runtimeStageBuilder.addRuntimeVertex(runtimeVertex);
+        stageBuilder.addRuntimeVertex(runtimeVertex);
         currentStageVertices.add(runtimeVertex);
         irVertexIdToRuntimeVertexMap.put(irVertex.getId(), runtimeVertex);
 
@@ -109,13 +109,15 @@ public final class LogicalDAGGenerator<I, O>
 
           // either the edge is within the stage
           if (currentStageVertices.contains(srcRuntimeVertex) && currentStageVertices.contains(dstRuntimeVertex)) {
-            runtimeStageBuilder.connectInternalRuntimeVertices(srcRuntimeVertex, dstRuntimeVertex);
+            stageBuilder.connectInternalRuntimeVertices(
+                RuntimeAttributeConverter.convertEdgeAttributes(irEdge.getAttributes()),
+                srcRuntimeVertex, dstRuntimeVertex);
 
           // or the edge is from another stage
           } else {
-            final RuntimeStage srcRuntimeStage = runtimeVertexIdToRuntimeStageMap.get(srcRuntimeVertex.getId());
+            final Stage srcStage = runtimeVertexIdToRuntimeStageMap.get(srcRuntimeVertex.getId());
 
-            if (srcRuntimeStage == null) {
+            if (srcStage == null) {
               throw new IllegalVertexOperationException(
                   "srcRuntimeVertex and/or dstRuntimeVertex are not yet added to the ExecutionPlanBuilder");
             }
@@ -124,20 +126,20 @@ public final class LogicalDAGGenerator<I, O>
             newEdgeBuilder.setEdgeAttributes(RuntimeAttributeConverter.convertEdgeAttributes(irEdge.getAttributes()));
             newEdgeBuilder.setSrcRuntimeVertex(srcRuntimeVertex);
             newEdgeBuilder.setDstRuntimeVertex(dstRuntimeVertex);
-            newEdgeBuilder.setSrcRuntimeStage(srcRuntimeStage);
+            newEdgeBuilder.setSrcStage(srcStage);
             currentStageIncomingEdges.add(newEdgeBuilder);
           }
         }));
       }
 
       // If this runtime stage contains at least one vertex, build it!
-      if (!runtimeStageBuilder.isEmpty()) {
-        final RuntimeStage currentStage = runtimeStageBuilder.build();
+      if (!stageBuilder.isEmpty()) {
+        final Stage currentStage = stageBuilder.build();
         logicalDAGBuilder.addVertex(currentStage);
 
         // Add this stage as the destination stage for all the incoming edges.
         currentStageIncomingEdges.forEach(stageEdgeBuilder -> {
-          stageEdgeBuilder.setDstRuntimeStage(currentStage);
+          stageEdgeBuilder.setDstStage(currentStage);
           final StageEdge stageEdge = stageEdgeBuilder.build();
           logicalDAGBuilder.connectVertices(stageEdge);
         });

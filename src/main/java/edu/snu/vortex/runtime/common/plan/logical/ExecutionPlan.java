@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * Represents a job.
- * Each execution plan consists of a list of {@link RuntimeStage} to execute, in a topological order.
+ * Each execution plan consists of a list of {@link Stage} to execute, in a topological order.
  * An execution plan is submitted to {@link edu.snu.vortex.runtime.master.RuntimeMaster} once created.
  */
 public final class ExecutionPlan {
@@ -29,10 +29,10 @@ public final class ExecutionPlan {
 
   private final String id;
 
-  private final DAG<RuntimeStage, StageEdge> runtimeStageDAG;
+  private final DAG<Stage, StageEdge> runtimeStageDAG;
 
   public ExecutionPlan(final String id,
-                       final DAG<RuntimeStage, StageEdge> runtimeStageDAG) {
+                       final DAG<Stage, StageEdge> runtimeStageDAG) {
     this.id = id;
     this.runtimeStageDAG = runtimeStageDAG;
   }
@@ -41,7 +41,7 @@ public final class ExecutionPlan {
     return id;
   }
 
-  public DAG<RuntimeStage, StageEdge> getRuntimeStageDAG() {
+  public DAG<Stage, StageEdge> getRuntimeStageDAG() {
     return runtimeStageDAG;
   }
 

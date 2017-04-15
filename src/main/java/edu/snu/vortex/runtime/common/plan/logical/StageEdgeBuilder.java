@@ -24,8 +24,8 @@ import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 public final class StageEdgeBuilder {
   private final String stageEdgeId;
   private RuntimeAttributeMap edgeAttributes;
-  private RuntimeStage srcRuntimeStage;
-  private RuntimeStage dstRuntimeStage;
+  private Stage srcStage;
+  private Stage dstStage;
   private RuntimeVertex srcRuntimeVertex;
   private RuntimeVertex dstRuntimeVertex;
 
@@ -41,12 +41,12 @@ public final class StageEdgeBuilder {
     this.edgeAttributes = edgeAttributes;
   }
 
-  public void setSrcRuntimeStage(final RuntimeStage srcRuntimeStage) {
-    this.srcRuntimeStage = srcRuntimeStage;
+  public void setSrcStage(final Stage srcStage) {
+    this.srcStage = srcStage;
   }
 
-  public void setDstRuntimeStage(final RuntimeStage dstRuntimeStage) {
-    this.dstRuntimeStage = dstRuntimeStage;
+  public void setDstStage(final Stage dstStage) {
+    this.dstStage = dstStage;
   }
 
   public void setSrcRuntimeVertex(final RuntimeVertex srcRuntimeVertex) {
@@ -59,6 +59,6 @@ public final class StageEdgeBuilder {
 
   public StageEdge build() {
     return new StageEdge(stageEdgeId,
-        edgeAttributes, srcRuntimeStage, dstRuntimeStage, srcRuntimeVertex, dstRuntimeVertex);
+        edgeAttributes, srcStage, dstStage, srcRuntimeVertex, dstRuntimeVertex);
   }
 }

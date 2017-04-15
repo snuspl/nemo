@@ -17,17 +17,16 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
-import edu.snu.vortex.utils.dag.Edge;
 
 import java.io.Serializable;
 
 /**
  * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
-public final class StageBoundaryEdgeInfo extends Edge<PhysicalStage> implements Serializable {
+public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> implements Serializable {
   private final String stageBoundaryEdgeInfoId;
-  private final RuntimeAttributeMap edgeAttributes;
 
   /**
    * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
@@ -53,9 +52,8 @@ public final class StageBoundaryEdgeInfo extends Edge<PhysicalStage> implements 
                                final RuntimeAttributeMap externalVertexAttr,
                                final PhysicalStage srcStage,
                                final PhysicalStage dstStage) {
-    super(srcStage, dstStage);
+    super(edgeAttributes, srcStage, dstStage);
     this.stageBoundaryEdgeInfoId = runtimeEdgeId;
-    this.edgeAttributes = edgeAttributes;
     this.srcVertex = srcVertex;
     this.dstVertex = dstVertex;
     this.externalVertexAttr = externalVertexAttr;
@@ -63,10 +61,6 @@ public final class StageBoundaryEdgeInfo extends Edge<PhysicalStage> implements 
 
   public String getStageBoundaryEdgeInfoId() {
     return stageBoundaryEdgeInfoId;
-  }
-
-  public RuntimeAttributeMap getEdgeAttributes() {
-    return edgeAttributes;
   }
 
   public RuntimeVertex getSrcVertex() {
@@ -87,7 +81,6 @@ public final class StageBoundaryEdgeInfo extends Edge<PhysicalStage> implements 
     sb.append("stageBoundaryEdgeInfoId='").append(stageBoundaryEdgeInfoId).append('\'');
     sb.append(", src='").append(getSrc().getId());
     sb.append(", dst='").append(getDst().getId());
-    sb.append(", edgeAttributes=").append(edgeAttributes);
     sb.append(", externalVertexId='").append(srcVertex).append('\'');
     sb.append(", externalVertexAttr=").append(externalVertexAttr);
     sb.append('}');

@@ -17,14 +17,13 @@ package edu.snu.vortex.runtime.common.plan.logical;
 
 
 import edu.snu.vortex.runtime.common.*;
-import edu.snu.vortex.utils.dag.Edge;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 
 /**
  * Stage Edge.
  */
-public final class StageEdge extends Edge<RuntimeStage> {
+public final class StageEdge extends RuntimeEdge<Stage> {
   private final String stageEdgeId;
-  private final RuntimeAttributeMap edgeAttributes;
   private final RuntimeVertex srcRuntimeVertex;
   private final RuntimeVertex dstRuntimeVertex;
 
@@ -32,30 +31,25 @@ public final class StageEdge extends Edge<RuntimeStage> {
    * Represents the edge between vertices in a logical plan.
    * @param irEdgeId id of this edge.
    * @param edgeAttributes to control the data flow on this edge.
-   * @param srcRuntimeStage source runtime stage.
-   * @param dstRuntimeStage destination runtime stage.
-   * @param srcRuntimeVertex source vertex (in srcRuntimeStage).
-   * @param dstRuntimeVertex destination vertex (in dstRuntimeStage).
+   * @param srcStage source runtime stage.
+   * @param dstStage destination runtime stage.
+   * @param srcRuntimeVertex source vertex (in srcStage).
+   * @param dstRuntimeVertex destination vertex (in dstStage).
    */
   public StageEdge(final String irEdgeId,
                    final RuntimeAttributeMap edgeAttributes,
-                   final RuntimeStage srcRuntimeStage,
-                   final RuntimeStage dstRuntimeStage,
+                   final Stage srcStage,
+                   final Stage dstStage,
                    final RuntimeVertex srcRuntimeVertex,
                    final RuntimeVertex dstRuntimeVertex) {
-    super(srcRuntimeStage, dstRuntimeStage);
-    this.stageEdgeId = RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId);
-    this.edgeAttributes = edgeAttributes;
+    super(edgeAttributes, srcStage, dstStage);
+    this.stageEdgeId = RuntimeIdGenerator.generateStageEdgeId(irEdgeId);
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.dstRuntimeVertex = dstRuntimeVertex;
   }
 
   public String getId() {
     return stageEdgeId;
-  }
-
-  public RuntimeAttributeMap getEdgeAttributes() {
-    return edgeAttributes;
   }
 
   public RuntimeVertex getSrcRuntimeVertex() {
