@@ -82,20 +82,7 @@ public final class SimpleRuntime {
               // After that, it applies its transform function to the data read.
               final Set<StageBoundaryEdgeInfo> inEdges = taskGroup.getIncomingEdges().get(vertexId);
               final Map<Transform, Object> sideInputs = getSideInputs(inEdges, task, edgeIdToChannels);
-              final Set<StageBoundaryEdgeInfo> nonSideInputEdges = getNonSideInputEdges(inEdges);
-              if (nonSideInputEdges.size() > 1) {
-                // We flatten the data that come in through multiple non-sideInput inEdges.
-                // Flatten is a primitive transform used in CoGroupByKey.
-                final ArrayList<Element> flattenedData = new ArrayList<>();
-                nonSideInputEdges.forEach(stageBoundaryEdgeInfo -> {
-                  edgeIdToChannels.get(stageBoundaryEdgeInfo.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read()
-                      .forEach(flattenedData::add);
-                });
-                data = flattenedData;
-              } else if (nonSideInputEdges.size() == 1) { // We fetch 'data' from the incoming stage
-                final StageBoundaryEdgeInfo inEdge = nonSideInputEdges.iterator().next();
-                data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
-              }
+              final Iterator<StageBoundaryEdgeInfo> nonSideInputEdges = getNonSideInputEdges(inEdges).iterator();
 
               final OperatorTask operatorTask = (OperatorTask) task;
 
@@ -105,7 +92,16 @@ public final class SimpleRuntime {
               final Transform.Context transformContext = new ContextImpl(sideInputs);
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
-              transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+              if (nonSideInputEdges.hasNext()) {
+                while (nonSideInputEdges.hasNext()) {
+                  final StageBoundaryEdgeInfo inEdge = nonSideInputEdges.next();
+                  // We fetch 'data' from the incoming stage
+                  data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
+                  transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+                }
+              } else {
+                transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+              }
               transform.close();
               data = outputCollector.getOutputList();
             } else {
