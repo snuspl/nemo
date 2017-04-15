@@ -23,7 +23,6 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
  * Stage Edge.
  */
 public final class StageEdge extends RuntimeEdge<Stage> {
-  private final String stageEdgeId;
   private final RuntimeVertex srcRuntimeVertex;
   private final RuntimeVertex dstRuntimeVertex;
 
@@ -42,14 +41,9 @@ public final class StageEdge extends RuntimeEdge<Stage> {
                    final Stage dstStage,
                    final RuntimeVertex srcRuntimeVertex,
                    final RuntimeVertex dstRuntimeVertex) {
-    super(edgeAttributes, srcStage, dstStage);
-    this.stageEdgeId = RuntimeIdGenerator.generateStageEdgeId(irEdgeId);
+    super(RuntimeIdGenerator.generateStageEdgeId(irEdgeId), edgeAttributes, srcStage, dstStage);
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.dstRuntimeVertex = dstRuntimeVertex;
-  }
-
-  public String getId() {
-    return stageEdgeId;
   }
 
   public RuntimeVertex getSrcRuntimeVertex() {

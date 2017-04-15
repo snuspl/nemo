@@ -43,14 +43,17 @@ public final class StageBuilder {
 
   /**
    * Connects two {@link RuntimeVertex} in this stage.
+   * @param irEdgeId the IR edge ID to be used for this edge.
    * @param edgeAttributes edge attributes of the edge.
    * @param srcVertex source vertex.
    * @param dstVertex destination vertex.
    */
-  public void connectInternalRuntimeVertices(final RuntimeAttributeMap edgeAttributes,
+  public void connectInternalRuntimeVertices(final String irEdgeId,
+                                             final RuntimeAttributeMap edgeAttributes,
                                              final RuntimeVertex srcVertex,
                                              final RuntimeVertex dstVertex) {
-    final RuntimeEdge<RuntimeVertex> edge = new RuntimeEdge<>(edgeAttributes, srcVertex, dstVertex);
+    final RuntimeEdge<RuntimeVertex> edge =
+        new RuntimeEdge<>(RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId), edgeAttributes, srcVertex, dstVertex);
     stageInternalDAGBuilder.connectVertices(edge);
   }
 
