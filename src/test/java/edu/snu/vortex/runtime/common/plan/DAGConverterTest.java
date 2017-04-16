@@ -132,9 +132,9 @@ public final class DAGConverterTest<I, O> {
     v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
 
-    final IRVertex v7 = new OperatorVertex(t);
-    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
+//    final IRVertex v7 = new OperatorVertex(t);
+//    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
+//    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final IRVertex v8 = new OperatorVertex(t);
     v8.setAttr(Attribute.IntegerKey.Parallelism, 2);
@@ -179,15 +179,15 @@ public final class DAGConverterTest<I, O> {
     e6.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e6.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
-    final IREdge e7 = new IREdge(IREdge.Type.OneToOne, v7, v5);
-    e7.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e7.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
-    e7.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
-
-    final IREdge e8 = new IREdge(IREdge.Type.OneToOne, v5, v8);
-    e8.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
-    e8.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    e8.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+//    final IREdge e7 = new IREdge(IREdge.Type.OneToOne, v7, v5);
+//    e7.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+//    e7.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
+//    e7.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+//
+//    final IREdge e8 = new IREdge(IREdge.Type.OneToOne, v5, v8);
+//    e8.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
+//    e8.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
+//    e8.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
     // Stage 1 = {v1, v2, v3}
     irDAGBuilder.connectVertices(e1);
@@ -226,7 +226,9 @@ public final class DAGConverterTest<I, O> {
     final Stage stage4 = sortedLogicalDAG.get(3);
     final Stage stage5 = sortedLogicalDAG.get(3);
 
-    assertEquals(logicalDAG.getVertices().size(), 5);
+    // TODO #148: Optimize Stage Partitioning Algorithm in VortexBackend
+    // The following asserts depend on how stage partitioning is defined; test must be rewritten accordingly.
+//    assertEquals(logicalDAG.getVertices().size(), 5);
 //    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
 //    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
 //    assertEquals(logicalDAG.getIncomingEdges(stage3).size(), 1);
