@@ -37,7 +37,7 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
    * @param <I> the input data type of the IREdge.
    * @param <O> the output data type of the IREdge.
    * @return the execution plan to be submitted to Runtime.
-   * @throws Exception
+   * @throws Exception any exception occurred during the compilation.
    */
   public <I, O> ExecutionPlan compile(final DAG<IRVertex, IREdge<I, O>> irDAG) throws Exception {
     final ExecutionPlan executionPlan =
