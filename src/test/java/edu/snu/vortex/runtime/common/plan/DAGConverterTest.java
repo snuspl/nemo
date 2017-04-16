@@ -107,7 +107,6 @@ public final class DAGConverterTest<I, O> {
     when(s.createReader(null)).thenReturn(r);
     when(s.splitIntoBundles(3L, null)).thenReturn(dummyReaderList);
 
-
     final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
@@ -217,7 +216,7 @@ public final class DAGConverterTest<I, O> {
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
-//    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
     final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
@@ -225,8 +224,9 @@ public final class DAGConverterTest<I, O> {
     final Stage stage2 = sortedLogicalDAG.get(1);
     final Stage stage3 = sortedLogicalDAG.get(2);
     final Stage stage4 = sortedLogicalDAG.get(3);
+    final Stage stage5 = sortedLogicalDAG.get(3);
 
-    assertEquals(logicalDAG.getVertices().size(), 4);
+    assertEquals(logicalDAG.getVertices().size(), 5);
 //    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
 //    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
 //    assertEquals(logicalDAG.getIncomingEdges(stage3).size(), 1);

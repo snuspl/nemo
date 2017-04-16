@@ -43,12 +43,6 @@ public final class SimpleRuntime {
   private static final String HACK_DUMMY_CHAND_ID = "HACK";
 
   /**
-   * Physical DAG and Logical DAG have incomplete data structures.
-   * As a result the dependency information between tasks within a stage in Physical DAG is lost in the translation.
-   * So for now we just assume that a stage is a sequence of tasks that only have 0 or 1 child/parent.
-   * This hack will be fixed by the following to do.
-   * TODO #132: Refactor DAG
-   *
    * @param physicalPlan Physical Plan.
    * @throws Exception during execution.
    */
@@ -67,7 +61,7 @@ public final class SimpleRuntime {
         final DAG<Task, RuntimeEdge<Task>> taskDAG = taskGroup.getTaskDAG();
         final List<Task> sortedTasks = taskDAG.getTopologicalSort();
         sortedTasks.forEach(task -> {
-          Iterable<Element> data = null; // hack (TODO #132: Refactor DAG)
+          Iterable<Element> data = null;
           final String vertexId = task.getRuntimeVertexId();
 
           // TODO #141: Remove instanceof
@@ -120,7 +114,7 @@ public final class SimpleRuntime {
               (data.toString().length() > 5000 ?
                   data.toString().substring(0, 5000) + "..." : data.toString()));
 
-          // Check for any outgoing edges to other stages and write output.
+          // Check for any outgoing edge to other stages and write output.
           final Set<StageBoundaryEdgeInfo> outEdgesToOtherStages = stageOutgoingEdges.stream().filter(
               outEdgeInfo -> outEdgeInfo.getSrcVertex().getId().equals(vertexId)).collect(Collectors.toSet());
 
@@ -130,7 +124,7 @@ public final class SimpleRuntime {
                 outEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism), finalData));
           }
 
-          // Check for any outgoing edges within the stage and write output.
+          // Check for any outgoing edge within the stage and write output.
           final Set<RuntimeEdge<Task>> outEdgesWithinStage = taskDAG.getOutgoingEdges(task);
 
           if (outEdgesWithinStage != null) {

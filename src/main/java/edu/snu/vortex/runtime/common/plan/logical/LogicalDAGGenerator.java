@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.Local;
+import static edu.snu.vortex.compiler.ir.attribute.Attribute.SideInput;
 
 /**
  * A function that converts an IR DAG to runtime's logical DAG.
@@ -99,6 +100,7 @@ public final class LogicalDAGGenerator<I, O>
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
           final RuntimeVertex srcRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getSrcIRVertex().getId());
+          final List<List<IRVertex>> tester = vertexListForEachStage;
           final RuntimeVertex dstRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getDstIRVertex().getId());
 
@@ -180,6 +182,7 @@ public final class LogicalDAGGenerator<I, O>
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne))
             .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
+            .filter(edge -> edge.getAttr(Attribute.Key.SideInput) != SideInput)
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()));
