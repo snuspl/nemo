@@ -22,7 +22,10 @@ import edu.snu.vortex.utils.dag.DAG;
 import java.io.Serializable;
 
 /**
- * TaskGroup.
+ * A TaskGroup is a grouping of {@link Task} that belong to a stage.
+ * Executors receive units of TaskGroups during job execution,
+ * and thus the resource type of all tasks of a TaskGroup must be identical.
+ * A stage contains a list of TaskGroups whose length corresponds to stage/operator parallelism.
  */
 public final class TaskGroup implements Serializable {
   private final String taskGroupId;

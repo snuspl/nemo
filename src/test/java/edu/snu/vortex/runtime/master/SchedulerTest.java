@@ -36,7 +36,7 @@ public final class SchedulerTest {
 
   @Test
   public void setUp() {
-    final DAGBuilder<PhysicalStage, StageBoundaryEdgeInfo> builder = new DAGBuilder<>();
+    final DAGBuilder<PhysicalStage, PhysicalStageEdge> builder = new DAGBuilder<>();
 
     final TaskGroup taskGroup1 = mock(TaskGroup.class);
     when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Compute);

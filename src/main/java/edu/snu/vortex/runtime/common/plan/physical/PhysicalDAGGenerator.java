@@ -37,16 +37,22 @@ import java.util.function.Function;
  * A function that converts a runtime's logical DAG to physical DAG.
  */
 public final class PhysicalDAGGenerator
-    implements Function<DAG<Stage, StageEdge>, DAG<PhysicalStage, StageBoundaryEdgeInfo>> {
+    implements Function<DAG<Stage, StageEdge>, DAG<PhysicalStage, PhysicalStageEdge>> {
 
-  private final DAGBuilder<PhysicalStage, StageBoundaryEdgeInfo> physicalDAGBuilder;
+  private final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder;
 
   public PhysicalDAGGenerator() {
     physicalDAGBuilder = new DAGBuilder<>();
   }
 
+  /**
+   * Converts the given logical DAG to a physical DAG for execution.
+   * @param logicalDAG submitted to Runtime in {@link ExecutionPlan}, an output of {@link LogicalDAGGenerator}.
+   * @return the converted physical DAG to execute,
+   * which consists of {@link PhysicalStage} and their relationship represented by {@link PhysicalStageEdge}.
+   */
   @Override
-  public DAG<PhysicalStage, StageBoundaryEdgeInfo> apply(final DAG<Stage, StageEdge> logicalDAG) {
+  public DAG<PhysicalStage, PhysicalStageEdge> apply(final DAG<Stage, StageEdge> logicalDAG) {
     final Map<String, PhysicalStage> runtimeStageIdToPhysicalStageMap = new HashMap<>();
 
     try {
@@ -59,10 +65,10 @@ public final class PhysicalDAGGenerator
         final RuntimeAttributeMap firstVertexAttrs = stageVertices.iterator().next().getVertexAttributes();
         int stageParallelism = firstVertexAttrs.get(RuntimeAttribute.IntegerKey.Parallelism);
         stageVertices.forEach(runtimeVertex -> {
+          // This check should be done in the compiler backend
           int vertexParallelism =
               runtimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
           if (vertexParallelism != stageParallelism) {
-            // This check should be done in the compiler backend
             // TODO #103: Integrity check in execution plan.
             throw new RuntimeException("All vertices in a stage should have same parallelism");
           }
@@ -129,7 +135,7 @@ public final class PhysicalDAGGenerator
           final PhysicalStage srcStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getSrc().getStageId());
           final PhysicalStage dstStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getDst().getStageId());
 
-          physicalDAGBuilder.connectVertices(new StageBoundaryEdgeInfo(stageEdge.getRuntimeEdgeId(),
+          physicalDAGBuilder.connectVertices(new PhysicalStageEdge(stageEdge.getRuntimeEdgeId(),
               stageEdge.getEdgeAttributes(),
               stageEdge.getSrcRuntimeVertex(), stageEdge.getDstRuntimeVertex(),
               stageEdge.getSrcRuntimeVertex().getVertexAttributes(), srcStage, dstStage));

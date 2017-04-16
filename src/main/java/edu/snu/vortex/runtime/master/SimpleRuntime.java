@@ -49,13 +49,13 @@ public final class SimpleRuntime {
    */
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
     final Map<String, List<LocalChannel>> edgeIdToChannels = new HashMap<>();
-    final DAG<PhysicalStage, StageBoundaryEdgeInfo> stageDAG = physicalPlan.getStageDAG();
+    final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = physicalPlan.getStageDAG();
 
     // TODO #93: Implement Batch Scheduler
     stageDAG.getTopologicalSort().forEach(stage -> {
       final int stageParallelism = stage.getTaskGroupList().size();
-      final Set<StageBoundaryEdgeInfo> stageIncomingEdges = stageDAG.getIncomingEdges(stage);
-      final Set<StageBoundaryEdgeInfo> stageOutgoingEdges = stageDAG.getOutgoingEdges(stage);
+      final Set<PhysicalStageEdge> stageIncomingEdges = stageDAG.getIncomingEdges(stage);
+      final Set<PhysicalStageEdge> stageOutgoingEdges = stageDAG.getOutgoingEdges(stage);
 
       stage.getTaskGroupList().forEach(taskGroup -> {
 
@@ -76,7 +76,7 @@ public final class SimpleRuntime {
             }
           } else if (task instanceof OperatorTask) {
             // Check for any incoming edge from other stages.
-            final Set<StageBoundaryEdgeInfo> inEdgesFromOtherStages = stageIncomingEdges.stream().filter(
+            final Set<PhysicalStageEdge> inEdgesFromOtherStages = stageIncomingEdges.stream().filter(
                 stageInEdge -> stageInEdge.getDstVertex().getId().equals(vertexId)).collect(Collectors.toSet());
 
             // Check for incoming edge from this stage.
@@ -116,7 +116,7 @@ public final class SimpleRuntime {
                   data.toString().substring(0, 5000) + "..." : data.toString()));
 
           // Check for any outgoing edge to other stages and write output.
-          final Set<StageBoundaryEdgeInfo> outEdgesToOtherStages = stageOutgoingEdges.stream().filter(
+          final Set<PhysicalStageEdge> outEdgesToOtherStages = stageOutgoingEdges.stream().filter(
               outEdgeInfo -> outEdgeInfo.getSrcVertex().getId().equals(vertexId)).collect(Collectors.toSet());
 
           if (outEdgesToOtherStages != null) {
@@ -145,7 +145,7 @@ public final class SimpleRuntime {
    * @param getSideInputEdges true if side-input edges are to be filtered, false otherwise.
    * @return the set of filtered edges.
    */
-  private Set<RuntimeEdge> filterInputEdges(final Set<StageBoundaryEdgeInfo> inEdgesFromOtherStages,
+  private Set<RuntimeEdge> filterInputEdges(final Set<PhysicalStageEdge> inEdgesFromOtherStages,
                                             final Set<RuntimeEdge<Task>> inEdgesWithinStage,
                                             final boolean getSideInputEdges) {
     final Set<RuntimeEdge> filteredEdges = new HashSet<>();
@@ -190,8 +190,8 @@ public final class SimpleRuntime {
         }
 
         final Transform srcTransform;
-        if (inEdge instanceof StageBoundaryEdgeInfo) {
-          srcTransform = ((RuntimeOperatorVertex) ((StageBoundaryEdgeInfo) inEdge).getSrcVertex())
+        if (inEdge instanceof PhysicalStageEdge) {
+          srcTransform = ((RuntimeOperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
               .getOperatorVertex().getTransform();
         } else {
           srcTransform = ((OperatorTask) inEdge.getSrc()).getTransform();

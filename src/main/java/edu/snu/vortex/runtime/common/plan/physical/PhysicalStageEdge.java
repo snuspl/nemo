@@ -25,7 +25,7 @@ import java.io.Serializable;
 /**
  * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
-public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> implements Serializable {
+public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> implements Serializable {
   /**
    * The source {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}.
    * This could either belong to the external stage or this stage.
@@ -43,13 +43,13 @@ public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> impl
    */
   private final RuntimeAttributeMap externalVertexAttr;
 
-  public StageBoundaryEdgeInfo(final String runtimeEdgeId,
-                               final RuntimeAttributeMap edgeAttributes,
-                               final RuntimeVertex srcVertex,
-                               final RuntimeVertex dstVertex,
-                               final RuntimeAttributeMap externalVertexAttr,
-                               final PhysicalStage srcStage,
-                               final PhysicalStage dstStage) {
+  public PhysicalStageEdge(final String runtimeEdgeId,
+                           final RuntimeAttributeMap edgeAttributes,
+                           final RuntimeVertex srcVertex,
+                           final RuntimeVertex dstVertex,
+                           final RuntimeAttributeMap externalVertexAttr,
+                           final PhysicalStage srcStage,
+                           final PhysicalStage dstStage) {
     super(runtimeEdgeId, edgeAttributes, srcStage, dstStage);
     this.srcVertex = srcVertex;
     this.dstVertex = dstVertex;
@@ -70,7 +70,7 @@ public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> impl
 
   @Override
   public String toString() {
-    final StringBuffer sb = new StringBuffer("StageBoundaryEdgeInfo{");
+    final StringBuffer sb = new StringBuffer("PhysicalStageEdge{");
     sb.append("runtimeEdgeId='").append(getRuntimeEdgeId()).append('\'');
     sb.append(", src='").append(getSrc().getId());
     sb.append(", dst='").append(getDst().getId());

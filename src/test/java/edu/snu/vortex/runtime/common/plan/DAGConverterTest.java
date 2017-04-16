@@ -65,7 +65,7 @@ public final class DAGConverterTest<I, O> {
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
-    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
     final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
@@ -132,6 +132,7 @@ public final class DAGConverterTest<I, O> {
     v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
 
+    // TODO #13: Implement Join Node
 //    final IRVertex v7 = new OperatorVertex(t);
 //    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
 //    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
@@ -146,8 +147,10 @@ public final class DAGConverterTest<I, O> {
     irDAGBuilder.addVertex(v4);
     irDAGBuilder.addVertex(v5);
     irDAGBuilder.addVertex(v6);
-//    irDAGBuilder.addVertex(v7);
     irDAGBuilder.addVertex(v8);
+
+    // TODO #13: Implement Join Node
+//    irDAGBuilder.addVertex(v7);
 
     final IREdge e1 = new IREdge(IREdge.Type.OneToOne, v1, v2);
     e1.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
@@ -179,6 +182,7 @@ public final class DAGConverterTest<I, O> {
     e6.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     e6.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
 
+    // TODO #13: Implement Join Node
 //    final IREdge e7 = new IREdge(IREdge.Type.OneToOne, v7, v5);
 //    e7.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
 //    e7.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
@@ -239,7 +243,7 @@ public final class DAGConverterTest<I, O> {
 
     // Test Physical DAG
 
-//    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+//    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 //    final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
 //    final PhysicalStage physicalStage1 = sortedPhysicalDAG.get(0);
 //    final PhysicalStage physicalStage2 = sortedPhysicalDAG.get(1);

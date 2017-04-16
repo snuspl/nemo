@@ -27,10 +27,10 @@ public final class PhysicalPlan {
 
   private final String id;
 
-  private final DAG<PhysicalStage, StageBoundaryEdgeInfo> stageDAG;
+  private final DAG<PhysicalStage, PhysicalStageEdge> stageDAG;
 
   public PhysicalPlan(final String id,
-                      final DAG<PhysicalStage, StageBoundaryEdgeInfo> stageDAG) {
+                      final DAG<PhysicalStage, PhysicalStageEdge> stageDAG) {
     this.id = id;
     this.stageDAG = stageDAG;
   }
@@ -39,7 +39,7 @@ public final class PhysicalPlan {
     return id;
   }
 
-  public DAG<PhysicalStage, StageBoundaryEdgeInfo> getStageDAG() {
+  public DAG<PhysicalStage, PhysicalStageEdge> getStageDAG() {
     return stageDAG;
   }
 

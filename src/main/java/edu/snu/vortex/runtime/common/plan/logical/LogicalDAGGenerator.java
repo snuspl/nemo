@@ -36,6 +36,7 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.SideInput;
 
 /**
  * A function that converts an IR DAG to runtime's logical DAG.
+ * Designed to be called in {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
  * @param <I> Input type of IREdge.
  * @param <O> Output type of IREdge.
  */
@@ -68,6 +69,12 @@ public final class LogicalDAGGenerator<I, O>
     stageNumber = new AtomicInteger(0);
   }
 
+  /**
+   * Converts the given IR DAG to its Runtime representation, a logical DAG.
+   * @param inputDAG the optimized IR DAG to be submitted to Runtime after the conversion.
+   * @return the converted logical DAG to submit to Runtime,
+   * which consists of {@link Stage} and their relationship represented by {@link StageEdge}.
+   */
   @Override
   public DAG<Stage, StageEdge> apply(final DAG<IRVertex, IREdge<I, O>> inputDAG) {
     this.irDAG = inputDAG;
