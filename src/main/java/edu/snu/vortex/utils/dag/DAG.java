@@ -42,6 +42,13 @@ public final class DAG<V, E extends Edge<V>> {
     this.outgoingEdges = outgoingEdges;
   }
 
+  /**
+   * Converts a DAG into another DAG according to a function.
+   * @param function to apply when converting a DAG to another.
+   * @param <V2> the converted DAG's vertex type.
+   * @param <E2> the converted DAG's edge type.
+   * @return the converted DAG.
+   */
   public <V2, E2 extends Edge<V2>> DAG<V2, E2> convert(final Function<DAG<V, E>, DAG<V2, E2>> function) {
     return function.apply(this);
   }

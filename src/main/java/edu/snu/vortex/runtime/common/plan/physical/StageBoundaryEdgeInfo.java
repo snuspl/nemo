@@ -27,14 +27,14 @@ import java.io.Serializable;
  */
 public final class StageBoundaryEdgeInfo extends RuntimeEdge<PhysicalStage> implements Serializable {
   /**
-   * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
-   * The vertex is connected to a vertex of this stage connected by the edge this class represents.
+   * The source {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}.
+   * This could either belong to the external stage or this stage.
    */
   private final RuntimeVertex srcVertex;
 
   /**
-   * The endpoint {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex} in the other stage.
-   * The vertex is connected to a vertex of this stage connected by the edge this class represents.
+   * The destination {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}.
+   * This could either belong to the external stage or this stage.
    */
   private final RuntimeVertex dstVertex;
 

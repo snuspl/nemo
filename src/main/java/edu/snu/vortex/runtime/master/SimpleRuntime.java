@@ -43,6 +43,7 @@ public final class SimpleRuntime {
   private static final String HACK_DUMMY_CHAND_ID = "HACK";
 
   /**
+   * Executes the given physical plan.
    * @param physicalPlan Physical Plan.
    * @throws Exception during execution.
    */
@@ -137,6 +138,13 @@ public final class SimpleRuntime {
     });
   }
 
+  /**
+   * Filters input edges (either side-input, or non-side-input).
+   * @param inEdgesFromOtherStages edges from other stages.
+   * @param inEdgesWithinStage edges within the stage.
+   * @param getSideInputEdges true if side-input edges are to be filtered, false otherwise.
+   * @return the set of filtered edges.
+   */
   private Set<RuntimeEdge> filterInputEdges(final Set<StageBoundaryEdgeInfo> inEdgesFromOtherStages,
                                             final Set<RuntimeEdge<Task>> inEdgesWithinStage,
                                             final boolean getSideInputEdges) {
@@ -158,6 +166,13 @@ public final class SimpleRuntime {
     return filteredEdges;
   }
 
+  /**
+   * Retrieves side-inputs based on the given side-input edges.
+   * @param sideInputEdges the set of side-input edges.
+   * @param task the subject task.
+   * @param edgeIdToChannels the map of runtime edge ID to channels.
+   * @return the side-inputs.
+   */
   private Map<Transform, Object> getSideInputs(final Set<RuntimeEdge> sideInputEdges,
                                                final Task task,
                                                final Map<String, List<LocalChannel>> edgeIdToChannels) {
@@ -189,6 +204,14 @@ public final class SimpleRuntime {
     }
   }
 
+  /**
+   * Writes data to appropriate channels.
+   * @param srcTaskIndex to be used for one-to-one edge channels.
+   * @param edgeIdToChannels the map of runtime edge ID to channels.
+   * @param edge to determine how data should be written to the corresponding channels.
+   * @param dstParallelism to be used for finding the corresponding channel for scatter-gather edges.
+   * @param data to write.
+   */
   private void writeToChannels(final int srcTaskIndex,
                                final Map<String, List<LocalChannel>> edgeIdToChannels,
                                final RuntimeEdge edge,

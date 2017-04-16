@@ -52,6 +52,9 @@ public final class LogicalDAGGenerator<I, O>
    */
   private final DAGBuilder<Stage, StageEdge> logicalDAGBuilder;
 
+  /**
+   * Data structures used for stage partitioning in Vortex Backend.
+   */
   private final HashMap<IRVertex, Integer> vertexStageNumHashMap;
   private final List<List<IRVertex>> vertexListForEachStage;
   private final HashMap<Integer, Integer> stageDependencyMap;
@@ -75,6 +78,53 @@ public final class LogicalDAGGenerator<I, O>
     return logicalDAGBuilder.build();
   }
 
+  /**
+   * Partitions an IR DAG into stages. Prepares for IR -> logical DAG conversion.
+   */
+  private void stagePartitionIrDAG() {
+    // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
+    irDAG.topologicalDo(vertex -> {
+      final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdges(vertex);
+      final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
+
+      if (!inEdgeList.isPresent()) { // If Source vertex
+        createNewStage(vertex);
+      } else {
+        final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
+            .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne))
+            .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
+            .filter(edge -> edge.getAttr(Attribute.Key.SideInput) != SideInput)
+            .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
+            .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
+            .collect(Collectors.toList()));
+        final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
+            !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
+            .orElse(Optional.empty());
+
+        if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
+          // when we cannot connect vertex in other stages
+          createNewStage(vertex);
+          inEdgeList.ifPresent(edges -> edges.forEach(inEdge -> {
+            stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
+          }));
+        } else {
+          final IRVertex irVertexToConnect = edgeToConnect.get().getSrcIRVertex();
+          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(irVertexToConnect));
+          final Optional<List<IRVertex>> list =
+              vertexListForEachStage.stream().filter(l -> l.contains(irVertexToConnect)).findFirst();
+          list.ifPresent(lst -> {
+            vertexListForEachStage.remove(lst);
+            lst.add(vertex);
+            vertexListForEachStage.add(lst);
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Converts an IR DAG to logical DAG given the stage partitioned DAG data.
+   */
   private void convertToLogicalDAG() {
     final Set<RuntimeVertex> currentStageVertices = new HashSet<>();
     final Set<StageEdgeBuilder> currentStageIncomingEdges = new HashSet<>();
@@ -100,7 +150,6 @@ public final class LogicalDAGGenerator<I, O>
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
           final RuntimeVertex srcRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getSrcIRVertex().getId());
-          final List<List<IRVertex>> tester = vertexListForEachStage;
           final RuntimeVertex dstRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getDstIRVertex().getId());
 
@@ -153,6 +202,11 @@ public final class LogicalDAGGenerator<I, O>
     }
   }
 
+  /**
+   * Converts an IR vertex into a {@link RuntimeVertex} for the logical DAG.
+   * @param irVertex to convert.
+   * @return the converted Runtime Vertex.
+   */
   private RuntimeVertex convertVertex(final IRVertex irVertex) {
     final RuntimeVertex newVertex;
 
@@ -169,48 +223,10 @@ public final class LogicalDAGGenerator<I, O>
     return newVertex;
   }
 
-  private void stagePartitionIrDAG() {
-    final List<IRVertex> test = irDAG.getTopologicalSort();
-    // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
-    irDAG.topologicalDo(vertex -> {
-      final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdges(vertex);
-      final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
-
-      if (!inEdgeList.isPresent()) { // If Source vertex
-        createNewStage(vertex);
-      } else {
-        final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
-            .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne))
-            .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
-            .filter(edge -> edge.getAttr(Attribute.Key.SideInput) != SideInput)
-            .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
-            .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
-            .collect(Collectors.toList()));
-        final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
-            !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
-            .orElse(Optional.empty());
-
-        if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
-          // when we cannot connect vertex in other stages
-          createNewStage(vertex);
-          inEdgeList.ifPresent(edges -> edges.forEach(inEdge -> {
-            stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
-          }));
-        } else {
-          final IRVertex irVertexToConnect = edgeToConnect.get().getSrcIRVertex();
-          vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(irVertexToConnect));
-          final Optional<List<IRVertex>> list =
-              vertexListForEachStage.stream().filter(l -> l.contains(irVertexToConnect)).findFirst();
-          list.ifPresent(lst -> {
-            vertexListForEachStage.remove(lst);
-            lst.add(vertex);
-            vertexListForEachStage.add(lst);
-          });
-        }
-      }
-    });
-  }
-
+  /**
+   * Creates a new stage.
+   * @param irVertex the vertex which begins the stage.
+   */
   private void createNewStage(final IRVertex irVertex) {
     vertexStageNumHashMap.put(irVertex, stageNumber.getAndIncrement());
     final List<IRVertex> newList = new ArrayList<>();

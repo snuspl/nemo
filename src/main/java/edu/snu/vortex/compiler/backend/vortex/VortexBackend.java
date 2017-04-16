@@ -30,9 +30,18 @@ public final class VortexBackend implements Backend<ExecutionPlan> {
   public VortexBackend() {
   }
 
+  /**
+   * Compiles an IR DAG into an {@link ExecutionPlan} to be submitted to Runtime.
+   * The IR DAG is converted to an execution plan encapsulating a logical DAG using {@link LogicalDAGGenerator}.
+   * @param irDAG to compile.
+   * @param <I> the input data type of the IREdge.
+   * @param <O> the output data type of the IREdge.
+   * @return the execution plan to be submitted to Runtime.
+   * @throws Exception
+   */
   public <I, O> ExecutionPlan compile(final DAG<IRVertex, IREdge<I, O>> irDAG) throws Exception {
-    final ExecutionPlan executionPlan = new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(),
-        irDAG.convert(new LogicalDAGGenerator<>()));
+    final ExecutionPlan executionPlan =
+        new ExecutionPlan(RuntimeIdGenerator.generateExecutionPlanId(), irDAG.convert(new LogicalDAGGenerator<>()));
     return executionPlan;
   }
 }

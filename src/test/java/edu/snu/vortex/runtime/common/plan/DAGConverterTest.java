@@ -216,7 +216,6 @@ public final class DAGConverterTest<I, O> {
 
     final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
-    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
     final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
@@ -239,6 +238,8 @@ public final class DAGConverterTest<I, O> {
 //    assertEquals(logicalDAG.getOutgoingEdges(stage4).size(), 0);
 
     // Test Physical DAG
+
+//    final DAG<PhysicalStage, StageBoundaryEdgeInfo> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 //    final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
 //    final PhysicalStage physicalStage1 = sortedPhysicalDAG.get(0);
 //    final PhysicalStage physicalStage2 = sortedPhysicalDAG.get(1);
