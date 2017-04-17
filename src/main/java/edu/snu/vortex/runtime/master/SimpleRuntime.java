@@ -97,10 +97,10 @@ public final class SimpleRuntime {
                   final StageBoundaryEdgeInfo inEdge = nonSideInputEdges.next();
                   // We fetch 'data' from the incoming stage
                   data = edgeIdToChannels.get(inEdge.getStageBoundaryEdgeInfoId()).get(task.getIndex()).read();
-                  transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+                  transform.onData(data); // hack (TODO #132: Refactor DAG)
                 }
               } else {
-                transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+                transform.onData(data); // hack (TODO #132: Refactor DAG)
               }
               transform.close();
               data = outputCollector.getOutputList();

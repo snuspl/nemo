@@ -79,7 +79,7 @@ public final class MapReduce {
     }
 
     @Override
-    public void onData(final Iterable<Element> data, final String srcVertexId) {
+    public void onData(final Iterable<Element> data) {
     }
 
     @Override
