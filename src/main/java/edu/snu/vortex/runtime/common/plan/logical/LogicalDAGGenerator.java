@@ -91,7 +91,7 @@ public final class LogicalDAGGenerator<I, O>
   private void stagePartitionIrDAG() {
     // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
     irDAG.topologicalDo(vertex -> {
-      final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdges(vertex);
+      final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdgesOf(vertex);
       final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
 
       if (!inEdgeList.isPresent()) { // If Source vertex
@@ -152,7 +152,7 @@ public final class LogicalDAGGenerator<I, O>
         irVertexIdToRuntimeVertexMap.put(irVertex.getId(), runtimeVertex);
 
         // Connect all the incoming edges for the runtime vertex
-        final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdges(irVertex);
+        final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdgesOf(irVertex);
         final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
           final RuntimeVertex srcRuntimeVertex =

@@ -69,7 +69,7 @@ public final class DAG<V, E extends Edge<V>> {
    * @return the set of incoming edges to the vertex.
    * Note that the result is never null, ensured by {@link DAGBuilder}.
    */
-  public Set<E> getIncomingEdges(final V v) {
+  public Set<E> getIncomingEdgesOf(final V v) {
     if (!vertices.contains(v)) {
       throw new IllegalVertexOperationException("The DAG does not contain this vertex");
     }
@@ -82,7 +82,7 @@ public final class DAG<V, E extends Edge<V>> {
    * @return the set of outgoing edges to the vertex.
    * Note that the result is never null, ensured by {@link DAGBuilder}.
    */
-  public Set<E> getOutgoingEdges(final V v) {
+  public Set<E> getOutgoingEdgesOf(final V v) {
     if (!vertices.contains(v)) {
       throw new IllegalVertexOperationException("The DAG does not contain this vertex");
     }
@@ -147,7 +147,7 @@ public final class DAG<V, E extends Edge<V>> {
     if (traversalOrder == TraversalOrder.PreOrder) {
       vertexConsumer.accept(vertex);
     }
-    final Set<E> outEdges = getOutgoingEdges(vertex);
+    final Set<E> outEdges = getOutgoingEdgesOf(vertex);
     if (!outEdges.isEmpty()) {
       outEdges.stream()
           .map(outEdge -> outEdge.getDst())

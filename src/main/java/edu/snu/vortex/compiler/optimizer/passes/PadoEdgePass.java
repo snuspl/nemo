@@ -28,7 +28,7 @@ import java.util.Set;
 public final class PadoEdgePass implements Pass {
   public <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
     dag.getVertices().forEach(vertex -> {
-      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdges(vertex);
+      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {

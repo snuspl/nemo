@@ -109,7 +109,7 @@ public final class PhysicalDAGGenerator
           // Notice that it suffices to iterate over only the internalInEdges.
           final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> internalInEdges = stage.getStageInternalDAG();
           internalInEdges.getVertices().forEach(runtimeVertex -> {
-            final Set<RuntimeEdge<RuntimeVertex>> inEdges = internalInEdges.getIncomingEdges(runtimeVertex);
+            final Set<RuntimeEdge<RuntimeVertex>> inEdges = internalInEdges.getIncomingEdgesOf(runtimeVertex);
             inEdges.forEach(edge -> stageInternalDAGBuilder
                 .connectVertices(new RuntimeEdge<>(edge.getRuntimeEdgeId(), edge.getEdgeAttributes(),
                     runtimeVertexIdToTask.get(edge.getSrc().getId()),
@@ -131,7 +131,7 @@ public final class PhysicalDAGGenerator
 
       // Connect PhysicalStage
       for (final Stage stage : logicalDAG.getVertices()) {
-        logicalDAG.getIncomingEdges(stage).forEach(stageEdge -> {
+        logicalDAG.getIncomingEdgesOf(stage).forEach(stageEdge -> {
           final PhysicalStage srcStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getSrc().getStageId());
           final PhysicalStage dstStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getDst().getStageId());
 

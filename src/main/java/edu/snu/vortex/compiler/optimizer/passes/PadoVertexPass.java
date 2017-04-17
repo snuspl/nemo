@@ -28,7 +28,7 @@ import java.util.Set;
 public final class PadoVertexPass implements Pass {
   public <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
     dag.topologicalDo(vertex -> {
-      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdges(vertex);
+      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
       if (inEdges.isEmpty()) {
         vertex.setAttr(Attribute.Key.Placement, Attribute.Transient);
       } else {

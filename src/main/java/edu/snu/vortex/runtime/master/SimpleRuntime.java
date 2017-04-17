@@ -54,8 +54,8 @@ public final class SimpleRuntime {
     // TODO #93: Implement Batch Scheduler
     stageDAG.getTopologicalSort().forEach(stage -> {
       final int stageParallelism = stage.getTaskGroupList().size();
-      final Set<PhysicalStageEdge> stageIncomingEdges = stageDAG.getIncomingEdges(stage);
-      final Set<PhysicalStageEdge> stageOutgoingEdges = stageDAG.getOutgoingEdges(stage);
+      final Set<PhysicalStageEdge> stageIncomingEdges = stageDAG.getIncomingEdgesOf(stage);
+      final Set<PhysicalStageEdge> stageOutgoingEdges = stageDAG.getOutgoingEdgesOf(stage);
 
       stage.getTaskGroupList().forEach(taskGroup -> {
 
@@ -80,7 +80,7 @@ public final class SimpleRuntime {
                 stageInEdge -> stageInEdge.getDstVertex().getId().equals(vertexId)).collect(Collectors.toSet());
 
             // Check for incoming edge from this stage.
-            final Set<RuntimeEdge<Task>> inEdgesWithinStage = taskDAG.getIncomingEdges(task);
+            final Set<RuntimeEdge<Task>> inEdgesWithinStage = taskDAG.getIncomingEdgesOf(task);
 
             final Set<RuntimeEdge> nonSideInputEdges =
                 filterInputEdges(inEdgesFromOtherStages, inEdgesWithinStage, false);
@@ -126,7 +126,7 @@ public final class SimpleRuntime {
           }
 
           // Check for any outgoing edge within the stage and write output.
-          final Set<RuntimeEdge<Task>> outEdgesWithinStage = taskDAG.getOutgoingEdges(task);
+          final Set<RuntimeEdge<Task>> outEdgesWithinStage = taskDAG.getOutgoingEdgesOf(task);
 
           if (!outEdgesWithinStage.isEmpty()) {
             final Iterable<Element> finalData = data;

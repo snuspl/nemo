@@ -30,7 +30,7 @@ public final class ParallelismPass implements Pass {
   public <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
     dag.topologicalDo(vertex -> {
       try {
-        final Set<IREdge<I, O>> inEdges = dag.getIncomingEdges(vertex);
+        final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
           vertex.setAttr(Attribute.IntegerKey.Parallelism, sourceVertex.getReaders(1).size());

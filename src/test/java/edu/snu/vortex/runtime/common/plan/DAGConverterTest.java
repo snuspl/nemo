@@ -72,20 +72,20 @@ public final class DAGConverterTest<I, O> {
     final Stage stage2 = sortedLogicalDAG.get(1);
 
     assertEquals(logicalDAG.getVertices().size(), 2);
-    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
-    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdges(stage1).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdges(stage2).size(), 0);
+    assertEquals(logicalDAG.getIncomingEdgesOf(stage1).size(), 0);
+    assertEquals(logicalDAG.getIncomingEdgesOf(stage2).size(), 1);
+    assertEquals(logicalDAG.getOutgoingEdgesOf(stage1).size(), 1);
+    assertEquals(logicalDAG.getOutgoingEdgesOf(stage2).size(), 0);
 
     // Test Physical DAG
     final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();
     final PhysicalStage physicalStage1 = sortedPhysicalDAG.get(0);
     final PhysicalStage physicalStage2 = sortedPhysicalDAG.get(1);
     assertEquals(physicalDAG.getVertices().size(), 2);
-    assertEquals(physicalDAG.getIncomingEdges(physicalStage1).size(), 0);
-    assertEquals(physicalDAG.getIncomingEdges(physicalStage2).size(), 1);
-    assertEquals(physicalDAG.getOutgoingEdges(physicalStage1).size(), 1);
-    assertEquals(physicalDAG.getOutgoingEdges(physicalStage2).size(), 0);
+    assertEquals(physicalDAG.getIncomingEdgesOf(physicalStage1).size(), 0);
+    assertEquals(physicalDAG.getIncomingEdgesOf(physicalStage2).size(), 1);
+    assertEquals(physicalDAG.getOutgoingEdgesOf(physicalStage1).size(), 1);
+    assertEquals(physicalDAG.getOutgoingEdgesOf(physicalStage2).size(), 0);
 
     final List<TaskGroup> taskGroupList1 = physicalStage1.getTaskGroupList();
     final List<TaskGroup> taskGroupList2 = physicalStage2.getTaskGroupList();
@@ -231,14 +231,14 @@ public final class DAGConverterTest<I, O> {
     // TODO #148: Optimize Stage Partitioning Algorithm in VortexBackend
     // The following asserts depend on how stage partitioning is defined; test must be rewritten accordingly.
 //    assertEquals(logicalDAG.getVertices().size(), 5);
-//    assertEquals(logicalDAG.getIncomingEdges(stage1).size(), 0);
-//    assertEquals(logicalDAG.getIncomingEdges(stage2).size(), 1);
-//    assertEquals(logicalDAG.getIncomingEdges(stage3).size(), 1);
-//    assertEquals(logicalDAG.getIncomingEdges(stage4).size(), 1);
-//    assertEquals(logicalDAG.getOutgoingEdges(stage1).size(), 2);
-//    assertEquals(logicalDAG.getOutgoingEdges(stage2).size(), 0);
-//    assertEquals(logicalDAG.getOutgoingEdges(stage3).size(), 1);
-//    assertEquals(logicalDAG.getOutgoingEdges(stage4).size(), 0);
+//    assertEquals(logicalDAG.getIncomingEdgesOf(stage1).size(), 0);
+//    assertEquals(logicalDAG.getIncomingEdgesOf(stage2).size(), 1);
+//    assertEquals(logicalDAG.getIncomingEdgesOf(stage3).size(), 1);
+//    assertEquals(logicalDAG.getIncomingEdgesOf(stage4).size(), 1);
+//    assertEquals(logicalDAG.getOutgoingEdgesOf(stage1).size(), 2);
+//    assertEquals(logicalDAG.getOutgoingEdgesOf(stage2).size(), 0);
+//    assertEquals(logicalDAG.getOutgoingEdgesOf(stage3).size(), 1);
+//    assertEquals(logicalDAG.getOutgoingEdgesOf(stage4).size(), 0);
 
     // Test Physical DAG
 
@@ -247,10 +247,10 @@ public final class DAGConverterTest<I, O> {
 //    final PhysicalStage physicalStage1 = sortedPhysicalDAG.get(0);
 //    final PhysicalStage physicalStage2 = sortedPhysicalDAG.get(1);
 //    assertEquals(physicalDAG.getVertices().size(), 2);
-//    assertEquals(physicalDAG.getIncomingEdges(physicalStage1).size(), 0);
-//    assertEquals(physicalDAG.getIncomingEdges(physicalStage2).size(), 1);
-//    assertEquals(physicalDAG.getOutgoingEdges(physicalStage1).size(), 1);
-//    assertEquals(physicalDAG.getOutgoingEdges(physicalStage2).size(), 0);
+//    assertEquals(physicalDAG.getIncomingEdgesOf(physicalStage1).size(), 0);
+//    assertEquals(physicalDAG.getIncomingEdgesOf(physicalStage2).size(), 1);
+//    assertEquals(physicalDAG.getOutgoingEdgesOf(physicalStage1).size(), 1);
+//    assertEquals(physicalDAG.getOutgoingEdgesOf(physicalStage2).size(), 0);
 //
 //    final List<TaskGroup> taskGroupList1 = physicalStage1.getTaskGroupList();
 //    final List<TaskGroup> taskGroupList2 = physicalStage2.getTaskGroupList();

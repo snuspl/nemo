@@ -58,10 +58,10 @@ public final class DAGTest {
     final DAG<Integer, Edge<Integer>> dag = dagBuilder.build();
 
     assertEquals(dag.getVertices().size(), 5);
-    assertEquals(dag.getIncomingEdges(1).size(), 0);
-    assertEquals(dag.getOutgoingEdges(5).size(), 0);
-    assertEquals(dag.getIncomingEdges(3).size(), 1);
-    assertEquals(dag.getOutgoingEdges(4).size(), 1);
+    assertEquals(dag.getIncomingEdgesOf(1).size(), 0);
+    assertEquals(dag.getOutgoingEdgesOf(5).size(), 0);
+    assertEquals(dag.getIncomingEdgesOf(3).size(), 1);
+    assertEquals(dag.getOutgoingEdgesOf(4).size(), 1);
     assertEquals(dag.getTopologicalSort().size(), 5);
 
     final List<Integer> topologicalOrder = dag.getTopologicalSort();
@@ -86,8 +86,8 @@ public final class DAGTest {
 
     final DAG<Integer, Edge<Integer>> dag = dagBuilder.build();
 
-    assertEquals(dag.getOutgoingEdges(4).size(), 2);
-    assertEquals(dag.getIncomingEdges(3).size(), 2);
+    assertEquals(dag.getOutgoingEdgesOf(4).size(), 2);
+    assertEquals(dag.getIncomingEdgesOf(3).size(), 2);
 
     final List<Integer> topologicalOrder = dag.getTopologicalSort();
     assertEquals((int) topologicalOrder.get(0), 4);

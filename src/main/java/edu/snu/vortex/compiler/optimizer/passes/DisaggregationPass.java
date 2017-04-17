@@ -33,7 +33,7 @@ public final class DisaggregationPass implements Pass {
     });
 
     dag.getVertices().forEach(vertex -> {
-      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdges(vertex);
+      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (edge.getType().equals(IREdge.Type.OneToOne)) {
