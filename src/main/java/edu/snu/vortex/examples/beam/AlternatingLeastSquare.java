@@ -19,6 +19,7 @@ import com.github.fommil.netlib.BLAS;
 import com.github.fommil.netlib.LAPACK;
 import edu.snu.vortex.compiler.frontend.beam.Runner;
 import edu.snu.vortex.compiler.frontend.beam.coder.PairCoder;
+import edu.snu.vortex.client.beam.LoopCompositeTransform;
 import edu.snu.vortex.utils.Pair;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
@@ -223,16 +224,16 @@ public final class AlternatingLeastSquare {
    * Composite transform that wraps the transforms inside the loop.
    * The loop updates the item matrix each iteration.
    */
-  public static final class Loop
-      extends PTransform<PCollection<KV<Integer, Pair<int[], float[]>>>, PCollectionView<Map<Integer, float[]>>> {
+  public static final class UpdateItemMatrix extends LoopCompositeTransform<
+      PCollection<KV<Integer, Pair<int[], float[]>>>, PCollectionView<Map<Integer, float[]>>> {
     private final int numFeatures;
     private final double lambda;
     private final PCollectionView<Map<Integer, float[]>> itemMatrix;
     private final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData;
 
-    Loop(final int numFeatures, final double lambda,
-         final PCollectionView<Map<Integer, float[]>> itemMatrix,
-         final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData) {
+    UpdateItemMatrix(final int numFeatures, final double lambda,
+                     final PCollectionView<Map<Integer, float[]>> itemMatrix,
+                     final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData) {
       this.numFeatures = numFeatures;
       this.lambda = lambda;
       this.itemMatrix = itemMatrix;
@@ -310,7 +311,7 @@ public final class AlternatingLeastSquare {
 
     // Iterations to update Item Matrix.
     for (int i = 0; i < numItr; i++) {
-      itemMatrix = parsedUserData.apply(new Loop(numFeatures, lambda, itemMatrix, parsedItemData));
+      itemMatrix = parsedUserData.apply(new UpdateItemMatrix(numFeatures, lambda, itemMatrix, parsedItemData));
     }
 
     p.run();
