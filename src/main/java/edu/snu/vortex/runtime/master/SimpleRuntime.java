@@ -50,6 +50,7 @@ public final class SimpleRuntime {
   public void executePhysicalPlan(final PhysicalPlan physicalPlan) throws Exception {
     final Map<String, List<LocalChannel>> edgeIdToChannels = new HashMap<>();
     final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = physicalPlan.getStageDAG();
+    final Map<String, Iterable<Element>> runtimeEdgeIdToData = new HashMap<>();
 
     // TODO #93: Implement Batch Scheduler
     stageDAG.getTopologicalSort().forEach(stage -> {
@@ -62,7 +63,6 @@ public final class SimpleRuntime {
         final DAG<Task, RuntimeEdge<Task>> taskDAG = taskGroup.getTaskDAG();
         final List<Task> sortedTasks = taskDAG.getTopologicalSort();
         sortedTasks.forEach(task -> {
-          Iterable<Element> data = null;
           final String vertexId = task.getRuntimeVertexId();
 
           // TODO #141: Remove instanceof
@@ -70,10 +70,13 @@ public final class SimpleRuntime {
             try {
               final BoundedSourceTask boundedSourceTask = (BoundedSourceTask) task;
               final Reader reader = boundedSourceTask.getReader();
-              data = reader.read();
+
+              writeOutput(task, reader.read(), runtimeEdgeIdToData, edgeIdToChannels,
+                  stageParallelism, stageOutgoingEdges, taskDAG.getOutgoingEdgesOf(task));
             } catch (Exception e) {
               throw new RuntimeException(e);
             }
+
           } else if (task instanceof OperatorTask) {
             // Check for any incoming edge from other stages.
             final Set<PhysicalStageEdge> inEdgesFromOtherStages = stageIncomingEdges.stream().filter(
@@ -93,8 +96,12 @@ public final class SimpleRuntime {
               throw new UnsupportedOperationException("Multi inedge not yet supported");
             } else if (nonSideInputEdges.size() == 1) { // We fetch 'data' from the incoming stage
               final RuntimeEdge inEdge = nonSideInputEdges.iterator().next();
-              data = edgeIdToChannels.get(inEdge.getRuntimeEdgeId()).get(task.getIndex()).read();
-
+              final String srcVertexId;
+              if (inEdge instanceof PhysicalStageEdge) {
+                srcVertexId = ((PhysicalStageEdge) inEdge).getSrcVertex().getId();
+              } else {
+                srcVertexId = ((Task) inEdge.getSrc()).getRuntimeVertexId();
+              }
               final OperatorTask operatorTask = (OperatorTask) task;
 
               // TODO #18: Support code/data serialization
@@ -103,39 +110,53 @@ public final class SimpleRuntime {
               final Transform.Context transformContext = new ContextImpl(sideInputs);
               final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
               transform.prepare(transformContext, outputCollector);
-              transform.onData(data, null); // hack (TODO #132: Refactor DAG)
+              transform.onData(edgeIdToChannels.get(inEdge.getRuntimeEdgeId()).get(task.getIndex()).read(),
+                  srcVertexId);
               transform.close();
-              data = outputCollector.getOutputList();
+              writeOutput(task, outputCollector.getOutputList(), runtimeEdgeIdToData, edgeIdToChannels,
+                  stageParallelism, stageOutgoingEdges, taskDAG.getOutgoingEdgesOf(task));
             }
           } else {
             throw new UnsupportedOperationException(task.toString());
           }
-
-          LOG.log(Level.INFO, " Output of {" + task.getTaskId() + "}: " +
-              (data.toString().length() > 5000 ?
-                  data.toString().substring(0, 5000) + "..." : data.toString()));
-
-          // Check for any outgoing edge to other stages and write output.
-          final Set<PhysicalStageEdge> outEdgesToOtherStages = stageOutgoingEdges.stream().filter(
-              outEdgeInfo -> outEdgeInfo.getSrcVertex().getId().equals(vertexId)).collect(Collectors.toSet());
-
-          if (!outEdgesToOtherStages.isEmpty()) {
-            final Iterable<Element> finalData = data;
-            outEdgesToOtherStages.forEach(outEdge -> writeToChannels(task.getIndex(), edgeIdToChannels, outEdge,
-                outEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism), finalData));
-          }
-
-          // Check for any outgoing edge within the stage and write output.
-          final Set<RuntimeEdge<Task>> outEdgesWithinStage = taskDAG.getOutgoingEdgesOf(task);
-
-          if (!outEdgesWithinStage.isEmpty()) {
-            final Iterable<Element> finalData = data;
-            outEdgesWithinStage.forEach(outEdge -> writeToChannels(task.getIndex(), edgeIdToChannels, outEdge,
-                stageParallelism, finalData));
-          }
         });
       });
     });
+  }
+
+  private void writeOutput(final Task taskExecuted,
+                           final Iterable<Element> dataToWrite,
+                           final Map<String, Iterable<Element>> runtimeEdgeIdToData,
+                           final Map<String, List<LocalChannel>> edgeIdToChannels,
+                           final int stageParallelism,
+                           final Set<PhysicalStageEdge> stageOutgoingEdges,
+                           final Set<RuntimeEdge<Task>> outEdgesWithinStage) {
+
+    LOG.log(Level.INFO, " Output of {" + taskExecuted.getTaskId() + "}: " +
+        (dataToWrite.toString().length() > 5000 ?
+            dataToWrite.toString().substring(0, 5000) + "..." : dataToWrite.toString()));
+
+    // Check for any outgoing edge to other stages and write output.
+    final Set<PhysicalStageEdge> outEdgesToOtherStages = stageOutgoingEdges.stream()
+        .filter(outEdgeInfo -> outEdgeInfo.getSrcVertex().getId().equals(taskExecuted.getRuntimeVertexId()))
+        .collect(Collectors.toSet());
+
+    if (!outEdgesToOtherStages.isEmpty()) {
+      outEdgesToOtherStages.forEach(outEdge -> {
+        writeToChannels(taskExecuted.getIndex(), edgeIdToChannels, outEdge,
+            outEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism), dataToWrite);
+        runtimeEdgeIdToData.put(outEdge.getRuntimeEdgeId(), dataToWrite);
+      });
+    }
+
+    // Check for any outgoing edge within the stage and write output.
+    if (!outEdgesWithinStage.isEmpty()) {
+      outEdgesWithinStage.forEach(outEdge -> {
+        writeToChannels(taskExecuted.getIndex(), edgeIdToChannels, outEdge,
+            stageParallelism, dataToWrite);
+        runtimeEdgeIdToData.put(outEdge.getRuntimeEdgeId(), dataToWrite);
+      });
+    }
   }
 
   /**
