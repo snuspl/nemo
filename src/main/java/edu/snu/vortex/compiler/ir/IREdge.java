@@ -22,10 +22,8 @@ import edu.snu.vortex.utils.dag.Edge;
 
 /**
  * Physical execution plan of intermediate data movement.
- * @param <I> input vertex type.
- * @param <O> output vertex type.
  */
-public final class IREdge<I, O> extends Edge<IRVertex> {
+public final class IREdge extends Edge<IRVertex> {
   /**
    * Type of edges.
    */
@@ -65,7 +63,7 @@ public final class IREdge<I, O> extends Edge<IRVertex> {
     return id;
   }
 
-  public IREdge<I, O> setAttr(final Attribute.Key key, final Attribute val) {
+  public IREdge setAttr(final Attribute.Key key, final Attribute val) {
     attributes.put(key, val);
     return this;
   }
@@ -99,7 +97,7 @@ public final class IREdge<I, O> extends Edge<IRVertex> {
       return false;
     }
 
-    IREdge<?, ?> irEdge = (IREdge<?, ?>) o;
+    IREdge irEdge = (IREdge) o;
 
     if (type != irEdge.type) {
       return false;

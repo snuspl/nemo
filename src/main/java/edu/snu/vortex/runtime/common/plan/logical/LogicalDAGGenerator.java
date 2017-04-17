@@ -37,16 +37,14 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.SideInput;
 /**
  * A function that converts an IR DAG to runtime's logical DAG.
  * Designed to be called in {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
- * @param <I> Input type of IREdge.
- * @param <O> Output type of IREdge.
  */
-public final class LogicalDAGGenerator<I, O>
-    implements Function<DAG<IRVertex, IREdge<I, O>>, DAG<Stage, StageEdge>> {
+public final class LogicalDAGGenerator
+    implements Function<DAG<IRVertex, IREdge>, DAG<Stage, StageEdge>> {
 
   /**
    * The IR DAG to convert.
    */
-  private DAG<IRVertex, IREdge<I, O>> irDAG;
+  private DAG<IRVertex, IREdge> irDAG;
 
   /**
    * The builder for the logical DAG.
@@ -73,10 +71,11 @@ public final class LogicalDAGGenerator<I, O>
    * Converts the given IR DAG to its Runtime representation, a logical DAG.
    * @param inputDAG the optimized IR DAG to be submitted to Runtime after the conversion.
    * @return the converted logical DAG to submit to Runtime,
-   * which consists of {@link Stage} and their relationship represented by {@link PhysicalStageEdge}.
+   * which consists of {@link Stage} and their relationship represented by
+   * {@link StageEdge}.
    */
   @Override
-  public DAG<Stage, StageEdge> apply(final DAG<IRVertex, IREdge<I, O>> inputDAG) {
+  public DAG<Stage, StageEdge> apply(final DAG<IRVertex, IREdge> inputDAG) {
     this.irDAG = inputDAG;
 
     stagePartitionIrDAG();
@@ -91,8 +90,8 @@ public final class LogicalDAGGenerator<I, O>
   private void stagePartitionIrDAG() {
     // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
     irDAG.topologicalDo(vertex -> {
-      final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdgesOf(vertex);
-      final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
+      final Set<IREdge> inEdges = irDAG.getIncomingEdgesOf(vertex);
+      final Optional<Set<IREdge>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
 
       if (!inEdgeList.isPresent()) { // If Source vertex
         createNewStage(vertex);
@@ -152,8 +151,8 @@ public final class LogicalDAGGenerator<I, O>
         irVertexIdToRuntimeVertexMap.put(irVertex.getId(), runtimeVertex);
 
         // Connect all the incoming edges for the runtime vertex
-        final Set<IREdge<I, O>> inEdges = irDAG.getIncomingEdgesOf(irVertex);
-        final Optional<Set<IREdge<I, O>>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
+        final Set<IREdge> inEdges = irDAG.getIncomingEdgesOf(irVertex);
+        final Optional<Set<IREdge>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
           final RuntimeVertex srcRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getSrcIRVertex().getId());

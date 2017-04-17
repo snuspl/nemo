@@ -38,8 +38,8 @@ public final class VortexBackendTest<I, O> {
   private final IRVertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
   private final IRVertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
 
-  private final DAGBuilder builder = new DAGBuilder<IRVertex, IREdge<I, O>>();
-  private DAG<IRVertex, IREdge<I, O>> dag;
+  private final DAGBuilder builder = new DAGBuilder<IRVertex, IREdge>();
+  private DAG<IRVertex, IREdge> dag;
 
   @Before
   public void setUp() throws Exception {

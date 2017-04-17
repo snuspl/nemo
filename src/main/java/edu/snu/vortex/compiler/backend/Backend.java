@@ -24,5 +24,5 @@ import edu.snu.vortex.utils.dag.DAG;
  * @param <ExecPlan> execution plan to compile the DAG into.
  */
 public interface Backend<ExecPlan> {
-  <I, O> ExecPlan compile(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception;
+  ExecPlan compile(final DAG<IRVertex, IREdge> dag) throws Exception;
 }

@@ -26,9 +26,9 @@ import java.util.Set;
  * Pado pass for tagging vertices.
  */
 public final class PadoVertexPass implements Pass {
-  public <I, O> DAG<IRVertex, IREdge<I, O>> process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
+  public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.topologicalDo(vertex -> {
-      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
+      final Set<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (inEdges.isEmpty()) {
         vertex.setAttr(Attribute.Key.Placement, Attribute.Transient);
       } else {
@@ -42,11 +42,11 @@ public final class PadoVertexPass implements Pass {
     return dag;
   }
 
-  private <I, O> boolean hasM2M(final Set<IREdge<I, O>> irEdges) {
-    return irEdges.stream().filter(edge -> ((IREdge) edge).getType() == IREdge.Type.ScatterGather).count() > 0;
+  private boolean hasM2M(final Set<IREdge> irEdges) {
+    return irEdges.stream().filter(edge -> edge.getType() == IREdge.Type.ScatterGather).count() > 0;
   }
 
-  private <I, O> boolean allFromReserved(final Set<IREdge<I, O>> irEdges) {
+  private boolean allFromReserved(final Set<IREdge> irEdges) {
     return irEdges.stream()
         .allMatch(edge -> edge.getSrc().getAttr(Attribute.Key.Placement) == Attribute.Reserved);
   }

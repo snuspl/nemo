@@ -38,8 +38,8 @@ import static org.mockito.Mockito.when;
 /**
  * Tests {@link LogicalDAGGenerator} and {@link PhysicalDAGGenerator}
  */
-public final class DAGConverterTest<I, O> {
-  private DAGBuilder<IRVertex, IREdge<I, O>> irDAGBuilder;
+public final class DAGConverterTest {
+  private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
 
   @Before
   public void setUp() {
@@ -62,8 +62,8 @@ public final class DAGConverterTest<I, O> {
     e.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
     irDAGBuilder.connectVertices(e);
 
-    final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
-    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     // Test Logical DAG
@@ -217,8 +217,8 @@ public final class DAGConverterTest<I, O> {
     // Stage 5 = {v6}
     irDAGBuilder.connectVertices(e5);
 
-    final DAG<IRVertex, IREdge<I, O>> irDAG = irDAGBuilder.build();
-    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator<>());
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
 
     // Test Logical DAG
     final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();

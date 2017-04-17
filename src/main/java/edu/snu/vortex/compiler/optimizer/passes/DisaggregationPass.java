@@ -27,13 +27,13 @@ import java.util.Set;
  */
 public final class DisaggregationPass implements Pass {
 
-  public <I, O> DAG process(final DAG<IRVertex, IREdge<I, O>> dag) throws Exception {
+  public DAG process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.topologicalDo(vertex -> {
       vertex.setAttr(Attribute.Key.Placement, Attribute.Compute);
     });
 
     dag.getVertices().forEach(vertex -> {
-      final Set<IREdge<I, O>> inEdges = dag.getIncomingEdgesOf(vertex);
+      final Set<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (edge.getType().equals(IREdge.Type.OneToOne)) {

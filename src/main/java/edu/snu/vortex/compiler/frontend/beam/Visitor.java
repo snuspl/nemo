@@ -121,8 +121,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
           .filter(pValueToVertex::containsKey)
           .map(pValueToVertex::get)
           .forEach(src -> {
-            final IREdge<I, O> edge =
-                new IREdge<I, O>(getEdgeType(src, vortexIRVertex), src, vortexIRVertex)
+            final IREdge edge =
+                new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex)
                     .setAttr(Attribute.Key.SideInput, Attribute.SideInput);
             builder.connectVertices(edge);
           });
