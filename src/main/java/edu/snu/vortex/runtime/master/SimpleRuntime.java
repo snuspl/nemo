@@ -119,7 +119,7 @@ public final class SimpleRuntime {
           final Set<PhysicalStageEdge> outEdgesToOtherStages = stageOutgoingEdges.stream().filter(
               outEdgeInfo -> outEdgeInfo.getSrcVertex().getId().equals(vertexId)).collect(Collectors.toSet());
 
-          if (outEdgesToOtherStages != null) {
+          if (!outEdgesToOtherStages.isEmpty()) {
             final Iterable<Element> finalData = data;
             outEdgesToOtherStages.forEach(outEdge -> writeToChannels(task.getIndex(), edgeIdToChannels, outEdge,
                 outEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism), finalData));
@@ -128,7 +128,7 @@ public final class SimpleRuntime {
           // Check for any outgoing edge within the stage and write output.
           final Set<RuntimeEdge<Task>> outEdgesWithinStage = taskDAG.getOutgoingEdges(task);
 
-          if (outEdgesWithinStage != null) {
+          if (!outEdgesWithinStage.isEmpty()) {
             final Iterable<Element> finalData = data;
             outEdgesWithinStage.forEach(outEdge -> writeToChannels(task.getIndex(), edgeIdToChannels, outEdge,
                 stageParallelism, finalData));
@@ -149,14 +149,14 @@ public final class SimpleRuntime {
                                             final Set<RuntimeEdge<Task>> inEdgesWithinStage,
                                             final boolean getSideInputEdges) {
     final Set<RuntimeEdge> filteredEdges = new HashSet<>();
-    if (inEdgesFromOtherStages != null) {
+    if (!inEdgesFromOtherStages.isEmpty()) {
       filteredEdges.addAll(inEdgesFromOtherStages.stream()
           .filter(
               inEdge -> (inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) != RuntimeAttribute.SideInput)
                   ^ getSideInputEdges)
           .collect(Collectors.toSet()));
     }
-    if (inEdgesWithinStage != null) {
+    if (!inEdgesWithinStage.isEmpty()) {
       filteredEdges.addAll(inEdgesWithinStage.stream()
           .filter(
               inEdge -> (inEdge.getEdgeAttributes().get(RuntimeAttribute.Key.SideInput) != RuntimeAttribute.SideInput)
@@ -176,7 +176,7 @@ public final class SimpleRuntime {
   private Map<Transform, Object> getSideInputs(final Set<RuntimeEdge> sideInputEdges,
                                                final Task task,
                                                final Map<String, List<LocalChannel>> edgeIdToChannels) {
-    if (sideInputEdges != null) {
+    if (!sideInputEdges.isEmpty()) {
       final Map<Transform, Object> sideInputs = new HashMap<>();
       sideInputEdges.forEach(inEdge -> {
         final Iterable<Element> elementSideInput =

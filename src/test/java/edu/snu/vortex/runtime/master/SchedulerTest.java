@@ -34,8 +34,13 @@ import static org.mockito.Mockito.*;
 public final class SchedulerTest {
   private final Scheduler scheduler = new Scheduler(RuntimeAttribute.SamplePolicy);
 
+  /**
+   * This method builds a physical DAG and tests whether the physical DAG successfully gets scheduled..
+   */
+  // TODO #93: Implement Batch Scheduler
+  // The tests will be extended with Batch Scheduler.
   @Test
-  public void setUp() {
+  public void testSimplePhysicalPlanScheduling() {
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> builder = new DAGBuilder<>();
 
     final TaskGroup taskGroup1 = mock(TaskGroup.class);

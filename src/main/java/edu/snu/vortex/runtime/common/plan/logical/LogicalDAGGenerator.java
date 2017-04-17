@@ -73,7 +73,7 @@ public final class LogicalDAGGenerator<I, O>
    * Converts the given IR DAG to its Runtime representation, a logical DAG.
    * @param inputDAG the optimized IR DAG to be submitted to Runtime after the conversion.
    * @return the converted logical DAG to submit to Runtime,
-   * which consists of {@link Stage} and their relationship represented by {@link StageEdge}.
+   * which consists of {@link Stage} and their relationship represented by {@link PhysicalStageEdge}.
    */
   @Override
   public DAG<Stage, StageEdge> apply(final DAG<IRVertex, IREdge<I, O>> inputDAG) {

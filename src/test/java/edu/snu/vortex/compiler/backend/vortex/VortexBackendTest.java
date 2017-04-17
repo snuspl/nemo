@@ -61,8 +61,12 @@ public final class VortexBackendTest<I, O> {
     this.dag = new Optimizer().optimize(dag, Optimizer.PolicyType.Pado);
   }
 
+  /**
+   * This method uses an IR DAG and tests whether VortexBackend successfully generates an Execution Plan.
+   * @throws Exception during the Execution Plan generation.
+   */
   @Test
-  public void test() throws Exception {
+  public void testExecutionPlanGeneration() throws Exception {
     final Backend<ExecutionPlan> backend = new VortexBackend();
     final ExecutionPlan executionPlan = backend.compile(dag);
 

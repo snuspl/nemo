@@ -49,14 +49,26 @@ public final class DAG<V, E extends Edge<V>> {
    * @param <E2> the converted DAG's edge type.
    * @return the converted DAG.
    */
+  // TODO #153: DAG conversion using Vertex/Edge Converters
   public <V2, E2 extends Edge<V2>> DAG<V2, E2> convert(final Function<DAG<V, E>, DAG<V2, E2>> function) {
     return function.apply(this);
   }
 
+  /**
+   * Retrieves the vertices of this DAG.
+   * @return the set of vertices.
+   * Note that the result is never null, ensured by {@link DAGBuilder}.
+   */
   public Set<V> getVertices() {
     return vertices;
   }
 
+  /**
+   * Retrieves the incoming edges of the given vertex.
+   * @param v the subject vertex.
+   * @return the set of incoming edges to the vertex.
+   * Note that the result is never null, ensured by {@link DAGBuilder}.
+   */
   public Set<E> getIncomingEdges(final V v) {
     if (!vertices.contains(v)) {
       throw new IllegalVertexOperationException("The DAG does not contain this vertex");
@@ -64,6 +76,12 @@ public final class DAG<V, E extends Edge<V>> {
     return incomingEdges.get(v);
   }
 
+  /**
+   * Retrieves the outgoing edges of the given vertex.
+   * @param v the subject vertex.
+   * @return the set of outgoing edges to the vertex.
+   * Note that the result is never null, ensured by {@link DAGBuilder}.
+   */
   public Set<E> getOutgoingEdges(final V v) {
     if (!vertices.contains(v)) {
       throw new IllegalVertexOperationException("The DAG does not contain this vertex");

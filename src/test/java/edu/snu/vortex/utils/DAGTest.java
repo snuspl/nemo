@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests {@link DAG}
+ * Tests {@link DAG} and {@link DAGBuilder}.
+ * This class tests the basic methods to build a DAG using {@link DAGBuilder}
+ * and the basic methods to retrieve components of the DAG using {@link DAG}.
  */
 public final class DAGTest {
   private DAGBuilder<Integer, Edge<Integer>> dagBuilder;
