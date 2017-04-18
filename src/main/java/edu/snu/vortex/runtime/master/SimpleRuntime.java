@@ -78,6 +78,10 @@ public final class SimpleRuntime {
             }
 
           } else if (task instanceof OperatorTask) {
+            final OperatorTask operatorTask = (OperatorTask) task;
+            // TODO #18: Support code/data serialization
+            final Transform transform = SerializationUtils.clone(operatorTask.getTransform());
+
             // Check for any incoming edge from other stages.
             final Set<PhysicalStageEdge> inEdgesFromOtherStages = stageIncomingEdges.stream().filter(
                 stageInEdge -> stageInEdge.getDstVertex().getId().equals(vertexId)).collect(Collectors.toSet());
@@ -85,16 +89,12 @@ public final class SimpleRuntime {
             // Check for incoming edge from this stage.
             final Set<RuntimeEdge<Task>> inEdgesWithinStage = taskDAG.getIncomingEdgesOf(task);
 
-            final Set<RuntimeEdge> nonSideInputEdges =
-                filterInputEdges(inEdgesFromOtherStages, inEdgesWithinStage, false);
             final Set<RuntimeEdge> sideInputEdges =
                 filterInputEdges(inEdgesFromOtherStages, inEdgesWithinStage, true);
             final Map<Transform, Object> sideInputs = getSideInputs(sideInputEdges, task, edgeIdToChannels);
 
-            final OperatorTask operatorTask = (OperatorTask) task;
-
-            // TODO #18: Support code/data serialization
-            final Transform transform = SerializationUtils.clone(operatorTask.getTransform());
+            final Set<RuntimeEdge> nonSideInputEdges =
+                filterInputEdges(inEdgesFromOtherStages, inEdgesWithinStage, false);
 
             final Transform.Context transformContext = new ContextImpl(sideInputs);
             final OutputCollectorImpl outputCollector = new OutputCollectorImpl();
