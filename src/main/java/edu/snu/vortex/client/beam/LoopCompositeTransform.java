@@ -19,11 +19,13 @@ import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PInput;
 import org.apache.beam.sdk.values.POutput;
 
+import java.io.Serializable;
+
 /**
  * A composite transform for wrapping transforms inside a loop to create loop operators in the IR.
  * @param <inputT> input type of the composite transform.
  * @param <outputT> output type of the composite transform.
  */
 public abstract class LoopCompositeTransform<inputT extends PInput, outputT extends POutput>
-    extends PTransform<inputT, outputT> {
+    extends PTransform<inputT, outputT> implements Serializable {
 }
