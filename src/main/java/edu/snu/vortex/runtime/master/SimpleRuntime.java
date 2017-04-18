@@ -92,7 +92,6 @@ public final class SimpleRuntime {
             final Map<Transform, Object> sideInputs = getSideInputs(sideInputEdges, task, edgeIdToChannels);
 
             final Iterator<RuntimeEdge> inEdges = nonSideInputEdges.iterator();
-            final String srcVertexId;
             final OperatorTask operatorTask = (OperatorTask) task;
 
             // TODO #18: Support code/data serialization
