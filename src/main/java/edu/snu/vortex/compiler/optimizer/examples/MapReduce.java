@@ -18,7 +18,6 @@ package edu.snu.vortex.compiler.optimizer.examples;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.Edge;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
 import java.util.logging.Level;
