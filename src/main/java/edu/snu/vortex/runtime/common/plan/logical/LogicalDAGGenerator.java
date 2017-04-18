@@ -32,7 +32,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.Local;
-import static edu.snu.vortex.compiler.ir.attribute.Attribute.SideInput;
 
 /**
  * A function that converts an IR DAG to runtime's logical DAG.
@@ -91,30 +90,32 @@ public final class LogicalDAGGenerator
     // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.
     irDAG.topologicalDo(vertex -> {
       final Set<IREdge> inEdges = irDAG.getIncomingEdgesOf(vertex);
-      final Optional<Set<IREdge>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
+      final Optional<Set<IREdge>> inEdgeList = (inEdges == null || inEdges.isEmpty()) ?
+          Optional.empty() : Optional.of(inEdges);
 
       if (!inEdgeList.isPresent()) { // If Source vertex
         createNewStage(vertex);
       } else {
+        // Filter candidate incoming edges that can be included in a stage.
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne))
             .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
-            // TODO #156: Remove SideInput Filter.
-            .filter(edge -> edge.getAttr(Attribute.Key.SideInput) != SideInput)
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             .collect(Collectors.toList()));
+        // Filter out one to connect out of the candidates.
         final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
             !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
             .orElse(Optional.empty());
 
         if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
           // when we cannot connect vertex in other stages
-          createNewStage(vertex);
           inEdgeList.ifPresent(edges -> edges.forEach(inEdge -> {
             stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
           }));
+          createNewStage(vertex);
         } else {
+          // otherwise connect with a stage.
           final IRVertex irVertexToConnect = edgeToConnect.get().getSrcIRVertex();
           vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(irVertexToConnect));
           final Optional<List<IRVertex>> list =
@@ -160,8 +161,10 @@ public final class LogicalDAGGenerator
           final RuntimeVertex dstRuntimeVertex =
               irVertexIdToRuntimeVertexMap.get(irEdge.getDstIRVertex().getId());
 
-          if (srcRuntimeVertex == null || dstRuntimeVertex == null) {
-            throw new IllegalVertexOperationException("unable to locate srcRuntimeVertex and/or dstRuntimeVertex");
+          if (srcRuntimeVertex == null) {
+            throw new IllegalVertexOperationException("unable to locate srcRuntimeVertex for IREdge " + irEdge);
+          } else if (dstRuntimeVertex == null) {
+            throw new IllegalVertexOperationException("unable to locate dstRuntimeVertex for IREdge " + irEdge);
           }
 
           // either the edge is within the stage
