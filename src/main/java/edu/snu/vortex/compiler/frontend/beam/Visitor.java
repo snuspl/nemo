@@ -21,7 +21,6 @@ import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.WindowTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.utils.dag.Edge;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.Read;
@@ -42,11 +41,11 @@ import java.util.Map;
  * Visits every node in the beam dag to translate the BEAM program to the Vortex IR.
  */
 final class Visitor extends Pipeline.PipelineVisitor.Defaults {
-  private final DAGBuilder<IRVertex, Edge<IRVertex>> builder;
+  private final DAGBuilder<IRVertex, IREdge> builder;
   private final Map<PValue, IRVertex> pValueToVertex;
   private final PipelineOptions options;
 
-  Visitor(final DAGBuilder<IRVertex, Edge<IRVertex>> builder, final PipelineOptions options) {
+  Visitor(final DAGBuilder<IRVertex, IREdge> builder, final PipelineOptions options) {
     this.builder = builder;
     this.pValueToVertex = new HashMap<>();
     this.options = options;
