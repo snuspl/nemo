@@ -35,9 +35,8 @@ public interface Transform extends Serializable {
   /**
    * On data received.
    * @param data data received.
-   * TODO #154: If needed, we can later add another argument, srcVertexId, to find out where the data has come from.
    */
-  void onData(final Iterable<Element> data);
+  void onData(final Iterable<Element> data, final String srcVertexId);
 
   /**
    * Close the transform.

@@ -90,7 +90,7 @@ public final class TestUtil {
     }
 
     @Override
-    public void onData(final Iterable<Element> data) {
+    public void onData(final Iterable<Element> data, final String srcVertexId) {
     }
 
     @Override

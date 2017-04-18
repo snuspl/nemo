@@ -44,12 +44,12 @@ public final class BroadcastTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data) {
+  public void onData(final Iterable<Element> data, final String srcVertexId) {
     final List<WindowedValue> windowed = StreamSupport.stream(data.spliterator(), false)
         .map(element -> WindowedValue.valueInGlobalWindow(element.getData()))
         .collect(Collectors.toList());
     final ViewFn viewFn = this.pCollectionView.getViewFn();
-    outputCollector.emit(new BeamElement(viewFn.apply(windowed)));
+    outputCollector.emit(new BeamElement<>(viewFn.apply(windowed)));
   }
 
   public PCollectionView getTag() {
