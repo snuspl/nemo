@@ -102,21 +102,23 @@ public final class LogicalDAGGenerator
             .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
+            .filter(edge -> !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc())))
             .collect(Collectors.toList()));
         // Filter out one to connect out of the candidates.
-        final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().filter(edge ->
-            !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc()))).findFirst())
+        final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().findAny())
             .orElse(Optional.empty());
+
+        inEdgeList.ifPresent(edges -> edges.stream()
+            .filter(e -> !e.equals(edgeToConnect.orElse(null)))
+            .forEach(inEdge ->
+                stageDependencyMap.putIfAbsent(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get())));
 
         if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
           // when we cannot connect vertex in other stages
-          inEdgeList.ifPresent(edges -> edges.forEach(inEdge -> {
-            stageDependencyMap.put(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get());
-          }));
           createNewStage(vertex);
         } else {
           // otherwise connect with a stage.
-          final IRVertex irVertexToConnect = edgeToConnect.get().getSrcIRVertex();
+          final IRVertex irVertexToConnect = edgeToConnect.get().getSrc();
           vertexStageNumHashMap.put(vertex, vertexStageNumHashMap.get(irVertexToConnect));
           final Optional<List<IRVertex>> list =
               vertexListForEachStage.stream().filter(l -> l.contains(irVertexToConnect)).findFirst();
@@ -157,9 +159,9 @@ public final class LogicalDAGGenerator
         final Optional<Set<IREdge>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
           final RuntimeVertex srcRuntimeVertex =
-              irVertexIdToRuntimeVertexMap.get(irEdge.getSrcIRVertex().getId());
+              irVertexIdToRuntimeVertexMap.get(irEdge.getSrc().getId());
           final RuntimeVertex dstRuntimeVertex =
-              irVertexIdToRuntimeVertexMap.get(irEdge.getDstIRVertex().getId());
+              irVertexIdToRuntimeVertexMap.get(irEdge.getDst().getId());
 
           if (srcRuntimeVertex == null) {
             throw new IllegalVertexOperationException("unable to locate srcRuntimeVertex for IREdge " + irEdge);
