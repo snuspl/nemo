@@ -55,14 +55,14 @@ public final class LogicalDAGGenerator
    */
   private final HashMap<IRVertex, Integer> vertexStageNumHashMap;
   private final List<List<IRVertex>> vertexListForEachStage;
-  private final HashMap<Integer, Integer> stageDependencyMap;
+  private final List<Integer> dependentStagesList;
   private final AtomicInteger stageNumber;
 
   public LogicalDAGGenerator() {
     logicalDAGBuilder = new DAGBuilder<>();
     vertexStageNumHashMap = new HashMap<>();
     vertexListForEachStage = new ArrayList<>();
-    stageDependencyMap = new HashMap<>();
+    dependentStagesList = new ArrayList<>();
     stageNumber = new AtomicInteger(0);
   }
 
@@ -102,16 +102,16 @@ public final class LogicalDAGGenerator
             .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Local))
             .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes()))
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
-            .filter(edge -> !stageDependencyMap.containsKey(vertexStageNumHashMap.get(edge.getSrc())))
+            .filter(edge -> !dependentStagesList.contains(vertexStageNumHashMap.get(edge.getSrc())))
             .collect(Collectors.toList()));
         // Filter out one to connect out of the candidates.
         final Optional<IREdge> edgeToConnect = inEdgesForStage.map(edges -> edges.stream().findAny())
             .orElse(Optional.empty());
 
+        // Mark stages that are dependent on others
         inEdgeList.ifPresent(edges -> edges.stream()
             .filter(e -> !e.equals(edgeToConnect.orElse(null)))
-            .forEach(inEdge ->
-                stageDependencyMap.putIfAbsent(vertexStageNumHashMap.get(inEdge.getSrc()), stageNumber.get())));
+            .forEach(inEdge -> dependentStagesList.add(vertexStageNumHashMap.get(inEdge.getSrc()))));
 
         if (!inEdgesForStage.isPresent() || inEdgesForStage.get().isEmpty() || !edgeToConnect.isPresent()) {
           // when we cannot connect vertex in other stages
