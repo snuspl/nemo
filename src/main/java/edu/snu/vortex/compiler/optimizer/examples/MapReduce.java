@@ -39,7 +39,7 @@ public final class MapReduce {
     final IRVertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
 
     // Before
-    final DAGBuilder<IRVertex, Edge<IRVertex>> builder = new DAGBuilder();
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     builder.addVertex(source);
     builder.addVertex(map);
     builder.addVertex(reduce);
