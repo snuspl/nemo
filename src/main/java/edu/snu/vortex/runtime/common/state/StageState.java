@@ -52,6 +52,10 @@ public final class StageState {
     return stateMachineBuilder.build();
   }
 
+  public StateMachine getStateMachine() {
+    return stateMachine;
+  }
+
   /**
    * Stage states.
    */

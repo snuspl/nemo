@@ -72,6 +72,10 @@ public final class TaskState {
     return stateMachineBuilder.build();
   }
 
+  public StateMachine getStateMachine() {
+    return stateMachine;
+  }
+
   /**
    * Task states.
    */

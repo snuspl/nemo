@@ -58,6 +58,10 @@ public final class TaskGroupState {
     return stateMachineBuilder.build();
   }
 
+  public StateMachine getStateMachine() {
+    return stateMachine;
+  }
+
   /**
    * Task Group states.
    */

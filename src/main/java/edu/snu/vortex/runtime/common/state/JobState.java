@@ -52,6 +52,10 @@ public final class JobState {
     return stateMachineBuilder.build();
   }
 
+  public StateMachine getStateMachine() {
+    return stateMachine;
+  }
+
   /**
    * Job states.
    */
