@@ -52,12 +52,12 @@ public final class PadoEdgePass implements Pass {
     return dag;
   }
 
-  private boolean fromTransientToReserved(final IREdge irEdge) {
+  private static boolean fromTransientToReserved(final IREdge irEdge) {
     return irEdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Transient) &&
         irEdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved);
   }
 
-  private boolean fromReservedToTransient(final IREdge irEdge) {
+  private static boolean fromReservedToTransient(final IREdge irEdge) {
     return irEdge.getSrc().getAttr(Attribute.Key.Placement).equals(Attribute.Reserved) &&
         irEdge.getDst().getAttr(Attribute.Key.Placement).equals(Attribute.Transient);
   }

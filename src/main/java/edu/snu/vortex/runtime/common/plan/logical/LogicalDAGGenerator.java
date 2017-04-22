@@ -223,7 +223,7 @@ public final class LogicalDAGGenerator
    * @param irVertex to convert.
    * @return the converted Runtime Vertex.
    */
-  private RuntimeVertex convertVertex(final IRVertex irVertex) {
+  private static RuntimeVertex convertVertex(final IRVertex irVertex) {
     final RuntimeVertex newVertex;
 
     // TODO #100: Add irVertex Type in IR

@@ -62,6 +62,15 @@ public final class DAGBuilder<V, E extends Edge<V>> {
     return vertices.isEmpty();
   }
 
+  /**
+   * check if the DAGBuilder contains the vertex.
+   * @param vertex vertex that it searches for.
+   * @return whether or not the builder contains it.
+   */
+  public boolean contains(final V vertex) {
+    return vertices.contains(vertex);
+  }
+
   public DAG<V, E> build() {
     return new DAG<>(vertices, incomingEdges, outgoingEdges);
   }

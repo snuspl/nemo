@@ -38,8 +38,8 @@ public final class IREdge extends Edge<IRVertex> {
   private final Type type;
 
   public IREdge(final Type type,
-         final IRVertex src,
-         final IRVertex dst) {
+                final IRVertex src,
+                final IRVertex dst) {
     super(src, dst);
     this.id = IdManager.newEdgeId();
     this.attributes = AttributeMap.of(this);

@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.utils.dag.DAG;
 
@@ -54,15 +56,15 @@ public final class Optimizer {
       this.passes = passes;
     }
 
-    private DAG process(final DAG dag) throws Exception {
-      DAG optimizedDAG = dag;
-      passes.forEach(pass -> {
+    private DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
+      DAG<IRVertex, IREdge> optimizedDAG = dag;
+      for (final Pass pass : passes) {
         try {
-          pass.process(optimizedDAG);
+          optimizedDAG = pass.process(optimizedDAG);
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
-      });
+      }
       return optimizedDAG;
     }
   }
@@ -84,9 +86,9 @@ public final class Optimizer {
     POLICIES.put(PolicyType.None,
         new ArrayList<>());
     POLICIES.put(PolicyType.Pado,
-        Arrays.asList(new PadoVertexPass(), new PadoEdgePass(), new ParallelismPass()));
+        Arrays.asList(new GroupLoopPass(), new PadoVertexPass(), new PadoEdgePass(), new ParallelismPass()));
     POLICIES.put(PolicyType.Disaggregation,
-        Arrays.asList(new DisaggregationPass(), new ParallelismPass()));
+        Arrays.asList(new GroupLoopPass(), new DisaggregationPass(), new ParallelismPass()));
   }
 
   /**

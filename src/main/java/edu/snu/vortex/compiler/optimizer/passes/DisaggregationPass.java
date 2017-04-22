@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public final class DisaggregationPass implements Pass {
 
-  public DAG process(final DAG<IRVertex, IREdge> dag) throws Exception {
+  public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.topologicalDo(vertex -> {
       vertex.setAttr(Attribute.Key.Placement, Attribute.Compute);
     });
