@@ -50,7 +50,7 @@ public final class LoopVertex extends IRVertex {
     return builder;
   }
 
-  public DAG getDAG() {
+  public DAG<IRVertex, IREdge> getDAG() {
     return builder.build();
   }
 
@@ -59,9 +59,17 @@ public final class LoopVertex extends IRVertex {
     this.incomingEdges.get(edge.getDst()).add(edge);
   }
 
+  public Map<IRVertex, Set<IREdge>> getIncomingEdges() {
+    return this.incomingEdges;
+  }
+
   public void addOutgoingEdge(final IREdge edge) {
     this.outgoingEdges.putIfAbsent(edge.getSrc(), new HashSet<>());
     this.outgoingEdges.get(edge.getSrc()).add(edge);
+  }
+
+  public Map<IRVertex, Set<IREdge>> getOutgoingEdges() {
+    return this.outgoingEdges;
   }
 
   @Override
