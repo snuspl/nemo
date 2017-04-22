@@ -106,8 +106,8 @@ public final class LoopGroupingPass implements Pass {
           loopVertex.setVertexIncomingEdges(dag.getIncomingEdgesOf(loopVertex));
           loopVertex.setVertexOutgoingEdges(dag.getOutgoingEdgesOf(loopVertex));
           // connect loop vertices together.
-          loopVertex.setPrev(rootLoopVertex.getLast());
-          rootLoopVertex.getLast().setNext(loopVertex);
+          loopVertex.setPrevLoopVertex(rootLoopVertex.getLast());
+          rootLoopVertex.getLast().setNextLoopVertex(loopVertex);
         }
       } else {
         throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);

@@ -33,8 +33,8 @@ public final class LoopVertex extends IRVertex {
   private final Map<IRVertex, Set<IREdge>> dagIncomingEdges;
   private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges;
   private final String compositeTransformFullName;
-  private LoopVertex prev;
-  private LoopVertex next;
+  private LoopVertex prevLoopVertex;
+  private LoopVertex nextLoopVertex;
 
   public LoopVertex(final String compositeTransformFullName) {
     super();
@@ -44,8 +44,8 @@ public final class LoopVertex extends IRVertex {
     this.dagIncomingEdges = new HashMap<>();
     this.dagOutgoingEdges = new HashMap<>();
     this.compositeTransformFullName = compositeTransformFullName;
-    this.prev = null;
-    this.next = null;
+    this.prevLoopVertex = null;
+    this.nextLoopVertex = null;
   }
 
   public DAGBuilder<IRVertex, IREdge> getBuilder() {
@@ -96,46 +96,46 @@ public final class LoopVertex extends IRVertex {
 
   public Integer getNumberOfIterations() {
     if (this.hasNext()) {
-      return this.next.getNumberOfIterations() + 1;
+      return this.nextLoopVertex.getNumberOfIterations() + 1;
     } else {
       return 1;
     }
   }
 
-  public Boolean isRoot() {
-    return prev == null && vertexIncomingEdges.isEmpty() && vertexOutgoingEdges.isEmpty();
+  public void setPrevLoopVertex(final LoopVertex prevLoopVertex) {
+    this.prevLoopVertex = prevLoopVertex;
   }
 
   public Boolean hasNext() {
-    return next != null;
+    return nextLoopVertex != null;
   }
 
-  public void setPrev(final LoopVertex prev) {
-    this.prev = prev;
+  public void setNextLoopVertex(final LoopVertex nextLoopVertex) {
+    this.nextLoopVertex = nextLoopVertex;
   }
 
-  public LoopVertex getNext() {
-    return this.next;
+  public LoopVertex getNextLoopVertex() {
+    return this.nextLoopVertex;
+  }
+
+  public Boolean isRoot() {
+    return prevLoopVertex == null && vertexIncomingEdges.isEmpty() && vertexOutgoingEdges.isEmpty();
   }
 
   public LoopVertex getRoot() {
-    if (this.prev == null) {
+    if (this.prevLoopVertex == null) {
       return this;
     } else {
-      return this.prev.getRoot();
+      return this.prevLoopVertex.getRoot();
     }
   }
 
   public LoopVertex getLast() {
     if (this.hasNext()) {
-      return this.getNext().getLast();
+      return this.getNextLoopVertex().getLast();
     } else {
       return this;
     }
-  }
-
-  public void setNext(final LoopVertex next) {
-    this.next = next;
   }
 
   @Override

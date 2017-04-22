@@ -61,7 +61,7 @@ public final class LoopUnrollingPass implements Pass {
         dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
 
         while (loopVertex.hasNext()) {
-          loopVertex = loopVertex.getNext();
+          loopVertex = loopVertex.getNextLoopVertex();
           followingLoopVertices.add(loopVertex);
           builder.addVertex(loopVertex);
           loopVertex.getVertexIncomingEdges().forEach(builder::connectVertices);
