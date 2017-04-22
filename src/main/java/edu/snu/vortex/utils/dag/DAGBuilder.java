@@ -54,7 +54,8 @@ public final class DAGBuilder<V, E extends Edge<V>> {
       incomingEdges.get(dst).add(edge);
       outgoingEdges.get(src).add(edge);
     } else {
-      throw new IllegalVertexOperationException("The DAG does not contain either src or dst");
+      throw new IllegalVertexOperationException("The DAG does not contain either src or dst of the edge: " +
+          src + " -> " + dst);
     }
   }
 

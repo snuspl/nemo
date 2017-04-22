@@ -24,6 +24,10 @@ import edu.snu.vortex.utils.dag.DAGBuilder;
  */
 public final class LoopGroupingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
+    return loopRolling(groupLoops(dag));
+  }
+
+  private DAG<IRVertex, IREdge> groupLoops(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     LoopVertex currentLoopVertex = null;
 
@@ -44,7 +48,7 @@ public final class LoopGroupingPass implements Pass {
             if (assignedLoopVertex.getBuilder().contains(irEdge.getSrc())) { // inside the composite loop
               assignedLoopVertex.getBuilder().connectVertices(irEdge);
             } else { // connecting with outside the composite loop
-              assignedLoopVertex.addIncomingEdge(irEdge);
+              assignedLoopVertex.addDagIncomingEdge(irEdge);
               final IREdge edgeToLoop =
                   finalCurrentLoopVertex != null && finalCurrentLoopVertex.getBuilder().contains(irEdge.getSrc()) ?
                       new IREdge(irEdge.getType(), finalCurrentLoopVertex, assignedLoopVertex) : // loop to loop
@@ -66,7 +70,7 @@ public final class LoopGroupingPass implements Pass {
           dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
             if (finalCurrentLoopVertex != null && finalCurrentLoopVertex.getBuilder().contains(irEdge.getSrc())) {
               // connecting with the loop.
-              finalCurrentLoopVertex.addOutgoingEdge(irEdge);
+              finalCurrentLoopVertex.addDagOutgoingEdge(irEdge);
               final IREdge edgeFromLoop = new IREdge(irEdge.getType(), finalCurrentLoopVertex, irEdge.getDst());
               builder.connectVertices(edgeFromLoop);
             } else { // connecting outside the composite loop.
@@ -75,10 +79,54 @@ public final class LoopGroupingPass implements Pass {
           });
         }
       } else {
-        throw new UnsupportedOperationException("Loop Vertex generated from Visitor: weird case");
+        throw new UnsupportedOperationException("Loop Vertex generated from Visitor: " + irVertex);
       }
     }
 
     return builder.build();
+  }
+
+  private DAG<IRVertex, IREdge> loopRolling(final DAG<IRVertex, IREdge> dag) throws Exception {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+    LoopVertex rootLoopVertex = null;
+
+    for (IRVertex irVertex : dag.getTopologicalSort()) { // source vertex
+      if (irVertex instanceof SourceVertex) {
+        builder.addVertex(irVertex);
+      } else if (irVertex instanceof OperatorVertex) { // operator vertex
+        addToBuilder(builder, irVertex, dag);
+      } else if (irVertex instanceof LoopVertex) { // loop vertex: we roll them if it is not root
+        final LoopVertex loopVertex = (LoopVertex) irVertex;
+
+        if (rootLoopVertex == null || !loopVertex.getName().contains(rootLoopVertex.getName())) { // initial root loop
+          rootLoopVertex = loopVertex;
+          addToBuilder(builder, loopVertex, dag);
+        } else { // following loop
+          // save edges connected to vertex to prevent loss of data.
+          loopVertex.setVertexIncomingEdges(dag.getIncomingEdgesOf(loopVertex));
+          loopVertex.setVertexOutgoingEdges(dag.getOutgoingEdgesOf(loopVertex));
+          // connect loop vertices together.
+          loopVertex.setPrev(rootLoopVertex.getLast());
+          rootLoopVertex.getLast().setNext(loopVertex);
+        }
+      } else {
+        throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);
+      }
+    }
+
+    return builder.build();
+  }
+
+  private void addToBuilder(final DAGBuilder<IRVertex, IREdge> builder, final IRVertex irVertex,
+                            final DAG<IRVertex, IREdge> dag) {
+    builder.addVertex(irVertex);
+    dag.getIncomingEdgesOf(irVertex).forEach(edge -> {
+      if (edge.getSrc() instanceof LoopVertex && !((LoopVertex) edge.getSrc()).isRoot()) {
+        final LoopVertex srcLoopVertex = (LoopVertex) edge.getSrc();
+        builder.connectVertices(new IREdge(edge.getType(), srcLoopVertex.getRoot(), irVertex));
+      } else {
+        builder.connectVertices(edge);
+      }
+    });
   }
 }

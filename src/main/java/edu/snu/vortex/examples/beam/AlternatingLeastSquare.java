@@ -311,6 +311,7 @@ public final class AlternatingLeastSquare {
 
     // Iterations to update Item Matrix.
     for (int i = 0; i < numItr; i++) {
+      // NOTE: a single composite transform for the iteration.
       itemMatrix = parsedUserData.apply(new UpdateItemMatrix(numFeatures, lambda, itemMatrix, parsedItemData));
     }
 

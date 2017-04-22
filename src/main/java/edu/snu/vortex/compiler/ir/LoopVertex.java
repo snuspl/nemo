@@ -28,22 +28,24 @@ import java.util.Set;
  */
 public final class LoopVertex extends IRVertex {
   private final DAGBuilder<IRVertex, IREdge> builder;
-  private final Map<IRVertex, Set<IREdge>> incomingEdges;
-  private final Map<IRVertex, Set<IREdge>> outgoingEdges;
+  private final Set<IREdge> vertexIncomingEdges;
+  private final Set<IREdge> vertexOutgoingEdges;
+  private final Map<IRVertex, Set<IREdge>> dagIncomingEdges;
+  private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges;
   private final String compositeTransformFullName;
-  private Integer iterationNum;
+  private LoopVertex prev;
+  private LoopVertex next;
 
   public LoopVertex(final String compositeTransformFullName) {
     super();
     this.builder = new DAGBuilder<>();
-    this.incomingEdges = new HashMap<>();
-    this.outgoingEdges = new HashMap<>();
+    this.vertexIncomingEdges = new HashSet<>();
+    this.vertexOutgoingEdges = new HashSet<>();
+    this.dagIncomingEdges = new HashMap<>();
+    this.dagOutgoingEdges = new HashMap<>();
     this.compositeTransformFullName = compositeTransformFullName;
-    this.iterationNum = 1;
-  }
-
-  public void setIterationNum(final Integer iterationNum) {
-    this.iterationNum = iterationNum;
+    this.prev = null;
+    this.next = null;
   }
 
   public DAGBuilder<IRVertex, IREdge> getBuilder() {
@@ -54,22 +56,86 @@ public final class LoopVertex extends IRVertex {
     return builder.build();
   }
 
-  public void addIncomingEdge(final IREdge edge) {
-    this.incomingEdges.putIfAbsent(edge.getDst(), new HashSet<>());
-    this.incomingEdges.get(edge.getDst()).add(edge);
+  public String getName() {
+    return compositeTransformFullName;
   }
 
-  public Map<IRVertex, Set<IREdge>> getIncomingEdges() {
-    return this.incomingEdges;
+  public void setVertexIncomingEdges(final Set<IREdge> vertexIncomingEdges) {
+    this.vertexIncomingEdges.addAll(vertexIncomingEdges);
   }
 
-  public void addOutgoingEdge(final IREdge edge) {
-    this.outgoingEdges.putIfAbsent(edge.getSrc(), new HashSet<>());
-    this.outgoingEdges.get(edge.getSrc()).add(edge);
+  public Set<IREdge> getVertexIncomingEdges() {
+    return this.vertexIncomingEdges;
   }
 
-  public Map<IRVertex, Set<IREdge>> getOutgoingEdges() {
-    return this.outgoingEdges;
+  public void setVertexOutgoingEdges(final Set<IREdge> vertexOutgoingEdges) {
+    this.vertexOutgoingEdges.addAll(vertexOutgoingEdges);
+  }
+
+  public Set<IREdge> getVertexOutgoingEdges() {
+    return this.vertexOutgoingEdges;
+  }
+
+  public void addDagIncomingEdge(final IREdge edge) {
+    this.dagIncomingEdges.putIfAbsent(edge.getDst(), new HashSet<>());
+    this.dagIncomingEdges.get(edge.getDst()).add(edge);
+  }
+
+  public Map<IRVertex, Set<IREdge>> getDagIncomingEdges() {
+    return this.dagIncomingEdges;
+  }
+
+  public void addDagOutgoingEdge(final IREdge edge) {
+    this.dagOutgoingEdges.putIfAbsent(edge.getSrc(), new HashSet<>());
+    this.dagOutgoingEdges.get(edge.getSrc()).add(edge);
+  }
+
+  public Map<IRVertex, Set<IREdge>> getDagOutgoingEdges() {
+    return this.dagOutgoingEdges;
+  }
+
+  public Integer getNumberOfIterations() {
+    if (this.hasNext()) {
+      return this.next.getNumberOfIterations() + 1;
+    } else {
+      return 1;
+    }
+  }
+
+  public Boolean isRoot() {
+    return prev == null && vertexIncomingEdges.isEmpty() && vertexOutgoingEdges.isEmpty();
+  }
+
+  public Boolean hasNext() {
+    return next != null;
+  }
+
+  public void setPrev(final LoopVertex prev) {
+    this.prev = prev;
+  }
+
+  public LoopVertex getNext() {
+    return this.next;
+  }
+
+  public LoopVertex getRoot() {
+    if (this.prev == null) {
+      return this;
+    } else {
+      return this.prev.getRoot();
+    }
+  }
+
+  public LoopVertex getLast() {
+    if (this.hasNext()) {
+      return this.getNext().getLast();
+    } else {
+      return this;
+    }
+  }
+
+  public void setNext(final LoopVertex next) {
+    this.next = next;
   }
 
   @Override
@@ -77,6 +143,7 @@ public final class LoopVertex extends IRVertex {
     final StringBuilder sb = new StringBuilder();
     sb.append(super.toString());
     sb.append(", name: " + compositeTransformFullName);
+    sb.append(", remaining iteration(s): " + getNumberOfIterations());
     sb.append(", DAG:\n<<  ");
     sb.append(getDAG());
     sb.append(">>");

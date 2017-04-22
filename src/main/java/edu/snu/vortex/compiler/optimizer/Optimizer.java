@@ -89,7 +89,8 @@ public final class Optimizer {
         Arrays.asList(new PadoVertexPass(), new PadoEdgePass(), new ParallelismPass(),
             new LoopGroupingPass(), new LoopUnrollingPass()));
     POLICIES.put(PolicyType.Disaggregation,
-        Arrays.asList(new DisaggregationPass(), new ParallelismPass(), new LoopGroupingPass(), new LoopUnrollingPass()));
+        Arrays.asList(new DisaggregationPass(), new ParallelismPass(),
+            new LoopGroupingPass(), new LoopUnrollingPass()));
   }
 
   /**

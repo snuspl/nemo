@@ -31,13 +31,13 @@ public final class LoopUnrollingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
-    unrollRecursively(builder, dag);
+    decomposeLoopVertices(builder, loopUnrolling(dag));
 
     this.loopVertices.forEach(loopVertex -> {
-      loopVertex.getIncomingEdges().values().forEach(irEdges -> {
+      loopVertex.getDagIncomingEdges().values().forEach(irEdges -> {
         irEdges.forEach(builder::connectVertices);
       });
-      loopVertex.getOutgoingEdges().values().forEach(irEdges -> {
+      loopVertex.getDagOutgoingEdges().values().forEach(irEdges -> {
         irEdges.forEach(builder::connectVertices);
       });
     });
@@ -45,7 +45,38 @@ public final class LoopUnrollingPass implements Pass {
     return builder.build();
   }
 
-  private void unrollRecursively(final DAGBuilder<IRVertex, IREdge> builder, final DAG<IRVertex, IREdge> dag) {
+  private DAG<IRVertex, IREdge> loopUnrolling(final DAG<IRVertex, IREdge> dag) throws Exception {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+    final Set<LoopVertex> followingLoopVertices = new HashSet<>();
+
+    dag.topologicalDo(irVertex -> {
+      if (irVertex instanceof SourceVertex) {
+        builder.addVertex(irVertex);
+      } else if (irVertex instanceof OperatorVertex) {
+        builder.addVertex(irVertex);
+        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
+      } else if (irVertex instanceof LoopVertex) {
+        LoopVertex loopVertex = (LoopVertex) irVertex;
+        builder.addVertex(loopVertex);
+        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
+
+        while (loopVertex.hasNext()) {
+          loopVertex = loopVertex.getNext();
+          followingLoopVertices.add(loopVertex);
+          builder.addVertex(loopVertex);
+          loopVertex.getVertexIncomingEdges().forEach(builder::connectVertices);
+        }
+      } else {
+        throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);
+      }
+
+      followingLoopVertices.forEach(vertex -> vertex.getVertexOutgoingEdges().forEach(builder::connectVertices));
+    });
+
+    return builder.build();
+  }
+
+  private void decomposeLoopVertices(final DAGBuilder<IRVertex, IREdge> builder, final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex -> {
       if (irVertex instanceof SourceVertex) {
         builder.addVertex(irVertex);
@@ -55,8 +86,10 @@ public final class LoopUnrollingPass implements Pass {
       } else if (irVertex instanceof LoopVertex) {
         final LoopVertex loopVertex = (LoopVertex) irVertex;
         final DAG<IRVertex, IREdge> loopDAG = loopVertex.getDAG();
-        unrollRecursively(builder, loopDAG);
+        decomposeLoopVertices(builder, loopDAG);
         this.loopVertices.add(loopVertex);
+      } else {
+        throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);
       }
     });
   }
