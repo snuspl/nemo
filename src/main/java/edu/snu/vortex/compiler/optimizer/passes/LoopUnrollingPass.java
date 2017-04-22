@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Pass for unrolling the loops grouped by the {@link edu.snu.vortex.compiler.ir.LoopVertex}.
  */
-public final class UnrollLoopPass implements Pass {
+public final class LoopUnrollingPass implements Pass {
   private Set<LoopVertex> loopVertices = new HashSet<>();
 
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {

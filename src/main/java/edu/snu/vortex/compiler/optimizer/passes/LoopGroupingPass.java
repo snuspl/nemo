@@ -22,7 +22,7 @@ import edu.snu.vortex.utils.dag.DAGBuilder;
 /**
  * Pass for grouping each loops together using the LoopVertex.
  */
-public final class GroupLoopPass implements Pass {
+public final class LoopGroupingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     LoopVertex currentLoopVertex = null;
