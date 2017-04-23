@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,8 +34,7 @@ public final class ExecutorRepresenter {
   private final String executorId;
   private final RuntimeAttribute resourceType;
   private final int executorCapacity;
-  private final Set<String> scheduledTaskGroups;
-  private final Set<String> runningTaskGroups;
+  private final Set<TaskGroup> runningTaskGroups;
 
   public ExecutorRepresenter(final String executorId,
                              final RuntimeAttribute resourceType,
@@ -42,20 +42,23 @@ public final class ExecutorRepresenter {
     this.executorId = executorId;
     this.resourceType = resourceType;
     this.executorCapacity = executorCapacity;
-    this.scheduledTaskGroups = new HashSet<>();
     this.runningTaskGroups = new HashSet<>();
   }
 
-  public void onTaskGroupScheduled(final String taskGroupId) {
-
+  public void onTaskGroupScheduled(final TaskGroup taskGroup) {
+    runningTaskGroups.add(taskGroup);
   }
 
-  public void onTaskGroupLaunched(final String taskGroupId) {
-
+  public void onTaskGroupExecutionComplete(final TaskGroup taskGroup) {
+    runningTaskGroups.remove(taskGroup);
   }
 
-  public void onTaskGroupCompleted(final String taskGroupId) {
+  public int getExecutorCapacity() {
+    return executorCapacity;
+  }
 
+  public Set<TaskGroup> getRunningTaskGroups() {
+    return runningTaskGroups;
   }
 
   public String getExecutorId() {
