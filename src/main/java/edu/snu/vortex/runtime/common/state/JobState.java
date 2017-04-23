@@ -41,11 +41,8 @@ public final class JobState {
         "Begin executing!");
     stateMachineBuilder.addTransition(State.EXECUTING, State.COMPLETE,
         "All stages complete, job complete");
-
-    stateMachineBuilder.addTransition(State.READY, State.FAILED,
-        "Master failure");
     stateMachineBuilder.addTransition(State.EXECUTING, State.FAILED,
-        "Executor failure");
+        "Unrecoverable failure in a stage");
 
     stateMachineBuilder.setInitialState(State.READY);
 
