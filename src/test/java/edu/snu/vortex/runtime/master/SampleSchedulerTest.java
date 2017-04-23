@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.scheduler.SampleScheduler;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 import org.junit.Before;
 import org.junit.Test;
