@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.utils;
 
+import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
+
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,7 +51,7 @@ public final class StateMachine {
           .append(getPossibleTransitionsFromCurrentState())
           .toString();
 
-      throw new RuntimeException(exceptionMessage);
+      throw new IllegalStateException(exceptionMessage);
     }
   }
 
@@ -74,7 +76,7 @@ public final class StateMachine {
           .append(toState).append('\n')
           .append(getPossibleTransitionsFromCurrentState())
           .toString();
-      throw new RuntimeException(exceptionMessage);
+      throw new IllegalStateTransitionException(new Exception(exceptionMessage));
     }
 
     currentState = toState;
