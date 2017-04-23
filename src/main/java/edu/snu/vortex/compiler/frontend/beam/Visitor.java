@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import com.sun.istack.internal.Nullable;
 import edu.snu.vortex.client.beam.LoopCompositeTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.ir.*;
@@ -31,6 +30,7 @@ import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PValue;
 import org.apache.beam.sdk.values.TaggedPValue;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +43,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final PipelineOptions options;
   // currentLoopVertex distinguishes primitive transforms that are inside composite transforms
   // (which each corresponds to an independent loop vertex) from those that are not.
-  @Nullable private LoopVertex currentLoopVertex;
+  private LoopVertex currentLoopVertex; // nullable
 
   Visitor(final DAGBuilder<IRVertex, IREdge> builder, final PipelineOptions options) {
     this.builder = builder;

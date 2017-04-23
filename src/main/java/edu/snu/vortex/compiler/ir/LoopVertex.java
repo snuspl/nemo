@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import com.sun.istack.internal.Nullable;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
@@ -35,8 +34,8 @@ public final class LoopVertex extends IRVertex {
   private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges;
   private final String compositeTransformFullName;
   // prevLoopVertex and nextLoopVertex chains each iteration of LoopVertices like linked lists.
-  @Nullable private LoopVertex prevLoopVertex;
-  @Nullable private LoopVertex nextLoopVertex;
+  private LoopVertex prevLoopVertex; // nullable
+  private LoopVertex nextLoopVertex; // nullable
 
   public LoopVertex(final String compositeTransformFullName) {
     super();

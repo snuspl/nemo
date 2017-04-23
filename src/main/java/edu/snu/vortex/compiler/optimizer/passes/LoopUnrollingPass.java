@@ -53,7 +53,7 @@ public final class LoopUnrollingPass implements Pass {
    * This method unrolls the root LoopVertex, in the form of linked list, into a line of Loop Vertices in the DAG.
    * @param dag DAG to process.
    * @return Processed DAG.
-   * @throws Exception
+   * @throws Exception exceptions through the way.
    */
   private DAG<IRVertex, IREdge> loopUnrolling(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();

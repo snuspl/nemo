@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
-import com.sun.istack.internal.Nullable;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
@@ -37,11 +36,11 @@ public final class LoopGroupingPass implements Pass {
    * transform.
    * @param dag DAG to process
    * @return processed DAG.
-   * @throws Exception
+   * @throws Exception exceptions through the way.
    */
   private DAG<IRVertex, IREdge> groupLoops(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    LoopVertex currentLoopVertex = null;
+    LoopVertex currentLoopVertex = null; // nullable
 
     for (IRVertex irVertex : dag.getTopologicalSort()) {
       if (irVertex instanceof SourceVertex) { // Source vertex: no incoming edges
@@ -50,8 +49,8 @@ public final class LoopGroupingPass implements Pass {
         final OperatorVertex operatorVertex = (OperatorVertex) irVertex;
         // If this is Composite.
         if (operatorVertex.isComposite()) {
-          @Nullable final LoopVertex assignedLoopVertex = operatorVertex.getAssignedLoopVertex();
-          final LoopVertex finalCurrentLoopVertex = currentLoopVertex;
+          final LoopVertex assignedLoopVertex = operatorVertex.getAssignedLoopVertex(); // nullable
+          final LoopVertex finalCurrentLoopVertex = currentLoopVertex; // nullable
 
           builder.addVertex(assignedLoopVertex);
           assignedLoopVertex.getBuilder().addVertex(operatorVertex);
@@ -103,7 +102,7 @@ public final class LoopGroupingPass implements Pass {
    * others in the form of a linked list.
    * @param dag DAG to process.
    * @return Processed DAG.
-   * @throws Exception
+   * @throws Exception exceptions through the way.
    */
   private DAG<IRVertex, IREdge> loopRolling(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();

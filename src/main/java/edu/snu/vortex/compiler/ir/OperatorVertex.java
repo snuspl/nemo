@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import com.sun.istack.internal.Nullable;
+
+import javax.annotation.Nullable;
 
 /**
  * IRVertex that transforms input data.
@@ -23,7 +24,7 @@ import com.sun.istack.internal.Nullable;
  */
 public final class OperatorVertex extends IRVertex {
   private final Transform transform;
-  @Nullable private final LoopVertex assignedLoopVertex;
+  private final LoopVertex assignedLoopVertex; // nullable
 
   public OperatorVertex(final Transform t) {
     this(t, null);
@@ -42,6 +43,7 @@ public final class OperatorVertex extends IRVertex {
     return assignedLoopVertex != null;
   }
 
+  @Nullable
   public LoopVertex getAssignedLoopVertex() {
     return assignedLoopVertex;
   }
