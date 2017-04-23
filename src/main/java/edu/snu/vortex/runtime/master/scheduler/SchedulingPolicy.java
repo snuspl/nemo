@@ -17,12 +17,16 @@ package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
+import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Defines the policy by which {@link Scheduler} assigns task groups to executors.
  */
+@DefaultImplementation(BatchRRScheduler.class)
 public interface SchedulingPolicy {
 
   /**
@@ -39,7 +43,7 @@ public interface SchedulingPolicy {
    * @param taskGroup to schedule
    * @return executorId on which the taskGroup is scheduled if successful, an empty Optional otherwise.
    */
-  Optional<String> attemptSchedule(final TaskGroup taskGroup);
+  Optional<ExecutorRepresenter> attemptSchedule(final TaskGroup taskGroup);
 
   /**
    * Adds the executor to the pool of available executors.
@@ -57,7 +61,7 @@ public interface SchedulingPolicy {
    *
    * @param executor that has been deleted.
    */
-  void onExecutorDeleted(final ExecutorRepresenter executor);
+  Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor);
 
   /**
    * Marks the executor scheduled for the taskGroup.
@@ -70,13 +74,6 @@ public interface SchedulingPolicy {
   void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup);
 
   /**
-   * Tentative.
-   * @param executor .
-   * @param taskGroup .
-   */
-  void onTaskGroupLaunched(final ExecutorRepresenter executor, final TaskGroup taskGroup);
-
-  /**
    * Marks the taskGroup's completion in the executor.
    * Unlocks this policy to schedule a next taskGroup if locked.
    * (Depending on the executor's resource type)
@@ -85,4 +82,14 @@ public interface SchedulingPolicy {
    * @param taskGroup whose execution has completed.
    */
   void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup);
+
+  /**
+   * Marks the taskGroup's failure in the executor.
+   * Unlocks this policy to reschedule this taskGroup if locked.
+   * (Depending on the executor's resource type)
+   *
+   * @param executor where the taskGroup's execution has failed.
+   * @param taskGroup whose execution has completed.
+   */
+  void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup);
 }
