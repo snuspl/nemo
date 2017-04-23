@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.state;
 
-import edu.snu.vortex.runtime.common.ExecutionState;
 import edu.snu.vortex.utils.StateMachine;
 
 /**
@@ -32,7 +31,7 @@ public final class TaskGroupState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(ExecutionState.ChannelState.DISCONNECTED, "The task group has been created.");
+    stateMachineBuilder.addState(State.READY, "The task group has been created.");
     stateMachineBuilder.addState(State.EXECUTING, "The task group is executing.");
     stateMachineBuilder.addState(State.COMPLETE, "All of this task group's tasks have completed.");
     stateMachineBuilder.addState(State.FAILED_RECOVERABLE, "Task group failed, but is recoverable.");
@@ -64,5 +63,16 @@ public final class TaskGroupState {
 
   public StateMachine getStateMachine() {
     return stateMachine;
+  }
+
+  /**
+   * TaskGroupState.
+   */
+  public enum State {
+    READY,
+    EXECUTING,
+    COMPLETE,
+    FAILED_RECOVERABLE,
+    FAILED_UNRECOVERABLE
   }
 }
