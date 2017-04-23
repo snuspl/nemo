@@ -16,13 +16,17 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
+import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.SchedulingException;
+import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
+import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 
@@ -77,15 +81,33 @@ public final class Scheduler {
     executionStateManager.manageNewJob(physicalPlan);
   }
 
-  public void onTaskGroupStateMessageReceived() {
-
+  public void onTaskGroupStateMessageReceived(final String executorId,
+                                              final ExecutorMessage.TaskGroupStateChangedMsg message) {
+    final TaskGroupState.State newState = convertState(message.getState());
+    switch (newState) {
+    case COMPLETE:
+      onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId), message.getTaskGroupId());
+      break;
+    case FAILED_RECOVERABLE:
+      onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), message.getTaskGroupId(),
+          message.getFailedTaskId());
+      break;
+    case FAILED_UNRECOVERABLE:
+      throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on Task #")
+          .append(message.getFailedTaskId()).append(" in Executor ").append(executorId).toString()));
+    case READY:
+    case EXECUTING:
+      throw new IllegalStateTransitionException(new Exception("The states READY/EXECUTING cannot occur at this point"));
+    default:
+      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + newState));
+    }
   }
 
-  private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
-    schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroup);
+  private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
+    schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
     final boolean currentStageComplete =
-        executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE);
+        executionStateManager.onTaskGroupStateChanged(taskGroupId, TaskGroupState.State.COMPLETE);
 
     if (currentStageComplete) {
       final boolean jobComplete =
@@ -99,20 +121,23 @@ public final class Scheduler {
     }
   }
 
-  private void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup,
-                                         final String taskIdOnFailure) {
-    // TODO #000: Handle Fault Tolerance
-    schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroup);
+  // TODO #000: Handle Fault Tolerance
+  private void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId,
+                                          final String taskIdOnFailure) {
+    schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroupId);
   }
 
+  // TODO #000: Resource manager
   public void onExecutorAdded(final ExecutorRepresenter executor) {
     executorRepresenterMap.put(executor.getExecutorId(), executor);
     schedulingPolicy.onExecutorAdded(executor);
   }
 
+  // TODO #000: Handle Fault Tolerance
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
-    final Set<TaskGroup> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executor);
-    taskGroupsToSchedule.addAll(taskGroupsToReschedule);
+    final Set<String> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executor);
+
+    // Reschedule taskGroupsToReschedule
   }
 
   /**
@@ -154,9 +179,11 @@ public final class Scheduler {
                 schedulingPolicy.getScheduleTimeout());
             taskGroupsToSchedule.addLast(taskGroup);
           } else {
+            // TODO #000: Executor
             // Must send this taskGroup to the destination executor.
-            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
-            executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(), TaskGroupState.State.EXECUTING);
+            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup.getTaskGroupId());
+            executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
+                TaskGroupState.State.EXECUTING);
           }
         } catch (final Exception e) {
           throw new SchedulingException(e);
@@ -168,5 +195,23 @@ public final class Scheduler {
   public void terminate() {
     schedulerThread.shutdown();
     taskGroupsToSchedule.clear();
+  }
+
+  // TODO #000: Cleanup Protobuf Usage
+  private TaskGroupState.State convertState(final ExecutorMessage.TaskGroupStateFromExecutor state) {
+    switch (state) {
+    case READY:
+      return TaskGroupState.State.READY;
+    case EXECUTING:
+      return TaskGroupState.State.EXECUTING;
+    case COMPLETE:
+      return TaskGroupState.State.COMPLETE;
+    case FAILED_RECOVERABLE:
+      return TaskGroupState.State.FAILED_RECOVERABLE;
+    case FAILED_UNRECOVERABLE:
+      return TaskGroupState.State.FAILED_UNRECOVERABLE;
+    default:
+      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
+    }
   }
 }
