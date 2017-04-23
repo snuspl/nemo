@@ -19,13 +19,14 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import edu.snu.vortex.runtime.common.state.JobState;
+import edu.snu.vortex.runtime.common.state.StageState;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.SchedulingException;
+import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,17 +44,27 @@ public final class Scheduler {
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
   private final Map<String, ExecutorRepresenter> executorRepresenterMap;
-  private SchedulingPolicy schedulingPolicy;
-  private List<PhysicalStage> physicalStages;
+  private final ExecutionStateManager executionStateManager;
 
-  public Scheduler(final RuntimeAttribute schedulingPolicy) {
+  private SchedulingPolicy schedulingPolicy;
+  private RuntimeAttribute schedulingPolicyAttribute;
+  private long scheduleTimeout;
+  private List<PhysicalStage> physicalStages;
+  private PhysicalStage currentStage;
+
+  public Scheduler(final ExecutionStateManager executionStateManager,
+                   final RuntimeAttribute schedulingPolicyAttribute,
+                   final long scheduleTimeout) {
     this.schedulerThread = Executors.newSingleThreadExecutor();
     this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
     this.executorRepresenterMap = new HashMap<>();
     schedulerThread.execute(new TaskGroupScheduleHandler());
 
+    this.executionStateManager = executionStateManager;
+
     // The default policy is initialized and set here.
-    setSchedulingPolicy(schedulingPolicy);
+    this.schedulingPolicyAttribute = schedulingPolicyAttribute;
+    this.scheduleTimeout = scheduleTimeout;
   }
 
   /**
@@ -62,12 +73,46 @@ public final class Scheduler {
    */
   public void scheduleJob(final PhysicalPlan physicalPlan) {
     this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+    initializeSchedulingPolicy();
+    executionStateManager.manageNewJob(physicalPlan);
   }
 
-  // TODO #90: Integrate Components for Single-Machine End-to-End Execution
-  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+  public void onTaskGroupStateMessageReceived(final ) {
+
+  }
+
+  private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroup);
-    scheduleNextStage();
+
+    final boolean currentStageComplete =
+        executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE);
+
+    if (currentStageComplete) {
+      final boolean jobComplete =
+          executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.COMPLETE);
+
+      if (jobComplete) {
+        executionStateManager.onJobStateChanged(JobState.State.COMPLETE);
+      } else {
+        scheduleNextStage();
+      }
+    }
+  }
+
+  private void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup,
+                                         final String taskIdOnFailure) {
+    // TODO #000: Handle Fault Tolerance
+    schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroup);
+  }
+
+  public void onExecutorAdded(final ExecutorRepresenter executor) {
+    executorRepresenterMap.put(executor.getExecutorId(), executor);
+    schedulingPolicy.onExecutorAdded(executor);
+  }
+
+  public void onExecutorRemoved(final ExecutorRepresenter executor) {
+    final Set<TaskGroup> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executor);
+    taskGroupsToSchedule.addAll(taskGroupsToReschedule);
   }
 
   /**
@@ -75,25 +120,22 @@ public final class Scheduler {
    * It takes the list for task groups for the stage and adds them where the scheduler thread continuously polls from.
    */
   private void scheduleNextStage() {
-    final List<TaskGroup> taskGroupList = physicalStages.remove(0).getTaskGroupList();
-    taskGroupsToSchedule.addAll(taskGroupList);
+    currentStage = physicalStages.remove(0);
+    taskGroupsToSchedule.addAll(currentStage.getTaskGroupList());
+    executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.EXECUTING);
   }
 
   /**
-   * Sets the scheduling policy.
+   * Initializes the scheduling policy.
    * This can be called anytime during this scheduler's lifetime and the policy will change flexibly.
-   * @param schedulingPolicy The attribute for the scheduling policy.
    */
-  private void setSchedulingPolicy(final RuntimeAttribute schedulingPolicy) {
-    switch (schedulingPolicy) {
+  private void initializeSchedulingPolicy() {
+    switch (schedulingPolicyAttribute) {
     case Batch:
-      this.schedulingPolicy = new BatchScheduler();
-      break;
-    case SamplePolicy:
-      this.schedulingPolicy = SampleScheduler.newInstance();
+      this.schedulingPolicy = new BatchRRScheduler(scheduleTimeout);
       break;
     default:
-      throw new SchedulingException("The scheduling policy is unsupported by runtime");
+      throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));
     }
   }
 
@@ -106,18 +148,18 @@ public final class Scheduler {
       while (!schedulerThread.isShutdown()) {
         try {
           final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();
-          final Optional<String> executorId = schedulingPolicy.attemptSchedule(taskGroup);
-          if (!executorId.isPresent()) {
+          final Optional<ExecutorRepresenter> executor = schedulingPolicy.attemptSchedule(taskGroup);
+          if (!executor.isPresent()) {
             LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
                 schedulingPolicy.getScheduleTimeout());
             taskGroupsToSchedule.addLast(taskGroup);
           } else {
-            // TODO #90: Integrate Components for Single-Machine End-to-End Execution
             // Must send this taskGroup to the destination executor.
-            schedulingPolicy.onTaskGroupScheduled(executorRepresenterMap.get(executorId.get()), taskGroup);
+            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
+            executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(), TaskGroupState.State.EXECUTING);
           }
         } catch (final Exception e) {
-          throw new SchedulingException(e.getMessage());
+          throw new SchedulingException(e);
         }
       }
     }
