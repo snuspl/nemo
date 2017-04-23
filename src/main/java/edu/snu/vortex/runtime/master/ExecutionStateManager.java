@@ -39,12 +39,23 @@ public final class ExecutionStateManager {
   private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
 
   private String jobId;
+
+  /**
+   * The data structures below track the execution states of this job.
+   */
   private JobState jobState;
   private final Map<String, StageState> idToStageStates;
   private final Map<String, TaskGroupState> idToTaskGroupStates;
   private final Map<String, TaskState> idToTaskStates;
 
+  /**
+   * Represent the job to manage.
+   */
   private PhysicalPlan physicalPlan;
+
+  /**
+   * Used to track stage/job completion status.
+   */
   private Set<String> currentStageTaskGroupIds;
   private Set<String> currentJobStageIds;
 
@@ -56,6 +67,10 @@ public final class ExecutionStateManager {
     this.currentJobStageIds = new HashSet<>();
   }
 
+  /**
+   * Receives a new job to manage.
+   * @param physicalPlanForNewJob to manage.
+   */
   public void manageNewJob(final PhysicalPlan physicalPlanForNewJob) {
     this.physicalPlan = physicalPlanForNewJob;
     idToStageStates.clear();
@@ -67,6 +82,7 @@ public final class ExecutionStateManager {
     this.jobState = new JobState();
     onJobStateChanged(JobState.State.EXECUTING);
 
+    // Initialize the states for the job down to task-level.
     physicalPlanForNewJob.getStageDAG().topologicalDo(physicalStage -> {
       currentJobStageIds.add(physicalStage.getId());
       idToStageStates.put(physicalStage.getId(), new StageState());
@@ -78,6 +94,10 @@ public final class ExecutionStateManager {
     });
   }
 
+  /**
+   * Updates the state of the job.
+   * @param newState of the job.
+   */
   public void onJobStateChanged(final JobState.State newState) {
     if (newState == JobState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing Job ID {0}...", jobId);
@@ -95,7 +115,13 @@ public final class ExecutionStateManager {
     }
   }
 
-  // Stage states only change in master(scheduler).
+  /**
+   * Updates the state of a stage.
+   * Stage state changes only occur in master.
+   * @param stageId of the stage.
+   * @param newState of the stage.
+   * @return true if this state change results in the entire job completion, false otherwise.
+   */
   public boolean onStageStateChanged(final String stageId, final StageState.State newState) {
     final StateMachine stageStateMachine = idToStageStates.get(stageId).getStateMachine();
     LOG.log(Level.FINE, "Stage State Transition: id {0} from {1} to {2}",
@@ -119,7 +145,14 @@ public final class ExecutionStateManager {
     return currentJobStageIds.isEmpty();
   }
 
-  // Task Group states can change in master(scheduler) and executor (but the events are received by scheduler).
+  /**
+   * Updates the state of a task group.
+   * Task group state changes can occur both in master and executor,
+   * but this event is received via {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}.
+   * @param taskGroupId of the task group.
+   * @param newState of the task group.
+   * @return true if this state change results in the current stage completion, false otherwise.
+   */
   public boolean onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",

@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Defines the policy by which {@link Scheduler} assigns task groups to executors.
  */
-@DefaultImplementation(BatchRRScheduler.class)
+@DefaultImplementation(RoundRobinScheduler.class)
 public interface SchedulingPolicy {
 
   /**
@@ -40,7 +40,7 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param taskGroup to schedule
-   * @return executorId on which the taskGroup is scheduled if successful, an empty Optional otherwise.
+   * @return {@link ExecutorRepresenter} on which the taskGroup is scheduled if successful, an empty Optional otherwise.
    */
   Optional<ExecutorRepresenter> attemptSchedule(final TaskGroup taskGroup);
 

@@ -47,24 +47,39 @@ public final class Scheduler {
 
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
-  private final Map<String, ExecutorRepresenter> executorRepresenterMap;
   private final ExecutionStateManager executionStateManager;
 
+  /**
+   * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
+   */
+  private final Map<String, ExecutorRepresenter> executorRepresenterMap;
+
+  /**
+   * The {@link SchedulingPolicy} used to schedule the task groups.
+   */
   private SchedulingPolicy schedulingPolicy;
   private RuntimeAttribute schedulingPolicyAttribute;
+
+  /**
+   * Timeout for the {@link SchedulingPolicy} upon task group scheduling.
+   */
   private long scheduleTimeout;
+
+  /**
+   * The list of stages for the currently running job.
+   */
   private List<PhysicalStage> physicalStages;
   private PhysicalStage currentStage;
 
   public Scheduler(final ExecutionStateManager executionStateManager,
                    final RuntimeAttribute schedulingPolicyAttribute,
                    final long scheduleTimeout) {
+    this.executionStateManager = executionStateManager;
+
     this.schedulerThread = Executors.newSingleThreadExecutor();
     this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
     this.executorRepresenterMap = new HashMap<>();
     schedulerThread.execute(new TaskGroupScheduleHandler());
-
-    this.executionStateManager = executionStateManager;
 
     // The default policy is initialized and set here.
     this.schedulingPolicyAttribute = schedulingPolicyAttribute;
@@ -81,10 +96,16 @@ public final class Scheduler {
     executionStateManager.manageNewJob(physicalPlan);
   }
 
+  /**
+   * Receives a {@link edu.snu.vortex.runtime.common.comm.ExecutorMessage.TaskGroupStateChangedMsg} from an executor.
+   * The message is received via communicator where this method is called.
+   * @param executorId the id of the executor where the message was sent from.
+   * @param message from the executor.
+   */
   // TODO #83: Introduce Task Group Executor
   // TODO #94: Implement Distributed Communicator
-  public void onTaskGroupStateMessageReceived(final String executorId,
-                                              final ExecutorMessage.TaskGroupStateChangedMsg message) {
+  public void onTaskGroupStateChanged(final String executorId,
+                                      final ExecutorMessage.TaskGroupStateChangedMsg message) {
     final TaskGroupState.State newState = convertState(message.getState());
     switch (newState) {
     case COMPLETE:
@@ -105,19 +126,22 @@ public final class Scheduler {
     }
   }
 
+
   private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
     final boolean currentStageComplete =
         executionStateManager.onTaskGroupStateChanged(taskGroupId, TaskGroupState.State.COMPLETE);
 
+    // if the current stage is complete,
     if (currentStageComplete) {
       final boolean jobComplete =
           executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.COMPLETE);
 
-      if (jobComplete) {
+
+      if (jobComplete) { // and if the job is complete,
         executionStateManager.onJobStateChanged(JobState.State.COMPLETE);
-      } else {
+      } else { // and if the job is still executing, schedule the next stage
         scheduleNextStage();
       }
     }
@@ -145,7 +169,7 @@ public final class Scheduler {
 
   /**
    * Schedules the next stage to execute.
-   * It takes the list for task groups for the stage and adds them where the scheduler thread continuously polls from.
+   * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
    */
   private void scheduleNextStage() {
     currentStage = physicalStages.remove(0);
@@ -160,7 +184,7 @@ public final class Scheduler {
   private void initializeSchedulingPolicy() {
     switch (schedulingPolicyAttribute) {
     case Batch:
-      this.schedulingPolicy = new BatchRRScheduler(scheduleTimeout);
+      this.schedulingPolicy = new RoundRobinScheduler(scheduleTimeout);
       break;
     default:
       throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));

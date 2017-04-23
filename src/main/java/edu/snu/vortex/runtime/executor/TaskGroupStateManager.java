@@ -30,21 +30,29 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages the states related to a task.
+ * Manages the states related to a task group.
  */
 // TODO #83: Introduce Task Group Executor
-public final class TaskStateManager {
-  private static final Logger LOG = Logger.getLogger(TaskStateManager.class.getName());
+public final class TaskGroupStateManager {
+  private static final Logger LOG = Logger.getLogger(TaskGroupStateManager.class.getName());
 
   private String taskGroupId;
   private final Map<String, TaskState> idToTaskStates;
+
+  /**
+   * Used to track task group completion status.
+   */
   private Set<String> currentTaskGroupTaskIds;
 
-  public TaskStateManager() {
+  public TaskGroupStateManager() {
     idToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
   }
 
+  /**
+   * Receives a new task group to manage.
+   * @param taskGroup to manage.
+   */
   public void manageNewTaskGroup(final TaskGroup taskGroup) {
     idToTaskStates.clear();
 
@@ -57,6 +65,10 @@ public final class TaskStateManager {
     });
   }
 
+  /**
+   * Updates the state of the task group.
+   * @param newState of the task group.
+   */
   public void onTaskGroupStateChanged(final TaskGroupState.State newState,
                                       final String failedTaskId) {
     if (newState == TaskGroupState.State.EXECUTING) {
@@ -75,6 +87,13 @@ public final class TaskStateManager {
     }
   }
 
+  /**
+   * Updates the state of a task.
+   * Task state changes only occur in executor.
+   * @param taskId of the task.
+   * @param newState of the task.
+   * @return true if this task change results in the current task group completion, false otherwise.
+   */
   public boolean onTaskStateChanged(final String taskId, final TaskState.State newState) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
     LOG.log(Level.FINE, "Task State Transition: id {0} from {1} to {2}",
@@ -86,6 +105,12 @@ public final class TaskStateManager {
     return currentTaskGroupTaskIds.isEmpty();
   }
 
+  /**
+   * Notifies the change in task group state to master.
+   * @param id of the task group.
+   * @param newState of the task group.
+   * @param failedTaskId the id of the task that caused this task group to fail, null otherwise.
+   */
   private void notifyTaskGroupStateToMaster(final String id,
                                             final TaskGroupState.State newState,
                                             final String failedTaskId) {

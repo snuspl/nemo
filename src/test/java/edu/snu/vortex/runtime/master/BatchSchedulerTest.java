@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.scheduler.BatchRRScheduler;
+import edu.snu.vortex.runtime.master.scheduler.RoundRobinScheduler;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests {@link BatchRRScheduler}
+ * Tests {@link RoundRobinScheduler}
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(TaskGroup.class)
@@ -37,7 +37,7 @@ public final class BatchSchedulerTest {
 
   @Before
   public void setUp() {
-    schedulingPolicy = new BatchRRScheduler(2000);
+    schedulingPolicy = new RoundRobinScheduler(2000);
   }
 
   @Test

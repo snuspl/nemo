@@ -30,21 +30,41 @@ import java.util.logging.Logger;
 
 /**
  * {@inheritDoc}
- * A batch implementation.
+ * A Round-Robin implementation.
  *
- * This scheduler simply keeps all {@link ExecutorRepresenter} available for each type of resource.
+ * This scheduler keeps a list of available {@link ExecutorRepresenter} for each type of resource.
+ * The RR policy is used for each resource type when trying to schedule a task group.
  */
 @ThreadSafe
-public final class BatchRRScheduler implements SchedulingPolicy {
-  private static final Logger LOG = Logger.getLogger(BatchRRScheduler.class.getName());
+public final class RoundRobinScheduler implements SchedulingPolicy {
+  private static final Logger LOG = Logger.getLogger(RoundRobinScheduler.class.getName());
 
-  private final Lock lock;
   private final long scheduleTimeout;
+
+  /**
+   * Thread safety is provided by this lock as multiple threads can call the methods in this class concurrently.
+   */
+  private final Lock lock;
+
+  /**
+   * Executor allocation is achieved by putting conditions for each resource type.
+   * The condition blocks when there is no executor of the resource type available,
+   * and is released when such an executor becomes available (either by an extra executor, or a task group completion).
+   */
   private final Map<RuntimeAttribute, Condition> attemptToScheduleByResourceType;
+
+  /**
+   * The pool of executors available for each resource type.
+   */
   private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorByResourceType;
+
+  /**
+   * The index of the next executor to be assigned for each resource type.
+   * This map allows the executor index computation of the RR scheduling.
+   */
   private final Map<RuntimeAttribute, Integer> nextExecutorIndexByResourceType;
 
-  public BatchRRScheduler(final long scheduleTimeout) {
+  public RoundRobinScheduler(final long scheduleTimeout) {
     this.scheduleTimeout = scheduleTimeout;
     this.lock = new ReentrantLock();
     this.executorByResourceType = new HashMap<>();
@@ -87,6 +107,12 @@ public final class BatchRRScheduler implements SchedulingPolicy {
     }
   }
 
+  /**
+   * Sticks to the RR policy to select an executor for the next task group.
+   * It checks the task groups running (as compared to each executor's capacity).
+   * @param resourceType to select an executor for.
+   * @return the selected executor.
+   */
   private ExecutorRepresenter selectExecutorByRR(final RuntimeAttribute resourceType) {
     ExecutorRepresenter selectedExecutor = null;
     final List<ExecutorRepresenter> executorRepresenterList = executorByResourceType.get(resourceType);
