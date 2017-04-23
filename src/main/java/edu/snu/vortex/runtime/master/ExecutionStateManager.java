@@ -68,10 +68,12 @@ public final class ExecutionStateManager {
     onJobStateChanged(JobState.State.EXECUTING);
 
     physicalPlanForNewJob.getStageDAG().topologicalDo(physicalStage -> {
+      currentJobStageIds.add(physicalStage.getId());
       idToStageStates.put(physicalStage.getId(), new StageState());
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
         idToTaskGroupStates.put(taskGroup.getTaskGroupId(), new TaskGroupState());
-        taskGroup.getTaskDAG().getVertices().forEach(task -> idToTaskStates.put(task.getTaskId(), new TaskState()));
+        taskGroup.getTaskDAG().getVertices().forEach(
+            task -> idToTaskStates.put(task.getTaskId(), new TaskState()));
       });
     });
   }
@@ -80,7 +82,6 @@ public final class ExecutionStateManager {
     if (newState == JobState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing Job ID {0}...", jobId);
       jobState.getStateMachine().setState(newState);
-      physicalPlan.getStageDAG().getVertices().forEach(physicalStage -> currentJobStageIds.add(physicalStage.getId()));
     } else if (newState == JobState.State.COMPLETE) {
       LOG.log(Level.FINE, "Job ID {0} complete!", jobId);
       jobState.getStateMachine().setState(newState);
