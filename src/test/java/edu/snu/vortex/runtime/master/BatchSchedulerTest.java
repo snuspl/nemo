@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(TaskGroup.class)
-public final class SampleSchedulerTest {
+public final class BatchSchedulerTest {
   private SchedulingPolicy schedulingPolicy;
 
   @Before

@@ -77,7 +77,7 @@ public final class Scheduler {
     executionStateManager.manageNewJob(physicalPlan);
   }
 
-  public void onTaskGroupStateMessageReceived(final ) {
+  public void onTaskGroupStateMessageReceived() {
 
   }
 

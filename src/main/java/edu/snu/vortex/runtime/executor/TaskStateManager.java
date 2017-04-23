@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.common.state.JobState;
-import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.utils.StateMachine;
@@ -52,7 +50,7 @@ public final class TaskStateManager {
 
   }
 
-  public void onTaskStateChanged(final String taskId, final StageState.State newState) {
+  public void onTaskStateChanged(final String taskId, final TaskState.State newState) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
     LOG.log(Level.FINE, "Task State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskStateChanged.getCurrentState(), newState});
@@ -65,6 +63,6 @@ public final class TaskStateManager {
   }
 
   private void notifyTaskGroupStateToMaster(final TaskGroupState.State newState, final String failedTaskId) {
-
+    
   }
 }

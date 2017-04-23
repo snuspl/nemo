@@ -19,7 +19,6 @@ import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,6 +59,7 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param executor that has been deleted.
+   * @return the set of task groups that were running on the executor.
    */
   Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor);
 

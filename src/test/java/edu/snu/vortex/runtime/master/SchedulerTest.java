@@ -32,7 +32,8 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(TaskGroup.class)
 public final class SchedulerTest {
-  private final Scheduler scheduler = new Scheduler(RuntimeAttribute.SamplePolicy);
+  private final ExecutionStateManager executionStateManager = new ExecutionStateManager();
+  private final Scheduler scheduler = new Scheduler(executionStateManager, RuntimeAttribute.Batch, 2000);
 
   /**
    * This method builds a physical DAG and tests whether the physical DAG successfully gets scheduled..
@@ -82,6 +83,6 @@ public final class SchedulerTest {
     final PhysicalStage stage3 = physicalStageBuilder.build();
     builder.addVertex(stage3);
 
-    scheduler.scheduleJob(new PhysicalPlan("TestPlan", builder.build()));
+//    scheduler.scheduleJob(new PhysicalPlan("TestPlan", builder.build()));
   }
 }

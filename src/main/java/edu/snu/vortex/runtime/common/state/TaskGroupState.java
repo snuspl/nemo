@@ -35,7 +35,8 @@ public final class TaskGroupState {
     stateMachineBuilder.addState(State.EXECUTING, "The task group is executing.");
     stateMachineBuilder.addState(State.COMPLETE, "All of this task group's tasks have completed.");
     stateMachineBuilder.addState(State.FAILED_RECOVERABLE, "Task group failed, but is recoverable.");
-    stateMachineBuilder.addState(State.FAILED_UNRECOVERABLE, "Task group failed, and is unrecoverable. The job will fail.");
+    stateMachineBuilder.addState(State.FAILED_UNRECOVERABLE,
+        "Task group failed, and is unrecoverable. The job will fail.");
 
     // Add transitions
     stateMachineBuilder.addTransition(State.READY, State.EXECUTING,

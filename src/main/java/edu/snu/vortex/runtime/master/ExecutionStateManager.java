@@ -56,18 +56,18 @@ public final class ExecutionStateManager {
     this.currentJobStageIds = new HashSet<>();
   }
 
-  public void manageNewJob(final PhysicalPlan physicalPlan) {
-    this.physicalPlan = physicalPlan;
+  public void manageNewJob(final PhysicalPlan physicalPlanForNewJob) {
+    this.physicalPlan = physicalPlanForNewJob;
     idToStageStates.clear();
     idToTaskGroupStates.clear();
     idToTaskStates.clear();
     currentJobStageIds.clear();
 
-    this.jobId = physicalPlan.getId();
+    this.jobId = physicalPlanForNewJob.getId();
     this.jobState = new JobState();
     onJobStateChanged(JobState.State.EXECUTING);
 
-    physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
+    physicalPlanForNewJob.getStageDAG().topologicalDo(physicalStage -> {
       idToStageStates.put(physicalStage.getId(), new StageState());
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
         idToTaskGroupStates.put(taskGroup.getTaskGroupId(), new TaskGroupState());
