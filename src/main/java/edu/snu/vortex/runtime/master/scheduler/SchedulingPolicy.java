@@ -59,9 +59,9 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param executor that has been deleted.
-   * @return the set of task groups that were running on the executor.
+   * @return the ids of the set of task groups that were running on the executor.
    */
-  Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor);
+  Set<String> onExecutorRemoved(final ExecutorRepresenter executor);
 
   /**
    * Marks the executor scheduled for the taskGroup.
@@ -69,9 +69,9 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param executor assigned for the taskGroup.
-   * @param taskGroup scheduled to the executor.
+   * @param taskGroupId scheduled to the executor.
    */
-  void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup);
+  void onTaskGroupScheduled(final ExecutorRepresenter executor, final String taskGroupId);
 
   /**
    * Marks the taskGroup's completion in the executor.
@@ -79,9 +79,9 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param executor where the taskGroup's execution has completed.
-   * @param taskGroup whose execution has completed.
+   * @param taskGroupId whose execution has completed.
    */
-  void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup);
+  void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId);
 
   /**
    * Marks the taskGroup's failure in the executor.
@@ -89,7 +89,7 @@ public interface SchedulingPolicy {
    * (Depending on the executor's resource type)
    *
    * @param executor where the taskGroup's execution has failed.
-   * @param taskGroup whose execution has completed.
+   * @param taskGroupId whose execution has completed.
    */
-  void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup);
+  void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId);
 }

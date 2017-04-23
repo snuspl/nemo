@@ -127,7 +127,7 @@ public final class BatchRRScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor) {
+  public Set<String> onExecutorRemoved(final ExecutorRepresenter executor) {
     lock.lock();
     try {
       final RuntimeAttribute resourceType = executor.getResourceType();
@@ -150,21 +150,21 @@ public final class BatchRRScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+  public void onTaskGroupScheduled(final ExecutorRepresenter executor, final String taskGroupId) {
     lock.lock();
     try {
-      executor.onTaskGroupScheduled(taskGroup);
+      executor.onTaskGroupScheduled(taskGroupId);
     } finally {
       lock.unlock();
     }
   }
 
   @Override
-  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+  public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
     lock.lock();
     try {
       final RuntimeAttribute resourceType = executor.getResourceType();
-      executor.onTaskGroupExecutionComplete(taskGroup);
+      executor.onTaskGroupExecutionComplete(taskGroupId);
       attemptToScheduleByResourceType.get(resourceType).signal();
     } finally {
       lock.unlock();
@@ -172,7 +172,7 @@ public final class BatchRRScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+  public void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId) {
     // TODO #000: Handle Fault Tolerance
   }
 }
