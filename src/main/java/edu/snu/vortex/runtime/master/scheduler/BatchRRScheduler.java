@@ -20,33 +20,36 @@ import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 /**
  * {@inheritDoc}
- * A sample implementation.
+ * A batch implementation.
  *
  * This scheduler simply keeps all {@link ExecutorRepresenter} available for each type of resource.
- * It simply assigns the first available executor in the queue for the resource type the task group must run on.
  */
-public final class SampleScheduler implements SchedulingPolicy {
-  private static SampleScheduler instance;
+@ThreadSafe
+public final class BatchRRScheduler implements SchedulingPolicy {
+  private static final Logger LOG = Logger.getLogger(BatchRRScheduler.class.getName());
 
-  private final long scheduleTimeout = 2 * 1000;
-  private final Map<RuntimeAttribute, BlockingQueue<ExecutorRepresenter>> executorByResourceType;
-  private final Map<String, Set<TaskGroup>> executorIdToRunningTaskGroups;
+  private final Lock lock;
+  private final long scheduleTimeout;
+  private final Map<RuntimeAttribute, Condition> attemptToScheduleByResourceType;
+  private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorByResourceType;
+  private final Map<RuntimeAttribute, Integer> nextExecutorIndexByResourceType;
 
-  public static SampleScheduler newInstance() {
-    if (instance == null) {
-      instance = new SampleScheduler();
-    }
-    return instance;
-  }
-
-  private SampleScheduler() {
+  public BatchRRScheduler(final long scheduleTimeout) {
+    this.scheduleTimeout = scheduleTimeout;
+    this.lock = new ReentrantLock();
     this.executorByResourceType = new HashMap<>();
-    this.executorIdToRunningTaskGroups = new HashMap<>();
+    this.attemptToScheduleByResourceType = new HashMap<>();
+    this.nextExecutorIndexByResourceType = new HashMap<>();
   }
 
   @Override
@@ -55,63 +58,121 @@ public final class SampleScheduler implements SchedulingPolicy {
   }
 
   @Override
-  public Optional<String> attemptSchedule(final TaskGroup taskGroup) {
+  public Optional<ExecutorRepresenter> attemptSchedule(final TaskGroup taskGroup) {
+    lock.lock();
     try {
       final RuntimeAttribute resourceType = taskGroup.getResourceType();
-
-      // This call to a LinkedBlockingQueue waits if there is none available for the given timeout.
-      // Notice that this behavior matches the description given in SchedulerPolicy interface javadoc.
-      final ExecutorRepresenter executor = executorByResourceType.get(resourceType)
-          .poll(scheduleTimeout, TimeUnit.MILLISECONDS);
+      ExecutorRepresenter executor = selectExecutorByRR(resourceType);
       if (executor == null) {
-        return Optional.empty();
+        Condition attemptToSchedule = attemptToScheduleByResourceType.get(resourceType);
+        if (attemptToSchedule == null) {
+          attemptToSchedule = lock.newCondition();
+          attemptToScheduleByResourceType.put(resourceType, attemptToSchedule);
+        }
+        boolean executorAvailable = attemptToSchedule.await(scheduleTimeout, TimeUnit.MILLISECONDS);
+
+        if (executorAvailable) {
+          executor = selectExecutorByRR(resourceType);
+          return Optional.of(executor);
+        } else {
+          return Optional.empty();
+        }
       } else {
-        return Optional.of(executor.getExecutorId());
+        return Optional.of(executor);
       }
     } catch (final Exception e) {
-      throw new SchedulingException(e.getMessage());
+      throw new SchedulingException(e);
+    } finally {
+      lock.unlock();
     }
+  }
+
+  private ExecutorRepresenter selectExecutorByRR(final RuntimeAttribute resourceType) {
+    ExecutorRepresenter selectedExecutor = null;
+    final List<ExecutorRepresenter> executorRepresenterList = executorByResourceType.get(resourceType);
+    final int numExecutors = executorRepresenterList.size();
+    int nextExecutorIndex = nextExecutorIndexByResourceType.get(resourceType);
+    for (int i = 0; i < numExecutors; i++) {
+      final int index = (nextExecutorIndex + i) % numExecutors;
+      selectedExecutor = executorRepresenterList.get(index);
+
+      if (selectedExecutor.getRunningTaskGroups().size() < selectedExecutor.getExecutorCapacity()) {
+        nextExecutorIndex = (index + 1) % numExecutors;
+        nextExecutorIndexByResourceType.put(resourceType, nextExecutorIndex);
+        break;
+      }
+    }
+    return selectedExecutor;
   }
 
   @Override
   public void onExecutorAdded(final ExecutorRepresenter executor) {
-    // Adding the executor to the LinkedBlockingQueue frees attemptSchedule() from blocking
-    // with the executor offered to the queue as a result of this method call.
-    final RuntimeAttribute resourceType = executor.getResourceType();
-    executorByResourceType.putIfAbsent(resourceType, new LinkedBlockingQueue<>());
-    executorByResourceType.get(resourceType).offer(executor);
-    executorIdToRunningTaskGroups.put(executor.getExecutorId(), new ConcurrentSkipListSet<>());
+    lock.lock();
+    try {
+      final RuntimeAttribute resourceType = executor.getResourceType();
+      final List<ExecutorRepresenter> executors =
+          executorByResourceType.putIfAbsent(resourceType, new ArrayList<>());
+
+      if (executors == null) { // This resource type is initially being introduced.
+        executorByResourceType.get(resourceType).add(executor);
+        nextExecutorIndexByResourceType.put(resourceType, 0);
+        attemptToScheduleByResourceType.put(resourceType, lock.newCondition());
+      } else { // This resource type has been introduced and there may be a TaskGroup waiting to be scheduled.
+        executorByResourceType.get(resourceType).add(nextExecutorIndexByResourceType.get(resourceType), executor);
+        attemptToScheduleByResourceType.get(resourceType).signal();
+      }
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
   public Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor) {
-    // Removing the executor from the LinkedBlockingQueue leaves attemptSchedule() blocking
-    // if the queue becomes empty as a result of this method call.
-    final RuntimeAttribute resourceType = executor.getResourceType();
-    executorByResourceType.get(resourceType).remove(executor);
-    return executorIdToRunningTaskGroups.remove(executor.getExecutorId());
+    lock.lock();
+    try {
+      final RuntimeAttribute resourceType = executor.getResourceType();
+
+      final List<ExecutorRepresenter> executorRepresenterList = executorByResourceType.get(resourceType);
+      int nextExecutorIndex = nextExecutorIndexByResourceType.get(resourceType);
+
+      final int executorAssignmentLocation = executorRepresenterList.indexOf(executor);
+      if (executorAssignmentLocation < nextExecutorIndex) {
+        nextExecutorIndexByResourceType.put(resourceType, nextExecutorIndex - 1);
+      } else if (executorAssignmentLocation == nextExecutorIndex) {
+        nextExecutorIndexByResourceType.put(resourceType, 0);
+      }
+
+      executorRepresenterList.remove(executor);
+    } finally {
+      lock.unlock();
+    }
+    return executor.getRunningTaskGroups();
   }
 
   @Override
   public void onTaskGroupScheduled(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
-    // Removing the executor from the LinkedBlockingQueue leaves attemptSchedule() blocking
-    // if the queue becomes empty as a result of this method call.
-    final RuntimeAttribute resourceType = executor.getResourceType();
-    executorByResourceType.get(resourceType).remove(executor);
-    executorIdToRunningTaskGroups.get(executor.getExecutorId()).add(taskGroup);
+    lock.lock();
+    try {
+      executor.onTaskGroupScheduled(taskGroup);
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
   public void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
-    // Adding the executor to the LinkedBlockingQueue frees attemptSchedule() from blocking
-    // with the executor offered to the queue as a result of this method call.
-    final RuntimeAttribute resourceType = executor.getResourceType();
-    executorByResourceType.get(resourceType).offer(executor);
-    executorIdToRunningTaskGroups.get(executor.getExecutorId()).remove(taskGroup);
+    lock.lock();
+    try {
+      final RuntimeAttribute resourceType = executor.getResourceType();
+      executor.onTaskGroupExecutionComplete(taskGroup);
+      attemptToScheduleByResourceType.get(resourceType).signal();
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
   public void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
-
+    // TODO #000: Handle Fault Tolerance
   }
 }
