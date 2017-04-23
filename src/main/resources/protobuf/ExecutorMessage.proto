@@ -2,16 +2,14 @@ syntax = "proto3";
 
 package protobuf;
 
-import "ExecutionState.proto";
-
 option java_package = "edu.snu.vortex.runtime.common.comm";
-option java_outer_classname = "ExecutionMessage";
+option java_outer_classname = "ExecutorMessage";
 
 enum MessageType {
     TaskGroupStateChanged = 0;
 }
 
-message ExecutorMessage {
+message Message {
     MessageType type = 1;
     oneof messageTypes {
         TaskGroupStateChangedMsg taskStateChangedMsg = 2;
@@ -20,6 +18,14 @@ message ExecutorMessage {
 
 message TaskGroupStateChangedMsg {
     string taskGroupId = 1;
-    TaskGroupState state = 2;
+    TaskGroupStateFromExecutor state = 2;
     string failedTaskId = 3;
+}
+
+enum TaskGroupStateFromExecutor {
+    READY = 0;
+    EXECUTING = 1;
+    COMPLETE = 2;
+    FAILED_RECOVERABLE = 3;
+    FAILED_UNRECOVERABLE = 4;
 }
