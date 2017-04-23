@@ -34,7 +34,8 @@ public final class SampleScheduler implements SchedulingPolicy {
   private static SampleScheduler instance;
 
   private final long scheduleTimeout = 2 * 1000;
-  private final ConcurrentMap<RuntimeAttribute, BlockingQueue<ExecutorRepresenter>> executorByResourceType;
+  private final Map<RuntimeAttribute, BlockingQueue<ExecutorRepresenter>> executorByResourceType;
+  private final Map<String, Set<TaskGroup>> executorIdToRunningTaskGroups;
 
   public static SampleScheduler newInstance() {
     if (instance == null) {
@@ -44,7 +45,8 @@ public final class SampleScheduler implements SchedulingPolicy {
   }
 
   private SampleScheduler() {
-    this.executorByResourceType = new ConcurrentHashMap<>();
+    this.executorByResourceType = new HashMap<>();
+    this.executorIdToRunningTaskGroups = new HashMap<>();
   }
 
   @Override
@@ -78,14 +80,16 @@ public final class SampleScheduler implements SchedulingPolicy {
     final RuntimeAttribute resourceType = executor.getResourceType();
     executorByResourceType.putIfAbsent(resourceType, new LinkedBlockingQueue<>());
     executorByResourceType.get(resourceType).offer(executor);
+    executorIdToRunningTaskGroups.put(executor.getExecutorId(), new ConcurrentSkipListSet<>());
   }
 
   @Override
-  public void onExecutorDeleted(final ExecutorRepresenter executor) {
+  public Set<TaskGroup> onExecutorRemoved(final ExecutorRepresenter executor) {
     // Removing the executor from the LinkedBlockingQueue leaves attemptSchedule() blocking
     // if the queue becomes empty as a result of this method call.
     final RuntimeAttribute resourceType = executor.getResourceType();
     executorByResourceType.get(resourceType).remove(executor);
+    return executorIdToRunningTaskGroups.remove(executor.getExecutorId());
   }
 
   @Override
@@ -94,11 +98,7 @@ public final class SampleScheduler implements SchedulingPolicy {
     // if the queue becomes empty as a result of this method call.
     final RuntimeAttribute resourceType = executor.getResourceType();
     executorByResourceType.get(resourceType).remove(executor);
-  }
-
-  @Override
-  public void onTaskGroupLaunched(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
-    // Tentative. Do nothing.
+    executorIdToRunningTaskGroups.get(executor.getExecutorId()).add(taskGroup);
   }
 
   @Override
@@ -107,5 +107,11 @@ public final class SampleScheduler implements SchedulingPolicy {
     // with the executor offered to the queue as a result of this method call.
     final RuntimeAttribute resourceType = executor.getResourceType();
     executorByResourceType.get(resourceType).offer(executor);
+    executorIdToRunningTaskGroups.get(executor.getExecutorId()).remove(taskGroup);
+  }
+
+  @Override
+  public void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final TaskGroup taskGroup) {
+
   }
 }
