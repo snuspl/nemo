@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
+import com.sun.istack.internal.Nullable;
 import edu.snu.vortex.client.beam.LoopCompositeTransform;
 import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.ir.*;
@@ -40,7 +41,9 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder<IRVertex, IREdge> builder;
   private final Map<PValue, IRVertex> pValueToVertex;
   private final PipelineOptions options;
-  private LoopVertex currentLoopVertex;
+  // currentLoopVertex distinguishes primitive transforms that are inside composite transforms
+  // (which each corresponds to an independent loop vertex) from those that are not.
+  @Nullable private LoopVertex currentLoopVertex;
 
   Visitor(final DAGBuilder<IRVertex, IREdge> builder, final PipelineOptions options) {
     this.builder = builder;
@@ -99,7 +102,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
    */
   private static <I, O> IRVertex convertToVertex(final TransformHierarchy.Node beamNode, final DAGBuilder builder,
                                                  final Map<PValue, IRVertex> pValueToVertex, final PipelineOptions optn,
-                                                 final LoopVertex currentLoopVertex) {
+                                                 @Nullable final LoopVertex currentLoopVertex) {
     final PTransform beamTransform = beamNode.getTransform();
     final IRVertex vortexIRVertex;
     if (beamTransform instanceof Read.Bounded) {

@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Pass for unrolling the loops grouped by the {@link edu.snu.vortex.compiler.ir.LoopVertex}.
+ * Pass for unrolling the loops grouped by the {@link LoopGroupingPass}.
+ * It first unrolls the root LoopVertex, which is in the form of linked list, into a straight line in the DAG.
+ * Then, it decomposes each of the LoopVertices with the DAG information that each of them contain.
  */
 public final class LoopUnrollingPass implements Pass {
   private Set<LoopVertex> loopVertices = new HashSet<>();
@@ -31,8 +33,10 @@ public final class LoopUnrollingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
+    // We decompose LoopVertices of the DAG that had been unrolled by the loopUnrolling method.
     decomposeLoopVertices(builder, loopUnrolling(dag));
 
+    // We make sure of the remaining incoming/outgoing edges of the DAG itself, in the LoopVertices, are connected.
     this.loopVertices.forEach(loopVertex -> {
       loopVertex.getDagIncomingEdges().values().forEach(irEdges -> {
         irEdges.forEach(builder::connectVertices);
@@ -45,6 +49,12 @@ public final class LoopUnrollingPass implements Pass {
     return builder.build();
   }
 
+  /**
+   * This method unrolls the root LoopVertex, in the form of linked list, into a line of Loop Vertices in the DAG.
+   * @param dag DAG to process.
+   * @return Processed DAG.
+   * @throws Exception
+   */
   private DAG<IRVertex, IREdge> loopUnrolling(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     final Set<LoopVertex> followingLoopVertices = new HashSet<>();
@@ -76,6 +86,11 @@ public final class LoopUnrollingPass implements Pass {
     return builder.build();
   }
 
+  /**
+   * It decomposes each of the LoopVertices with the DAG info that each of they contain, in a recursive manner.
+   * @param builder Builder to add the vertices to.
+   * @param dag DAG to add the vetices from.
+   */
   private void decomposeLoopVertices(final DAGBuilder<IRVertex, IREdge> builder, final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex -> {
       if (irVertex instanceof SourceVertex) {

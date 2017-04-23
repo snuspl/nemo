@@ -15,19 +15,21 @@
  */
 package edu.snu.vortex.compiler.ir;
 
+import com.sun.istack.internal.Nullable;
+
 /**
  * IRVertex that transforms input data.
  * It is to be constructed in the compiler frontend with language-specific data transform logic.
  */
 public final class OperatorVertex extends IRVertex {
   private final Transform transform;
-  private final LoopVertex assignedLoopVertex;
+  @Nullable private final LoopVertex assignedLoopVertex;
 
   public OperatorVertex(final Transform t) {
     this(t, null);
   }
 
-  public OperatorVertex(final Transform t, final LoopVertex assignedLoopVertex) {
+  public OperatorVertex(final Transform t, @Nullable final LoopVertex assignedLoopVertex) {
     super();
     this.transform = t;
     this.assignedLoopVertex = assignedLoopVertex;

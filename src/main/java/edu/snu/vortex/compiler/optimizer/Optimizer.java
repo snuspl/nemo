@@ -58,7 +58,7 @@ public final class Optimizer {
 
     private DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
       DAG<IRVertex, IREdge> optimizedDAG = dag;
-      for (final Pass pass : passes) {
+      for (final Pass pass : passes) { // we run them one by one, in order.
         try {
           optimizedDAG = pass.process(optimizedDAG);
         } catch (Exception e) {
@@ -80,6 +80,7 @@ public final class Optimizer {
 
   /**
    * A HashMap to match each of instantiation policies with a combination of instantiation passes.
+   * Each policies are run in the order with which they are defined.
    */
   private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
   static {

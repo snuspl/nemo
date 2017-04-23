@@ -15,18 +15,30 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
+import com.sun.istack.internal.Nullable;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
 /**
  * Pass for grouping each loops together using the LoopVertex.
+ * It first groups loops together, making each iteration into a LoopOperator.
+ * Then, it rolls repetitive operators into one root LoopOperator, which is linked with other LoopOperators,
+ * in the form of a doubly linked list.
  */
 public final class LoopGroupingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     return loopRolling(groupLoops(dag));
   }
 
+  /**
+   * This part groups loops together, seeing if each of the primitive operators are assigned with a loop vertex,
+   * indicating that it is part of a composite transform, which is used to indicate that it is part of an iterative
+   * transform.
+   * @param dag DAG to process
+   * @return processed DAG.
+   * @throws Exception
+   */
   private DAG<IRVertex, IREdge> groupLoops(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     LoopVertex currentLoopVertex = null;
@@ -38,7 +50,7 @@ public final class LoopGroupingPass implements Pass {
         final OperatorVertex operatorVertex = (OperatorVertex) irVertex;
         // If this is Composite.
         if (operatorVertex.isComposite()) {
-          final LoopVertex assignedLoopVertex = operatorVertex.getAssignedLoopVertex();
+          @Nullable final LoopVertex assignedLoopVertex = operatorVertex.getAssignedLoopVertex();
           final LoopVertex finalCurrentLoopVertex = currentLoopVertex;
 
           builder.addVertex(assignedLoopVertex);
@@ -86,6 +98,13 @@ public final class LoopGroupingPass implements Pass {
     return builder.build();
   }
 
+  /**
+   * This part rolls the repetitive LoopVertices into a single one, leaving only the root LoopVertex, and linking the
+   * others in the form of a linked list.
+   * @param dag DAG to process.
+   * @return Processed DAG.
+   * @throws Exception
+   */
   private DAG<IRVertex, IREdge> loopRolling(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     LoopVertex rootLoopVertex = null;
@@ -117,7 +136,13 @@ public final class LoopGroupingPass implements Pass {
     return builder.build();
   }
 
-  private void addToBuilder(final DAGBuilder<IRVertex, IREdge> builder, final IRVertex irVertex,
+  /**
+   * Adds the vertex and the incoming edges of the builder to the builder.
+   * @param builder Builder that it adds to.
+   * @param irVertex Vertex to add.
+   * @param dag DAG to observe the incoming edges of the vertex.
+   */
+  private static void addToBuilder(final DAGBuilder<IRVertex, IREdge> builder, final IRVertex irVertex,
                             final DAG<IRVertex, IREdge> dag) {
     builder.addVertex(irVertex);
     dag.getIncomingEdgesOf(irVertex).forEach(edge -> {
