@@ -63,15 +63,4 @@ public final class StageState {
   public StateMachine getStateMachine() {
     return stateMachine;
   }
-
-  /**
-   * Stage states.
-   */
-  public enum State {
-    READY,
-    EXECUTING,
-    COMPLETE,
-    FAILED_RECOVERABLE,
-    FAILED_UNRECOVERABLE
-  }
 }

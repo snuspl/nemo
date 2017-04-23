@@ -52,14 +52,4 @@ public final class JobState {
   public StateMachine getStateMachine() {
     return stateMachine;
   }
-
-  /**
-   * Job states.
-   */
-  public enum State {
-    READY,
-    EXECUTING,
-    COMPLETE,
-    FAILED
-  }
 }

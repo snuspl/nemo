@@ -74,16 +74,4 @@ public final class TaskState {
   public StateMachine getStateMachine() {
     return stateMachine;
   }
-
-  /**
-   * Task states.
-   */
-  public enum State {
-    READY,
-    PENDING_IN_EXECUTOR,
-    EXECUTING,
-    COMPLETE,
-    FAILED_RECOVERABLE,
-    FAILED_UNRECOVERABLE
-  }
 }
