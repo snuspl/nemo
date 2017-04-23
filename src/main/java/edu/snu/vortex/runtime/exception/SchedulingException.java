@@ -23,9 +23,9 @@ package edu.snu.vortex.runtime.exception;
 public final class SchedulingException extends RuntimeException {
   /**
    * SchedulingException.
-   * @param message message
+   * @param exception exception
    */
-  public SchedulingException(final String message) {
-    super(message);
+  public SchedulingException(final Throwable exception) {
+    super(exception);
   }
 }
