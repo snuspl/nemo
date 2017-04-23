@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
@@ -23,9 +24,12 @@ import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Manages the states related to a job.
@@ -40,19 +44,28 @@ public final class ExecutionStateManager {
   private final Map<String, TaskGroupState> idToTaskGroupStates;
   private final Map<String, TaskState> idToTaskStates;
 
+  private PhysicalPlan physicalPlan;
+  private Set<String> currentStageTaskGroupIds;
+  private Set<String> currentJobStageIds;
+
   public ExecutionStateManager() {
-    idToStageStates = new HashMap<>();
-    idToTaskGroupStates = new HashMap<>();
-    idToTaskStates = new HashMap<>();
+    this.idToStageStates = new HashMap<>();
+    this.idToTaskGroupStates = new HashMap<>();
+    this.idToTaskStates = new HashMap<>();
+    this.currentStageTaskGroupIds = new HashSet<>();
+    this.currentJobStageIds = new HashSet<>();
   }
 
   public void manageNewJob(final PhysicalPlan physicalPlan) {
+    this.physicalPlan = physicalPlan;
     idToStageStates.clear();
     idToTaskGroupStates.clear();
     idToTaskStates.clear();
+    currentJobStageIds.clear();
 
     this.jobId = physicalPlan.getId();
     this.jobState = new JobState();
+    onJobStateChanged(JobState.State.EXECUTING);
 
     physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
       idToStageStates.put(physicalStage.getId(), new StageState());
@@ -67,6 +80,7 @@ public final class ExecutionStateManager {
     if (newState == JobState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing Job ID {0}...", jobId);
       jobState.getStateMachine().setState(newState);
+      physicalPlan.getStageDAG().getVertices().forEach(physicalStage -> currentJobStageIds.add(physicalStage.getId()));
     } else if (newState == JobState.State.COMPLETE) {
       LOG.log(Level.FINE, "Job ID {0} complete!", jobId);
       jobState.getStateMachine().setState(newState);
@@ -81,19 +95,39 @@ public final class ExecutionStateManager {
   }
 
   // Stage states only change in master(scheduler).
-  public void onStageStateChanged(final String stageId, final StageState.State newState) {
+  public boolean onStageStateChanged(final String stageId, final StageState.State newState) {
     final StateMachine stageStateMachine = idToStageStates.get(stageId).getStateMachine();
     LOG.log(Level.FINE, "Stage State Transition: id {0} from {1} to {2}",
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
+    if (newState == StageState.State.EXECUTING) {
+      currentStageTaskGroupIds.clear();
+      for (final PhysicalStage stage : physicalPlan.getStageDAG().getVertices()) {
+        if (stage.getId().equals(stageId)) {
+          currentStageTaskGroupIds.addAll(
+              stage.getTaskGroupList()
+                  .stream()
+                  .map(taskGroup -> taskGroup.getTaskGroupId())
+                  .collect(Collectors.toSet()));
+          break;
+        }
+      }
+    } else if (newState == StageState.State.COMPLETE) {
+      currentJobStageIds.remove(stageId);
+    }
+    return currentJobStageIds.isEmpty();
   }
 
   // Task Group states can change in master(scheduler) and executor (but the events are received by scheduler).
-  public void onTaskGroupStateChanged(final String taskGroupId, final StageState.State newState) {
+  public boolean onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
     taskGroupStateChanged.setState(newState);
+    if (newState == TaskGroupState.State.COMPLETE) {
+      currentStageTaskGroupIds.remove(taskGroupId);
+    }
+    return currentStageTaskGroupIds.isEmpty();
   }
 
   // Tentative
