@@ -56,7 +56,30 @@ public final class RuntimeAttributeMap {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(attributes);
+    sb.append("{");
+    boolean firstPair = true;
+    for (final Map.Entry<RuntimeAttribute.Key, RuntimeAttribute> pair : attributes.entrySet()) {
+      if (!firstPair) {
+        sb.append(", ");
+      }
+      firstPair = false;
+      sb.append("\"");
+      sb.append(pair.getKey());
+      sb.append("\": \"");
+      sb.append(pair.getValue());
+      sb.append("\"");
+    }
+    for (final Map.Entry<RuntimeAttribute.IntegerKey, Integer> pair : intAttributes.entrySet()) {
+      if (!firstPair) {
+        sb.append(", ");
+      }
+      firstPair = false;
+      sb.append("\"");
+      sb.append(pair.getKey());
+      sb.append("\": ");
+      sb.append(pair.getValue());
+    }
+    sb.append("}");
     return sb.toString();
   }
 }

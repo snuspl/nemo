@@ -16,13 +16,14 @@
 package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.runtime.common.*;
+import edu.snu.vortex.utils.dag.Vertex;
 
 import java.io.Serializable;
 
 /**
  * Represents an operator of a job, tagged with attributes about the operator.
  */
-public abstract class RuntimeVertex implements Serializable {
+public abstract class RuntimeVertex implements Vertex, Serializable {
   private final String runtimeVertexId;
   private final RuntimeAttributeMap vertexAttributes;
 

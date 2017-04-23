@@ -15,35 +15,16 @@
  */
 package edu.snu.vortex.utils.dag;
 
-import java.util.logging.Logger;
-
 /**
- * Connects two vertices of a DAG.
- * This class can be extended for various DAG representations.
- *
- * @param <V> the vertex type.
+ * A vertex in DAG.
  */
-public class Edge<V extends Vertex> {
-  private static final Logger LOG = Logger.getLogger(Edge.class.getName());
+public interface Vertex {
+  /**
+   * Returns an identifier of the vertex.
+   * The identifier must be unique in the DAG.
+   * @return an identifier of the vertex
+   */
+  String getId();
 
-  private V src;
-  private V dst;
-
-  public Edge(final V src, final V dst) {
-    this.src = src;
-    this.dst = dst;
-  }
-
-  public final V getSrc() {
-    return src;
-  }
-
-  public final V getDst() {
-    return dst;
-  }
-
-  @SuppressWarnings("checkstyle:designforextension")
-  public String propertiesToJSON() {
-    return "{}";
-  }
+  String propertiesToJSON();
 }

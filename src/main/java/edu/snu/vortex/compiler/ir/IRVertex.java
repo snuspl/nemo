@@ -17,13 +17,14 @@ package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.utils.dag.Vertex;
 
 import java.io.Serializable;
 
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
  */
-public abstract class IRVertex implements Serializable {
+public abstract class IRVertex implements Vertex, Serializable {
   private final String id;
   private final AttributeMap attributes;
 
@@ -56,16 +57,10 @@ public abstract class IRVertex implements Serializable {
     return attributes;
   }
 
-  @SuppressWarnings("checkstyle:designforextension")
-  @Override
-  public String toString() {
+  protected final String irVertexPropertiesToString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("class: ");
-    sb.append(this.getClass().getSimpleName());
-    sb.append(", id: ");
-    sb.append(id);
-    sb.append(", attributes: ");
-    sb.append(attributes);
+    sb.append("\"class\": \"").append(this.getClass().getSimpleName());
+    sb.append("\", \"attributes\": ").append(attributes);
     return sb.toString();
   }
 }

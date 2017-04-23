@@ -17,13 +17,14 @@ package edu.snu.vortex.runtime.common.plan.logical;
 
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.Vertex;
 
 /**
  * Represents a stage in Runtime's execution of a job.
  * Each stage contains a part of a whole execution plan.
  * Stage partitioning is determined by {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
  */
-public final class Stage {
+public final class Stage implements Vertex {
   private final String stageId;
 
   private final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAG;
@@ -43,11 +44,16 @@ public final class Stage {
   }
 
   @Override
-  public String toString() {
-    final StringBuffer sb = new StringBuffer("Stage{");
-    sb.append("stageId='").append(stageId).append('\'');
-    sb.append(", stageInternalDAG=").append(stageInternalDAG);
-    sb.append('}');
+  public String propertiesToJSON() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("{\"stageId\": \"").append(stageId);
+    sb.append("\", \"stageInternalDAG\": ").append(stageInternalDAG.toString());
+    sb.append("}");
     return sb.toString();
+  }
+
+  @Override
+  public String getId() {
+    return stageId;
   }
 }
