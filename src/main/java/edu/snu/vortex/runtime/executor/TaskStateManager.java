@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 /**
  * Manages the states related to a task.
  */
+// TODO #83: Introduce Task Group Executor
 public final class TaskStateManager {
   private static final Logger LOG = Logger.getLogger(TaskStateManager.class.getName());
 
@@ -94,11 +95,11 @@ public final class TaskStateManager {
     taskGroupStateChangedMsg.setState(convertState(newState));
     taskGroupStateChangedMsg.setFailedTaskId(failedTaskId);
 
-    // TODO #000: Work with executor
-    // Send to master!
+    // TODO #94: Implement Distributed Communicator
+    // Send taskGroupStateChangedMsg to master!
   }
 
-  // TODO #000: Cleanup Protobuf Usage
+  // TODO #164: Cleanup Protobuf Usage
   private ExecutorMessage.TaskGroupStateFromExecutor convertState(final TaskGroupState.State state) {
     switch (state) {
     case READY:

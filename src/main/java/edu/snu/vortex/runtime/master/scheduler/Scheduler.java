@@ -81,6 +81,8 @@ public final class Scheduler {
     executionStateManager.manageNewJob(physicalPlan);
   }
 
+  // TODO #83: Introduce Task Group Executor
+  // TODO #94: Implement Distributed Communicator
   public void onTaskGroupStateMessageReceived(final String executorId,
                                               final ExecutorMessage.TaskGroupStateChangedMsg message) {
     final TaskGroupState.State newState = convertState(message.getState());
@@ -121,19 +123,20 @@ public final class Scheduler {
     }
   }
 
-  // TODO #000: Handle Fault Tolerance
+  // TODO #163: Handle Fault Tolerance
   private void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId,
                                           final String taskIdOnFailure) {
     schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroupId);
   }
 
-  // TODO #000: Resource manager
+  // TODO #85: Introduce Resource Manager
   public void onExecutorAdded(final ExecutorRepresenter executor) {
     executorRepresenterMap.put(executor.getExecutorId(), executor);
     schedulingPolicy.onExecutorAdded(executor);
   }
 
-  // TODO #000: Handle Fault Tolerance
+  // TODO #163: Handle Fault Tolerance
+  // TODO #85: Introduce Resource Manager
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
     final Set<String> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executor);
 
@@ -179,7 +182,8 @@ public final class Scheduler {
                 schedulingPolicy.getScheduleTimeout());
             taskGroupsToSchedule.addLast(taskGroup);
           } else {
-            // TODO #000: Executor
+            // TODO #83: Introduce Task Group Executor
+            // TODO #94: Implement Distributed Communicator
             // Must send this taskGroup to the destination executor.
             schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup.getTaskGroupId());
             executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
@@ -197,7 +201,7 @@ public final class Scheduler {
     taskGroupsToSchedule.clear();
   }
 
-  // TODO #000: Cleanup Protobuf Usage
+  // TODO #164: Cleanup Protobuf Usage
   private TaskGroupState.State convertState(final ExecutorMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
     case READY:
