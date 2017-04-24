@@ -91,8 +91,12 @@ public final class Scheduler {
    * @param physicalPlan the physical plan for the job.
    */
   public void scheduleJob(final PhysicalPlan physicalPlan) {
-    synchronized (physicalStages) {
+    if (physicalStages == null) {
       this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+    } else {
+      synchronized (physicalStages) {
+        this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+      }
     }
     initializeSchedulingPolicy();
     executionStateManager.manageNewJob(physicalPlan);
