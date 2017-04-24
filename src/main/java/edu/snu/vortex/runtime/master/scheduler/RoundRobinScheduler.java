@@ -126,6 +126,8 @@ public final class RoundRobinScheduler implements SchedulingPolicy {
         nextExecutorIndex = (index + 1) % numExecutors;
         nextExecutorIndexByResourceType.put(resourceType, nextExecutorIndex);
         break;
+      } else {
+        selectedExecutor = null;
       }
     }
     return selectedExecutor;
