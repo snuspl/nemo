@@ -74,4 +74,11 @@ public final class StageState {
     FAILED_RECOVERABLE,
     FAILED_UNRECOVERABLE
   }
+
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer();
+    sb.append(stateMachine.getCurrentState());
+    return sb.toString();
+  }
 }
