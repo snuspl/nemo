@@ -71,7 +71,7 @@ public final class ExecutionStateManager {
    * Receives a new job to manage.
    * @param physicalPlanForNewJob to manage.
    */
-  public void manageNewJob(final PhysicalPlan physicalPlanForNewJob) {
+  public synchronized void manageNewJob(final PhysicalPlan physicalPlanForNewJob) {
     this.physicalPlan = physicalPlanForNewJob;
     idToStageStates.clear();
     idToTaskGroupStates.clear();
@@ -98,7 +98,7 @@ public final class ExecutionStateManager {
    * Updates the state of the job.
    * @param newState of the job.
    */
-  public void onJobStateChanged(final JobState.State newState) {
+  public synchronized void onJobStateChanged(final JobState.State newState) {
     if (newState == JobState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing Job ID {0}...", jobId);
       jobState.getStateMachine().setState(newState);
@@ -122,7 +122,7 @@ public final class ExecutionStateManager {
    * @param newState of the stage.
    * @return true if this state change results in the entire job completion, false otherwise.
    */
-  public boolean onStageStateChanged(final String stageId, final StageState.State newState) {
+  public synchronized boolean onStageStateChanged(final String stageId, final StageState.State newState) {
     final StateMachine stageStateMachine = idToStageStates.get(stageId).getStateMachine();
     LOG.log(Level.FINE, "Stage State Transition: id {0} from {1} to {2}",
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
@@ -153,7 +153,7 @@ public final class ExecutionStateManager {
    * @param newState of the task group.
    * @return true if this state change results in the current stage completion, false otherwise.
    */
-  public boolean onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
+  public synchronized boolean onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
@@ -165,8 +165,22 @@ public final class ExecutionStateManager {
   }
 
   // Tentative
-  public void getCurrentJobExecutionState() {
-
+  public String getCurrentJobExecutionState() {
+    final StringBuffer sb = new StringBuffer("Job ID  ");
+    sb.append(this.jobId).append(": ");
+    physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
+      final StageState stageState = idToStageStates.get(physicalStage.getId());
+      sb.append("{ Stage ").append(physicalStage.getId()).append(":").append(stageState).append(", TaskGroups:{");
+      physicalStage.getTaskGroupList().forEach(taskGroup -> {
+        sb.append(taskGroup.getTaskGroupId()).append(":").append(idToTaskGroupStates.get(taskGroup.getTaskGroupId()))
+            .append(", Tasks:{");
+        taskGroup.getTaskDAG().topologicalDo(
+            task -> sb.append(task.getTaskId()).append(":").append(idToTaskStates.get(task.getTaskId())).append(","));
+        sb.append("}, ");
+      });
+      sb.append("}}");
+    });
+    return sb.toString();
   }
 
   // Tentative

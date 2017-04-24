@@ -53,7 +53,7 @@ public final class TaskGroupStateManager {
    * Receives a new task group to manage.
    * @param taskGroup to manage.
    */
-  public void manageNewTaskGroup(final TaskGroup taskGroup) {
+  public synchronized void manageNewTaskGroup(final TaskGroup taskGroup) {
     idToTaskStates.clear();
 
     this.taskGroupId = taskGroup.getTaskGroupId();
@@ -69,7 +69,7 @@ public final class TaskGroupStateManager {
    * Updates the state of the task group.
    * @param newState of the task group.
    */
-  public void onTaskGroupStateChanged(final TaskGroupState.State newState,
+  public synchronized void onTaskGroupStateChanged(final TaskGroupState.State newState,
                                       final String failedTaskId) {
     if (newState == TaskGroupState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing TaskGroup ID {0}...", taskGroupId);
@@ -94,7 +94,7 @@ public final class TaskGroupStateManager {
    * @param newState of the task.
    * @return true if this task change results in the current task group completion, false otherwise.
    */
-  public boolean onTaskStateChanged(final String taskId, final TaskState.State newState) {
+  public synchronized boolean onTaskStateChanged(final String taskId, final TaskState.State newState) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
     LOG.log(Level.FINE, "Task State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskStateChanged.getCurrentState(), newState});

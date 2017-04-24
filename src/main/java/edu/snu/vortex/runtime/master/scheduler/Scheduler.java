@@ -91,7 +91,9 @@ public final class Scheduler {
    * @param physicalPlan the physical plan for the job.
    */
   public void scheduleJob(final PhysicalPlan physicalPlan) {
-    this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+    synchronized (physicalStages) {
+      this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+    }
     initializeSchedulingPolicy();
     executionStateManager.manageNewJob(physicalPlan);
   }
@@ -109,11 +111,15 @@ public final class Scheduler {
     final TaskGroupState.State newState = convertState(message.getState());
     switch (newState) {
     case COMPLETE:
-      onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId), message.getTaskGroupId());
+      synchronized (executorRepresenterMap) {
+        onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId), message.getTaskGroupId());
+      }
       break;
     case FAILED_RECOVERABLE:
-      onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), message.getTaskGroupId(),
-          message.getFailedTaskId());
+      synchronized (executorRepresenterMap) {
+        onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), message.getTaskGroupId(),
+            message.getFailedTaskId());
+      }
       break;
     case FAILED_UNRECOVERABLE:
       throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on Task #")
@@ -155,13 +161,18 @@ public final class Scheduler {
 
   // TODO #85: Introduce Resource Manager
   public void onExecutorAdded(final ExecutorRepresenter executor) {
-    executorRepresenterMap.put(executor.getExecutorId(), executor);
+    synchronized (executorRepresenterMap) {
+      executorRepresenterMap.put(executor.getExecutorId(), executor);
+    }
     schedulingPolicy.onExecutorAdded(executor);
   }
 
   // TODO #163: Handle Fault Tolerance
   // TODO #85: Introduce Resource Manager
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
+    synchronized (executorRepresenterMap) {
+      executorRepresenterMap.remove(executor.getExecutorId());
+    }
     final Set<String> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executor);
 
     // Reschedule taskGroupsToReschedule
@@ -172,7 +183,9 @@ public final class Scheduler {
    * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
    */
   private void scheduleNextStage() {
-    currentStage = physicalStages.remove(0);
+    synchronized (physicalStages) {
+      currentStage = physicalStages.remove(0);
+    }
     taskGroupsToSchedule.addAll(currentStage.getTaskGroupList());
     executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.EXECUTING);
   }
