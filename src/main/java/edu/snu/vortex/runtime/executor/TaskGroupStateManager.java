@@ -68,9 +68,10 @@ public final class TaskGroupStateManager {
   /**
    * Updates the state of the task group.
    * @param newState of the task group.
+   * @param failedTaskId the ID of the task on which this task group failed if failed, null otherwise.
    */
   public synchronized void onTaskGroupStateChanged(final TaskGroupState.State newState,
-                                      final String failedTaskId) {
+                                                   final String failedTaskId) {
     if (newState == TaskGroupState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing TaskGroup ID {0}...", taskGroupId);
     } else if (newState == TaskGroupState.State.COMPLETE) {

@@ -80,6 +80,7 @@ public final class TaskState {
    */
   public enum State {
     READY,
+    // PENDING_IN_EXECUTOR and EXECUTING states are only managed in executor.
     PENDING_IN_EXECUTOR,
     EXECUTING,
     COMPLETE,
