@@ -15,74 +15,60 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.OperatorVertex;
+import edu.snu.vortex.compiler.ir.Transform;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
+import edu.snu.vortex.runtime.common.plan.logical.Stage;
+import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Mockito.*;
 
 /**
  * Tests {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(TaskGroup.class)
 public final class SchedulerTest {
   private final ExecutionStateManager executionStateManager = new ExecutionStateManager();
   private final Scheduler scheduler = new Scheduler(executionStateManager, RuntimeAttribute.Batch, 2000);
+  private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
+
+  @Before
+  public void setUp() {
+    irDAGBuilder = new DAGBuilder<>();
+  }
 
   /**
-   * This method builds a physical DAG and tests whether the physical DAG successfully gets scheduled..
+   * This method builds a physical DAG starting from an IR DAG to test whether the it successfully gets scheduled.
    */
-  // TODO #93: Implement Batch Scheduler
-  // The tests will be extended with Batch Scheduler.
   @Test
   public void testSimplePhysicalPlanScheduling() {
-    final DAGBuilder<PhysicalStage, PhysicalStageEdge> builder = new DAGBuilder<>();
+    final Transform t = mock(Transform.class);
+    final IRVertex v1 = new OperatorVertex(t);
+    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    irDAGBuilder.addVertex(v1);
 
-    final TaskGroup taskGroup1 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Compute);
-    final TaskGroup taskGroup2 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Compute);
-    final TaskGroup taskGroup3 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Compute);
+    final IRVertex v2 = new OperatorVertex(t);
+    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    irDAGBuilder.addVertex(v2);
 
-    final TaskGroup taskGroup4 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Storage);
-    final TaskGroup taskGroup5 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.Storage);
+    final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2);
+    e.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+    e.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+    irDAGBuilder.connectVertices(e);
 
-    final TaskGroup taskGroup6 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.DistributedStorage);
-    final TaskGroup taskGroup7 = mock(TaskGroup.class);
-    when(taskGroup1.getResourceType()).thenReturn(RuntimeAttribute.DistributedStorage);
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
+    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
-    PhysicalStageBuilder physicalStageBuilder = new PhysicalStageBuilder("Stage-1", 3);
-    physicalStageBuilder.addTaskGroup(taskGroup1);
-    physicalStageBuilder.addTaskGroup(taskGroup2);
-    physicalStageBuilder.addTaskGroup(taskGroup3);
-
-    final PhysicalStage stage1 = physicalStageBuilder.build();
-    builder.addVertex(stage1);
-
-    physicalStageBuilder = new PhysicalStageBuilder("Stage-2", 2);
-    physicalStageBuilder.addTaskGroup(taskGroup4);
-    physicalStageBuilder.addTaskGroup(taskGroup5);
-
-    final PhysicalStage stage2 = physicalStageBuilder.build();
-    builder.addVertex(stage2);
-
-    physicalStageBuilder = new PhysicalStageBuilder("Stage-3", 2);
-    physicalStageBuilder.addTaskGroup(taskGroup6);
-    physicalStageBuilder.addTaskGroup(taskGroup7);
-
-    final PhysicalStage stage3 = physicalStageBuilder.build();
-    builder.addVertex(stage3);
-
-//    scheduler.scheduleJob(new PhysicalPlan("TestPlan", builder.build()));
+    scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
   }
 }
