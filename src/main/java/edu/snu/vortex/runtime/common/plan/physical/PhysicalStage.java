@@ -23,18 +23,13 @@ import java.util.List;
 /**
  * TaskGroup.
  */
-public final class PhysicalStage implements Vertex, Serializable {
-  private final String id;
+public final class PhysicalStage extends Vertex implements Serializable {
   private final List<TaskGroup> taskGroupList;
 
   public PhysicalStage(final String stageId,
                        final List<TaskGroup> taskGroupList) {
-    this.id = stageId;
+    super(stageId);
     this.taskGroupList = taskGroupList;
-  }
-
-  public String getId() {
-    return id;
   }
 
   public List<TaskGroup> getTaskGroupList() {

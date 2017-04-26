@@ -18,13 +18,28 @@ package edu.snu.vortex.utils.dag;
 /**
  * A vertex in DAG.
  */
-public interface Vertex {
-  /**
-   * Returns an identifier of the vertex.
-   * The identifier must be unique in the DAG.
-   * @return an identifier of the vertex
-   */
-  String getId();
+public abstract class Vertex {
+  private final String id;
 
-  String propertiesToJSON();
+  /**
+   * @param id unique identifier of the vertex
+   */
+  public Vertex(final String id) {
+    this.id = id;
+  }
+
+  /**
+   * @return identifier of the vertex
+   */
+  public final String getId() {
+    return id;
+  }
+
+  /**
+   * @return JSON representation of additional properties
+   */
+  @SuppressWarnings("checkstyle:designforextension")
+  public String propertiesToJSON() {
+    return "{}";
+  }
 }

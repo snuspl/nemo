@@ -24,14 +24,12 @@ import edu.snu.vortex.utils.dag.Vertex;
  * Each stage contains a part of a whole execution plan.
  * Stage partitioning is determined by {@link edu.snu.vortex.compiler.backend.vortex.VortexBackend}.
  */
-public final class Stage implements Vertex {
-  private final String stageId;
-
+public final class Stage extends Vertex {
   private final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAG;
 
   public Stage(final String stageId,
                final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAG) {
-    this.stageId = stageId;
+    super(stageId);
     this.stageInternalDAG = stageInternalDAG;
   }
 
@@ -40,20 +38,14 @@ public final class Stage implements Vertex {
   }
 
   public String getStageId() {
-    return stageId;
+    return getId();
   }
 
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("{\"stageId\": \"").append(stageId);
-    sb.append("\", \"stageInternalDAG\": ").append(stageInternalDAG.toString());
+    sb.append("{\"stageInternalDAG\": ").append(stageInternalDAG.toString());
     sb.append("}");
     return sb.toString();
-  }
-
-  @Override
-  public String getId() {
-    return stageId;
   }
 }

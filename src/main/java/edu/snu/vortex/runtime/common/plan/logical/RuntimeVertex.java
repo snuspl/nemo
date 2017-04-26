@@ -23,18 +23,13 @@ import java.io.Serializable;
 /**
  * Represents an operator of a job, tagged with attributes about the operator.
  */
-public abstract class RuntimeVertex implements Vertex, Serializable {
-  private final String runtimeVertexId;
+public abstract class RuntimeVertex extends Vertex implements Serializable {
   private final RuntimeAttributeMap vertexAttributes;
 
   public RuntimeVertex(final String irVertexId,
                        final RuntimeAttributeMap vertexAttributes) {
-    this.runtimeVertexId = RuntimeIdGenerator.generateRuntimeVertexId(irVertexId);
+    super(RuntimeIdGenerator.generateRuntimeVertexId(irVertexId));
     this.vertexAttributes = vertexAttributes;
-  }
-
-  public final String getId() {
-    return runtimeVertexId;
   }
 
   public final RuntimeAttributeMap getVertexAttributes() {

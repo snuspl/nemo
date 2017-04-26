@@ -98,19 +98,15 @@ public final class DAGTest {
     assertEquals(topologicalOrder.get(4).getValue(), 3);
   }
 
-  final class IntegerVertex implements Vertex {
+  final class IntegerVertex extends Vertex {
     private final int value;
     public IntegerVertex(final int value) {
+      super(String.valueOf(value));
       this.value = value;
     }
 
     public int getValue() {
       return value;
-    }
-
-    @Override
-    public String getId() {
-      return String.valueOf(value);
     }
 
     @Override
@@ -128,11 +124,6 @@ public final class DAGTest {
     @Override
     public int hashCode() {
       return value;
-    }
-
-    @Override
-    public String propertiesToJSON() {
-      return "{}";
     }
   }
 }

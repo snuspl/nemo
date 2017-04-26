@@ -163,24 +163,24 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
   public String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"vertices\": [");
-    boolean firstVertex = true;
+    boolean isFirstVertex = true;
     for (final V vertex : vertices) {
-      if (!firstVertex) {
+      if (!isFirstVertex) {
         sb.append(", ");
       }
-      firstVertex = false;
+      isFirstVertex = false;
       sb.append("{\"id\": \"").append(vertex.getId());
       sb.append("\", \"properties\": ").append(vertex.propertiesToJSON());
       sb.append("}");
     }
     sb.append("], \"edges\": [");
-    boolean firstEdge = true;
+    boolean isFirstEdge = true;
     for (final Set<E> edgeSet : incomingEdges.values()) {
       for (final E edge : edgeSet) {
-        if (!firstEdge) {
+        if (!isFirstEdge) {
           sb.append(", ");
         }
-        firstEdge = false;
+        isFirstEdge = false;
         sb.append("{\"src\": \"").append(edge.getSrc().getId());
         sb.append("\", \"dst\": \"").append(edge.getDst().getId());
         sb.append("\", \"properties\": ").append(edge.propertiesToJSON());

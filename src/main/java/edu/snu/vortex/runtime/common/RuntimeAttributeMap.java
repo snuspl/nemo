@@ -57,12 +57,12 @@ public final class RuntimeAttributeMap {
   public String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{");
-    boolean firstPair = true;
+    boolean isFirstPair = true;
     for (final Map.Entry<RuntimeAttribute.Key, RuntimeAttribute> pair : attributes.entrySet()) {
-      if (!firstPair) {
+      if (!isFirstPair) {
         sb.append(", ");
       }
-      firstPair = false;
+      isFirstPair = false;
       sb.append("\"");
       sb.append(pair.getKey());
       sb.append("\": \"");
@@ -70,10 +70,10 @@ public final class RuntimeAttributeMap {
       sb.append("\"");
     }
     for (final Map.Entry<RuntimeAttribute.IntegerKey, Integer> pair : intAttributes.entrySet()) {
-      if (!firstPair) {
+      if (!isFirstPair) {
         sb.append(", ");
       }
-      firstPair = false;
+      isFirstPair = false;
       sb.append("\"");
       sb.append(pair.getKey());
       sb.append("\": ");
