@@ -51,11 +51,13 @@ public final class Scheduler {
 
   /**
    * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
+   * This object is synchronized as multiple threads can access and modify {@link ExecutorRepresenter}s.
    */
   private final Map<String, ExecutorRepresenter> executorRepresenterMap;
 
   /**
-   * The {@link SchedulingPolicy} used to schedule the task groups.
+   * The {@link SchedulingPolicy} used to schedule task groups.
+   * {@link this#schedulingPolicyAttribute} decides the implementation.
    */
   private SchedulingPolicy schedulingPolicy;
   private RuntimeAttribute schedulingPolicyAttribute;
@@ -67,6 +69,7 @@ public final class Scheduler {
 
   /**
    * The list of stages for the currently running job.
+   * This object is synchronized as a new job can be submitted while a job runs.
    */
   private List<PhysicalStage> physicalStages;
   private PhysicalStage currentStage;
@@ -83,7 +86,10 @@ public final class Scheduler {
 
     // The default policy is initialized and set here.
     this.schedulingPolicyAttribute = schedulingPolicyAttribute;
+    initializeSchedulingPolicy();
+
     this.scheduleTimeout = scheduleTimeout;
+    this.physicalStages = Collections.emptyList();
   }
 
   /**
@@ -91,15 +97,12 @@ public final class Scheduler {
    * @param physicalPlan the physical plan for the job.
    */
   public void scheduleJob(final PhysicalPlan physicalPlan) {
-    if (physicalStages == null) {
+    synchronized (physicalStages) {
       this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
-    } else {
-      synchronized (physicalStages) {
-        this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
-      }
     }
     initializeSchedulingPolicy();
     executionStateManager.manageNewJob(physicalPlan);
+    scheduleNextStage();
   }
 
   /**
@@ -113,21 +116,24 @@ public final class Scheduler {
   public void onTaskGroupStateChanged(final String executorId,
                                       final ExecutorMessage.TaskGroupStateChangedMsg message) {
     final TaskGroupState.State newState = convertState(message.getState());
+    final boolean currentStageComplete =
+        executionStateManager.onTaskGroupStateChanged(message.getTaskGroupId(), newState);
     switch (newState) {
     case COMPLETE:
       synchronized (executorRepresenterMap) {
-        onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId), message.getTaskGroupId());
+        onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId),
+            message.getTaskGroupId(), currentStageComplete);
       }
       break;
     case FAILED_RECOVERABLE:
       synchronized (executorRepresenterMap) {
         onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), message.getTaskGroupId(),
-            message.getFailedTaskId());
+            message.getFailedTaskIdsList());
       }
       break;
     case FAILED_UNRECOVERABLE:
-      throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on Task #")
-          .append(message.getFailedTaskId()).append(" in Executor ").append(executorId).toString()));
+      throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on TaskGroup #")
+          .append(message.getTaskGroupId()).append(" in Executor ").append(executorId).toString()));
     case READY:
     case EXECUTING:
       throw new IllegalStateTransitionException(new Exception("The states READY/EXECUTING cannot occur at this point"));
@@ -136,12 +142,10 @@ public final class Scheduler {
     }
   }
 
-
-  private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor, final String taskGroupId) {
+  private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor,
+                                            final String taskGroupId,
+                                            final boolean currentStageComplete) {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
-
-    final boolean currentStageComplete =
-        executionStateManager.onTaskGroupStateChanged(taskGroupId, TaskGroupState.State.COMPLETE);
 
     // if the current stage is complete,
     if (currentStageComplete) {
@@ -159,7 +163,7 @@ public final class Scheduler {
 
   // TODO #163: Handle Fault Tolerance
   private void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId,
-                                          final String taskIdOnFailure) {
+                                          final List<String> taskIdOnFailure) {
     schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroupId);
   }
 
@@ -186,7 +190,7 @@ public final class Scheduler {
    * Schedules the next stage to execute.
    * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
    */
-  private void scheduleNextStage() {
+  private synchronized void scheduleNextStage() {
     synchronized (physicalStages) {
       currentStage = physicalStages.remove(0);
     }
@@ -201,7 +205,7 @@ public final class Scheduler {
   private void initializeSchedulingPolicy() {
     switch (schedulingPolicyAttribute) {
     case Batch:
-      this.schedulingPolicy = new RoundRobinScheduler(scheduleTimeout);
+      this.schedulingPolicy = new RoundRobinSchedulingPolicy(scheduleTimeout);
       break;
     default:
       throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));
@@ -214,10 +218,13 @@ public final class Scheduler {
   private class TaskGroupScheduleHandler implements Runnable {
     @Override
     public void run() {
+      System.out.println("hi" + schedulerThread.isShutdown());
       while (!schedulerThread.isShutdown()) {
         try {
           final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();
           final Optional<ExecutorRepresenter> executor = schedulingPolicy.attemptSchedule(taskGroup);
+          System.out.println(taskGroup);
+          System.out.println(executor);
           if (!executor.isPresent()) {
             LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
                 schedulingPolicy.getScheduleTimeout());
@@ -227,6 +234,7 @@ public final class Scheduler {
             // TODO #94: Implement Distributed Communicator
             // Must send this taskGroup to the destination executor.
             schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup.getTaskGroupId());
+            System.out.println("Scheduling! " + taskGroup.getTaskGroupId());
             executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
                 TaskGroupState.State.EXECUTING);
           }

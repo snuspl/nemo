@@ -21,10 +21,12 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
 import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
@@ -50,14 +52,16 @@ public final class SchedulerTest {
    * This method builds a physical DAG starting from an IR DAG to test whether the it successfully gets scheduled.
    */
   @Test
-  public void testSimplePhysicalPlanScheduling() {
+  public void testSimplePhysicalPlanScheduling() throws InterruptedException {
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v1.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v2);
 
     final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2);
@@ -69,6 +73,39 @@ public final class SchedulerTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
+    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
+    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1);
+    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1);
+    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1);
+    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1);
+
+
+
+    scheduler.onExecutorAdded(a1);
+//    scheduler.onExecutorAdded(a2);
+//    scheduler.onExecutorAdded(a3);
+    scheduler.onExecutorAdded(b1);
+    Thread.sleep(2000);
+//    scheduler.onExecutorAdded(b2);
+
     scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
+
+    for (final PhysicalStage physicalStage : physicalDAG.getVertices()) {
+      physicalStage.getTaskGroupList().forEach(taskGroup -> {
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e1) {
+          e1.printStackTrace();
+        }
+        final ExecutorMessage.TaskGroupStateChangedMsg.Builder taskGroupStateChangedMsg =
+            ExecutorMessage.TaskGroupStateChangedMsg.newBuilder();
+        taskGroupStateChangedMsg.setTaskGroupId(taskGroup.getTaskGroupId());
+        taskGroupStateChangedMsg.setState(ExecutorMessage.TaskGroupStateFromExecutor.COMPLETE);
+        scheduler.onTaskGroupStateChanged(a1.getExecutorId(), taskGroupStateChangedMsg.build());
+      });
+    }
+    executionStateManager.printCurrentJobExecutionState();
+
+    scheduler.terminate();
   }
 }

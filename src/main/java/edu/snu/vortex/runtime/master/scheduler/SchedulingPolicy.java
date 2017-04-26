@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Defines the policy by which {@link Scheduler} assigns task groups to executors.
  */
-@DefaultImplementation(RoundRobinScheduler.class)
+@DefaultImplementation(RoundRobinSchedulingPolicy.class)
 public interface SchedulingPolicy {
 
   /**

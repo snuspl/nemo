@@ -22,25 +22,30 @@ import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.utils.StateMachine;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Manages the states related to a task group.
+ * The methods of this class are synchronized.
  */
 // TODO #83: Introduce Task Group Executor
 public final class TaskGroupStateManager {
   private static final Logger LOG = Logger.getLogger(TaskGroupStateManager.class.getName());
 
   private String taskGroupId;
+
+  /**
+   * Used to track all task states of this task group, by keeping a map of task ids to their states.
+   */
   private final Map<String, TaskState> idToTaskStates;
 
   /**
    * Used to track task group completion status.
+   * All task ids are added to the set when the this task group begins executing.
+   * Each task id is removed upon completion,
+   * therefore indicating the task group's completion when this set becomes empty.
    */
   private Set<String> currentTaskGroupTaskIds;
 
@@ -68,23 +73,23 @@ public final class TaskGroupStateManager {
   /**
    * Updates the state of the task group.
    * @param newState of the task group.
-   * @param failedTaskId the ID of the task on which this task group failed if failed, null otherwise.
+   * @param failedTaskIds the ID of the task on which this task group failed if failed, empty otherwise.
    */
   public synchronized void onTaskGroupStateChanged(final TaskGroupState.State newState,
-                                                   final String failedTaskId) {
+                                                   final Optional<List<String>> failedTaskIds) {
     if (newState == TaskGroupState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing TaskGroup ID {0}...", taskGroupId);
     } else if (newState == TaskGroupState.State.COMPLETE) {
       LOG.log(Level.FINE, "TaskGroup ID {0} complete!", taskGroupId);
-      notifyTaskGroupStateToMaster(taskGroupId, newState, null);
+      notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskIds);
     } else if (newState == TaskGroupState.State.FAILED_RECOVERABLE) {
       LOG.log(Level.FINE, "TaskGroup ID {0} failed (recoverable).", taskGroupId);
-      notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskId);
+      notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskIds);
     } else if (newState == TaskGroupState.State.FAILED_UNRECOVERABLE) {
       LOG.log(Level.FINE, "TaskGroup ID {0} failed (unrecoverable).", taskGroupId);
-      notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskId);
+      notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskIds);
     } else {
-      throw new RuntimeException("Illegal State");
+      throw new IllegalStateException("Illegal state at this point");
     }
   }
 
@@ -110,18 +115,22 @@ public final class TaskGroupStateManager {
    * Notifies the change in task group state to master.
    * @param id of the task group.
    * @param newState of the task group.
-   * @param failedTaskId the id of the task that caused this task group to fail, null otherwise.
+   * @param failedTaskIds the id of the task that caused this task group to fail, empty otherwise.
    */
   private void notifyTaskGroupStateToMaster(final String id,
                                             final TaskGroupState.State newState,
-                                            final String failedTaskId) {
+                                            final Optional<List<String>> failedTaskIds) {
     final ExecutorMessage.TaskGroupStateChangedMsg.Builder taskGroupStateChangedMsg =
         ExecutorMessage.TaskGroupStateChangedMsg.newBuilder();
     taskGroupStateChangedMsg.setTaskGroupId(id);
     taskGroupStateChangedMsg.setState(convertState(newState));
-    taskGroupStateChangedMsg.setFailedTaskId(failedTaskId);
+
+    if (failedTaskIds.isPresent()) {
+      taskGroupStateChangedMsg.addAllFailedTaskIds(failedTaskIds.get());
+    }
 
     // TODO #94: Implement Distributed Communicator
+
     // Send taskGroupStateChangedMsg to master!
   }
 

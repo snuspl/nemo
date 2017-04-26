@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.scheduler.RoundRobinScheduler;
+import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +30,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link RoundRobinScheduler}
+ * Tests {@link RoundRobinSchedulingPolicy}
  */
-public final class RRSchedulerTest {
+public final class RoundRobinSchedulingPolicyTest {
   private SchedulingPolicy schedulingPolicy;
 
   @Before
   public void setUp() {
-    schedulingPolicy = new RoundRobinScheduler(2000);
+    schedulingPolicy = new RoundRobinSchedulingPolicy(2000);
   }
 
   @Test

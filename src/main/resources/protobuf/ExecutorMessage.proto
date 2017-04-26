@@ -19,7 +19,7 @@ message Message {
 message TaskGroupStateChangedMsg {
     string taskGroupId = 1;
     TaskGroupStateFromExecutor state = 2;
-    string failedTaskId = 3;
+    repeated string failedTaskIds = 3;
 }
 
 enum TaskGroupStateFromExecutor {

@@ -30,14 +30,14 @@ import java.util.logging.Logger;
 
 /**
  * {@inheritDoc}
- * A Round-Robin implementation.
+ * A Round-Robin implementation used by {@link Scheduler}.
  *
- * This scheduler keeps a list of available {@link ExecutorRepresenter} for each type of resource.
+ * This policy keeps a list of available {@link ExecutorRepresenter} for each type of resource.
  * The RR policy is used for each resource type when trying to schedule a task group.
  */
 @ThreadSafe
-public final class RoundRobinScheduler implements SchedulingPolicy {
-  private static final Logger LOG = Logger.getLogger(RoundRobinScheduler.class.getName());
+public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
+  private static final Logger LOG = Logger.getLogger(RoundRobinSchedulingPolicy.class.getName());
 
   private final long scheduleTimeout;
 
@@ -64,7 +64,7 @@ public final class RoundRobinScheduler implements SchedulingPolicy {
    */
   private final Map<RuntimeAttribute, Integer> nextExecutorIndexByResourceType;
 
-  public RoundRobinScheduler(final long scheduleTimeout) {
+  public RoundRobinSchedulingPolicy(final long scheduleTimeout) {
     this.scheduleTimeout = scheduleTimeout;
     this.lock = new ReentrantLock();
     this.executorByResourceType = new HashMap<>();
@@ -83,15 +83,17 @@ public final class RoundRobinScheduler implements SchedulingPolicy {
     try {
       final RuntimeAttribute resourceType = taskGroup.getResourceType();
       ExecutorRepresenter executor = selectExecutorByRR(resourceType);
-      if (executor == null) {
+      if (executor == null) { // If there is no available executor to schedule this task group now,
+
+        // we must wait until an executor becomes available, by putting a condition on the lock.
         Condition attemptToSchedule = attemptToScheduleByResourceType.get(resourceType);
-        if (attemptToSchedule == null) {
+        if (attemptToSchedule == null) { // initialize a new condition if this resourceType has never waited before.
           attemptToSchedule = lock.newCondition();
           attemptToScheduleByResourceType.put(resourceType, attemptToSchedule);
         }
         boolean executorAvailable = attemptToSchedule.await(scheduleTimeout, TimeUnit.MILLISECONDS);
 
-        if (executorAvailable) {
+        if (executorAvailable) { // if an executor has become available before scheduleTimeout,
           executor = selectExecutorByRR(resourceType);
           return Optional.of(executor);
         } else {
@@ -116,18 +118,21 @@ public final class RoundRobinScheduler implements SchedulingPolicy {
   private ExecutorRepresenter selectExecutorByRR(final RuntimeAttribute resourceType) {
     ExecutorRepresenter selectedExecutor = null;
     final List<ExecutorRepresenter> executorRepresenterList = executorByResourceType.get(resourceType);
-    final int numExecutors = executorRepresenterList.size();
-    int nextExecutorIndex = nextExecutorIndexByResourceType.get(resourceType);
-    for (int i = 0; i < numExecutors; i++) {
-      final int index = (nextExecutorIndex + i) % numExecutors;
-      selectedExecutor = executorRepresenterList.get(index);
 
-      if (selectedExecutor.getRunningTaskGroups().size() < selectedExecutor.getExecutorCapacity()) {
-        nextExecutorIndex = (index + 1) % numExecutors;
-        nextExecutorIndexByResourceType.put(resourceType, nextExecutorIndex);
-        break;
-      } else {
-        selectedExecutor = null;
+    if (executorRepresenterList != null && !executorRepresenterList.isEmpty()) {
+      final int numExecutors = executorRepresenterList.size();
+      int nextExecutorIndex = nextExecutorIndexByResourceType.get(resourceType);
+      for (int i = 0; i < numExecutors; i++) {
+        final int index = (nextExecutorIndex + i) % numExecutors;
+        selectedExecutor = executorRepresenterList.get(index);
+
+        if (selectedExecutor.getRunningTaskGroups().size() < selectedExecutor.getExecutorCapacity()) {
+          nextExecutorIndex = (index + 1) % numExecutors;
+          nextExecutorIndexByResourceType.put(resourceType, nextExecutorIndex);
+          break;
+        } else {
+          selectedExecutor = null;
+        }
       }
     }
     return selectedExecutor;

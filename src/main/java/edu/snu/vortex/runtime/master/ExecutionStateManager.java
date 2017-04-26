@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
+import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 /**
  * Manages the states related to a job.
  * This class can be used to track a job's execution status to task level in the future.
+ * The methods of this class are synchronized.
  */
 public final class ExecutionStateManager {
   private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
@@ -55,9 +57,19 @@ public final class ExecutionStateManager {
   private PhysicalPlan physicalPlan;
 
   /**
-   * Used to track stage/job completion status.
+   * Used to track current stage completion status.
+   * All task group ids are added to the set when the a stage begins executing.
+   * Each task group id is removed upon completion,
+   * therefore indicating the stage's completion when this set becomes empty.
    */
   private Set<String> currentStageTaskGroupIds;
+
+  /**
+   * Used to track job completion status.
+   * All stage ids are added to the set when the this job begins executing.
+   * Each stage id is removed upon completion,
+   * therefore indicating the job's completion when this set becomes empty.
+   */
   private Set<String> currentJobStageIds;
 
   public ExecutionStateManager() {
@@ -112,7 +124,7 @@ public final class ExecutionStateManager {
       jobState.getStateMachine().setState(newState);
       dumpPreviousJobExecutionStateToFile();
     } else {
-      throw new RuntimeException("Illegal Job State Transition");
+      throw new IllegalStateTransitionException(new Exception("Illegal Job State Transition"));
     }
   }
 
@@ -148,8 +160,11 @@ public final class ExecutionStateManager {
 
   /**
    * Updates the state of a task group.
-   * Task group state changes can occur both in master and executor,
-   * but this event is received via {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}.
+   * Task group state changes can occur both in master and executor.
+   * State changes that occur in master are initiated in {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}.
+   * State changes that occur in executors are sent to master as a control message,
+   * and the call to this method is initiated in {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   * when the message/event is received.
    * A task group completion implies completion of all its tasks.
    * @param taskGroupId of the task group.
    * @param newState of the task group.
@@ -201,7 +216,8 @@ public final class ExecutionStateManager {
   // Tentative
   public void printCurrentJobExecutionState() {
     final StringBuffer sb = new StringBuffer("Job ID ");
-    sb.append(this.jobId).append(":\n{Stages:\n{");
+    sb.append(this.jobId).append(":").append(jobState.getStateMachine().getCurrentState());
+    sb.append("\n{Stages:\n{");
     physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
       final StageState stageState = idToStageStates.get(physicalStage.getId());
       sb.append(physicalStage.getId()).append(":").append(stageState).append("\nTaskGroups:\n{");
