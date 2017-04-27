@@ -169,10 +169,10 @@ public final class Scheduler {
 
   // TODO #85: Introduce Resource Manager
   public void onExecutorAdded(final ExecutorRepresenter executor) {
+    schedulingPolicy.onExecutorAdded(executor);
     synchronized (executorRepresenterMap) {
       executorRepresenterMap.put(executor.getExecutorId(), executor);
     }
-    schedulingPolicy.onExecutorAdded(executor);
   }
 
   // TODO #163: Handle Fault Tolerance
@@ -218,7 +218,6 @@ public final class Scheduler {
   private class TaskGroupScheduleHandler implements Runnable {
     @Override
     public void run() {
-      System.out.println("hi" + schedulerThread.isShutdown());
       while (!schedulerThread.isShutdown()) {
         try {
           final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();

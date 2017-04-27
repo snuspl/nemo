@@ -80,7 +80,6 @@ public final class SchedulerTest {
     final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1);
 
 
-
     scheduler.onExecutorAdded(a1);
 //    scheduler.onExecutorAdded(a2);
 //    scheduler.onExecutorAdded(a3);
