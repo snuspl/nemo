@@ -31,7 +31,7 @@ public final class MapReduceDisaggregationTest {
   private final String optimizationPolicy = "disaggregation";
   private final String input = "./src/main/resources/sample_input_mr";
   private final String output = "./src/main/resources/sample_output";
-  private final String dagDirectory = "./target/mr_disaggregation/dag";
+  private final String dagDirectory = "./target/dag/mr_disaggregation";
 
   @Test
   public void test() throws Exception {

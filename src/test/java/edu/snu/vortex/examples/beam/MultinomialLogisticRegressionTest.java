@@ -33,7 +33,7 @@ public final class MultinomialLogisticRegressionTest {
   private final String numFeatures = "100";
   private final String numClasses = "5";
   private final String numIteration = "3";
-  private final String dagDirectory = "./target/mlr/dag";
+  private final String dagDirectory = "./target/dag/mlr";
 
   @Test
   public void test() throws Exception {
