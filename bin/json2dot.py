@@ -15,13 +15,14 @@
 # limitations under the License.
 #
 
+'''
+json2dot.py: Generates Graphviz representation of Vortex DAG::toString
+This file is used as backend for https://service.jangho.kr/vortex-dag
+'''
+
 import sys
 import json
 import re
-import uuid
-from subprocess import Popen, PIPE, run
-from shutil import which
-from os import makedirs
 
 nextIdx = 0
 
@@ -31,6 +32,10 @@ def getIdx():
     return nextIdx
 
 class DAG:
+    '''
+    A class for converting DAG to Graphviz representation.
+    JSON representation should be formatted like what toString method in DAG.java does.
+    '''
     def __init__(self, dag):
         self.vertices = {}
         self.edges = []
@@ -262,16 +267,4 @@ def jsonToDot(dagJSON):
     return 'digraph dag {compound=true; nodesep=1.0; forcelabels=true;' + DAG(dagJSON).dot + '}'
 
 if __name__ == "__main__":
-    dot = jsonToDot(json.loads(sys.stdin.read()))
-    filename = './target/json2png/{}.png'.format(uuid.uuid4().hex)
-    makedirs('./target/json2png', exist_ok=True)
-    p = Popen(['dot', '-Tpng', '-o', filename], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    stderr = str(p.communicate(bytes(dot, 'utf-8'))[1], 'utf-8')
-    if p.returncode != 0:
-        print(stderr, file=sys.stderr)
-        sys.exit(p.returncode)
-    if which('open') is not None:
-        sys.exit(run(['open', filename]).returncode)
-    if which('xdg-open') is not None:
-        sys.exit(run(['xdg-open', filename]).returncode)
-    print('PNG saved to {}'.format(filename))
+    print(jsonToDot(json.loads(sys.stdin.read())))

@@ -22,11 +22,4 @@ Vortex is a data-processing system composed of modular components.
 * `$ java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce`
 
 ## DAG Visualization
-You can visualize a DAG using the JSON representation of it.
-
-### Requirements
-* Python 3 interpreter (3.5 or later version is recommended)
-* Graphviz
-
-### Howto
-Execute `./bin/json2png.py` and type in the JSON string, or save JSON in another file and execute `./bin/json2png.py < ./path/to/json`.
+You can visualize a DAG using the JSON representation of it, using [online visualizer](https://service.jangho.kr/vortex-dag/).
