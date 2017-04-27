@@ -199,8 +199,9 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
    * Stores JSON representation of this DAG into a file.
    * @param directory the directory which JSON representation is saved to
    * @param name name of this DAG
+   * @param description description of this DAG
    */
-  public void storeJSON(final String directory, final String name) {
+  public void storeJSON(final String directory, final String name, final String description) {
     final File file = new File(directory, name + ".json");
     file.getParentFile().mkdirs();
     try {
@@ -211,5 +212,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
       LOG.log(Level.WARNING, String.format("Cannot store JSON representation of DAG to %s/%s.json: %s",
           directory, name, e.toString()));
     }
+    LOG.log(Level.INFO, String.format("DAG JSON for %s is saved at %s" +
+        " (Use https://service.jangho.kr/vortex-dag/ to visualize it.)", description, file.getPath()));
   }
 }

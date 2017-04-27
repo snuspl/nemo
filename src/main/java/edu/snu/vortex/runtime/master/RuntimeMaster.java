@@ -63,11 +63,11 @@ public final class RuntimeMaster {
    */
   private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan, final String dagDirectory) {
     final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
-    logicalDAG.storeJSON(dagDirectory, "plan-logical");
+    logicalDAG.storeJSON(dagDirectory, "plan-logical", "logical execution plan");
 
     final PhysicalPlan physicalPlan = new PhysicalPlan(executionPlan.getId(),
         logicalDAG.convert(new PhysicalDAGGenerator()));
-    physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan-physical");
+    physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan-physical", "physical execution plan");
     return physicalPlan;
   }
 }

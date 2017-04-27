@@ -62,15 +62,15 @@ public final class JobLauncher {
     final String className = injector.getNamedInstance(JobConf.UserMainClass.class);
     final String[] arguments = injector.getNamedInstance(JobConf.UserMainArguments.class).split(" ");
     final DAG dag = frontend.compile(className, arguments);
-    dag.storeJSON(dagDirectory, "ir");
+    dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
     final String policyName = injector.getNamedInstance(JobConf.OptimizationPolicy.class);
     final Optimizer.PolicyType optimizationPolicy = POLICY_NAME.get(policyName);
     final DAG optimizedDAG = optimizer.optimize(dag, optimizationPolicy);
-    optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy);
+    optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy, "IR optimized for " + optimizationPolicy);
 
     final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
-    executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan");
+    executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan", "execution plan by compiler");
 
     /**
      * Step 2: Execute
