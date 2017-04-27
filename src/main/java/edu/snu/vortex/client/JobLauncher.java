@@ -31,7 +31,6 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,8 +53,7 @@ public final class JobLauncher {
     final Optimizer optimizer = new Optimizer();
     final Backend<ExecutionPlan> backend = new VortexBackend();
 
-    final String dagDirConf = injector.getNamedInstance(JobConf.DAGDirectory.class);
-    final Optional<String> dagDirectory = dagDirConf.equals("") ? Optional.empty() : Optional.of(dagDirConf);
+    final String dagDirectory = injector.getNamedInstance(JobConf.DAGDirectory.class);
 
     /**
      * Step 1: Compile

@@ -19,7 +19,6 @@ import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.utils.dag.*;
 
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -45,7 +44,7 @@ public final class RuntimeMaster {
    * @param executionPlan to execute.
    * @param dagDirectory the directory to which JSON representation of the plan is saved
    */
-  public void execute(final ExecutionPlan executionPlan, final Optional<String> dagDirectory) {
+  public void execute(final ExecutionPlan executionPlan, final String dagDirectory) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     // TODO #93: Implement Batch Scheduler
     // scheduler.scheduleJob(physicalPlan);
@@ -62,7 +61,7 @@ public final class RuntimeMaster {
    * @param dagDirectory the directory to which JSON representation of the plan is saved
    * @return {@link PhysicalPlan} to execute.
    */
-  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan, final Optional<String> dagDirectory) {
+  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan, final String dagDirectory) {
     final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
     logicalDAG.storeJSON(dagDirectory, "plan-logical");
 

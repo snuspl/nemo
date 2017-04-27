@@ -31,7 +31,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Directory to store JSON representation of intermediate DAGs.
    */
-  @NamedParameter(doc = "Directory to store intermediate DAGs", short_name = "dag_dir", default_value = "")
+  @NamedParameter(doc = "Directory to store intermediate DAGs", short_name = "dag_dir", default_value = "./target/dag")
   public final class DAGDirectory implements Name<String> {
   }
 
