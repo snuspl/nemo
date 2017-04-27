@@ -208,11 +208,11 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
       final PrintWriter printWriter = new PrintWriter(file);
       printWriter.println(toString());
       printWriter.close();
+      LOG.log(Level.INFO, String.format("DAG JSON for %s is saved at %s" +
+          " (Use https://service.jangho.kr/vortex-dag/ to visualize it.)", description, file.getPath()));
     } catch (IOException e) {
-      LOG.log(Level.WARNING, String.format("Cannot store JSON representation of DAG to %s/%s.json: %s",
-          directory, name, e.toString()));
+      LOG.log(Level.WARNING, String.format("Cannot store JSON representation of %s to %s: %s",
+          description, file.getPath(), e.toString()));
     }
-    LOG.log(Level.INFO, String.format("DAG JSON for %s is saved at %s" +
-        " (Use https://service.jangho.kr/vortex-dag/ to visualize it.)", description, file.getPath()));
   }
 }
