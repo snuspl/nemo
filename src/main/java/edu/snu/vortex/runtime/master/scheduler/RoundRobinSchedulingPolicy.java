@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 /**
  * {@inheritDoc}
- * A Round-Robin implementation used by {@link Scheduler}.
+ * A Round-Robin implementation used by {@link BatchScheduler}.
  *
  * This policy keeps a list of available {@link ExecutorRepresenter} for each type of resource.
  * The RR policy is used for each resource type when trying to schedule a task group.
@@ -206,6 +206,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
 
   @Override
   public void onTaskGroupExecutionFailed(final ExecutorRepresenter executor, final String taskGroupId) {
-    // TODO #000: Handle Fault Tolerance
+    // TODO #163: Handle Fault Tolerance
   }
 }

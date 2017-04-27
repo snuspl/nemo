@@ -65,8 +65,8 @@ public final class TaskGroupStateManager {
     onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, null);
 
     taskGroup.getTaskDAG().getVertices().forEach(task -> {
-      currentTaskGroupTaskIds.add(task.getTaskId());
-      idToTaskStates.put(task.getTaskId(), new TaskState());
+      currentTaskGroupTaskIds.add(task.getId());
+      idToTaskStates.put(task.getId(), new TaskState());
     });
   }
 

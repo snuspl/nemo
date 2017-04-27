@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.dag.*;
 
 import java.util.logging.Level;
@@ -27,17 +28,17 @@ import java.util.logging.Logger;
  * Compiler submits an {@link ExecutionPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
  *    a) Physical conversion of a job's DAG into a physical plan.
- *    b) Scheduling the job with {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}.
+ *    b) Scheduling the job with {@link BatchScheduler}.
  *    c) (Please list others done by Runtime Master as features are added).
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
-  // TODO #93: Implement Batch Scheduler
-  // private final Scheduler scheduler;
+  // TODO #93: Implement Batch BatchScheduler
+  // private final BatchScheduler scheduler;
 
   public RuntimeMaster() {
-    // TODO #93: Implement Batch Scheduler
-    // this.scheduler = new Scheduler(RuntimeAttribute.Batch);
+    // TODO #93: Implement Batch BatchScheduler
+    // this.scheduler = new BatchScheduler(RuntimeAttribute.Batch);
   }
 
   /**
@@ -46,7 +47,7 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
-    // TODO #93: Implement Batch Scheduler
+    // TODO #93: Implement Batch BatchScheduler
     // scheduler.scheduleJob(physicalPlan);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);

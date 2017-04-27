@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Defines the policy by which {@link Scheduler} assigns task groups to executors.
+ * Defines the policy by which {@link BatchScheduler} assigns task groups to executors.
  */
 @DefaultImplementation(RoundRobinSchedulingPolicy.class)
 public interface SchedulingPolicy {

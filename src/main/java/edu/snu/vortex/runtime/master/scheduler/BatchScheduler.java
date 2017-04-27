@@ -39,15 +39,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Scheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
+ * BatchScheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
  * The policy by which it schedules them is dependent on the implementation of {@link SchedulingPolicy}.
  */
-public final class Scheduler {
-  private static final Logger LOG = Logger.getLogger(Scheduler.class.getName());
+public final class BatchScheduler implements Scheduler{
+  private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
 
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
-  private final ExecutionStateManager executionStateManager;
+  private ExecutionStateManager executionStateManager;
 
   /**
    * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
@@ -68,17 +68,13 @@ public final class Scheduler {
   private long scheduleTimeout;
 
   /**
-   * The list of stages for the currently running job.
+   * The current job being executed.
    * This object is synchronized as a new job can be submitted while a job runs.
    */
-  private List<PhysicalStage> physicalStages;
-  private PhysicalStage currentStage;
+  private PhysicalPlan physicalPlan;
 
-  public Scheduler(final ExecutionStateManager executionStateManager,
-                   final RuntimeAttribute schedulingPolicyAttribute,
-                   final long scheduleTimeout) {
-    this.executionStateManager = executionStateManager;
-
+  public BatchScheduler(final RuntimeAttribute schedulingPolicyAttribute,
+                        final long scheduleTimeout) {
     this.schedulerThread = Executors.newSingleThreadExecutor();
     this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
     this.executorRepresenterMap = new HashMap<>();
@@ -89,20 +85,22 @@ public final class Scheduler {
     initializeSchedulingPolicy();
 
     this.scheduleTimeout = scheduleTimeout;
-    this.physicalStages = Collections.emptyList();
   }
 
   /**
    * Receives a job to schedule.
    * @param physicalPlan the physical plan for the job.
    */
-  public void scheduleJob(final PhysicalPlan physicalPlan) {
-    synchronized (physicalStages) {
-      this.physicalStages = physicalPlan.getStageDAG().getTopologicalSort();
+  @Override
+  public ExecutionStateManager scheduleJob(final PhysicalPlan physicalPlan) {
+    synchronized (this.physicalPlan) {
+      this.physicalPlan = physicalPlan;
     }
+    this.executionStateManager = new ExecutionStateManager(physicalPlan);
     initializeSchedulingPolicy();
-    executionStateManager.manageNewJob(physicalPlan);
     scheduleNextStage();
+
+    return executionStateManager;
   }
 
   /**
@@ -113,16 +111,16 @@ public final class Scheduler {
    */
   // TODO #83: Introduce Task Group Executor
   // TODO #94: Implement Distributed Communicator
+  @Override
   public void onTaskGroupStateChanged(final String executorId,
                                       final ExecutorMessage.TaskGroupStateChangedMsg message) {
     final TaskGroupState.State newState = convertState(message.getState());
-    final boolean currentStageComplete =
-        executionStateManager.onTaskGroupStateChanged(message.getTaskGroupId(), newState);
+    executionStateManager.onTaskGroupStateChanged(message.getTaskGroupId(), newState);
     switch (newState) {
     case COMPLETE:
       synchronized (executorRepresenterMap) {
         onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId),
-            message.getTaskGroupId(), currentStageComplete);
+            message.getTaskGroupId());
       }
       break;
     case FAILED_RECOVERABLE:
@@ -143,19 +141,12 @@ public final class Scheduler {
   }
 
   private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor,
-                                            final String taskGroupId,
-                                            final boolean currentStageComplete) {
+                                            final String taskGroupId) {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
     // if the current stage is complete,
-    if (currentStageComplete) {
-      final boolean jobComplete =
-          executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.COMPLETE);
-
-
-      if (jobComplete) { // and if the job is complete,
-        executionStateManager.onJobStateChanged(JobState.State.COMPLETE);
-      } else { // and if the job is still executing, schedule the next stage
+    if (executionStateManager.checkCurrentStageCompletion()) {
+      if (!executionStateManager.checkJobCompletion()) { // and if the job is not yet complete,
         scheduleNextStage();
       }
     }
@@ -168,6 +159,7 @@ public final class Scheduler {
   }
 
   // TODO #85: Introduce Resource Manager
+  @Override
   public void onExecutorAdded(final ExecutorRepresenter executor) {
     schedulingPolicy.onExecutorAdded(executor);
     synchronized (executorRepresenterMap) {
@@ -177,6 +169,7 @@ public final class Scheduler {
 
   // TODO #163: Handle Fault Tolerance
   // TODO #85: Introduce Resource Manager
+  @Override
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
     synchronized (executorRepresenterMap) {
       executorRepresenterMap.remove(executor.getExecutorId());
@@ -190,12 +183,24 @@ public final class Scheduler {
    * Schedules the next stage to execute.
    * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
    */
-  private synchronized void scheduleNextStage() {
-    synchronized (physicalStages) {
-      currentStage = physicalStages.remove(0);
+  private void scheduleNextStage() {
+    PhysicalStage nextStageToExecute = null;
+    synchronized (physicalPlan) {
+      for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
+        if (executionStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+            == StageState.State.READY) {
+          nextStageToExecute = physicalStage;
+          break;
+        }
+      }
     }
-    taskGroupsToSchedule.addAll(currentStage.getTaskGroupList());
-    executionStateManager.onStageStateChanged(currentStage.getId(), StageState.State.EXECUTING);
+    if (nextStageToExecute != null) {
+      taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
+      executionStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
+    } else {
+      throw new SchedulingException(new Exception("There is no next stage to execute! " +
+          "There must have been something wrong in setting execution states!"));
+    }
   }
 
   /**
@@ -244,6 +249,7 @@ public final class Scheduler {
     }
   }
 
+  @Override
   public void terminate() {
     schedulerThread.shutdown();
     taskGroupsToSchedule.clear();

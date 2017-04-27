@@ -26,8 +26,7 @@ import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.junit.Before;
@@ -36,11 +35,11 @@ import org.junit.Test;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+ * Tests {@link BatchScheduler}
  */
-public final class SchedulerTest {
+public final class BatchSchedulerTest {
   private final ExecutionStateManager executionStateManager = new ExecutionStateManager();
-  private final Scheduler scheduler = new Scheduler(executionStateManager, RuntimeAttribute.Batch, 2000);
+  private final BatchScheduler scheduler = new BatchScheduler(executionStateManager, RuntimeAttribute.Batch, 2000);
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
 
   @Before

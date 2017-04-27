@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
+import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.util.HashMap;
@@ -41,20 +42,20 @@ import java.util.stream.Collectors;
 public final class ExecutionStateManager {
   private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
 
-  private String jobId;
+  private final String jobId;
 
   /**
    * The data structures below track the execution states of this job.
    */
-  private JobState jobState;
+  private final JobState jobState;
   private final Map<String, StageState> idToStageStates;
   private final Map<String, TaskGroupState> idToTaskGroupStates;
   private final Map<String, TaskState> idToTaskStates;
 
   /**
-   * Represent the job to manage.
+   * Represents the job to manage.
    */
-  private PhysicalPlan physicalPlan;
+  private final PhysicalPlan physicalPlan;
 
   /**
    * Used to track current stage completion status.
@@ -62,7 +63,9 @@ public final class ExecutionStateManager {
    * Each task group id is removed upon completion,
    * therefore indicating the stage's completion when this set becomes empty.
    */
-  private Set<String> currentStageTaskGroupIds;
+  private final Set<String> currentStageTaskGroupIds;
+
+  private String currentStageId;
 
   /**
    * Used to track job completion status.
@@ -70,39 +73,34 @@ public final class ExecutionStateManager {
    * Each stage id is removed upon completion,
    * therefore indicating the job's completion when this set becomes empty.
    */
-  private Set<String> currentJobStageIds;
+  private final Set<String> currentJobStageIds;
 
-  public ExecutionStateManager() {
+  public ExecutionStateManager(final PhysicalPlan physicalPlan) {
+    this.physicalPlan = physicalPlan;
+    this.jobId = physicalPlan.getId();
+    this.jobState = new JobState();
     this.idToStageStates = new HashMap<>();
     this.idToTaskGroupStates = new HashMap<>();
     this.idToTaskStates = new HashMap<>();
     this.currentStageTaskGroupIds = new HashSet<>();
     this.currentJobStageIds = new HashSet<>();
+    initializeStates();
   }
 
   /**
-   * Receives a new job to manage.
-   * @param physicalPlanForNewJob to manage.
+   * Initializes the states for the job/stages/taskgroups/tasks for this job.
    */
-  public synchronized void manageNewJob(final PhysicalPlan physicalPlanForNewJob) {
-    this.physicalPlan = physicalPlanForNewJob;
-    idToStageStates.clear();
-    idToTaskGroupStates.clear();
-    idToTaskStates.clear();
-    currentJobStageIds.clear();
-
-    this.jobId = physicalPlanForNewJob.getId();
-    this.jobState = new JobState();
+  private void initializeStates() {
     onJobStateChanged(JobState.State.EXECUTING);
 
     // Initialize the states for the job down to task-level.
-    physicalPlanForNewJob.getStageDAG().topologicalDo(physicalStage -> {
+    physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
       currentJobStageIds.add(physicalStage.getId());
       idToStageStates.put(physicalStage.getId(), new StageState());
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
         idToTaskGroupStates.put(taskGroup.getTaskGroupId(), new TaskGroupState());
         taskGroup.getTaskDAG().getVertices().forEach(
-            task -> idToTaskStates.put(task.getTaskId(), new TaskState()));
+            task -> idToTaskStates.put(task.getId(), new TaskState()));
       });
     });
   }
@@ -135,13 +133,14 @@ public final class ExecutionStateManager {
    * @param newState of the stage.
    * @return true if this state change results in the entire job completion, false otherwise.
    */
-  public synchronized boolean onStageStateChanged(final String stageId, final StageState.State newState) {
+  public synchronized void onStageStateChanged(final String stageId, final StageState.State newState) {
     final StateMachine stageStateMachine = idToStageStates.get(stageId).getStateMachine();
     LOG.log(Level.FINE, "Stage State Transition: id {0} from {1} to {2}",
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
     if (newState == StageState.State.EXECUTING) {
       currentStageTaskGroupIds.clear();
+      currentStageId = stageId;
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getVertices()) {
         if (stage.getId().equals(stageId)) {
           currentStageTaskGroupIds.addAll(
@@ -154,23 +153,25 @@ public final class ExecutionStateManager {
       }
     } else if (newState == StageState.State.COMPLETE) {
       currentJobStageIds.remove(stageId);
+      if (currentJobStageIds.isEmpty()) {
+        onJobStateChanged(JobState.State.COMPLETE);
+      }
     }
-    return currentJobStageIds.isEmpty();
   }
 
   /**
    * Updates the state of a task group.
    * Task group state changes can occur both in master and executor.
-   * State changes that occur in master are initiated in {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}.
+   * State changes that occur in master are initiated in {@link BatchScheduler}.
    * State changes that occur in executors are sent to master as a control message,
-   * and the call to this method is initiated in {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   * and the call to this method is initiated in {@link BatchScheduler}
    * when the message/event is received.
    * A task group completion implies completion of all its tasks.
    * @param taskGroupId of the task group.
    * @param newState of the task group.
    * @return true if this state change results in the current stage completion, false otherwise.
    */
-  public synchronized boolean onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
+  public synchronized void onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
@@ -181,35 +182,45 @@ public final class ExecutionStateManager {
         for (final TaskGroup taskGroup : physicalStage.getTaskGroupList()) {
           if (taskGroup.getTaskGroupId().equals(taskGroupId)) {
             taskGroup.getTaskDAG().getVertices().forEach(task -> {
-              idToTaskStates.get(task.getTaskId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
-              idToTaskStates.get(task.getTaskId()).getStateMachine().setState(TaskState.State.EXECUTING);
-              idToTaskStates.get(task.getTaskId()).getStateMachine().setState(TaskState.State.COMPLETE);
+              idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
+              idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.EXECUTING);
+              idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.COMPLETE);
             });
             break;
           }
         }
       }
+      if (currentStageTaskGroupIds.isEmpty()) {
+        onStageStateChanged(currentStageId, StageState.State.COMPLETE);
+      }
     }
+  }
+
+  public synchronized boolean checkCurrentStageCompletion() {
     return currentStageTaskGroupIds.isEmpty();
   }
 
-  public String getJobId() {
+  public synchronized boolean checkJobCompletion() {
+    return (jobState.getStateMachine().getCurrentState() == JobState.State.COMPLETE);
+  }
+
+  public synchronized String getJobId() {
     return jobId;
   }
 
-  public JobState getJobState() {
-    return jobState;
+  public synchronized StageState getStageState(final String stageId) {
+    return idToStageStates.get(stageId);
   }
 
-  public Map<String, StageState> getIdToStageStates() {
+  public synchronized Map<String, StageState> getIdToStageStates() {
     return idToStageStates;
   }
 
-  public Map<String, TaskGroupState> getIdToTaskGroupStates() {
+  public synchronized Map<String, TaskGroupState> getIdToTaskGroupStates() {
     return idToTaskGroupStates;
   }
 
-  public Map<String, TaskState> getIdToTaskStates() {
+  public synchronized Map<String, TaskState> getIdToTaskStates() {
     return idToTaskStates;
   }
 
@@ -225,7 +236,7 @@ public final class ExecutionStateManager {
         sb.append(taskGroup.getTaskGroupId()).append(":").append(idToTaskGroupStates.get(taskGroup.getTaskGroupId()))
             .append(", Tasks:{\n");
         taskGroup.getTaskDAG().topologicalDo(
-            task -> sb.append(task.getTaskId()).append(":").append(idToTaskStates.get(task.getTaskId())).append(","));
+            task -> sb.append(task.getId()).append(":").append(idToTaskStates.get(task.getId())).append(","));
         sb.append("},\n");
       });
       sb.append("}}\n");
