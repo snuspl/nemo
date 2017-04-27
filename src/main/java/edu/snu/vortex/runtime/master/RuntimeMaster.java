@@ -19,7 +19,7 @@ import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.utils.dag.*;
 
-import java.util.logging.Level;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -43,9 +43,10 @@ public final class RuntimeMaster {
   /**
    * Submits the {@link ExecutionPlan} to Runtime.
    * @param executionPlan to execute.
+   * @param dagDirectory the directory to which JSON representation of the plan is saved
    */
-  public void execute(final ExecutionPlan executionPlan) {
-    final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
+  public void execute(final ExecutionPlan executionPlan, final Optional<String> dagDirectory) {
+    final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     // TODO #93: Implement Batch Scheduler
     // scheduler.scheduleJob(physicalPlan);
     try {
@@ -58,17 +59,16 @@ public final class RuntimeMaster {
   /**
    * Generates the {@link PhysicalPlan} to be executed.
    * @param executionPlan that should be converted to a physical plan
+   * @param dagDirectory the directory to which JSON representation of the plan is saved
    * @return {@link PhysicalPlan} to execute.
    */
-  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan) {
+  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan, final Optional<String> dagDirectory) {
     final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
-    LOG.log(Level.INFO, "##### Logical DAG #####");
-    LOG.log(Level.INFO, logicalDAG.toString());
+    logicalDAG.storeJSON(dagDirectory, "plan-logical");
 
     final PhysicalPlan physicalPlan = new PhysicalPlan(executionPlan.getId(),
         logicalDAG.convert(new PhysicalDAGGenerator()));
-    LOG.log(Level.INFO, "##### Physical DAG #####");
-    LOG.log(Level.INFO, physicalPlan.toString());
+    physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan-physical");
     return physicalPlan;
   }
 }

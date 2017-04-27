@@ -31,6 +31,7 @@ import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.CommandLine;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,7 +54,8 @@ public final class JobLauncher {
     final Optimizer optimizer = new Optimizer();
     final Backend<ExecutionPlan> backend = new VortexBackend();
 
-    final String dagDirectory = injector.getNamedInstance(JobConf.DAGDirectory.class);
+    final String dagDirConf = injector.getNamedInstance(JobConf.DAGDirectory.class);
+    final Optional<String> dagDirectory = dagDirConf.equals("") ? Optional.empty() : Optional.of(dagDirConf);
 
     /**
      * Step 1: Compile
@@ -70,13 +72,13 @@ public final class JobLauncher {
     optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy);
 
     final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
-    executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan-logical");
+    executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan");
 
     /**
      * Step 2: Execute
      */
     LOG.log(Level.INFO, "##### VORTEX Runtime #####");
-    new RuntimeMaster().execute(executionPlan);
+    new RuntimeMaster().execute(executionPlan, dagDirectory);
   }
 
   public static Configuration getJobConf(final String[] args) throws IOException, InjectionException {

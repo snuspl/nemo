@@ -197,14 +197,15 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
 
   /**
    * Stores JSON representation of this DAG into a file.
-   * @param directory the directory which JSON representation is saved to
+   * @param dagDirectory the directory which JSON representation is saved to
    * @param name name of this DAG
    */
-  public void storeJSON(final String directory, final String name) {
+  public void storeJSON(final Optional<String> dagDirectory, final String name) {
     // If directory was not given, do not proceed.
-    if (directory.equals("")) {
+    if (!dagDirectory.isPresent()) {
       return;
     }
+    final String directory = dagDirectory.get();
     final File file = new File(directory, name + ".json");
     file.getParentFile().mkdirs();
     try {
