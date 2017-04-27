@@ -76,9 +76,14 @@ public enum RuntimeAttribute {
   ScatterGather(Key.CommPattern),
 
   /**
-   * BatchScheduler type attributes.
+   * SchedulingPolicy type attributes.
    */
-  Batch(Key.SchedulingPolicy);
+  RoundRobin(Key.SchedulingPolicy),
+
+  /**
+   * Scheduler type attributes.
+   */
+  Batch(Key.Scheduler);
 
   /**
    * Runtime attribute keys.
@@ -91,6 +96,7 @@ public enum RuntimeAttribute {
     SideInput,
     CommPattern,
     SchedulingPolicy,
+    Scheduler
   }
 
   /**

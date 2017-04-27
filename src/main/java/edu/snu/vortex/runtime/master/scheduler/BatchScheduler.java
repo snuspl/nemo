@@ -20,7 +20,6 @@ import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
@@ -42,7 +41,7 @@ import java.util.logging.Logger;
  * BatchScheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
  * The policy by which it schedules them is dependent on the implementation of {@link SchedulingPolicy}.
  */
-public final class BatchScheduler implements Scheduler{
+public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
 
   private final ExecutorService schedulerThread;
@@ -82,24 +81,34 @@ public final class BatchScheduler implements Scheduler{
 
     // The default policy is initialized and set here.
     this.schedulingPolicyAttribute = schedulingPolicyAttribute;
-    initializeSchedulingPolicy();
-
     this.scheduleTimeout = scheduleTimeout;
+    initializeSchedulingPolicy();
+  }
+
+  /**
+   * Initializes the scheduling policy.
+   * This can be called anytime during this scheduler's lifetime and the policy will change flexibly.
+   */
+  private void initializeSchedulingPolicy() {
+    switch (schedulingPolicyAttribute) {
+    case RoundRobin:
+      this.schedulingPolicy = new RoundRobinSchedulingPolicy(scheduleTimeout);
+      break;
+    default:
+      throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));
+    }
   }
 
   /**
    * Receives a job to schedule.
-   * @param physicalPlan the physical plan for the job.
+   * @param jobToSchedule the physical plan for the job.
+   * @return the {@link ExecutionStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public ExecutionStateManager scheduleJob(final PhysicalPlan physicalPlan) {
-    synchronized (this.physicalPlan) {
-      this.physicalPlan = physicalPlan;
-    }
-    this.executionStateManager = new ExecutionStateManager(physicalPlan);
-    initializeSchedulingPolicy();
+  public ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
+    this.physicalPlan = jobToSchedule;
+    this.executionStateManager = new ExecutionStateManager(jobToSchedule);
     scheduleNextStage();
-
     return executionStateManager;
   }
 
@@ -185,7 +194,7 @@ public final class BatchScheduler implements Scheduler{
    */
   private void scheduleNextStage() {
     PhysicalStage nextStageToExecute = null;
-    synchronized (physicalPlan) {
+//    synchronized (physicalPlan) {
       for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
         if (executionStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
             == StageState.State.READY) {
@@ -193,27 +202,13 @@ public final class BatchScheduler implements Scheduler{
           break;
         }
       }
-    }
+//    }
     if (nextStageToExecute != null) {
       taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
       executionStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
     } else {
       throw new SchedulingException(new Exception("There is no next stage to execute! " +
           "There must have been something wrong in setting execution states!"));
-    }
-  }
-
-  /**
-   * Initializes the scheduling policy.
-   * This can be called anytime during this scheduler's lifetime and the policy will change flexibly.
-   */
-  private void initializeSchedulingPolicy() {
-    switch (schedulingPolicyAttribute) {
-    case Batch:
-      this.schedulingPolicy = new RoundRobinSchedulingPolicy(scheduleTimeout);
-      break;
-    default:
-      throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));
     }
   }
 

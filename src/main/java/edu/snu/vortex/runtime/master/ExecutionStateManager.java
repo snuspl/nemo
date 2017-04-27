@@ -23,7 +23,6 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
-import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.util.HashMap;
@@ -131,7 +130,6 @@ public final class ExecutionStateManager {
    * Stage state changes only occur in master.
    * @param stageId of the stage.
    * @param newState of the stage.
-   * @return true if this state change results in the entire job completion, false otherwise.
    */
   public synchronized void onStageStateChanged(final String stageId, final StageState.State newState) {
     final StateMachine stageStateMachine = idToStageStates.get(stageId).getStateMachine();
@@ -162,19 +160,19 @@ public final class ExecutionStateManager {
   /**
    * Updates the state of a task group.
    * Task group state changes can occur both in master and executor.
-   * State changes that occur in master are initiated in {@link BatchScheduler}.
+   * State changes that occur in master are initiated in {@link edu.snu.vortex.runtime.master.scheduler.BatchScheduler}.
    * State changes that occur in executors are sent to master as a control message,
-   * and the call to this method is initiated in {@link BatchScheduler}
+   * and the call to this method is initiated in {@link edu.snu.vortex.runtime.master.scheduler.BatchScheduler}
    * when the message/event is received.
    * A task group completion implies completion of all its tasks.
    * @param taskGroupId of the task group.
    * @param newState of the task group.
-   * @return true if this state change results in the current stage completion, false otherwise.
    */
   public synchronized void onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
-    LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
+    LOG.log(Level.INFO, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
+    System.err.println("Task Group State Transition: id " + taskGroupId + " to " + newState);
     taskGroupStateChanged.setState(newState);
     if (newState == TaskGroupState.State.COMPLETE) {
       currentStageTaskGroupIds.remove(taskGroupId);

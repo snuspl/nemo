@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 /**
  * A finite state machine that can be created with user defined states and transitions.
  */
+// TODO #171: Enable StateMachine with Handlers for State Transitions
 public final class StateMachine {
   private static final Logger LOG = Logger.getLogger(StateMachine.class.getName());
 

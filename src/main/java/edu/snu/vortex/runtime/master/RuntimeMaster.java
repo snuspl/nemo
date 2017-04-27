@@ -15,9 +15,11 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.*;
 
 import java.util.logging.Level;
@@ -33,12 +35,16 @@ import java.util.logging.Logger;
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
-  // TODO #93: Implement Batch BatchScheduler
-  // private final BatchScheduler scheduler;
+  private final Scheduler scheduler;
 
-  public RuntimeMaster() {
-    // TODO #93: Implement Batch BatchScheduler
-    // this.scheduler = new BatchScheduler(RuntimeAttribute.Batch);
+  public RuntimeMaster(final RuntimeAttribute schedulerType) {
+    switch (schedulerType) {
+    case Batch:
+      this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
+      break;
+    default:
+      throw new RuntimeException("Unknown scheduler type");
+    }
   }
 
   /**
@@ -47,8 +53,6 @@ public final class RuntimeMaster {
    */
   public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
-    // TODO #93: Implement Batch BatchScheduler
-    // scheduler.scheduleJob(physicalPlan);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);
     } catch (Exception e) {

@@ -17,13 +17,9 @@ package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Defines the policy by which {@link BatchScheduler} assigns task groups to executors.

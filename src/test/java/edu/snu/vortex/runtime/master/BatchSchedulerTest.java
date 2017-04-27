@@ -26,20 +26,26 @@ import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.common.state.StageState;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
+import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests {@link BatchScheduler}
+ * Tests {@link BatchScheduler}.
+ * The tests in this class build a physical DAG starting from an IR DAG to test for a successful scheduling.
+ * We know that the scheduling was successful if all tasks complete.
  */
 public final class BatchSchedulerTest {
-  private final ExecutionStateManager executionStateManager = new ExecutionStateManager();
-  private final BatchScheduler scheduler = new BatchScheduler(executionStateManager, RuntimeAttribute.Batch, 2000);
+  private final BatchScheduler scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
 
   @Before
@@ -48,7 +54,7 @@ public final class BatchSchedulerTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG to test whether the it successfully gets scheduled.
+   * Tests a simple Map-Reduce DAG of 2 stages, one with parallelism 3 and the other with parallelism 2.
    */
   @Test
   public void testSimplePhysicalPlanScheduling() throws InterruptedException {
@@ -60,7 +66,7 @@ public final class BatchSchedulerTest {
 
     final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v1.setAttr(Attribute.Key.Placement, Attribute.Storage);
+    v2.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v2);
 
     final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2);
@@ -73,36 +79,36 @@ public final class BatchSchedulerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
-    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1);
-    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1);
-    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1);
-    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1);
-
+    final ExecutorRepresenter a2 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
+    final ExecutorRepresenter a3 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
+    final ExecutorRepresenter b1 = new ExecutorRepresenter("a1", RuntimeAttribute.Storage, 1);
+    final ExecutorRepresenter b2 = new ExecutorRepresenter("a1", RuntimeAttribute.Storage, 1);
 
     scheduler.onExecutorAdded(a1);
-//    scheduler.onExecutorAdded(a2);
-//    scheduler.onExecutorAdded(a3);
+    scheduler.onExecutorAdded(a2);
+    scheduler.onExecutorAdded(a3);
     scheduler.onExecutorAdded(b1);
-    Thread.sleep(2000);
-//    scheduler.onExecutorAdded(b2);
+    scheduler.onExecutorAdded(b2);
 
-    scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
+    final ExecutionStateManager executionStateManager =
+        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
 
     for (final PhysicalStage physicalStage : physicalDAG.getVertices()) {
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
-        try {
-          Thread.sleep(2000);
-        } catch (InterruptedException e1) {
-          e1.printStackTrace();
-        }
         final ExecutorMessage.TaskGroupStateChangedMsg.Builder taskGroupStateChangedMsg =
             ExecutorMessage.TaskGroupStateChangedMsg.newBuilder();
         taskGroupStateChangedMsg.setTaskGroupId(taskGroup.getTaskGroupId());
         taskGroupStateChangedMsg.setState(ExecutorMessage.TaskGroupStateFromExecutor.COMPLETE);
-        scheduler.onTaskGroupStateChanged(a1.getExecutorId(), taskGroupStateChangedMsg.build());
+        scheduler.onTaskGroupStateChanged("a1", taskGroupStateChangedMsg.build());
       });
     }
-    executionStateManager.printCurrentJobExecutionState();
+    executionStateManager.getIdToTaskStates().forEach((id, state) ->
+        assertEquals(state.getStateMachine().getCurrentState(), TaskState.State.COMPLETE));
+    executionStateManager.getIdToTaskGroupStates().forEach((id, state) ->
+        assertEquals(state.getStateMachine().getCurrentState(), TaskGroupState.State.COMPLETE));
+    executionStateManager.getIdToStageStates().forEach((id, state) ->
+        assertEquals(state.getStateMachine().getCurrentState(), StageState.State.COMPLETE));
+    assertTrue(executionStateManager.checkJobCompletion());
 
     scheduler.terminate();
   }
