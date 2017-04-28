@@ -17,9 +17,13 @@ package edu.snu.vortex.utils.dag;
 
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +31,7 @@ import java.util.logging.Logger;
  * @param <V> the vertex type
  * @param <E> the edge type
  */
-public final class DAG<V, E extends Edge<V>> {
+public final class DAG<V extends Vertex, E extends Edge<V>> {
   private static final Logger LOG = Logger.getLogger(DAG.class.getName());
 
   private final Set<V> vertices;
@@ -50,7 +54,7 @@ public final class DAG<V, E extends Edge<V>> {
    * @return the converted DAG.
    */
   // TODO #153: DAG conversion using Vertex/Edge Converters
-  public <V2, E2 extends Edge<V2>> DAG<V2, E2> convert(final Function<DAG<V, E>, DAG<V2, E2>> function) {
+  public <V2 extends Vertex, E2 extends Edge<V2>> DAG<V2, E2> convert(final Function<DAG<V, E>, DAG<V2, E2>> function) {
     return function.apply(this);
   }
 
@@ -161,11 +165,54 @@ public final class DAG<V, E extends Edge<V>> {
 
   @Override
   public String toString() {
-    final StringBuffer sb = new StringBuffer("DAG{");
-    sb.append("vertices=").append(vertices);
-    sb.append(", incomingEdges=").append(incomingEdges);
-    sb.append(", outgoingEdges=").append(outgoingEdges);
-    sb.append('}');
+    final StringBuilder sb = new StringBuilder();
+    sb.append("{\"vertices\": [");
+    boolean isFirstVertex = true;
+    for (final V vertex : vertices) {
+      if (!isFirstVertex) {
+        sb.append(", ");
+      }
+      isFirstVertex = false;
+      sb.append("{\"id\": \"").append(vertex.getId());
+      sb.append("\", \"properties\": ").append(vertex.propertiesToJSON());
+      sb.append("}");
+    }
+    sb.append("], \"edges\": [");
+    boolean isFirstEdge = true;
+    for (final Set<E> edgeSet : incomingEdges.values()) {
+      for (final E edge : edgeSet) {
+        if (!isFirstEdge) {
+          sb.append(", ");
+        }
+        isFirstEdge = false;
+        sb.append("{\"src\": \"").append(edge.getSrc().getId());
+        sb.append("\", \"dst\": \"").append(edge.getDst().getId());
+        sb.append("\", \"properties\": ").append(edge.propertiesToJSON());
+        sb.append("}");
+      }
+    }
+    sb.append("]}");
     return sb.toString();
+  }
+
+  /**
+   * Stores JSON representation of this DAG into a file.
+   * @param directory the directory which JSON representation is saved to
+   * @param name name of this DAG
+   * @param description description of this DAG
+   */
+  public void storeJSON(final String directory, final String name, final String description) {
+    final File file = new File(directory, name + ".json");
+    file.getParentFile().mkdirs();
+    try {
+      final PrintWriter printWriter = new PrintWriter(file);
+      printWriter.println(toString());
+      printWriter.close();
+      LOG.log(Level.INFO, String.format("DAG JSON for %s is saved at %s" +
+          " (Use https://service.jangho.kr/vortex-dag/ to visualize it.)", description, file.getPath()));
+    } catch (IOException e) {
+      LOG.log(Level.WARNING, String.format("Cannot store JSON representation of %s to %s: %s",
+          description, file.getPath(), e.toString()));
+    }
   }
 }
