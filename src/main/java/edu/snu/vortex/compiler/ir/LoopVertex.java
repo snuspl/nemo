@@ -140,14 +140,15 @@ public final class LoopVertex extends IRVertex {
   }
 
   @Override
-  public String toString() {
+  public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(super.toString());
-    sb.append(", name: " + compositeTransformFullName);
-    sb.append(", remaining iteration(s): " + getNumberOfIterations());
-    sb.append(", DAG:\n<<  ");
+    sb.append("{");
+    sb.append(irVertexPropertiesToString());
+    sb.append(", \"Remaining Iteration\"");
+    sb.append(getNumberOfIterations());
+    sb.append(", \"DAG\": \"");
     sb.append(getDAG());
-    sb.append(">>");
+    sb.append("\"}");
     return sb.toString();
   }
 }
