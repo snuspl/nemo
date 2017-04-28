@@ -68,7 +68,6 @@ public final class BatchScheduler implements Scheduler {
 
   /**
    * The current job being executed.
-   * This object is synchronized as a new job can be submitted while a job runs.
    */
   private PhysicalPlan physicalPlan;
 
@@ -105,7 +104,7 @@ public final class BatchScheduler implements Scheduler {
    * @return the {@link ExecutionStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
+  public synchronized ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
     this.physicalPlan = jobToSchedule;
     this.executionStateManager = new ExecutionStateManager(jobToSchedule);
     scheduleNextStage();
@@ -194,15 +193,13 @@ public final class BatchScheduler implements Scheduler {
    */
   private void scheduleNextStage() {
     PhysicalStage nextStageToExecute = null;
-//    synchronized (physicalPlan) {
-      for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
-        if (executionStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
-            == StageState.State.READY) {
-          nextStageToExecute = physicalStage;
-          break;
-        }
+    for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
+      if (executionStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+          == StageState.State.READY) {
+        nextStageToExecute = physicalStage;
+        break;
       }
-//    }
+    }
     if (nextStageToExecute != null) {
       taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
       executionStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
@@ -222,8 +219,6 @@ public final class BatchScheduler implements Scheduler {
         try {
           final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();
           final Optional<ExecutorRepresenter> executor = schedulingPolicy.attemptSchedule(taskGroup);
-          System.out.println(taskGroup);
-          System.out.println(executor);
           if (!executor.isPresent()) {
             LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
                 schedulingPolicy.getScheduleTimeout());
@@ -233,7 +228,6 @@ public final class BatchScheduler implements Scheduler {
             // TODO #94: Implement Distributed Communicator
             // Must send this taskGroup to the destination executor.
             schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup.getTaskGroupId());
-            System.out.println("Scheduling! " + taskGroup.getTaskGroupId());
             executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
                 TaskGroupState.State.EXECUTING);
           }

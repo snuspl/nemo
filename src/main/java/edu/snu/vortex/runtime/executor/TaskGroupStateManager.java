@@ -31,10 +31,11 @@ import java.util.logging.Logger;
  * The methods of this class are synchronized.
  */
 // TODO #83: Introduce Task Group Executor
+// TODO #163: Handle Fault Tolerance
 public final class TaskGroupStateManager {
   private static final Logger LOG = Logger.getLogger(TaskGroupStateManager.class.getName());
 
-  private String taskGroupId;
+  private final String taskGroupId;
 
   /**
    * Used to track all task states of this task group, by keeping a map of task ids to their states.
@@ -49,20 +50,19 @@ public final class TaskGroupStateManager {
    */
   private Set<String> currentTaskGroupTaskIds;
 
-  public TaskGroupStateManager() {
+  public TaskGroupStateManager(final TaskGroup taskGroup) {
+    this.taskGroupId = taskGroup.getTaskGroupId();
     idToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
+    initializeStates(taskGroup);
   }
 
   /**
-   * Receives a new task group to manage.
+   * Receives and initializes the states for the task group to manage.
    * @param taskGroup to manage.
    */
-  public synchronized void manageNewTaskGroup(final TaskGroup taskGroup) {
-    idToTaskStates.clear();
-
-    this.taskGroupId = taskGroup.getTaskGroupId();
-    onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, null);
+  private void initializeStates(final TaskGroup taskGroup) {
+    onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty());
 
     taskGroup.getTaskDAG().getVertices().forEach(task -> {
       currentTaskGroupTaskIds.add(task.getId());
@@ -100,15 +100,17 @@ public final class TaskGroupStateManager {
    * @param newState of the task.
    * @return true if this task change results in the current task group completion, false otherwise.
    */
-  public synchronized boolean onTaskStateChanged(final String taskId, final TaskState.State newState) {
+  public synchronized void onTaskStateChanged(final String taskId, final TaskState.State newState) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
     LOG.log(Level.FINE, "Task State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskStateChanged.getCurrentState(), newState});
     taskStateChanged.setState(newState);
     if (newState == TaskState.State.COMPLETE) {
       currentTaskGroupTaskIds.remove(taskId);
+      if (currentTaskGroupTaskIds.isEmpty()) {
+        onTaskGroupStateChanged(TaskGroupState.State.COMPLETE, Optional.empty());
+      }
     }
-    return currentTaskGroupTaskIds.isEmpty();
   }
 
   /**

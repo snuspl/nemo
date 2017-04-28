@@ -63,7 +63,6 @@ public final class ExecutionStateManager {
    * therefore indicating the stage's completion when this set becomes empty.
    */
   private final Set<String> currentStageTaskGroupIds;
-
   private String currentStageId;
 
   /**
@@ -172,7 +171,6 @@ public final class ExecutionStateManager {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
     LOG.log(Level.INFO, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
-    System.err.println("Task Group State Transition: id " + taskGroupId + " to " + newState);
     taskGroupStateChanged.setState(newState);
     if (newState == TaskGroupState.State.COMPLETE) {
       currentStageTaskGroupIds.remove(taskGroupId);
