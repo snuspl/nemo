@@ -169,7 +169,7 @@ public final class ExecutionStateManager {
    */
   public synchronized void onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
     final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
-    LOG.log(Level.INFO, "Task Group State Transition: id {0} from {1} to {2}",
+    LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
     taskGroupStateChanged.setState(newState);
     if (newState == TaskGroupState.State.COMPLETE) {

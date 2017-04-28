@@ -98,7 +98,6 @@ public final class TaskGroupStateManager {
    * Task state changes only occur in executor.
    * @param taskId of the task.
    * @param newState of the task.
-   * @return true if this task change results in the current task group completion, false otherwise.
    */
   public synchronized void onTaskStateChanged(final String taskId, final TaskState.State newState) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
