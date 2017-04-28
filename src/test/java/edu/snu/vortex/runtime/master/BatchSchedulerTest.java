@@ -78,6 +78,9 @@ public final class BatchSchedulerTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
+    // HACK: All executors have the same ID since we cannot deterministically know
+    // which executor executes which task group,
+    // but TaskGroupStateChangedMsg requires the source executor's ID.
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
     final ExecutorRepresenter a3 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1);
@@ -101,6 +104,8 @@ public final class BatchSchedulerTest {
         taskGroupStateChangedMsg.setState(ExecutorMessage.TaskGroupStateFromExecutor.COMPLETE);
         scheduler.onTaskGroupStateChanged("a1", taskGroupStateChangedMsg.build());
       });
+      // Allow 2 seconds for the next stage to be scheduled.
+      Thread.sleep(3000);
     }
     executionStateManager.getIdToTaskStates().forEach((id, state) ->
         assertEquals(state.getStateMachine().getCurrentState(), TaskState.State.COMPLETE));
