@@ -20,7 +20,6 @@
         <apache.commons.version>2.1.1</apache.commons.version>
         <jackson.version>2.7.0</jackson.version>
         <protobuf.version>3.1.0</protobuf.version>
-        <protoc.version>3.1.0.5</protoc.version>
         <slf4j.version>1.7.14</slf4j.version>
 
     </properties>
