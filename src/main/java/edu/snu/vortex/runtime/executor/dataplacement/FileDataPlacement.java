@@ -8,23 +8,23 @@ public final class FileDataPlacement implements DataPlacement {
   }
 
   @Override
-  public Iterable<Element> get(final String runtimeEdgeId, final int srcTaskIndex, final int dstTaskIndex) {
+  public Iterable<Element> get(final String runtimeEdgeId, final int srcTaskIdx, final int dstTaskIdx) {
     return null;
   }
 
   @Override
-  public Iterable<Element> get(final String runtimeEdgeId, final int srcTaskIndex) {
+  public Iterable<Element> get(final String runtimeEdgeId, final int srcTaskIdx) {
     return null;
   }
 
   @Override
-  public void put(final String runtimeEdgeId, final int srcTaskIndex, final Iterable<Element> data) {
+  public void put(final String runtimeEdgeId, final int srcTaskIdx, final Iterable<Element> data) {
 
   }
 
   @Override
-  public void put(final String runtimeEdgeId, final int srcTaskIndex,
-                  final int partitionIndex, final Iterable<Element> data) {
+  public void put(final String runtimeEdgeId, final int srcTaskIdx,
+                  final int partitionIdx, final Iterable<Element> data) {
 
   }
 }

@@ -29,12 +29,28 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
- * Output channel interface.
+ * Represents the output data transfer from a task.
  */
 public final class OutputWriter extends DataTransfer {
+
+  /**
+   * The task that writes the data.
+   */
   private final Task srcTask;
+
+  /**
+   * The {@link RuntimeVertex} where the output data is transferred to.
+   */
   private final RuntimeVertex dstRuntimeVertex;
+
+  /**
+   * The {@link RuntimeEdge} that connects the srcTask to the tasks belonging to dstRuntimeVertex.
+   */
   private final RuntimeEdge runtimeEdge;
+
+  /**
+   * Represents where the output data is placed.
+   */
   private final DataPlacement dataPlacement;
 
   public OutputWriter(final Task srcTask,
@@ -49,8 +65,8 @@ public final class OutputWriter extends DataTransfer {
   }
 
   /**
-   * write dataToWrite to the channel.
-   * @param dataToWrite An iterable for elements to be written.
+   * Writes output data depending on the communication pattern of the dstRuntimeVertex.
+   * @param dataToWrite An iterable for the elements to be written.
    */
   public void write(final Iterable<Element> dataToWrite) {
     switch (dstRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.Key.CommPattern)) {

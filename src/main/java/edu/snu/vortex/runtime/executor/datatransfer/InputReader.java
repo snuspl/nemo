@@ -27,13 +27,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Input channel interface.
+ * Represents the input data transfer to a task.
  */
 public final class InputReader extends DataTransfer {
 
+  /**
+   * The task that reads the data.
+   */
   private final Task dstTask;
+
+  /**
+   * The {@link RuntimeVertex} where the input data is from.
+   */
   private final RuntimeVertex srcRuntimeVertex;
+
+  /**
+   * The {@link RuntimeEdge} that connects the tasks belonging to srcRuntimeVertex to dstTask.
+   */
   private final RuntimeEdge runtimeEdge;
+
+  /**
+   * Represents where the input data is placed.
+   */
   private final DataPlacement dataPlacement;
 
   public InputReader(final Task dstTask,
@@ -47,6 +62,10 @@ public final class InputReader extends DataTransfer {
     this.dataPlacement = dataPlacement;
   }
 
+  /**
+   * Reads input data depending on the communication pattern of the srcRuntimeVertex.
+   * @return the read data.
+   */
   public Iterable<Element> read() {
     switch (srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.Key.CommPattern)) {
     case OneToOne:
@@ -60,11 +79,11 @@ public final class InputReader extends DataTransfer {
     }
   }
 
-  public Iterable<Element> readOneToOne() {
+  private Iterable<Element> readOneToOne() {
     return dataPlacement.get(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
   }
 
-  public Iterable<Element> readBroadcast() {
+  private Iterable<Element> readBroadcast() {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> readData = new ArrayList<>();
@@ -75,7 +94,7 @@ public final class InputReader extends DataTransfer {
     return readData;
   }
 
-  public Iterable<Element> readScatterGather() {
+  private Iterable<Element> readScatterGather() {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> readData = new ArrayList<>();
