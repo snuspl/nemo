@@ -85,13 +85,21 @@ public final class Optimizer {
   private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.None,
-        new ArrayList<>());
+        Arrays.asList(
+            new ParallelismPass() // Provides parallelism information.
+        ));
     POLICIES.put(PolicyType.Pado,
-        Arrays.asList(new PadoVertexPass(), new PadoEdgePass(), new ParallelismPass(),
-            new LoopGroupingPass(), new LoopUnrollingPass()));
+        Arrays.asList(
+            new ParallelismPass(), // Provides parallelism information.
+            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
+            new LoopGroupingPass(), new LoopUnrollingPass()// Groups then unrolls loops. TODO #162: remove unrolling pt.
+        ));
     POLICIES.put(PolicyType.Disaggregation,
-        Arrays.asList(new DisaggregationPass(), new ParallelismPass(),
-            new LoopGroupingPass(), new LoopUnrollingPass()));
+        Arrays.asList(
+            new ParallelismPass(), // Provides parallelism information.
+            new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
+            new LoopGroupingPass(), new LoopUnrollingPass()// Groups then unrolls loops. TODO #162: remove unrolling pt.
+        ));
   }
 
   /**

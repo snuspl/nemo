@@ -23,7 +23,7 @@ import edu.snu.vortex.utils.dag.DAGBuilder;
  * Pass for grouping each loops together using the LoopVertex.
  * It first groups loops together, making each iteration into a LoopOperator.
  * Then, it rolls repetitive operators into one root LoopOperator, which is linked with other LoopOperators,
- * in the form of a doubly linked list.
+ * each of which represents a single iteration of the loop, in the form of a doubly linked list.
  */
 public final class LoopGroupingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
