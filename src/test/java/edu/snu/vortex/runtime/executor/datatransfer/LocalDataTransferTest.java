@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.channel;
 
-import edu.snu.vortex.compiler.ir.Element;
-
 /**
- * Output channel interface.
+ * Tests {@link InputReader} and {@link OutputWriter}.
  */
-public interface OutputChannel extends Channel {
+public final class LocalDataTransferTest {
 
-  /**
-   * write data to the channel.
-   * @param data An iterable for elements to be written.
-   */
-  void write(Iterable<Element> data);
-
-  /**
-   * transfer all internally buffered data to the respective {@link InputChannel} immediately.
-   */
-  void flush();
 }

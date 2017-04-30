@@ -15,11 +15,23 @@
  */
 package edu.snu.vortex.runtime.executor.channel;
 
+
 /**
- * Channel states both for {@link InputChannel} and {@link OutputChannel}.
+ * Contains common parts involved in {@link InputReader} and {@link OutputWriter}.
+ * The two classes are involved in
+ * intermediate data transfer between {@link edu.snu.vortex.runtime.common.plan.physical.Task}.
  */
-public enum ChannelState {
-  //TODO #087: need to organize channel states.
-  Open,
-  Close
+public abstract class DataTransfer {
+  private final String id;
+
+  public DataTransfer(final String id ) {
+    this.id = id;
+  }
+
+  /**
+   * @return ID of the reader/writer.
+   */
+  public String getId() {
+    return id;
+  }
 }

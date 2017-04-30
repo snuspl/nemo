@@ -15,19 +15,22 @@
  */
 package edu.snu.vortex.runtime.executor.channel;
 
-
 import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * Interface of channel selectors that determine which channels a given record should be written into.
+ * Output channel interface.
  */
-public interface ChannelSelector {
+public final class OutputWriter extends DataTransfer {
+
+  public OutputWriter(final String id) {
+    super(id);
+  }
+
   /**
-   * Returns the channel indexes, to which the given record should be written.
-   *
-   * @param record        the record to determine which partitions it is written into.
-   * @return a (possibly empty) array of integer numbers which indicate the indices of the channels to
-   * which the record shall be written.
+   * write data to the channel.
+   * @param data An iterable for elements to be written.
    */
-  int[] selectChannels(Element record);
+  public void write(final Iterable<Element> data) {
+
+  }
 }

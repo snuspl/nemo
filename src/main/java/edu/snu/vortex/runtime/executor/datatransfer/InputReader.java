@@ -15,26 +15,20 @@
  */
 package edu.snu.vortex.runtime.executor.channel;
 
+import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * Channel interface, a common part of {@link OutputChannel} and {@link InputChannel}.
- * Channel implementations should manage data transfers.
+ * Input channel interface.
  */
-public interface Channel {
+public final class InputReader extends DataTransfer {
 
-  /**
-   * @return the channel id.
-   */
-  String getId();
+  public InputReader(final String id) {
+    super(id);
+  }
 
-  /**
-   * @return the state of this channel.
-   */
-  ChannelState getState();
+  public Iterable<Element> read() {
+    final Iterable<Element> data = null;
 
-  /**
-   * Initialize the internal state of the channel.
-   * @param config the configuration for channel initialization.
-   */
-  void initialize(ChannelConfig config);
+    return data;
+  }
 }
