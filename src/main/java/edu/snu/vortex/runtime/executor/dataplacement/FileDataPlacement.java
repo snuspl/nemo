@@ -2,6 +2,9 @@ package edu.snu.vortex.runtime.executor.dataplacement;
 
 import edu.snu.vortex.compiler.ir.Element;
 
+/**
+ * {@inheritDoc}.
+ */
 public final class FileDataPlacement implements DataPlacement {
   public FileDataPlacement() {
 

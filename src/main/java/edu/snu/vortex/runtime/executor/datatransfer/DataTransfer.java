@@ -24,14 +24,14 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 public abstract class DataTransfer {
   private final String id;
 
-  public DataTransfer(final String id ) {
+  public DataTransfer(final String id) {
     this.id = id;
   }
 
   /**
    * @return ID of the reader/writer.
    */
-  public String getId() {
+  public final String getId() {
     return id;
   }
 }
