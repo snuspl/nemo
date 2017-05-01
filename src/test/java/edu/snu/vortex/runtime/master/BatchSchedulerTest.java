@@ -99,10 +99,15 @@ public final class BatchSchedulerTest {
     for (final PhysicalStage physicalStage : physicalDAG.getTopologicalSort()) {
       final StageState stageState =
           executionStateManager.getIdToStageStates().get(physicalStage.getId());
-      while (stageState.getStateMachine().getCurrentState() == TaskGroupState.State.READY) {
+      while (stageState.getStateMachine().getCurrentState() == StageState.State.READY) {
         // Wait until this stage is scheduled and executing
       }
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
+        final TaskGroupState taskGroupState =
+            executionStateManager.getIdToTaskGroupStates().get(taskGroup.getTaskGroupId());
+        while (taskGroupState.getStateMachine().getCurrentState() == TaskGroupState.State.READY) {
+          // Wait until this task group is scheduled and executing
+        }
         final ExecutorMessage.TaskGroupStateChangedMsg.Builder taskGroupStateChangedMsg =
             ExecutorMessage.TaskGroupStateChangedMsg.newBuilder();
         taskGroupStateChangedMsg.setTaskGroupId(taskGroup.getTaskGroupId());
