@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
@@ -25,6 +26,9 @@ import edu.snu.vortex.runtime.executor.block.BlockStorage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Represents the input data transfer to a task.
@@ -51,6 +55,8 @@ public final class InputReader extends DataTransfer {
    */
   private final BlockStorage blockStorage;
 
+  private final RuntimeAttribute commPatternAttribute;
+
   public InputReader(final Task dstTask,
                      final RuntimeVertex srcRuntimeVertex,
                      final RuntimeEdge runtimeEdge,
@@ -60,6 +66,7 @@ public final class InputReader extends DataTransfer {
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.runtimeEdge = runtimeEdge;
     this.blockStorage = blockStorage;
+    this.commPatternAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
   }
 
   /**
@@ -67,7 +74,7 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public Iterable<Element> read() {
-    switch (srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.Key.CommPattern)) {
+    switch (commPatternAttribute) {
     case OneToOne:
       return readOneToOne();
     case Broadcast:
@@ -80,29 +87,34 @@ public final class InputReader extends DataTransfer {
   }
 
   private Iterable<Element> readOneToOne() {
-    return blockStorage.get(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
+    final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
+    return blockStorage.getBlock(blockId);
   }
 
   private Iterable<Element> readBroadcast() {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
-    final List<Element> readData = new ArrayList<>();
+    final List<Element> concatStreamBase = new ArrayList<>();
+    Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final Iterable<Element> dataFromATask = blockStorage.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
-      dataFromATask.forEach(element -> readData.add(element));
+      final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
+      final Iterable<Element> dataFromATask = blockStorage.getBlock(blockId);
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
-    return readData;
+    return concatStream.collect(Collectors.toList());
   }
 
   private Iterable<Element> readScatterGather() {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
-    final List<Element> readData = new ArrayList<>();
+    final List<Element> concatStreamBase = new ArrayList<>();
+    Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final Iterable<Element> dataFromATask =
-          blockStorage.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx, dstTask.getIndex());
-      dataFromATask.forEach(element -> readData.add(element));
+      final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
+      final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, dstTask.getIndex());
+      final Iterable<Element> dataFromATask = blockStorage.getBlock(subBlockId);
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
-    return readData;
+    return concatStream.collect(Collectors.toList());
   }
 }

@@ -62,7 +62,7 @@ public final class OutputWriter extends DataTransfer {
     this.partitionAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition);
     this.dataPlacementAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.ChannelDataPlacement);
     this.blockManagerWorker = blockManagerWorker;
-    this.blockId = RuntimeIdGenerator.generateBlockId(srcTask.getId(), runtimeEdge.getRuntimeEdgeId());
+    this.blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTask.getIndex());
   }
 
   /**

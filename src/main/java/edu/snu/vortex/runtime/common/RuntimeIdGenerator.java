@@ -88,11 +88,11 @@ public final class RuntimeIdGenerator {
     return "TaskGroup-" + taskGroupIdGenerator.getAndIncrement();
   }
 
-  public static String generateBlockId(final String taskId, final String runtimeEdgeId) {
-    return "Block-" + taskId + "-" + runtimeEdgeId;
+  public static String generateBlockId(final String runtimeEdgeId, final int index) {
+    return "Block-" + runtimeEdgeId + "-" + index;
   }
 
   public static String generateSubBlockId(final String blockId, final int index) {
-    return "Sub-" + blockId + "-" + index;
+    return blockId + "-" + index;
   }
 }
