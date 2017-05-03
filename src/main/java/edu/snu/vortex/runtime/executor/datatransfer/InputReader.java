@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
+import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.BlockStorage;
 
 import java.util.ArrayList;
@@ -53,42 +54,45 @@ public final class InputReader extends DataTransfer {
   /**
    * Represents where the input data is placed.
    */
-  private final BlockStorage blockStorage;
+  private final BlockManagerWorker blockManagerWorker;
 
   private final RuntimeAttribute commPatternAttribute;
+  private final RuntimeAttribute dataPlacementAttribute;
 
   public InputReader(final Task dstTask,
                      final RuntimeVertex srcRuntimeVertex,
                      final RuntimeEdge runtimeEdge,
-                     final BlockStorage blockStorage) {
+                     final BlockManagerWorker blockManagerWorker) {
     super(runtimeEdge.getRuntimeEdgeId());
     this.dstTask = dstTask;
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.runtimeEdge = runtimeEdge;
-    this.blockStorage = blockStorage;
+    this.blockManagerWorker = blockManagerWorker;
     this.commPatternAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
+    this.dataPlacementAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.ChannelDataPlacement);
   }
 
   /**
    * Reads input data depending on the communication pattern of the srcRuntimeVertex.
+   *
    * @return the read data.
    */
   public Iterable<Element> read() {
     switch (commPatternAttribute) {
-    case OneToOne:
-      return readOneToOne();
-    case Broadcast:
-      return readBroadcast();
-    case ScatterGather:
-      return readScatterGather();
-    default:
-      throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
+      case OneToOne:
+        return readOneToOne();
+      case Broadcast:
+        return readBroadcast();
+      case ScatterGather:
+        return readScatterGather();
+      default:
+        throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
     }
   }
 
   private Iterable<Element> readOneToOne() {
     final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
-    return blockStorage.getBlock(blockId);
+    return blockManagerWorker.getBlock(blockId, dataPlacementAttribute);
   }
 
   private Iterable<Element> readBroadcast() {
@@ -98,7 +102,7 @@ public final class InputReader extends DataTransfer {
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
-      final Iterable<Element> dataFromATask = blockStorage.getBlock(blockId);
+      final Iterable<Element> dataFromATask = blockManagerWorker.getBlock(blockId, dataPlacementAttribute);
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
@@ -112,7 +116,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
       final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, dstTask.getIndex());
-      final Iterable<Element> dataFromATask = blockStorage.getBlock(subBlockId);
+      final Iterable<Element> dataFromATask = blockManagerWorker.getBlock(subBlockId, dataPlacementAttribute);
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

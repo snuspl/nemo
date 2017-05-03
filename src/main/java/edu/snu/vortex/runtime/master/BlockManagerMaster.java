@@ -1,8 +1,19 @@
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.state.BlockState;
+import edu.snu.vortex.runtime.common.state.SubBlockState;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class BlockManagerMaster {
-  private final Map<String, StageState> idToBlockStates;
-  private final Map<String, TaskGroupState> idToSubBlockStates;
+  private final Map<String, BlockState> idToBlockStates;
+  private final Map<String, SubBlockState> idToSubBlockStates;
+
+  public BlockManagerMaster() {
+    this.idToBlockStates = new HashMap<>();
+    this.idToSubBlockStates = new HashMap<>();
+  }
 
   public void onBlockCreated(final String blockId) {
   }

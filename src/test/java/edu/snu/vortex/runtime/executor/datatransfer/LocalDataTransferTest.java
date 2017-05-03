@@ -15,9 +15,21 @@
  */
 package edu.snu.vortex.runtime.executor.datatransfer;
 
+import org.junit.Before;
+import org.junit.Test;
+
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 public final class LocalDataTransferTest {
 
+  @Before
+  public void dd() {
+
+  }
+
+  @Test
+  public void dd() {
+
+  }
 }
