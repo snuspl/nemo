@@ -80,6 +80,10 @@ public final class IREdge extends Edge<IRVertex> {
     return type;
   }
 
+  public Boolean hasSameItineraryAs(final IREdge edge) {
+    return getSrc().equals(edge.getSrc()) && getDst().equals(edge.getDst());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -91,13 +95,7 @@ public final class IREdge extends Edge<IRVertex> {
 
     IREdge irEdge = (IREdge) o;
 
-    if (type != irEdge.type) {
-      return false;
-    }
-    if (!getSrc().equals(irEdge.getSrc())) {
-      return false;
-    }
-    return getDst().equals(irEdge.getDst());
+    return type.equals(irEdge.getType()) && hasSameItineraryAs(irEdge);
   }
 
   @Override

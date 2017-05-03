@@ -18,35 +18,35 @@ package edu.snu.vortex.compiler.ir;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * IRVertex that contains a partial DAG that is iterative.
  */
 public final class LoopVertex extends IRVertex {
-  private final DAGBuilder<IRVertex, IREdge> builder;
-  private final Set<IREdge> vertexIncomingEdges;
-  private final Set<IREdge> vertexOutgoingEdges;
-  private final Map<IRVertex, Set<IREdge>> dagIncomingEdges;
-  private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges;
+  private final DAGBuilder<IRVertex, IREdge> builder; // Contains DAG information
   private final String compositeTransformFullName;
-  // prevLoopVertex and nextLoopVertex chains each iteration of LoopVertices like linked lists.
-  private LoopVertex prevLoopVertex; // nullable
-  private LoopVertex nextLoopVertex; // nullable
+  private final LoopVertex assignedLoopVertex; // loop vertex that encloses this loop vertex.
 
-  public LoopVertex(final String compositeTransformFullName) {
+  private final Map<IRVertex, Set<IREdge>> dagIncomingEdges; // for the initial iteration
+  private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges; // for iterations
+  private final Map<IRVertex, Set<IREdge>> nonIterativeIncomingEdges; // for iterations
+  private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges; // for the final iteration
+
+  public LoopVertex(final String compositeTransformFullName, final Stack<LoopVertex> loopVertexStack) {
     super();
     this.builder = new DAGBuilder<>();
-    this.vertexIncomingEdges = new HashSet<>();
-    this.vertexOutgoingEdges = new HashSet<>();
-    this.dagIncomingEdges = new HashMap<>();
-    this.dagOutgoingEdges = new HashMap<>();
     this.compositeTransformFullName = compositeTransformFullName;
-    this.prevLoopVertex = null;
-    this.nextLoopVertex = null;
+    this.dagIncomingEdges = new HashMap<>();
+    this.iterativeIncomingEdges = new HashMap<>();
+    this.nonIterativeIncomingEdges = new HashMap<>();
+    this.dagOutgoingEdges = new HashMap<>();
+
+    if (loopVertexStack.empty()) {
+      this.assignedLoopVertex = null;
+    } else {
+      this.assignedLoopVertex = loopVertexStack.peek();
+    }
   }
 
   public DAGBuilder<IRVertex, IREdge> getBuilder() {
@@ -61,29 +61,33 @@ public final class LoopVertex extends IRVertex {
     return compositeTransformFullName;
   }
 
-  public void setVertexIncomingEdges(final Set<IREdge> vertexIncomingEdges) {
-    this.vertexIncomingEdges.addAll(vertexIncomingEdges);
-  }
-
-  public Set<IREdge> getVertexIncomingEdges() {
-    return this.vertexIncomingEdges;
-  }
-
-  public void setVertexOutgoingEdges(final Set<IREdge> vertexOutgoingEdges) {
-    this.vertexOutgoingEdges.addAll(vertexOutgoingEdges);
-  }
-
-  public Set<IREdge> getVertexOutgoingEdges() {
-    return this.vertexOutgoingEdges;
+  public LoopVertex getAssignedLoopVertex() {
+    return assignedLoopVertex;
   }
 
   public void addDagIncomingEdge(final IREdge edge) {
     this.dagIncomingEdges.putIfAbsent(edge.getDst(), new HashSet<>());
     this.dagIncomingEdges.get(edge.getDst()).add(edge);
+    this.nonIterativeIncomingEdges.putIfAbsent(edge.getDst(), new HashSet<>());
+    this.nonIterativeIncomingEdges.get(edge.getDst()).add(edge);
   }
 
   public Map<IRVertex, Set<IREdge>> getDagIncomingEdges() {
     return this.dagIncomingEdges;
+  }
+
+  public void addIterativeIncomingEdge(final IREdge edge) {
+    this.iterativeIncomingEdges.putIfAbsent(edge.getDst(), new HashSet<>());
+    this.iterativeIncomingEdges.get(edge.getDst()).add(edge);
+    this.nonIterativeIncomingEdges.get(edge.getDst()).remove(edge);
+  }
+
+  public Map<IRVertex, Set<IREdge>> getIterativeIncomingEdges() {
+    return this.iterativeIncomingEdges;
+  }
+
+  public Map<IRVertex, Set<IREdge>> getNonIterativeIncomingEdges() {
+    return this.nonIterativeIncomingEdges;
   }
 
   public void addDagOutgoingEdge(final IREdge edge) {
@@ -95,60 +99,16 @@ public final class LoopVertex extends IRVertex {
     return this.dagOutgoingEdges;
   }
 
-  public Integer getNumberOfIterations() {
-    if (this.hasNext()) {
-      return this.nextLoopVertex.getNumberOfIterations() + 1;
-    } else {
-      return 1;
-    }
-  }
-
-  public void setPrevLoopVertex(final LoopVertex prevLoopVertex) {
-    this.prevLoopVertex = prevLoopVertex;
-  }
-
-  public Boolean hasNext() {
-    return nextLoopVertex != null;
-  }
-
-  public void setNextLoopVertex(final LoopVertex nextLoopVertex) {
-    this.nextLoopVertex = nextLoopVertex;
-  }
-
-  public LoopVertex getNextLoopVertex() {
-    return this.nextLoopVertex;
-  }
-
-  public Boolean isRoot() {
-    return prevLoopVertex == null && vertexIncomingEdges.isEmpty() && vertexOutgoingEdges.isEmpty();
-  }
-
-  public LoopVertex getRoot() {
-    if (this.prevLoopVertex == null) {
-      return this;
-    } else {
-      return this.prevLoopVertex.getRoot();
-    }
-  }
-
-  public LoopVertex getLast() {
-    if (this.hasNext()) {
-      return this.getNextLoopVertex().getLast();
-    } else {
-      return this;
-    }
-  }
-
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{");
     sb.append(irVertexPropertiesToString());
-    sb.append(", \"Remaining Iteration\"");
-    sb.append(getNumberOfIterations());
-    sb.append(", \"DAG\": \"");
+//    sb.append(", \"Remaining Iteration\": ");
+//    sb.append(getNumberOfIterations());
+    sb.append(", \"DAG\": ");
     sb.append(getDAG());
-    sb.append("\"}");
+    sb.append("}");
     return sb.toString();
   }
 }

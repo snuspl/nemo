@@ -15,8 +15,7 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-
-import javax.annotation.Nullable;
+import java.util.Stack;
 
 /**
  * IRVertex that transforms input data.
@@ -24,28 +23,31 @@ import javax.annotation.Nullable;
  */
 public final class OperatorVertex extends IRVertex {
   private final Transform transform;
-  private final LoopVertex assignedLoopVertex; // nullable
+  private final Stack<LoopVertex> loopVertexStack;
 
   public OperatorVertex(final Transform t) {
     this(t, null);
   }
 
-  public OperatorVertex(final Transform t, @Nullable final LoopVertex assignedLoopVertex) {
+  public OperatorVertex(final Transform t, final Stack<LoopVertex> loopVertexStack) {
     super();
     this.transform = t;
-    this.assignedLoopVertex = assignedLoopVertex;
-    if (this.assignedLoopVertex != null) {
-      this.assignedLoopVertex.getBuilder().addVertex(this);
+    this.loopVertexStack = (Stack<LoopVertex>) loopVertexStack.clone();
+    if (!this.loopVertexStack.empty()) {
+      this.loopVertexStack.peek().getBuilder().addVertex(this);
     }
   }
 
   public Boolean isComposite() {
-    return assignedLoopVertex != null;
+    return !loopVertexStack.empty();
   }
 
-  @Nullable
   public LoopVertex getAssignedLoopVertex() {
-    return assignedLoopVertex;
+    return loopVertexStack.peek();
+  }
+
+  public Integer getLoopVertexStackDepth() {
+    return loopVertexStack.size();
   }
 
   public Transform getTransform() {

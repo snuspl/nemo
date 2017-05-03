@@ -34,7 +34,7 @@ public final class LoopUnrollingPass implements Pass {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
     // We decompose LoopVertices of the DAG that had been unrolled by the loopUnrolling method.
-    decomposeLoopVertices(builder, loopUnrolling(dag));
+//    decomposeLoopVertices(builder, loopUnrolling(dag));
 
     // We make sure of the remaining incoming/outgoing edges of the DAG itself, in the LoopVertices, are connected.
     this.loopVertices.forEach(loopVertex -> {
@@ -49,42 +49,42 @@ public final class LoopUnrollingPass implements Pass {
     return builder.build();
   }
 
-  /**
-   * This method unrolls the root LoopVertex, in the form of linked list, into a line of Loop Vertices in the DAG.
-   * @param dag DAG to process.
-   * @return Processed DAG.
-   * @throws Exception exceptions through the way.
-   */
-  private DAG<IRVertex, IREdge> loopUnrolling(final DAG<IRVertex, IREdge> dag) throws Exception {
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    final Set<LoopVertex> followingLoopVertices = new HashSet<>();
-
-    dag.topologicalDo(irVertex -> {
-      if (irVertex instanceof SourceVertex) {
-        builder.addVertex(irVertex);
-      } else if (irVertex instanceof OperatorVertex) {
-        builder.addVertex(irVertex);
-        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
-      } else if (irVertex instanceof LoopVertex) {
-        LoopVertex loopVertex = (LoopVertex) irVertex;
-        builder.addVertex(loopVertex);
-        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
-
-        while (loopVertex.hasNext()) {
-          loopVertex = loopVertex.getNextLoopVertex();
-          followingLoopVertices.add(loopVertex);
-          builder.addVertex(loopVertex);
-          loopVertex.getVertexIncomingEdges().forEach(builder::connectVertices);
-        }
-      } else {
-        throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);
-      }
-
-      followingLoopVertices.forEach(vertex -> vertex.getVertexOutgoingEdges().forEach(builder::connectVertices));
-    });
-
-    return builder.build();
-  }
+//  /**
+//   * This method unrolls the root LoopVertex, in the form of linked list, into a line of Loop Vertices in the DAG.
+//   * @param dag DAG to process.
+//   * @return Processed DAG.
+//   * @throws Exception exceptions through the way.
+//   */
+//  private DAG<IRVertex, IREdge> loopUnrolling(final DAG<IRVertex, IREdge> dag) throws Exception {
+//    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+//    final Set<LoopVertex> followingLoopVertices = new HashSet<>();
+//
+//    dag.topologicalDo(irVertex -> {
+//      if (irVertex instanceof SourceVertex) {
+//        builder.addVertex(irVertex);
+//      } else if (irVertex instanceof OperatorVertex) {
+//        builder.addVertex(irVertex);
+//        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
+//      } else if (irVertex instanceof LoopVertex) {
+//        LoopVertex loopVertex = (LoopVertex) irVertex;
+//        builder.addVertex(loopVertex);
+//        dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
+//
+//        while (loopVertex.hasNext()) {
+//          loopVertex = loopVertex.getNextLoopVertex();
+//          followingLoopVertices.add(loopVertex);
+//          builder.addVertex(loopVertex);
+//          loopVertex.getVertexIncomingEdges().forEach(builder::connectVertices);
+//        }
+//      } else {
+//        throw new UnsupportedOperationException("Unknown vertex type: " + irVertex);
+//      }
+//
+//      followingLoopVertices.forEach(vertex -> vertex.getVertexOutgoingEdges().forEach(builder::connectVertices));
+//    });
+//
+//    return builder.build();
+//  }
 
   /**
    * It decomposes each of the LoopVertices with the DAG info that each of they contain, in a recursive manner.
