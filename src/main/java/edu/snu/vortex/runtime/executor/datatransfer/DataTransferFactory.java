@@ -7,7 +7,7 @@ import edu.snu.vortex.runtime.executor.block.*;
 
 /**
  * A factory that produces {@link InputReader} and {@link OutputWriter}.
- * Each {@link DataTransfer} is bound to the {@link BlockManager} mechanism specified by
+ * Each {@link DataTransfer} is bound to the {@link BlockStorage} mechanism specified by
  * the data placement attribute.
  */
 public final class DataTransferFactory {

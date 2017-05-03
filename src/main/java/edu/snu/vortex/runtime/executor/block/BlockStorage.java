@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 /**
  * Interface for block manager.
  */
-public interface BlockManager {
+public interface BlockStorage {
   /**
    * Retrieves a block.
    * @param blockId of the block

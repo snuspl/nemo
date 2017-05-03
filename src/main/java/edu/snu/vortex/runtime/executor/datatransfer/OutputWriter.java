@@ -39,6 +39,7 @@ public final class OutputWriter extends DataTransfer {
   private final int dstParallelism;
   private final RuntimeAttribute partitionAttribute;
   private final RuntimeAttribute commPatternAttribute;
+  private final RuntimeAttribute dataPlacementAttribute;
 
   /**
    * The Block Manager Worker.
@@ -59,6 +60,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstParallelism = dstRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
     this.commPatternAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
     this.partitionAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.Partition);
+    this.dataPlacementAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.ChannelDataPlacement);
     this.blockManagerWorker = blockManagerWorker;
     this.blockId = RuntimeIdGenerator.generateBlockId(srcTask.getId(), runtimeEdge.getRuntimeEdgeId());
   }
@@ -84,11 +86,11 @@ public final class OutputWriter extends DataTransfer {
   }
 
   private void writeOneToOne(final Iterable<Element> dataToWrite) {
-    blockManagerWorker.writeBlock(blockId, dataToWrite);
+    blockManagerWorker.putBlock(blockId, dataToWrite, dataPlacementAttribute);
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite) {
-    blockManagerWorker.writeBlock(blockId, dataToWrite);
+    blockManagerWorker.putBlock(blockId, dataToWrite, dataPlacementAttribute);
   }
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) {
@@ -107,7 +109,7 @@ public final class OutputWriter extends DataTransfer {
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> {
         // Give each partition its own 'subBlockId'
         final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, partitionIdx);
-        blockManagerWorker.writeBlock(subBlockId, partitionedOutputList.get(partitionIdx));
+        blockManagerWorker.putBlock(subBlockId, partitionedOutputList.get(partitionIdx), dataPlacementAttribute);
       });
       break;
     case Range:
