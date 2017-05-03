@@ -17,6 +17,9 @@ package edu.snu.vortex.runtime.common.state;
 
 import edu.snu.vortex.utils.StateMachine;
 
+/**
+ * Represents the states of a whole block(a task output).
+ */
 public final class BlockState {
   private final StateMachine stateMachine;
 

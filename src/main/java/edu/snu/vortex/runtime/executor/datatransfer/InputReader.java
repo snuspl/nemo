@@ -17,13 +17,10 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
-import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
-import edu.snu.vortex.runtime.executor.block.BlockStorage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,41 +32,28 @@ import java.util.stream.StreamSupport;
  * Represents the input data transfer to a task.
  */
 public final class InputReader extends DataTransfer {
+  private final String edgeId;
+  private final int dstTaskIndex;
 
-  /**
-   * The task that reads the data.
-   */
-  private final Task dstTask;
-
-  /**
-   * The {@link RuntimeVertex} where the input data is from.
-   */
-  private final RuntimeVertex srcRuntimeVertex;
-
-  /**
-   * The {@link RuntimeEdge} that connects the tasks belonging to srcRuntimeVertex to dstTask.
-   */
-  private final RuntimeEdge runtimeEdge;
-
-  /**
-   * Represents where the input data is placed.
-   */
   private final BlockManagerWorker blockManagerWorker;
 
-  private final RuntimeAttribute commPatternAttribute;
-  private final RuntimeAttribute dataPlacementAttribute;
+  /**
+   * Attributes that specify how we should read the input.
+   */
+  private final RuntimeAttributeMap srcVertexAttributes;
+  private final RuntimeAttributeMap edgeAttributes;
 
-  public InputReader(final Task dstTask,
-                     final RuntimeVertex srcRuntimeVertex,
-                     final RuntimeEdge runtimeEdge,
+  public InputReader(final String edgeId,
+                     final int dstTaskIndex,
+                     final RuntimeAttributeMap srcVertexAttributes,
+                     final RuntimeAttributeMap edgeAttributes,
                      final BlockManagerWorker blockManagerWorker) {
-    super(runtimeEdge.getRuntimeEdgeId());
-    this.dstTask = dstTask;
-    this.srcRuntimeVertex = srcRuntimeVertex;
-    this.runtimeEdge = runtimeEdge;
+    super(edgeId);
+    this.edgeId = edgeId;
+    this.dstTaskIndex = dstTaskIndex;
+    this.srcVertexAttributes = srcVertexAttributes;
+    this.edgeAttributes = edgeAttributes;
     this.blockManagerWorker = blockManagerWorker;
-    this.commPatternAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
-    this.dataPlacementAttribute = runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.ChannelDataPlacement);
   }
 
   /**
@@ -78,7 +62,7 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public Iterable<Element> read() {
-    switch (commPatternAttribute) {
+    switch (edgeAttributes.get(RuntimeAttribute.Key.CommPattern)) {
       case OneToOne:
         return readOneToOne();
       case Broadcast:
@@ -91,32 +75,34 @@ public final class InputReader extends DataTransfer {
   }
 
   private Iterable<Element> readOneToOne() {
-    final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
-    return blockManagerWorker.getBlock(blockId, dataPlacementAttribute);
+    final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, dstTaskIndex);
+    return blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.Storage));
   }
 
   private Iterable<Element> readBroadcast() {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
+    final int numSrcTasks = srcVertexAttributes.get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> concatStreamBase = new ArrayList<>();
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
-      final Iterable<Element> dataFromATask = blockManagerWorker.getBlock(blockId, dataPlacementAttribute);
+      final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx);
+      final Iterable<Element> dataFromATask =
+          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.Storage));
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
   }
 
   private Iterable<Element> readScatterGather() {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
+    final int numSrcTasks = srcVertexAttributes.get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> concatStreamBase = new ArrayList<>();
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String blockId = RuntimeIdGenerator.generateBlockId(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
-      final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, dstTask.getIndex());
-      final Iterable<Element> dataFromATask = blockManagerWorker.getBlock(subBlockId, dataPlacementAttribute);
+      final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx);
+      final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, dstTaskIndex);
+      final Iterable<Element> dataFromATask =
+          blockManagerWorker.getBlock(subBlockId, edgeAttributes.get(RuntimeAttribute.Key.Storage));
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

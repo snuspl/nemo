@@ -4,10 +4,13 @@ import edu.snu.vortex.compiler.ir.Element;
 
 import java.util.HashMap;
 
-final class LocalBlockStorage implements BlockStorage {
+/**
+ * Store data in local memory, unserialized.
+ */
+public final class LocalBlockStorage implements BlockStorage {
   private final HashMap<String, Iterable<Element>> blockIdToData;
 
-  LocalBlockStorage() {
+  public LocalBlockStorage() {
     this.blockIdToData = new HashMap<>();
   }
 

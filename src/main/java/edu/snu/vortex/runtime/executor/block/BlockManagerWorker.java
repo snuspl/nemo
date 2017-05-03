@@ -5,7 +5,10 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.exception.UnsupportedDataPlacementException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 
-public class BlockManagerWorker {
+/**
+ * Executor-side block manager.
+ */
+public final class BlockManagerWorker {
   private final BlockManagerMaster blockManagerMaster;
 
   private final LocalBlockStorage localBlockManager;
@@ -17,9 +20,10 @@ public class BlockManagerWorker {
   }
 
   /**
-   * Used by task OutputWriter to store output.
-   * @param blockId of either the whole block or a sub-block
-   * @param data of the output
+   * Store block somewhere.
+   * @param blockId of the block
+   * @param data of the block
+   * @param dataPlacementAttribute for storing the block
    */
   public void putBlock(final String blockId,
                        final Iterable<Element> data,
@@ -29,9 +33,10 @@ public class BlockManagerWorker {
   }
 
   /**
-   * Used by task InputReader to read a the whole block or a sub-block.
-   * @param blockId id of the block to read
-   * @return input data
+   * Get the stored block.
+   * @param blockId of the block
+   * @param dataPlacementAttribute for the data storage
+   * @return the block data
    */
   public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute dataPlacementAttribute) {
     final BlockStorage blockStorage = getStorage(dataPlacementAttribute);
@@ -39,7 +44,7 @@ public class BlockManagerWorker {
   }
 
   /**
-   * Sender-side code for moving a block to a remote BlockManagerWorker
+   * Sender-side code for moving a block to a remote BlockManagerWorker.
    * @param blockId id of the block to send
    * @param data of the block
    */
@@ -47,7 +52,7 @@ public class BlockManagerWorker {
   }
 
   /**
-   * Receiver-side handler for the whole block or a sub-block sent from a remote BlockManagerWorker
+   * Receiver-side handler for the whole block or a sub-block sent from a remote BlockManagerWorker.
    * @param blockId id of the sent block
    * @param data of the block
    */

@@ -6,7 +6,10 @@ import edu.snu.vortex.runtime.common.state.SubBlockState;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BlockManagerMaster {
+/**
+ * Matser-side block manager.
+ */
+public final class BlockManagerMaster {
   private final Map<String, BlockState> idToBlockStates;
   private final Map<String, SubBlockState> idToSubBlockStates;
 
@@ -31,8 +34,10 @@ public class BlockManagerMaster {
   }
 
   public String getBlockLocation(final String blockId) {
+    return null;
   }
 
   public String getSubBlockLocation(final String subBlockId) {
+    return null;
   }
 }
