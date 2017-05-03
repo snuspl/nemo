@@ -21,7 +21,7 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
-import edu.snu.vortex.runtime.executor.dataplacement.DataPlacement;
+import edu.snu.vortex.runtime.executor.block.BlockManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,17 +49,17 @@ public final class InputReader extends DataTransfer {
   /**
    * Represents where the input data is placed.
    */
-  private final DataPlacement dataPlacement;
+  private final BlockManager blockManager;
 
   public InputReader(final Task dstTask,
                      final RuntimeVertex srcRuntimeVertex,
                      final RuntimeEdge runtimeEdge,
-                     final DataPlacement dataPlacement) {
+                     final BlockManager blockManager) {
     super(runtimeEdge.getRuntimeEdgeId());
     this.dstTask = dstTask;
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.runtimeEdge = runtimeEdge;
-    this.dataPlacement = dataPlacement;
+    this.blockManager = blockManager;
   }
 
   /**
@@ -80,7 +80,7 @@ public final class InputReader extends DataTransfer {
   }
 
   private Iterable<Element> readOneToOne() {
-    return dataPlacement.get(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
+    return blockManager.get(runtimeEdge.getRuntimeEdgeId(), dstTask.getIndex());
   }
 
   private Iterable<Element> readBroadcast() {
@@ -88,7 +88,7 @@ public final class InputReader extends DataTransfer {
 
     final List<Element> readData = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final Iterable<Element> dataFromATask = dataPlacement.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
+      final Iterable<Element> dataFromATask = blockManager.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx);
       dataFromATask.forEach(element -> readData.add(element));
     }
     return readData;
@@ -100,7 +100,7 @@ public final class InputReader extends DataTransfer {
     final List<Element> readData = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final Iterable<Element> dataFromATask =
-          dataPlacement.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx, dstTask.getIndex());
+          blockManager.get(runtimeEdge.getRuntimeEdgeId(), srcTaskIdx, dstTask.getIndex());
       dataFromATask.forEach(element -> readData.add(element));
     }
     return readData;
