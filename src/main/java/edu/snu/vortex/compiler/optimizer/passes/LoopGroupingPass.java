@@ -195,6 +195,7 @@ public final class LoopGroupingPass implements Pass {
           addToBuilder(builder, loopVertex, dag, loopVerticesOfSameLoop);
         } else { // following loops
           final LoopVertex finalRootLoopVertex = rootLoopVertex;
+          finalRootLoopVertex.increaseMaxNumberOfIterations();
 
           // Add the loop to the list
           loopVerticesOfSameLoop.get(finalRootLoopVertex).add(loopVertex);
@@ -207,6 +208,9 @@ public final class LoopGroupingPass implements Pass {
           while (rootVertices.hasNext() && vertices.hasNext()) {
             equivalentVertices.get(rootVertices.next()).add(vertices.next());
           }
+
+          // reset non iterative incoming edges.
+          finalRootLoopVertex.getNonIterativeIncomingEdges().clear();
 
           // incoming edges to the DAG.
           loopVertex.getDagIncomingEdges().forEach((dstVertex, edges) -> edges.forEach(edge -> {
@@ -241,7 +245,11 @@ public final class LoopGroupingPass implements Pass {
               // remove overlapping DAG outgoing edges.
               finalRootLoopVertex.getDagOutgoingEdges().values().stream().forEach(irEdges ->
                   irEdges.removeIf(e -> e.getSrc().equals(equivalentSrcRootVertex) && e.getDst().equals(dstVertex)));
-            } // other cases don't need to be handled
+            } else {
+              // src is from outside the previous loop. vertex outside previous loop -> DAG.
+              final IREdge newIrEdge = new IREdge(edge.getType(), srcVertex, equivalentDstRootVertex);
+              finalRootLoopVertex.addNonIterativeIncomingEdge(newIrEdge);
+            }
           }));
 
           // outgoing edges from the DAG

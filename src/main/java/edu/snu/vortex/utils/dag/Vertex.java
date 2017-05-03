@@ -19,12 +19,16 @@ package edu.snu.vortex.utils.dag;
  * A vertex in DAG.
  */
 public abstract class Vertex {
-  private final String id;
+  private String id;
 
   /**
    * @param id unique identifier of the vertex
    */
   public Vertex(final String id) {
+    this.id = id;
+  }
+
+  public final void setId(final String id) {
     this.id = id;
   }
 
