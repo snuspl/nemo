@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
-public final class RemoteDataTransferTest {
+public final class DataTransferTest {
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;

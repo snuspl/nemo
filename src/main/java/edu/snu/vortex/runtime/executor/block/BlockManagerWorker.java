@@ -3,8 +3,12 @@ package edu.snu.vortex.runtime.executor.block;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.state.BlockState;
-import edu.snu.vortex.runtime.exception.UnsupportedDataPlacementException;
+import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Executor-side block manager.
@@ -16,12 +20,15 @@ public final class BlockManagerWorker {
 
   private final LocalStore localStore;
 
+  private final Set<String> idOfBlocksStoredInThisWorker;
+
   public BlockManagerWorker(final String workerId,
                             final BlockManagerMaster blockManagerMaster,
                             final LocalStore localStore) {
     this.workerId = workerId;
     this.blockManagerMaster = blockManagerMaster;
     this.localStore = localStore;
+    this.idOfBlocksStoredInThisWorker = new HashSet<>();
   }
 
   public String getWorkerId() {
@@ -37,10 +44,9 @@ public final class BlockManagerWorker {
   public void putBlock(final String blockId,
                        final Iterable<Element> data,
                        final RuntimeAttribute blockStore) {
-    final BlockStore store = getStorage(blockStore);
+    final BlockStore store = getBlockStore(blockStore);
     store.putBlock(blockId, data);
-
-    // TODO: if local, don't notify / else, notify
+    idOfBlocksStoredInThisWorker.add(blockId);
     blockManagerMaster.onBlockStateChanged(workerId, blockId, BlockState.State.COMMITTED);
   }
 
@@ -51,33 +57,53 @@ public final class BlockManagerWorker {
    * @return the block data
    */
   public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute blockStore) {
-    // TODO: handle remote get
-    final BlockStore store = getStorage(blockStore);
+    if (idOfBlocksStoredInThisWorker.contains(blockId)) {
+      // Local hit!
+      final BlockStore store = getBlockStore(blockStore);
+      final Optional<Iterable<Element>> optionalData = store.getBlock(blockId);
+      if (optionalData.isPresent()) {
+        return optionalData.get();
+      } else {
+        // TODO #163: Handle Fault Tolerance
+        // We should report this exception to the master, instead of shutting down the JVM
+        throw new RuntimeException("Something's wrong: worker thinks it has the block, but the store doesn't have it");
+      }
+    } else {
+      // We don't have the block here... let's see if a remote worker has it
+      final Optional<BlockManagerWorker> optionalWorker = blockManagerMaster.getBlockLocation(blockId);
+      if (optionalWorker.isPresent()) {
+        final BlockManagerWorker remoteWorker = optionalWorker.get();
+        final Optional<Iterable<Element>> optionalData = remoteWorker.getBlockRemotely(workerId, blockId, blockStore);
+        if (optionalData.isPresent()) {
+          return optionalData.get();
+        } else {
+          // TODO #163: Handle Fault Tolerance
+          // We should report this exception to the master, instead of shutting down the JVM
+          throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorker.getWorkerId());
+        }
+      } else {
+        // TODO #163: Handle Fault Tolerance
+        // We should report this exception to the master, instead of shutting down the JVM
+        throw new RuntimeException("Block " + blockId + " not found both in the local storage and the remote storage");
+      }
+    }
+  }
+
+  /**
+   * Get block request from a remote worker.
+   * @param requestingWorkerId of the requestor
+   * @param blockId to get
+   * @param blockStore for the block
+   * @return block data
+   */
+  public Optional<Iterable<Element>> getBlockRemotely(final String requestingWorkerId,
+                                                      final String blockId,
+                                                      final RuntimeAttribute blockStore) {
+    final BlockStore store = getBlockStore(blockStore);
     return store.getBlock(blockId);
   }
 
-  /**
-   * Sender-side code for moving a block to a remote BlockManagerWorker.
-   * @param blockId id of the block to send
-   * @param data of the block
-   */
-  private void sendBlock(final String blockId,
-                         final Iterable<Element> data,
-                         final RuntimeAttribute blockStore) {
-  }
-
-  /**
-   * Receiver-side handler for the whole block or a sub-block sent from a remote BlockManagerWorker.
-   * @param blockId id of the sent block
-   * @param data of the block
-   */
-  public void onBlockReceived(final String blockId,
-                              final Iterable<Element> data,
-                              final RuntimeAttribute blockStore) {
-    putBlock(blockId, data, blockStore);
-  }
-
-  private BlockStore getStorage(final RuntimeAttribute blockStore) {
+  private BlockStore getBlockStore(final RuntimeAttribute blockStore) {
     switch (blockStore) {
       case Local:
         return localStore;
@@ -90,7 +116,7 @@ public final class BlockManagerWorker {
       case DistributedStorage:
         throw new UnsupportedOperationException(blockStore.toString());
       default:
-        throw new UnsupportedDataPlacementException(new Exception(blockStore + " is not supported."));
+        throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
   }
 }

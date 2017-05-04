@@ -17,6 +17,8 @@ package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
 
+import java.util.Optional;
+
 /**
  * Interface for block placement.
  */
@@ -24,9 +26,9 @@ public interface BlockStore {
   /**
    * Retrieves a block.
    * @param blockId of the block
-   * @return the data of the block
+   * @return the data of the block (optionally)
    */
-  Iterable<Element> getBlock(final String blockId);
+  Optional<Iterable<Element>> getBlock(final String blockId);
 
   /**
    * Saves a block.
