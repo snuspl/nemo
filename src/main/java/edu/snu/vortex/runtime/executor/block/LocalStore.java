@@ -20,6 +20,9 @@ public final class LocalStore implements BlockStore {
   }
 
   public void putBlock(final String blockId, final Iterable<Element> data) {
+    if (blockIdToData.containsKey(blockId)) {
+      throw new RuntimeException("Trying to overwrite an already-put block");
+    }
     blockIdToData.put(blockId, data);
   }
 }

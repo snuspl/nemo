@@ -19,6 +19,7 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
@@ -83,6 +84,9 @@ public final class DataTransferTest {
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
     edgeAttributes.put(RuntimeAttribute.Key.BlockStore, RuntimeAttribute.Local);
 
+    // Initialize states in BlockManagerMaster
+    master.initializeState(edgeId, srcTaskIndex);
+
     // Write from worker1
     final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, sender);
     final List<Element> dataWritten = new ArrayList<>();
@@ -99,6 +103,9 @@ public final class DataTransferTest {
 
     // Compare (should be the same)
     assertTrue(dataWritten.equals(dataRead));
+
+    // Block Location
+    master.getBlockLocation(RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex));
   }
 
 }

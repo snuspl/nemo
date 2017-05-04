@@ -31,14 +31,14 @@ public final class BlockState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.CREATED, "The block is created.");
+    stateMachineBuilder.addState(State.TOBECREATED, "The block is created.");
     stateMachineBuilder.addState(State.MOVING, "The block is moving.");
     stateMachineBuilder.addState(State.COMMITTED, "The block has been committed.");
     stateMachineBuilder.addState(State.LOST, "Block lost.");
 
     // Add transitions
-    stateMachineBuilder.addTransition(State.CREATED, State.COMMITTED, "Committed as soon as created");
-    stateMachineBuilder.addTransition(State.CREATED, State.MOVING, "Block moving");
+    stateMachineBuilder.addTransition(State.TOBECREATED, State.COMMITTED, "Committed as soon as created");
+    stateMachineBuilder.addTransition(State.TOBECREATED, State.MOVING, "Block moving");
     stateMachineBuilder.addTransition(State.MOVING, State.COMMITTED, "Successfully moved and committed");
     stateMachineBuilder.addTransition(State.MOVING, State.LOST, "Lost before committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
@@ -46,7 +46,7 @@ public final class BlockState {
     stateMachineBuilder.addTransition(State.COMMITTED, State.MOVING,
         "(WARNING) Possible race condition: receiver may have reached us before the sender, or there's sth wrong");
 
-    stateMachineBuilder.setInitialState(State.CREATED);
+    stateMachineBuilder.setInitialState(State.TOBECREATED);
 
     return stateMachineBuilder.build();
   }
@@ -59,7 +59,7 @@ public final class BlockState {
    * BlockState.
    */
   public enum State {
-    CREATED,
+    TOBECREATED,
     MOVING,
     COMMITTED,
     LOST
