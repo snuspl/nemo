@@ -158,10 +158,10 @@ public final class LoopVertex extends IRVertex {
     this.maxNumberOfIterations = maxNum;
   }
   public void increaseMaxNumberOfIterations() {
-    this.maxNumberOfIterations ++;
+    this.maxNumberOfIterations++;
   }
   private void decreaseMaxNumberOfIterations() {
-    this.maxNumberOfIterations --;
+    this.maxNumberOfIterations--;
   }
 
   public void setTerminationCondition(final IntPredicate terminationCondition) {
