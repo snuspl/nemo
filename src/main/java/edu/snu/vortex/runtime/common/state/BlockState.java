@@ -24,10 +24,10 @@ public final class BlockState {
   private final StateMachine stateMachine;
 
   public BlockState() {
-    stateMachine = buildTaskGroupStateMachine();
+    stateMachine = buildBlockStateMachine();
   }
 
-  private StateMachine buildTaskGroupStateMachine() {
+  private StateMachine buildBlockStateMachine() {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states

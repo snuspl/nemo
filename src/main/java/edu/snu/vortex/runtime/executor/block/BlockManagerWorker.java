@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,16 @@ import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * Executor-side block manager.
+ * For now, all its operations are synchronized to guarantee thread safety.
  */
+@ThreadSafe
 public final class BlockManagerWorker {
   private final String workerId;
 
@@ -52,13 +55,17 @@ public final class BlockManagerWorker {
 
   /**
    * Store block somewhere.
+   * Invariant: This should be invoked only once per blockId.
    * @param blockId of the block
    * @param data of the block
    * @param blockStore for storing the block
    */
-  public void putBlock(final String blockId,
-                       final Iterable<Element> data,
-                       final RuntimeAttribute blockStore) {
+  public synchronized void putBlock(final String blockId,
+                                    final Iterable<Element> data,
+                                    final RuntimeAttribute blockStore) {
+    if (idOfBlocksStoredInThisWorker.contains(blockId)) {
+      throw new RuntimeException("Trying to put an already existing block");
+    }
     final BlockStore store = getBlockStore(blockStore);
     store.putBlock(blockId, data);
     idOfBlocksStoredInThisWorker.add(blockId);
@@ -67,11 +74,13 @@ public final class BlockManagerWorker {
 
   /**
    * Get the stored block.
+   * Unlike putBlock, this can be invoked multiple times per blockId (maybe due to failures).
+   * Here, we first check if we have the block here, and then try to fetch the block from a remote worker.
    * @param blockId of the block
    * @param blockStore for the data storage
    * @return the block data
    */
-  public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute blockStore) {
+  public synchronized Iterable<Element> getBlock(final String blockId, final RuntimeAttribute blockStore) {
     if (idOfBlocksStoredInThisWorker.contains(blockId)) {
       // Local hit!
       final BlockStore store = getBlockStore(blockStore);
@@ -85,6 +94,8 @@ public final class BlockManagerWorker {
       }
     } else {
       // We don't have the block here... let's see if a remote worker has it
+      // This part should be replaced with an RPC.
+      // TODO #44: Import REEF
       final Optional<BlockManagerWorker> optionalWorker = blockManagerMaster.getBlockLocation(blockId);
       if (optionalWorker.isPresent()) {
         final BlockManagerWorker remoteWorker = optionalWorker.get();
@@ -106,14 +117,16 @@ public final class BlockManagerWorker {
 
   /**
    * Get block request from a remote worker.
+   * Should be replaced with an RPC.
+   * TODO #44: Import REEF
    * @param requestingWorkerId of the requestor
    * @param blockId to get
    * @param blockStore for the block
    * @return block data
    */
-  public Optional<Iterable<Element>> getBlockRemotely(final String requestingWorkerId,
-                                                      final String blockId,
-                                                      final RuntimeAttribute blockStore) {
+  public synchronized Optional<Iterable<Element>> getBlockRemotely(final String requestingWorkerId,
+                                                                   final String blockId,
+                                                                   final RuntimeAttribute blockStore) {
     final BlockStore store = getBlockStore(blockStore);
     return store.getBlock(blockId);
   }
@@ -123,12 +136,16 @@ public final class BlockManagerWorker {
       case Local:
         return localStore;
       case Memory:
+        // TODO #181: Implement MemoryBlockStore
         throw new UnsupportedOperationException(blockStore.toString());
       case File:
+        // TODO #69: Implement file channel in Runtime
         throw new UnsupportedOperationException(blockStore.toString());
       case MemoryFile:
+        // TODO #69: Implement file channel in Runtime
         throw new UnsupportedOperationException(blockStore.toString());
       case DistributedStorage:
+        // TODO #180: Implement DistributedStorageStore
         throw new UnsupportedOperationException(blockStore.toString());
       default:
         throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));

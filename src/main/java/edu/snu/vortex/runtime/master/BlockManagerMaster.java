@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 /**
  * Matser-side block manager.
+ * For now, all its operations are synchronized to guarantee thread safety.
  */
 @ThreadSafe
 public final class BlockManagerMaster {
