@@ -33,7 +33,7 @@ public enum RuntimeAttribute {
 
 
   /**
-   * Data placement attributes.
+   * Block placement attributes.
    * Local: The intermediate data is placed without serialization
    * and the receiver on the same machine task will take the data.
    *
@@ -52,11 +52,11 @@ public enum RuntimeAttribute {
    * DistributedStorage: The intermediate data is serialized and stored in a distributed storage,
    * until it is taken by the receiver task.
    */
-  Local(Key.Storage),
-  Memory(Key.Storage),
-  File(Key.Storage),
-  MemoryFile(Key.Storage),
-  DistributedStorage(Key.Storage),
+  Local(Key.BlockPlacement),
+  Memory(Key.BlockPlacement),
+  File(Key.BlockPlacement),
+  MemoryFile(Key.BlockPlacement),
+  DistributedStorage(Key.BlockPlacement),
 
   /**
    * Data transfer policy attributes.
@@ -97,7 +97,7 @@ public enum RuntimeAttribute {
    */
   public enum Key {
     ResourceType,
-    Storage,
+    BlockPlacement,
     PullOrPush,
     Partition,
     SideInput,

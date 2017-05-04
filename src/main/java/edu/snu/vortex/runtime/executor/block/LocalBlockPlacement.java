@@ -7,10 +7,10 @@ import java.util.HashMap;
 /**
  * Store data in local memory, unserialized.
  */
-public final class LocalBlockStorage implements BlockStorage {
+public final class LocalBlockPlacement implements BlockPlacement {
   private final HashMap<String, Iterable<Element>> blockIdToData;
 
-  public LocalBlockStorage() {
+  public LocalBlockPlacement() {
     this.blockIdToData = new HashMap<>();
   }
 

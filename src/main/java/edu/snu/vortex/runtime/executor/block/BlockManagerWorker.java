@@ -9,14 +9,22 @@ import edu.snu.vortex.runtime.master.BlockManagerMaster;
  * Executor-side block manager.
  */
 public final class BlockManagerWorker {
+  private final String executorId;
+
   private final BlockManagerMaster blockManagerMaster;
 
-  private final LocalBlockStorage localBlockManager;
+  private final LocalBlockPlacement localBlockManager;
 
-  public BlockManagerWorker(final BlockManagerMaster blockManagerMaster,
-                            final LocalBlockStorage localBlockManager) {
+  public BlockManagerWorker(final String executorId,
+                            final BlockManagerMaster blockManagerMaster,
+                            final LocalBlockPlacement localBlockManager) {
+    this.executorId = executorId;
     this.blockManagerMaster = blockManagerMaster;
     this.localBlockManager = localBlockManager;
+  }
+
+  public String getExecutorId() {
+    return executorId;
   }
 
   /**
@@ -28,8 +36,11 @@ public final class BlockManagerWorker {
   public void putBlock(final String blockId,
                        final Iterable<Element> data,
                        final RuntimeAttribute dataPlacementAttribute) {
-    final BlockStorage blockStorage = getStorage(dataPlacementAttribute);
-    blockStorage.putBlock(blockId, data);
+    final BlockPlacement blockPlacement = getStorage(dataPlacementAttribute);
+    blockPlacement.putBlock(blockId, data);
+
+    // TODO: if local, don't notify / else, notify
+    blockManagerMaster.onBlockCommitted(executorId, blockId);
   }
 
   /**
@@ -39,8 +50,8 @@ public final class BlockManagerWorker {
    * @return the block data
    */
   public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute dataPlacementAttribute) {
-    final BlockStorage blockStorage = getStorage(dataPlacementAttribute);
-    return blockStorage.getBlock(blockId);
+    final BlockPlacement blockPlacement = getStorage(dataPlacementAttribute);
+    return blockPlacement.getBlock(blockId);
   }
 
   /**
@@ -48,7 +59,9 @@ public final class BlockManagerWorker {
    * @param blockId id of the block to send
    * @param data of the block
    */
-  private void sendBlock(final String blockId, final Iterable<Element> data) {
+  private void sendBlock(final String blockId,
+                         final Iterable<Element> data,
+                         final RuntimeAttribute dataPlacementAttribute) {
   }
 
   /**
@@ -56,14 +69,13 @@ public final class BlockManagerWorker {
    * @param blockId id of the sent block
    * @param data of the block
    */
-  public void onBlockReceived(final String blockId, final Iterable<Element> data) {
-    // Step 1: Write the block to an appropriate storage
-
-    // Step 2: Notify the master
-    blockManagerMaster.onBlockCommitted(blockId);
+  public void onBlockReceived(final String blockId,
+                              final Iterable<Element> data,
+                              final RuntimeAttribute dataPlacementAttribute) {
+    putBlock(blockId, data, dataPlacementAttribute);
   }
 
-  private BlockStorage getStorage(final RuntimeAttribute dataPlacementAttribute) {
+  private BlockPlacement getStorage(final RuntimeAttribute dataPlacementAttribute) {
     switch (dataPlacementAttribute) {
       case Local:
         return localBlockManager;

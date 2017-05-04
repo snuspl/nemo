@@ -18,9 +18,9 @@ package edu.snu.vortex.runtime.executor.block;
 import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * Interface for block manager.
+ * Interface for block placement.
  */
-public interface BlockStorage {
+public interface BlockPlacement {
   /**
    * Retrieves a block.
    * @param blockId of the block

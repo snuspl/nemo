@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common.state;
 import edu.snu.vortex.utils.StateMachine;
 
 /**
- * Represents the states of a sub-block(a part of a task output).
+ * Represents the states of a sub-block(a partition of a task output).
  */
 public final class SubBlockState {
   private final StateMachine stateMachine;
@@ -31,13 +31,16 @@ public final class SubBlockState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.CREATED, "The sub-block has been created.");
+    stateMachineBuilder.addState(State.CREATED, "The sub-block is created.");
+    stateMachineBuilder.addState(State.MOVING, "The sub-block is moving.");
     stateMachineBuilder.addState(State.COMMITTED, "The sub-block has been committed.");
     stateMachineBuilder.addState(State.LOST, "Sub-block lost.");
 
     // Add transitions
-    stateMachineBuilder.addTransition(State.CREATED, State.COMMITTED, "Successfully committed");
-    stateMachineBuilder.addTransition(State.CREATED, State.LOST, "Lost before committed");
+    stateMachineBuilder.addTransition(State.CREATED, State.COMMITTED, "Committed as soon as created");
+    stateMachineBuilder.addTransition(State.CREATED, State.MOVING, "Sub-block moving");
+    stateMachineBuilder.addTransition(State.MOVING, State.COMMITTED, "Successfully moved and committed");
+    stateMachineBuilder.addTransition(State.MOVING, State.LOST, "Lost before committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
 
     stateMachineBuilder.setInitialState(State.CREATED);
@@ -54,6 +57,7 @@ public final class SubBlockState {
    */
   public enum State {
     CREATED,
+    MOVING,
     COMMITTED,
     LOST
   }
