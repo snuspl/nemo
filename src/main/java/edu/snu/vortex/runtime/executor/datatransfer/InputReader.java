@@ -76,7 +76,7 @@ public final class InputReader extends DataTransfer {
 
   private Iterable<Element> readOneToOne() {
     final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, dstTaskIndex);
-    return blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+    return blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
   }
 
   private Iterable<Element> readBroadcast() {
@@ -87,7 +87,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx);
       final Iterable<Element> dataFromATask =
-          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
@@ -101,7 +101,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx, dstTaskIndex);
       final Iterable<Element> dataFromATask =
-          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

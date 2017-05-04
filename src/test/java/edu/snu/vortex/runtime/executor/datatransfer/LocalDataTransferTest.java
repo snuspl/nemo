@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
-import edu.snu.vortex.runtime.executor.block.LocalBlockPlacement;
+import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public final class LocalDataTransferTest {
   @Before
   public void setUp() {
     this.master = new BlockManagerMaster();
-    this.worker = new BlockManagerWorker(master, new LocalBlockPlacement());
+    this.worker = new BlockManagerWorker(master, new LocalStore());
   }
 
   @Test
@@ -60,7 +60,7 @@ public final class LocalDataTransferTest {
     final RuntimeAttributeMap edgeAttributes = new RuntimeAttributeMap();
     edgeAttributes.put(RuntimeAttribute.Key.CommPattern, RuntimeAttribute.OneToOne);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
-    edgeAttributes.put(RuntimeAttribute.Key.BlockPlacement, RuntimeAttribute.Local);
+    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, RuntimeAttribute.Local);
 
     // Write
     final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, worker);

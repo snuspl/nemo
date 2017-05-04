@@ -14,14 +14,14 @@ public final class BlockManagerWorker {
 
   private final BlockManagerMaster blockManagerMaster;
 
-  private final LocalBlockPlacement localBlockManager;
+  private final LocalStore localStore;
 
   public BlockManagerWorker(final String workerId,
                             final BlockManagerMaster blockManagerMaster,
-                            final LocalBlockPlacement localBlockManager) {
+                            final LocalStore localStore) {
     this.workerId = workerId;
     this.blockManagerMaster = blockManagerMaster;
-    this.localBlockManager = localBlockManager;
+    this.localStore = localStore;
   }
 
   public String getWorkerId() {
@@ -32,13 +32,13 @@ public final class BlockManagerWorker {
    * Store block somewhere.
    * @param blockId of the block
    * @param data of the block
-   * @param dataPlacementAttribute for storing the block
+   * @param blockStore for storing the block
    */
   public void putBlock(final String blockId,
                        final Iterable<Element> data,
-                       final RuntimeAttribute dataPlacementAttribute) {
-    final BlockPlacement blockPlacement = getStorage(dataPlacementAttribute);
-    blockPlacement.putBlock(blockId, data);
+                       final RuntimeAttribute blockStore) {
+    final BlockStore store = getStorage(blockStore);
+    store.putBlock(blockId, data);
 
     // TODO: if local, don't notify / else, notify
     blockManagerMaster.onBlockStateChanged(workerId, blockId, BlockState.State.COMMITTED);
@@ -47,12 +47,13 @@ public final class BlockManagerWorker {
   /**
    * Get the stored block.
    * @param blockId of the block
-   * @param dataPlacementAttribute for the data storage
+   * @param blockStore for the data storage
    * @return the block data
    */
-  public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute dataPlacementAttribute) {
-    final BlockPlacement blockPlacement = getStorage(dataPlacementAttribute);
-    return blockPlacement.getBlock(blockId);
+  public Iterable<Element> getBlock(final String blockId, final RuntimeAttribute blockStore) {
+    // TODO: handle remote get
+    final BlockStore store = getStorage(blockStore);
+    return store.getBlock(blockId);
   }
 
   /**
@@ -62,7 +63,7 @@ public final class BlockManagerWorker {
    */
   private void sendBlock(final String blockId,
                          final Iterable<Element> data,
-                         final RuntimeAttribute dataPlacementAttribute) {
+                         final RuntimeAttribute blockStore) {
   }
 
   /**
@@ -72,24 +73,24 @@ public final class BlockManagerWorker {
    */
   public void onBlockReceived(final String blockId,
                               final Iterable<Element> data,
-                              final RuntimeAttribute dataPlacementAttribute) {
-    putBlock(blockId, data, dataPlacementAttribute);
+                              final RuntimeAttribute blockStore) {
+    putBlock(blockId, data, blockStore);
   }
 
-  private BlockPlacement getStorage(final RuntimeAttribute dataPlacementAttribute) {
-    switch (dataPlacementAttribute) {
+  private BlockStore getStorage(final RuntimeAttribute blockStore) {
+    switch (blockStore) {
       case Local:
-        return localBlockManager;
+        return localStore;
       case Memory:
-        throw new UnsupportedOperationException(dataPlacementAttribute.toString());
+        throw new UnsupportedOperationException(blockStore.toString());
       case File:
-        throw new UnsupportedOperationException(dataPlacementAttribute.toString());
+        throw new UnsupportedOperationException(blockStore.toString());
       case MemoryFile:
-        throw new UnsupportedOperationException(dataPlacementAttribute.toString());
+        throw new UnsupportedOperationException(blockStore.toString());
       case DistributedStorage:
-        throw new UnsupportedOperationException(dataPlacementAttribute.toString());
+        throw new UnsupportedOperationException(blockStore.toString());
       default:
-        throw new UnsupportedDataPlacementException(new Exception(dataPlacementAttribute + " is not supported."));
+        throw new UnsupportedDataPlacementException(new Exception(blockStore + " is not supported."));
     }
   }
 }

@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
-import edu.snu.vortex.runtime.executor.block.LocalBlockPlacement;
+import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,16 +35,38 @@ import static org.junit.Assert.assertTrue;
  */
 public final class RemoteDataTransferTest {
   private BlockManagerMaster master;
-  private BlockManagerWorker worker;
+  private BlockManagerWorker worker1;
+  private BlockManagerWorker worker2;
 
   @Before
   public void setUp() {
     this.master = new BlockManagerMaster();
-    this.worker = new BlockManagerWorker(master, new LocalBlockPlacement());
+    this.worker1 = new BlockManagerWorker("worker1", master, new LocalStore());
+    this.worker2 = new BlockManagerWorker("worker2", master, new LocalStore());
+    this.master.addNewWorker(worker1);
+    this.master.addNewWorker(worker2);
   }
 
   @Test
-  public void testOneToOne() {
+  public void testOneToOneSameWorker() {
+    testOneToOne(worker1, worker1);
+  }
+
+  @Test
+  public void testOneToOneDifferentWorker() {
+    testOneToOne(worker1, worker2);
+  }
+
+  @Test
+  public void testOneToMany() {
+  }
+
+  @Test
+  public void testManyToMany() {
+  }
+
+  private void testOneToOne(final BlockManagerWorker sender,
+                            final BlockManagerWorker receiver) {
     // Src setup
     final int srcTaskIndex = 0;
     final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
@@ -59,10 +81,10 @@ public final class RemoteDataTransferTest {
     final RuntimeAttributeMap edgeAttributes = new RuntimeAttributeMap();
     edgeAttributes.put(RuntimeAttribute.Key.CommPattern, RuntimeAttribute.OneToOne);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
-    edgeAttributes.put(RuntimeAttribute.Key.BlockPlacement, RuntimeAttribute.Local);
+    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, RuntimeAttribute.Local);
 
-    // Write
-    final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, worker);
+    // Write from worker1
+    final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, sender);
     final List<Element> dataWritten = new ArrayList<>();
     dataWritten.add(new BeamElement<>(1));
     dataWritten.add(new BeamElement<>(2));
@@ -70,21 +92,13 @@ public final class RemoteDataTransferTest {
     dataWritten.add(new BeamElement<>(4));
     writer.write(dataWritten);
 
-    // Read
-    final InputReader reader = new InputReader(edgeId, dstTaskIndex, srcVertexAttributes, edgeAttributes, worker);
+    // Read from worker2
+    final InputReader reader = new InputReader(edgeId, dstTaskIndex, srcVertexAttributes, edgeAttributes, receiver);
     final List<Element> dataRead = new ArrayList<>();
     reader.read().forEach(dataRead::add);
 
     // Compare (should be the same)
     assertTrue(dataWritten.equals(dataRead));
-  }
-
-  @Test
-  public void testOneToMany() {
-  }
-
-  @Test
-  public void testManyToMany() {
   }
 
 }

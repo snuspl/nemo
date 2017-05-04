@@ -80,12 +80,12 @@ public final class OutputWriter extends DataTransfer {
 
   private void writeOneToOne(final Iterable<Element> dataToWrite) {
     final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex);
-    blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+    blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite) {
     final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex);
-    blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+    blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
   }
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) {
@@ -109,7 +109,7 @@ public final class OutputWriter extends DataTransfer {
         final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex, partitionIdx);
         blockManagerWorker.putBlock(blockId,
             partitionedOutputList.get(partitionIdx),
-            edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+            edgeAttributes.get(RuntimeAttribute.Key.BlockStore));
       });
       break;
     case Range:

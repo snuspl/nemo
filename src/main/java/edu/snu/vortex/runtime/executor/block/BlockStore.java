@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 /**
  * Interface for block placement.
  */
-public interface BlockPlacement {
+public interface BlockStore {
   /**
    * Retrieves a block.
    * @param blockId of the block
