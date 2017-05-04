@@ -1,5 +1,6 @@
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.common.state.SubBlockState;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
@@ -40,6 +41,7 @@ public final class BlockManagerMaster {
   }
 
   public synchronized Optional<BlockManagerWorker> getBlockLocation(final String blockId) {
+
     final String executorId = blockIdToExecutorId.get(blockId);
     if (executorId == null) {
       return Optional.empty();
@@ -51,10 +53,20 @@ public final class BlockManagerMaster {
   public synchronized void onBlockStateChanged(final String executorId,
                                                final String blockId,
                                                final BlockState.State newState) {
-    final StateMachine sm = blockIdToState.get(blockId).getStateMachine();
-    final Enum oldState = sm.getCurrentState();
-    LOG.log(Level.FINE, "Block State Transition: id {0} from {1} to {2}", new Object[]{blockId, oldState, newState});
+    if (RuntimeIdGenerator.isSubBlock(blockId)) {
+      onSubBlockStateChanged(executorId, blockId, newState);
+    } else {
+      onWholeBlockStateChanged(executorId, blockId, newState);
+    }
+  }
 
+  private void onSubBlockStateChanged(final String executorId,
+                                      final String subBlockId,
+                                      final BlockState.State newState) {
+    final StateMachine sm = subBlockIdToState.get(subBlockId).getStateMachine();
+    final Enum oldState = sm.getCurrentState();
+    LOG.log(Level.FINE, "Sub-Block State Transition: id {0} from {1} to {2}",
+        new Object[]{subBlockId, oldState, newState});
     sm.setState(newState);
 
     switch (newState) {
@@ -63,12 +75,41 @@ public final class BlockManagerMaster {
           LOG.log(Level.WARNING, "Transition from committed to moving: " +
               "reset to commited since receiver probably reached us before the sender");
           sm.setState(BlockState.State.COMMITTED);
+        } else {
+          blockIdToExecutorId.put(subBlockId, executorId);
         }
-        // TODO move the block across the executors
         break;
       case COMMITTED:
+        blockIdToExecutorId.put(subBlockId, executorId); // overwritten in case of moving->committed
         // TODO: check for subblock
-        blockIdToExecutorId.put(blockId, executorId);
+        break;
+      case LOST:
+        throw new UnsupportedOperationException(newState.toString());
+      default:
+        throw new UnsupportedOperationException(newState.toString());
+    }
+  }
+
+  private void onWholeBlockStateChanged(final String executorId,
+                                        final String blockId,
+                                        final BlockState.State newState) {
+    final StateMachine sm = blockIdToState.get(blockId).getStateMachine();
+    final Enum oldState = sm.getCurrentState();
+    LOG.log(Level.FINE, "Block State Transition: id {0} from {1} to {2}", new Object[]{blockId, oldState, newState});
+    sm.setState(newState);
+
+    switch (newState) {
+      case MOVING:
+        if (oldState == BlockState.State.COMMITTED) {
+          LOG.log(Level.WARNING, "Transition from committed to moving: " +
+              "reset to commited since receiver probably reached us before the sender");
+          sm.setState(BlockState.State.COMMITTED);
+        } else {
+          blockIdToExecutorId.put(blockId, executorId);
+        }
+        break;
+      case COMMITTED:
+        blockIdToExecutorId.put(blockId, executorId); // overwritten in case of moving->committed
         break;
       case LOST:
         throw new UnsupportedOperationException(newState.toString());

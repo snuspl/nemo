@@ -93,6 +93,14 @@ public final class RuntimeIdGenerator {
   }
 
   public static String generateSubBlockId(final String blockId, final int index) {
-    return blockId + "-" + index;
+    return blockId + "-sub-" + index;
+  }
+
+  public static String generateBlockIdFromSubBlockId(final String subBlockId) {
+    return subBlockId.substring(0, subBlockId.lastIndexOf('-'));
+  }
+
+  public static boolean isSubBlock(final String id) {
+    return id.contains("-sub-");
   }
 }
