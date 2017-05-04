@@ -16,16 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * SchedulingException.
- * Thrown when any exception occurs while trying to schedule
- * a {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to an executor.
+ * UnsupportedCommPatternException.
+ * Thrown when the intermediate data communication pattern is not supported in Runtime.
  */
-public final class SchedulingException extends RuntimeException {
+public final class UnsupportedCommPatternException extends RuntimeException {
   /**
-   * SchedulingException.
-   * @param exception exception
+   * UnsupportedCommPatternException.
+   * @param cause cause
    */
-  public SchedulingException(final Throwable exception) {
-    super(exception);
+  public UnsupportedCommPatternException(final Throwable cause) {
+    super(cause);
   }
 }

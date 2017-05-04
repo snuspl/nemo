@@ -16,16 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * SchedulingException.
- * Thrown when any exception occurs while trying to schedule
- * a {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to an executor.
+ * UnsupportedPartitionerException.
+ * Thrown when the intermediate data partitioning method is not supported in Runtime.
  */
-public final class SchedulingException extends RuntimeException {
+public final class UnsupportedPartitionerException extends RuntimeException {
   /**
-   * SchedulingException.
-   * @param exception exception
+   * UnsupportedPartitionerException.
+   * @param cause cause
    */
-  public SchedulingException(final Throwable exception) {
-    super(exception);
+  public UnsupportedPartitionerException(final Throwable cause) {
+    super(cause);
   }
 }

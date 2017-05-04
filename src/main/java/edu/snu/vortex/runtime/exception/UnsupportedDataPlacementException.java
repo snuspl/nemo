@@ -16,16 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * SchedulingException.
- * Thrown when any exception occurs while trying to schedule
- * a {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to an executor.
+ * UnsupportedDataPlacementException.
+ * Thrown when the data placement method is undefined in Runtime.
  */
-public final class SchedulingException extends RuntimeException {
+public final class UnsupportedDataPlacementException extends RuntimeException {
   /**
-   * SchedulingException.
-   * @param exception exception
+   * UnsupportedDataPlacementException.
+   * @param cause cause
    */
-  public SchedulingException(final Throwable exception) {
-    super(exception);
+  public UnsupportedDataPlacementException(final Throwable cause) {
+    super(cause);
   }
 }

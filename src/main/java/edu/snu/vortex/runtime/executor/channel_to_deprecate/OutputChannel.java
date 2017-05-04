@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.runtime.executor.channel_to_deprecate;
+
+import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * SchedulingException.
- * Thrown when any exception occurs while trying to schedule
- * a {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to an executor.
+ * Output channel interface.
  */
-public final class SchedulingException extends RuntimeException {
+public interface OutputChannel extends Channel {
+
   /**
-   * SchedulingException.
-   * @param exception exception
+   * write data to the channel.
+   * @param data An iterable for elements to be written.
    */
-  public SchedulingException(final Throwable exception) {
-    super(exception);
-  }
+  void write(Iterable<Element> data);
+
+  /**
+   * transfer all internally buffered data to the respective {@link InputChannel} immediately.
+   */
+  void flush();
 }

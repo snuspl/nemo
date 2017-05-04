@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Seoul National University
+ * Copyright (C) 2016 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.runtime.executor.datatransfer;
 
 /**
- * SchedulingException.
- * Thrown when any exception occurs while trying to schedule
- * a {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to an executor.
+ * Tests {@link InputReader} and {@link OutputWriter}.
  */
-public final class SchedulingException extends RuntimeException {
-  /**
-   * SchedulingException.
-   * @param exception exception
-   */
-  public SchedulingException(final Throwable exception) {
-    super(exception);
-  }
+public final class LocalDataTransferTest {
+
 }
