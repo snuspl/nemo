@@ -88,19 +88,24 @@ public final class RuntimeIdGenerator {
     return "TaskGroup-" + taskGroupIdGenerator.getAndIncrement();
   }
 
-  public static String generateBlockId(final String runtimeEdgeId, final int index) {
-    return "Block-" + runtimeEdgeId + "-" + index;
+  /**
+   * Generates the ID for a whole block.
+   * @param runtimeEdgeId of the block
+   * @param taskIndex of the block
+   * @return the generated ID
+   */
+  public static String generateBlockId(final String runtimeEdgeId, final int taskIndex) {
+    return "Block-" + runtimeEdgeId + "-" + taskIndex;
   }
 
-  public static String generateSubBlockId(final String blockId, final int index) {
-    return blockId + "-sub-" + index;
-  }
-
-  public static String generateBlockIdFromSubBlockId(final String subBlockId) {
-    return subBlockId.substring(0, subBlockId.lastIndexOf('-'));
-  }
-
-  public static boolean isSubBlock(final String id) {
-    return id.contains("-sub-");
+  /**
+   * Generates the ID for a sub-block.
+   * @param runtimeEdgeId of the block
+   * @param taskIndex of the block
+   * @param partitionIndex of the block
+   * @return the generated ID
+   */
+  public static String generateBlockId(final String runtimeEdgeId, final int taskIndex, final int partitionIndex) {
+    return generateBlockId(runtimeEdgeId, taskIndex) + "-" + partitionIndex;
   }
 }

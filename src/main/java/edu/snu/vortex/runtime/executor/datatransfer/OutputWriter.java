@@ -42,11 +42,8 @@ public final class OutputWriter extends DataTransfer {
    */
   private final BlockManagerWorker blockManagerWorker;
 
-  /**
-   * Block id of this output.
-   * For communication patterns that 'partitions' the block, this is used to generate each sub-block id.
-   */
-  private final String blockId;
+  private final String edgeId;
+  private final int srcTaskindex;
 
   public OutputWriter(final String edgeId,
                       final int srcTaskIndex,
@@ -57,7 +54,8 @@ public final class OutputWriter extends DataTransfer {
     this.edgeAttributes = edgeAttributes;
     this.dstVertexAttributes = dstVertexAttributes;
     this.blockManagerWorker = blockManagerWorker;
-    this.blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
+    this.edgeId = edgeId;
+    this.srcTaskindex = srcTaskIndex;
   }
 
   /**
@@ -81,10 +79,12 @@ public final class OutputWriter extends DataTransfer {
   }
 
   private void writeOneToOne(final Iterable<Element> dataToWrite) {
+    final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex);
     blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite) {
+    final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex);
     blockManagerWorker.putBlock(blockId, dataToWrite, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
   }
 
@@ -105,9 +105,9 @@ public final class OutputWriter extends DataTransfer {
 
       // Then write each partition appropriately to the target data placement.
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> {
-        // Give each partition its own 'subBlockId'
-        final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, partitionIdx);
-        blockManagerWorker.putBlock(subBlockId,
+        // Give each partition its own block id
+        final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskindex, partitionIdx);
+        blockManagerWorker.putBlock(blockId,
             partitionedOutputList.get(partitionIdx),
             edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
       });

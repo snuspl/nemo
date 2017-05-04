@@ -99,10 +99,9 @@ public final class InputReader extends DataTransfer {
     final List<Element> concatStreamBase = new ArrayList<>();
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx);
-      final String subBlockId = RuntimeIdGenerator.generateSubBlockId(blockId, dstTaskIndex);
+      final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIdx, dstTaskIndex);
       final Iterable<Element> dataFromATask =
-          blockManagerWorker.getBlock(subBlockId, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
+          blockManagerWorker.getBlock(blockId, edgeAttributes.get(RuntimeAttribute.Key.BlockPlacement));
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

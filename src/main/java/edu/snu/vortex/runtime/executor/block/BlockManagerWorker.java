@@ -2,6 +2,7 @@ package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.exception.UnsupportedDataPlacementException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 
@@ -9,22 +10,22 @@ import edu.snu.vortex.runtime.master.BlockManagerMaster;
  * Executor-side block manager.
  */
 public final class BlockManagerWorker {
-  private final String executorId;
+  private final String workerId;
 
   private final BlockManagerMaster blockManagerMaster;
 
   private final LocalBlockPlacement localBlockManager;
 
-  public BlockManagerWorker(final String executorId,
+  public BlockManagerWorker(final String workerId,
                             final BlockManagerMaster blockManagerMaster,
                             final LocalBlockPlacement localBlockManager) {
-    this.executorId = executorId;
+    this.workerId = workerId;
     this.blockManagerMaster = blockManagerMaster;
     this.localBlockManager = localBlockManager;
   }
 
-  public String getExecutorId() {
-    return executorId;
+  public String getWorkerId() {
+    return workerId;
   }
 
   /**
@@ -40,7 +41,7 @@ public final class BlockManagerWorker {
     blockPlacement.putBlock(blockId, data);
 
     // TODO: if local, don't notify / else, notify
-    blockManagerMaster.onBlockCommitted(executorId, blockId);
+    blockManagerMaster.onBlockStateChanged(workerId, blockId, BlockState.State.COMMITTED);
   }
 
   /**
