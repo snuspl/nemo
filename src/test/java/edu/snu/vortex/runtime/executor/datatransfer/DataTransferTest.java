@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,19 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
-import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import org.apache.beam.sdk.values.KV;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertTrue;
 
@@ -35,6 +39,9 @@ import static org.junit.Assert.assertTrue;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 public final class DataTransferTest {
+  private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
+  private static final int PARALLELISM_TEN = 10;
+
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
@@ -50,62 +57,101 @@ public final class DataTransferTest {
 
   @Test
   public void testOneToOneSameWorker() {
-    testOneToOne(worker1, worker1);
+    writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
   }
 
   @Test
   public void testOneToOneDifferentWorker() {
-    testOneToOne(worker1, worker2);
+    writeAndRead(worker1, worker2, RuntimeAttribute.OneToOne);
   }
 
   @Test
-  public void testOneToMany() {
+  public void testOneToManySameWorker() {
+    writeAndRead(worker1, worker1, RuntimeAttribute.Broadcast);
   }
 
   @Test
-  public void testManyToMany() {
+  public void testOneToManyDifferentWorker() {
+    writeAndRead(worker1, worker2, RuntimeAttribute.Broadcast);
   }
 
-  private void testOneToOne(final BlockManagerWorker sender,
-                            final BlockManagerWorker receiver) {
+  @Test
+  public void testManyToManySameWorker() {
+    writeAndRead(worker1, worker1, RuntimeAttribute.ScatterGather);
+  }
+
+  @Test
+  public void testManyToManyDifferentWorker() {
+    writeAndRead(worker1, worker2, RuntimeAttribute.ScatterGather);
+  }
+
+  private void writeAndRead(final BlockManagerWorker sender,
+                            final BlockManagerWorker receiver,
+                            final RuntimeAttribute commPattern) {
     // Src setup
-    final int srcTaskIndex = 0;
     final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
+    srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
 
     // Dst setup
-    final int dstTaskIndex = srcTaskIndex;
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
-    dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, 1);
+    dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
 
     // Edge setup
     final String edgeId = "Dummy";
     final RuntimeAttributeMap edgeAttributes = new RuntimeAttributeMap();
-    edgeAttributes.put(RuntimeAttribute.Key.CommPattern, RuntimeAttribute.OneToOne);
+    edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
-    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, RuntimeAttribute.Local);
+    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
 
-    // Initialize states in BlockManagerMaster
-    master.initializeState(edgeId, srcTaskIndex);
+    // Initialize states in Master
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      if (commPattern == RuntimeAttribute.ScatterGather) {
+        IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
+          master.initializeState(edgeId, srcTaskIndex, dstTaskIndex);
+        });
+      } else {
+        master.initializeState(edgeId, srcTaskIndex);
+      }
+    });
 
-    // Write from worker1
-    final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, sender);
-    final List<Element> dataWritten = new ArrayList<>();
-    dataWritten.add(new BeamElement<>(1));
-    dataWritten.add(new BeamElement<>(2));
-    dataWritten.add(new BeamElement<>(3));
-    dataWritten.add(new BeamElement<>(4));
-    writer.write(dataWritten);
+    // Write
+    final List<List<Element>> dataWrittenList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      final List<Element> dataWritten = getListOfZeroToNine();
+      final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, sender);
+      writer.write(dataWritten);
+      dataWrittenList.add(dataWritten);
+    });
 
-    // Read from worker2
-    final InputReader reader = new InputReader(edgeId, dstTaskIndex, srcVertexAttributes, edgeAttributes, receiver);
-    final List<Element> dataRead = new ArrayList<>();
-    reader.read().forEach(dataRead::add);
+    // Read
+    final List<List<Element>> dataReadList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
+      final InputReader reader = new InputReader(edgeId, dstTaskIndex, srcVertexAttributes, edgeAttributes, receiver);
+      final List<Element> dataRead = new ArrayList<>();
+      reader.read().forEach(dataRead::add);
+      dataReadList.add(dataRead);
+    });
 
     // Compare (should be the same)
-    assertTrue(dataWritten.equals(dataRead));
-
-    // Block Location
-    master.getBlockLocation(RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex));
+    final List<Element> flattenedWrittenData = flatten(dataWrittenList);
+    final List<Element> flattenedReadData = flatten(dataReadList);
+    assertTrue(doTheyHaveSomeElements(flattenedWrittenData, flattenedReadData));
   }
 
+  private List<Element> getListOfZeroToNine() {
+    final List<Element> dummy = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(number -> dummy.add(new BeamElement<>(KV.of(number, number))));
+    return dummy;
+  }
+
+  private List<Element> flatten(final List<List<Element>> listOfList) {
+    return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
+  }
+
+  private boolean doTheyHaveSomeElements(final List<Element> l, final List<Element> r) {
+    // Check equality, ignoring list order
+    final Set<Element> s1 = new HashSet<>(l);
+    final Set<Element> s2 = new HashSet<>(r);
+    return s1.equals(s2);
+  }
 }
