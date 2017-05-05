@@ -31,7 +31,7 @@ public final class BlockState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.TOBECREATED, "The block is created.");
+    stateMachineBuilder.addState(State.TOBECREATED, "The block is to be created.");
     stateMachineBuilder.addState(State.MOVING, "The block is moving.");
     stateMachineBuilder.addState(State.COMMITTED, "The block has been committed.");
     stateMachineBuilder.addState(State.LOST, "Block lost.");
