@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.utils.dag;
 
+import edu.snu.vortex.compiler.ir.IREdge;
+
 import java.util.logging.Logger;
 
 /**
@@ -45,5 +47,9 @@ public class Edge<V extends Vertex> {
   @SuppressWarnings("checkstyle:designforextension")
   public String propertiesToJSON() {
     return "{}";
+  }
+
+  public static void copyAttributes(final IREdge fromEdge, final IREdge toEdge) {
+    fromEdge.getAttributes().forEachAttr(toEdge::setAttr);
   }
 }

@@ -17,6 +17,7 @@ package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
+import edu.snu.vortex.utils.dag.Edge;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -120,6 +121,7 @@ public final class LoopVertex extends IRVertex {
       dagToAdd.getIncomingEdgesOf(irVertex).forEach(edge -> {
         final IRVertex newSrc = originalToNewIRVertex.get(edge.getSrc());
         final IREdge newIrEdge = new IREdge(edge.getType(), newSrc, newIrVertex);
+        Edge.copyAttributes(edge, newIrEdge);
         dagBuilder.connectVertices(newIrEdge);
       });
     });
@@ -127,6 +129,7 @@ public final class LoopVertex extends IRVertex {
     // process DAG incoming edges.
     getDagIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(edge -> {
       final IREdge newIrEdge = new IREdge(edge.getType(), edge.getSrc(), originalToNewIRVertex.get(dstVertex));
+      Edge.copyAttributes(edge, newIrEdge);
       dagBuilder.connectVertices(newIrEdge);
     }));
 
@@ -134,6 +137,7 @@ public final class LoopVertex extends IRVertex {
       // if termination condition met, we process the DAG outgoing edge.
       getDagOutgoingEdges().forEach((srcVertex, irEdges) -> irEdges.forEach(edge -> {
         final IREdge newIrEdge = new IREdge(edge.getType(), originalToNewIRVertex.get(srcVertex), edge.getDst());
+        Edge.copyAttributes(edge, newIrEdge);
         dagBuilder.connectVertices(newIrEdge);
       }));
     }
@@ -141,8 +145,11 @@ public final class LoopVertex extends IRVertex {
     // process next iteration's DAG incoming edges
     this.getDagIncomingEdges().clear();
     this.getNonIterativeIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(this::addDagIncomingEdge));
-    this.getIterativeIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(edge ->
-        this.addDagIncomingEdge(new IREdge(edge.getType(), originalToNewIRVertex.get(edge.getSrc()), dstVertex))));
+    this.getIterativeIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(edge -> {
+      final IREdge newIrEdge = new IREdge(edge.getType(), originalToNewIRVertex.get(edge.getSrc()), dstVertex);
+      Edge.copyAttributes(edge, newIrEdge);
+      this.addDagIncomingEdge(newIrEdge);
+    }));
 
     return this;
   }
