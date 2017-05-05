@@ -91,14 +91,16 @@ public final class Optimizer {
     POLICIES.put(PolicyType.Pado,
         Arrays.asList(
             new ParallelismPass(), // Provides parallelism information.
-            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
-            new LoopGroupingPass(), new LoopUnrollingPass()// Groups then unrolls loops. TODO #162: remove unrolling pt.
+            new LoopGroupingPass(),
+            new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
+            new PadoVertexPass(), new PadoEdgePass() // Processes vertices and edges with Pado algorithm.
         ));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(
             new ParallelismPass(), // Provides parallelism information.
-            new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
-            new LoopGroupingPass(), new LoopUnrollingPass()// Groups then unrolls loops. TODO #162: remove unrolling pt.
+            new LoopGroupingPass(),
+            new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
+            new DisaggregationPass() // Processes vertices and edges with Disaggregation algorithm.
         ));
   }
 
