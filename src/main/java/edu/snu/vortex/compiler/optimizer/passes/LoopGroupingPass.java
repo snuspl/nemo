@@ -281,6 +281,8 @@ public final class LoopGroupingPass implements Pass {
       }
     }
 
+    equivalentVerticesOfLoops.forEach(LoopVertex::setEquivalentVerticesOfLoop);
+
     return builder.build();
   }
 

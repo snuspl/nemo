@@ -52,16 +52,6 @@ public abstract class IRVertex extends Vertex implements Serializable, Cloneable
     return attributes;
   }
 
-  public final IRVertex getClone() {
-    try {
-      final IRVertex newIRVertex = (IRVertex) this.clone();
-      newIRVertex.setId(IdManager.newOperatorId());
-      return newIRVertex;
-    } catch (Exception e) {
-      throw new RuntimeException("Cannot clone IRVertex!");
-    }
-  }
-
   protected final String irVertexPropertiesToString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("\"class\": \"").append(this.getClass().getSimpleName());
