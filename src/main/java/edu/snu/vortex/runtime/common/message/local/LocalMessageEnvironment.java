@@ -14,9 +14,9 @@ public final class LocalMessageEnvironment implements MessageEnvironment {
   private final String currentNodeId;
   private final LocalMessageDispatcher dispatcher;
 
-  public LocalMessageEnvironment(final String currentNodeId, final LocalMessageDispatcher dispatcher) {
+  public LocalMessageEnvironment(final String currentNodeId) {
     this.currentNodeId = currentNodeId;
-    this.dispatcher = dispatcher;
+    this.dispatcher = new LocalMessageDispatcher();
   }
 
   @Override

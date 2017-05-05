@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
  */
 public interface MessageEnvironment {
 
-  String DRIVER_ID = "DRIVER_COMMUNICATION_ID";
+  String MASTER_COMMUNICATION_ID = "MASTER";
 
   /**
    * Set up a {@link MessageListener} with a message type id.

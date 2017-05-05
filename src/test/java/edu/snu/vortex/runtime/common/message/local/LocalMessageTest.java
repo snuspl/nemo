@@ -14,15 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LocalMessageTest {
   @Test
   public void testLocalMessages() throws Exception {
-    final LocalMessageDispatcher dispatcher = new LocalMessageDispatcher();
-
     final String driverNodeId = "DRIVER_NODE";
     final String executorOneNodeId = "EXECUTOR_ONE_NODE";
     final String executorTwoNodeId = "EXECUTOR_TWO_NODE";
 
-    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverNodeId, dispatcher);
-    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneNodeId, dispatcher);
-    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoNodeId, dispatcher);
+    final LocalMessageEnvironment driverEnv = new LocalMessageEnvironment(driverNodeId);
+    final LocalMessageEnvironment executorOneEnv = new LocalMessageEnvironment(executorOneNodeId);
+    final LocalMessageEnvironment executorTwoEnv = new LocalMessageEnvironment(executorTwoNodeId);
 
     final AtomicInteger toDriverMessageUsingSend = new AtomicInteger();
 

@@ -29,6 +29,7 @@ import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
+import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;

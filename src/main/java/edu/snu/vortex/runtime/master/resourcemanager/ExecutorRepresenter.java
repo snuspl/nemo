@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master;
+package edu.snu.vortex.runtime.master.resourcemanager;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,18 +37,23 @@ public final class ExecutorRepresenter {
   private final RuntimeAttribute resourceType;
   private final int executorCapacity;
   private final Set<String> runningTaskGroups;
+  private final MessageSender<Serializable> messageSender;
 
   public ExecutorRepresenter(final String executorId,
                              final RuntimeAttribute resourceType,
-                             final int executorCapacity) {
+                             final int executorCapacity,
+                             final MessageSender<Serializable> messageSender) {
     this.executorId = executorId;
     this.resourceType = resourceType;
     this.executorCapacity = executorCapacity;
+    this.messageSender = messageSender;
     this.runningTaskGroups = new HashSet<>();
+
   }
 
-  public void onTaskGroupScheduled(final String taskGroupId) {
-    runningTaskGroups.add(taskGroupId);
+  public void onTaskGroupScheduled(final TaskGroup taskGroup) {
+    runningTaskGroups.add(taskGroup.getTaskGroupId());
+    messageSender.send(taskGroup);
   }
 
   public void onTaskGroupExecutionComplete(final String taskGroupId) {

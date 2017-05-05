@@ -16,8 +16,16 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageContext;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.logical.*;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.exception.UnsupportedMessageException;
+import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
+import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.*;
@@ -34,7 +42,14 @@ import java.util.logging.Logger;
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
+
+  private static final int DEFAULT_NUM_EXECUTOR = 4;
+  private static final int DEFAULT_EXECUTOR_CAPACITY = 4;
+
   private final Scheduler scheduler;
+  private final ResourceManager resourceManager;
+  private final MessageEnvironment messageEnvironment;
+  private ExecutionStateManager executionStateManager;
 
   public RuntimeMaster(final RuntimeAttribute schedulerType) {
     switch (schedulerType) {
@@ -44,6 +59,8 @@ public final class RuntimeMaster {
     default:
       throw new RuntimeException("Unknown scheduler type");
     }
+    this.messageEnvironment = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID);
+    this.resourceManager = new LocalResourceManager(scheduler, messageEnvironment);
   }
 
   /**
@@ -55,6 +72,8 @@ public final class RuntimeMaster {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
       new SimpleRuntime().executePhysicalPlan(physicalPlan);
+      // to be replaced by:
+      // executionStateManager = scheduler.scheduleJob(physicalPlan);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -74,5 +93,28 @@ public final class RuntimeMaster {
         logicalDAG.convert(new PhysicalDAGGenerator()));
     physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan-physical", "physical execution plan");
     return physicalPlan;
+  }
+
+  /**
+   * Handler for messages received by Master.
+   */
+  private final class MasterCommunicator implements MessageListener<ControlMessage.Message> {
+
+    @Override
+    public void onSendMessage(final ControlMessage.Message message) {
+      switch (message.getType()) {
+      case TaskGroupStateChanged:
+        scheduler.onTaskGroupStateChanged(message.getTaskStateChangedMsg().getTaskGroupId());
+        break;
+      default:
+        throw new UnsupportedMessageException(
+            new Exception("This message type is not supported: " + message.getType()));
+      }
+      // scheduler.onTaskGroupStateChanged();
+    }
+
+    @Override
+    public void onRequestMessage(final ControlMessage.Message message, final MessageContext messageContext) {
+    }
   }
 }

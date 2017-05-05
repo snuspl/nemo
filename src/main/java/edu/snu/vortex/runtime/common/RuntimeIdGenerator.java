@@ -25,6 +25,7 @@ public final class RuntimeIdGenerator {
   private static AtomicInteger stageIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger executorIdGenerator = new AtomicInteger(1);
 
   private RuntimeIdGenerator() {
   }
@@ -86,5 +87,13 @@ public final class RuntimeIdGenerator {
    */
   public static String generateTaskGroupId() {
     return "TaskGroup-" + taskGroupIdGenerator.getAndIncrement();
+  }
+
+  /**
+   * Generates the ID for executor.
+   * @return the generated ID
+   */
+  public static String generateExecutorId() {
+    return "Executor-" + executorIdGenerator.getAndIncrement();
   }
 }

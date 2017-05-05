@@ -1,6 +1,5 @@
 package edu.snu.vortex.runtime.common.message;
 
-import java.io.Serializable;
 
 /**
  * Handles messages from {@link MessageSender}. Multiple MessageListeners can be setup using {@link MessageEnvironment}
@@ -8,7 +7,7 @@ import java.io.Serializable;
  *
  * @param <T> message type
  */
-public interface MessageListener<T extends Serializable> {
+public interface MessageListener<T> {
 
   /**
    * Called back when a message is received.
