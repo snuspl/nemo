@@ -3,7 +3,7 @@ syntax = "proto3";
 package protobuf;
 
 option java_package = "edu.snu.vortex.runtime.common.comm";
-option java_outer_classname = "ExecutorMessage";
+option java_outer_classname = "ControlMessage";
 
 enum MessageType {
     TaskGroupStateChanged = 0;

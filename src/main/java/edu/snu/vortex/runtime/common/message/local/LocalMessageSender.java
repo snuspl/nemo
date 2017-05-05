@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
  * A simple {@link MessageSender} implementation that works on a single node.
  * @param <T> a message type
  */
-final class LocalMessageSender<T extends Serializable> implements MessageSender<T> {
+final class LocalMessageSender<T> implements MessageSender<T> {
 
   private final String senderId;
   private final String targetId;

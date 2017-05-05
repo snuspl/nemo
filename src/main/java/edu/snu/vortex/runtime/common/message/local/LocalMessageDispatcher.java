@@ -21,7 +21,7 @@ final class LocalMessageDispatcher {
     this.nodeIdToMessageListenersMap = new ConcurrentHashMap<>();
   }
 
-  <T extends Serializable> MessageSender<T> setupListener(
+  <T> MessageSender<T> setupListener(
       final String currentNodeId, final String messageTypeId, final MessageListener<T> listener) {
 
     ConcurrentMap<String, MessageListener> messageTypeToListenerMap = nodeIdToMessageListenersMap.get(currentNodeId);
@@ -43,7 +43,7 @@ final class LocalMessageDispatcher {
     return new LocalMessageSender<>(currentNodeId, currentNodeId, messageTypeId, this);
   }
 
-  <T extends Serializable> void dispatchSendMessage(
+  <T> void dispatchSendMessage(
       final String targetId, final String messageTypeId, final T message) {
     final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);
     if (listener == null) {
@@ -52,7 +52,7 @@ final class LocalMessageDispatcher {
     listener.onSendMessage(message);
   }
 
-  <T extends Serializable, U extends Serializable> Future<U> dispatchRequestMessage(
+  <T, U extends Serializable> Future<U> dispatchRequestMessage(
       final String senderId, final String targetId, final String messageTypeId, final T message) {
 
     final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);

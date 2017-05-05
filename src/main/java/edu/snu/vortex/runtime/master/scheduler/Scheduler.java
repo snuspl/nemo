@@ -15,14 +15,14 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
-import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
-import edu.snu.vortex.runtime.master.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 /**
- * Defines the policy by which {@link BatchScheduler} assigns task groups to executors.
+ * Receives a job to execute and schedules {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to executors.
  */
 @DefaultImplementation(BatchScheduler.class)
 public interface Scheduler {
@@ -33,7 +33,7 @@ public interface Scheduler {
   void onExecutorRemoved(final ExecutorRepresenter executor);
 
   void onTaskGroupStateChanged(final String executorId,
-                               final ExecutorMessage.TaskGroupStateChangedMsg message);
+                               final ControlMessage.TaskGroupStateChangedMsg message);
 
   void terminate();
 }

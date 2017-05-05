@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
-import edu.snu.vortex.runtime.common.comm.ExecutorMessage;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
@@ -27,7 +27,7 @@ import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
-import edu.snu.vortex.runtime.master.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 
 import java.util.*;
 import java.util.concurrent.BlockingDeque;
@@ -112,7 +112,7 @@ public final class BatchScheduler implements Scheduler {
   }
 
   /**
-   * Receives a {@link edu.snu.vortex.runtime.common.comm.ExecutorMessage.TaskGroupStateChangedMsg} from an executor.
+   * Receives a {@link edu.snu.vortex.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
    * The message is received via communicator where this method is called.
    * @param executorId the id of the executor where the message was sent from.
    * @param message from the executor.
@@ -121,7 +121,7 @@ public final class BatchScheduler implements Scheduler {
   // TODO #94: Implement Distributed Communicator
   @Override
   public void onTaskGroupStateChanged(final String executorId,
-                                      final ExecutorMessage.TaskGroupStateChangedMsg message) {
+                                      final ControlMessage.TaskGroupStateChangedMsg message) {
     final TaskGroupState.State newState = convertState(message.getState());
     executionStateManager.onTaskGroupStateChanged(message.getTaskGroupId(), newState);
     switch (newState) {
@@ -227,7 +227,7 @@ public final class BatchScheduler implements Scheduler {
             // TODO #83: Introduce Task Group Executor
             // TODO #94: Implement Distributed Communicator
             // Must send this taskGroup to the destination executor.
-            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup.getTaskGroupId());
+            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
             executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
                 TaskGroupState.State.EXECUTING);
           }
@@ -245,7 +245,7 @@ public final class BatchScheduler implements Scheduler {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private TaskGroupState.State convertState(final ExecutorMessage.TaskGroupStateFromExecutor state) {
+  private TaskGroupState.State convertState(final ControlMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
     case READY:
       return TaskGroupState.State.READY;
