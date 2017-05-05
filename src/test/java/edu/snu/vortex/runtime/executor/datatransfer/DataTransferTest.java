@@ -135,7 +135,7 @@ public final class DataTransferTest {
     // Compare (should be the same)
     final List<Element> flattenedWrittenData = flatten(dataWrittenList);
     final List<Element> flattenedReadData = flatten(dataReadList);
-    assertTrue(doTheyHaveSomeElements(flattenedWrittenData, flattenedReadData));
+    assertTrue(doTheyHaveSameElements(flattenedWrittenData, flattenedReadData));
   }
 
   private List<Element> getListOfZeroToNine() {
@@ -148,7 +148,7 @@ public final class DataTransferTest {
     return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
   }
 
-  private boolean doTheyHaveSomeElements(final List<Element> l, final List<Element> r) {
+  private boolean doTheyHaveSameElements(final List<Element> l, final List<Element> r) {
     // Check equality, ignoring list order
     final Set<Element> s1 = new HashSet<>(l);
     final Set<Element> s2 = new HashSet<>(r);
