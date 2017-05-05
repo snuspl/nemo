@@ -106,35 +106,36 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
                                                  final Stack<LoopVertex> loopVertexStack) {
     final PTransform beamTransform = beamNode.getTransform();
     final IRVertex vortexIRVertex;
+    final LoopVertex assignedLoopVertex = loopVertexStack.empty() ? null : loopVertexStack.peek();
     if (beamTransform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) beamTransform;
       vortexIRVertex = new BoundedSourceVertex<>(read.getSource());
       builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof GroupByKey) {
-      vortexIRVertex = new OperatorVertex(new GroupByKeyTransform(), loopVertexStack);
+      vortexIRVertex = new OperatorVertex(new GroupByKeyTransform(), assignedLoopVertex, loopVertexStack.size());
       builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof View.CreatePCollectionView) {
       final View.CreatePCollectionView view = (View.CreatePCollectionView) beamTransform;
       final BroadcastTransform vortexTransform = new BroadcastTransform(view.getView());
-      vortexIRVertex = new OperatorVertex(vortexTransform, loopVertexStack);
+      vortexIRVertex = new OperatorVertex(vortexTransform, assignedLoopVertex, loopVertexStack.size());
       pValueToVertex.put(view.getView(), vortexIRVertex);
       builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
-      vortexIRVertex = new OperatorVertex(vortexTransform, loopVertexStack);
+      vortexIRVertex = new OperatorVertex(vortexTransform, assignedLoopVertex, loopVertexStack.size());
       builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Window.Assign) {
       final Window.Assign<I> window = (Window.Assign<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
-      vortexIRVertex = new OperatorVertex(vortexTransform, loopVertexStack);
+      vortexIRVertex = new OperatorVertex(vortexTransform, assignedLoopVertex, loopVertexStack.size());
       builder.addVertex(vortexIRVertex);
     } else if (beamTransform instanceof Write) {
       throw new UnsupportedOperationException(beamTransform.toString());
     } else if (beamTransform instanceof ParDo.Bound) {
       final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
       final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
-      vortexIRVertex = new OperatorVertex(vortexTransform, loopVertexStack);
+      vortexIRVertex = new OperatorVertex(vortexTransform, assignedLoopVertex, loopVertexStack.size());
       builder.addVertex(vortexIRVertex);
       parDo.getSideInputs().stream()
           .filter(pValueToVertex::containsKey)
@@ -146,7 +147,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
             builder.connectVertices(edge);
           });
     } else if (beamTransform instanceof Flatten.PCollections) {
-      vortexIRVertex = new OperatorVertex(new FlattenTransform(), loopVertexStack);
+      vortexIRVertex = new OperatorVertex(new FlattenTransform(), assignedLoopVertex, loopVertexStack.size());
       builder.addVertex(vortexIRVertex);
     } else {
       throw new UnsupportedOperationException(beamTransform.toString());

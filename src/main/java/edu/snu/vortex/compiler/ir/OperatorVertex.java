@@ -15,39 +15,39 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import java.util.Stack;
-
 /**
  * IRVertex that transforms input data.
  * It is to be constructed in the compiler frontend with language-specific data transform logic.
  */
 public final class OperatorVertex extends IRVertex {
   private final Transform transform;
-  private final Stack<LoopVertex> loopVertexStack;
+  private final LoopVertex assignedLoopVertex;
+  private final Integer stackDepth;
 
   public OperatorVertex(final Transform t) {
-    this(t, null);
+    this(t, null, 0);
   }
 
-  public OperatorVertex(final Transform t, final Stack<LoopVertex> loopVertexStack) {
+  public OperatorVertex(final Transform t, final LoopVertex assignedLoopVertex, final Integer stackDepth) {
     super();
     this.transform = t;
-    this.loopVertexStack = (Stack<LoopVertex>) loopVertexStack.clone();
-    if (!this.loopVertexStack.empty()) {
-      this.loopVertexStack.peek().getBuilder().addVertex(this);
+    this.stackDepth = stackDepth;
+    this.assignedLoopVertex = assignedLoopVertex;
+    if (this.assignedLoopVertex != null) {
+      this.assignedLoopVertex.getBuilder().addVertex(this);
     }
   }
 
   public Boolean isComposite() {
-    return !loopVertexStack.empty();
+    return assignedLoopVertex != null;
   }
 
   public LoopVertex getAssignedLoopVertex() {
-    return loopVertexStack.peek();
+    return assignedLoopVertex;
   }
 
   public Integer getLoopVertexStackDepth() {
-    return loopVertexStack.size();
+    return stackDepth;
   }
 
   public Transform getTransform() {
