@@ -21,14 +21,17 @@ import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.vortex.runtime.common.plan.logical.*;
-import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.exception.UnsupportedMessageException;
 import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
+import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
+import edu.snu.vortex.runtime.common.plan.logical.Stage;
+import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
-import edu.snu.vortex.utils.dag.*;
+import edu.snu.vortex.utils.dag.DAG;
 
 import java.util.logging.Logger;
 
