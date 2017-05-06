@@ -31,14 +31,14 @@ public final class BlockState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.TOBECREATED, "The block is to be created.");
+    stateMachineBuilder.addState(State.READY, "The block is ready to be created.");
     stateMachineBuilder.addState(State.MOVING, "The block is moving.");
     stateMachineBuilder.addState(State.COMMITTED, "The block has been committed.");
     stateMachineBuilder.addState(State.LOST, "Block lost.");
 
     // Add transitions
-    stateMachineBuilder.addTransition(State.TOBECREATED, State.COMMITTED, "Committed as soon as created");
-    stateMachineBuilder.addTransition(State.TOBECREATED, State.MOVING, "Block moving");
+    stateMachineBuilder.addTransition(State.READY, State.COMMITTED, "Committed as soon as created");
+    stateMachineBuilder.addTransition(State.READY, State.MOVING, "Block moving");
     stateMachineBuilder.addTransition(State.MOVING, State.COMMITTED, "Successfully moved and committed");
     stateMachineBuilder.addTransition(State.MOVING, State.LOST, "Lost before committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
@@ -46,7 +46,7 @@ public final class BlockState {
     stateMachineBuilder.addTransition(State.COMMITTED, State.MOVING,
         "(WARNING) Possible race condition: receiver may have reached us before the sender, or there's sth wrong");
 
-    stateMachineBuilder.setInitialState(State.TOBECREATED);
+    stateMachineBuilder.setInitialState(State.READY);
 
     return stateMachineBuilder.build();
   }
@@ -59,9 +59,22 @@ public final class BlockState {
    * BlockState.
    */
   public enum State {
-    TOBECREATED,
+    READY,
     MOVING,
     COMMITTED,
+    /**
+     * A block can be considered "lost" by BlockManagerMaster for the following reasons:
+     * 1) The executor that has the block goes down
+     * 2) Local block fetch failure (disk corruption, block evicted due to memory pressure, etc)
+     * 3) Remote block fetch failure (network partitioning, network timeout, etc)
+     *
+     * Our current BlockManager implementation does *not* properly handle the above cases.
+     * They should be handled in the future with the issue, TODO #163: Handle Fault Tolerance
+     *
+     * Moreover, we assume that all lost blocks are recoverable,
+     * meaning that we do not fail the job upon the event of a lost block.
+     * Thus, we only have a single state(LOST) that represents failure.
+     */
     LOST
   }
 
