@@ -7,12 +7,14 @@ option java_outer_classname = "ControlMessage";
 
 enum MessageType {
     TaskGroupStateChanged = 0;
+    ScheduleTaskGroup = 1;
 }
 
 message Message {
     MessageType type = 1;
     oneof messageTypes {
         TaskGroupStateChangedMsg taskStateChangedMsg = 2;
+        ScheduleTaskGroupMsg scheduleTaskGroupMsg = 3;
     }
 }
 
@@ -20,6 +22,11 @@ message TaskGroupStateChangedMsg {
     string taskGroupId = 1;
     TaskGroupStateFromExecutor state = 2;
     repeated string failedTaskIds = 3;
+}
+
+message ScheduleTaskGroupMsg {
+    string taskGroupId = 1;
+    bytes taskGroup = 2;
 }
 
 enum TaskGroupStateFromExecutor {

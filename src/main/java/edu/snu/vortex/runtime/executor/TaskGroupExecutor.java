@@ -66,13 +66,13 @@ public final class TaskGroupExecutor {
       inEdgesFromOtherStages.forEach(physicalStageEdge -> {
         final InputReader channelReader = channelFactory.createReader(
             task, physicalStageEdge.getSrcVertex(), physicalStageEdge);
-        addChannelReader(task, channelReader);
+        addInputReader(task, channelReader);
       });
 
       outEdgesToOhterStages.forEach(physicalStageEdge -> {
         final OutputWriter channelWriter = channelFactory.createWriter(
             task, physicalStageEdge.getDstVertex(), physicalStageEdge);
-        addChannelWriter(task, channelWriter);
+        addOutputWriter(task, channelWriter);
       });
 
       final Set<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
@@ -94,18 +94,18 @@ public final class TaskGroupExecutor {
 
   private void createLocalChannel(final Task task, final RuntimeEdge<Task> internalEdge) {
     final InputReader channelReader = channelFactory.createReader(task, internalEdge);
-    addChannelReader(task, channelReader);
+    addInputReader(task, channelReader);
 
     final OutputWriter channelWriter = channelFactory.createWriter(task, internalEdge);
-    addChannelWriter(task, channelWriter);
+    addOutputWriter(task, channelWriter);
   }
 
-  private void addChannelReader(final Task task, final InputReader channelReader) {
+  private void addInputReader(final Task task, final InputReader channelReader) {
     taskIdToChannelReadersMap.computeIfAbsent(task.getId(), (key) -> new ArrayList<>());
     taskIdToChannelReadersMap.get(task.getId()).add(channelReader);
   }
 
-  private void addChannelWriter(final Task task, final OutputWriter channelWriter) {
+  private void addOutputWriter(final Task task, final OutputWriter channelWriter) {
     taskIdToChannelWritersMap.computeIfAbsent(task.getId(), (key) -> new ArrayList<>());
     taskIdToChannelWritersMap.get(task.getId()).add(channelWriter);
   }
