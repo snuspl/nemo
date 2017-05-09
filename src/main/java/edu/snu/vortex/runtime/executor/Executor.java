@@ -21,7 +21,9 @@ import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.vortex.runtime.master.BlockManagerMaster;
 
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
@@ -35,12 +37,17 @@ public final class Executor {
   private final DataTransferFactory dataTransferFactory;
 
   private PhysicalPlan physicalPlan;
+  private TaskGroupStateManager taskGroupStateManager;
 
-  public Executor(final String executorId, final int numCores, final MessageEnvironment messageEnvironment) {
+  public Executor(final String executorId, final int numCores,
+                  final MessageEnvironment messageEnvironment,
+                  final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.numCores = numCores;
     this.executorService = Executors.newFixedThreadPool(numCores);
-    this.dataTransferFactory = new DataTransferFactory();
+
+    // TODO #: Check
+    this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
@@ -48,7 +55,7 @@ public final class Executor {
   }
 
   private void launchTaskGroup(final TaskGroup taskGroup) {
-    final TaskGroupStateManager taskGroupStateManager = new TaskGroupStateManager(messageSenderToDriver, taskGroup);
+    taskGroupStateManager = new TaskGroupStateManager(taskGroup);
     new TaskGroupExecutor(taskGroup,
         taskGroupStateManager,
         physicalPlan.getStageDAG().getIncomingEdgesOf(taskGroup.getStageId()),
@@ -57,12 +64,12 @@ public final class Executor {
   }
 
 
-  private final class Hello implements MessageListener<Serializable> {
+  private final class ExecutorMessageReceiver implements MessageListener<Serializable> {
 
     @Override
     public void onSendMessage(Serializable message) {
-      // TODO #: call onTaskGroupReceived()
-      // TODO #: Set physical plan
+      onTaskGroupReceived();
+      physicalPlan = message.getPhysicalPlan();
     }
 
     @Override

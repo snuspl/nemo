@@ -20,8 +20,6 @@ import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.executor.channel.ChannelReader;
-import edu.snu.vortex.runtime.executor.channel.ChannelWriter;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.executor.datatransfer.InputReader;
 import edu.snu.vortex.runtime.executor.datatransfer.OutputWriter;
@@ -72,7 +70,7 @@ public final class TaskGroupExecutor {
       });
 
       outEdgesToOhterStages.forEach(physicalStageEdge -> {
-        final ChannelWriter channelWriter = channelFactory.createWriter(
+        final OutputWriter channelWriter = channelFactory.createWriter(
             task, physicalStageEdge.getDstVertex(), physicalStageEdge);
         addChannelWriter(task, channelWriter);
       });
@@ -141,10 +139,10 @@ public final class TaskGroupExecutor {
 
     taskIdToChannelReadersMap.get(operatorTask.getId())
         .stream()
-        .filter(ChannelReader::isSideInputReader)
+        .filter(InputReader::isSideInputReader)
         .forEach(channelReader -> {
           final Object sideInput = channelReader.getSideInput();
-          // TODO #: write assumption
+          // TODO #: Assumption!
           final Transform srcTransform = ((OperatorTask)channelReader.getRuntimeEdge().getSrc()).getTransform();
           sideInputMap.put(srcTransform, sideInput);
         });
