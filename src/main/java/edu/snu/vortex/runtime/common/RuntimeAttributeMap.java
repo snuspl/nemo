@@ -53,6 +53,10 @@ public final class RuntimeAttributeMap {
     return attributes.remove(key);
   }
 
+  public boolean containsKey(final RuntimeAttribute.Key key) { return attributes.containsKey(key); }
+
+  public boolean containsKey(final RuntimeAttribute.IntegerKey key) { return intAttributes.containsKey(key); }
+
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
