@@ -26,6 +26,10 @@ import edu.snu.vortex.utils.dag.DAGBuilder;
  */
 public final class LoopUnrollingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
+    return recursivelyUnroll(dag);
+  }
+
+  private DAG<IRVertex, IREdge> recursivelyUnroll(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
     dag.topologicalDo(irVertex -> {
@@ -40,6 +44,10 @@ public final class LoopUnrollingPass implements Pass {
       }
     });
 
-    return builder.build();
+    if (builder.contains((vertex) -> vertex instanceof LoopVertex)) {
+      return recursivelyUnroll(builder.build());
+    } else {
+      return builder.build();
+    }
   }
 }

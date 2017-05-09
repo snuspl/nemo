@@ -107,8 +107,14 @@ public final class LoopVertex extends IRVertex {
     return this.dagOutgoingEdges;
   }
 
-  public void setEquivalentVerticesOfLoop(final HashMap<IRVertex, List<IRVertex>> equivalentVerticesOfLoop) {
-    equivalentVerticesOfLoop.forEach((vertex, list) -> {
+  public void setEquivalentVerticesOfLoop(final HashMap<IRVertex, IRVertex> equivalentVerticesOfLoop) {
+    final HashMap<IRVertex, List<IRVertex>> mapToList = new HashMap<>();
+    equivalentVerticesOfLoop.forEach((vertex, rootVertex) -> {
+      mapToList.putIfAbsent(rootVertex, new LinkedList<>());
+      mapToList.get(rootVertex).add(vertex);
+    });
+    mapToList.forEach((vertex, list) -> {
+      Collections.sort(list, Comparator.comparingInt(v -> Integer.parseInt(v.getId().substring("vertex".length()))));
       this.equivalentVerticesOfLoop.putIfAbsent(vertex, list.iterator());
     });
   }
@@ -151,8 +157,8 @@ public final class LoopVertex extends IRVertex {
 
     // process next iteration's DAG incoming edges
     this.getDagIncomingEdges().clear();
-    this.getNonIterativeIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(this::addDagIncomingEdge));
-    this.getIterativeIncomingEdges().forEach((dstVertex, irEdges) -> irEdges.forEach(edge -> {
+    this.nonIterativeIncomingEdges.forEach((dstVertex, irEdges) -> irEdges.forEach(this::addDagIncomingEdge));
+    this.iterativeIncomingEdges.forEach((dstVertex, irEdges) -> irEdges.forEach(edge -> {
       final IREdge newIrEdge = new IREdge(edge.getType(), originalToNewIRVertex.get(edge.getSrc()), dstVertex);
       Edge.copyAttributes(edge, newIrEdge);
       this.addDagIncomingEdge(newIrEdge);

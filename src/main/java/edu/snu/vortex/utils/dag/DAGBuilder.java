@@ -18,6 +18,7 @@ package edu.snu.vortex.utils.dag;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * DAG Builder.
@@ -70,6 +71,10 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
    */
   public boolean contains(final V vertex) {
     return vertices.contains(vertex);
+  }
+
+  public boolean contains(final Predicate<V> predicate) {
+    return vertices.stream().anyMatch(predicate);
   }
 
   public DAG<V, E> build() {

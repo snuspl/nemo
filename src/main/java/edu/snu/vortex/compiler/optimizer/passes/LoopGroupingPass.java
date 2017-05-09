@@ -31,7 +31,17 @@ import java.util.*;
 public final class LoopGroupingPass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final Integer maxStackDepth = this.findMaxLoopVertexStackDepth(dag);
-    return groupLoops(dag, maxStackDepth);
+    final DAG<IRVertex, IREdge> result = groupLoops(dag, maxStackDepth);
+//    result.topologicalDo(irVertex -> {
+//      if (irVertex instanceof LoopVertex) {
+//        final LoopVertex loopVertex = (LoopVertex) irVertex;
+//        System.out.println("  DAGIncomingEdges: " + loopVertex.getDagIncomingEdges());
+//        System.out.println("  DAGOutgoingEdges: " + loopVertex.getDagOutgoingEdges());
+//        System.out.println("  IterativeEdges: " + loopVertex.getIterativeIncomingEdges());
+//        System.out.println("  Non-IterativeEdges: " + loopVertex.getNonIterativeIncomingEdges());
+//      }
+//    });
+    return result;
   }
 
   /**
@@ -70,15 +80,16 @@ public final class LoopGroupingPass implements Pass {
           // If this is Composite && depth is appropriate. == If this belongs to a loop.
           if (operatorVertex.isComposite() && operatorVertex.getLoopVertexStackDepth().equals(depth)) {
             final LoopVertex assignedLoopVertex = operatorVertex.getAssignedLoopVertex();
+            builder.addVertex(assignedLoopVertex);
             connectElementToLoop(dag, builder, operatorVertex, assignedLoopVertex); // something -> loop
           } else { // Otherwise: it is not composite || depth inappropriate. == If this is just an operator.
             builder.addVertex(operatorVertex);
             dag.getIncomingEdgesOf(operatorVertex).forEach(irEdge -> {
-              if (isEdgeSourceLoop(irEdge)) {
+              if (isSourceInALoop(irEdge)) {
                 // connecting with a loop: loop -> operator.
-                final LoopVertex srcLoopVertex = getEdgeSourceLoop(irEdge);
+                final LoopVertex srcLoopVertex = getSourceContainingLoop(irEdge);
                 srcLoopVertex.addDagOutgoingEdge(irEdge);
-                final IREdge edgeFromLoop = new IREdge(irEdge.getType(), srcLoopVertex, irEdge.getDst());
+                final IREdge edgeFromLoop = new IREdge(irEdge.getType(), srcLoopVertex, operatorVertex);
                 Edge.copyAttributes(irEdge, edgeFromLoop);
                 builder.connectVertices(edgeFromLoop);
               } else { // connecting outside the composite loop: operator -> operator.
@@ -115,12 +126,11 @@ public final class LoopGroupingPass implements Pass {
    */
   private static void connectElementToLoop(final DAG<IRVertex, IREdge> dag, final DAGBuilder<IRVertex, IREdge> builder,
                                            final IRVertex dstVertex, final LoopVertex assignedLoopVertex) {
-    builder.addVertex(assignedLoopVertex);
     assignedLoopVertex.getBuilder().addVertex(dstVertex);
 
     dag.getIncomingEdgesOf(dstVertex).forEach(irEdge -> {
-      if (isEdgeSourceLoop(irEdge)) {
-        final LoopVertex srcLoopVertex = getEdgeSourceLoop(irEdge);
+      if (isSourceInALoop(irEdge)) {
+        final LoopVertex srcLoopVertex = getSourceContainingLoop(irEdge);
         if (srcLoopVertex.equals(assignedLoopVertex)) { // connecting within the composite loop DAG.
           assignedLoopVertex.getBuilder().connectVertices(irEdge);
         } else { // loop -> loop connection
@@ -143,23 +153,23 @@ public final class LoopGroupingPass implements Pass {
    * @param irEdge edge to observe.
    * @return whether or not the source of the edge is inside a loop.
    */
-  private static boolean isEdgeSourceLoop(final IREdge irEdge) {
+  private static boolean isSourceInALoop(final IREdge irEdge) {
     return (irEdge.getSrc() instanceof OperatorVertex && ((OperatorVertex) irEdge.getSrc()).isComposite()) ||
         (irEdge.getSrc() instanceof LoopVertex && ((LoopVertex) irEdge.getSrc()).getAssignedLoopVertex() != null);
   }
 
   /**
-   * This static method gets the loop of the source of the edge.
+   * This static method gets the loop that contains the source of the edge.
    * @param irEdge edge to retrieve the loop of the source from.
    * @return loop of the source of the edge.
    */
-  private static LoopVertex getEdgeSourceLoop(final IREdge irEdge) {
+  private static LoopVertex getSourceContainingLoop(final IREdge irEdge) {
     if (irEdge.getSrc() instanceof OperatorVertex) {
       return ((OperatorVertex) irEdge.getSrc()).getAssignedLoopVertex();
     } else if (irEdge.getSrc() instanceof LoopVertex) {
       return ((LoopVertex) irEdge.getSrc()).getAssignedLoopVertex();
     } else {
-      throw new UnsupportedOperationException("Edge source not a LoopVertex or OpeatorVertex: " + irEdge);
+      throw new UnsupportedOperationException("Edge source not a LoopVertex or OperatorVertex: " + irEdge);
     }
   }
 
@@ -172,8 +182,8 @@ public final class LoopGroupingPass implements Pass {
    */
   private DAG<IRVertex, IREdge> loopRolling(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    final HashMap<LoopVertex, List<LoopVertex>> loopVerticesOfSameLoop = new HashMap<>();
-    final HashMap<LoopVertex, HashMap<IRVertex, List<IRVertex>>> equivalentVerticesOfLoops = new HashMap<>();
+    final HashMap<LoopVertex, LoopVertex> loopVerticesOfSameLoop = new HashMap<>();
+    final HashMap<LoopVertex, HashMap<IRVertex, IRVertex>> equivalentVerticesOfLoops = new HashMap<>();
     LoopVertex rootLoopVertex = null;
 
     // observe the DAG in a topological order.
@@ -182,97 +192,68 @@ public final class LoopGroupingPass implements Pass {
         builder.addVertex(irVertex);
 
       } else if (irVertex instanceof OperatorVertex) { // operator vertex
-        addToBuilder(builder, irVertex, dag, loopVerticesOfSameLoop);
+        addVertexToBuilder(builder, irVertex, dag, loopVerticesOfSameLoop);
 
       } else if (irVertex instanceof LoopVertex) { // loop vertex: we roll them if it is not root
         final LoopVertex loopVertex = (LoopVertex) irVertex;
 
         if (rootLoopVertex == null || !loopVertex.getName().contains(rootLoopVertex.getName())) { // initial root loop
           rootLoopVertex = loopVertex;
-          loopVerticesOfSameLoop.putIfAbsent(rootLoopVertex, new ArrayList<>());
-          loopVerticesOfSameLoop.get(rootLoopVertex).add(rootLoopVertex);
+          loopVerticesOfSameLoop.putIfAbsent(rootLoopVertex, rootLoopVertex);
           equivalentVerticesOfLoops.putIfAbsent(rootLoopVertex, new HashMap<>());
           for (IRVertex vertex : rootLoopVertex.getDAG().getTopologicalSort()) {
-            equivalentVerticesOfLoops.get(rootLoopVertex).putIfAbsent(vertex, new ArrayList<>());
-            equivalentVerticesOfLoops.get(rootLoopVertex).get(vertex).add(vertex);
+            equivalentVerticesOfLoops.get(rootLoopVertex).putIfAbsent(vertex, vertex);
           }
-          addToBuilder(builder, loopVertex, dag, loopVerticesOfSameLoop);
+          addVertexToBuilder(builder, rootLoopVertex, dag, loopVerticesOfSameLoop);
         } else { // following loops
           final LoopVertex finalRootLoopVertex = rootLoopVertex;
-          finalRootLoopVertex.increaseMaxNumberOfIterations();
 
           // Add the loop to the list
-          loopVerticesOfSameLoop.get(finalRootLoopVertex).add(loopVertex);
+          loopVerticesOfSameLoop.putIfAbsent(loopVertex, finalRootLoopVertex);
+          finalRootLoopVertex.increaseMaxNumberOfIterations();
 
-          // Zip current vertices together. We assume getTolopogicalSort() brings consistent results..
-          final HashMap<IRVertex, List<IRVertex>> equivalentVertices =
-              equivalentVerticesOfLoops.get(finalRootLoopVertex);
+          // Zip current vertices together. We assume getTopologicalSort() brings consistent results.
           final Iterator<IRVertex> rootVertices = finalRootLoopVertex.getDAG().getTopologicalSort().iterator();
           final Iterator<IRVertex> vertices = loopVertex.getDAG().getTopologicalSort().iterator();
+          final HashMap<IRVertex, IRVertex> equivalentVertices = equivalentVerticesOfLoops.get(finalRootLoopVertex);
           while (rootVertices.hasNext() && vertices.hasNext()) {
-            equivalentVertices.get(rootVertices.next()).add(vertices.next());
+            equivalentVertices.put(vertices.next(), rootVertices.next());
           }
 
           // reset non iterative incoming edges.
           finalRootLoopVertex.getNonIterativeIncomingEdges().clear();
+          finalRootLoopVertex.getIterativeIncomingEdges().clear();
 
           // incoming edges to the DAG.
           loopVertex.getDagIncomingEdges().forEach((dstVertex, edges) -> edges.forEach(edge -> {
             final IRVertex srcVertex = edge.getSrc();
-            final IRVertex equivalentDstRootVertex = equivalentVertices.values().stream()
-                .filter(list -> list.contains(dstVertex)).map(list -> list.get(0)).findFirst()
-                .orElseThrow(() -> new RuntimeException("dstVertex should have been added while zipping"));
+            final IRVertex equivalentDstVertex = equivalentVertices.get(dstVertex);
 
-            if (equivalentVertices.values().stream().anyMatch(list -> list.contains(srcVertex))) {
+            if (equivalentVertices.containsKey(srcVertex)) {
               // src is from the previous loop. vertex in previous loop -> DAG.
-              final IRVertex equivalentSrcRootVertex = equivalentVertices.values().stream()
-                  .filter(list -> list.contains(srcVertex)).map(list -> list.get(0)).findFirst()
-                  .orElseThrow(() -> new RuntimeException("anyMatch didn't work correctly"));
+              final IRVertex equivalentSrcVertex = equivalentVertices.get(srcVertex);
 
-              if (finalRootLoopVertex.getIterativeIncomingEdges().values()
-                  .stream().allMatch(irEdges -> irEdges.stream().allMatch(e ->
-                      !e.getSrc().equals(equivalentSrcRootVertex) || !e.getDst().equals(equivalentDstRootVertex)))) {
-                // doesn't already exist in rootVertex iterative incoming edge list.
-
-                // add the new IREdge to the iterative incoming edges list.
-                final IREdge newIrEdge = new IREdge(edge.getType(), equivalentSrcRootVertex, equivalentDstRootVertex);
-                Edge.copyAttributes(edge, newIrEdge);
-                finalRootLoopVertex.addIterativeIncomingEdge(newIrEdge);
-
-                // remove them from rootLoopVertex's DAG outgoing edges and replace them.
-                finalRootLoopVertex.getDagOutgoingEdges().values().stream().filter(irEdges -> irEdges.contains(edge))
-                    .forEach(irEdges -> {
-                      irEdges.remove(edge);
-                      irEdges.add(newIrEdge);
-                    });
-              }
-
-              // remove overlapping DAG outgoing edges.
-              finalRootLoopVertex.getDagOutgoingEdges().values().stream().forEach(irEdges ->
-                  irEdges.removeIf(e -> e.getSrc().equals(equivalentSrcRootVertex) && e.getDst().equals(dstVertex)));
+              // add the new IREdge to the iterative incoming edges list.
+              final IREdge newIrEdge = new IREdge(edge.getType(), equivalentSrcVertex, equivalentDstVertex);
+              Edge.copyAttributes(edge, newIrEdge);
+              finalRootLoopVertex.addIterativeIncomingEdge(newIrEdge);
             } else {
               // src is from outside the previous loop. vertex outside previous loop -> DAG.
-              final IREdge newIrEdge = new IREdge(edge.getType(), srcVertex, equivalentDstRootVertex);
+              final IREdge newIrEdge = new IREdge(edge.getType(), srcVertex, equivalentDstVertex);
               Edge.copyAttributes(edge, newIrEdge);
               finalRootLoopVertex.addNonIterativeIncomingEdge(newIrEdge);
             }
           }));
 
-          // outgoing edges from the DAG
+          // Overwrite the DAG outgoing edges
+          finalRootLoopVertex.getDagOutgoingEdges().clear();
           loopVertex.getDagOutgoingEdges().forEach((srcVertex, edges) -> edges.forEach(edge -> {
             final IRVertex dstVertex = edge.getDst();
-            final IRVertex equivalentSrcRootVertex = equivalentVertices.values().stream()
-                .filter(list -> list.contains(srcVertex)).map(list -> list.get(0)).findFirst()
-                .orElseThrow(() -> new RuntimeException("srcVertex should have been added while zipping"));
+            final IRVertex equivalentSrcVertex = equivalentVertices.get(srcVertex);
 
-            if (finalRootLoopVertex.getDagOutgoingEdges().values().stream()
-                .allMatch(irEdges -> irEdges.stream().allMatch(e ->
-                    !e.getSrc().equals(equivalentSrcRootVertex) || !e.getDst().equals(dstVertex)))) {
-              // doesn't already exist in rootVertex DAG outgoing edges
-              final IREdge newIrEdge = new IREdge(edge.getType(), equivalentSrcRootVertex, dstVertex);
-              Edge.copyAttributes(edge, newIrEdge);
-              finalRootLoopVertex.addDagOutgoingEdge(newIrEdge);
-            }
+            final IREdge newIrEdge = new IREdge(edge.getType(), equivalentSrcVertex, dstVertex);
+            Edge.copyAttributes(edge, newIrEdge);
+            finalRootLoopVertex.addDagOutgoingEdge(newIrEdge);
           }));
         }
 
@@ -293,19 +274,18 @@ public final class LoopGroupingPass implements Pass {
    * @param dag DAG to observe the incoming edges of the vertex.
    * @param loopVerticesOfSameLoop List that keeps track of the iterations of the identical loop.
    */
-  private static void addToBuilder(final DAGBuilder<IRVertex, IREdge> builder, final IRVertex irVertex,
-                                   final DAG<IRVertex, IREdge> dag,
-                                   final Map<LoopVertex, List<LoopVertex>> loopVerticesOfSameLoop) {
+  private static void addVertexToBuilder(final DAGBuilder<IRVertex, IREdge> builder, final IRVertex irVertex,
+                                         final DAG<IRVertex, IREdge> dag,
+                                         final Map<LoopVertex, LoopVertex> loopVerticesOfSameLoop) {
     builder.addVertex(irVertex);
     dag.getIncomingEdgesOf(irVertex).forEach(edge -> {
 
       // find first LoopVertex of the loop, if it exists. Otherwise just use the src.
       final IRVertex firstEquivalentVertex;
       if (edge.getSrc() instanceof LoopVertex) {
-        final Optional<LoopVertex> equivalentVertexCandidate = loopVerticesOfSameLoop.values().stream()
-            .filter(list -> list.contains(edge.getSrc())).map(list -> list.get(0)).findFirst();
-        if (equivalentVertexCandidate.isPresent()) {
-          firstEquivalentVertex = equivalentVertexCandidate.get();
+        final LoopVertex equivalentVertexCandidate = loopVerticesOfSameLoop.get(edge.getSrc());
+        if (equivalentVertexCandidate != null) {
+          firstEquivalentVertex = equivalentVertexCandidate;
         } else {
           firstEquivalentVertex = edge.getSrc();
         }
