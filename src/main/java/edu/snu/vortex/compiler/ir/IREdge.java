@@ -84,6 +84,10 @@ public final class IREdge extends Edge<IRVertex> {
     return getSrc().equals(edge.getSrc()) && getDst().equals(edge.getDst());
   }
 
+  public static void copyAttributes(final IREdge fromEdge, final IREdge toEdge) {
+    fromEdge.getAttributes().forEachAttr(toEdge::setAttr);
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
