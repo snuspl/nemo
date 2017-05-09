@@ -46,12 +46,14 @@ import java.util.logging.Logger;
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
+  // TODO #: Configuration
   private static final int DEFAULT_NUM_EXECUTOR = 4;
   private static final int DEFAULT_EXECUTOR_CAPACITY = 4;
 
   private final Scheduler scheduler;
   private final ResourceManager resourceManager;
   private final MessageEnvironment messageEnvironment;
+  private final BlockManagerMaster blockManagerMaster;
   private ExecutionStateManager executionStateManager;
 
   public RuntimeMaster(final RuntimeAttribute schedulerType) {
@@ -63,7 +65,8 @@ public final class RuntimeMaster {
       throw new RuntimeException("Unknown scheduler type");
     }
     this.messageEnvironment = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID);
-    this.resourceManager = new LocalResourceManager(scheduler, messageEnvironment);
+    this.blockManagerMaster = new BlockManagerMaster();
+    this.resourceManager = new LocalResourceManager(scheduler, messageEnvironment, blockManagerMaster);
   }
 
   /**
@@ -101,7 +104,7 @@ public final class RuntimeMaster {
   /**
    * Handler for messages received by Master.
    */
-  private final class MasterCommunicator implements MessageListener<ControlMessage.Message> {
+  private final class MasterMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
     public void onSendMessage(final ControlMessage.Message message) {
