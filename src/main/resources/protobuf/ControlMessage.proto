@@ -79,7 +79,7 @@ enum TaskGroupStateFromExecutor {
 }
 
 enum BlockStateFromExecutor {
-    READY = 0;
+    BLOCK_READY = 0;
     MOVING = 1;
     COMMITTED = 2;
     LOST = 3;
