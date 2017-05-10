@@ -29,8 +29,8 @@ public final class LoopVertex extends IRVertex {
   private final String compositeTransformFullName;
 
   private final Map<IRVertex, Set<IREdge>> dagIncomingEdges; // for the initial iteration
-  private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges; // for iterations
-  private final Map<IRVertex, Set<IREdge>> nonIterativeIncomingEdges; // for iterations
+  private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges;// Edges from previous iterations connected internally
+  private final Map<IRVertex, Set<IREdge>> nonIterativeIncomingEdges;// Edges from outside previous iterations.
   private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges; // for the final iteration
 
   private Integer maxNumberOfIterations;
