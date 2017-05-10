@@ -17,11 +17,10 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.utils.dag.Vertex;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
- * TaskGroup.
+ * PhysicalStage.
  */
 public final class PhysicalStage extends Vertex {
   private final List<TaskGroup> taskGroupList;

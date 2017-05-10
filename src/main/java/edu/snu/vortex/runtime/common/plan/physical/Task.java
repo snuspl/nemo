@@ -17,8 +17,6 @@ package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.utils.dag.Vertex;
 
-import java.io.Serializable;
-
 /**
  * Task.
  */
