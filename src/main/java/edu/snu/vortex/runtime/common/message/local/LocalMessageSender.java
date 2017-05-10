@@ -2,7 +2,6 @@ package edu.snu.vortex.runtime.common.message.local;
 
 import edu.snu.vortex.runtime.common.message.MessageSender;
 
-import java.io.Serializable;
 import java.util.concurrent.Future;
 
 /**
@@ -32,7 +31,7 @@ final class LocalMessageSender<T> implements MessageSender<T> {
   }
 
   @Override
-  public <U extends Serializable> Future<U> request(final T message) {
+  public <U> Future<U> request(final T message) {
     return dispatcher.dispatchRequestMessage(senderId, targetId, messageTypeId, message);
   }
 }

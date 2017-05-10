@@ -3,7 +3,6 @@ package edu.snu.vortex.runtime.common.message.local;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 
-import java.io.Serializable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +51,7 @@ final class LocalMessageDispatcher {
     listener.onSendMessage(message);
   }
 
-  <T, U extends Serializable> Future<U> dispatchRequestMessage(
+  <T, U> Future<U> dispatchRequestMessage(
       final String senderId, final String targetId, final String messageTypeId, final T message) {
 
     final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);

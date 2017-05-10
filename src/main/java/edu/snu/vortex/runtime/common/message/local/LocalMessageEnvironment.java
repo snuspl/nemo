@@ -4,14 +4,13 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 
-import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
  * A simple {@link MessageEnvironment} implementation that works on a single node.
  */
-public final class LocalMessageEnvironment implements MessageEnvironment {
+public final class LocalMessageEnvironment<T> implements MessageEnvironment {
 
   private final String currentNodeId;
   private final LocalMessageDispatcher dispatcher;
@@ -22,13 +21,13 @@ public final class LocalMessageEnvironment implements MessageEnvironment {
   }
 
   @Override
-  public <T extends Serializable> MessageSender<T> setupListener(
-      final String messageTypeId, final MessageListener<T> listener) {
+  public MessageSender<T> setupListener(
+      final String messageTypeId, final MessageListener listener) {
     return dispatcher.setupListener(currentNodeId, messageTypeId, listener);
   }
 
   @Override
-  public <T extends Serializable> Future<MessageSender<T>> asyncConnect(
+  public Future<MessageSender<T>> asyncConnect(
       final String targetId, final String messageTypeId) {
     return CompletableFuture.completedFuture(new LocalMessageSender<T>(
         currentNodeId, targetId, messageTypeId, dispatcher));
