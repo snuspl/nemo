@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ID Generator.
@@ -26,6 +27,7 @@ public final class RuntimeIdGenerator {
   private static AtomicInteger taskIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(1);
   private static AtomicInteger executorIdGenerator = new AtomicInteger(1);
+  private static AtomicLong messageIdGenerator = new AtomicLong(1L);
 
   private RuntimeIdGenerator() {
   }
@@ -116,5 +118,13 @@ public final class RuntimeIdGenerator {
    */
   public static String generateBlockId(final String runtimeEdgeId, final int taskIndex, final int partitionIndex) {
     return generateBlockId(runtimeEdgeId, taskIndex) + "-" + partitionIndex;
+  }
+
+  /**
+   * Generates the ID for a control message.
+   * @return the generated ID
+   */
+  public static long generateMessageId() {
+    return messageIdGenerator.getAndIncrement();
   }
 }
