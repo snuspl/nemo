@@ -47,11 +47,11 @@ public final class LoopGroupingPass implements Pass {
   }
 
   /**
-   * This part groups each iteration of loops together by observing the LoopVertexStack of primitive operators,
-   * which is assigned by the {@link edu.snu.vortex.compiler.frontend.beam.Visitor}. This shows in which depth of
-   * nested loops each of the composite transforms are located in, indicating that it is part of an iterative transform.
+   * This part groups each iteration of loops together by observing the LoopVertex assigned to primitive operators,
+   * which is assigned by the {@link edu.snu.vortex.compiler.frontend.beam.Visitor}. This also shows in which depth of
+   * nested loops the function handles. It recursively calls itself from the maximum depth until 0.
    * @param dag DAG to process
-   * @param depth the depth of the stack to process. Must be >=0.
+   * @param depth the depth of the stack to process. Must be greater than 0.
    * @return processed DAG.
    * @throws Exception exceptions through the way.
    */
@@ -76,7 +76,7 @@ public final class LoopGroupingPass implements Pass {
             dag.getIncomingEdgesOf(operatorVertex).forEach(irEdge -> {
               if (isSourceInALoop(irEdge)) {
                 // connecting with a loop: loop -> operator.
-                final LoopVertex srcLoopVertex = getSourceContainingLoop(irEdge);
+                final LoopVertex srcLoopVertex = getLoopOfTheSource(irEdge);
                 srcLoopVertex.addDagOutgoingEdge(irEdge);
                 final IREdge edgeFromLoop = new IREdge(irEdge.getType(), srcLoopVertex, operatorVertex);
                 IREdge.copyAttributes(irEdge, edgeFromLoop);
@@ -119,7 +119,7 @@ public final class LoopGroupingPass implements Pass {
 
     dag.getIncomingEdgesOf(dstVertex).forEach(irEdge -> {
       if (isSourceInALoop(irEdge)) {
-        final LoopVertex srcLoopVertex = getSourceContainingLoop(irEdge);
+        final LoopVertex srcLoopVertex = getLoopOfTheSource(irEdge);
         if (srcLoopVertex.equals(assignedLoopVertex)) { // connecting within the composite loop DAG.
           assignedLoopVertex.getBuilder().connectVertices(irEdge);
         } else { // loop -> loop connection
@@ -152,7 +152,7 @@ public final class LoopGroupingPass implements Pass {
    * @param irEdge edge to retrieve the loop of the source from.
    * @return loop of the source of the edge.
    */
-  private static LoopVertex getSourceContainingLoop(final IREdge irEdge) {
+  private static LoopVertex getLoopOfTheSource(final IREdge irEdge) {
     if (irEdge.getSrc() instanceof OperatorVertex) {
       return ((OperatorVertex) irEdge.getSrc()).getAssignedLoopVertex();
     } else if (irEdge.getSrc() instanceof LoopVertex) {
@@ -251,7 +251,8 @@ public final class LoopGroupingPass implements Pass {
       }
     }
 
-    equivalentVerticesOfLoops.forEach(LoopVertex::setEquivalentVerticesOfLoop);
+    // Set equivalent vertices information to the LoopVertex.
+    equivalentVerticesOfLoops.forEach(LoopVertex::setEquivalentVerticesOfIteration);
 
     return builder.build();
   }

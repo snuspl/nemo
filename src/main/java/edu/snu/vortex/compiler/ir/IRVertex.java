@@ -24,7 +24,7 @@ import java.io.Serializable;
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
  */
-public abstract class IRVertex extends Vertex implements Serializable, Cloneable {
+public abstract class IRVertex extends Vertex implements Serializable {
   private final AttributeMap attributes;
 
   public IRVertex() {

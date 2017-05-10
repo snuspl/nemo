@@ -33,7 +33,7 @@ public final class LoopVertex extends IRVertex {
   private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges; // for iterations
   private final Map<IRVertex, Set<IREdge>> nonIterativeIncomingEdges; // for iterations
   private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges; // for the final iteration
-  private final HashMap<IRVertex, Iterator<IRVertex>> equivalentVerticesOfLoop;
+  private final HashMap<IRVertex, Iterator<IRVertex>> equivalentVerticesOfIteration;
 
   private Integer maxNumberOfIterations;
   private IntPredicate terminationCondition;
@@ -46,7 +46,7 @@ public final class LoopVertex extends IRVertex {
     this.iterativeIncomingEdges = new HashMap<>();
     this.nonIterativeIncomingEdges = new HashMap<>();
     this.dagOutgoingEdges = new HashMap<>();
-    this.equivalentVerticesOfLoop = new HashMap<>();
+    this.equivalentVerticesOfIteration = new HashMap<>();
     this.maxNumberOfIterations = 1; // 1 is the default number of iterations.
     this.terminationCondition = (integer -> false); // nothing much yet.
 
@@ -106,15 +106,15 @@ public final class LoopVertex extends IRVertex {
     return this.dagOutgoingEdges;
   }
 
-  public void setEquivalentVerticesOfLoop(final HashMap<IRVertex, IRVertex> equivalentVerticesOfLoop) {
+  public void setEquivalentVerticesOfIteration(final HashMap<IRVertex, IRVertex> equivalentVerticesOfIteration) {
     final HashMap<IRVertex, List<IRVertex>> mapToList = new HashMap<>();
-    equivalentVerticesOfLoop.forEach((vertex, rootVertex) -> {
+    equivalentVerticesOfIteration.forEach((vertex, rootVertex) -> {
       mapToList.putIfAbsent(rootVertex, new LinkedList<>());
       mapToList.get(rootVertex).add(vertex);
     });
     mapToList.forEach((vertex, list) -> {
       Collections.sort(list, Comparator.comparingInt(v -> Integer.parseInt(v.getId().substring("vertex".length()))));
-      this.equivalentVerticesOfLoop.putIfAbsent(vertex, list.iterator());
+      this.equivalentVerticesOfIteration.putIfAbsent(vertex, list.iterator());
     });
   }
 
@@ -126,7 +126,7 @@ public final class LoopVertex extends IRVertex {
 
     // add the DAG and internal edges to the dagBuilder.
     dagToAdd.topologicalDo(irVertex -> {
-      final IRVertex newIrVertex = equivalentVerticesOfLoop.get(irVertex).next();
+      final IRVertex newIrVertex = equivalentVerticesOfIteration.get(irVertex).next();
       originalToNewIRVertex.putIfAbsent(irVertex, newIrVertex);
 
       dagBuilder.addVertex(newIrVertex);

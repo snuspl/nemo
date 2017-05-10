@@ -73,10 +73,19 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     return vertices.contains(vertex);
   }
 
+  /**
+   * check if the DAGBuilder contains any vertex that satisfies the predicate.
+   * @param predicate predicate to test each vertices with.
+   * @return whether or not the builder contains it.
+   */
   public boolean contains(final Predicate<V> predicate) {
     return vertices.stream().anyMatch(predicate);
   }
 
+  /**
+   * Build the DAG.
+   * @return the DAG contained by the builder.
+   */
   public DAG<V, E> build() {
     return new DAG<>(vertices, incomingEdges, outgoingEdges);
   }
