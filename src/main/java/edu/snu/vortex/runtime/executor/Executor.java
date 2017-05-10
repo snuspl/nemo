@@ -19,7 +19,8 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
-import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -27,7 +28,6 @@ import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.apache.commons.lang3.SerializationUtils;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,7 +39,6 @@ public final class Executor {
   private final String executorId;
   private final int numCores;
   private final MessageEnvironment<ControlMessage.Message> myMessageEnvironment;
-  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMessageSenderMap;
   private final ExecutorService executorService;
   private final DataTransferFactory dataTransferFactory;
 
@@ -48,14 +47,12 @@ public final class Executor {
 
   public Executor(final String executorId,
                   final int numCores,
-                  final MessageEnvironment myMessageEnvironment,
-                  final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMessageSenderMap,
+                  final LocalMessageDispatcher localMessageDispatcher,
                   final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.numCores = numCores;
-    this.myMessageEnvironment = myMessageEnvironment;
+    this.myMessageEnvironment = new LocalMessageEnvironment<>(executorId, localMessageDispatcher);
     myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
-    this.nodeIdToMessageSenderMap = nodeIdToMessageSenderMap;
     this.executorService = Executors.newFixedThreadPool(numCores);
 
     // TODO #: Check
@@ -83,7 +80,10 @@ public final class Executor {
     @Override
     public void onSendMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
-
+      case BroadcastPhysicalPlan:
+        final ControlMessage.BroadcastPhysicalPlanMsg broadcastPhysicalPlanMsg = message.getBroadcastPhysicalPlanMsg();
+        physicalPlan = SerializationUtils.deserialize(broadcastPhysicalPlanMsg.getPhysicalPlan().toByteArray());
+        break;
       case ScheduleTaskGroup:
         final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();
         final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
@@ -99,7 +99,6 @@ public final class Executor {
         throw new IllegalMessageException(
             new Exception("This message should not be received by an executor :" + message.getType()));
       }
-      physicalPlan = message.getPhysicalPlan();
     }
 
     @Override

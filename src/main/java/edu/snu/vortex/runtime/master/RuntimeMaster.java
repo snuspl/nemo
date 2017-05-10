@@ -20,6 +20,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.exception.UnsupportedMessageException;
 import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
@@ -52,7 +53,8 @@ public final class RuntimeMaster {
 
   private final Scheduler scheduler;
   private final ResourceManager resourceManager;
-  private final MessageEnvironment messageEnvironment;
+  private final LocalMessageDispatcher localMessageDispatcher;
+  private final MessageEnvironment masterMessageEnvironment;
   private final BlockManagerMaster blockManagerMaster;
   private ExecutionStateManager executionStateManager;
 
@@ -64,10 +66,12 @@ public final class RuntimeMaster {
     default:
       throw new RuntimeException("Unknown scheduler type");
     }
-    this.messageEnvironment = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID);
-    messageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
+    this.localMessageDispatcher = new LocalMessageDispatcher();
+    this.masterMessageEnvironment =
+        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);
+    masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
     this.blockManagerMaster = new BlockManagerMaster();
-    this.resourceManager = new LocalResourceManager(scheduler, messageEnvironment, blockManagerMaster);
+    this.resourceManager = new LocalResourceManager(scheduler, masterMessageEnvironment, blockManagerMaster);
   }
 
   /**
