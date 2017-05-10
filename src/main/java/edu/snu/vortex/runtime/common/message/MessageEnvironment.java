@@ -5,6 +5,7 @@ import java.util.concurrent.Future;
 /**
  * Set up {@link MessageListener}s to handle incoming messages on this node, and connect to remote nodes and return
  * {@link MessageSender}s to send message to them.
+ * @param <T> The type of the message to be sent in the environment
  */
 public interface MessageEnvironment<T> {
 

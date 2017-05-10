@@ -9,15 +9,17 @@ import java.util.concurrent.Future;
 
 /**
  * A simple {@link MessageEnvironment} implementation that works on a single node.
+ * @param <T> The type of the message to be sent in the environment.
  */
 public final class LocalMessageEnvironment<T> implements MessageEnvironment {
 
   private final String currentNodeId;
   private final LocalMessageDispatcher dispatcher;
 
-  public LocalMessageEnvironment(final String currentNodeId) {
+  public LocalMessageEnvironment(final String currentNodeId,
+                                 final LocalMessageDispatcher dispatcher) {
     this.currentNodeId = currentNodeId;
-    this.dispatcher = new LocalMessageDispatcher();
+    this.dispatcher = dispatcher;
   }
 
   @Override
