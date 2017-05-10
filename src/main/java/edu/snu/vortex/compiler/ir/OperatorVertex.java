@@ -21,37 +21,14 @@ package edu.snu.vortex.compiler.ir;
  */
 public final class OperatorVertex extends IRVertex {
   private final Transform transform;
-  private final LoopVertex assignedLoopVertex;
-  private final Integer stackDepth;
 
   public OperatorVertex(final Transform t) {
-    this(t, null, 0);
-  }
-
-  public OperatorVertex(final Transform t, final LoopVertex assignedLoopVertex, final Integer stackDepth) {
     super();
     this.transform = t;
-    this.stackDepth = stackDepth;
-    this.assignedLoopVertex = assignedLoopVertex;
-    if (this.assignedLoopVertex != null) {
-      this.assignedLoopVertex.getBuilder().addVertex(this);
-    }
   }
 
   public OperatorVertex getClone() {
-    return new OperatorVertex(this.transform, this.assignedLoopVertex, this.stackDepth);
-  }
-
-  public Boolean isComposite() {
-    return assignedLoopVertex != null;
-  }
-
-  public LoopVertex getAssignedLoopVertex() {
-    return assignedLoopVertex;
-  }
-
-  public Integer getLoopVertexStackDepth() {
-    return stackDepth;
+    return new OperatorVertex(this.transform);
   }
 
   public Transform getTransform() {

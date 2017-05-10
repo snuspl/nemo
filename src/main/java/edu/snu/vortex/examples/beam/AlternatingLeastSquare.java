@@ -228,18 +228,18 @@ public final class AlternatingLeastSquare {
 
   /**
    * Composite transform that wraps the transforms inside the loop.
-   * The loop updates the item matrix each iteration.
+   * The loop updates the user matrix and the item matrix in each iteration.
    */
-  public static final class UpdateItemMatrix extends LoopCompositeTransform<
+  public static final class UpdateUserAndItemMatrix extends LoopCompositeTransform<
       PCollection<KV<Integer, float[]>>, PCollection<KV<Integer, float[]>>> {
     private final int numFeatures;
     private final double lambda;
     private final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData;
     private final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData;
 
-    UpdateItemMatrix(final int numFeatures, final double lambda,
-                     final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData,
-                     final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData) {
+    UpdateUserAndItemMatrix(final int numFeatures, final double lambda,
+                            final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData,
+                            final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData) {
       this.numFeatures = numFeatures;
       this.lambda = lambda;
       this.parsedUserData = parsedUserData;
@@ -250,7 +250,7 @@ public final class AlternatingLeastSquare {
     public PCollection<KV<Integer, float[]>> expand(final PCollection<KV<Integer, float[]>> itemMatrix) {
       // Make Item Matrix view.
       final PCollectionView<Map<Integer, float[]>> itemMatrixView = itemMatrix.apply(View.asMap());
-      // Create User Matrix
+      // Get new User Matrix
       final PCollectionView<Map<Integer, float[]>> userMatrixView = parsedUserData
           .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrixView)).withSideInputs(itemMatrixView))
           .apply(View.asMap());
@@ -318,7 +318,7 @@ public final class AlternatingLeastSquare {
     // Iterations to update Item Matrix.
     for (int i = 0; i < numItr; i++) {
       // NOTE: a single composite transform for the iteration.
-      itemMatrix = itemMatrix.apply(new UpdateItemMatrix(numFeatures, lambda, parsedUserData, parsedItemData));
+      itemMatrix = itemMatrix.apply(new UpdateUserAndItemMatrix(numFeatures, lambda, parsedUserData, parsedItemData));
     }
 
     p.run();

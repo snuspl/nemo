@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.utils.dag;
 
+import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
@@ -29,17 +30,43 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   private final Set<V> vertices;
   private final Map<V, Set<E>> incomingEdges;
   private final Map<V, Set<E>> outgoingEdges;
+  private final Map<V, LoopVertex> assignedLoopVertexMap;
+  private final Map<V, Integer> loopStackDepthMap;
 
   public DAGBuilder() {
     this.vertices = new HashSet<>();
     this.incomingEdges = new HashMap<>();
     this.outgoingEdges = new HashMap<>();
+    this.assignedLoopVertexMap = new HashMap<>();
+    this.loopStackDepthMap = new HashMap<>();
   }
 
   public void addVertex(final V v) {
     vertices.add(v);
     incomingEdges.putIfAbsent(v, new HashSet<>());
     outgoingEdges.putIfAbsent(v, new HashSet<>());
+  }
+
+  private void addVertex(final V v, final LoopVertex assignedLoopVertex, final Integer stackDepth) {
+    addVertex(v);
+    this.assignedLoopVertexMap.put(v, assignedLoopVertex);
+    this.loopStackDepthMap.put(v, stackDepth);
+  }
+
+  public void addVertex(final V v, final Stack<LoopVertex> loopVertexStack) {
+    if (!loopVertexStack.empty()) {
+      addVertex(v, loopVertexStack.peek(), loopVertexStack.size());
+    } else {
+      addVertex(v);
+    }
+  }
+
+  public void addVertex(final V v, final DAG<V, E> dag) {
+    if (dag.isCompositeVertex(v)) {
+      addVertex(v, dag.getAssignedLoopVertexOf(v), dag.getLoopStackDepthOf(v));
+    } else {
+      addVertex(v);
+    }
   }
 
   public void removeVertex(final V v) {
@@ -87,6 +114,6 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
    * @return the DAG contained by the builder.
    */
   public DAG<V, E> build() {
-    return new DAG<>(vertices, incomingEdges, outgoingEdges);
+    return new DAG<>(vertices, incomingEdges, outgoingEdges, assignedLoopVertexMap, loopStackDepthMap);
   }
 }

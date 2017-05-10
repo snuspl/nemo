@@ -27,7 +27,6 @@ import java.util.function.IntPredicate;
 public final class LoopVertex extends IRVertex {
   private final DAGBuilder<IRVertex, IREdge> builder; // Contains DAG information
   private final String compositeTransformFullName;
-  private final LoopVertex assignedLoopVertex; // loop vertex that encloses this loop vertex.
 
   private final Map<IRVertex, Set<IREdge>> dagIncomingEdges; // for the initial iteration
   private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges; // for iterations
@@ -37,7 +36,7 @@ public final class LoopVertex extends IRVertex {
   private Integer maxNumberOfIterations;
   private IntPredicate terminationCondition;
 
-  public LoopVertex(final String compositeTransformFullName, final Stack<LoopVertex> loopVertexStack) {
+  public LoopVertex(final String compositeTransformFullName) {
     super();
     this.builder = new DAGBuilder<>();
     this.compositeTransformFullName = compositeTransformFullName;
@@ -47,26 +46,16 @@ public final class LoopVertex extends IRVertex {
     this.dagOutgoingEdges = new HashMap<>();
     this.maxNumberOfIterations = 1; // 1 is the default number of iterations.
     this.terminationCondition = (integer -> false); // nothing much yet.
-
-    if (loopVertexStack.empty()) {
-      this.assignedLoopVertex = null;
-    } else {
-      this.assignedLoopVertex = loopVertexStack.peek();
-    }
   }
 
   @Override
   public LoopVertex getClone() {
-    final Stack<LoopVertex> loopVertexStack = new Stack<>();
-    if (this.assignedLoopVertex != null) {
-      loopVertexStack.push(this.assignedLoopVertex);
-    }
-    final LoopVertex newLoopVertex = new LoopVertex(compositeTransformFullName, loopVertexStack);
+    final LoopVertex newLoopVertex = new LoopVertex(compositeTransformFullName);
 
     // Copy all elements to the clone
     final DAG<IRVertex, IREdge> dagToCopy = this.getBuilder().build();
     dagToCopy.topologicalDo(v -> {
-      newLoopVertex.getBuilder().addVertex(v);
+      newLoopVertex.getBuilder().addVertex(v, dagToCopy);
       dagToCopy.getIncomingEdgesOf(v).forEach(e -> newLoopVertex.getBuilder().connectVertices(e));
     });
     this.dagIncomingEdges.forEach(((v, es) -> es.forEach(newLoopVertex::addDagIncomingEdge)));
@@ -89,10 +78,6 @@ public final class LoopVertex extends IRVertex {
 
   public String getName() {
     return compositeTransformFullName;
-  }
-
-  public LoopVertex getAssignedLoopVertex() {
-    return assignedLoopVertex;
   }
 
   public void addDagIncomingEdge(final IREdge edge) {
@@ -139,7 +124,7 @@ public final class LoopVertex extends IRVertex {
       final IRVertex newIrVertex = irVertex.getClone();
       originalToNewIRVertex.putIfAbsent(irVertex, newIrVertex);
 
-      dagBuilder.addVertex(newIrVertex);
+      dagBuilder.addVertex(newIrVertex, dagToAdd);
       dagToAdd.getIncomingEdgesOf(irVertex).forEach(edge -> {
         final IRVertex newSrc = originalToNewIRVertex.get(edge.getSrc());
         final IREdge newIrEdge = new IREdge(edge.getType(), newSrc, newIrVertex);

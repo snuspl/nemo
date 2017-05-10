@@ -45,7 +45,7 @@ public final class LoopUnrollingPass implements Pass {
           loopVertex = loopVertex.unRollIteration(builder);
         }
       } else {
-        builder.addVertex(irVertex);
+        builder.addVertex(irVertex, dag);
         dag.getIncomingEdgesOf(irVertex).forEach(builder::connectVertices);
       }
     });
