@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * TaskGroup.
  */
-public final class PhysicalStage extends Vertex implements Serializable {
+public final class PhysicalStage extends Vertex {
   private final List<TaskGroup> taskGroupList;
 
   public PhysicalStage(final String stageId,

@@ -25,7 +25,7 @@ import java.io.Serializable;
 /**
  * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
  */
-public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> implements Serializable {
+public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> {
   /**
    * The source {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}.
    * This could either belong to the external stage or this stage.
