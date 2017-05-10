@@ -33,39 +33,19 @@ public final class Optimizer {
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
    */
-  public DAG optimize(final DAG dag, final PolicyType policyType) throws Exception {
+  public DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType) throws Exception {
     if (policyType == null) {
       throw new RuntimeException("Policy has not been provided for the policyType");
     }
-    final Policy policy = new Policy(POLICIES.get(policyType));
-    return policy.process(dag);
+    return process(dag, POLICIES.get(policyType));
   }
 
-  /**
-   * Policy class.
-   * It runs a list of passes sequentially to optimize the DAG.
-   */
-  private static final class Policy {
-    private final List<Pass> passes;
-
-    private Policy(final List<Pass> passes) {
-      if (passes.isEmpty()) {
-        // TODO #144: Run without user-specified optimization pass
-        throw new NoSuchElementException("No instantiation pass supplied to the policy!");
-      }
-      this.passes = passes;
-    }
-
-    private DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
-      DAG<IRVertex, IREdge> optimizedDAG = dag;
-      for (final Pass pass : passes) { // we run them one by one, in order.
-        try {
-          optimizedDAG = pass.process(optimizedDAG);
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-      return optimizedDAG;
+  private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag, final List<Pass> passes)
+          throws Exception {
+    if (passes.isEmpty()) {
+      return dag;
+    } else {
+      return process(passes.get(0).process(dag), passes.subList(1, passes.size()));
     }
   }
 
