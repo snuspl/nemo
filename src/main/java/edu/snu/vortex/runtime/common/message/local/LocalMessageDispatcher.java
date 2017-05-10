@@ -12,11 +12,11 @@ import java.util.concurrent.Future;
 /**
  * Dispatch messages on a single machine.
  */
-final class LocalMessageDispatcher {
+public final class LocalMessageDispatcher {
 
   private final ConcurrentMap<String, ConcurrentMap<String, MessageListener>> nodeIdToMessageListenersMap;
 
-  LocalMessageDispatcher() {
+  public LocalMessageDispatcher() {
     this.nodeIdToMessageListenersMap = new ConcurrentHashMap<>();
   }
 
