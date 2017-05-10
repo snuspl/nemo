@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Disaggregated Resources pass for tagging vertices.
@@ -33,7 +33,7 @@ public final class DisaggregationPass implements Pass {
     });
 
     dag.getVertices().forEach(vertex -> {
-      final Set<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
+      final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (edge.getType().equals(IREdge.Type.OneToOne)) {

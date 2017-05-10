@@ -17,6 +17,7 @@ package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
+import edu.snu.vortex.utils.dag.Vertex;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -113,7 +114,7 @@ public final class LoopVertex extends IRVertex {
       mapToList.get(rootVertex).add(vertex);
     });
     mapToList.forEach((vertex, list) -> {
-      Collections.sort(list, Comparator.comparingInt(v -> Integer.parseInt(v.getId().substring("vertex".length()))));
+      Collections.sort(list, Comparator.comparingInt(Vertex::getNumericId));
       this.equivalentVerticesOfIteration.putIfAbsent(vertex, list.iterator());
     });
   }

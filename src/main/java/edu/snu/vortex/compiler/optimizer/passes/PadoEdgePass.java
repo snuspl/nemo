@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Pado pass for tagging edges.
@@ -28,7 +28,7 @@ import java.util.Set;
 public final class PadoEdgePass implements Pass {
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.getVertices().forEach(vertex -> {
-      final Set<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
+      final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {

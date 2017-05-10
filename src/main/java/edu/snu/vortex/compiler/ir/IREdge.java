@@ -33,15 +33,13 @@ public final class IREdge extends Edge<IRVertex> {
     OneToOne,
   }
 
-  private final String id;
   private final AttributeMap attributes;
   private final Type type;
 
   public IREdge(final Type type,
                 final IRVertex src,
                 final IRVertex dst) {
-    super(src, dst);
-    this.id = IdManager.newEdgeId();
+    super(IdManager.newEdgeId(), src, dst);
     this.attributes = AttributeMap.of(this);
     this.type = type;
     switch (this.getType()) {
@@ -57,10 +55,6 @@ public final class IREdge extends Edge<IRVertex> {
       default:
         throw new UnsupportedAttributeException("There is no such edge type as: " + this.getType());
     }
-  }
-
-  public String getId() {
-    return id;
   }
 
   public IREdge setAttr(final Attribute.Key key, final Attribute val) {
@@ -113,7 +107,7 @@ public final class IREdge extends Edge<IRVertex> {
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("{\"id\": \"").append(id);
+    sb.append("{\"id\": \"").append(getId());
     sb.append("\", \"attributes\": ").append(attributes);
     sb.append(", \"type\": \"").append(type);
     sb.append("\"}");

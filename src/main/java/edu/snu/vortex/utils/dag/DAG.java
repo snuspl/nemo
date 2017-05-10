@@ -15,8 +15,6 @@
  */
 package edu.snu.vortex.utils.dag;
 
-import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * DAG implementation.
@@ -34,19 +33,21 @@ import java.util.logging.Logger;
 public final class DAG<V extends Vertex, E extends Edge<V>> {
   private static final Logger LOG = Logger.getLogger(DAG.class.getName());
 
-  private final Map<String, V> vertices;
-  private final Map<String, Set<E>> incomingEdges;
-  private final Map<String, Set<E>> outgoingEdges;
+  private final List<V> vertices;
+  private final Map<String, List<E>> incomingEdges;
+  private final Map<String, List<E>> outgoingEdges;
 
   public DAG(final Set<V> vertices,
              final Map<V, Set<E>> incomingEdges,
              final Map<V, Set<E>> outgoingEdges) {
-    this.vertices = new HashMap<>();
+    this.vertices = new ArrayList<>();
     this.incomingEdges = new HashMap<>();
     this.outgoingEdges = new HashMap<>();
-    vertices.forEach(v -> this.vertices.put(v.getId(), v));
-    incomingEdges.forEach((v, e) -> this.incomingEdges.put(v.getId(), e));
-    outgoingEdges.forEach((v, e) -> this.outgoingEdges.put(v.getId(), e));
+    vertices.stream().sorted(Comparator.comparingInt(Vertex::getNumericId)).forEachOrdered(this.vertices::add);
+    incomingEdges.forEach((v, es) -> this.incomingEdges.put(v.getId(),
+        es.stream().sorted(Comparator.comparingInt(Edge::getNumericId)).collect(Collectors.toList())));
+    outgoingEdges.forEach((v, es) -> this.outgoingEdges.put(v.getId(),
+        es.stream().sorted(Comparator.comparingInt(Edge::getNumericId)).collect(Collectors.toList())));
   }
 
   /**
@@ -66,10 +67,8 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
    * @return the set of vertices.
    * Note that the result is never null, ensured by {@link DAGBuilder}.
    */
-  public Set<V> getVertices() {
-    Set<V> vertexSet = new HashSet<>();
-    vertexSet.addAll(vertices.values());
-    return vertexSet;
+  public List<V> getVertices() {
+    return vertices;
   }
 
   /**
@@ -78,14 +77,11 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
    * @return the set of incoming edges to the vertex.
    * Note that the result is never null, ensured by {@link DAGBuilder}.
    */
-  public Set<E> getIncomingEdgesOf(final V v) {
+  public List<E> getIncomingEdgesOf(final V v) {
     return getIncomingEdgesOf(v.getId());
   }
 
-  public Set<E> getIncomingEdgesOf(final String vertexId) {
-    if (!vertices.containsKey(vertexId)) {
-      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
-    }
+  public List<E> getIncomingEdgesOf(final String vertexId) {
     return incomingEdges.get(vertexId);
   }
 
@@ -95,14 +91,11 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
    * @return the set of outgoing edges to the vertex.
    * Note that the result is never null, ensured by {@link DAGBuilder}.
    */
-  public Set<E> getOutgoingEdgesOf(final V v) {
+  public List<E> getOutgoingEdgesOf(final V v) {
     return getOutgoingEdgesOf(v.getId());
   }
 
-  public Set<E> getOutgoingEdgesOf(final String vertexId) {
-    if (!vertices.containsKey(vertexId)) {
-      throw new IllegalVertexOperationException("The DAG does not contain this vertex");
-    }
+  public List<E> getOutgoingEdgesOf(final String vertexId) {
     return outgoingEdges.get(vertexId);
   }
 
@@ -146,7 +139,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
     getVertices().stream()
         .filter(vertex -> incomingEdges.get(vertex.getId()).isEmpty()) // root Operators
         .filter(vertex -> !visited.contains(vertex))
-        .forEach(vertex -> dfsDo(vertex, function, traversalOrder, visited));
+        .forEachOrdered(vertex -> dfsDo(vertex, function, traversalOrder, visited));
   }
 
   /**
@@ -164,12 +157,12 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
     if (traversalOrder == TraversalOrder.PreOrder) {
       vertexConsumer.accept(vertex);
     }
-    final Set<E> outEdges = getOutgoingEdgesOf(vertex);
+    final List<E> outEdges = getOutgoingEdgesOf(vertex);
     if (!outEdges.isEmpty()) {
       outEdges.stream()
           .map(outEdge -> outEdge.getDst())
           .filter(outOperator -> !visited.contains(outOperator))
-          .forEach(outOperator -> dfsDo(outOperator, vertexConsumer, traversalOrder, visited));
+          .forEachOrdered(outOperator -> dfsDo(outOperator, vertexConsumer, traversalOrder, visited));
     }
     if (traversalOrder == TraversalOrder.PostOrder) {
       vertexConsumer.accept(vertex);
@@ -181,7 +174,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"vertices\": [");
     boolean isFirstVertex = true;
-    for (final V vertex : vertices.values()) {
+    for (final V vertex : vertices) {
       if (!isFirstVertex) {
         sb.append(", ");
       }
@@ -192,8 +185,8 @@ public final class DAG<V extends Vertex, E extends Edge<V>> {
     }
     sb.append("], \"edges\": [");
     boolean isFirstEdge = true;
-    for (final Set<E> edgeSet : incomingEdges.values()) {
-      for (final E edge : edgeSet) {
+    for (final List<E> edgeList : incomingEdges.values()) {
+      for (final E edge : edgeList) {
         if (!isFirstEdge) {
           sb.append(", ");
         }
