@@ -1,6 +1,5 @@
 package edu.snu.vortex.runtime.common.message;
 
-import java.io.Serializable;
 import java.util.concurrent.Future;
 
 /**
@@ -25,6 +24,5 @@ public interface MessageSender<T> {
    * @param <U> reply message type.
    * @return a future
    */
-  <U extends Serializable> Future<U> request(T message);
-
+  <U> Future<U> request(T message);
 }
