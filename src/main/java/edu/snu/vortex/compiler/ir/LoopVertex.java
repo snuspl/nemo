@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
-import edu.snu.vortex.utils.dag.Vertex;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -34,7 +33,6 @@ public final class LoopVertex extends IRVertex {
   private final Map<IRVertex, Set<IREdge>> iterativeIncomingEdges; // for iterations
   private final Map<IRVertex, Set<IREdge>> nonIterativeIncomingEdges; // for iterations
   private final Map<IRVertex, Set<IREdge>> dagOutgoingEdges; // for the final iteration
-  private final HashMap<IRVertex, Iterator<IRVertex>> equivalentVerticesOfIteration;
 
   private Integer maxNumberOfIterations;
   private IntPredicate terminationCondition;
@@ -47,7 +45,6 @@ public final class LoopVertex extends IRVertex {
     this.iterativeIncomingEdges = new HashMap<>();
     this.nonIterativeIncomingEdges = new HashMap<>();
     this.dagOutgoingEdges = new HashMap<>();
-    this.equivalentVerticesOfIteration = new HashMap<>();
     this.maxNumberOfIterations = 1; // 1 is the default number of iterations.
     this.terminationCondition = (integer -> false); // nothing much yet.
 
@@ -56,6 +53,30 @@ public final class LoopVertex extends IRVertex {
     } else {
       this.assignedLoopVertex = loopVertexStack.peek();
     }
+  }
+
+  @Override
+  public LoopVertex getClone() {
+    final Stack<LoopVertex> loopVertexStack = new Stack<>();
+    if (this.assignedLoopVertex != null) {
+      loopVertexStack.push(this.assignedLoopVertex);
+    }
+    final LoopVertex newLoopVertex = new LoopVertex(compositeTransformFullName, loopVertexStack);
+
+    // Copy all elements to the clone
+    final DAG<IRVertex, IREdge> dagToCopy = this.getBuilder().build();
+    dagToCopy.topologicalDo(v -> {
+      newLoopVertex.getBuilder().addVertex(v);
+      dagToCopy.getIncomingEdgesOf(v).forEach(e -> newLoopVertex.getBuilder().connectVertices(e));
+    });
+    this.dagIncomingEdges.forEach(((v, es) -> es.forEach(newLoopVertex::addDagIncomingEdge)));
+    this.iterativeIncomingEdges.forEach((v, es) -> es.forEach(newLoopVertex::addIterativeIncomingEdge));
+    this.nonIterativeIncomingEdges.forEach((v, es) -> es.forEach(newLoopVertex::addNonIterativeIncomingEdge));
+    this.dagOutgoingEdges.forEach(((v, es) -> es.forEach(newLoopVertex::addDagOutgoingEdge)));
+    newLoopVertex.setMaxNumberOfIterations(maxNumberOfIterations);
+    newLoopVertex.setTerminationCondition(terminationCondition);
+
+    return newLoopVertex;
   }
 
   public DAGBuilder<IRVertex, IREdge> getBuilder() {
@@ -107,18 +128,6 @@ public final class LoopVertex extends IRVertex {
     return this.dagOutgoingEdges;
   }
 
-  public void setEquivalentVerticesOfIteration(final HashMap<IRVertex, IRVertex> equivalentVerticesOfIteration) {
-    final HashMap<IRVertex, List<IRVertex>> mapToList = new HashMap<>();
-    equivalentVerticesOfIteration.forEach((vertex, rootVertex) -> {
-      mapToList.putIfAbsent(rootVertex, new LinkedList<>());
-      mapToList.get(rootVertex).add(vertex);
-    });
-    mapToList.forEach((vertex, list) -> {
-      Collections.sort(list, Comparator.comparingInt(Vertex::getNumericId));
-      this.equivalentVerticesOfIteration.putIfAbsent(vertex, list.iterator());
-    });
-  }
-
   public LoopVertex unRollIteration(final DAGBuilder<IRVertex, IREdge> dagBuilder) {
     final HashMap<IRVertex, IRVertex> originalToNewIRVertex = new HashMap<>();
     final DAG<IRVertex, IREdge> dagToAdd = getDAG();
@@ -127,7 +136,7 @@ public final class LoopVertex extends IRVertex {
 
     // add the DAG and internal edges to the dagBuilder.
     dagToAdd.topologicalDo(irVertex -> {
-      final IRVertex newIrVertex = equivalentVerticesOfIteration.get(irVertex).next();
+      final IRVertex newIrVertex = irVertex.getClone();
       originalToNewIRVertex.putIfAbsent(irVertex, newIrVertex);
 
       dagBuilder.addVertex(newIrVertex);

@@ -231,32 +231,32 @@ public final class AlternatingLeastSquare {
    * The loop updates the item matrix each iteration.
    */
   public static final class UpdateItemMatrix extends LoopCompositeTransform<
-      PCollection<KV<Integer, Pair<int[], float[]>>>, PCollectionView<Map<Integer, float[]>>> {
+      PCollection<KV<Integer, float[]>>, PCollection<KV<Integer, float[]>>> {
     private final int numFeatures;
     private final double lambda;
-    private final PCollectionView<Map<Integer, float[]>> itemMatrix;
+    private final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData;
     private final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData;
 
     UpdateItemMatrix(final int numFeatures, final double lambda,
-                     final PCollectionView<Map<Integer, float[]>> itemMatrix,
+                     final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData,
                      final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData) {
       this.numFeatures = numFeatures;
       this.lambda = lambda;
-      this.itemMatrix = itemMatrix;
+      this.parsedUserData = parsedUserData;
       this.parsedItemData = parsedItemData;
     }
 
     @Override
-    public PCollectionView<Map<Integer, float[]>> expand(
-        final PCollection<KV<Integer, Pair<int[], float[]>>> parsedUserData) {
+    public PCollection<KV<Integer, float[]>> expand(final PCollection<KV<Integer, float[]>> itemMatrix) {
+      // Make Item Matrix view.
+      final PCollectionView<Map<Integer, float[]>> itemMatrixView = itemMatrix.apply(View.asMap());
       // Create User Matrix
-      final PCollectionView<Map<Integer, float[]>> userMatrix = parsedUserData
-          .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrix)).withSideInputs(itemMatrix))
+      final PCollectionView<Map<Integer, float[]>> userMatrixView = parsedUserData
+          .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrixView)).withSideInputs(itemMatrixView))
           .apply(View.asMap());
-      // return Item Matrix
-      return parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrix))
-          .withSideInputs(userMatrix))
-          .apply(View.asMap());
+      // return new Item Matrix
+      return parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrixView))
+          .withSideInputs(userMatrixView));
     }
   }
 
@@ -294,7 +294,7 @@ public final class AlternatingLeastSquare {
         .apply(Combine.perKey(new TrainingDataCombiner()));
 
     // Create Initial Item Matrix
-    PCollectionView<Map<Integer, float[]>> itemMatrix = parsedItemData
+    PCollection<KV<Integer, float[]>> itemMatrix = parsedItemData
         .apply(ParDo.of(new DoFn<KV<Integer, Pair<int[], float[]>>, KV<Integer, float[]>>() {
           @ProcessElement
           public void processElement(final ProcessContext c) throws Exception {
@@ -312,13 +312,13 @@ public final class AlternatingLeastSquare {
             }
             c.output(KV.of(element.getKey(), result));
           }
-        })).apply(View.asMap());
+        }));
 
 
     // Iterations to update Item Matrix.
     for (int i = 0; i < numItr; i++) {
       // NOTE: a single composite transform for the iteration.
-      itemMatrix = parsedUserData.apply(new UpdateItemMatrix(numFeatures, lambda, itemMatrix, parsedItemData));
+      itemMatrix = itemMatrix.apply(new UpdateItemMatrix(numFeatures, lambda, parsedUserData, parsedItemData));
     }
 
     p.run();

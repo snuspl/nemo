@@ -38,6 +38,10 @@ public final class OperatorVertex extends IRVertex {
     }
   }
 
+  public OperatorVertex getClone() {
+    return new OperatorVertex(this.transform, this.assignedLoopVertex, this.stackDepth);
+  }
+
   public Boolean isComposite() {
     return assignedLoopVertex != null;
   }
