@@ -65,6 +65,7 @@ public final class RuntimeMaster {
       throw new RuntimeException("Unknown scheduler type");
     }
     this.messageEnvironment = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID);
+    messageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
     this.blockManagerMaster = new BlockManagerMaster();
     this.resourceManager = new LocalResourceManager(scheduler, messageEnvironment, blockManagerMaster);
   }
@@ -110,7 +111,7 @@ public final class RuntimeMaster {
     public void onSendMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
       case TaskGroupStateChanged:
-        scheduler.onTaskGroupStateChanged(message.getTaskStateChangedMsg().getTaskGroupId());
+//        scheduler.onTaskGroupStateChanged(message.getTaskStateChangedMsg().getTaskGroupId());
         break;
       default:
         throw new UnsupportedMessageException(

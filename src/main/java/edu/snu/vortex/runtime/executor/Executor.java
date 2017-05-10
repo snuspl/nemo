@@ -15,35 +15,47 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
+import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import org.apache.commons.lang3.SerializationUtils;
 
-import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Executor.
+ */
 public final class Executor {
 
   private final String executorId;
   private final int numCores;
+  private final MessageEnvironment<ControlMessage.Message> myMessageEnvironment;
+  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMessageSenderMap;
   private final ExecutorService executorService;
   private final DataTransferFactory dataTransferFactory;
 
   private PhysicalPlan physicalPlan;
   private TaskGroupStateManager taskGroupStateManager;
 
-  public Executor(final String executorId, final int numCores,
-                  final MessageEnvironment messageEnvironment,
+  public Executor(final String executorId,
+                  final int numCores,
+                  final MessageEnvironment myMessageEnvironment,
+                  final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMessageSenderMap,
                   final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.numCores = numCores;
+    this.myMessageEnvironment = myMessageEnvironment;
+    myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
+    this.nodeIdToMessageSenderMap = nodeIdToMessageSenderMap;
     this.executorService = Executors.newFixedThreadPool(numCores);
 
     // TODO #: Check
@@ -63,17 +75,35 @@ public final class Executor {
         dataTransferFactory).execute();
   }
 
-
-  private final class ExecutorMessageReceiver implements MessageListener<Serializable> {
+  /**
+   * MessageListener for Executor.
+   */
+  private final class ExecutorMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
-    public void onSendMessage(Serializable message) {
-      onTaskGroupReceived();
+    public void onSendMessage(final ControlMessage.Message message) {
+      switch (message.getType()) {
+
+      case ScheduleTaskGroup:
+        final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();
+        final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
+        onTaskGroupReceived(taskGroup);
+        break;
+      case BlockLocationInfo:
+        break;
+      case RequestBlock:
+        break;
+      case TransferBlock:
+        break;
+      default:
+        throw new IllegalMessageException(
+            new Exception("This message should not be received by an executor :" + message.getType()));
+      }
       physicalPlan = message.getPhysicalPlan();
     }
 
     @Override
-    public void onRequestMessage(Serializable message, MessageContext messageContext) {
+    public void onRequestMessage(final ControlMessage.Message message, final MessageContext messageContext) {
 
     }
   }

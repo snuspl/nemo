@@ -30,6 +30,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Task Group Executor.
+ */
 public final class TaskGroupExecutor {
 
   private static final Logger LOG = Logger.getLogger(TaskGroupExecutor.class.getName());
@@ -143,7 +146,7 @@ public final class TaskGroupExecutor {
         .forEach(channelReader -> {
           final Object sideInput = channelReader.getSideInput();
           // TODO #: Assumption!
-          final Transform srcTransform = ((OperatorTask)channelReader.getRuntimeEdge().getSrc()).getTransform();
+          final Transform srcTransform = ((OperatorTask) channelReader.getRuntimeEdge().getSrc()).getTransform();
           sideInputMap.put(srcTransform, sideInput);
         });
 
