@@ -121,7 +121,7 @@ public final class InputReader extends DataTransfer {
       return srcRuntimeVertex.getId();
     }
 
-    return ((Task)runtimeEdge.getSrc()).getRuntimeVertexId();
+    return ((Task) runtimeEdge.getSrc()).getRuntimeVertexId();
   }
 
   public boolean isSideInputReader() {

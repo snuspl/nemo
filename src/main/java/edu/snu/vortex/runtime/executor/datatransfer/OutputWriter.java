@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
-import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;

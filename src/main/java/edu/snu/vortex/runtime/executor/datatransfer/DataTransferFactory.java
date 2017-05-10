@@ -34,7 +34,8 @@ public final class DataTransferFactory {
     return new OutputWriter(srcTask.getIndex(), dstRuntimeVertex, runtimeEdge, blockManagerWorker);
   }
 
-  public OutputWriter createWriter(Task srcTask, RuntimeEdge runtimeEdge) {
+  public OutputWriter createWriter(final Task srcTask,
+                                   final RuntimeEdge runtimeEdge) {
     return createWriter(srcTask, null, runtimeEdge);
   }
 
@@ -51,7 +52,8 @@ public final class DataTransferFactory {
     return new InputReader(dstTask.getIndex(), srcRuntimeVertex, runtimeEdge, blockManagerWorker);
   }
 
-  public InputReader createReader(Task dstTask, RuntimeEdge runtimeEdge) {
+  public InputReader createReader(final Task dstTask,
+                                  final RuntimeEdge runtimeEdge) {
     return createReader(dstTask, null, runtimeEdge);
   }
 }
