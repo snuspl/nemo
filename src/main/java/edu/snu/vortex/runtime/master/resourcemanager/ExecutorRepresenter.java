@@ -15,11 +15,14 @@
  */
 package edu.snu.vortex.runtime.master.resourcemanager;
 
+import com.google.protobuf.ByteString;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import org.apache.commons.lang3.SerializationUtils;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,12 +40,12 @@ public final class ExecutorRepresenter {
   private final RuntimeAttribute resourceType;
   private final int executorCapacity;
   private final Set<String> runningTaskGroups;
-  private final MessageSender<Serializable> messageSender;
+  private final MessageSender<ControlMessage.Message> messageSender;
 
   public ExecutorRepresenter(final String executorId,
                              final RuntimeAttribute resourceType,
                              final int executorCapacity,
-                             final MessageSender<Serializable> messageSender) {
+                             final MessageSender<ControlMessage.Message> messageSender) {
     this.executorId = executorId;
     this.resourceType = resourceType;
     this.executorCapacity = executorCapacity;
@@ -53,7 +56,17 @@ public final class ExecutorRepresenter {
 
   public void onTaskGroupScheduled(final TaskGroup taskGroup) {
     runningTaskGroups.add(taskGroup.getTaskGroupId());
-    messageSender.send(taskGroup);
+
+    final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
+    final ControlMessage.ScheduleTaskGroupMsg.Builder scheduleTaskGroupMsgBuilder =
+        ControlMessage.ScheduleTaskGroupMsg.newBuilder();
+
+    scheduleTaskGroupMsgBuilder.setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(taskGroup)));
+    msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+    msgBuilder.setType(ControlMessage.MessageType.ScheduleTaskGroup);
+    msgBuilder.setScheduleTaskGroupMsg(scheduleTaskGroupMsgBuilder.build());
+
+    messageSender.send(msgBuilder.build());
   }
 
   public void onTaskGroupExecutionComplete(final String taskGroupId) {
