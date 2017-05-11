@@ -19,6 +19,7 @@ public final class DataTransferFactory {
                              final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.blockManagerWorker = new BlockManagerWorker(executorId, blockManagerMaster, new LocalStore());
+    blockManagerMaster.addNewWorker(blockManagerWorker);
   }
 
   /**

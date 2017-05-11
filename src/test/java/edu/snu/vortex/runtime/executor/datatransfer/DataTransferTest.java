@@ -16,7 +16,9 @@
 package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
+import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
@@ -25,6 +27,7 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.values.KV;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +40,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
@@ -94,12 +99,22 @@ public final class DataTransferTest {
     // Src setup
     final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
     srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-    final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(null, srcVertexAttributes);
+
+    final BoundedSource s = mock(BoundedSource.class);
+    final BoundedSource.BoundedReader r = mock(BoundedSource.BoundedReader.class);
+    final List<BoundedSource.BoundedReader> dummyReaderList = new ArrayList<>(3);
+//    dummyReaderList.add(r);
+//    dummyReaderList.add(r);
+//    dummyReaderList.add(r);
+
+    final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
+    final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
 
     // Dst setup
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
     dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-    final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(null, dstVertexAttributes);
+    final BoundedSourceVertex v2 = new BoundedSourceVertex<>(s);
+    final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
 
     // Edge setup
     final String edgeId = "Dummy";
