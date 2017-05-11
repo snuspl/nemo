@@ -44,7 +44,7 @@ public final class Executor {
   private static final Logger LOG = Logger.getLogger(Executor.class.getName());
 
   private final String executorId;
-  private final int numCores;
+  private final int capacity;
   private final MessageEnvironment myMessageEnvironment;
   private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
   private final ExecutorService executorService;
@@ -54,16 +54,16 @@ public final class Executor {
   private TaskGroupStateManager taskGroupStateManager;
 
   public Executor(final String executorId,
-                  final int numCores,
+                  final int capacity,
                   final LocalMessageDispatcher localMessageDispatcher,
                   final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
-    this.numCores = numCores;
+    this.capacity = capacity;
     this.myMessageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
     this.nodeIdToMsgSenderMap = new HashMap<>();
     myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     connectToOtherNodes(myMessageEnvironment);
-    this.executorService = Executors.newFixedThreadPool(numCores);
+    this.executorService = Executors.newFixedThreadPool(capacity);
 
     // TODO #: Check
     this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
