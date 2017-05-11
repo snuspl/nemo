@@ -19,8 +19,6 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.utils.dag.Vertex;
 
-import java.io.Serializable;
-
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
  */
