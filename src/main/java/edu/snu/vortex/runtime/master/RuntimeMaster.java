@@ -73,6 +73,11 @@ public final class RuntimeMaster {
     this.blockManagerMaster = new BlockManagerMaster();
     this.resourceManager =
         new LocalResourceManager(scheduler, masterMessageEnvironment, localMessageDispatcher, blockManagerMaster);
+    initializeResources();
+  }
+
+  private void initializeResources() {
+    resourceManager.requestExecutor();
   }
 
   /**
@@ -83,9 +88,10 @@ public final class RuntimeMaster {
   public void execute(final ExecutionPlan executionPlan, final String dagDirectory) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
-//      new SimpleRuntime().executePhysicalPlan(physicalPlan);
-      // to be replaced by:
-       executionStateManager = scheduler.scheduleJob(physicalPlan);
+      executionStateManager = scheduler.scheduleJob(physicalPlan);
+      while (!executionStateManager.checkJobCompletion()) {
+        // wait
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
