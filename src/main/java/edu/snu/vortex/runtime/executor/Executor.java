@@ -38,7 +38,7 @@ public final class Executor {
 
   private final String executorId;
   private final int numCores;
-  private final MessageEnvironment<ControlMessage.Message> myMessageEnvironment;
+  private final MessageEnvironment myMessageEnvironment;
   private final ExecutorService executorService;
   private final DataTransferFactory dataTransferFactory;
 
@@ -51,7 +51,7 @@ public final class Executor {
                   final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.numCores = numCores;
-    this.myMessageEnvironment = new LocalMessageEnvironment<>(executorId, localMessageDispatcher);
+    this.myMessageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
     myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     this.executorService = Executors.newFixedThreadPool(numCores);
 

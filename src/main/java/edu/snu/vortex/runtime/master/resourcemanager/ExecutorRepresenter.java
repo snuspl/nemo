@@ -66,7 +66,11 @@ public final class ExecutorRepresenter {
     msgBuilder.setType(ControlMessage.MessageType.ScheduleTaskGroup);
     msgBuilder.setScheduleTaskGroupMsg(scheduleTaskGroupMsgBuilder.build());
 
-    messageSender.send(msgBuilder.build());
+    sendControlMessage(msgBuilder.build());
+  }
+
+  public void sendControlMessage(final ControlMessage.Message message) {
+    messageSender.send(message);
   }
 
   public void onTaskGroupExecutionComplete(final String taskGroupId) {
