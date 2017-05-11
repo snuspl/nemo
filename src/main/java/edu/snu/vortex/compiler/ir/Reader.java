@@ -15,11 +15,13 @@
  */
 package edu.snu.vortex.compiler.ir;
 
+import java.io.Serializable;
+
 /**
  * Interface for reader.
  * @param <O> output type.
  */
-public interface Reader<O> {
+public interface Reader<O> extends Serializable {
   Iterable<Element<O, ?, ?>> read() throws Exception;
 }
 
