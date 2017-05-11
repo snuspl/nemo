@@ -63,7 +63,7 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public Iterable<Element> read() {
-    switch (srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.Key.CommPattern)) {
+    switch (runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern)) {
       case OneToOne:
         return readOneToOne();
       case Broadcast:
