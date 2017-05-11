@@ -100,7 +100,7 @@ public final class RuntimeMaster {
   public void execute(final ExecutionPlan executionPlan, final String dagDirectory) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
-      executionStateManager = scheduler.scheduleJob(physicalPlan);
+      executionStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
       while (!executionStateManager.checkJobCompletion()) {
         // wait
       }
