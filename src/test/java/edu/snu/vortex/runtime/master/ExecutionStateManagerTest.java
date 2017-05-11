@@ -76,7 +76,7 @@ public final class ExecutionStateManagerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final ExecutionStateManager executionStateManager =
-        new ExecutionStateManager(new PhysicalPlan("TestPlan", physicalDAG));
+        new ExecutionStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
 
     assertEquals(executionStateManager.getJobId(), "TestPlan");
 
