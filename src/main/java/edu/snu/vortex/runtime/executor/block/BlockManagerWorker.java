@@ -137,16 +137,20 @@ public final class BlockManagerWorker {
         return localStore;
       case Memory:
         // TODO #181: Implement MemoryBlockStore
-        throw new UnsupportedOperationException(blockStore.toString());
+        return localStore;
+//        throw new UnsupportedOperationException(blockStore.toString());
       case File:
         // TODO #69: Implement file channel in Runtime
-        throw new UnsupportedOperationException(blockStore.toString());
+        return localStore;
+//        throw new UnsupportedOperationException(blockStore.toString());
       case MemoryFile:
         // TODO #69: Implement file channel in Runtime
-        throw new UnsupportedOperationException(blockStore.toString());
+        return localStore;
+//        throw new UnsupportedOperationException(blockStore.toString());
       case DistributedStorage:
         // TODO #180: Implement DistributedStorageStore
-        throw new UnsupportedOperationException(blockStore.toString());
+        return localStore;
+//        throw new UnsupportedOperationException(blockStore.toString());
       default:
         throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
