@@ -19,6 +19,9 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
@@ -91,10 +94,12 @@ public final class DataTransferTest {
     // Src setup
     final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
     srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(null, srcVertexAttributes);
 
     // Dst setup
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
     dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(null, dstVertexAttributes);
 
     // Edge setup
     final String edgeId = "Dummy";
@@ -102,6 +107,7 @@ public final class DataTransferTest {
     edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
     edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
+    final RuntimeEdge<RuntimeVertex> dummyEdge = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex);
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
@@ -118,7 +124,7 @@ public final class DataTransferTest {
     final List<List<Element>> dataWrittenList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
       final List<Element> dataWritten = getListOfZeroToNine();
-      final OutputWriter writer = new OutputWriter(edgeId, srcTaskIndex, dstVertexAttributes, edgeAttributes, sender);
+      final OutputWriter writer = new OutputWriter(srcTaskIndex, dstVertex, dummyEdge, sender);
       writer.write(dataWritten);
       dataWrittenList.add(dataWritten);
     });
@@ -126,7 +132,7 @@ public final class DataTransferTest {
     // Read
     final List<List<Element>> dataReadList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
-      final InputReader reader = new InputReader(edgeId, dstTaskIndex, srcVertexAttributes, edgeAttributes, receiver);
+      final InputReader reader = new InputReader(dstTaskIndex, srcVertex, dummyEdge, receiver);
       final List<Element> dataRead = new ArrayList<>();
       reader.read().forEach(dataRead::add);
       dataReadList.add(dataRead);
