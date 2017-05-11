@@ -20,6 +20,8 @@ import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
+import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.executor.datatransfer.InputReader;
 import edu.snu.vortex.runtime.executor.datatransfer.OutputWriter;
@@ -114,8 +116,11 @@ public final class TaskGroupExecutor {
   }
 
   public void execute() {
+    taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty());
+
     initializeChannels();
     taskGroup.getTaskDAG().topologicalDo(task -> {
+      taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING);
       if (task instanceof BoundedSourceTask) {
         launchBoundedSourceTask((BoundedSourceTask) task);
       } else if (task instanceof OperatorTask) {
@@ -135,6 +140,7 @@ public final class TaskGroupExecutor {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+    taskGroupStateManager.onTaskStateChanged(boundedSourceTask.getId(), TaskState.State.COMPLETE);
   }
 
   private void launchOperatorTask(final OperatorTask operatorTask) {
@@ -163,5 +169,6 @@ public final class TaskGroupExecutor {
 
     final Iterable<Element> output = outputCollector.getOutputList();
     taskIdToChannelWritersMap.get(operatorTask.getId()).forEach(channelWriter -> channelWriter.write(output));
+    taskGroupStateManager.onTaskStateChanged(operatorTask.getId(), TaskState.State.COMPLETE);
   }
 }

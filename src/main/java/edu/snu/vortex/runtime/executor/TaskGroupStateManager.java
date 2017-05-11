@@ -79,6 +79,7 @@ public final class TaskGroupStateManager {
                                                    final Optional<List<String>> failedTaskIds) {
     if (newState == TaskGroupState.State.EXECUTING) {
       LOG.log(Level.FINE, "Executing TaskGroup ID {0}...", taskGroupId);
+      idToTaskStates.forEach((taskId, state) -> state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR));
     } else if (newState == TaskGroupState.State.COMPLETE) {
       LOG.log(Level.FINE, "TaskGroup ID {0} complete!", taskGroupId);
       notifyTaskGroupStateToMaster(taskGroupId, newState, failedTaskIds);
