@@ -23,7 +23,9 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
@@ -54,7 +56,7 @@ public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
   // TODO #: Configuration
-  private static final int DEFAULT_NUM_EXECUTOR = 4;
+  private static final int DEFAULT_NUM_EXECUTOR = 2;
   private static final int DEFAULT_EXECUTOR_CAPACITY = 4;
 
   private final Scheduler scheduler;
@@ -134,17 +136,42 @@ public final class RuntimeMaster {
     public void onSendMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
       case TaskGroupStateChanged:
-//        scheduler.onTaskGroupStateChanged(message.getTaskStateChangedMsg().getTaskGroupId());
+        final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
+        scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
+            taskGroupStateChangedMsg.getTaskGroupId(),
+            convertState(taskGroupStateChangedMsg.getState()),
+            taskGroupStateChangedMsg.getFailedTaskIdsList());
+        break;
+      case BlockStateChanged:
+        break;
+      case RequestBlock:
         break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by Master :" + message.getType()));
       }
-      // scheduler.onTaskGroupStateChanged();
     }
 
     @Override
     public void onRequestMessage(final ControlMessage.Message message, final MessageContext messageContext) {
+    }
+  }
+
+  // TODO #164: Cleanup Protobuf Usage
+  private TaskGroupState.State convertState(final ControlMessage.TaskGroupStateFromExecutor state) {
+    switch (state) {
+    case READY:
+      return TaskGroupState.State.READY;
+    case EXECUTING:
+      return TaskGroupState.State.EXECUTING;
+    case COMPLETE:
+      return TaskGroupState.State.COMPLETE;
+    case FAILED_RECOVERABLE:
+      return TaskGroupState.State.FAILED_RECOVERABLE;
+    case FAILED_UNRECOVERABLE:
+      return TaskGroupState.State.FAILED_UNRECOVERABLE;
+    default:
+      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
     }
   }
 }
