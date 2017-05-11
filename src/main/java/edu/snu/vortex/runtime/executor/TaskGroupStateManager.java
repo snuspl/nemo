@@ -15,7 +15,10 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
@@ -23,6 +26,7 @@ import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.utils.StateMachine;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,8 +54,12 @@ public final class TaskGroupStateManager {
    */
   private Set<String> currentTaskGroupTaskIds;
 
-  public TaskGroupStateManager(final TaskGroup taskGroup) {
+  private Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
+
+  public TaskGroupStateManager(final TaskGroup taskGroup,
+                               final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap) {
     this.taskGroupId = taskGroup.getTaskGroupId();
+    this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     idToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
     initializeStates(taskGroup);
@@ -69,6 +77,7 @@ public final class TaskGroupStateManager {
       idToTaskStates.put(task.getId(), new TaskState());
     });
   }
+
 
   /**
    * Updates the state of the task group.
@@ -122,18 +131,24 @@ public final class TaskGroupStateManager {
   private void notifyTaskGroupStateToMaster(final String id,
                                             final TaskGroupState.State newState,
                                             final Optional<List<String>> failedTaskIds) {
+    final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
     final ControlMessage.TaskGroupStateChangedMsg.Builder taskGroupStateChangedMsg =
         ControlMessage.TaskGroupStateChangedMsg.newBuilder();
     taskGroupStateChangedMsg.setTaskGroupId(id);
     taskGroupStateChangedMsg.setState(convertState(newState));
 
+    msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+    msgBuilder.setType(ControlMessage.MessageType.TaskGroupStateChanged);
+    msgBuilder.setTaskStateChangedMsg(taskGroupStateChangedMsg.build());
+
     if (failedTaskIds.isPresent()) {
       taskGroupStateChangedMsg.addAllFailedTaskIds(failedTaskIds.get());
     }
 
-    // TODO #94: Implement Distributed Communicator
-
     // Send taskGroupStateChangedMsg to master!
+    final MessageSender<ControlMessage.Message> senderToDriver =
+        nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
+    senderToDriver.send(msgBuilder.build());
   }
 
   // TODO #164: Cleanup Protobuf Usage

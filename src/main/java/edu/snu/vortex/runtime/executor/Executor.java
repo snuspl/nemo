@@ -19,6 +19,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
@@ -28,6 +29,9 @@ import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.apache.commons.lang3.SerializationUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,6 +43,7 @@ public final class Executor {
   private final String executorId;
   private final int numCores;
   private final MessageEnvironment myMessageEnvironment;
+  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
   private final ExecutorService executorService;
   private final DataTransferFactory dataTransferFactory;
 
@@ -52,11 +57,26 @@ public final class Executor {
     this.executorId = executorId;
     this.numCores = numCores;
     this.myMessageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
+    this.nodeIdToMsgSenderMap = new HashMap<>();
     myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
+    connectToOtherNodes(myMessageEnvironment);
     this.executorService = Executors.newFixedThreadPool(numCores);
 
     // TODO #: Check
     this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
+  }
+
+  private void connectToOtherNodes(final MessageEnvironment myMessageEnvironment) {
+    // Connect to Master for now.
+    try {
+      nodeIdToMsgSenderMap.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
+          myMessageEnvironment.<ControlMessage.Message>asyncConnect(
+              MessageEnvironment.MASTER_COMMUNICATION_ID, MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
@@ -64,7 +84,7 @@ public final class Executor {
   }
 
   private void launchTaskGroup(final TaskGroup taskGroup) {
-    taskGroupStateManager = new TaskGroupStateManager(taskGroup);
+    taskGroupStateManager = new TaskGroupStateManager(taskGroup, nodeIdToMsgSenderMap);
     new TaskGroupExecutor(taskGroup,
         taskGroupStateManager,
         physicalPlan.getStageDAG().getIncomingEdgesOf(taskGroup.getStageId()),
