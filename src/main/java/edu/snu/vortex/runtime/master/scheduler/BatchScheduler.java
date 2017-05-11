@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
+import com.google.protobuf.ByteString;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
@@ -28,6 +30,7 @@ import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
+import org.apache.commons.lang.SerializationUtils;
 
 import java.util.*;
 import java.util.concurrent.BlockingDeque;
@@ -107,8 +110,22 @@ public final class BatchScheduler implements Scheduler {
   public synchronized ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
     this.physicalPlan = jobToSchedule;
     this.executionStateManager = new ExecutionStateManager(jobToSchedule);
+    broadcastPhysicalPlan();
     scheduleNextStage();
     return executionStateManager;
+  }
+
+  private void broadcastPhysicalPlan() {
+    executorRepresenterMap.forEach((executorId, representer) -> {
+      ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
+      final ControlMessage.BroadcastPhysicalPlanMsg.Builder broadcastPhysicalPlanMsgBuilder =
+          ControlMessage.BroadcastPhysicalPlanMsg.newBuilder();
+      broadcastPhysicalPlanMsgBuilder.setPhysicalPlan(ByteString.copyFrom(SerializationUtils.serialize(physicalPlan)));
+      msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+      msgBuilder.setType(ControlMessage.MessageType.BroadcastPhysicalPlan);
+      msgBuilder.setBroadcastPhysicalPlanMsg(broadcastPhysicalPlanMsgBuilder.build());
+      representer.sendControlMessage(msgBuilder.build());
+    });
   }
 
   /**
