@@ -80,7 +80,15 @@ public final class Executor {
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
-    executorService.execute(() -> launchTaskGroup(taskGroup));
+    executorService.execute(() -> {
+      System.out.println("yo");
+      try {
+        launchTaskGroup(taskGroup);
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   private void launchTaskGroup(final TaskGroup taskGroup) {

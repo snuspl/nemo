@@ -68,16 +68,20 @@ public final class DoTransform implements Transform {
 
   @Override
   public void onData(final Iterable<Element> data, final String srcVertexId) {
-    final ProcessContext beamContext = new ProcessContext(doFn, outputCollector, sideInputs, serializedOptions);
-    final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
-    invoker.invokeSetup();
-    invoker.invokeStartBundle(beamContext);
-    data.forEach(element -> { // No need to check for input index, since it is always 0 for DoTransform
-      beamContext.setElement(element.getData());
-      invoker.invokeProcessElement(beamContext);
-    });
-    invoker.invokeFinishBundle(beamContext);
-    invoker.invokeTeardown();
+    try {
+      final ProcessContext beamContext = new ProcessContext(doFn, outputCollector, sideInputs, serializedOptions);
+      final DoFnInvoker invoker = DoFnInvokers.invokerFor(doFn);
+      invoker.invokeSetup();
+      invoker.invokeStartBundle(beamContext);
+      data.forEach(element -> { // No need to check for input index, since it is always 0 for DoTransform
+        beamContext.setElement(element.getData());
+        invoker.invokeProcessElement(beamContext);
+      });
+      invoker.invokeFinishBundle(beamContext);
+      invoker.invokeTeardown();
+    } catch (Throwable e2) {
+      e2.printStackTrace();
+    }
   }
 
   @Override
