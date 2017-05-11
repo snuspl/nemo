@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Task Group Executor.
+ * Executes a task group.
  */
 public final class TaskGroupExecutor {
 
@@ -46,6 +46,9 @@ public final class TaskGroupExecutor {
   private final List<PhysicalStageEdge> stageOutgoingEdges;
   private final DataTransferFactory channelFactory;
 
+  /**
+   * Map of task IDs in this task group to their readers/writers.
+   */
   private final Map<String, List<InputReader>> taskIdToInputReaderMap;
   private final Map<String, List<OutputWriter>> taskIdToOutputWriterMap;
 
@@ -64,7 +67,11 @@ public final class TaskGroupExecutor {
     this.taskIdToOutputWriterMap = new HashMap<>();
   }
 
-  private void initializeChannels() {
+  /**
+   * Initializes readers and writers depending on the attributes.
+   * Note that there are edges that are cross-stage and stage-internal.
+   */
+  private void initializeDataTransfer() {
     taskGroup.getTaskDAG().topologicalDo((task -> {
       final Set<PhysicalStageEdge> inEdgesFromOtherStages = getInEdgesFromOtherStages(task);
       final Set<PhysicalStageEdge> outEdgesToOhterStages = getOutEdgesToOtherStages(task);
@@ -89,6 +96,7 @@ public final class TaskGroupExecutor {
     }));
   }
 
+  // Helper functions to initializes cross-stage edges.
   private Set<PhysicalStageEdge> getInEdgesFromOtherStages(final Task task) {
     return stageIncomingEdges.stream().filter(
         stageInEdge -> stageInEdge.getDstVertex().getId().equals(task.getRuntimeVertexId()))
@@ -101,6 +109,7 @@ public final class TaskGroupExecutor {
         .collect(Collectors.toSet());
   }
 
+  // Helper functions to initializes stage-internal edges.
   private void createLocalReader(final Task task, final RuntimeEdge<Task> internalEdge) {
     final InputReader inputReader = channelFactory.createReader(task, internalEdge);
     addInputReader(task, inputReader);
@@ -111,6 +120,7 @@ public final class TaskGroupExecutor {
     addOutputWriter(task, outputWriter);
   }
 
+  // Helper functions to add the initialized reader/writer to the maintained map.
   private void addInputReader(final Task task, final InputReader inputReader) {
     taskIdToInputReaderMap.computeIfAbsent(task.getId(), readerList -> new ArrayList<>());
     taskIdToInputReaderMap.get(task.getId()).add(inputReader);
@@ -121,10 +131,13 @@ public final class TaskGroupExecutor {
     taskIdToOutputWriterMap.get(task.getId()).add(outputWriter);
   }
 
+  /**
+   * Executes the task group.
+   */
   public void execute() {
     taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty());
 
-    initializeChannels();
+    initializeDataTransfer();
     taskGroup.getTaskDAG().topologicalDo(task -> {
       taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING);
       try {
@@ -140,9 +153,13 @@ public final class TaskGroupExecutor {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
       }
     });
-    LOG.log(Level.INFO, "TaskGroup #{0} Execution Complete!", taskGroup.getTaskGroupId());
+    LOG.log(Level.FINE, "TaskGroup #{0} Execution Complete!", taskGroup.getTaskGroupId());
   }
 
+  /**
+   * Processes a BoundedSourceTask.
+   * @param boundedSourceTask to execute
+   */
   private void launchBoundedSourceTask(final BoundedSourceTask boundedSourceTask) {
     try {
       final Reader reader = boundedSourceTask.getReader();
@@ -155,9 +172,14 @@ public final class TaskGroupExecutor {
     taskGroupStateManager.onTaskStateChanged(boundedSourceTask.getId(), TaskState.State.COMPLETE);
   }
 
+  /**
+   * Processes an OperatorTask.
+   * @param operatorTask to execute
+   */
   private void launchOperatorTask(final OperatorTask operatorTask) {
     final Map<Transform, Object> sideInputMap = new HashMap<>();
 
+    // Check for side inputs
     taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
         .filter(InputReader::isSideInputReader)
@@ -173,6 +195,8 @@ public final class TaskGroupExecutor {
 
     final Transform transform = operatorTask.getTransform();
     transform.prepare(transformContext, outputCollector);
+
+    // Check for non-side inputs
     taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
         .filter(inputReader -> !inputReader.isSideInputReader())
@@ -181,10 +205,11 @@ public final class TaskGroupExecutor {
 
     final Iterable<Element> output = outputCollector.getOutputList();
 
+    // Write the output of this task to the writer
     if (taskIdToOutputWriterMap.containsKey(operatorTask.getId())) {
       taskIdToOutputWriterMap.get(operatorTask.getId()).forEach(outputWriter -> outputWriter.write(output));
     } else {
-      // The final task of the job
+      LOG.log(Level.INFO, "Output: {0}", output);
     }
 
     taskGroupStateManager.onTaskStateChanged(operatorTask.getId(), TaskState.State.COMPLETE);

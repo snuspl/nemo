@@ -45,9 +45,25 @@ public final class Executor {
 
   private final String executorId;
   private final int capacity;
-  private final MessageEnvironment myMessageEnvironment;
+
+  /**
+   * The message environment for this executor.
+   */
+  private final MessageEnvironment messageEnvironment;
+
+  /**
+   * Map of node ID to messageSender for outgoing messages from this executor.
+   */
   private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
+
+  /**
+   * To be used for a thread pool to execute task groups.
+   */
   private final ExecutorService executorService;
+
+  /**
+   * Factory of InputReader/OutputWriter for executing tasks groups.
+   */
   private final DataTransferFactory dataTransferFactory;
 
   private PhysicalPlan physicalPlan;
@@ -59,16 +75,20 @@ public final class Executor {
                   final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.capacity = capacity;
-    this.myMessageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
+    this.messageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
     this.nodeIdToMsgSenderMap = new HashMap<>();
-    myMessageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
-    connectToOtherNodes(myMessageEnvironment);
+    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
+    connectToOtherNodes(messageEnvironment);
     this.executorService = Executors.newFixedThreadPool(capacity);
 
     // TODO #: Check
     this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
   }
 
+  /**
+   * Initializes connections to other nodes to send necessary messages.
+   * @param myMessageEnvironment the message environment for this executor.
+   */
   // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
   // We should connect to the existing executors for control messages involved in block transfers.
   private void connectToOtherNodes(final MessageEnvironment myMessageEnvironment) {
@@ -85,11 +105,15 @@ public final class Executor {
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
-    LOG.log(Level.INFO, "Executor [{0}] received TaskGroup [{1}] to execute.",
+    LOG.log(Level.FINE, "Executor [{0}] received TaskGroup [{1}] to execute.",
         new Object[]{executorId, taskGroup.getTaskGroupId()});
     executorService.execute(() -> launchTaskGroup(taskGroup));
   }
 
+  /**
+   * Launches the TaskGroup, and keeps track of the execution state with taskGroupStateManager.
+   * @param taskGroup to launch.
+   */
   private void launchTaskGroup(final TaskGroup taskGroup) {
     taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, nodeIdToMsgSenderMap);
     new TaskGroupExecutor(taskGroup,

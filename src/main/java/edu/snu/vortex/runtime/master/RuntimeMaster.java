@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import avro.shaded.com.google.common.collect.Sets;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
@@ -55,7 +54,7 @@ import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
-  // TODO #: Configuration
+  // We should have a new way of (ex. configuration) these settings.
   private static final int DEFAULT_NUM_EXECUTOR = 2;
   private static final int DEFAULT_EXECUTOR_CAPACITY = 4;
 
@@ -84,6 +83,9 @@ public final class RuntimeMaster {
     initializeResources();
   }
 
+  /**
+   * Initialize a default amount of resources by requesting to the Resource Manager.
+   */
   private void initializeResources() {
     final Set<RuntimeAttribute> completeSetOfResourceType =
         new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
@@ -104,7 +106,8 @@ public final class RuntimeMaster {
     try {
       executionStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
       while (!executionStateManager.checkJobCompletion()) {
-        // wait
+        // Check every 3 seconds for job completion.
+        Thread.sleep(3000);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);

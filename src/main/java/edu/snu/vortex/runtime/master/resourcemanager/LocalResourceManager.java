@@ -19,8 +19,11 @@ import java.util.Map;
 public final class LocalResourceManager implements ResourceManager {
 
   private final Scheduler scheduler;
+
+  /**
+   * Map of executor IDs to the actual executors.
+   */
   private final Map<String, Executor> executorMap;
-  private final Map<String, MessageEnvironment> executorMessageEnvMap;
   private final MessageEnvironment masterMessageEnvironment;
   private final LocalMessageDispatcher localMessageDispatcher;
   private final BlockManagerMaster blockManagerMaster;
@@ -34,7 +37,6 @@ public final class LocalResourceManager implements ResourceManager {
     this.localMessageDispatcher = localMessageDispatcher;
     this.blockManagerMaster = blockManagerMaster;
     this.executorMap = new HashMap<>();
-    this.executorMessageEnvMap = new HashMap<>();
   }
 
   @Override

@@ -134,9 +134,9 @@ public final class BatchScheduler implements Scheduler {
    * Receives a {@link edu.snu.vortex.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
    * The message is received via communicator where this method is called.
    * @param executorId the id of the executor where the message was sent from.
-   * @param taskGroupId
-   * @param newState
-   * @param failedTaskIds
+   * @param taskGroupId whose state has changed
+   * @param newState the state to change to
+   * @param failedTaskIds if the task group failed. It is null otherwise.
    */
   // TODO #83: Introduce Task Group Executor
   // TODO #94: Implement Distributed Communicator
@@ -186,7 +186,6 @@ public final class BatchScheduler implements Scheduler {
     schedulingPolicy.onTaskGroupExecutionFailed(executor, taskGroupId);
   }
 
-  // TODO #85: Introduce Resource Manager
   @Override
   public void onExecutorAdded(final ExecutorRepresenter executor) {
     schedulingPolicy.onExecutorAdded(executor);
