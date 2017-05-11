@@ -34,11 +34,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Executor.
  */
 public final class Executor {
+  private static final Logger LOG = Logger.getLogger(Executor.class.getName());
 
   private final String executorId;
   private final int numCores;
@@ -80,19 +83,13 @@ public final class Executor {
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
-    executorService.execute(() -> {
-      System.out.println("yo");
-      try {
-        launchTaskGroup(taskGroup);
-      } catch (Exception e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-      }
-    });
+    LOG.log(Level.INFO, "Executor [{0}] received TaskGroup [{1}] to execute.",
+        new Object[]{executorId, taskGroup.getTaskGroupId()});
+    executorService.execute(() -> launchTaskGroup(taskGroup));
   }
 
   private void launchTaskGroup(final TaskGroup taskGroup) {
-    taskGroupStateManager = new TaskGroupStateManager(taskGroup, nodeIdToMsgSenderMap);
+    taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, nodeIdToMsgSenderMap);
     new TaskGroupExecutor(taskGroup,
         taskGroupStateManager,
         physicalPlan.getStageDAG().getIncomingEdgesOf(taskGroup.getStageId()),
