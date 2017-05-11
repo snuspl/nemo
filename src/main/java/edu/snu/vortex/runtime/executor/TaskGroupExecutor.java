@@ -29,6 +29,7 @@ import edu.snu.vortex.runtime.master.ContextImpl;
 import edu.snu.vortex.runtime.master.OutputCollectorImpl;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -45,8 +46,8 @@ public final class TaskGroupExecutor {
   private final List<PhysicalStageEdge> stageOutgoingEdges;
   private final DataTransferFactory channelFactory;
 
-  private final Map<String, List<InputReader>> taskIdToChannelReadersMap;
-  private final Map<String, List<OutputWriter>> taskIdToChannelWritersMap;
+  private final Map<String, List<InputReader>> taskIdToInputReaderMap;
+  private final Map<String, List<OutputWriter>> taskIdToOutputWriterMap;
 
   public TaskGroupExecutor(final TaskGroup taskGroup,
                            final TaskGroupStateManager taskGroupStateManager,
@@ -59,8 +60,8 @@ public final class TaskGroupExecutor {
     this.stageOutgoingEdges = stageOutgoingEdges;
     this.channelFactory = channelFactory;
 
-    this.taskIdToChannelReadersMap = new HashMap<>();
-    this.taskIdToChannelWritersMap = new HashMap<>();
+    this.taskIdToInputReaderMap = new HashMap<>();
+    this.taskIdToOutputWriterMap = new HashMap<>();
   }
 
   private void initializeChannels() {
@@ -111,13 +112,13 @@ public final class TaskGroupExecutor {
   }
 
   private void addInputReader(final Task task, final InputReader inputReader) {
-    taskIdToChannelReadersMap.computeIfAbsent(task.getId(), (key) -> new ArrayList<>());
-    taskIdToChannelReadersMap.get(task.getId()).add(inputReader);
+    taskIdToInputReaderMap.computeIfAbsent(task.getId(), readerList -> new ArrayList<>());
+    taskIdToInputReaderMap.get(task.getId()).add(inputReader);
   }
 
   private void addOutputWriter(final Task task, final OutputWriter outputWriter) {
-    taskIdToChannelWritersMap.computeIfAbsent(task.getId(), (key) -> new ArrayList<>());
-    taskIdToChannelWritersMap.get(task.getId()).add(outputWriter);
+    taskIdToOutputWriterMap.computeIfAbsent(task.getId(), readerList -> new ArrayList<>());
+    taskIdToOutputWriterMap.get(task.getId()).add(outputWriter);
   }
 
   public void execute() {
@@ -126,14 +127,20 @@ public final class TaskGroupExecutor {
     initializeChannels();
     taskGroup.getTaskDAG().topologicalDo(task -> {
       taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING);
-      if (task instanceof BoundedSourceTask) {
-        launchBoundedSourceTask((BoundedSourceTask) task);
-      } else if (task instanceof OperatorTask) {
-        launchOperatorTask((OperatorTask) task);
-      } else {
-        throw new UnsupportedOperationException(task.toString());
+      try {
+        if (task instanceof BoundedSourceTask) {
+          launchBoundedSourceTask((BoundedSourceTask) task);
+        } else if (task instanceof OperatorTask) {
+          launchOperatorTask((OperatorTask) task);
+        } else {
+          throw new UnsupportedOperationException(task.toString());
+        }
+      } catch (final Throwable cause) {
+        cause.printStackTrace();
+        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
       }
     });
+    LOG.log(Level.INFO, "TaskGroup #{0} Execution Complete!", taskGroup.getTaskGroupId());
   }
 
   private void launchBoundedSourceTask(final BoundedSourceTask boundedSourceTask) {
@@ -141,7 +148,7 @@ public final class TaskGroupExecutor {
       final Reader reader = boundedSourceTask.getReader();
       final Iterable<Element> readData = reader.read();
 
-      taskIdToChannelWritersMap.get(boundedSourceTask.getId()).forEach(outputWriter -> outputWriter.write(readData));
+      taskIdToOutputWriterMap.get(boundedSourceTask.getId()).forEach(outputWriter -> outputWriter.write(readData));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -151,12 +158,12 @@ public final class TaskGroupExecutor {
   private void launchOperatorTask(final OperatorTask operatorTask) {
     final Map<Transform, Object> sideInputMap = new HashMap<>();
 
-    taskIdToChannelReadersMap.get(operatorTask.getId())
+    taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
         .filter(InputReader::isSideInputReader)
         .forEach(inputReader -> {
           final Object sideInput = inputReader.getSideInput();
-          // TODO #: Assumption!
+          // Assumption: the side input source is from within the stage.
           final Transform srcTransform = ((OperatorTask) inputReader.getRuntimeEdge().getSrc()).getTransform();
           sideInputMap.put(srcTransform, sideInput);
         });
@@ -166,14 +173,20 @@ public final class TaskGroupExecutor {
 
     final Transform transform = operatorTask.getTransform();
     transform.prepare(transformContext, outputCollector);
-    taskIdToChannelReadersMap.get(operatorTask.getId())
+    taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
         .filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> transform.onData(inputReader.read(), inputReader.getSrcRuntimeVertexId()));
     transform.close();
 
     final Iterable<Element> output = outputCollector.getOutputList();
-    taskIdToChannelWritersMap.get(operatorTask.getId()).forEach(outputWriter -> outputWriter.write(output));
+
+    if (taskIdToOutputWriterMap.containsKey(operatorTask.getId())) {
+      taskIdToOutputWriterMap.get(operatorTask.getId()).forEach(outputWriter -> outputWriter.write(output));
+    } else {
+      // The final task of the job
+    }
+
     taskGroupStateManager.onTaskStateChanged(operatorTask.getId(), TaskState.State.COMPLETE);
   }
 }
