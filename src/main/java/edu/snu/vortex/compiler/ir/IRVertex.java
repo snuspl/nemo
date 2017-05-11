@@ -30,6 +30,8 @@ public abstract class IRVertex extends Vertex {
     this.attributes = AttributeMap.of(this);
   }
 
+  public abstract IRVertex getClone();
+
   public final IRVertex setAttr(final Attribute.Key key, final Attribute val) {
     attributes.put(key, val);
     return this;

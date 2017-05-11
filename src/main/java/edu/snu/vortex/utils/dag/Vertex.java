@@ -37,6 +37,10 @@ public abstract class Vertex implements Serializable {
     return id;
   }
 
+  public final Integer getNumericId() {
+    return Integer.parseInt(id.replaceAll("[^\\d.]", ""));
+  }
+
   /**
    * @return JSON representation of additional properties
    */
