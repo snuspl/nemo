@@ -134,31 +134,32 @@ public final class BatchScheduler implements Scheduler {
    * Receives a {@link edu.snu.vortex.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
    * The message is received via communicator where this method is called.
    * @param executorId the id of the executor where the message was sent from.
-   * @param message from the executor.
+   * @param taskGroupId
+   * @param newState
+   * @param failedTaskIds
    */
   // TODO #83: Introduce Task Group Executor
   // TODO #94: Implement Distributed Communicator
   @Override
   public void onTaskGroupStateChanged(final String executorId,
-                                      final ControlMessage.TaskGroupStateChangedMsg message) {
-    final TaskGroupState.State newState = convertState(message.getState());
-    executionStateManager.onTaskGroupStateChanged(message.getTaskGroupId(), newState);
+                                      final String taskGroupId,
+                                      final TaskGroupState.State newState,
+                                      final List<String> failedTaskIds) {
+    executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
     switch (newState) {
     case COMPLETE:
       synchronized (executorRepresenterMap) {
-        onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId),
-            message.getTaskGroupId());
+        onTaskGroupExecutionComplete(executorRepresenterMap.get(executorId), taskGroupId);
       }
       break;
     case FAILED_RECOVERABLE:
       synchronized (executorRepresenterMap) {
-        onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), message.getTaskGroupId(),
-            message.getFailedTaskIdsList());
+        onTaskGroupExecutionFailed(executorRepresenterMap.get(executorId), taskGroupId, failedTaskIds);
       }
       break;
     case FAILED_UNRECOVERABLE:
       throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on TaskGroup #")
-          .append(message.getTaskGroupId()).append(" in Executor ").append(executorId).toString()));
+          .append(taskGroupId).append(" in Executor ").append(executorId).toString()));
     case READY:
     case EXECUTING:
       throw new IllegalStateTransitionException(new Exception("The states READY/EXECUTING cannot occur at this point"));
@@ -220,8 +221,9 @@ public final class BatchScheduler implements Scheduler {
       }
     }
     if (nextStageToExecute != null) {
-      taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
+      LOG.log(Level.INFO, "Scheduling Stage: {0}", nextStageToExecute.getId());
       executionStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
+      taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
     } else {
       throw new SchedulingException(new Exception("There is no next stage to execute! " +
           "There must have been something wrong in setting execution states!"));
@@ -243,12 +245,10 @@ public final class BatchScheduler implements Scheduler {
                 schedulingPolicy.getScheduleTimeout());
             taskGroupsToSchedule.addLast(taskGroup);
           } else {
-            // TODO #83: Introduce Task Group Executor
-            // TODO #94: Implement Distributed Communicator
             // Must send this taskGroup to the destination executor.
-            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
             executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
                 TaskGroupState.State.EXECUTING);
+            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
           }
         } catch (final Exception e) {
           throw new SchedulingException(e);
@@ -261,23 +261,5 @@ public final class BatchScheduler implements Scheduler {
   public void terminate() {
     schedulerThread.shutdown();
     taskGroupsToSchedule.clear();
-  }
-
-  // TODO #164: Cleanup Protobuf Usage
-  private TaskGroupState.State convertState(final ControlMessage.TaskGroupStateFromExecutor state) {
-    switch (state) {
-    case READY:
-      return TaskGroupState.State.READY;
-    case EXECUTING:
-      return TaskGroupState.State.EXECUTING;
-    case COMPLETE:
-      return TaskGroupState.State.COMPLETE;
-    case FAILED_RECOVERABLE:
-      return TaskGroupState.State.FAILED_RECOVERABLE;
-    case FAILED_UNRECOVERABLE:
-      return TaskGroupState.State.FAILED_UNRECOVERABLE;
-    default:
-      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
-    }
   }
 }

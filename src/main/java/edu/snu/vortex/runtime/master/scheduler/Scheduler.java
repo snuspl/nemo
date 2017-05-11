@@ -15,12 +15,14 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.List;
 
 /**
  * Receives a job to execute and schedules {@link edu.snu.vortex.runtime.common.plan.physical.TaskGroup} to executors.
@@ -34,7 +36,8 @@ public interface Scheduler {
   void onExecutorRemoved(final ExecutorRepresenter executor);
 
   void onTaskGroupStateChanged(final String executorId,
-                               final ControlMessage.TaskGroupStateChangedMsg message);
+                               final String taskGroupId,
+                               final TaskGroupState.State newState, final List<String> failedTaskIds);
 
   void terminate();
 }
