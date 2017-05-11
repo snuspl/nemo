@@ -81,7 +81,10 @@ public final class TaskGroupExecutor {
       });
 
       final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
-      inEdgesWithinStage.forEach(internalEdge -> createLocalChannel(task, internalEdge));
+      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, internalEdge));
+
+      final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroup.getTaskDAG().getOutgoingEdgesOf(task);
+      outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, internalEdge));
     }));
   }
 
@@ -97,10 +100,12 @@ public final class TaskGroupExecutor {
         .collect(Collectors.toSet());
   }
 
-  private void createLocalChannel(final Task task, final RuntimeEdge<Task> internalEdge) {
+  private void createLocalReader(final Task task, final RuntimeEdge<Task> internalEdge) {
     final InputReader channelReader = channelFactory.createReader(task, internalEdge);
     addInputReader(task, channelReader);
+  }
 
+  private void createLocalWriter(final Task task, final RuntimeEdge<Task> internalEdge) {
     final OutputWriter channelWriter = channelFactory.createWriter(task, internalEdge);
     addOutputWriter(task, channelWriter);
   }
