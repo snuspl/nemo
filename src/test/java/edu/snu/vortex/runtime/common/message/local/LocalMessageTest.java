@@ -82,13 +82,13 @@ public class LocalMessageTest {
     executorOneEnv.setupListener("BetweenExecutors", new SimpleMessageListener());
     executorTwoEnv.setupListener("BetweenExecutors", new SimpleMessageListener());
 
-//    final MessageSender<BetweenExecutors> oneToTwo = executorOneEnv.<BetweenExecutors>asyncConnect(
-//        executorTwoNodeId, "BetweenExecutors").get();
-//    final MessageSender<BetweenExecutors> twoToOne = executorOneEnv.<BetweenExecutors>asyncConnect(
-//        executorOneNodeId, "BetweenExecutors").get();
+    final MessageSender<BetweenExecutors> oneToTwo = executorOneEnv.<BetweenExecutors>asyncConnect(
+        executorTwoNodeId, "BetweenExecutors").get();
+    final MessageSender<BetweenExecutors> twoToOne = executorOneEnv.<BetweenExecutors>asyncConnect(
+        executorOneNodeId, "BetweenExecutors").get();
 
-//    Assert.assertEquals("oneToTwo", oneToTwo.<String>request(new SimpleMessage("oneToTwo")).get());
-//    Assert.assertEquals("twoToOne", twoToOne.<String>request(new SimpleMessage("twoToOne")).get());
+    Assert.assertEquals("oneToTwo", oneToTwo.<String>request(new SimpleMessage("oneToTwo")).get());
+    Assert.assertEquals("twoToOne", twoToOne.<String>request(new SimpleMessage("twoToOne")).get());
   }
 
   final class SimpleMessageListener implements MessageListener<SimpleMessage> {

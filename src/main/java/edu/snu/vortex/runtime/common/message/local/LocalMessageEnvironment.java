@@ -9,9 +9,8 @@ import java.util.concurrent.Future;
 
 /**
  * A simple {@link MessageEnvironment} implementation that works on a single node.
- * @param <T> The type of the message to be sent in the environment.
  */
-public final class LocalMessageEnvironment<T> implements MessageEnvironment {
+public final class LocalMessageEnvironment implements MessageEnvironment {
 
   private final String currentNodeId;
   private final LocalMessageDispatcher dispatcher;
@@ -23,13 +22,13 @@ public final class LocalMessageEnvironment<T> implements MessageEnvironment {
   }
 
   @Override
-  public MessageSender<T> setupListener(
-      final String messageTypeId, final MessageListener listener) {
+  public <T> MessageSender<T> setupListener(
+      final String messageTypeId, final MessageListener<T> listener) {
     return dispatcher.setupListener(currentNodeId, messageTypeId, listener);
   }
 
   @Override
-  public Future<MessageSender<T>> asyncConnect(
+  public <T> Future<MessageSender<T>> asyncConnect(
       final String targetId, final String messageTypeId) {
     return CompletableFuture.completedFuture(new LocalMessageSender<T>(
         currentNodeId, targetId, messageTypeId, dispatcher));

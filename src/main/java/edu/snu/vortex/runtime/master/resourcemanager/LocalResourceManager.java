@@ -2,7 +2,6 @@ package edu.snu.vortex.runtime.master.resourcemanager;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
@@ -21,17 +20,17 @@ public final class LocalResourceManager implements ResourceManager {
 
   private final Scheduler scheduler;
   private final Map<String, Executor> executorMap;
-  private final Map<String, MessageEnvironment<ControlMessage.Message>> executorMessageEnvMap;
-  private final MessageEnvironment<ControlMessage.Message> driverMessageEnvironment;
+  private final Map<String, MessageEnvironment> executorMessageEnvMap;
+  private final MessageEnvironment masterMessageEnvironment;
   private final LocalMessageDispatcher localMessageDispatcher;
   private final BlockManagerMaster blockManagerMaster;
 
   public LocalResourceManager(final Scheduler scheduler,
-                              final MessageEnvironment<ControlMessage.Message> driverMessageEnvironment,
+                              final MessageEnvironment masterMessageEnvironment,
                               final LocalMessageDispatcher localMessageDispatcher,
                               final BlockManagerMaster blockManagerMaster) {
     this.scheduler = scheduler;
-    this.driverMessageEnvironment = driverMessageEnvironment;
+    this.masterMessageEnvironment = masterMessageEnvironment;
     this.localMessageDispatcher = localMessageDispatcher;
     this.blockManagerMaster = blockManagerMaster;
     this.executorMap = new HashMap<>();
@@ -48,10 +47,10 @@ public final class LocalResourceManager implements ResourceManager {
     executorMap.put(executorId, executor);
 
     // Connect to the executor and initiate Master side's executor representation.
-    final MessageSender<ControlMessage.Message> messageSender;
+    final MessageSender messageSender;
     try {
       messageSender =
-          driverMessageEnvironment.asyncConnect(executorId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+          masterMessageEnvironment.asyncConnect(executorId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }

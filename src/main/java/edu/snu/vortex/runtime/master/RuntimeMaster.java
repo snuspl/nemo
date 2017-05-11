@@ -22,7 +22,7 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.vortex.runtime.exception.UnsupportedMessageException;
+import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
@@ -71,7 +71,8 @@ public final class RuntimeMaster {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);
     masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
     this.blockManagerMaster = new BlockManagerMaster();
-    this.resourceManager = new LocalResourceManager(scheduler, masterMessageEnvironment, blockManagerMaster);
+    this.resourceManager =
+        new LocalResourceManager(scheduler, masterMessageEnvironment, localMessageDispatcher, blockManagerMaster);
   }
 
   /**
@@ -118,8 +119,8 @@ public final class RuntimeMaster {
 //        scheduler.onTaskGroupStateChanged(message.getTaskStateChangedMsg().getTaskGroupId());
         break;
       default:
-        throw new UnsupportedMessageException(
-            new Exception("This message type is not supported: " + message.getType()));
+        throw new IllegalMessageException(
+            new Exception("This message should not be received by Master :" + message.getType()));
       }
       // scheduler.onTaskGroupStateChanged();
     }
