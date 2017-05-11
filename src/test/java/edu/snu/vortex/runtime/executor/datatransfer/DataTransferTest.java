@@ -121,9 +121,8 @@ public final class DataTransferTest {
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
       if (commPattern == RuntimeAttribute.ScatterGather) {
-        IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
-          master.initializeState(edgeId, srcTaskIndex, dstTaskIndex);
-        });
+        IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex ->
+            master.initializeState(edgeId, srcTaskIndex, dstTaskIndex));
       } else {
         master.initializeState(edgeId, srcTaskIndex);
       }

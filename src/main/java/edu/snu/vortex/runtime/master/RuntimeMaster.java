@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import avro.shaded.com.google.common.collect.Sets;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
@@ -34,7 +35,12 @@ import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
+
+import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 
 /**
  * Runtime Master is the central controller of Runtime.
@@ -77,7 +83,13 @@ public final class RuntimeMaster {
   }
 
   private void initializeResources() {
-    resourceManager.requestExecutor();
+    final Set<RuntimeAttribute> completeSetOfResourceType =
+        new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
+    completeSetOfResourceType.forEach(resourceType -> {
+      for (int i = 0; i < DEFAULT_NUM_EXECUTOR; i++) {
+        resourceManager.requestExecutor(resourceType, DEFAULT_EXECUTOR_CAPACITY);
+      }
+    });
   }
 
   /**
