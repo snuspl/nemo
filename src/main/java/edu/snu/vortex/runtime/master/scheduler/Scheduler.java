@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -26,7 +27,7 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
  */
 @DefaultImplementation(BatchScheduler.class)
 public interface Scheduler {
-  ExecutionStateManager scheduleJob(final PhysicalPlan physicalPlan);
+  ExecutionStateManager scheduleJob(final PhysicalPlan physicalPlan, final BlockManagerMaster blockManagerMaster);
 
   void onExecutorAdded(final ExecutorRepresenter executor);
 

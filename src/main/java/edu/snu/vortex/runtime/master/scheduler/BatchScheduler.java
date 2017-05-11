@@ -28,6 +28,7 @@ import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
+import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.ExecutionStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.commons.lang.SerializationUtils;
@@ -107,9 +108,10 @@ public final class BatchScheduler implements Scheduler {
    * @return the {@link ExecutionStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public synchronized ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
+  public synchronized ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule,
+                                                        final BlockManagerMaster blockManagerMaster) {
     this.physicalPlan = jobToSchedule;
-    this.executionStateManager = new ExecutionStateManager(jobToSchedule);
+    this.executionStateManager = new ExecutionStateManager(jobToSchedule, blockManagerMaster);
     broadcastPhysicalPlan();
     scheduleNextStage();
     return executionStateManager;
