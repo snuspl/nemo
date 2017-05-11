@@ -8,14 +8,14 @@ import java.util.concurrent.Future;
  * A simple {@link MessageSender} implementation that works on a single node.
  * @param <T> a message type
  */
-final class LocalMessageSender<T> implements MessageSender<T> {
+public final class LocalMessageSender<T> implements MessageSender<T> {
 
   private final String senderId;
   private final String targetId;
   private final String messageTypeId;
   private final LocalMessageDispatcher dispatcher;
 
-  LocalMessageSender(final String senderId,
+  public LocalMessageSender(final String senderId,
                      final String targetId,
                      final String messageTypeId,
                      final LocalMessageDispatcher dispatcher) {
