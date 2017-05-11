@@ -101,12 +101,6 @@ public final class DataTransferTest {
     srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
 
     final BoundedSource s = mock(BoundedSource.class);
-    final BoundedSource.BoundedReader r = mock(BoundedSource.BoundedReader.class);
-    final List<BoundedSource.BoundedReader> dummyReaderList = new ArrayList<>(3);
-//    dummyReaderList.add(r);
-//    dummyReaderList.add(r);
-//    dummyReaderList.add(r);
-
     final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
     final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
 
