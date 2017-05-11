@@ -31,9 +31,7 @@ public final class LocalStore implements BlockStore {
   }
 
   public Optional<Iterable<Element>> getBlock(final String blockId) {
-    final Iterable<Element> block = blockIdToData.get(blockId);
-    System.err.println("TEST!: " + block);
-    return Optional.ofNullable(block);
+    return Optional.ofNullable(blockIdToData.get(blockId));
   }
 
   public void putBlock(final String blockId, final Iterable<Element> data) {
