@@ -69,6 +69,8 @@ public final class Executor {
     this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
   }
 
+  // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
+  // We should connect to the existing executors for control messages involved in block transfers.
   private void connectToOtherNodes(final MessageEnvironment myMessageEnvironment) {
     // Connect to Master for now.
     try {
@@ -114,6 +116,7 @@ public final class Executor {
         final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
         onTaskGroupReceived(taskGroup);
         break;
+      // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
       case BlockLocationInfo:
         break;
       case RequestBlock:

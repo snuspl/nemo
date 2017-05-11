@@ -19,6 +19,8 @@ public final class DataTransferFactory {
                              final BlockManagerMaster blockManagerMaster) {
     this.executorId = executorId;
     this.blockManagerWorker = new BlockManagerWorker(executorId, blockManagerMaster, new LocalStore());
+
+    // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
     blockManagerMaster.addNewWorker(blockManagerWorker);
   }
 

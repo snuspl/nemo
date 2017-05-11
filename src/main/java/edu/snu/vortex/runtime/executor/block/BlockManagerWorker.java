@@ -69,6 +69,8 @@ public final class BlockManagerWorker {
     final BlockStore store = getBlockStore(blockStore);
     store.putBlock(blockId, data);
     idOfBlocksStoredInThisWorker.add(blockId);
+
+    // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
     blockManagerMaster.onBlockStateChanged(workerId, blockId, BlockState.State.COMMITTED);
   }
 
@@ -95,7 +97,7 @@ public final class BlockManagerWorker {
     } else {
       // We don't have the block here... let's see if a remote worker has it
       // This part should be replaced with an RPC.
-      // TODO #44: Import REEF
+      // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
       final Optional<BlockManagerWorker> optionalWorker = blockManagerMaster.getBlockLocation(blockId);
       if (optionalWorker.isPresent()) {
         final BlockManagerWorker remoteWorker = optionalWorker.get();
@@ -118,7 +120,7 @@ public final class BlockManagerWorker {
   /**
    * Get block request from a remote worker.
    * Should be replaced with an RPC.
-   * TODO #44: Import REEF
+   * TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
    * @param requestingWorkerId of the requestor
    * @param blockId to get
    * @param blockStore for the block
@@ -138,19 +140,15 @@ public final class BlockManagerWorker {
       case Memory:
         // TODO #181: Implement MemoryBlockStore
         return localStore;
-//        throw new UnsupportedOperationException(blockStore.toString());
       case File:
         // TODO #69: Implement file channel in Runtime
         return localStore;
-//        throw new UnsupportedOperationException(blockStore.toString());
       case MemoryFile:
         // TODO #69: Implement file channel in Runtime
         return localStore;
-//        throw new UnsupportedOperationException(blockStore.toString());
       case DistributedStorage:
         // TODO #180: Implement DistributedStorageStore
         return localStore;
-//        throw new UnsupportedOperationException(blockStore.toString());
       default:
         throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
