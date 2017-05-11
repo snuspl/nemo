@@ -41,8 +41,8 @@ public final class TaskGroupExecutor {
 
   private final TaskGroup taskGroup;
   private final TaskGroupStateManager taskGroupStateManager;
-  private final Set<PhysicalStageEdge> stageIncomingEdges;
-  private final Set<PhysicalStageEdge> stageOutgoingEdges;
+  private final List<PhysicalStageEdge> stageIncomingEdges;
+  private final List<PhysicalStageEdge> stageOutgoingEdges;
   private final DataTransferFactory channelFactory;
 
   private final Map<String, List<InputReader>> taskIdToChannelReadersMap;
@@ -50,8 +50,8 @@ public final class TaskGroupExecutor {
 
   public TaskGroupExecutor(final TaskGroup taskGroup,
                            final TaskGroupStateManager taskGroupStateManager,
-                           final Set<PhysicalStageEdge> stageIncomingEdges,
-                           final Set<PhysicalStageEdge> stageOutgoingEdges,
+                           final List<PhysicalStageEdge> stageIncomingEdges,
+                           final List<PhysicalStageEdge> stageOutgoingEdges,
                            final DataTransferFactory channelFactory) {
     this.taskGroup = taskGroup;
     this.taskGroupStateManager = taskGroupStateManager;
@@ -80,7 +80,7 @@ public final class TaskGroupExecutor {
         addOutputWriter(task, channelWriter);
       });
 
-      final Set<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
+      final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
       inEdgesWithinStage.forEach(internalEdge -> createLocalChannel(task, internalEdge));
     }));
   }

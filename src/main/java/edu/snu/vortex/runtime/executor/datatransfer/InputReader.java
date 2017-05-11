@@ -50,7 +50,7 @@ public final class InputReader extends DataTransfer {
                      final RuntimeEdge runtimeEdge,
                      final BlockManagerWorker blockManagerWorker) {
 
-    super(runtimeEdge.getRuntimeEdgeId());
+    super(runtimeEdge.getId());
     this.dstTaskIndex = dstTaskIndex;
     this.srcRuntimeVertex = srcRuntimeVertex;
     this.runtimeEdge = runtimeEdge;

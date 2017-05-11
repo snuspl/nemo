@@ -45,7 +45,7 @@ public final class OutputWriter extends DataTransfer {
                       final RuntimeVertex dstRuntimeVertex,
                       final RuntimeEdge runtimeEdge,
                       final BlockManagerWorker blockManagerWorker) {
-    super(runtimeEdge.getRuntimeEdgeId());
+    super(runtimeEdge.getId());
     this.runtimeEdge = runtimeEdge;
     this.dstRuntimeVertex = dstRuntimeVertex;
     this.blockManagerWorker = blockManagerWorker;
