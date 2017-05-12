@@ -209,7 +209,7 @@ public final class TaskGroupExecutor {
     if (taskIdToOutputWriterMap.containsKey(operatorTask.getId())) {
       taskIdToOutputWriterMap.get(operatorTask.getId()).forEach(outputWriter -> outputWriter.write(output));
     } else {
-      LOG.log(Level.INFO, "Output: {0}", output);
+      LOG.log(Level.INFO, "This is a sink task: {0}", operatorTask.getId());
     }
 
     taskGroupStateManager.onTaskStateChanged(operatorTask.getId(), TaskState.State.COMPLETE);
