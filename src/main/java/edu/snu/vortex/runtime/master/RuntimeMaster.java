@@ -104,6 +104,7 @@ public final class RuntimeMaster {
   public void execute(final ExecutionPlan executionPlan, final String dagDirectory) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
+      // TODO #187: Cleanup Execution Threads
       executionStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
       while (!executionStateManager.checkJobCompletion()) {
         // Check every 3 seconds for job completion.
