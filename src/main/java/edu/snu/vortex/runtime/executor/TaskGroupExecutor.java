@@ -19,6 +19,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
@@ -185,8 +186,14 @@ public final class TaskGroupExecutor {
         .filter(InputReader::isSideInputReader)
         .forEach(inputReader -> {
           final Object sideInput = inputReader.getSideInput();
-          // Assumption: the side input source is from within the stage.
-          final Transform srcTransform = ((OperatorTask) inputReader.getRuntimeEdge().getSrc()).getTransform();
+          final RuntimeEdge inEdge = inputReader.getRuntimeEdge();
+          final Transform srcTransform;
+          if (inEdge instanceof PhysicalStageEdge) {
+            srcTransform = ((RuntimeOperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
+                .getOperatorVertex().getTransform();
+          } else {
+            srcTransform = ((OperatorTask) inEdge.getSrc()).getTransform();
+          }
           sideInputMap.put(srcTransform, sideInput);
         });
 
