@@ -127,8 +127,7 @@ public final class InputReader extends DataTransfer {
   public boolean isSideInputReader() {
     RuntimeAttributeMap edgeAttributes = runtimeEdge.getEdgeAttributes();
 
-    return edgeAttributes.get(RuntimeAttribute.Key.BlockStore) == RuntimeAttribute.Local &&
-        edgeAttributes.containsKey(RuntimeAttribute.Key.SideInput);
+    return edgeAttributes.containsKey(RuntimeAttribute.Key.SideInput);
   }
 
   public Object getSideInput() {
