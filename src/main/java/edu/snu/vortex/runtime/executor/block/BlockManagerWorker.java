@@ -17,14 +17,23 @@ package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.state.BlockState;
+import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import org.apache.commons.lang3.SerializationUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Executor-side block manager.
@@ -32,7 +41,7 @@ import java.util.Set;
  */
 @ThreadSafe
 public final class BlockManagerWorker {
-  private final String workerId;
+  private final String executorId;
 
   private final BlockManagerMaster blockManagerMaster;
 
@@ -40,17 +49,21 @@ public final class BlockManagerWorker {
 
   private final Set<String> idOfBlocksStoredInThisWorker;
 
-  public BlockManagerWorker(final String workerId,
+  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
+
+  public BlockManagerWorker(final String executorId,
                             final BlockManagerMaster blockManagerMaster,
-                            final LocalStore localStore) {
-    this.workerId = workerId;
+                            final LocalStore localStore,
+                            final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap) {
+    this.executorId = executorId;
     this.blockManagerMaster = blockManagerMaster;
     this.localStore = localStore;
+    this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
   }
 
-  public String getWorkerId() {
-    return workerId;
+  public String getExecutorId() {
+    return executorId;
   }
 
   /**
@@ -70,8 +83,21 @@ public final class BlockManagerWorker {
     store.putBlock(blockId, data);
     idOfBlocksStoredInThisWorker.add(blockId);
 
-    // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
-    blockManagerMaster.onBlockStateChanged(workerId, blockId, BlockState.State.COMMITTED);
+    final MessageSender<ControlMessage.Message> messageSenderToMaster =
+        nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
+
+    final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
+    final ControlMessage.BlockStateChangedMsg.Builder blockStateChangedMsgBuilder =
+        ControlMessage.BlockStateChangedMsg.newBuilder();
+    blockStateChangedMsgBuilder.setExecutorId(executorId);
+    blockStateChangedMsgBuilder.setBlockId(blockId);
+    blockStateChangedMsgBuilder.setState(ControlMessage.BlockStateFromExecutor.COMMITTED);
+
+    msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+    msgBuilder.setType(ControlMessage.MessageType.BlockStateChanged);
+    msgBuilder.setBlockStateChangedMsg(blockStateChangedMsgBuilder.build());
+
+    messageSenderToMaster.send(msgBuilder.build());
   }
 
   /**
@@ -96,19 +122,64 @@ public final class BlockManagerWorker {
       }
     } else {
       // We don't have the block here... let's see if a remote worker has it
-      // This part should be replaced with an RPC.
-      // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
-      final Optional<BlockManagerWorker> optionalWorker = blockManagerMaster.getBlockLocation(blockId);
-      if (optionalWorker.isPresent()) {
-        final BlockManagerWorker remoteWorker = optionalWorker.get();
-        final Optional<Iterable<Element>> optionalData = remoteWorker.getBlockRemotely(workerId, blockId, blockStore);
-        if (optionalData.isPresent()) {
-          return optionalData.get();
+      // Ask Master for the location
+      final MessageSender<ControlMessage.Message> messageSenderToMaster =
+          nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
+
+      final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
+      final ControlMessage.RequestBlockLocationMsg.Builder requestBlockLocationMsgBuilder =
+          ControlMessage.RequestBlockLocationMsg.newBuilder();
+      requestBlockLocationMsgBuilder.setExecutorId(executorId);
+      requestBlockLocationMsgBuilder.setBlockId(blockId);
+
+      msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+      msgBuilder.setType(ControlMessage.MessageType.RequestBlockLocation);
+      msgBuilder.setRequestBlockLocationMsg(requestBlockLocationMsgBuilder.build());
+
+      final ControlMessage.Message responseFromMaster;
+      try {
+        responseFromMaster = messageSenderToMaster.<ControlMessage.Message>request(msgBuilder.build()).get();
+      } catch (Exception e) {
+        throw new NodeConnectionException(e);
+      }
+
+      final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
+      if (blockLocationInfoMsg != null) {
+        final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
+
+        // Ask Master for the location
+        final MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor =
+            nodeIdToMsgSenderMap.get(remoteWorkerId);
+
+        final ControlMessage.Message.Builder dataRequestBuilder = ControlMessage.Message.newBuilder();
+        final ControlMessage.RequestBlockMsg.Builder requestBlockMsgBuilder =
+            ControlMessage.RequestBlockMsg.newBuilder();
+        requestBlockMsgBuilder.setExecutorId(executorId);
+        requestBlockMsgBuilder.setBlockId(blockId);
+
+        dataRequestBuilder.setId(RuntimeIdGenerator.generateMessageId());
+        dataRequestBuilder.setType(ControlMessage.MessageType.RequestBlock);
+        dataRequestBuilder.setRequestBlockMsg(requestBlockMsgBuilder.build());
+
+        final ControlMessage.Message responseFromRemoteExecutor;
+        try {
+          responseFromRemoteExecutor =
+              messageSenderToRemoteExecutor.<ControlMessage.Message>request(dataRequestBuilder.build()).get();
+        } catch (Exception e) {
+          throw new NodeConnectionException(e);
+        }
+
+        final ControlMessage.TransferBlockMsg transferBlockMsg = responseFromRemoteExecutor.getTransferBlockMsg();
+        if (transferBlockMsg != null) {
+          Iterable<Element> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
+          return data;
         } else {
           // TODO #163: Handle Fault Tolerance
           // We should report this exception to the master, instead of shutting down the JVM
-          throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorker.getWorkerId());
+          throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorkerId);
         }
+//        final Optional<Iterable<Element>> optionalData =
+//            remoteWorker.getBlockRemotely(executorId, blockId, blockStore);
       } else {
         // TODO #163: Handle Fault Tolerance
         // We should report this exception to the master, instead of shutting down the JVM
