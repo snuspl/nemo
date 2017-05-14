@@ -16,12 +16,14 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
@@ -145,13 +147,14 @@ public final class RuntimeMaster {
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
             taskGroupStateChangedMsg.getTaskGroupId(),
-            convertState(taskGroupStateChangedMsg.getState()),
+            convertTaskGroupState(taskGroupStateChangedMsg.getState()),
             taskGroupStateChangedMsg.getFailedTaskIdsList());
         break;
       case BlockStateChanged:
-        throw new UnsupportedOperationException("Not yet supported");
-      case RequestBlock:
-        throw new UnsupportedOperationException("Not yet supported");
+        final ControlMessage.BlockStateChangedMsg blockStateChangedMsg = message.getBlockStateChangedMsg();
+        blockManagerMaster.onBlockStateChanged(blockStateChangedMsg.getExecutorId(), blockStateChangedMsg.getBlockId(),
+            convertBlockState(blockStateChangedMsg.getState()));
+        break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by Master :" + message.getType()));
@@ -160,11 +163,31 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
+      switch (message.getType()) {
+      case RequestBlockLocation:
+        final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();
+
+        final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
+        final ControlMessage.BlockLocationInfoMsg.Builder blockLocationInfoMsgBuilder =
+            ControlMessage.BlockLocationInfoMsg.newBuilder();
+        blockLocationInfoMsgBuilder.setBlockId(requestBlockLocationMsg.getBlockId());
+        blockLocationInfoMsgBuilder.setOwnerExecutorId(
+            blockManagerMaster.getBlockLocation(requestBlockLocationMsg.getBlockId()).get());
+
+        msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+        msgBuilder.setType(ControlMessage.MessageType.BlockLocationInfo);
+        msgBuilder.setBlockLocationInfoMsg(blockLocationInfoMsgBuilder.build());
+
+        messageContext.reply(msgBuilder.build());
+      default:
+        throw new IllegalMessageException(
+            new Exception("This message should not be requested to Master :" + message.getType()));
+      }
     }
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private TaskGroupState.State convertState(final ControlMessage.TaskGroupStateFromExecutor state) {
+  private TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
     case READY:
       return TaskGroupState.State.READY;
@@ -176,6 +199,22 @@ public final class RuntimeMaster {
       return TaskGroupState.State.FAILED_RECOVERABLE;
     case FAILED_UNRECOVERABLE:
       return TaskGroupState.State.FAILED_UNRECOVERABLE;
+    default:
+      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
+    }
+  }
+
+  // TODO #164: Cleanup Protobuf Usage
+  private BlockState.State convertBlockState(final ControlMessage.BlockStateFromExecutor state) {
+    switch (state) {
+    case BLOCK_READY:
+      return BlockState.State.READY;
+    case MOVING:
+      return BlockState.State.MOVING;
+    case COMMITTED:
+      return BlockState.State.COMMITTED;
+    case LOST:
+      return BlockState.State.LOST;
     default:
       throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
     }
