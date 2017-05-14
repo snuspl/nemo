@@ -68,6 +68,7 @@ message RequestBlockLocationMsg {
 message RequestBlockMsg {
     string executorId = 1;
     string blockId = 2;
+    BlockStore blockStore = 3;
 }
 
 message TransferBlockMsg {
@@ -89,4 +90,12 @@ enum BlockStateFromExecutor {
     MOVING = 1;
     COMMITTED = 2;
     LOST = 3;
+}
+
+enum BlockStore {
+    LOCAL = 0;
+    MEMORY = 1;
+    FILE = 2;
+    MEMORY_FILE = 3;
+    DISTRIBUTED_STORAGE = 4;
 }
