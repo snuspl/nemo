@@ -29,7 +29,7 @@ import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
-import edu.snu.vortex.runtime.master.ExecutionStateManager;
+import edu.snu.vortex.runtime.master.JobStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.commons.lang.SerializationUtils;
 
@@ -50,7 +50,7 @@ public final class BatchScheduler implements Scheduler {
 
   private final ExecutorService schedulerThread;
   private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
-  private ExecutionStateManager executionStateManager;
+  private JobStateManager jobStateManager;
 
   /**
    * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
@@ -105,16 +105,16 @@ public final class BatchScheduler implements Scheduler {
   /**
    * Receives a job to schedule.
    * @param jobToSchedule the physical plan for the job.
-   * @return the {@link ExecutionStateManager} to keep track of the submitted job's states.
+   * @return the {@link JobStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public synchronized ExecutionStateManager scheduleJob(final PhysicalPlan jobToSchedule,
-                                                        final BlockManagerMaster blockManagerMaster) {
+  public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule,
+                                                  final BlockManagerMaster blockManagerMaster) {
     this.physicalPlan = jobToSchedule;
-    this.executionStateManager = new ExecutionStateManager(jobToSchedule, blockManagerMaster);
+    this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
     broadcastPhysicalPlan();
     scheduleNextStage();
-    return executionStateManager;
+    return jobStateManager;
   }
 
   private void broadcastPhysicalPlan() {
@@ -145,7 +145,7 @@ public final class BatchScheduler implements Scheduler {
                                       final String taskGroupId,
                                       final TaskGroupState.State newState,
                                       final List<String> failedTaskIds) {
-    executionStateManager.onTaskGroupStateChanged(taskGroupId, newState);
+    jobStateManager.onTaskGroupStateChanged(taskGroupId, newState);
     switch (newState) {
     case COMPLETE:
       synchronized (executorRepresenterMap) {
@@ -173,8 +173,8 @@ public final class BatchScheduler implements Scheduler {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
     // if the current stage is complete,
-    if (executionStateManager.checkCurrentStageCompletion()) {
-      if (!executionStateManager.checkJobCompletion()) { // and if the job is not yet complete,
+    if (jobStateManager.checkCurrentStageCompletion()) {
+      if (!jobStateManager.checkJobCompletion()) { // and if the job is not yet complete,
         scheduleNextStage();
       }
     }
@@ -213,7 +213,7 @@ public final class BatchScheduler implements Scheduler {
   private void scheduleNextStage() {
     PhysicalStage nextStageToExecute = null;
     for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
-      if (executionStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+      if (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
           == StageState.State.READY) {
         nextStageToExecute = physicalStage;
         break;
@@ -221,7 +221,7 @@ public final class BatchScheduler implements Scheduler {
     }
     if (nextStageToExecute != null) {
       LOG.log(Level.INFO, "Scheduling Stage: {0}", nextStageToExecute.getId());
-      executionStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
+      jobStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
       taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
     } else {
       throw new SchedulingException(new Exception("There is no next stage to execute! " +
@@ -245,7 +245,7 @@ public final class BatchScheduler implements Scheduler {
             taskGroupsToSchedule.addLast(taskGroup);
           } else {
             // Must send this taskGroup to the destination executor.
-            executionStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
+            jobStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
                 TaskGroupState.State.EXECUTING);
             schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
           }

@@ -28,12 +28,12 @@ public class LocalMessageTest {
 
     driverEnv.setupListener("ToDriver", new MessageListener<ToDriver>() {
       @Override
-      public void onSendMessage(final ToDriver message) {
+      public void onMessage(final ToDriver message) {
         toDriverMessageUsingSend.incrementAndGet();
       }
 
       @Override
-      public void onRequestMessage(final ToDriver message, final MessageContext messageContext) {
+      public void onMessageWithContext(final ToDriver message, final MessageContext messageContext) {
         if (message instanceof ExecutorStarted) {
           messageContext.reply(true);
         } else if (message instanceof MakeException) {
@@ -45,11 +45,11 @@ public class LocalMessageTest {
     // Setup multiple listeners.
     driverEnv.setupListener("SecondToDriver", new MessageListener<SecondToDriver>() {
       @Override
-      public void onSendMessage(SecondToDriver message) {
+      public void onMessage(SecondToDriver message) {
       }
 
       @Override
-      public void onRequestMessage(SecondToDriver message, MessageContext messageContext) {
+      public void onMessageWithContext(SecondToDriver message, MessageContext messageContext) {
       }
     });
 
@@ -94,13 +94,13 @@ public class LocalMessageTest {
   final class SimpleMessageListener implements MessageListener<SimpleMessage> {
 
     @Override
-    public void onSendMessage(final SimpleMessage message) {
+    public void onMessage(final SimpleMessage message) {
       // Expected not reached here.
       throw new RuntimeException();
     }
 
     @Override
-    public void onRequestMessage(final SimpleMessage message, final MessageContext messageContext) {
+    public void onMessageWithContext(final SimpleMessage message, final MessageContext messageContext) {
       messageContext.reply(message.getData());
     }
   }

@@ -37,8 +37,8 @@ import java.util.stream.IntStream;
  * This class can be used to track a job's execution status to task level in the future.
  * The methods of this class are synchronized.
  */
-public final class ExecutionStateManager {
-  private static final Logger LOG = Logger.getLogger(ExecutionStateManager.class.getName());
+public final class JobStateManager {
+  private static final Logger LOG = Logger.getLogger(JobStateManager.class.getName());
 
   private final String jobId;
 
@@ -72,8 +72,8 @@ public final class ExecutionStateManager {
    */
   private final Set<String> currentJobStageIds;
 
-  public ExecutionStateManager(final PhysicalPlan physicalPlan,
-                               final BlockManagerMaster blockManagerMaster) {
+  public JobStateManager(final PhysicalPlan physicalPlan,
+                         final BlockManagerMaster blockManagerMaster) {
     this.physicalPlan = physicalPlan;
     this.jobId = physicalPlan.getId();
     this.jobState = new JobState();

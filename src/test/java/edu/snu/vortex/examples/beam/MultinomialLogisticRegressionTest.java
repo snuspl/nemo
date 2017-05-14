@@ -37,11 +37,11 @@ public final class MultinomialLogisticRegressionTest {
 
   @Test
   public void test() throws Exception {
-//    final ArgBuilder builder = new ArgBuilder()
-//        .addUserMain(mlr)
-//        .addOptimizationPolicy(optimizationPolicy)
-//        .addUserArgs(input, numFeatures, numClasses, numIteration)
-//        .addDAGDirectory(dagDirectory);
-//    JobLauncher.main(builder.build());
+    final ArgBuilder builder = new ArgBuilder()
+        .addUserMain(mlr)
+        .addOptimizationPolicy(optimizationPolicy)
+        .addUserArgs(input, numFeatures, numClasses, numIteration)
+        .addDAGDirectory(dagDirectory);
+    JobLauncher.main(builder.build());
   }
 }

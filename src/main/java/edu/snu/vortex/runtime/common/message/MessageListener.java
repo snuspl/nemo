@@ -13,13 +13,13 @@ public interface MessageListener<T> {
    * Called back when a message is received.
    * @param message a message
    */
-  void onSendMessage(T message);
+  void onMessage(T message);
 
   /**
    * Called back when a message is received, and return a response using {@link MessageContext}.
    * @param message a message
    * @param messageContext a message context
    */
-  void onRequestMessage(T message, MessageContext messageContext);
+  void onMessageWithContext(T message, MessageContext messageContext);
 
 }

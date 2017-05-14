@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 public interface MessageSender<T> {
 
   /**
-   * Send a message to corresponding {@link MessageListener#onSendMessage}. It does not guarantee whether
+   * Send a message to corresponding {@link MessageListener#onMessage}. It does not guarantee whether
    * the message is sent successfully or not.
    *
    * @param message a message
@@ -17,7 +17,7 @@ public interface MessageSender<T> {
   void send(T message);
 
   /**
-   * Send a message to corresponding {@link MessageListener#onRequestMessage} and return
+   * Send a message to corresponding {@link MessageListener#onMessageWithContext} and return
    * a reply message. If there was an exception, the returned future would be failed.
    *
    * @param message a message

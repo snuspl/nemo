@@ -63,7 +63,7 @@ public final class RuntimeMaster {
   private final LocalMessageDispatcher localMessageDispatcher;
   private final MessageEnvironment masterMessageEnvironment;
   private final BlockManagerMaster blockManagerMaster;
-  private ExecutionStateManager executionStateManager;
+  private JobStateManager jobStateManager;
 
   public RuntimeMaster(final RuntimeAttribute schedulerType) {
     switch (schedulerType) {
@@ -105,8 +105,8 @@ public final class RuntimeMaster {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
       // TODO #187: Cleanup Execution Threads
-      executionStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
-      while (!executionStateManager.checkJobCompletion()) {
+      jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
+      while (!jobStateManager.checkJobCompletion()) {
         // Check every 3 seconds for job completion.
         Thread.sleep(3000);
       }
@@ -134,10 +134,12 @@ public final class RuntimeMaster {
   /**
    * Handler for messages received by Master.
    */
+  // TODO #187: Cleanup Execution Threads
+  // Executor threads call this at the moment.
   private final class MasterMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
-    public void onSendMessage(final ControlMessage.Message message) {
+    public void onMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
@@ -147,9 +149,9 @@ public final class RuntimeMaster {
             taskGroupStateChangedMsg.getFailedTaskIdsList());
         break;
       case BlockStateChanged:
-        break;
+        throw new UnsupportedOperationException("Not yet supported");
       case RequestBlock:
-        break;
+        throw new UnsupportedOperationException("Not yet supported");
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by Master :" + message.getType()));
@@ -157,7 +159,7 @@ public final class RuntimeMaster {
     }
 
     @Override
-    public void onRequestMessage(final ControlMessage.Message message, final MessageContext messageContext) {
+    public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
     }
   }
 

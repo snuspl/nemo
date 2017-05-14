@@ -48,7 +48,7 @@ public final class LocalMessageDispatcher {
     if (listener == null) {
       throw new LocalDispatcherException("There was no set up listener for " + messageTypeId + " in " + targetId);
     }
-    listener.onSendMessage(message);
+    listener.onMessage(message);
   }
 
   <T, U> Future<U> dispatchRequestMessage(
@@ -60,7 +60,7 @@ public final class LocalMessageDispatcher {
     }
 
     final LocalMessageContext context = new LocalMessageContext(senderId);
-    listener.onRequestMessage(message, context);
+    listener.onMessageWithContext(message, context);
 
     final Optional<Throwable> throwable = context.getThrowable();
     final Optional<Object> replyMessage = context.getReplyMessage();

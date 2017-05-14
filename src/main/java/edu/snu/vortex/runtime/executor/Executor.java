@@ -80,8 +80,6 @@ public final class Executor {
     messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     connectToOtherNodes(messageEnvironment);
     this.executorService = Executors.newFixedThreadPool(capacity);
-
-    // TODO #: Check
     this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
   }
 
@@ -129,7 +127,7 @@ public final class Executor {
   private final class ExecutorMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
-    public void onSendMessage(final ControlMessage.Message message) {
+    public void onMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
       case BroadcastPhysicalPlan:
         final ControlMessage.BroadcastPhysicalPlanMsg broadcastPhysicalPlanMsg = message.getBroadcastPhysicalPlanMsg();
@@ -142,11 +140,11 @@ public final class Executor {
         break;
       // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
       case BlockLocationInfo:
-        break;
+        throw new UnsupportedOperationException("Not yet supported");
       case RequestBlock:
-        break;
+        throw new UnsupportedOperationException("Not yet supported");
       case TransferBlock:
-        break;
+        throw new UnsupportedOperationException("Not yet supported");
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by an executor :" + message.getType()));
@@ -154,8 +152,7 @@ public final class Executor {
     }
 
     @Override
-    public void onRequestMessage(final ControlMessage.Message message, final MessageContext messageContext) {
-
+    public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
     }
   }
 }
