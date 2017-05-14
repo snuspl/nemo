@@ -36,7 +36,9 @@ public abstract class Vertex implements Serializable {
   public final String getId() {
     return id;
   }
-
+  /**
+   * @return the numeric id of the vertex.
+   */
   public final Integer getNumericId() {
     return Integer.parseInt(id.replaceAll("[^\\d.]", ""));
   }

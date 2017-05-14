@@ -31,9 +31,9 @@ import java.util.List;
 public interface Scheduler {
   JobStateManager scheduleJob(final PhysicalPlan physicalPlan, final BlockManagerMaster blockManagerMaster);
 
-  void onExecutorAdded(final ExecutorRepresenter executor);
+  void onExecutorAdded(ExecutorRepresenter executor);
 
-  void onExecutorRemoved(final ExecutorRepresenter executor);
+  void onExecutorRemoved(ExecutorRepresenter executor);
 
   void onTaskGroupStateChanged(final String executorId,
                                final String taskGroupId,
