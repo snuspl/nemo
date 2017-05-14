@@ -65,7 +65,6 @@ public final class Executor {
    */
   private final ExecutorService executorService;
 
-
   /**
    * In charge of this executor's intermediate data transfer.
    */

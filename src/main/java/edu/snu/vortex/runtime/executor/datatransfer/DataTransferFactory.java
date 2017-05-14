@@ -4,6 +4,8 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
+import edu.snu.vortex.runtime.executor.block.LocalStore;
+import edu.snu.vortex.runtime.master.BlockManagerMaster;
 
 /**
  * A factory that produces {@link InputReader} and {@link OutputWriter}.
