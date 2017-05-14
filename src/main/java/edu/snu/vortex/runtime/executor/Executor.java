@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor;
 
+import com.google.protobuf.ByteString;
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -26,8 +28,10 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
+import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
+import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
+import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
-import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.HashMap;
@@ -61,6 +65,12 @@ public final class Executor {
    */
   private final ExecutorService executorService;
 
+
+  /**
+   * In charge of this executor's intermediate data transfer.
+   */
+  private final BlockManagerWorker blockManagerWorker;
+
   /**
    * Factory of InputReader/OutputWriter for executing tasks groups.
    */
@@ -71,8 +81,7 @@ public final class Executor {
 
   public Executor(final String executorId,
                   final int capacity,
-                  final LocalMessageDispatcher localMessageDispatcher,
-                  final BlockManagerMaster blockManagerMaster) {
+                  final LocalMessageDispatcher localMessageDispatcher) {
     this.executorId = executorId;
     this.capacity = capacity;
     this.messageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
@@ -80,7 +89,8 @@ public final class Executor {
     messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     connectToOtherNodes(messageEnvironment);
     this.executorService = Executors.newFixedThreadPool(capacity);
-    this.dataTransferFactory = new DataTransferFactory(executorId, blockManagerMaster);
+    this.blockManagerWorker = new BlockManagerWorker(executorId, new LocalStore(), nodeIdToMsgSenderMap);
+    this.dataTransferFactory = new DataTransferFactory(blockManagerWorker);
   }
 
   /**
@@ -136,13 +146,6 @@ public final class Executor {
         final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
         onTaskGroupReceived(taskGroup);
         break;
-      // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
-      case BlockLocationInfo:
-        throw new UnsupportedOperationException("Not yet supported");
-      case RequestBlock:
-        throw new UnsupportedOperationException("Not yet supported");
-      case TransferBlock:
-        throw new UnsupportedOperationException("Not yet supported");
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by an executor :" + message.getType()));
@@ -151,6 +154,39 @@ public final class Executor {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
+      switch (message.getType()) {
+      case RequestBlock:
+        final ControlMessage.RequestBlockMsg requestBlockMsg = message.getRequestBlockMsg();
+
+        final ControlMessage.TransferBlockMsg.Builder transferBlockMsgBuilder =
+            ControlMessage.TransferBlockMsg.newBuilder();
+        transferBlockMsgBuilder.setExecutorId(executorId);
+        transferBlockMsgBuilder.setBlockId(requestBlockMsg.getBlockId());
+        transferBlockMsgBuilder.setData(ByteString.copyFrom(SerializationUtils.serialize(
+            blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
+                convertBlockStoreType(requestBlockMsg.getBlockStore()))));
+        throw new UnsupportedOperationException("Not yet supported");
+      default:
+        throw new IllegalMessageException(
+            new Exception("This message should not be requested to an executor :" + message.getType()));
+      }
+    }
+  }
+
+  private RuntimeAttribute convertBlockStoreType(final ControlMessage.BlockStore blockStoreType) {
+    switch (blockStoreType) {
+    case LOCAL:
+      return RuntimeAttribute.Local;
+    case MEMORY:
+      return RuntimeAttribute.Memory;
+    case FILE:
+      return RuntimeAttribute.File;
+    case MEMORY_FILE:
+      return RuntimeAttribute.MemoryFile;
+    case DISTRIBUTED_STORAGE:
+      return RuntimeAttribute.DistributedStorage;
+    default:
+      throw new UnsupportedBlockStoreException(new Throwable("This block store is not yet supported"));
     }
   }
 }

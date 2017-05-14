@@ -21,10 +21,8 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
-import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
-import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.apache.commons.lang3.SerializationUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -32,8 +30,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * Executor-side block manager.
@@ -43,8 +39,6 @@ import java.util.concurrent.Future;
 public final class BlockManagerWorker {
   private final String executorId;
 
-  private final BlockManagerMaster blockManagerMaster;
-
   private final LocalStore localStore;
 
   private final Set<String> idOfBlocksStoredInThisWorker;
@@ -52,11 +46,9 @@ public final class BlockManagerWorker {
   private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
 
   public BlockManagerWorker(final String executorId,
-                            final BlockManagerMaster blockManagerMaster,
                             final LocalStore localStore,
                             final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap) {
     this.executorId = executorId;
-    this.blockManagerMaster = blockManagerMaster;
     this.localStore = localStore;
     this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
@@ -186,22 +178,6 @@ public final class BlockManagerWorker {
         throw new RuntimeException("Block " + blockId + " not found both in the local storage and the remote storage");
       }
     }
-  }
-
-  /**
-   * Get block request from a remote worker.
-   * Should be replaced with an RPC.
-   * TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
-   * @param requestingWorkerId of the requestor
-   * @param blockId to get
-   * @param blockStore for the block
-   * @return block data
-   */
-  public synchronized Optional<Iterable<Element>> getBlockRemotely(final String requestingWorkerId,
-                                                                   final String blockId,
-                                                                   final RuntimeAttribute blockStore) {
-    final BlockStore store = getBlockStore(blockStore);
-    return store.getBlock(blockId);
   }
 
   private BlockStore getBlockStore(final RuntimeAttribute blockStore) {
