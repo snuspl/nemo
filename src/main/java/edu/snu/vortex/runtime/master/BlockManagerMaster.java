@@ -55,7 +55,7 @@ public final class BlockManagerMaster {
   }
 
   public synchronized void addNewWorker(final BlockManagerWorker worker) {
-    workerIdToWorker.put(worker.getWorkerId(), worker);
+    workerIdToWorker.put(worker.getExecutorId(), worker);
   }
 
   public synchronized void removeWorker(final String executorId) {
@@ -70,12 +70,12 @@ public final class BlockManagerMaster {
     workerIdToWorker.remove(executorId);
   }
 
-  public synchronized Optional<BlockManagerWorker> getBlockLocation(final String blockId) {
+  public synchronized Optional<String> getBlockLocation(final String blockId) {
     final String executorId = committedBlockIdToWorkerId.get(blockId);
     if (executorId == null) {
       return Optional.empty();
     } else {
-      return Optional.ofNullable(workerIdToWorker.get(executorId));
+      return Optional.ofNullable(executorId);
     }
   }
 
