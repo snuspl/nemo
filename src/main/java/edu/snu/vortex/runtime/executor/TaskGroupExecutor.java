@@ -53,6 +53,8 @@ public final class TaskGroupExecutor {
   private final Map<String, List<InputReader>> taskIdToInputReaderMap;
   private final Map<String, List<OutputWriter>> taskIdToOutputWriterMap;
 
+  private boolean isExecutionRequested;
+
   public TaskGroupExecutor(final TaskGroup taskGroup,
                            final TaskGroupStateManager taskGroupStateManager,
                            final List<PhysicalStageEdge> stageIncomingEdges,
@@ -66,6 +68,10 @@ public final class TaskGroupExecutor {
 
     this.taskIdToInputReaderMap = new HashMap<>();
     this.taskIdToOutputWriterMap = new HashMap<>();
+
+    this.isExecutionRequested = false;
+
+    initializeDataTransfer();
   }
 
   /**
@@ -75,7 +81,7 @@ public final class TaskGroupExecutor {
   private void initializeDataTransfer() {
     taskGroup.getTaskDAG().topologicalDo((task -> {
       final Set<PhysicalStageEdge> inEdgesFromOtherStages = getInEdgesFromOtherStages(task);
-      final Set<PhysicalStageEdge> outEdgesToOhterStages = getOutEdgesToOtherStages(task);
+      final Set<PhysicalStageEdge> outEdgesToOtherStages = getOutEdgesToOtherStages(task);
 
       inEdgesFromOtherStages.forEach(physicalStageEdge -> {
         final InputReader inputReader = channelFactory.createReader(
@@ -83,7 +89,7 @@ public final class TaskGroupExecutor {
         addInputReader(task, inputReader);
       });
 
-      outEdgesToOhterStages.forEach(physicalStageEdge -> {
+      outEdgesToOtherStages.forEach(physicalStageEdge -> {
         final OutputWriter outputWriter = channelFactory.createWriter(
             task, physicalStageEdge.getDstVertex(), physicalStageEdge);
         addOutputWriter(task, outputWriter);
@@ -136,9 +142,14 @@ public final class TaskGroupExecutor {
    * Executes the task group.
    */
   public void execute() {
+    if (isExecutionRequested) {
+      throw new RuntimeException("TaskGroup {" + taskGroup.getTaskGroupId() + "} execution called again!");
+    } else {
+      isExecutionRequested = true;
+    }
+
     taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty());
 
-    initializeDataTransfer();
     taskGroup.getTaskDAG().topologicalDo(task -> {
       taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING);
       try {
@@ -149,9 +160,9 @@ public final class TaskGroupExecutor {
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
-      } catch (final Throwable cause) {
-        cause.printStackTrace();
+      } catch (final Exception e) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
+        throw new RuntimeException(e);
       }
     });
     LOG.log(Level.FINE, "TaskGroup #{0} Execution Complete!", taskGroup.getTaskGroupId());

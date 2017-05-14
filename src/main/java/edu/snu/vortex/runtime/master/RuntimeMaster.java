@@ -55,7 +55,7 @@ public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
   // We should have a new way of (ex. configuration) these settings.
-  private static final int DEFAULT_NUM_EXECUTOR = 2;
+  private static final int DEFAULT_EXECUTOR_NUM = 2;
   private static final int DEFAULT_EXECUTOR_CAPACITY = 4;
 
   private final Scheduler scheduler;
@@ -90,7 +90,7 @@ public final class RuntimeMaster {
     final Set<RuntimeAttribute> completeSetOfResourceType =
         new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
     completeSetOfResourceType.forEach(resourceType -> {
-      for (int i = 0; i < DEFAULT_NUM_EXECUTOR; i++) {
+      for (int i = 0; i < DEFAULT_EXECUTOR_NUM; i++) {
         resourceManager.requestExecutor(resourceType, DEFAULT_EXECUTOR_CAPACITY);
       }
     });

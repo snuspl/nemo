@@ -25,6 +25,7 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import org.apache.commons.lang3.SerializationUtils;
@@ -95,10 +96,8 @@ public final class Executor {
       nodeIdToMsgSenderMap.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
           myMessageEnvironment.<ControlMessage.Message>asyncConnect(
               MessageEnvironment.MASTER_COMMUNICATION_ID, MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ExecutionException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
+      throw new NodeConnectionException(e);
     }
   }
 

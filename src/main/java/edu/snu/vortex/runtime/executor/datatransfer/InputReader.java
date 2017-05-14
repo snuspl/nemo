@@ -116,7 +116,7 @@ public final class InputReader extends DataTransfer {
   }
 
   public String getSrcRuntimeVertexId() {
-    // TODO #: this src runtime vertex can be either a real vertex or a task. we must check!
+    // this src runtime vertex can be either a real vertex or a task. we must check!
     if (srcRuntimeVertex != null) {
       return srcRuntimeVertex.getId();
     }

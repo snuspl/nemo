@@ -16,15 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * IllegalMessageException.
- * Thrown when the received message is of an illegal type in master/executor.
+ * NodeConnectionException.
+ * Thrown when an exception occurs while trying to connect to a node.
  */
-public final class IllegalMessageException extends RuntimeException {
+public final class NodeConnectionException extends RuntimeException {
   /**
-   * IllegalMessageException.
+   * NodeConnectionException.
    * @param cause cause
    */
-  public IllegalMessageException(final Throwable cause) {
+  public NodeConnectionException(final Throwable cause) {
     super(cause);
   }
 }
