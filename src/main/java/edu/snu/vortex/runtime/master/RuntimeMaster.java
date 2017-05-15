@@ -104,8 +104,7 @@ public final class RuntimeMaster {
         new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
     completeSetOfResourceType.forEach(resourceType -> {
       for (int i = 0; i < runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorNum(); i++) {
-        resourceManager.requestExecutor(resourceType,
-            runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorCapacity());
+        resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
       }
     });
   }
