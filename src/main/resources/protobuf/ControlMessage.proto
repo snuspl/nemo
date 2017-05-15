@@ -75,6 +75,7 @@ message TransferBlockMsg {
     string executorId = 1;
     string blockId = 2;
     bytes data = 3; // just for now
+    // TODO #18: Support code/data serialization
     bool isUnionValue = 4; // just for now
 }
 

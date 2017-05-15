@@ -185,6 +185,7 @@ public final class BlockManagerWorker {
           final List<Element> deserializedData = new ArrayList<>();
           ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
           data.forEach(bytes -> {
+            // TODO #18: Support code/data serialization
             if (transferBlockMsg.getIsUnionValue()) {
               final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
               List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),

@@ -178,11 +178,10 @@ public final class Executor {
         final Iterable<Element> data = blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
             convertBlockStoreType(requestBlockMsg.getBlockStore()));
         final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
-//        data.forEach(element -> dataToSerialize.add(element));
 
         data.forEach(element -> {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-
+            // TODO #18: Support code/data serialization
             if (element.getData() instanceof KV) {
               final KV keyValue = (KV) element.getData();
               if (keyValue.getValue() instanceof RawUnionValue) {
