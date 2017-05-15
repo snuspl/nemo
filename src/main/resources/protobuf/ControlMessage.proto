@@ -75,6 +75,7 @@ message TransferBlockMsg {
     string executorId = 1;
     string blockId = 2;
     bytes data = 3; // just for now
+    bool isUnionValue = 4; // just for now
 }
 
 enum TaskGroupStateFromExecutor {
