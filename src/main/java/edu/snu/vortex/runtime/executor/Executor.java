@@ -16,7 +16,9 @@
 package edu.snu.vortex.runtime.executor;
 
 import com.google.protobuf.ByteString;
+import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -33,6 +35,7 @@ import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.http.util.ByteArrayBuffer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +91,8 @@ public final class Executor {
     messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     connectToOtherNodes(messageEnvironment);
     this.executorService = Executors.newFixedThreadPool(capacity);
-    this.blockManagerWorker = new BlockManagerWorker(executorId, new LocalStore(), nodeIdToMsgSenderMap);
+    this.blockManagerWorker = new BlockManagerWorker(executorId, new LocalStore(),
+        messageEnvironment, nodeIdToMsgSenderMap);
     this.dataTransferFactory = new DataTransferFactory(blockManagerWorker);
   }
 
@@ -157,14 +161,27 @@ public final class Executor {
       case RequestBlock:
         final ControlMessage.RequestBlockMsg requestBlockMsg = message.getRequestBlockMsg();
 
+        final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
         final ControlMessage.TransferBlockMsg.Builder transferBlockMsgBuilder =
             ControlMessage.TransferBlockMsg.newBuilder();
         transferBlockMsgBuilder.setExecutorId(executorId);
         transferBlockMsgBuilder.setBlockId(requestBlockMsg.getBlockId());
-        transferBlockMsgBuilder.setData(ByteString.copyFrom(SerializationUtils.serialize(
-            blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
-                convertBlockStoreType(requestBlockMsg.getBlockStore()))));
-        throw new UnsupportedOperationException("Not yet supported");
+
+        final Iterable<Element> data = blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
+            convertBlockStoreType(requestBlockMsg.getBlockStore()));
+        final ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(0);
+        data.forEach(element -> {
+          byte[] serializedData = SerializationUtils.serialize(element);
+          byteArrayBuffer.append(serializedData, 0, serializedData.length);
+        });
+        transferBlockMsgBuilder.setData(ByteString.copyFrom(byteArrayBuffer.toByteArray()));
+
+        msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
+        msgBuilder.setType(ControlMessage.MessageType.TransferBlock);
+        msgBuilder.setTransferBlockMsg(transferBlockMsgBuilder.build());
+
+        messageContext.reply(msgBuilder.build());
+        break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be requested to an executor :" + message.getType()));

@@ -45,7 +45,7 @@ public final class LocalResourceManager implements ResourceManager {
 
     // Create the executor!
     final Executor executor =
-        new Executor(executorId, executorCapacity, localMessageDispatcher, blockManagerMaster);
+        new Executor(executorId, executorCapacity, localMessageDispatcher);
     executorMap.put(executorId, executor);
 
     // Connect to the executor and initiate Master side's executor representation.

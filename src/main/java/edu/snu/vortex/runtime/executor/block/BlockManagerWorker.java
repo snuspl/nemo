@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Executor-side block manager.
@@ -43,14 +44,18 @@ public final class BlockManagerWorker {
 
   private final Set<String> idOfBlocksStoredInThisWorker;
 
+  private final MessageEnvironment messageEnvironment;
+
   private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
 
   public BlockManagerWorker(final String executorId,
                             final LocalStore localStore,
+                            final MessageEnvironment messageEnvironment,
                             final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap) {
     this.executorId = executorId;
     this.localStore = localStore;
     this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
+    this.messageEnvironment = messageEnvironment;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
   }
 
@@ -139,9 +144,19 @@ public final class BlockManagerWorker {
       if (blockLocationInfoMsg != null) {
         final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
 
-        // Ask Master for the location
-        final MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor =
+        // Request the block to the owner executor.
+        MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor =
             nodeIdToMsgSenderMap.get(remoteWorkerId);
+
+        if (messageSenderToRemoteExecutor == null) {
+          try {
+            messageSenderToRemoteExecutor =
+                messageEnvironment.<ControlMessage.Message>asyncConnect(
+                    remoteWorkerId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+          } catch (Exception e) {
+            throw new NodeConnectionException(e);
+          }
+        }
 
         final ControlMessage.Message.Builder dataRequestBuilder = ControlMessage.Message.newBuilder();
         final ControlMessage.RequestBlockMsg.Builder requestBlockMsgBuilder =
@@ -170,8 +185,6 @@ public final class BlockManagerWorker {
           // We should report this exception to the master, instead of shutting down the JVM
           throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorkerId);
         }
-//        final Optional<Iterable<Element>> optionalData =
-//            remoteWorker.getBlockRemotely(executorId, blockId, blockStore);
       } else {
         // TODO #163: Handle Fault Tolerance
         // We should report this exception to the master, instead of shutting down the JVM

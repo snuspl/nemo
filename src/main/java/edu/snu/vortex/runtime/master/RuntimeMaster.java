@@ -179,6 +179,7 @@ public final class RuntimeMaster {
         msgBuilder.setBlockLocationInfoMsg(blockLocationInfoMsgBuilder.build());
 
         messageContext.reply(msgBuilder.build());
+        break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be requested to Master :" + message.getType()));

@@ -161,7 +161,7 @@ public final class TaskGroupExecutor {
           throw new UnsupportedOperationException(task.toString());
         }
       } catch (final Exception e) {
-        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
+//        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
         throw new RuntimeException(e);
       }
     });
