@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.block;
 
+import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
@@ -23,14 +24,17 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
+import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.SerializableCoder;
+import org.apache.beam.sdk.coders.VarIntCoder;
+import org.apache.beam.sdk.transforms.join.UnionCoder;
 import org.apache.commons.lang3.SerializationUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Executor-side block manager.
@@ -178,8 +182,26 @@ public final class BlockManagerWorker {
 
         final ControlMessage.TransferBlockMsg transferBlockMsg = responseFromRemoteExecutor.getTransferBlockMsg();
         if (transferBlockMsg != null) {
-          Iterable<Element> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
-          return data;
+          final List<Element> deserializedData = new ArrayList<>();
+          ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
+          data.forEach(bytes -> {
+            if (transferBlockMsg.getIsUnionValue()) {
+              final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+              List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+                  SerializableCoder.of(double[].class));
+              UnionCoder coder = UnionCoder.of(elementCodecs);
+              KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+              try {
+                final Element element = new BeamElement(kvCoder.decode(stream, Coder.Context.OUTER));
+                deserializedData.add(element);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            } else {
+              deserializedData.add(SerializationUtils.deserialize(bytes));
+            }
+          });
+          return deserializedData;
         } else {
           // TODO #163: Handle Fault Tolerance
           // We should report this exception to the master, instead of shutting down the JVM

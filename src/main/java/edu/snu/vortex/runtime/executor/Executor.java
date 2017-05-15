@@ -34,11 +34,18 @@ import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
+import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.SerializableCoder;
+import org.apache.beam.sdk.coders.VarIntCoder;
+import org.apache.beam.sdk.transforms.join.RawUnionValue;
+import org.apache.beam.sdk.transforms.join.UnionCoder;
+import org.apache.beam.sdk.values.KV;
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.http.util.ByteArrayBuffer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -170,12 +177,36 @@ public final class Executor {
 
         final Iterable<Element> data = blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
             convertBlockStoreType(requestBlockMsg.getBlockStore()));
-        final ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(0);
+        final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
+//        data.forEach(element -> dataToSerialize.add(element));
+
         data.forEach(element -> {
-          byte[] serializedData = SerializationUtils.serialize(element);
-          byteArrayBuffer.append(serializedData, 0, serializedData.length);
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+
+            if (element.getData() instanceof KV) {
+              final KV keyValue = (KV) element.getData();
+              if (keyValue.getValue() instanceof RawUnionValue) {
+                List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+                    SerializableCoder.of(double[].class));
+                UnionCoder coder = UnionCoder.of(elementCodecs);
+                KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+                kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
+
+                transferBlockMsgBuilder.setIsUnionValue(true);
+              } else {
+                SerializationUtils.serialize(element, stream);
+                transferBlockMsgBuilder.setIsUnionValue(false);
+              }
+            } else {
+              SerializationUtils.serialize(element, stream);
+              transferBlockMsgBuilder.setIsUnionValue(false);
+            }
+            dataToSerialize.add(stream.toByteArray());
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         });
-        transferBlockMsgBuilder.setData(ByteString.copyFrom(byteArrayBuffer.toByteArray()));
+        transferBlockMsgBuilder.setData(ByteString.copyFrom(SerializationUtils.serialize(dataToSerialize)));
 
         msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
         msgBuilder.setType(ControlMessage.MessageType.TransferBlock);
