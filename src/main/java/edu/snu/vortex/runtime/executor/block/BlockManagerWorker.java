@@ -186,22 +186,22 @@ public final class BlockManagerWorker {
           final List<Element> deserializedData = new ArrayList<>();
           ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
           data.forEach(bytes -> {
-//            // TODO #18: Support code/data serialization
-//            if (transferBlockMsg.getIsUnionValue()) {
-//              final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-//              List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
-//                  SerializableCoder.of(double[].class));
-//              UnionCoder coder = UnionCoder.of(elementCodecs);
-//              KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
-//              try {
-//                final Element element = new BeamElement(kvCoder.decode(stream, Coder.Context.OUTER));
-//                deserializedData.add(element);
-//              } catch (IOException e) {
-//                throw new RuntimeException(e);
-//              }
-//            } else {
+            // TODO #18: Support code/data serialization
+            if (transferBlockMsg.getIsUnionValue()) {
+              final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+              List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+                  SerializableCoder.of(double[].class));
+              UnionCoder coder = UnionCoder.of(elementCodecs);
+              KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+              try {
+                final Element element = new BeamElement(kvCoder.decode(stream, Coder.Context.OUTER));
+                deserializedData.add(element);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            } else {
               deserializedData.add(SerializationUtils.deserialize(bytes));
-//            }
+            }
           });
           return deserializedData;
         } else {

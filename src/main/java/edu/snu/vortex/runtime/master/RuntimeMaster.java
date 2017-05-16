@@ -35,7 +35,6 @@ import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 
@@ -52,7 +51,7 @@ import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
  * Compiler submits an {@link ExecutionPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
  *    a) Physical conversion of a job's DAG into a physical plan.
- *    b) Scheduling the job with {@link BatchScheduler}.
+ *    b) Scheduling the job with {@link Scheduler}.
  *    c) (Please list others done by Runtime Master as features are added).
  */
 public final class RuntimeMaster {
