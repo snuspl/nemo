@@ -239,11 +239,18 @@ public final class DataTransferTest {
     final Set<Element> s1 = new HashSet<>(l);
     final Set<Element> s2 = new HashSet<>(r);
 
-    s1.forEach(element -> {
-      if (!s2.contains(element)) {
+//    s1.forEach(element -> {
+//      if (!s2.contains(element)) {
+//        System.err.println(element);
+//      }
+//    });
+
+    s2.forEach(element -> {
+      if (!s1.contains(element)) {
         System.err.println(element);
       }
     });
+
     return s1.equals(s2);
   }
 }
