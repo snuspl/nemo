@@ -170,24 +170,24 @@ public final class Executor {
         data.forEach(element -> {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             // TODO #18: Support code/data serialization
-//            if (element.getData() instanceof KV) {
-//              final KV keyValue = (KV) element.getData();
-//              if (keyValue.getValue() instanceof RawUnionValue) {
-//                List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
-//                    SerializableCoder.of(double[].class));
-//                UnionCoder coder = UnionCoder.of(elementCodecs);
-//                KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
-//                kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
-//
-//                transferBlockMsgBuilder.setIsUnionValue(true);
-//              } else {
-//                SerializationUtils.serialize(element, stream);
-//                transferBlockMsgBuilder.setIsUnionValue(false);
-//              }
-//            } else {
+            if (element.getData() instanceof KV) {
+              final KV keyValue = (KV) element.getData();
+              if (keyValue.getValue() instanceof RawUnionValue) {
+                List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+                    SerializableCoder.of(double[].class));
+                UnionCoder coder = UnionCoder.of(elementCodecs);
+                KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+                kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
+
+                transferBlockMsgBuilder.setIsUnionValue(true);
+              } else {
+                SerializationUtils.serialize(element, stream);
+                transferBlockMsgBuilder.setIsUnionValue(false);
+              }
+            } else {
               SerializationUtils.serialize(element, stream);
               transferBlockMsgBuilder.setIsUnionValue(false);
-//            }
+            }
             dataToSerialize.add(stream.toByteArray());
           } catch (IOException e) {
             throw new RuntimeException(e);
