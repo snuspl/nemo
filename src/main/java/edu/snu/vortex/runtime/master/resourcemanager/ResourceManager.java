@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master.resourcemanager;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 
 /**
@@ -27,6 +28,6 @@ public interface ResourceManager {
    * @param resourceType the resource type (ex. compute/storage) to request for the executor.
    * @param executorConfiguration the configuration for the executor to use.
    */
-  void requestExecutor(final RuntimeAttribute resourceType, final ExecutorConfiguration executorConfiguration);
+  Executor requestExecutor(final RuntimeAttribute resourceType, final ExecutorConfiguration executorConfiguration);
 
 }

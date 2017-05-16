@@ -24,15 +24,11 @@ import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.MessageSender;
-import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
-import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
-import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -91,34 +87,26 @@ public final class Executor {
   public Executor(final String executorId,
                   final int capacity,
                   final int numThreads,
-                  final LocalMessageDispatcher localMessageDispatcher) {
+                  final MessageEnvironment messageEnvironment,
+                  final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap,
+                  final BlockManagerWorker blockManagerWorker,
+                  final DataTransferFactory dataTransferFactory) {
     this.executorId = executorId;
     this.capacity = capacity;
-    this.messageEnvironment = new LocalMessageEnvironment(executorId, localMessageDispatcher);
-    this.nodeIdToMsgSenderMap = new HashMap<>();
-    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
-    connectToOtherNodes(messageEnvironment);
-    this.blockManagerWorker = new BlockManagerWorker(executorId, new LocalStore(),
-        messageEnvironment, nodeIdToMsgSenderMap);
-    this.dataTransferFactory = new DataTransferFactory(blockManagerWorker);
     this.executorService = Executors.newFixedThreadPool(numThreads);
+    this.messageEnvironment = messageEnvironment;
+    this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
+    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
+    this.blockManagerWorker = blockManagerWorker;
+    this.dataTransferFactory = dataTransferFactory;
   }
 
-  /**
-   * Initializes connections to other nodes to send necessary messages.
-   * @param myMessageEnvironment the message environment for this executor.
-   */
-  // TODO #186: Integrate BlockManager Master/Workers with Protobuf Messages
-  // We should connect to the existing executors for control messages involved in block transfers.
-  private void connectToOtherNodes(final MessageEnvironment myMessageEnvironment) {
-    // Connect to Master for now.
-    try {
-      nodeIdToMsgSenderMap.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
-          myMessageEnvironment.<ControlMessage.Message>asyncConnect(
-              MessageEnvironment.MASTER_COMMUNICATION_ID, MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
-    } catch (Exception e) {
-      throw new NodeConnectionException(e);
-    }
+  public String getExecutorId() {
+    return executorId;
+  }
+
+  public int getCapacity() {
+    return capacity;
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {
@@ -182,24 +170,24 @@ public final class Executor {
         data.forEach(element -> {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             // TODO #18: Support code/data serialization
-            if (element.getData() instanceof KV) {
-              final KV keyValue = (KV) element.getData();
-              if (keyValue.getValue() instanceof RawUnionValue) {
-                List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
-                    SerializableCoder.of(double[].class));
-                UnionCoder coder = UnionCoder.of(elementCodecs);
-                KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
-                kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
-
-                transferBlockMsgBuilder.setIsUnionValue(true);
-              } else {
-                SerializationUtils.serialize(element, stream);
-                transferBlockMsgBuilder.setIsUnionValue(false);
-              }
-            } else {
+//            if (element.getData() instanceof KV) {
+//              final KV keyValue = (KV) element.getData();
+//              if (keyValue.getValue() instanceof RawUnionValue) {
+//                List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+//                    SerializableCoder.of(double[].class));
+//                UnionCoder coder = UnionCoder.of(elementCodecs);
+//                KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+//                kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
+//
+//                transferBlockMsgBuilder.setIsUnionValue(true);
+//              } else {
+//                SerializationUtils.serialize(element, stream);
+//                transferBlockMsgBuilder.setIsUnionValue(false);
+//              }
+//            } else {
               SerializationUtils.serialize(element, stream);
               transferBlockMsgBuilder.setIsUnionValue(false);
-            }
+//            }
             dataToSerialize.add(stream.toByteArray());
           } catch (IOException e) {
             throw new RuntimeException(e);

@@ -15,20 +15,20 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
-import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
+import edu.snu.vortex.runtime.executor.Executor;
+import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
@@ -39,11 +39,10 @@ import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
@@ -67,35 +66,21 @@ public final class RuntimeMaster {
   private final BlockManagerMaster blockManagerMaster;
   private JobStateManager jobStateManager;
 
-  public RuntimeMaster(final RuntimeAttribute schedulerType) {
-    switch (schedulerType) {
-    case Batch:
-      this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
-      this.runtimeConfiguration = readConfiguration();
-      break;
-    default:
-      throw new RuntimeException("Unknown scheduler type");
-    }
-    this.localMessageDispatcher = new LocalMessageDispatcher();
-    this.masterMessageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);
-    masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
-    this.blockManagerMaster = new BlockManagerMaster();
-    this.resourceManager =
-        new LocalResourceManager(scheduler, masterMessageEnvironment, localMessageDispatcher, blockManagerMaster);
+  public RuntimeMaster(final RuntimeConfiguration runtimeConfiguration,
+                       final Scheduler scheduler,
+                       final LocalMessageDispatcher localMessageDispatcher,
+                       final MessageEnvironment masterMessageEnvironment,
+                       final BlockManagerMaster blockManagerMaster,
+                       final ResourceManager resourceManager) {
+    this.scheduler = scheduler;
+    this.runtimeConfiguration = runtimeConfiguration;
+    this.localMessageDispatcher = localMessageDispatcher;
+    this.masterMessageEnvironment = masterMessageEnvironment;
+    this.masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER,
+        new MasterMessageReceiver());
+    this.blockManagerMaster = blockManagerMaster;
+    this.resourceManager = resourceManager;
     initializeResources();
-  }
-
-  private RuntimeConfiguration readConfiguration() {
-    final ObjectMapper objectMapper = new ObjectMapper();
-    final File configurationFile = new File("src/main/resources/configuration/RuntimeConfiguration.json");
-    final RuntimeConfiguration configuration;
-    try {
-      configuration = objectMapper.readValue(configurationFile, RuntimeConfiguration.class);
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read configuration file", e);
-    }
-    return configuration;
   }
 
   /**
@@ -106,7 +91,25 @@ public final class RuntimeMaster {
         new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
     completeSetOfResourceType.forEach(resourceType -> {
       for (int i = 0; i < runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorNum(); i++) {
-        resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
+        final Executor executor =
+            resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
+
+        if (executor != null) {
+          // Connect to the executor and initiate Master side's executor representation.
+          final MessageSender messageSender;
+          try {
+            messageSender =
+                masterMessageEnvironment.asyncConnect(
+                    executor.getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+          } catch (final Exception e) {
+            throw new RuntimeException(e);
+          }
+          final ExecutorRepresenter executorRepresenter =
+              new ExecutorRepresenter(executor.getExecutorId(), resourceType, executor.getCapacity(), messageSender);
+          scheduler.onExecutorAdded(executorRepresenter);
+        } else {
+          LOG.log(Level.INFO, "Resource Manager failed to return an Executor for " + resourceType);
+        }
       }
     });
   }
@@ -151,7 +154,7 @@ public final class RuntimeMaster {
    */
   // TODO #187: Cleanup Execution Threads
   // Executor threads call this at the moment.
-  private final class MasterMessageReceiver implements MessageListener<ControlMessage.Message> {
+  public final class MasterMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {

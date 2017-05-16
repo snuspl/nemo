@@ -21,21 +21,34 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
+import edu.snu.vortex.runtime.executor.Executor;
+import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import edu.snu.vortex.runtime.master.RuntimeConfiguration;
+import edu.snu.vortex.runtime.master.RuntimeMaster;
+import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
+import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
+import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.values.KV;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -50,122 +63,187 @@ public final class DataTransferTest {
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
 
+  private RuntimeMaster runtimeMaster;
+  private Scheduler scheduler;
+  private LocalMessageDispatcher dispatcher;
+  private MessageEnvironment masterEnv;
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
 
-//  @Before
-//  public void setUp() {
-//    this.master = new BlockManagerMaster();
-//    this.worker1 = new BlockManagerWorker("worker1", new LocalStore());
-//    this.worker2 = new BlockManagerWorker("worker2", new LocalStore());
-//    this.master.addNewWorker(worker1);
-//    this.master.addNewWorker(worker2);
-//  }
-//
+  @Before
+  public void setUp() {
+    this.dispatcher = new LocalMessageDispatcher();
+    this.masterEnv = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, dispatcher);
+    this.master = new BlockManagerMaster();
+    final ResourceManager resourceManager = new MockResourceManager();
+
+    this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
+    this.runtimeMaster = new RuntimeMaster(
+        new RuntimeConfiguration(new ExecutorConfiguration(2, 1, 1)),
+        scheduler,
+        dispatcher,
+        masterEnv,
+        master,
+        resourceManager);
+  }
+
+  private final class MockResourceManager implements ResourceManager {
+
+    private int executorCount = 0;
+
+    @Override
+    public Executor requestExecutor(final RuntimeAttribute resourceType,
+                                final ExecutorConfiguration executorConfiguration) {
+      Executor executor = null;
+      if (executorCount < 2) {
+        final String executorId = "Executor" + executorCount;
+
+        final MessageEnvironment workerEnv = new LocalMessageEnvironment(executorId, dispatcher);
+
+        final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderForWorker = new HashMap<>();
+        try {
+          nodeIdToMsgSenderForWorker.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
+              workerEnv.<ControlMessage.Message>asyncConnect(MessageEnvironment.MASTER_COMMUNICATION_ID,
+                  MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
+        } catch (final Exception e) {
+          e.printStackTrace();
+        }
+
+        final BlockManagerWorker blockManagerWorker =
+            new BlockManagerWorker(executorId, new LocalStore(), workerEnv, nodeIdToMsgSenderForWorker);
+
+        if (executorCount == 0) {
+          worker1 = blockManagerWorker;
+        } else {
+          worker2 = blockManagerWorker;
+        }
+
+        // Create the executor!
+        executor =
+            new Executor("Executor" + executorCount,
+                executorConfiguration.getDefaultExecutorCapacity(),
+                executorConfiguration.getExecutorNumThreads(),
+                workerEnv,
+                nodeIdToMsgSenderForWorker,
+                blockManagerWorker,
+                new DataTransferFactory(blockManagerWorker));
+
+        executorCount++;
+      }
+      return executor;
+    }
+  }
+
 //  @Test
-//  public void testOneToOneSameWorker() {
-//    writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
-//  }
-//
+  public void testOneToOneSameWorker() {
+    writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
+  }
+
 //  @Test
-//  public void testOneToOneDifferentWorker() {
-//    writeAndRead(worker1, worker2, RuntimeAttribute.OneToOne);
-//  }
-//
+  public void testOneToOneDifferentWorker() {
+    writeAndRead(worker1, worker2, RuntimeAttribute.OneToOne);
+  }
+
 //  @Test
-//  public void testOneToManySameWorker() {
-//    writeAndRead(worker1, worker1, RuntimeAttribute.Broadcast);
-//  }
-//
+  public void testOneToManySameWorker() {
+    writeAndRead(worker1, worker1, RuntimeAttribute.Broadcast);
+  }
+
+  @Test
+  public void testOneToManyDifferentWorker() {
+    writeAndRead(worker1, worker2, RuntimeAttribute.Broadcast);
+  }
+
 //  @Test
-//  public void testOneToManyDifferentWorker() {
-//    writeAndRead(worker1, worker2, RuntimeAttribute.Broadcast);
-//  }
-//
+  public void testManyToManySameWorker() {
+    writeAndRead(worker1, worker1, RuntimeAttribute.ScatterGather);
+  }
+
 //  @Test
-//  public void testManyToManySameWorker() {
-//    writeAndRead(worker1, worker1, RuntimeAttribute.ScatterGather);
-//  }
-//
-//  @Test
-//  public void testManyToManyDifferentWorker() {
-//    writeAndRead(worker1, worker2, RuntimeAttribute.ScatterGather);
-//  }
-//
-//  private void writeAndRead(final BlockManagerWorker sender,
-//                            final BlockManagerWorker receiver,
-//                            final RuntimeAttribute commPattern) {
-//    // Src setup
-//    final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
-//    srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-//
-//    final BoundedSource s = mock(BoundedSource.class);
-//    final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
-//    final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
-//
-//    // Dst setup
-//    final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
-//    dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-//    final BoundedSourceVertex v2 = new BoundedSourceVertex<>(s);
-//    final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
-//
-//    // Edge setup
-//    final String edgeId = "Dummy";
-//    final RuntimeAttributeMap edgeAttributes = new RuntimeAttributeMap();
-//    edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
-//    edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
-//    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
-//    final RuntimeEdge<RuntimeVertex> dummyEdge = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex);
-//
-//    // Initialize states in Master
-//    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-//      if (commPattern == RuntimeAttribute.ScatterGather) {
-//        IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex ->
-//            master.initializeState(edgeId, srcTaskIndex, dstTaskIndex));
-//      } else {
-//        master.initializeState(edgeId, srcTaskIndex);
-//      }
-//    });
-//
-//    // Write
-//    final List<List<Element>> dataWrittenList = new ArrayList<>();
-//    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-//      final List<Element> dataWritten = getListOfZeroToNine();
-//      final OutputWriter writer = new OutputWriter(srcTaskIndex, dstVertex, dummyEdge, sender);
-//      writer.write(dataWritten);
-//      dataWrittenList.add(dataWritten);
-//    });
-//
-//    // Read
-//    final List<List<Element>> dataReadList = new ArrayList<>();
-//    IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
-//      final InputReader reader = new InputReader(dstTaskIndex, srcVertex, dummyEdge, receiver);
-//      final List<Element> dataRead = new ArrayList<>();
-//      reader.read().forEach(dataRead::add);
-//      dataReadList.add(dataRead);
-//    });
-//
-//    // Compare (should be the same)
-//    final List<Element> flattenedWrittenData = flatten(dataWrittenList);
-//    final List<Element> flattenedReadData = flatten(dataReadList);
-//    assertTrue(doTheyHaveSameElements(flattenedWrittenData, flattenedReadData));
-//  }
-//
-//  private List<Element> getListOfZeroToNine() {
-//    final List<Element> dummy = new ArrayList<>();
-//    IntStream.range(0, PARALLELISM_TEN).forEach(number -> dummy.add(new BeamElement<>(KV.of(number, number))));
-//    return dummy;
-//  }
-//
-//  private List<Element> flatten(final List<List<Element>> listOfList) {
-//    return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
-//  }
-//
-//  private boolean doTheyHaveSameElements(final List<Element> l, final List<Element> r) {
-//    // Check equality, ignoring list order
-//    final Set<Element> s1 = new HashSet<>(l);
-//    final Set<Element> s2 = new HashSet<>(r);
-//    return s1.equals(s2);
-//  }
+  public void testManyToManyDifferentWorker() {
+    writeAndRead(worker1, worker2, RuntimeAttribute.ScatterGather);
+  }
+
+  private void writeAndRead(final BlockManagerWorker sender,
+                            final BlockManagerWorker receiver,
+                            final RuntimeAttribute commPattern) {
+    // Src setup
+    final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
+    srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+
+    final BoundedSource s = mock(BoundedSource.class);
+    final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
+    final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
+
+    // Dst setup
+    final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
+    dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    final BoundedSourceVertex v2 = new BoundedSourceVertex<>(s);
+    final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
+
+    // Edge setup
+    final String edgeId = "Dummy";
+    final RuntimeAttributeMap edgeAttributes = new RuntimeAttributeMap();
+    edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
+    edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
+    edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
+    final RuntimeEdge<RuntimeVertex> dummyEdge = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex);
+
+    // Initialize states in Master
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      if (commPattern == RuntimeAttribute.ScatterGather) {
+        IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex ->
+            master.initializeState(edgeId, srcTaskIndex, dstTaskIndex));
+      } else {
+        master.initializeState(edgeId, srcTaskIndex);
+      }
+    });
+
+    // Write
+    final List<List<Element>> dataWrittenList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      final List<Element> dataWritten = getListOfZeroToNine();
+      final OutputWriter writer = new OutputWriter(srcTaskIndex, dstVertex, dummyEdge, sender);
+      writer.write(dataWritten);
+      dataWrittenList.add(dataWritten);
+    });
+
+    // Read
+    final List<List<Element>> dataReadList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
+      final InputReader reader = new InputReader(dstTaskIndex, srcVertex, dummyEdge, receiver);
+      final List<Element> dataRead = new ArrayList<>();
+      reader.read().forEach(dataRead::add);
+      dataReadList.add(dataRead);
+    });
+
+    // Compare (should be the same)
+    final List<Element> flattenedWrittenData = flatten(dataWrittenList);
+    final List<Element> flattenedReadData = flatten(dataReadList);
+    assertTrue(doTheyHaveSameElements(flattenedWrittenData, flattenedReadData));
+  }
+
+  private List<Element> getListOfZeroToNine() {
+    final List<Element> dummy = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(number -> dummy.add(new BeamElement<>(KV.of(number, number))));
+    return dummy;
+  }
+
+  private List<Element> flatten(final List<List<Element>> listOfList) {
+    return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
+  }
+
+  private boolean doTheyHaveSameElements(final List<Element> l, final List<Element> r) {
+    // Check equality, ignoring list order
+    final Set<Element> s1 = new HashSet<>(l);
+    final Set<Element> s2 = new HashSet<>(r);
+
+    s1.forEach(element -> {
+      if (!s2.contains(element)) {
+        System.err.println(element);
+      }
+    });
+    return s1.equals(s2);
+  }
 }

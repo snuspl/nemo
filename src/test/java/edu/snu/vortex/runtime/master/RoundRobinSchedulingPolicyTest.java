@@ -49,7 +49,7 @@ public final class RoundRobinSchedulingPolicyTest {
 
   private final class MockResourceManager implements ResourceManager {
     @Override
-    public void requestExecutor(final RuntimeAttribute resourceType,
+    public Executor requestExecutor(final RuntimeAttribute resourceType,
                                 final ExecutorConfiguration executorConfiguration) {
       if (resourceType == RuntimeAttribute.Compute) {
         final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender);
@@ -64,6 +64,7 @@ public final class RoundRobinSchedulingPolicyTest {
         schedulingPolicy.onExecutorAdded(b2);
         schedulingPolicy.onExecutorAdded(b1);
       }
+      return null;
     }
   }
 
