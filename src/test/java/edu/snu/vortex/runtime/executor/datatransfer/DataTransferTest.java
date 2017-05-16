@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -215,7 +216,15 @@ public final class DataTransferTest {
     // Compare (should be the same)
     final List<Element> flattenedWrittenData = flatten(dataWrittenList);
     final List<Element> flattenedReadData = flatten(dataReadList);
-    assertTrue(doTheyHaveSameElements(flattenedWrittenData, flattenedReadData));
+    if (commPattern == RuntimeAttribute.Broadcast) {
+      final List<Element> broadcastedWrittenData = new ArrayList<>();
+      IntStream.range(0, PARALLELISM_TEN).forEach(i -> broadcastedWrittenData.addAll(flattenedWrittenData));
+      assertEquals(broadcastedWrittenData.size(), flattenedReadData.size());
+      flattenedReadData.forEach(rData -> assertTrue(broadcastedWrittenData.remove(rData)));
+    } else {
+      assertEquals(flattenedWrittenData.size(), flattenedReadData.size());
+      flattenedReadData.forEach(rData -> assertTrue(flattenedWrittenData.remove(rData)));
+    }
   }
 
   private List<Element> getListOfZeroToNine() {
@@ -226,22 +235,5 @@ public final class DataTransferTest {
 
   private List<Element> flatten(final List<List<Element>> listOfList) {
     return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
-  }
-
-  private boolean doTheyHaveSameElements(final List<Element> l, final List<Element> r) {
-    // Check equality, ignoring list order
-    final Set<KV<Integer, Integer>> s1 = new HashSet<>();
-    l.forEach(element -> {
-      final KV<Integer, Integer> keyValue = (KV<Integer, Integer>) element.getData();
-      s1.add(keyValue);
-    });
-
-    final Set<KV<Integer, Integer>> s2 = new HashSet<>();
-    r.forEach(element -> {
-      final KV<Integer, Integer> keyValue = (KV<Integer, Integer>) element.getData();
-      s2.add(keyValue);
-    });
-
-    return s1.equals(s2);
   }
 }

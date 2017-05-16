@@ -54,4 +54,10 @@ public final class BeamElement<Data, Key, Value> implements Element<Data, Key, V
   public String toString() {
     return data.toString();
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    final BeamElement<Data, Key, Value> otherElement = (BeamElement<Data, Key, Value>)o;
+    return otherElement.getData().equals(data);
+  }
 }
