@@ -13,8 +13,6 @@ import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
-import edu.snu.vortex.runtime.master.BlockManagerMaster;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 
 import java.util.HashMap;
 import java.util.Map;

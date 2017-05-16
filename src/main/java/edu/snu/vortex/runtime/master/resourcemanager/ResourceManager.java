@@ -27,6 +27,7 @@ public interface ResourceManager {
    * Requests for an executor.
    * @param resourceType the resource type (ex. compute/storage) to request for the executor.
    * @param executorConfiguration the configuration for the executor to use.
+   * @return the requested executor.
    */
   Executor requestExecutor(final RuntimeAttribute resourceType, final ExecutorConfiguration executorConfiguration);
 
