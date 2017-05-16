@@ -18,10 +18,8 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
-import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -37,8 +35,6 @@ import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeConfiguration;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
-import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
-import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
@@ -48,13 +44,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
@@ -135,17 +129,17 @@ public final class DataTransferTest {
     }
   }
 
-//  @Test
+  @Test
   public void testOneToOneSameWorker() {
     writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
   }
 
-//  @Test
+  @Test
   public void testOneToOneDifferentWorker() {
     writeAndRead(worker1, worker2, RuntimeAttribute.OneToOne);
   }
 
-//  @Test
+  @Test
   public void testOneToManySameWorker() {
     writeAndRead(worker1, worker1, RuntimeAttribute.Broadcast);
   }
@@ -155,12 +149,12 @@ public final class DataTransferTest {
     writeAndRead(worker1, worker2, RuntimeAttribute.Broadcast);
   }
 
-//  @Test
+  @Test
   public void testManyToManySameWorker() {
     writeAndRead(worker1, worker1, RuntimeAttribute.ScatterGather);
   }
 
-//  @Test
+  @Test
   public void testManyToManyDifferentWorker() {
     writeAndRead(worker1, worker2, RuntimeAttribute.ScatterGather);
   }
@@ -236,19 +230,16 @@ public final class DataTransferTest {
 
   private boolean doTheyHaveSameElements(final List<Element> l, final List<Element> r) {
     // Check equality, ignoring list order
-    final Set<Element> s1 = new HashSet<>(l);
-    final Set<Element> s2 = new HashSet<>(r);
+    final Set<KV<Integer, Integer>> s1 = new HashSet<>();
+    l.forEach(element -> {
+      final KV<Integer, Integer> keyValue = (KV<Integer, Integer>) element.getData();
+      s1.add(keyValue);
+    });
 
-//    s1.forEach(element -> {
-//      if (!s2.contains(element)) {
-//        System.err.println(element);
-//      }
-//    });
-
-    s2.forEach(element -> {
-      if (!s1.contains(element)) {
-        System.err.println(element);
-      }
+    final Set<KV<Integer, Integer>> s2 = new HashSet<>();
+    r.forEach(element -> {
+      final KV<Integer, Integer> keyValue = (KV<Integer, Integer>) element.getData();
+      s2.add(keyValue);
     });
 
     return s1.equals(s2);
