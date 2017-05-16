@@ -58,7 +58,6 @@ public final class DataTransferTest {
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
 
-  private RuntimeMaster runtimeMaster;
   private Scheduler scheduler;
   private LocalMessageDispatcher dispatcher;
   private MessageEnvironment masterEnv;
@@ -74,7 +73,7 @@ public final class DataTransferTest {
     final ResourceManager resourceManager = new MockResourceManager();
 
     this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
-    this.runtimeMaster = new RuntimeMaster(
+    new RuntimeMaster(
         new RuntimeConfiguration(new ExecutorConfiguration(2, 1, 1)),
         scheduler,
         dispatcher,
