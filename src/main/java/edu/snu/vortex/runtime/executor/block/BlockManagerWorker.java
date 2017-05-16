@@ -145,75 +145,75 @@ public final class BlockManagerWorker {
       }
 
       final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
-      if (blockLocationInfoMsg != null) {
-        final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
-
-        // Request the block to the owner executor.
-        MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor =
-            nodeIdToMsgSenderMap.get(remoteWorkerId);
-
-        if (messageSenderToRemoteExecutor == null) {
-          try {
-            messageSenderToRemoteExecutor =
-                messageEnvironment.<ControlMessage.Message>asyncConnect(
-                    remoteWorkerId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
-            nodeIdToMsgSenderMap.put(remoteWorkerId, messageSenderToRemoteExecutor);
-          } catch (Exception e) {
-            throw new NodeConnectionException(e);
-          }
-        }
-
-        final ControlMessage.Message.Builder dataRequestBuilder = ControlMessage.Message.newBuilder();
-        final ControlMessage.RequestBlockMsg.Builder requestBlockMsgBuilder =
-            ControlMessage.RequestBlockMsg.newBuilder();
-        requestBlockMsgBuilder.setExecutorId(executorId);
-        requestBlockMsgBuilder.setBlockId(blockId);
-
-        dataRequestBuilder.setId(RuntimeIdGenerator.generateMessageId());
-        dataRequestBuilder.setType(ControlMessage.MessageType.RequestBlock);
-        dataRequestBuilder.setRequestBlockMsg(requestBlockMsgBuilder.build());
-
-        final ControlMessage.Message responseFromRemoteExecutor;
-        try {
-          responseFromRemoteExecutor =
-              messageSenderToRemoteExecutor.<ControlMessage.Message>request(dataRequestBuilder.build()).get();
-        } catch (Exception e) {
-          throw new NodeConnectionException(e);
-        }
-
-        final ControlMessage.TransferBlockMsg transferBlockMsg = responseFromRemoteExecutor.getTransferBlockMsg();
-        if (transferBlockMsg != null) {
-          final List<Element> deserializedData = new ArrayList<>();
-          ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
-          data.forEach(bytes -> {
-            // TODO #18: Support code/data serialization
-            if (transferBlockMsg.getIsUnionValue()) {
-              final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-              List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
-                  SerializableCoder.of(double[].class));
-              UnionCoder coder = UnionCoder.of(elementCodecs);
-              KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
-              try {
-                final Element element = new BeamElement(kvCoder.decode(stream, Coder.Context.OUTER));
-                deserializedData.add(element);
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-            } else {
-              deserializedData.add(SerializationUtils.deserialize(bytes));
-            }
-          });
-          return deserializedData;
-        } else {
-          // TODO #163: Handle Fault Tolerance
-          // We should report this exception to the master, instead of shutting down the JVM
-          throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorkerId);
-        }
-      } else {
+      assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);
+      if (blockLocationInfoMsg == null) {
         // TODO #163: Handle Fault Tolerance
         // We should report this exception to the master, instead of shutting down the JVM
         throw new RuntimeException("Block " + blockId + " not found both in the local storage and the remote storage");
       }
+      final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
+
+      // Request the block to the owner executor.
+      final MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor;
+      if (nodeIdToMsgSenderMap.containsKey(remoteWorkerId)) {
+        messageSenderToRemoteExecutor = nodeIdToMsgSenderMap.get(remoteWorkerId);
+      } else {
+        try {
+          messageSenderToRemoteExecutor =
+              messageEnvironment.<ControlMessage.Message>asyncConnect(
+                  remoteWorkerId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+          nodeIdToMsgSenderMap.put(remoteWorkerId, messageSenderToRemoteExecutor);
+        } catch (Exception e) {
+          throw new NodeConnectionException(e);
+        }
+      }
+
+      final ControlMessage.Message.Builder dataRequestBuilder = ControlMessage.Message.newBuilder();
+      final ControlMessage.RequestBlockMsg.Builder requestBlockMsgBuilder =
+          ControlMessage.RequestBlockMsg.newBuilder();
+      requestBlockMsgBuilder.setExecutorId(executorId);
+      requestBlockMsgBuilder.setBlockId(blockId);
+
+      dataRequestBuilder.setId(RuntimeIdGenerator.generateMessageId());
+      dataRequestBuilder.setType(ControlMessage.MessageType.RequestBlock);
+      dataRequestBuilder.setRequestBlockMsg(requestBlockMsgBuilder.build());
+
+      final ControlMessage.Message responseFromRemoteExecutor;
+      try {
+        responseFromRemoteExecutor =
+            messageSenderToRemoteExecutor.<ControlMessage.Message>request(dataRequestBuilder.build()).get();
+      } catch (Exception e) {
+        throw new NodeConnectionException(e);
+      }
+
+      final ControlMessage.TransferBlockMsg transferBlockMsg = responseFromRemoteExecutor.getTransferBlockMsg();
+      if (transferBlockMsg == null) {
+        // TODO #163: Handle Fault Tolerance
+        // We should report this exception to the master, instead of shutting down the JVM
+        throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorkerId);
+      }
+
+      final List<Element> deserializedData = new ArrayList<>();
+      ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
+      data.forEach(bytes -> {
+        // TODO #18: Support code/data serialization
+        if (transferBlockMsg.getIsUnionValue()) {
+          final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+          List<Coder<?>> elementCodecs = Arrays.asList(SerializableCoder.of(double[].class),
+              SerializableCoder.of(double[].class));
+          UnionCoder coder = UnionCoder.of(elementCodecs);
+          KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
+          try {
+            final Element element = new BeamElement(kvCoder.decode(stream, Coder.Context.OUTER));
+            deserializedData.add(element);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        } else {
+          deserializedData.add(SerializationUtils.deserialize(bytes));
+        }
+      });
+      return deserializedData;
     }
   }
 

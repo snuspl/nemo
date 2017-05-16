@@ -16,6 +16,7 @@ import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * {@inheritDoc}
@@ -29,8 +30,8 @@ public final class LocalResourceManager implements ResourceManager {
   }
 
   @Override
-  public synchronized Executor requestExecutor(final RuntimeAttribute resourceType,
-                                           final ExecutorConfiguration executorConfiguration) {
+  public synchronized Optional<Executor> requestExecutor(final RuntimeAttribute resourceType,
+                                                         final ExecutorConfiguration executorConfiguration) {
     final String executorId = RuntimeIdGenerator.generateExecutorId();
 
     final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap = new HashMap<>();
@@ -50,7 +51,7 @@ public final class LocalResourceManager implements ResourceManager {
             blockManagerWorker,
             dataTransferFactory);
 
-    return executor;
+    return Optional.of(executor);
   }
 
   /**

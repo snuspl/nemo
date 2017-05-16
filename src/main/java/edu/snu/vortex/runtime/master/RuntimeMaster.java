@@ -40,8 +40,8 @@ import edu.snu.vortex.utils.dag.DAG;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
@@ -90,24 +90,23 @@ public final class RuntimeMaster {
         new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
     completeSetOfResourceType.forEach(resourceType -> {
       for (int i = 0; i < runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorNum(); i++) {
-        final Executor executor =
+        final Optional<Executor> executor =
             resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
 
-        if (executor != null) {
+        if (executor.isPresent()) {
           // Connect to the executor and initiate Master side's executor representation.
           final MessageSender messageSender;
           try {
             messageSender =
                 masterMessageEnvironment.asyncConnect(
-                    executor.getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+                    executor.get().getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
           } catch (final Exception e) {
             throw new RuntimeException(e);
           }
           final ExecutorRepresenter executorRepresenter =
-              new ExecutorRepresenter(executor.getExecutorId(), resourceType, executor.getCapacity(), messageSender);
+              new ExecutorRepresenter(executor.get().getExecutorId(), resourceType,
+                  executor.get().getCapacity(), messageSender);
           scheduler.onExecutorAdded(executorRepresenter);
-        } else {
-          LOG.log(Level.INFO, "Resource Manager failed to return an Executor for " + resourceType);
         }
       }
     });

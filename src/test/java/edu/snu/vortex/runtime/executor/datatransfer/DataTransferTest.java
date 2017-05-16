@@ -87,9 +87,8 @@ public final class DataTransferTest {
     private int executorCount = 0;
 
     @Override
-    public Executor requestExecutor(final RuntimeAttribute resourceType,
+    public Optional<Executor> requestExecutor(final RuntimeAttribute resourceType,
                                 final ExecutorConfiguration executorConfiguration) {
-      Executor executor = null;
       if (executorCount < 2) {
         final String executorId = "Executor" + executorCount;
 
@@ -114,7 +113,7 @@ public final class DataTransferTest {
         }
 
         // Create the executor!
-        executor =
+        final Executor executor =
             new Executor("Executor" + executorCount,
                 executorConfiguration.getDefaultExecutorCapacity(),
                 executorConfiguration.getExecutorNumThreads(),
@@ -124,8 +123,9 @@ public final class DataTransferTest {
                 new DataTransferFactory(blockManagerWorker));
 
         executorCount++;
+        return Optional.of(executor);
       }
-      return executor;
+      return Optional.empty();
     }
   }
 

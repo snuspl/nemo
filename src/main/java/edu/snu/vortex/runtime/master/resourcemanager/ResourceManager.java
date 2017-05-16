@@ -19,6 +19,8 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 
+import java.util.Optional;
+
 /**
  * Manages resources depending on the environment in which jobs are executed.
  */
@@ -29,6 +31,6 @@ public interface ResourceManager {
    * @param executorConfiguration the configuration for the executor to use.
    * @return the requested executor.
    */
-  Executor requestExecutor(final RuntimeAttribute resourceType, final ExecutorConfiguration executorConfiguration);
-
+  Optional<Executor> requestExecutor(final RuntimeAttribute resourceType,
+                                     final ExecutorConfiguration executorConfiguration);
 }
