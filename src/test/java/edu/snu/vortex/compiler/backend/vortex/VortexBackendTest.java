@@ -53,9 +53,7 @@ public final class VortexBackendTest<I, O> {
     builder.connectVertices(new IREdge(IREdge.Type.OneToOne, groupByKey, combine));
     builder.connectVertices(new IREdge(IREdge.Type.OneToOne, combine, map2));
 
-
     this.dag = builder.build();
-
     this.dag = new Optimizer().optimize(dag, Optimizer.PolicyType.Pado);
   }
 
