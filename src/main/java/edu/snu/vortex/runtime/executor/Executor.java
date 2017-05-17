@@ -157,18 +157,13 @@ public final class Executor {
       case RequestBlock:
         final ControlMessage.RequestBlockMsg requestBlockMsg = message.getRequestBlockMsg();
 
-        final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
-        final ControlMessage.TransferBlockMsg.Builder transferBlockMsgBuilder =
-            ControlMessage.TransferBlockMsg.newBuilder();
-        transferBlockMsgBuilder.setExecutorId(executorId);
-        transferBlockMsgBuilder.setBlockId(requestBlockMsg.getBlockId());
-
         final Iterable<Element> data = blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
             convertBlockStoreType(requestBlockMsg.getBlockStore()));
-        final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
 
         // TODO #197: Improve Serialization/Deserialization Performance
-        data.forEach(element -> {
+        final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
+        boolean isUnionValue = false;
+        for (final Element element : data) {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             // TODO #18: Support code/data serialization
             if (element.getData() instanceof KV) {
@@ -180,27 +175,31 @@ public final class Executor {
                 KvCoder kvCoder = KvCoder.of(VarIntCoder.of(), coder);
                 kvCoder.encode(keyValue, stream, Coder.Context.OUTER);
 
-                transferBlockMsgBuilder.setIsUnionValue(true);
+                isUnionValue = true;
               } else {
                 SerializationUtils.serialize(element, stream);
-                transferBlockMsgBuilder.setIsUnionValue(false);
               }
             } else {
               SerializationUtils.serialize(element, stream);
-              transferBlockMsgBuilder.setIsUnionValue(false);
             }
             dataToSerialize.add(stream.toByteArray());
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
-        });
-        transferBlockMsgBuilder.setData(ByteString.copyFrom(SerializationUtils.serialize(dataToSerialize)));
+        }
 
-        msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
-        msgBuilder.setType(ControlMessage.MessageType.TransferBlock);
-        msgBuilder.setTransferBlockMsg(transferBlockMsgBuilder.build());
-
-        messageContext.reply(msgBuilder.build());
+        messageContext.reply(
+            ControlMessage.Message.newBuilder()
+                .setId(RuntimeIdGenerator.generateMessageId())
+                .setType(ControlMessage.MessageType.TransferBlock)
+                .setTransferBlockMsg(
+                    ControlMessage.TransferBlockMsg.newBuilder()
+                        .setExecutorId(executorId)
+                        .setBlockId(requestBlockMsg.getBlockId())
+                        .setIsUnionValue(isUnionValue)
+                        .setData(ByteString.copyFrom(SerializationUtils.serialize(dataToSerialize)))
+                        .build())
+                .build());
         break;
       default:
         throw new IllegalMessageException(

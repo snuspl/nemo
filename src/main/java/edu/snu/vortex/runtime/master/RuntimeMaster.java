@@ -181,18 +181,17 @@ public final class RuntimeMaster {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();
 
-        final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
-        final ControlMessage.BlockLocationInfoMsg.Builder blockLocationInfoMsgBuilder =
-            ControlMessage.BlockLocationInfoMsg.newBuilder();
-        blockLocationInfoMsgBuilder.setBlockId(requestBlockLocationMsg.getBlockId());
-        blockLocationInfoMsgBuilder.setOwnerExecutorId(
-            blockManagerMaster.getBlockLocation(requestBlockLocationMsg.getBlockId()).get());
-
-        msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
-        msgBuilder.setType(ControlMessage.MessageType.BlockLocationInfo);
-        msgBuilder.setBlockLocationInfoMsg(blockLocationInfoMsgBuilder.build());
-
-        messageContext.reply(msgBuilder.build());
+        messageContext.reply(
+            ControlMessage.Message.newBuilder()
+                .setId(RuntimeIdGenerator.generateMessageId())
+                .setType(ControlMessage.MessageType.BlockLocationInfo)
+                .setBlockLocationInfoMsg(
+                    ControlMessage.BlockLocationInfoMsg.newBuilder()
+                        .setBlockId(requestBlockLocationMsg.getBlockId())
+                        .setOwnerExecutorId(
+                            blockManagerMaster.getBlockLocation(requestBlockLocationMsg.getBlockId()).get())
+                        .build())
+                .build());
         break;
       default:
         throw new IllegalMessageException(

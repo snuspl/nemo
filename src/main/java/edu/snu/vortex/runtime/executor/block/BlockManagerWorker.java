@@ -87,18 +87,17 @@ public final class BlockManagerWorker {
     final MessageSender<ControlMessage.Message> messageSenderToMaster =
         nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
 
-    final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
-    final ControlMessage.BlockStateChangedMsg.Builder blockStateChangedMsgBuilder =
-        ControlMessage.BlockStateChangedMsg.newBuilder();
-    blockStateChangedMsgBuilder.setExecutorId(executorId);
-    blockStateChangedMsgBuilder.setBlockId(blockId);
-    blockStateChangedMsgBuilder.setState(ControlMessage.BlockStateFromExecutor.COMMITTED);
-
-    msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
-    msgBuilder.setType(ControlMessage.MessageType.BlockStateChanged);
-    msgBuilder.setBlockStateChangedMsg(blockStateChangedMsgBuilder.build());
-
-    messageSenderToMaster.send(msgBuilder.build());
+    messageSenderToMaster.send(
+        ControlMessage.Message.newBuilder()
+        .setId(RuntimeIdGenerator.generateMessageId())
+        .setType(ControlMessage.MessageType.BlockStateChanged)
+        .setBlockStateChangedMsg(
+            ControlMessage.BlockStateChangedMsg.newBuilder()
+            .setExecutorId(executorId)
+            .setBlockId(blockId)
+            .setState(ControlMessage.BlockStateFromExecutor.COMMITTED)
+            .build())
+        .build());
   }
 
   /**
@@ -127,19 +126,18 @@ public final class BlockManagerWorker {
       final MessageSender<ControlMessage.Message> messageSenderToMaster =
           nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
 
-      final ControlMessage.Message.Builder msgBuilder = ControlMessage.Message.newBuilder();
-      final ControlMessage.RequestBlockLocationMsg.Builder requestBlockLocationMsgBuilder =
-          ControlMessage.RequestBlockLocationMsg.newBuilder();
-      requestBlockLocationMsgBuilder.setExecutorId(executorId);
-      requestBlockLocationMsgBuilder.setBlockId(blockId);
-
-      msgBuilder.setId(RuntimeIdGenerator.generateMessageId());
-      msgBuilder.setType(ControlMessage.MessageType.RequestBlockLocation);
-      msgBuilder.setRequestBlockLocationMsg(requestBlockLocationMsgBuilder.build());
-
       final ControlMessage.Message responseFromMaster;
       try {
-        responseFromMaster = messageSenderToMaster.<ControlMessage.Message>request(msgBuilder.build()).get();
+        responseFromMaster = messageSenderToMaster.<ControlMessage.Message>request(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.RequestBlockLocation)
+              .setRequestBlockLocationMsg(
+                  ControlMessage.RequestBlockLocationMsg.newBuilder()
+                      .setExecutorId(executorId)
+                      .setBlockId(blockId)
+                      .build())
+              .build()).get();
       } catch (Exception e) {
         throw new NodeConnectionException(e);
       }
@@ -168,20 +166,20 @@ public final class BlockManagerWorker {
         }
       }
 
-      final ControlMessage.Message.Builder dataRequestBuilder = ControlMessage.Message.newBuilder();
-      final ControlMessage.RequestBlockMsg.Builder requestBlockMsgBuilder =
-          ControlMessage.RequestBlockMsg.newBuilder();
-      requestBlockMsgBuilder.setExecutorId(executorId);
-      requestBlockMsgBuilder.setBlockId(blockId);
-
-      dataRequestBuilder.setId(RuntimeIdGenerator.generateMessageId());
-      dataRequestBuilder.setType(ControlMessage.MessageType.RequestBlock);
-      dataRequestBuilder.setRequestBlockMsg(requestBlockMsgBuilder.build());
-
       final ControlMessage.Message responseFromRemoteExecutor;
       try {
         responseFromRemoteExecutor =
-            messageSenderToRemoteExecutor.<ControlMessage.Message>request(dataRequestBuilder.build()).get();
+            messageSenderToRemoteExecutor.<ControlMessage.Message>request(
+                ControlMessage.Message.newBuilder()
+                .setId(RuntimeIdGenerator.generateMessageId())
+                .setType(ControlMessage.MessageType.RequestBlock)
+                .setRequestBlockMsg(
+                    ControlMessage.RequestBlockMsg.newBuilder()
+                    .setExecutorId(executorId)
+                    .setBlockId(blockId)
+                    .build())
+                .build())
+                .get();
       } catch (Exception e) {
         throw new NodeConnectionException(e);
       }
