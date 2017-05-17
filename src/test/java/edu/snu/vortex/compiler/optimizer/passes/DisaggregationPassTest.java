@@ -19,6 +19,7 @@ import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,20 @@ public class DisaggregationPassTest {
   public void testDisaggregation() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().process(compiledDAG);
 
-    assertEquals(1, 1);
+    processedDAG.getTopologicalSort().forEach(irVertex -> {
+      assertEquals(Attribute.Compute, irVertex.getAttr(Attribute.Key.Placement));
+      processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge ->
+          assertEquals(Attribute.Pull, irEdge.getAttr(Attribute.Key.ChannelTransferPolicy)));
+    });
+
+    final IRVertex vertex4 = processedDAG.getTopologicalSort().get(6);
+    processedDAG.getIncomingEdgesOf(vertex4).forEach(irEdge ->
+      assertEquals(Attribute.Local, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
+    processedDAG.getOutgoingEdgesOf(vertex4).forEach(irEdge ->
+      assertEquals(Attribute.Local, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
+
+    final IRVertex vertex12 = processedDAG.getTopologicalSort().get(10);
+    processedDAG.getIncomingEdgesOf(vertex12).forEach(irEdge ->
+      assertEquals(Attribute.DistributedStorage, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
   }
 }

@@ -19,12 +19,17 @@ import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.utils.Pair;
 import edu.snu.vortex.utils.dag.DAG;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +51,18 @@ public class LoopUnrollingPassTest {
     final DAG<IRVertex, IREdge> processedDAG =
         new LoopUnrollingPass().process(new LoopGroupingPass().process(compiledDAG));
 
-    assertEquals(1, 1);
+    assertEquals(compiledDAG.getTopologicalSort().size(), processedDAG.getTopologicalSort().size());
+    // zip vertices
+    final Iterator<IRVertex> vertices1 = compiledDAG.getTopologicalSort().iterator();
+    final Iterator<IRVertex> vertices2 = processedDAG.getTopologicalSort().iterator();
+    final List<Pair<IRVertex, IRVertex>> list = new ArrayList<>();
+    while  (vertices1.hasNext() && vertices2.hasNext()) {
+      list.add(Pair.of(vertices1.next(), vertices2.next()));
+    }
+    list.forEach(irVertexPair -> {
+        assertEquals(irVertexPair.left().getAttributes(), irVertexPair.right().getAttributes());
+        assertEquals(compiledDAG.getIncomingEdgesOf(irVertexPair.left()).size(),
+            processedDAG.getIncomingEdgesOf(irVertexPair.right()).size());
+    });
   }
 }

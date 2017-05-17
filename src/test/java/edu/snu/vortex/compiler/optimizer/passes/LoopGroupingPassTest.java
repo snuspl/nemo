@@ -45,6 +45,6 @@ public class LoopGroupingPassTest {
   public void testLoopGrouping() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG = new LoopGroupingPass().process(compiledDAG);
 
-    assertEquals(1, 1);
+    assertEquals(9, processedDAG.getTopologicalSort().size());
   }
 }
