@@ -19,7 +19,6 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
-import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -77,14 +76,12 @@ public final class VortexDriver {
   private final int executorThreads;
 
   private final UserApplicationRunner userApplicationRunner;
-  private final PendingTaskSchedulerRunner pendingTaskSchedulerRunner;
+  private final SchedulerRunner schedulerRunner;
 
   @Inject
-  private VortexDriver(final ExecutoruatorRequestor evaluatorRequestor,
-                       final MasterToAggregatorRequestor masterToAggregatorRequestor,
+  private VortexDriver(final EvaluatorRequestor evaluatorRequestor,
                        final RuntimeMaster runtimeMaster,
-                       final UserApplicationRunner userApplicationRunner,
-                       final PendingTaskSchedulerRunner pendingTaskSchedulerRunner,
+                       final SchedulerRunner schedulerRunner,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
                        final UserApplicationRunner userApplicationRunner,
@@ -93,14 +90,11 @@ public final class VortexDriver {
                        @Parameter(JobConf.ExecutorCores.class) final int executorCores,
                        @Parameter(JobConf.ExecutorThreads.class) final int executorThreads) {
     this.userApplicationRunner = userApplicationRunner;
-    this.pendingTaskSchedulerRunner = pendingTaskSchedulerRunner;
+    this.schedulerRunner = schedulerRunner;
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.runtimeMaster = runtimeMaster;
-    this.masterToAggregatorRequestor = masterToAggregatorRequestor;
-
-
     this.executorNum = executorNum;
     this.executorCores = executorCores;
     this.executorMem = executorMem;
@@ -144,10 +138,9 @@ public final class VortexDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      // Start threads
-      startThreads();
+      // Launch scheduler
       final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
-      pendingTaskSchedulerThread.execute(pendingTaskSchedulerRunner);
+      pendingTaskSchedulerThread.execute(schedulerRunner);
       pendingTaskSchedulerThread.shutdown();
 
       // Launch resources
@@ -157,7 +150,7 @@ public final class VortexDriver {
           .setNumberOfCores(executorCores)
           .build());
 
-      // Launch job (with a new thread)
+      // Launch user application (with a new thread)
       final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
       userApplicationRunnerThread.execute(userApplicationRunner);
       userApplicationRunnerThread.shutdown();
@@ -197,7 +190,7 @@ public final class VortexDriver {
     return Configurations.merge(aggregatorConfiguration, contextConfiguration);
   }
 
-  private Configuration getNameResolverServiceConfiguration() {
+  private Configuration getExecutorNcsConfiguration() {
     return Tang.Factory.getTang().newConfigurationBuilder()
         .bindNamedParameter(NameResolverNameServerPort.class, Integer.toString(nameServer.getPort()))
         .bindNamedParameter(NameResolverNameServerAddr.class, localAddressProvider.getLocalAddress())

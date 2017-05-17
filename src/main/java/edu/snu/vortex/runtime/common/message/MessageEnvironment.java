@@ -23,21 +23,21 @@ public interface MessageEnvironment {
   <T> MessageSender<T> setupListener(String messageTypeId, MessageListener<T> listener);
 
   /**
-   * Asynchronously connect to the node called 'targetId' and return a future of {@link MessageSender} that sends
+   * Asynchronously connect to the node called 'receiverId' and return a future of {@link MessageSender} that sends
    * messages with 'messageTypeId'.
    *
-   * @param targetId a target id
+   * @param receiverId a receiver id
    * @param messageTypeId a message type id
    * @param <T> The type of the message to be sent in the environment
    * @return a message sender
    */
-  <T> Future<MessageSender<T>> asyncConnect(String targetId, String messageTypeId);
+  <T> Future<MessageSender<T>> asyncConnect(String receiverId, String messageTypeId);
 
   /**
    * Return an id of current node.
    *
    * @return an identifier
    */
-  String getCurrentId();
+  String getId();
 
 }

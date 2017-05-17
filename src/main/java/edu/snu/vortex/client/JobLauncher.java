@@ -19,14 +19,19 @@ import edu.snu.vortex.runtime.master.VortexDriver;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
 import org.apache.reef.client.LauncherStatus;
+import org.apache.reef.io.network.naming.LocalNameResolverConfiguration;
+import org.apache.reef.io.network.naming.NameServerConfiguration;
+import org.apache.reef.io.network.util.StringIdentifierFactory;
 import org.apache.reef.runtime.local.client.LocalRuntimeConfiguration;
 import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.CommandLine;
 import org.apache.reef.util.EnvironmentUtils;
 import org.apache.reef.util.Optional;
+import org.apache.reef.wake.IdentifierFactory;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,9 +55,10 @@ public final class JobLauncher {
     // Get Job and Driver Confs
     final Configuration jobConf = getJobConf(args);
     final Configuration driverConf = getDriverConf(jobConf);
+    final Configuration driverNcsConf = getDriverNcsConf();
 
     // Merge Job and Driver Confs
-    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf);
+    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf);
 
     // Get Runtime Conf
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
@@ -64,7 +70,17 @@ public final class JobLauncher {
     final Optional<Throwable> possibleError = launcherStatus.getError();
     if (possibleError.isPresent()) {
       throw new RuntimeException(possibleError.get());
+    } else {
+      LOG.log(Level.INFO, "Job successfully completed (at least it seems...)");
     }
+  }
+
+  private static Configuration getDriverNcsConf() throws InjectionException {
+    return Configurations.merge(NameServerConfiguration.CONF.build(),
+        LocalNameResolverConfiguration.CONF.build(),
+        Tang.Factory.getTang().newConfigurationBuilder()
+            .bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class)
+            .build());
   }
 
   private static Configuration getDriverConf(final Configuration jobConf) throws InjectionException {

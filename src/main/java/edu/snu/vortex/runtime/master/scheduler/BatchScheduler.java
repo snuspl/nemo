@@ -21,7 +21,6 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
@@ -35,9 +34,6 @@ import org.apache.commons.lang.SerializationUtils;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,8 +45,8 @@ import java.util.logging.Logger;
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
 
-  private final ExecutorService schedulerThread;
-  private final BlockingDeque<TaskGroup> taskGroupsToSchedule;
+  private final PendingTaskGroupQueue pendingTaskGroupQueue;
+
   private JobStateManager jobStateManager;
 
   /**
@@ -78,11 +74,10 @@ public final class BatchScheduler implements Scheduler {
 
   @Inject
   public BatchScheduler(final RuntimeAttribute schedulingPolicyAttribute,
-                        final long scheduleTimeout) {
-    this.schedulerThread = Executors.newSingleThreadExecutor();
-    this.taskGroupsToSchedule = new LinkedBlockingDeque<>();
+                        final long scheduleTimeout,
+                        final PendingTaskGroupQueue pendingTaskGroupQueue) {
+    this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.executorRepresenterMap = new HashMap<>();
-    schedulerThread.execute(new TaskGroupScheduleHandler());
 
     // The default policy is initialized and set here.
     this.schedulingPolicyAttribute = schedulingPolicyAttribute;
@@ -225,43 +220,15 @@ public final class BatchScheduler implements Scheduler {
     if (nextStageToExecute != null) {
       LOG.log(Level.INFO, "Scheduling Stage: {0}", nextStageToExecute.getId());
       jobStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
-      taskGroupsToSchedule.addAll(nextStageToExecute.getTaskGroupList());
+      pendingTaskGroupQueue.addAll(nextStageToExecute.getTaskGroupList());
     } else {
       throw new SchedulingException(new Exception("There is no next stage to execute! "
           + "There must have been something wrong in setting execution states!"));
     }
   }
 
-  /**
-   * A separate thread is run to schedule task groups to executors.
-   */
-  private class TaskGroupScheduleHandler implements Runnable {
-    @Override
-    public void run() {
-      while (!schedulerThread.isShutdown()) {
-        try {
-          final TaskGroup taskGroup = taskGroupsToSchedule.takeFirst();
-          final Optional<ExecutorRepresenter> executor = schedulingPolicy.attemptSchedule(taskGroup);
-          if (!executor.isPresent()) {
-            LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
-                schedulingPolicy.getScheduleTimeout());
-            taskGroupsToSchedule.addLast(taskGroup);
-          } else {
-            // Must send this taskGroup to the destination executor.
-            jobStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
-                TaskGroupState.State.EXECUTING);
-            schedulingPolicy.onTaskGroupScheduled(executor.get(), taskGroup);
-          }
-        } catch (final Exception e) {
-          throw new SchedulingException(e);
-        }
-      }
-    }
-  }
-
-  @Override
+ @Override
   public void terminate() {
-    schedulerThread.shutdown();
-    taskGroupsToSchedule.clear();
+   // TODO
   }
 }
