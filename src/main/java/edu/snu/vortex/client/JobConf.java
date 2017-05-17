@@ -15,6 +15,13 @@ public final class JobConf extends ConfigurationModuleBuilder {
   //////////////////////////////// User Configurations
 
   /**
+   * Job id.
+   */
+  @NamedParameter(doc = "Job id", short_name = "job_id")
+  public final class JobId implements Name<String> {
+  }
+
+  /**
    * User Main Class Name.
    */
   @NamedParameter(doc = "User Main Class Name", short_name = "user_main")
@@ -35,6 +42,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class DAGDirectory implements Name<String> {
   }
 
+  static final RequiredParameter<String> JOB_ID = new RequiredParameter<>();
   static final RequiredParameter<String> USER_MAIN_CLASS = new RequiredParameter<>();
   static final RequiredParameter<String> USER_MAIN_ARGS = new RequiredParameter<>();
   static final OptionalParameter<String> DAG_DIRECTORY = new OptionalParameter<>();
@@ -52,14 +60,47 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   //////////////////////////////// Runtime Configurations
 
+  /**
+   * Vortex driver memory.
+   */
+  @NamedParameter(doc = "Vortex driver memory", short_name = "driver_mem")
+  public final class DriverMem implements Name<Integer> {
+  }
 
+  /**
+   * Number of vortex executors.
+   */
+  @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num")
+  public final class ExecutorNum implements Name<Integer> {
+  }
+
+  /**
+   * Vortex executor memory.
+   */
+  @NamedParameter(doc = "Vortex executor memory", short_name = "executor_mem")
+  public final class ExecutorMem implements Name<Integer> {
+  }
+
+  /**
+   * Vortex executor cores.
+   */
+  @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores")
+  public final class ExecutorCores implements Name<Integer> {
+  }
+
+  /**
+   * VortexExecutor threads.
+   */
+  @NamedParameter(doc = "VortexExecutor Threads", short_name = "executor_threads")
+  public final class ExecutorThreads implements Name<Integer> {
+  }
+
+  static final RequiredParameter<String> DRIVER_MEM = new RequiredParameter<>();
+  static final RequiredParameter<String> EXECUTOR_NUM = new RequiredParameter<>();
+  static final RequiredParameter<String> EXECUTOR_MEM = new RequiredParameter<>();
+  static final RequiredParameter<String> EXECUTOR_CORES = new RequiredParameter<>();
+  static final RequiredParameter<String> EXECUTOR_THREADS = new RequiredParameter<>();
 
   //////////////////////////////// Configuration Module
 
-  public static final ConfigurationModule CONF = new JobConf()
-      .bindNamedParameter(UserMainClass.class, USER_MAIN_CLASS)
-      .bindNamedParameter(UserMainArguments.class, USER_MAIN_ARGS)
-      .bindNamedParameter(DAGDirectory.class, DAG_DIRECTORY)
-      .bindNamedParameter(OptimizationPolicy.class, OPTIMIZATION_POLICY)
-      .build();
 }

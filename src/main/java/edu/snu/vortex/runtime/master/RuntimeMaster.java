@@ -15,6 +15,12 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.compiler.backend.Backend;
+import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
+import edu.snu.vortex.compiler.frontend.Frontend;
+import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
+import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
@@ -37,15 +43,18 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 
 /**
  * Runtime Master is the central controller of Runtime.
@@ -66,13 +75,16 @@ public final class RuntimeMaster {
   private final BlockManagerMaster blockManagerMaster;
   private JobStateManager jobStateManager;
 
+  private final String dagDirectory;
+
   @Inject
   public RuntimeMaster(final RuntimeConfiguration runtimeConfiguration,
                        final Scheduler scheduler,
                        final LocalMessageDispatcher localMessageDispatcher,
                        final MessageEnvironment masterMessageEnvironment,
                        final BlockManagerMaster blockManagerMaster,
-                       final ResourceManager resourceManager) {
+                       final ResourceManager resourceManager,
+                       @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
     this.runtimeConfiguration = runtimeConfiguration;
     this.localMessageDispatcher = localMessageDispatcher;
@@ -81,45 +93,50 @@ public final class RuntimeMaster {
         new MasterMessageReceiver());
     this.blockManagerMaster = blockManagerMaster;
     this.resourceManager = resourceManager;
-    initializeResources();
+    this.dagDirectory = dagDirectory;
   }
 
-  /**
-   * Initialize a default amount of resources by requesting to the Resource Manager.
-   */
-  private void initializeResources() {
-    final Set<RuntimeAttribute> completeSetOfResourceType =
-        new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
-    completeSetOfResourceType.forEach(resourceType -> {
-      for (int i = 0; i < runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorNum(); i++) {
-        final Optional<Executor> executor =
-            resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
+  public void onStart() {
+    // start stuff
+    execute();
 
-        if (executor.isPresent()) {
-          // Connect to the executor and initiate Master side's executor representation.
-          final MessageSender messageSender;
-          try {
-            messageSender =
-                masterMessageEnvironment.asyncConnect(
-                    executor.get().getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
-          } catch (final Exception e) {
-            throw new RuntimeException(e);
-          }
-          final ExecutorRepresenter executorRepresenter =
-              new ExecutorRepresenter(executor.get().getExecutorId(), resourceType,
-                  executor.get().getCapacity(), messageSender);
-          scheduler.onExecutorAdded(executorRepresenter);
-        }
-      }
-    });
+
+
+    /**
+     * Step 2: Execute
+     */
+    LOG.log(Level.INFO, "##### VORTEX Runtime #####");
+    // Initialize Runtime Components
+    /*
+    final RuntimeConfiguration runtimeConfiguration = readConfiguration();
+    final Scheduler scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin,
+        runtimeConfiguration.getDefaultScheduleTimeout());
+    final LocalMessageDispatcher localMessageDispatcher = new LocalMessageDispatcher();
+    final MessageEnvironment masterMessageEnvironment =
+        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);
+    final BlockManagerMaster blockManagerMaster = new BlockManagerMaster();
+    final ResourceManager resourceManager = new LocalResourceManager(localMessageDispatcher);
+    */
+
+    // Initialize RuntimeMaster and Execute!
+    launchREEFJob()
+        /*
+    new RuntimeMaster(
+        runtimeConfiguration,
+        scheduler,
+        localMessageDispatcher,
+        masterMessageEnvironment,
+        blockManagerMaster,
+        resourceManager).execute(executionPlan, dagDirectory);
+        */
   }
+
 
   /**
    * Submits the {@link ExecutionPlan} to Runtime.
    * @param executionPlan to execute.
-   * @param dagDirectory the directory to which JSON representation of the plan is saved
    */
-  public void execute(final ExecutionPlan executionPlan, final String dagDirectory) {
+  public void execute(final ExecutionPlan executionPlan) {
     final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
     try {
       // TODO #187: Cleanup Execution Threads

@@ -41,6 +41,11 @@
             <version>${reef.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.reef</groupId>
+            <artifactId>reef-runtime-local</artifactId>
+            <version>${reef.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.beam</groupId>
             <artifactId>beam-sdks-java-core</artifactId>
             <version>${beam.version}</version>
