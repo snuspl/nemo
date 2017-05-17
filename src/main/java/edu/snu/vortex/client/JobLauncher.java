@@ -97,8 +97,9 @@ public final class JobLauncher {
      */
     LOG.log(Level.INFO, "##### VORTEX Runtime #####");
     // Initialize Runtime Components
-    final Scheduler scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
     final RuntimeConfiguration runtimeConfiguration = readConfiguration();
+    final Scheduler scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin,
+        runtimeConfiguration.getDefaultScheduleTimeout());
     final LocalMessageDispatcher localMessageDispatcher = new LocalMessageDispatcher();
     final MessageEnvironment masterMessageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);

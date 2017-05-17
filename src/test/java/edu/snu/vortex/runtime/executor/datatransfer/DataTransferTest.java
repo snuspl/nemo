@@ -57,6 +57,7 @@ import static org.mockito.Mockito.mock;
 public final class DataTransferTest {
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
+  private static final long DEFAULT_SCHEDULE_TIMEOUT = 1000;
 
   private Scheduler scheduler;
   private LocalMessageDispatcher dispatcher;
@@ -74,7 +75,7 @@ public final class DataTransferTest {
 
     this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
     new RuntimeMaster(
-        new RuntimeConfiguration(new ExecutorConfiguration(2, 1, 1)),
+        new RuntimeConfiguration(DEFAULT_SCHEDULE_TIMEOUT, new ExecutorConfiguration(2, 1, 1)),
         scheduler,
         dispatcher,
         masterEnv,

@@ -193,6 +193,7 @@ public final class BlockManagerWorker {
         throw new RuntimeException("Failed fetching block " + blockId + "from worker " + remoteWorkerId);
       }
 
+      // TODO #197: Improve Serialization/Deserialization Performance
       final List<Element> deserializedData = new ArrayList<>();
       ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
       data.forEach(bytes -> {

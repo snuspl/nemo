@@ -167,6 +167,7 @@ public final class Executor {
             convertBlockStoreType(requestBlockMsg.getBlockStore()));
         final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
 
+        // TODO #197: Improve Serialization/Deserialization Performance
         data.forEach(element -> {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             // TODO #18: Support code/data serialization
