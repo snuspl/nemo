@@ -20,6 +20,8 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
+import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -196,8 +198,9 @@ public final class VortexDriver {
         .build();
 
     final Configuration ncsConfiguration =  getExecutorNcsConfiguration();
+    final Configuration messageConfiguration = getExecutorMessageConfiguration(executorId);
 
-    return Configurations.merge(aggregatorConfiguration, contextConfiguration, ncsConfiguration);
+    return Configurations.merge(aggregatorConfiguration, contextConfiguration, ncsConfiguration, messageConfiguration);
   }
 
   private Configuration getExecutorNcsConfiguration() {
@@ -205,6 +208,13 @@ public final class VortexDriver {
         .bindNamedParameter(NameResolverNameServerPort.class, Integer.toString(nameServer.getPort()))
         .bindNamedParameter(NameResolverNameServerAddr.class, localAddressProvider.getLocalAddress())
         .bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class)
+        .build();
+  }
+
+  private Configuration getExecutorMessageConfiguration(final String executorId) {
+    return Tang.Factory.getTang().newConfigurationBuilder()
+        .bindImplementation(MessageEnvironment.class, NcsMessageEnvironment.class)
+        .bindNamedParameter(NcsParameters.SenderId.class, executorId)
         .build();
   }
 

@@ -22,9 +22,9 @@ public final class LocalMessageEnvironment implements MessageEnvironment {
   }
 
   @Override
-  public <T> MessageSender<T> setupListener(
+  public <T> void setupListener(
       final String messageTypeId, final MessageListener<T> listener) {
-    return dispatcher.setupListener(currentNodeId, messageTypeId, listener);
+    dispatcher.setupListener(currentNodeId, messageTypeId, listener);
   }
 
   @Override
@@ -37,5 +37,10 @@ public final class LocalMessageEnvironment implements MessageEnvironment {
   @Override
   public String getId() {
     return currentNodeId;
+  }
+
+  @Override
+  public void close() {
+    // No-ops.
   }
 }

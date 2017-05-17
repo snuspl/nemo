@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.client;
 
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
+import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.master.VortexDriver;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
@@ -56,6 +59,7 @@ public final class JobLauncher {
     final Configuration jobConf = getJobConf(args);
     final Configuration driverConf = getDriverConf(jobConf);
     final Configuration driverNcsConf = getDriverNcsConf();
+    final Configuration driverMessageConfg = getDriverMessageConf();
 
     // Merge Job and Driver Confs
     final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf);
@@ -83,6 +87,13 @@ public final class JobLauncher {
             .build());
   }
 
+  private static Configuration getDriverMessageConf() throws InjectionException {
+    return Tang.Factory.getTang().newConfigurationBuilder()
+        .bindImplementation(MessageEnvironment.class, NcsMessageEnvironment.class)
+        .bindNamedParameter(NcsParameters.SenderId.class, MessageEnvironment.MASTER_COMMUNICATION_ID)
+        .build();
+  }
+
   private static Configuration getDriverConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector(jobConf);
     final String jobId = injector.getNamedInstance(JobConf.JobId.class);
@@ -92,7 +103,6 @@ public final class JobLauncher {
         .set(DriverConfiguration.ON_DRIVER_STARTED, VortexDriver.StartHandler.class)
         .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, VortexDriver.AllocatedEvaluatorHandler.class)
         .set(DriverConfiguration.ON_CONTEXT_ACTIVE, VortexDriver.ActiveContextHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_MESSAGE, VortexDriver.ContextMessageHandler.class)
         .set(DriverConfiguration.ON_EVALUATOR_FAILED, VortexDriver.FailedEvaluatorHandler.class)
         .set(DriverConfiguration.ON_DRIVER_STOP, VortexDriver.DriverStopHandler.class)
         .set(DriverConfiguration.DRIVER_IDENTIFIER, jobId)
