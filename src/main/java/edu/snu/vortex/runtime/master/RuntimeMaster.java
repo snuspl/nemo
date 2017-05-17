@@ -38,6 +38,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
@@ -65,6 +66,7 @@ public final class RuntimeMaster {
   private final BlockManagerMaster blockManagerMaster;
   private JobStateManager jobStateManager;
 
+  @Inject
   public RuntimeMaster(final RuntimeConfiguration runtimeConfiguration,
                        final Scheduler scheduler,
                        final LocalMessageDispatcher localMessageDispatcher,

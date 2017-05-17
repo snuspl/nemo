@@ -28,18 +28,18 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeConfiguration;
-import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.resourcemanager.LocalResourceManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
-import org.apache.reef.tang.Configuration;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.JavaConfigurationBuilder;
-import org.apache.reef.tang.Tang;
+import org.apache.reef.client.DriverConfiguration;
+import org.apache.reef.client.DriverLauncher;
+import org.apache.reef.client.LauncherStatus;
+import org.apache.reef.tang.*;
 import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.tang.formats.CommandLine;
+import org.apache.reef.util.EnvironmentUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,6 +107,8 @@ public final class JobLauncher {
     final ResourceManager resourceManager = new LocalResourceManager(localMessageDispatcher);
 
     // Initialize RuntimeMaster and Execute!
+    launchREEFJob()
+        /*
     new RuntimeMaster(
         runtimeConfiguration,
         scheduler,
@@ -114,6 +116,7 @@ public final class JobLauncher {
         masterMessageEnvironment,
         blockManagerMaster,
         resourceManager).execute(executionPlan, dagDirectory);
+        */
   }
 
   /**
@@ -145,5 +148,57 @@ public final class JobLauncher {
     }
     return configuration;
   }
+
+
+  public static LauncherStatus launchREEFJob(final Configuration jobConf) throws InjectionException {
+    // Get Driver Conf
+    final Injector injector = Tang.Factory.getTang().newInjector(jobConf);
+    final String className = injector.getNamedInstance(VortexJobConf.UserMainClass.class);
+    final String[] classNameArray = className.split("\\.");
+    final int driverMemory = injector.getNamedInstance(VortexJobConf.DriverMem.class);
+    final Configuration driverConf = getDriverConf(classNameArray[classNameArray.length - 1], driverMemory);
+
+    // Merge Job Conf and Driver Conf
+    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf);
+
+    // Get Runtime Conf
+    final String runtime = injector.getNamedInstance(VortexJobConf.Runtime.class);
+    final Configuration runtimeConf;
+    switch (runtime) {
+      case "local":
+        runtimeConf = LocalRuntimeConfiguration.CONF
+            .set(LocalRuntimeConfiguration.MAX_NUMBER_OF_EVALUATORS, 20)
+            .build();
+        break;
+      case "yarn":
+        runtimeConf = YarnClientConfiguration.CONF
+            .set(YarnClientConfiguration.JVM_HEAP_SLACK, 0.2)
+            .build();
+        break;
+      default:
+        throw new RuntimeException("Unknown runtime: " + runtime);
+    }
+
+    // Launch!
+    return DriverLauncher.getLauncher(runtimeConf).run(jobAndDriverConf);
+  }
+
+  public static Configuration getDriverConf(final String jobName, final int driverMemory) {
+    return DriverConfiguration.CONF
+        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(VortexDriver.class))
+        .set(DriverConfiguration.ON_DRIVER_STARTED, VortexDriver.StartHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, VortexDriver.AllocatedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, VortexDriver.ActiveContextHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_MESSAGE, VortexDriver.ContextMessageHandler.class)
+        .set(DriverConfiguration.ON_TASK_RUNNING, VortexDriver.RunningTaskHandler.class)
+        .set(DriverConfiguration.ON_TASK_MESSAGE, VortexDriver.TaskMessageHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_FAILED, VortexDriver.FailedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_DRIVER_STOP, VortexDriver.DriverStopHandler.class)
+        .set(DriverConfiguration.DRIVER_IDENTIFIER, jobName)
+        .set(DriverConfiguration.DRIVER_MEMORY, driverMemory)
+        .build();
+  }
+}
+
 
 }

@@ -2,6 +2,8 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 
+import javax.inject.Inject;
+
 /**
  * Defines all configurations required in Runtime.
  */
@@ -12,6 +14,7 @@ public final class RuntimeConfiguration {
   public RuntimeConfiguration() {
   }
 
+  @Inject
   public RuntimeConfiguration(final long defaultScheduleTimeout,
                               final ExecutorConfiguration executorConfiguration) {
     this.defaultScheduleTimeout = defaultScheduleTimeout;

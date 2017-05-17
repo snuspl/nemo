@@ -33,6 +33,7 @@ import edu.snu.vortex.runtime.master.JobStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.commons.lang.SerializationUtils;
 
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
@@ -75,6 +76,7 @@ public final class BatchScheduler implements Scheduler {
    */
   private PhysicalPlan physicalPlan;
 
+  @Inject
   public BatchScheduler(final RuntimeAttribute schedulingPolicyAttribute,
                         final long scheduleTimeout) {
     this.schedulerThread = Executors.newSingleThreadExecutor();
