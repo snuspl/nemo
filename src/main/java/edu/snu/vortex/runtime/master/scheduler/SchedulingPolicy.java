@@ -32,7 +32,7 @@ public interface SchedulingPolicy {
    * Returns this scheduling policy's timeout before an executor assignment.
    * @return the timeout in milliseconds.
    */
-  long getScheduleTimeout();
+  long getScheduleTimeoutMs();
 
   /**
    * Attempts to schedule the given taskGroup to an executor according to this policy.

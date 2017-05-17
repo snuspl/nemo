@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,7 @@ import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 public final class VortexDriver {
   private static final Logger LOG = Logger.getLogger(VortexDriver.class.getName());
 
-  private final EvaluatorRequestor evaluatorRequestor; // for requesting resources
-  private final RuntimeMaster runtimeMaster; // Vortex RuntimeMaster
+  private final EvaluatorRequestor evaluatorRequestor;
   private final NameServer nameServer;
   private final LocalAddressProvider localAddressProvider;
 
@@ -73,12 +72,13 @@ public final class VortexDriver {
   private final SchedulerRunner schedulerRunner;
   private final Scheduler scheduler;
 
+  // These are hacks to get around
+  // TODO #60: Specify Types in Requesting Containers
   private final List<ExecutorToBeLaunched> pendingEvaluators;
   private final Map<String, ExecutorToBeLaunched> executorIdToPendingContext;
 
   @Inject
   private VortexDriver(final EvaluatorRequestor evaluatorRequestor,
-                       final RuntimeMaster runtimeMaster,
                        final SchedulerRunner schedulerRunner,
                        final Scheduler scheduler,
                        final NameServer nameServer,
@@ -94,7 +94,6 @@ public final class VortexDriver {
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
-    this.runtimeMaster = runtimeMaster;
     this.executorNum = executorNum;
     this.executorCores = executorCores;
     this.executorMem = executorMem;
@@ -128,6 +127,9 @@ public final class VortexDriver {
       final Set<RuntimeAttribute> completeSetOfResourceType =
           new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
       completeSetOfResourceType.forEach(resourceType -> {
+        // For each type, request executorNum of evaluators
+        // These are hacks to get around
+        // TODO #60: Specify Types in Requesting Containers
         final ExecutorToBeLaunched executorToBeLaunched = new ExecutorToBeLaunched(resourceType, executorCapacity);
         pendingEvaluators.add(executorToBeLaunched);
         evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
@@ -152,6 +154,9 @@ public final class VortexDriver {
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Container allocated");
       synchronized (this) {
+        // Match one-by-one from the list assuming homogeneous evaluators
+        // These are hacks to get around
+        // TODO #60: Specify Types in Requesting Containers
         final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
@@ -165,6 +170,8 @@ public final class VortexDriver {
     public void onNext(final ActiveContext activeContext) {
       LOG.log(Level.INFO, "VortexContext up and running");
       synchronized (this) {
+        // These are hacks to get around
+        // TODO #60: Specify Types in Requesting Containers
         final String executorId = activeContext.getId(); // Because we set: contextId = executorId
         final ExecutorToBeLaunched executorToBeLaunched = executorIdToPendingContext.get(executorId);
 
@@ -187,17 +194,18 @@ public final class VortexDriver {
   }
 
   private Configuration getExecutorConfiguration(final String executorId) {
-    final Configuration aggregatorConfiguration = JobConf.CONF
-        .set(VortexExecutorConf.NUM_OF_THREADS, aggregatorCores)
+    final Configuration executorConfiguration = JobConf.CONF
+        .set(VortexExecutorConf.NUM_OF_THREADS, )
         .build();
 
     final Configuration contextConfiguration = ContextConfiguration.CONF
         .set(ContextConfiguration.IDENTIFIER, executorId) // We set: contextId = executorId
+        .set(ContextConfiguration.ON_CONTEXT_STARTED, VortexContextStopHandler.class)
         .build();
 
     final Configuration ncsConfiguration =  getExecutorNcsConfiguration();
 
-    return Configurations.merge(aggregatorConfiguration, contextConfiguration, ncsConfiguration);
+    return Configurations.merge(executorConfiguration, contextConfiguration, ncsConfiguration);
   }
 
   private Configuration getExecutorNcsConfiguration() {
@@ -219,7 +227,7 @@ public final class VortexDriver {
   public final class DriverStopHandler implements EventHandler<StopTime> {
     @Override
     public void onNext(final StopTime stopTime) {
-      runtimeMaster.applicationFinished();
+      // TODO: stop something
     }
   }
 }

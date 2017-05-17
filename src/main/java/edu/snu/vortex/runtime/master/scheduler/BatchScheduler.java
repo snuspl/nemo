@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import com.google.protobuf.ByteString;
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
@@ -31,10 +32,10 @@ import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,15 +58,8 @@ public final class BatchScheduler implements Scheduler {
 
   /**
    * The {@link SchedulingPolicy} used to schedule task groups.
-   * {@link this#schedulingPolicyAttribute} decides the implementation.
    */
   private SchedulingPolicy schedulingPolicy;
-  private RuntimeAttribute schedulingPolicyAttribute;
-
-  /**
-   * Timeout for the {@link SchedulingPolicy} upon task group scheduling.
-   */
-  private long scheduleTimeout;
 
   /**
    * The current job being executed.
@@ -73,30 +67,11 @@ public final class BatchScheduler implements Scheduler {
   private PhysicalPlan physicalPlan;
 
   @Inject
-  public BatchScheduler(final RuntimeAttribute schedulingPolicyAttribute,
-                        final long scheduleTimeout,
+  public BatchScheduler(final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupQueue pendingTaskGroupQueue) {
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.executorRepresenterMap = new HashMap<>();
-
-    // The default policy is initialized and set here.
-    this.schedulingPolicyAttribute = schedulingPolicyAttribute;
-    this.scheduleTimeout = scheduleTimeout;
-    initializeSchedulingPolicy();
-  }
-
-  /**
-   * Initializes the scheduling policy.
-   * This can be called anytime during this scheduler's lifetime and the policy will change flexibly.
-   */
-  private void initializeSchedulingPolicy() {
-    switch (schedulingPolicyAttribute) {
-      case RoundRobin:
-        this.schedulingPolicy = new RoundRobinSchedulingPolicy(scheduleTimeout);
-        break;
-      default:
-        throw new SchedulingException(new Exception("The scheduling policy is unsupported by runtime"));
-    }
+    this.schedulingPolicy = schedulingPolicy;
   }
 
   /**

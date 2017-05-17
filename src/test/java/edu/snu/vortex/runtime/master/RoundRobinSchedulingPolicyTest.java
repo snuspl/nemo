@@ -74,7 +74,7 @@ public final class RoundRobinSchedulingPolicyTest {
 
   @Test
   public void checkScheduleTimeout() {
-    assertEquals(schedulingPolicy.getScheduleTimeout(), 2000);
+    assertEquals(schedulingPolicy.getScheduleTimeoutMs(), 2000);
   }
 
   @Test

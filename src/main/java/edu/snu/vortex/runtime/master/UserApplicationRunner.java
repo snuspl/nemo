@@ -20,7 +20,6 @@ import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
-import edu.snu.vortex.compiler.frontend.beam.Runner;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.utils.dag.DAG;

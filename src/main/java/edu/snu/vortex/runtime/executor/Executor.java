@@ -39,6 +39,7 @@ import org.apache.beam.sdk.transforms.join.UnionCoder;
 import org.apache.beam.sdk.values.KV;
 import org.apache.commons.lang3.SerializationUtils;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
@@ -84,6 +85,7 @@ public final class Executor {
   private PhysicalPlan physicalPlan;
   private TaskGroupStateManager taskGroupStateManager;
 
+  @Inject
   public Executor(final String executorId,
                   final int capacity,
                   final int numThreads,

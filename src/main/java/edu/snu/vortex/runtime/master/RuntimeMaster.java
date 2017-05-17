@@ -37,7 +37,6 @@ import edu.snu.vortex.utils.dag.DAG;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,10 +50,7 @@ import java.util.logging.Logger;
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
-  private final RuntimeConfiguration runtimeConfiguration;
   private final Scheduler scheduler;
-  private final ResourceManager resourceManager;
-  private final LocalMessageDispatcher localMessageDispatcher;
   private final MessageEnvironment masterMessageEnvironment;
   private final BlockManagerMaster blockManagerMaster;
   private JobStateManager jobStateManager;
@@ -62,56 +58,18 @@ public final class RuntimeMaster {
   private final String dagDirectory;
 
   @Inject
-  public RuntimeMaster(final RuntimeConfiguration runtimeConfiguration,
-                       final Scheduler scheduler,
+  public RuntimeMaster(final Scheduler scheduler,
                        final LocalMessageDispatcher localMessageDispatcher,
                        final MessageEnvironment masterMessageEnvironment,
                        final BlockManagerMaster blockManagerMaster,
-                       final ResourceManager resourceManager,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
-    this.runtimeConfiguration = runtimeConfiguration;
-    this.localMessageDispatcher = localMessageDispatcher;
     this.masterMessageEnvironment = masterMessageEnvironment;
     this.masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER,
         new MasterMessageReceiver());
     this.blockManagerMaster = blockManagerMaster;
-    this.resourceManager = resourceManager;
     this.dagDirectory = dagDirectory;
   }
-
-  public void onStart() {
-    // start stuff
-    execute();
-
-
-
-    LOG.log(Level.INFO, "##### VORTEX Runtime #####");
-    // Initialize Runtime Components
-    /*
-    final RuntimeConfiguration runtimeConfiguration = readConfiguration();
-    final Scheduler scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin,
-        runtimeConfiguration.getDefaultScheduleTimeout());
-    final LocalMessageDispatcher localMessageDispatcher = new LocalMessageDispatcher();
-    final MessageEnvironment masterMessageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, localMessageDispatcher);
-    final BlockManagerMaster blockManagerMaster = new BlockManagerMaster();
-    final ResourceManager resourceManager = new LocalResourceManager(localMessageDispatcher);
-    */
-
-    // Initialize RuntimeMaster and Execute!
-    launchREEFJob()
-        /*
-    new RuntimeMaster(
-        runtimeConfiguration,
-        scheduler,
-        localMessageDispatcher,
-        masterMessageEnvironment,
-        blockManagerMaster,
-        resourceManager).execute(executionPlan, dagDirectory);
-        */
-  }
-
 
   /**
    * Submits the {@link ExecutionPlan} to Runtime.

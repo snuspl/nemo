@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Seoul National University
+ * Copyright (C) 2017 Seoul National University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ final class SchedulerRunner implements Runnable {
         final Optional<ExecutorRepresenter> executor = schedulingPolicy.attemptSchedule(taskGroup);
         if (!executor.isPresent()) {
           LOG.log(Level.INFO, "Failed to assign an executor before the timeout: {0}",
-              schedulingPolicy.getScheduleTimeout());
+              schedulingPolicy.getScheduleTimeoutMs());
           pendingTaskGroupQueue.addLast(taskGroup);
         } else {
           // Must send this taskGroup to the destination executor.

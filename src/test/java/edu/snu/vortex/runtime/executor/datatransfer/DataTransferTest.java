@@ -33,7 +33,6 @@ import edu.snu.vortex.runtime.executor.ExecutorConfiguration;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
-import edu.snu.vortex.runtime.master.RuntimeConfiguration;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
