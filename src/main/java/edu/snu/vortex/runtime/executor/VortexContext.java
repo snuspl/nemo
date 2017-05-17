@@ -30,7 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Private
 @EvaluatorSide
 @Unit
 public final class VortexContext {
@@ -57,10 +56,6 @@ public final class VortexContext {
     this.stageInfoRepository = stageInfoRepository;
     this.executorService = Executors.newFixedThreadPool(numOfThreads);
     messageChannel.registerHandlerForAggregator(new MessageHandler());
-    MetricsService.setAggregatorReportSender(reportSender);
-    MetricsService.start();
-    MetricsService.newMemoryUsageGaugeSet();
-    MetricsService.newStopwatch(MetricsKeys.AGGREGATOR_UPTIME);
   }
 
   // VortexMessages from VortexMaster
@@ -127,25 +122,6 @@ public final class VortexContext {
         }
       );
     }
-  }
-
-  private Map getJoinData(final Join join, final Integer[] stageIds) {
-
-    final Object[] values = new Object[stageIds.length];
-    final Map[] maps = new Map[stageIds.length];
-    for (int i = 0; i < stageIds.length; i++) {
-      maps[i] = stageIdToTaskAggregator.get(stageIds[i]).getData();
-    }
-
-    final Map joinData = new HashMap<>(maps[0].keySet().size());
-    maps[0].keySet().forEach(k -> {
-        for (int i = 0; i < stageIds.length; i++) {
-          values[i] = maps[i].get(k);
-        }
-        joinData.put(k, join.join(k, values));
-      });
-
-    return joinData;
   }
 
   // VortexMessages from VortexExecutors

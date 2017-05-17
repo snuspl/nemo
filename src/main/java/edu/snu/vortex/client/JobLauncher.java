@@ -112,7 +112,8 @@ public final class JobLauncher {
     cl.registerShortNameOfClass(JobConf.ExecutorCores.class);
     cl.registerShortNameOfClass(JobConf.ExecutorMem.class);
     cl.registerShortNameOfClass(JobConf.ExecutorNum.class);
-    cl.registerShortNameOfClass(JobConf.ExecutorThreads.class);
+    cl.registerShortNameOfClass(JobConf.ExecutorCapacity.class);
+    cl.registerShortNameOfClass(JobConf.SchedulerTimeoutMs.class);
     cl.processCommandLine(args);
     return confBuilder.build();
   }

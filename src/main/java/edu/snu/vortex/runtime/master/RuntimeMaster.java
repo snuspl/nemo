@@ -86,9 +86,6 @@ public final class RuntimeMaster {
 
 
 
-    /**
-     * Step 2: Execute
-     */
     LOG.log(Level.INFO, "##### VORTEX Runtime #####");
     // Initialize Runtime Components
     /*

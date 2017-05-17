@@ -89,17 +89,26 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * VortexExecutor threads.
+   * VortexExecutor capacity.
    */
-  @NamedParameter(doc = "VortexExecutor Threads", short_name = "executor_threads")
-  public final class ExecutorThreads implements Name<Integer> {
+  @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity")
+  public final class ExecutorCapacity implements Name<Integer> {
   }
 
-  static final RequiredParameter<String> DRIVER_MEM = new RequiredParameter<>();
-  static final RequiredParameter<String> EXECUTOR_NUM = new RequiredParameter<>();
-  static final RequiredParameter<String> EXECUTOR_MEM = new RequiredParameter<>();
-  static final RequiredParameter<String> EXECUTOR_CORES = new RequiredParameter<>();
-  static final RequiredParameter<String> EXECUTOR_THREADS = new RequiredParameter<>();
+  /**
+   * Scheduler timeout in ms.
+   */
+  @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms")
+  public final class SchedulerTimeoutMs implements Name<Integer> {
+  }
+
+
+  static final RequiredParameter<Integer> DRIVER_MEM = new RequiredParameter<>();
+  static final RequiredParameter<Integer> EXECUTOR_NUM = new RequiredParameter<>();
+  static final RequiredParameter<Integer> EXECUTOR_MEM = new RequiredParameter<>();
+  static final RequiredParameter<Integer> EXECUTOR_CORES = new RequiredParameter<>();
+  static final RequiredParameter<Integer> EXECUTOR_CAPACITY = new RequiredParameter<>();
+  static final RequiredParameter<Integer> SCHEDULER_TIMEOUT_MS = new RequiredParameter<>();
 
   //////////////////////////////// Configuration Module
 

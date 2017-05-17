@@ -17,18 +17,15 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
-import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
-import org.apache.reef.driver.context.ContextMessage;
-import org.apache.reef.driver.evaluator.AllocatedEvaluator;
-import org.apache.reef.driver.evaluator.EvaluatorRequest;
-import org.apache.reef.driver.evaluator.EvaluatorRequestor;
-import org.apache.reef.driver.evaluator.FailedEvaluator;
+import org.apache.reef.driver.evaluator.*;
 import org.apache.reef.io.network.naming.NameServer;
 import org.apache.reef.io.network.naming.parameters.NameResolverNameServerAddr;
 import org.apache.reef.io.network.naming.parameters.NameResolverNameServerPort;
@@ -45,10 +42,7 @@ import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.event.StopTime;
 
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -73,23 +67,29 @@ public final class VortexDriver {
   private final int executorNum;
   private final int executorCores;
   private final int executorMem;
-  private final int executorThreads;
+  private final int executorCapacity;
 
   private final UserApplicationRunner userApplicationRunner;
   private final SchedulerRunner schedulerRunner;
+  private final Scheduler scheduler;
+
+  private final List<ExecutorToBeLaunched> pendingEvaluators;
+  private final Map<String, ExecutorToBeLaunched> executorIdToPendingContext;
 
   @Inject
   private VortexDriver(final EvaluatorRequestor evaluatorRequestor,
                        final RuntimeMaster runtimeMaster,
                        final SchedulerRunner schedulerRunner,
+                       final Scheduler scheduler,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
                        final UserApplicationRunner userApplicationRunner,
                        @Parameter(JobConf.ExecutorMem.class) final int executorMem,
                        @Parameter(JobConf.ExecutorNum.class) final int executorNum,
                        @Parameter(JobConf.ExecutorCores.class) final int executorCores,
-                       @Parameter(JobConf.ExecutorThreads.class) final int executorThreads) {
+                       @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity) {
     this.userApplicationRunner = userApplicationRunner;
+    this.scheduler = scheduler;
     this.schedulerRunner = schedulerRunner;
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
@@ -98,39 +98,20 @@ public final class VortexDriver {
     this.executorNum = executorNum;
     this.executorCores = executorCores;
     this.executorMem = executorMem;
-    this.executorThreads = executorThreads;
+    this.executorCapacity = executorCapacity;
+    this.pendingEvaluators = new ArrayList<>();
+    this.executorIdToPendingContext = new HashMap<>();
   }
 
-  /**
-   * Initialize a default amount of resources by requesting to the Resource Manager.
-   */
-  private void initializeResources() {
-    final Set<RuntimeAttribute> completeSetOfResourceType =
-        new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
-    completeSetOfResourceType.forEach(resourceType -> {
-      for (int i = 0; i < runtimeConfiguration.getExecutorConfiguration().getDefaultExecutorNum(); i++) {
-        final Optional<Executor> executor =
-            resourceManager.requestExecutor(resourceType, runtimeConfiguration.getExecutorConfiguration());
+  private final class ExecutorToBeLaunched {
+    final RuntimeAttribute resourceType;
+    final int executorCapacity;
 
-        if (executor.isPresent()) {
-          // Connect to the executor and initiate Master side's executor representation.
-          final MessageSender messageSender;
-          try {
-            messageSender =
-                masterMessageEnvironment.asyncConnect(
-                    executor.get().getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
-          } catch (final Exception e) {
-            throw new RuntimeException(e);
-          }
-          final ExecutorRepresenter executorRepresenter =
-              new ExecutorRepresenter(executor.get().getExecutorId(), resourceType,
-                  executor.get().getCapacity(), messageSender);
-          scheduler.onExecutorAdded(executorRepresenter);
-        }
-      }
-    });
+    ExecutorToBeLaunched(final RuntimeAttribute resourceType, final int executorCapacity) {
+      this.resourceType = resourceType;
+      this.executorCapacity = executorCapacity;
+    }
   }
-
 
   /**
    * Driver started.
@@ -144,11 +125,17 @@ public final class VortexDriver {
       pendingTaskSchedulerThread.shutdown();
 
       // Launch resources
-      evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
-          .setNumber(executorNum)
-          .setMemory(executorMem)
-          .setNumberOfCores(executorCores)
-          .build());
+      final Set<RuntimeAttribute> completeSetOfResourceType =
+          new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
+      completeSetOfResourceType.forEach(resourceType -> {
+        final ExecutorToBeLaunched executorToBeLaunched = new ExecutorToBeLaunched(resourceType, executorCapacity);
+        pendingEvaluators.add(executorToBeLaunched);
+        evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
+            .setNumber(executorNum)
+            .setMemory(executorMem)
+            .setNumberOfCores(executorCores)
+            .build());
+      });
 
       // Launch user application (with a new thread)
       final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
@@ -164,30 +151,53 @@ public final class VortexDriver {
     @Override
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       LOG.log(Level.INFO, "Container allocated");
-      final String executorId = allocatedEvaluator.getId() + "_vortex_executor";
-      final Configuration contextConfiguration = Configurations.merge(
-          ContextConfiguration.CONF
-              .set(ContextConfiguration.IDENTIFIER, executorId + "_CONTEXT")
-              .set(ContextConfiguration.ON_CONTEXT_STOP, VortexContextStopHandler.class)
-              .build(),
-          getNameResolverServiceConfiguration());
-      allocatedEvaluator.submitContextAndTask(contextConfiguration, getExecutorConfiguration(executorId));
+      synchronized (this) {
+        final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
+        final String executorId = RuntimeIdGenerator.generateExecutorId();
+        executorIdToPendingContext.put(executorId, executorToBeLaunched);
+        allocatedEvaluator.submitContext(getExecutorConfiguration());
+      }
     }
   }
 
-  private Configuration getExecutorConfiguration(final String aggregatorId) {
-    final Configuration aggregatorConfiguration = VortexAggregatorConf.CONF
-        .set(VortexAggregatorConf.NUM_OF_THREADS, aggregatorCores)
+  public final class ActiveContextHandler implements EventHandler<ActiveContext> {
+    @Override
+    public void onNext(final ActiveContext activeContext) {
+      LOG.log(Level.INFO, "VortexContext up and running");
+      synchronized (this) {
+        final String executorId = activeContext.getId(); // Because we set: contextId = executorId
+        final ExecutorToBeLaunched executorToBeLaunched = executorIdToPendingContext.get(executorId);
+
+        // Connect to the executor and initiate Master side's executor representation.
+        final MessageSender messageSender;
+        try {
+          messageSender =
+              masterMessageEnvironment.asyncConnect(
+                  executor.get().getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+        } catch (final Exception e) {
+          throw new RuntimeException(e);
+        }
+
+        final ExecutorRepresenter executorRepresenter = new ExecutorRepresenter(executorId,
+            executorToBeLaunched.resourceType, executorToBeLaunched.executorCapacity, messageSender);
+
+        scheduler.onExecutorAdded(executorRepresenter);
+      }
+    }
+  }
+
+  private Configuration getExecutorConfiguration(final String executorId) {
+    final Configuration aggregatorConfiguration = JobConf.CONF
+        .set(VortexExecutorConf.NUM_OF_THREADS, aggregatorCores)
         .build();
 
     final Configuration contextConfiguration = ContextConfiguration.CONF
-        .set(ContextConfiguration.IDENTIFIER, aggregatorId)
-        .set(ContextConfiguration.ON_CONTEXT_STOP, VortexContextStopHandler.class)
-        .set(ContextConfiguration.ON_MESSAGE, VortexAggregator.ContextMessageHandler.class)
-        .set(ContextConfiguration.ON_SEND_MESSAGE, AggregatorReportSender.class)
+        .set(ContextConfiguration.IDENTIFIER, executorId) // We set: contextId = executorId
         .build();
 
-    return Configurations.merge(aggregatorConfiguration, contextConfiguration);
+    final Configuration ncsConfiguration =  getExecutorNcsConfiguration();
+
+    return Configurations.merge(aggregatorConfiguration, contextConfiguration, ncsConfiguration);
   }
 
   private Configuration getExecutorNcsConfiguration() {
@@ -198,39 +208,11 @@ public final class VortexDriver {
         .build();
   }
 
-  private void onActiveContext(final ActiveContext activeContext) {
-    LOG.log(Level.INFO, "VortexContext up and running");
-    runtimeMaster.aggregatorAllocated(new VortexAggregatorManager(masterToAggregatorRequestor, activeContext));
-    if (numLaunchedAggregators.incrementAndGet() == aggregatorNum) {
-    }
-  }
-
-  public final class ActiveContextHandler implements EventHandler<ActiveContext> {
-
-    @Override
-    public void onNext(final ActiveContext activeContext) {
-      onActiveContext(activeContext);
-    }
-  }
-
-  public final class ContextMessageHandler implements EventHandler<ContextMessage> {
-    @Override
-    public void onNext(final ContextMessage contextMessage) {
-      final VortexMessage vortexMessage = messageCodec.decode(contextMessage.get());
-
-      // Invoke runtimeMaster methods
-      runtimeMaster.aggregatorReported(vortexMessage);
-    }
-  }
-
-  /**
-   * Executoruator preempted.
-   */
   public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
     @Override
     public void onNext(final FailedEvaluator failedEvaluator) {
       // TODO: handle faults
-      throw new RuntimeException(failedExecutoruator.getExecutoruatorException());
+      throw new RuntimeException(failedEvaluator.getEvaluatorException());
     }
   }
 
