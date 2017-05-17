@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
+import edu.snu.vortex.compiler.frontend.beam.Runner;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.utils.dag.DAG;
@@ -31,32 +32,37 @@ import java.util.logging.Logger;
 
 import static edu.snu.vortex.compiler.optimizer.Optimizer.POLICY_NAME;
 
-public final class Compiler {
-  private static final Logger LOG = Logger.getLogger(Compiler.class.getName());
+public final class UserApplicationRunner implements Runnable {
+  private static final Logger LOG = Logger.getLogger(UserApplicationRunner.class.getName());
 
   private final String dagDirectory;
   private final String className;
   private final String[] arguments;
   private final String policyName;
 
+  private final RuntimeMaster runtimeMaster;
+
   @Inject
-  private Compiler(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
-                   @Parameter(JobConf.UserMainClass.class) final String className,
-                   @Parameter(JobConf.UserMainArguments.class) final String arguments,
-                   @Parameter(JobConf.OptimizationPolicy.class) final String policyName) {
+  private UserApplicationRunner(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
+                                @Parameter(JobConf.UserMainClass.class) final String className,
+                                @Parameter(JobConf.UserMainArguments.class) final String arguments,
+                                @Parameter(JobConf.OptimizationPolicy.class) final String policyName,
+                                final RuntimeMaster runtimeMaster) {
     this.dagDirectory = dagDirectory;
     this.className = className;
     this.arguments = arguments.split(" ");
     this.policyName = policyName;
+    this.runtimeMaster =runtimeMaster;
   }
 
-  public ExecutionPlan compile() {
+  @Override
+  public void run() {
     try {
       final Frontend frontend = new BeamFrontend();
       final Optimizer optimizer = new Optimizer();
       final Backend<ExecutionPlan> backend = new VortexBackend();
 
-      LOG.log(Level.INFO, "##### VORTEX Compiler #####");
+      LOG.log(Level.INFO, "##### VORTEX UserApplicationRunner #####");
       final DAG dag = frontend.compile(className, arguments);
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
@@ -66,7 +72,7 @@ public final class Compiler {
 
       final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
       executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan", "execution plan by compiler");
-      return executionPlan;
+      runtimeMaster.execute(executionPlan);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

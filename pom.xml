@@ -9,8 +9,8 @@
     <version>0.1-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.userApplicationRunner.source>1.8</maven.userApplicationRunner.source>
+        <maven.userApplicationRunner.target>1.8</maven.userApplicationRunner.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <beam.version>0.6.0</beam.version>
         <reef.version>0.15.0</reef.version>

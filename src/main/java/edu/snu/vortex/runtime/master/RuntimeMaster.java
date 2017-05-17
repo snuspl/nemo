@@ -58,7 +58,7 @@ import java.util.logging.Logger;
 
 /**
  * Runtime Master is the central controller of Runtime.
- * Compiler submits an {@link ExecutionPlan} to Runtime Master to execute a job.
+ * UserApplicationRunner submits an {@link ExecutionPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
  *    a) Physical conversion of a job's DAG into a physical plan.
  *    b) Scheduling the job with {@link Scheduler}.

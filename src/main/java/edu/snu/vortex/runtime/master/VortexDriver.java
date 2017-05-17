@@ -64,7 +64,6 @@ import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 @DriverSide
 public final class VortexDriver {
   private static final Logger LOG = Logger.getLogger(VortexDriver.class.getName());
-  private static final String AGGREGATOR_CONTEXT_PREFIX = "AGGREGATOR_CONTEXT_";
 
   private final EvaluatorRequestor evaluatorRequestor; // for requesting resources
   private final RuntimeMaster runtimeMaster; // Vortex RuntimeMaster
@@ -77,25 +76,23 @@ public final class VortexDriver {
   private final int executorMem;
   private final int executorThreads;
 
-  private final UserMainRunner userMainRunner;
+  private final UserApplicationRunner userApplicationRunner;
   private final PendingTaskSchedulerRunner pendingTaskSchedulerRunner;
-
-  private final Compiler compiler;
 
   @Inject
   private VortexDriver(final ExecutoruatorRequestor evaluatorRequestor,
                        final MasterToAggregatorRequestor masterToAggregatorRequestor,
                        final RuntimeMaster runtimeMaster,
-                       final UserMainRunner userMainRunner,
+                       final UserApplicationRunner userApplicationRunner,
                        final PendingTaskSchedulerRunner pendingTaskSchedulerRunner,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
-                       final Compiler compiler,
+                       final UserApplicationRunner userApplicationRunner,
                        @Parameter(JobConf.ExecutorMem.class) final int executorMem,
                        @Parameter(JobConf.ExecutorNum.class) final int executorNum,
                        @Parameter(JobConf.ExecutorCores.class) final int executorCores,
                        @Parameter(JobConf.ExecutorThreads.class) final int executorThreads) {
-    this.userMainRunner = userMainRunner;
+    this.userApplicationRunner = userApplicationRunner;
     this.pendingTaskSchedulerRunner = pendingTaskSchedulerRunner;
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
@@ -103,7 +100,6 @@ public final class VortexDriver {
     this.runtimeMaster = runtimeMaster;
     this.masterToAggregatorRequestor = masterToAggregatorRequestor;
 
-    this.compiler = compiler;
 
     this.executorNum = executorNum;
     this.executorCores = executorCores;
@@ -150,6 +146,9 @@ public final class VortexDriver {
     public void onNext(final StartTime startTime) {
       // Start threads
       startThreads();
+      final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
+      pendingTaskSchedulerThread.execute(pendingTaskSchedulerRunner);
+      pendingTaskSchedulerThread.shutdown();
 
       // Launch resources
       evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
@@ -158,9 +157,10 @@ public final class VortexDriver {
           .setNumberOfCores(executorCores)
           .build());
 
-      // Launch job
-      final ExecutionPlan executionPlan = compiler.compile();
-      runtimeMaster.execute(executionPlan);
+      // Launch job (with a new thread)
+      final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
+      userApplicationRunnerThread.execute(userApplicationRunner);
+      userApplicationRunnerThread.shutdown();
     }
   }
 
@@ -206,21 +206,10 @@ public final class VortexDriver {
   }
 
   private void onActiveContext(final ActiveContext activeContext) {
-    if (activeContext.getId().startsWith(AGGREGATOR_CONTEXT_PREFIX)) {
-      LOG.log(Level.INFO, "VortexAggregator up and running");
-      runtimeMaster.aggregatorAllocated(new VortexAggregatorManager(masterToAggregatorRequestor, activeContext));
-      if (numLaunchedAggregators.incrementAndGet() == aggregatorNum) {
-      }
+    LOG.log(Level.INFO, "VortexContext up and running");
+    runtimeMaster.aggregatorAllocated(new VortexAggregatorManager(masterToAggregatorRequestor, activeContext));
+    if (numLaunchedAggregators.incrementAndGet() == aggregatorNum) {
     }
-  }
-
-  private void startThreads() {
-    final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
-    pendingTaskSchedulerThread.execute(pendingTaskSchedulerRunner);
-    pendingTaskSchedulerThread.shutdown();
-    final ExecutorService userMainRunnerThread = Executors.newSingleThreadExecutor();
-    userMainRunnerThread.execute(userMainRunner);
-    userMainRunnerThread.shutdown();
   }
 
   public final class ActiveContextHandler implements EventHandler<ActiveContext> {
