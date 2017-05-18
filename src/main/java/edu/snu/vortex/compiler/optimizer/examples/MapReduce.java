@@ -51,10 +51,10 @@ public final class MapReduce {
     builder.addVertex(map);
     builder.addVertex(reduce);
 
-    final IREdge edge1 = new IREdge(IREdge.Type.OneToOne, source, map);
+    final IREdge edge1 = new IREdge(IREdge.Type.OneToOne, source, map, null);
     builder.connectVertices(edge1);
 
-    final IREdge edge2 = new IREdge(IREdge.Type.ScatterGather, map, reduce);
+    final IREdge edge2 = new IREdge(IREdge.Type.ScatterGather, map, reduce, null);
     builder.connectVertices(edge2);
 
     final DAG dag = builder.build();

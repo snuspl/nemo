@@ -65,7 +65,7 @@ public final class JobStateManagerTest {
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v2);
 
-    final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2);
+    final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2, null);
     e.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
     e.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
     irDAGBuilder.connectVertices(e);

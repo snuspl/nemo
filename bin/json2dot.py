@@ -212,9 +212,10 @@ class IREdge:
         self.dst = dst
         self.id = properties['id']
         self.attributes = properties['attributes']
+        self.coder = properties['coder']
     @property
     def dot(self):
-        label = self.id + '\\n' + '/'.join(self.attributes.values())
+        label = self.id + '\\n' + '/'.join(self.attributes.values()) + '\\n' + self.coder
         return '{} -> {} [ltail = {}, lhead = {}, label = "{}"];'.format(self.src.oneVertex.idx,
                 self.dst.oneVertex.idx, self.src.logicalEnd, self.dst.logicalEnd, label)
 
