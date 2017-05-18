@@ -24,6 +24,7 @@ import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.executor.VortexContext;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.runtime.master.scheduler.SchedulerRunner;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;

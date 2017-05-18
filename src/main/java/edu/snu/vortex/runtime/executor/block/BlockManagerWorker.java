@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.block;
 
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
@@ -24,13 +25,14 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
-import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.transforms.join.UnionCoder;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -52,44 +54,18 @@ public final class BlockManagerWorker {
 
   private final MessageEnvironment messageEnvironment;
 
-  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
+  private final PersistentConnectionToMaster persistentConnectionToMaster;
 
   @Inject
-  public BlockManagerWorker(final String executorId,
+  public BlockManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
                             final LocalStore localStore,
-                            final MessageEnvironment messageEnvironment,
-                            final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap) {
+                            final PersistentConnectionToMaster persistentConnectionToMaster,
+                            final MessageEnvironment messageEnvironment) {
     this.executorId = executorId;
     this.localStore = localStore;
-    this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     this.messageEnvironment = messageEnvironment;
+    this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
-
-    final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap = new HashMap<>();
-    connectToMaster(nodeIdToMsgSenderMap, messageEnvironment);
-    final BlockManagerWorker blockManagerWorker =
-        new BlockManagerWorker(executorId, new LocalStore(), messageEnvironment, nodeIdToMsgSenderMap);
-    final DataTransferFactory dataTransferFactory = new DataTransferFactory(blockManagerWorker);
-  }
-
-  /**
-   * Initializes connections to master to send necessary messages.
-   * @param nodeIdToMsgSenderMap map of node ID to messageSender for outgoing messages from this executor.
-   * @param messageEnvironment the message environment for this executor.
-   */
-  private void connectToMaster(final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap,
-                               final MessageEnvironment messageEnvironment) {
-    try {
-      nodeIdToMsgSenderMap.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
-          messageEnvironment.<ControlMessage.Message>asyncConnect(
-              MessageEnvironment.MASTER_COMMUNICATION_ID, MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
-    } catch (Exception e) {
-      throw new NodeConnectionException(e);
-    }
-  }
-
-  public String getExecutorId() {
-    return executorId;
   }
 
   /**
@@ -109,10 +85,7 @@ public final class BlockManagerWorker {
     store.putBlock(blockId, data);
     idOfBlocksStoredInThisWorker.add(blockId);
 
-    final MessageSender<ControlMessage.Message> messageSenderToMaster =
-        nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
-
-    messageSenderToMaster.send(
+    persistentConnectionToMaster.getMessageSender().send(
         ControlMessage.Message.newBuilder()
         .setId(RuntimeIdGenerator.generateMessageId())
         .setType(ControlMessage.MessageType.BlockStateChanged)
@@ -148,12 +121,10 @@ public final class BlockManagerWorker {
     } else {
       // We don't have the block here... let's see if a remote worker has it
       // Ask Master for the location
-      final MessageSender<ControlMessage.Message> messageSenderToMaster =
-          nodeIdToMsgSenderMap.get(MessageEnvironment.MASTER_COMMUNICATION_ID);
 
       final ControlMessage.Message responseFromMaster;
       try {
-        responseFromMaster = messageSenderToMaster.<ControlMessage.Message>request(
+        responseFromMaster = persistentConnectionToMaster.getMessageSender().<ControlMessage.Message>request(
           ControlMessage.Message.newBuilder()
               .setId(RuntimeIdGenerator.generateMessageId())
               .setType(ControlMessage.MessageType.RequestBlockLocation)
@@ -178,17 +149,12 @@ public final class BlockManagerWorker {
 
       // Request the block to the owner executor.
       final MessageSender<ControlMessage.Message> messageSenderToRemoteExecutor;
-      if (nodeIdToMsgSenderMap.containsKey(remoteWorkerId)) {
-        messageSenderToRemoteExecutor = nodeIdToMsgSenderMap.get(remoteWorkerId);
-      } else {
-        try {
-          messageSenderToRemoteExecutor =
-              messageEnvironment.<ControlMessage.Message>asyncConnect(
-                  remoteWorkerId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
-          nodeIdToMsgSenderMap.put(remoteWorkerId, messageSenderToRemoteExecutor);
-        } catch (Exception e) {
-          throw new NodeConnectionException(e);
-        }
+      try {
+        messageSenderToRemoteExecutor =
+            messageEnvironment.<ControlMessage.Message>asyncConnect(
+                remoteWorkerId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+      } catch (Exception e) {
+        throw new NodeConnectionException(e);
       }
 
       final ControlMessage.Message responseFromRemoteExecutor;
@@ -207,6 +173,12 @@ public final class BlockManagerWorker {
                 .get();
       } catch (Exception e) {
         throw new NodeConnectionException(e);
+      }
+
+      try {
+        messageSenderToRemoteExecutor.close();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
 
       final ControlMessage.TransferBlockMsg transferBlockMsg = responseFromRemoteExecutor.getTransferBlockMsg();

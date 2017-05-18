@@ -31,4 +31,9 @@ final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
     connection.write(message);
     return (Future) replyWaitingLock.waitingReply(message.getId());
   }
+
+  @Override
+  public void close() throws Exception {
+    connection.close();
+  }
 }

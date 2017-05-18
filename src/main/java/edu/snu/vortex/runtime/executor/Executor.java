@@ -24,7 +24,6 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
-import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -60,10 +58,6 @@ public final class Executor {
   private static final Logger LOG = Logger.getLogger(Executor.class.getName());
 
   private final String executorId;
-
-  /**
-   * Map of node ID to messageSender for outgoing messages from this executor.
-   */
 
   /**
    * To be used for a thread pool to execute task groups.
@@ -83,19 +77,22 @@ public final class Executor {
   private PhysicalPlan physicalPlan;
   private TaskGroupStateManager taskGroupStateManager;
 
+  private final PersistentConnectionToMaster persistentConnectionToMaster;
+
   @Inject
   public Executor(@Parameter(JobConf.ExecutorId.class) final String executorId,
                   @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity,
-                  final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap,
+                  final PersistentConnectionToMaster persistentConnectionToMaster,
                   final MessageEnvironment messageEnvironment,
                   final BlockManagerWorker blockManagerWorker,
                   final DataTransferFactory dataTransferFactory) {
     this.executorId = executorId;
     this.executorService = Executors.newFixedThreadPool(executorCapacity);
-    this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     this.blockManagerWorker = blockManagerWorker;
     this.dataTransferFactory = dataTransferFactory;
+    this.persistentConnectionToMaster = persistentConnectionToMaster;
     messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
+
   }
 
   public String getExecutorId() {
@@ -113,7 +110,7 @@ public final class Executor {
    * @param taskGroup to launch.
    */
   private void launchTaskGroup(final TaskGroup taskGroup) {
-    taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, nodeIdToMsgSenderMap);
+    taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, persistentConnectionToMaster);
     new TaskGroupExecutor(taskGroup,
         taskGroupStateManager,
         physicalPlan.getStageDAG().getIncomingEdgesOf(taskGroup.getStageId()),

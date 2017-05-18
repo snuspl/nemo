@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master;
+package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.SchedulingException;
-import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupQueue;
-import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
+import edu.snu.vortex.runtime.master.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 
 import javax.inject.Inject;
@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * Pending VortexTask Launcher.
  */
 @DriverSide
-final class SchedulerRunner implements Runnable {
+public final class SchedulerRunner implements Runnable {
   private static final Logger LOG = Logger.getLogger(SchedulerRunner.class.getName());
   private final JobStateManager jobStateManager;
   private final SchedulingPolicy schedulingPolicy;

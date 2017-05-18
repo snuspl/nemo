@@ -33,13 +33,13 @@ public final class VortexContext {
 
   @Inject
   private VortexContext(final Executor executor) {
-    this.executor = executor;
+    this.executor = executor; // To make Tang instantiate Executor
   }
 
   public final class ContextStartHandler implements EventHandler<ContextStart> {
     @Override
     public void onNext(final ContextStart contextStart) {
-      LOG.log(Level.INFO, "Context Started: Executor instantiated through its constructor");
+      LOG.log(Level.INFO, "Context Started: Executor is now ready and listening for messages");
     }
   }
 }
