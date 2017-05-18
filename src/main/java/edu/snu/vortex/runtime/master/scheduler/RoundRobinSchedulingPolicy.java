@@ -19,7 +19,7 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.exception.SchedulingException;
-import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;

@@ -19,7 +19,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
-import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;

@@ -32,6 +32,7 @@ import org.apache.beam.sdk.transforms.join.UnionCoder;
 import org.apache.commons.lang3.SerializationUtils;
 
 import javax.annotation.concurrent.ThreadSafe;
+import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
@@ -52,6 +53,7 @@ public final class BlockManagerWorker {
 
   private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
 
+  @Inject
   public BlockManagerWorker(final String executorId,
                             final LocalStore localStore,
                             final MessageEnvironment messageEnvironment,
@@ -61,6 +63,28 @@ public final class BlockManagerWorker {
     this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
     this.messageEnvironment = messageEnvironment;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
+
+    final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap = new HashMap<>();
+    connectToMaster(nodeIdToMsgSenderMap, messageEnvironment);
+    final BlockManagerWorker blockManagerWorker =
+        new BlockManagerWorker(executorId, new LocalStore(), messageEnvironment, nodeIdToMsgSenderMap);
+    final DataTransferFactory dataTransferFactory = new DataTransferFactory(blockManagerWorker);
+  }
+
+  /**
+   * Initializes connections to master to send necessary messages.
+   * @param nodeIdToMsgSenderMap map of node ID to messageSender for outgoing messages from this executor.
+   * @param messageEnvironment the message environment for this executor.
+   */
+  private void connectToMaster(final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap,
+                               final MessageEnvironment messageEnvironment) {
+    try {
+      nodeIdToMsgSenderMap.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
+          messageEnvironment.<ControlMessage.Message>asyncConnect(
+              MessageEnvironment.MASTER_COMMUNICATION_ID, MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
+    } catch (Exception e) {
+      throw new NodeConnectionException(e);
+    }
   }
 
   public String getExecutorId() {

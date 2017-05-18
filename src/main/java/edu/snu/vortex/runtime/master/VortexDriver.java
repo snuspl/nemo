@@ -22,7 +22,6 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
-import edu.snu.vortex.runtime.master.resourcemanager.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
@@ -73,6 +72,7 @@ public final class VortexDriver {
   private final UserApplicationRunner userApplicationRunner;
   private final SchedulerRunner schedulerRunner;
   private final Scheduler scheduler;
+  private final MessageEnvironment messageEnvironment;
 
   // These are hacks to get around
   // TODO #60: Specify Types in Requesting Containers
@@ -86,6 +86,7 @@ public final class VortexDriver {
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
                        final UserApplicationRunner userApplicationRunner,
+                       final MessageEnvironment messageEnvironment,
                        @Parameter(JobConf.ExecutorMem.class) final int executorMem,
                        @Parameter(JobConf.ExecutorNum.class) final int executorNum,
                        @Parameter(JobConf.ExecutorCores.class) final int executorCores,
@@ -96,6 +97,7 @@ public final class VortexDriver {
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
+    this.messageEnvironment = messageEnvironment;
     this.executorNum = executorNum;
     this.executorCores = executorCores;
     this.executorMem = executorMem;
@@ -181,12 +183,10 @@ public final class VortexDriver {
         final MessageSender messageSender;
         try {
           messageSender =
-              masterMessageEnvironment.asyncConnect(
-                  executor.get().getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
+              messageEnvironment.asyncConnect(executorId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER).get();
         } catch (final Exception e) {
           throw new RuntimeException(e);
         }
-
         final ExecutorRepresenter executorRepresenter = new ExecutorRepresenter(executorId,
             executorToBeLaunched.resourceType, executorToBeLaunched.executorCapacity, messageSender);
 

@@ -1,11 +1,15 @@
 package edu.snu.vortex.runtime.common.message;
 
+import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
 import java.util.concurrent.Future;
 
 /**
  * Set up {@link MessageListener}s to handle incoming messages on this node, and connect to remote nodes and return
  * {@link MessageSender}s to send message to them.
  */
+@DefaultImplementation(NcsMessageEnvironment.class)
 public interface MessageEnvironment {
 
   String MASTER_COMMUNICATION_ID = "MASTER";
