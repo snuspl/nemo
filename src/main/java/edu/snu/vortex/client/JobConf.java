@@ -47,7 +47,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   static final RequiredParameter<String> USER_MAIN_ARGS = new RequiredParameter<>();
   static final OptionalParameter<String> DAG_DIRECTORY = new OptionalParameter<>();
 
-  //////////////////////////////// UserApplicationRunner Configurations
+  //////////////////////////////// Compiler Configurations
 
   /**
    * Name of the optimization policy.

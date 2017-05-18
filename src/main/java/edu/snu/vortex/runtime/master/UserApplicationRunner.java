@@ -61,7 +61,7 @@ public final class UserApplicationRunner implements Runnable {
       final Optimizer optimizer = new Optimizer();
       final Backend<ExecutionPlan> backend = new VortexBackend();
 
-      LOG.log(Level.INFO, "##### VORTEX UserApplicationRunner #####");
+      LOG.log(Level.INFO, "##### VORTEX Compiler #####");
       final DAG dag = frontend.compile(className, arguments);
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
