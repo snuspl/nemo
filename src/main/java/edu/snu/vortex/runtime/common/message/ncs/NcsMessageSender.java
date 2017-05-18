@@ -6,6 +6,9 @@ import org.apache.reef.io.network.Connection;
 
 import java.util.concurrent.Future;
 
+/**
+ * MessageSender for NCS.
+ */
 final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
 
   private final Connection<ControlMessage.Message> connection;

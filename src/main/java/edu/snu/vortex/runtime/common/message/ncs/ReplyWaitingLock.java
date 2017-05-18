@@ -10,6 +10,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Lock used for NCS messages.
+ */
 class ReplyWaitingLock {
 
   private final Lock lock;

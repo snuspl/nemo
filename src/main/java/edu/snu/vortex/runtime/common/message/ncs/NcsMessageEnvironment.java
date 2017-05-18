@@ -21,6 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
+/**
+ * Message environment for NCS.
+ */
 public final class NcsMessageEnvironment implements MessageEnvironment {
 
   private static final String NCS_CONN_FACTORY_ID = "NCS_CONN_FACTORY_ID";
@@ -83,6 +86,9 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     networkConnectionService.close();
   }
 
+  /**
+   * Message handler for NCS.
+   */
   private final class NcsMessageHandler implements EventHandler<Message<ControlMessage.Message>> {
 
     public void onNext(final Message<ControlMessage.Message> messages) {
@@ -122,6 +128,9 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     }
   }
 
+  /**
+   * LinkListener for NCS.
+   */
   private final class NcsLinkListener implements LinkListener<Message<ControlMessage.Message>> {
 
     public void onSuccess(final Message<ControlMessage.Message> messages) {

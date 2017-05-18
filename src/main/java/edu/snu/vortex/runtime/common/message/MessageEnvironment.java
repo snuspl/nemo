@@ -45,7 +45,7 @@ public interface MessageEnvironment {
 
   /**
    * Close this message environment.
+   * @throws Exception while closing
    */
   void close() throws Exception;
-
 }

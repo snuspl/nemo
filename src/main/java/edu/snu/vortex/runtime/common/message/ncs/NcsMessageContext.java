@@ -6,6 +6,9 @@ import org.apache.reef.io.network.Connection;
 import org.apache.reef.io.network.ConnectionFactory;
 import org.apache.reef.wake.IdentifierFactory;
 
+/**
+ * Message context for NCS.
+ */
 final class NcsMessageContext implements MessageContext {
 
   private final String senderId;
@@ -27,7 +30,7 @@ final class NcsMessageContext implements MessageContext {
 
   @Override
   public <U> void reply(final U replyMessage) {
-    // TODO: We should track whether the replied message is successfully sent or not.
+    // TODO #200: Track whether the replied message is successfully sent in NcsMessageContext
     final Connection connection = connectionFactory.newConnection(idFactory.getNewInstance(senderId));
     try {
       connection.open();

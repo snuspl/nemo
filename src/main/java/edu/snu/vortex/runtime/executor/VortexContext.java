@@ -16,9 +16,7 @@
 package edu.snu.vortex.runtime.executor;
 
 import org.apache.reef.annotations.audience.EvaluatorSide;
-import org.apache.reef.driver.evaluator.FailedEvaluator;
 import org.apache.reef.evaluator.context.events.ContextStart;
-import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 
