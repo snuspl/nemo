@@ -111,13 +111,25 @@ public final class VortexDriver {
     this.executorIdToPendingContext = new HashMap<>();
   }
 
+  /**
+   * Hack for.
+   * TODO #60: Specify Types in Requesting Containers
+   */
   private final class ExecutorToBeLaunched {
-    final RuntimeAttribute resourceType;
-    final int executorCapacity;
+    private final RuntimeAttribute resourceType;
+    private final int executorCapacity;
 
     ExecutorToBeLaunched(final RuntimeAttribute resourceType, final int executorCapacity) {
       this.resourceType = resourceType;
       this.executorCapacity = executorCapacity;
+    }
+
+    RuntimeAttribute getResourceType() {
+      return resourceType;
+    }
+
+    int getExecutorCapacity() {
+      return executorCapacity;
     }
   }
 
@@ -174,6 +186,9 @@ public final class VortexDriver {
     }
   }
 
+  /**
+   * Context active.
+   */
   public final class ActiveContextHandler implements EventHandler<ActiveContext> {
     @Override
     public void onNext(final ActiveContext activeContext) {
@@ -193,12 +208,32 @@ public final class VortexDriver {
           throw new RuntimeException(e);
         }
         final ExecutorRepresenter executorRepresenter = new ExecutorRepresenter(executorId,
-            executorToBeLaunched.resourceType, executorToBeLaunched.executorCapacity, messageSender);
+            executorToBeLaunched.getResourceType(), executorToBeLaunched.getExecutorCapacity(), messageSender);
 
         scheduler.onExecutorAdded(executorRepresenter);
       }
     }
   }
+
+  /**
+   * Evaluator failed.
+   */
+  public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
+    @Override
+    public void onNext(final FailedEvaluator failedEvaluator) {
+      throw new RuntimeException(failedEvaluator.getEvaluatorException());
+    }
+  }
+
+  /**
+   * Driver stopped.
+   */
+  public final class DriverStopHandler implements EventHandler<StopTime> {
+    @Override
+    public void onNext(final StopTime stopTime) {
+    }
+  }
+
 
   private Configuration getExecutorConfiguration(final String executorId) {
     final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
@@ -229,20 +264,5 @@ public final class VortexDriver {
         .bindImplementation(MessageEnvironment.class, NcsMessageEnvironment.class)
         .bindNamedParameter(NcsParameters.SenderId.class, executorId)
         .build();
-  }
-
-  public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
-    @Override
-    public void onNext(final FailedEvaluator failedEvaluator) {
-      // TODO: handle faults
-      throw new RuntimeException(failedEvaluator.getEvaluatorException());
-    }
-  }
-
-  public final class DriverStopHandler implements EventHandler<StopTime> {
-    @Override
-    public void onNext(final StopTime stopTime) {
-      // TODO: stop something
-    }
   }
 }

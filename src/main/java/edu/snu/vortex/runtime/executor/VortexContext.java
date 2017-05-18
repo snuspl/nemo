@@ -24,6 +24,9 @@ import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * REEF Context for Vortex Executor.
+ */
 @EvaluatorSide
 @Unit
 public final class VortexContext {
@@ -36,6 +39,9 @@ public final class VortexContext {
     this.executor = executor; // To make Tang instantiate Executor
   }
 
+  /**
+   * Called when the context starts.
+   */
   public final class ContextStartHandler implements EventHandler<ContextStart> {
     @Override
     public void onNext(final ContextStart contextStart) {

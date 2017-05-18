@@ -8,7 +8,10 @@ import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import javax.inject.Inject;
 import java.util.concurrent.ExecutionException;
 
-public class PersistentConnectionToMaster {
+/**
+ * Persistent connection for sending messages to master.
+ */
+public final class PersistentConnectionToMaster {
   private final MessageSender<ControlMessage.Message> messageSender;
 
   @Inject

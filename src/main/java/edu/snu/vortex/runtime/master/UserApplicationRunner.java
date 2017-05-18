@@ -31,6 +31,9 @@ import java.util.logging.Logger;
 
 import static edu.snu.vortex.compiler.optimizer.Optimizer.POLICY_NAME;
 
+/**
+ * Compiles and runs User application.
+ */
 public final class UserApplicationRunner implements Runnable {
   private static final Logger LOG = Logger.getLogger(UserApplicationRunner.class.getName());
 
@@ -51,7 +54,7 @@ public final class UserApplicationRunner implements Runnable {
     this.className = className;
     this.arguments = arguments.split(" ");
     this.policyName = policyName;
-    this.runtimeMaster =runtimeMaster;
+    this.runtimeMaster = runtimeMaster;
   }
 
   @Override

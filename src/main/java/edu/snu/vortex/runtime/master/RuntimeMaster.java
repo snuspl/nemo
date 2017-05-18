@@ -75,7 +75,7 @@ public final class RuntimeMaster {
    * @param executionPlan to execute.
    */
   public void execute(final ExecutionPlan executionPlan) {
-    final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan, dagDirectory);
+    final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
     try {
       // TODO #187: Cleanup Execution Threads
       jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
@@ -91,10 +91,9 @@ public final class RuntimeMaster {
   /**
    * Generates the {@link PhysicalPlan} to be executed.
    * @param executionPlan that should be converted to a physical plan
-   * @param dagDirectory the directory to which JSON representation of the plan is saved
    * @return {@link PhysicalPlan} to execute.
    */
-  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan, final String dagDirectory) {
+  private PhysicalPlan generatePhysicalPlan(final ExecutionPlan executionPlan) {
     final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
     logicalDAG.storeJSON(dagDirectory, "plan-logical", "logical execution plan");
 
