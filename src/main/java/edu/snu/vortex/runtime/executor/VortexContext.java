@@ -16,10 +16,14 @@
 package edu.snu.vortex.runtime.executor;
 
 import org.apache.reef.annotations.audience.EvaluatorSide;
+import org.apache.reef.driver.evaluator.FailedEvaluator;
+import org.apache.reef.evaluator.context.events.ContextStart;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.tang.annotations.Unit;
+import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @EvaluatorSide
@@ -27,9 +31,17 @@ import java.util.logging.Logger;
 public final class VortexContext {
 
   private static final Logger LOG = Logger.getLogger(VortexContext.class.getName());
+  private final Executor executor;
 
   @Inject
-  private VortexContext(@Parameter(VortexAggregatorConf.NumOfThreads.class) final int numOfThreads) {
-    // Set up executor and ncs here...
+  private VortexContext(final Executor executor) {
+    this.executor = executor;
+  }
+
+  public final class ContextStartHandler implements EventHandler<ContextStart> {
+    @Override
+    public void onNext(final ContextStart contextStart) {
+      LOG.log(Level.INFO, "Context Started: Executor instantiated through its constructor");
+    }
   }
 }

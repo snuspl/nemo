@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor;
 
 import com.google.protobuf.ByteString;
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
@@ -38,6 +39,7 @@ import org.apache.beam.sdk.transforms.join.RawUnionValue;
 import org.apache.beam.sdk.transforms.join.UnionCoder;
 import org.apache.beam.sdk.values.KV;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
@@ -55,17 +57,10 @@ public final class Executor {
   private static final Logger LOG = Logger.getLogger(Executor.class.getName());
 
   private final String executorId;
-  private final int capacity;
-
-  /**
-   * The message environment for this executor.
-   */
-  private final MessageEnvironment messageEnvironment;
 
   /**
    * Map of node ID to messageSender for outgoing messages from this executor.
    */
-  private final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap;
 
   /**
    * To be used for a thread pool to execute task groups.
@@ -86,29 +81,22 @@ public final class Executor {
   private TaskGroupStateManager taskGroupStateManager;
 
   @Inject
-  public Executor(final String executorId,
-                  final int capacity,
-                  final int numThreads,
-                  final MessageEnvironment messageEnvironment,
+  public Executor(@Parameter(JobConf.ExecutorId.class) final String executorId,
+                  @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity,
                   final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderMap,
+                  final MessageEnvironment messageEnvironment,
                   final BlockManagerWorker blockManagerWorker,
                   final DataTransferFactory dataTransferFactory) {
     this.executorId = executorId;
-    this.capacity = capacity;
-    this.executorService = Executors.newFixedThreadPool(numThreads);
-    this.messageEnvironment = messageEnvironment;
+    this.executorService = Executors.newFixedThreadPool(executorCapacity);
     this.nodeIdToMsgSenderMap = nodeIdToMsgSenderMap;
-    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
     this.blockManagerWorker = blockManagerWorker;
     this.dataTransferFactory = dataTransferFactory;
+    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
   }
 
   public String getExecutorId() {
     return executorId;
-  }
-
-  public int getCapacity() {
-    return capacity;
   }
 
   private synchronized void onTaskGroupReceived(final TaskGroup taskGroup) {

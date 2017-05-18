@@ -42,10 +42,10 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class DAGDirectory implements Name<String> {
   }
 
-  static final RequiredParameter<String> JOB_ID = new RequiredParameter<>();
-  static final RequiredParameter<String> USER_MAIN_CLASS = new RequiredParameter<>();
-  static final RequiredParameter<String> USER_MAIN_ARGS = new RequiredParameter<>();
-  static final OptionalParameter<String> DAG_DIRECTORY = new OptionalParameter<>();
+  public static final RequiredParameter<String> JOB_ID = new RequiredParameter<>();
+  public static final RequiredParameter<String> USER_MAIN_CLASS = new RequiredParameter<>();
+  public static final RequiredParameter<String> USER_MAIN_ARGS = new RequiredParameter<>();
+  public static final OptionalParameter<String> DAG_DIRECTORY = new OptionalParameter<>();
 
   //////////////////////////////// Compiler Configurations
 
@@ -56,7 +56,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class OptimizationPolicy implements Name<String> {
   }
 
-  static final OptionalParameter<String> OPTIMIZATION_POLICY = new OptionalParameter<>();
+  public static final OptionalParameter<String> OPTIMIZATION_POLICY = new OptionalParameter<>();
 
   //////////////////////////////// Runtime Configurations
 
@@ -102,14 +102,24 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class SchedulerTimeoutMs implements Name<Integer> {
   }
 
+  /**
+   * VortexExecutor id.
+   */
+  @NamedParameter(doc = "Executor id", short_name = "executor_id")
+  public final class ExecutorId implements Name<String> {
+  }
 
-  static final RequiredParameter<Integer> DRIVER_MEM = new RequiredParameter<>();
-  static final RequiredParameter<Integer> EXECUTOR_NUM = new RequiredParameter<>();
-  static final RequiredParameter<Integer> EXECUTOR_MEM = new RequiredParameter<>();
-  static final RequiredParameter<Integer> EXECUTOR_CORES = new RequiredParameter<>();
-  static final RequiredParameter<Integer> EXECUTOR_CAPACITY = new RequiredParameter<>();
-  static final RequiredParameter<Integer> SCHEDULER_TIMEOUT_MS = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> DRIVER_MEM = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> EXECUTOR_NUM = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> EXECUTOR_MEM = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> EXECUTOR_CORES = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> EXECUTOR_CAPACITY = new RequiredParameter<>();
+  public static final RequiredParameter<Integer> SCHEDULER_TIMEOUT_MS = new RequiredParameter<>();
+  public static final RequiredParameter<String> EXECUTOR_ID = new RequiredParameter<>();
 
-  //////////////////////////////// Configuration Module
+  public static final ConfigurationModule EXECUTOR_CONF = new JobConf()
+      .bindNamedParameter(ExecutorId.class, EXECUTOR_ID)
+      .bindNamedParameter(ExecutorCapacity.class, EXECUTOR_CAPACITY)
+      .build();
 
 }

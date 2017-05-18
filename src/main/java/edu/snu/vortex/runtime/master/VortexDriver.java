@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
+import edu.snu.vortex.runtime.executor.VortexContext;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
@@ -164,7 +165,7 @@ public final class VortexDriver {
         final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
-        allocatedEvaluator.submitContext(getExecutorConfiguration());
+        allocatedEvaluator.submitContext(getExecutorConfiguration(executorId));
       }
     }
   }
@@ -196,13 +197,13 @@ public final class VortexDriver {
   }
 
   private Configuration getExecutorConfiguration(final String executorId) {
-    final Configuration executorConfiguration = JobConf.CONF
-        .set(VortexExecutorConf.NUM_OF_THREADS, )
+    final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
+        .set(JobConf.EXECUTOR_CAPACITY, executorCapacity)
         .build();
 
     final Configuration contextConfiguration = ContextConfiguration.CONF
         .set(ContextConfiguration.IDENTIFIER, executorId) // We set: contextId = executorId
-        .set(ContextConfiguration.ON_CONTEXT_STARTED, VortexContextStopHandler.class)
+        .set(ContextConfiguration.ON_CONTEXT_STARTED, VortexContext.ContextStartHandler.class)
         .build();
 
     final Configuration ncsConfiguration =  getExecutorNcsConfiguration();
