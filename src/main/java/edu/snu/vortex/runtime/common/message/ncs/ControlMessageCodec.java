@@ -4,13 +4,10 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import org.apache.reef.io.serialization.Codec;
 
-import javax.inject.Inject;
-
-public class ControlMessageCodec implements Codec<ControlMessage.Message>,
+final class ControlMessageCodec implements Codec<ControlMessage.Message>,
     org.apache.reef.wake.remote.Codec<ControlMessage.Message> {
 
-  @Inject
-  private ControlMessageCodec() {
+  public ControlMessageCodec() {
   }
 
   @Override
@@ -23,7 +20,7 @@ public class ControlMessageCodec implements Codec<ControlMessage.Message>,
     try {
       return ControlMessage.Message.parseFrom(buf);
     } catch (final InvalidProtocolBufferException e) {
-      throw new Runtim
+      throw new RuntimeException(e);
     }
   }
 }

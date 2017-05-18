@@ -18,9 +18,8 @@ public interface MessageEnvironment {
    * @param messageTypeId an identifier of the message type which would be handled by message listener
    * @param listener a message listener
    * @param <T> The type of the message to be sent in the environment
-   * @return a message sender to the locally set up listener.
    */
-  <T> MessageSender<T> setupListener(String messageTypeId, MessageListener<T> listener);
+  <T> void setupListener(String messageTypeId, MessageListener<T> listener);
 
   /**
    * Asynchronously connect to the node called 'receiverId' and return a future of {@link MessageSender} that sends
@@ -39,5 +38,10 @@ public interface MessageEnvironment {
    * @return an identifier
    */
   String getId();
+
+  /**
+   * Close this message environment.
+   */
+  void close() throws Exception;
 
 }
