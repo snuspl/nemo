@@ -60,5 +60,10 @@ public interface Coder<T> extends Serializable {
     public Object decode(final InputStream inStream) {
       throw new RuntimeException("DummyCoder is not supposed to be used.");
     }
+
+    @Override
+    public String toString() {
+      return "DUMMY_CODER";
+    }
   }
 }
