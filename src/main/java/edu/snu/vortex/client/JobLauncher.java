@@ -110,7 +110,7 @@ public final class JobLauncher {
         .build();
   }
 
-  private static Configuration getJobConf(final String[] args) throws IOException, InjectionException {
+  public static Configuration getJobConf(final String[] args) throws IOException, InjectionException {
     final JavaConfigurationBuilder confBuilder = Tang.Factory.getTang().newConfigurationBuilder();
     final CommandLine cl = new CommandLine(confBuilder);
     cl.registerShortNameOfClass(JobConf.JobId.class);

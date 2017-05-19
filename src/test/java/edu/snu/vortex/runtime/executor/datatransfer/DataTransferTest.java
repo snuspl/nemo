@@ -20,21 +20,20 @@ import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
-import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
-import edu.snu.vortex.runtime.executor.Executor;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
-import edu.snu.vortex.runtime.master.resourcemanager.ResourceManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
+import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupQueue;
+import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.values.KV;
@@ -42,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -53,79 +53,37 @@ import static org.mockito.Mockito.mock;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 public final class DataTransferTest {
+  private static final String EMPTY_DAG_DIRECTORY = "";
+  private static final int SCHEDULE_TIMEOUT = 1000;
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
-  private static final long DEFAULT_SCHEDULE_TIMEOUT = 1000;
+  private static final AtomicInteger EXECUTOR_COUNT = new AtomicInteger(0);
 
-  private Scheduler scheduler;
-  private LocalMessageDispatcher dispatcher;
-  private MessageEnvironment masterEnv;
+  private RuntimeMaster runtimeMaster; // Unused, but necessary for wiring up the message environments
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
 
   @Before
   public void setUp() {
-    this.dispatcher = new LocalMessageDispatcher();
-    this.masterEnv = new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, dispatcher);
-    this.master = new BlockManagerMaster();
-    final ResourceManager resourceManager = new MockResourceManager();
+    final LocalMessageEnvironment messageEnvironment =
+        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, new LocalMessageDispatcher());
+    final Scheduler scheduler =
+        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
 
-    this.scheduler = new BatchScheduler(RuntimeAttribute.RoundRobin, 2000);
-    new RuntimeMaster(
-        new RuntimeConfiguration(DEFAULT_SCHEDULE_TIMEOUT, new ExecutorConfiguration(2, 1, 1)),
-        scheduler,
-        dispatcher,
-        masterEnv,
-        master,
-        resourceManager);
+    this.runtimeMaster = new RuntimeMaster(scheduler, messageEnvironment, master, EMPTY_DAG_DIRECTORY);
+    this.master = new BlockManagerMaster();
+    this.worker1 = createWorker(messageEnvironment);
+    this.worker2 = createWorker(messageEnvironment);
   }
 
-  private final class MockResourceManager implements ResourceManager {
-
-    private int executorCount = 0;
-
-    @Override
-    public Optional<Executor> requestExecutor(final RuntimeAttribute resourceType,
-                                final ExecutorConfiguration executorConfiguration) {
-      if (executorCount < 2) {
-        final String executorId = "Executor" + executorCount;
-
-        final MessageEnvironment workerEnv = new LocalMessageEnvironment(executorId, dispatcher);
-
-        final Map<String, MessageSender<ControlMessage.Message>> nodeIdToMsgSenderForWorker = new HashMap<>();
-        try {
-          nodeIdToMsgSenderForWorker.put(MessageEnvironment.MASTER_COMMUNICATION_ID,
-              workerEnv.<ControlMessage.Message>asyncConnect(MessageEnvironment.MASTER_COMMUNICATION_ID,
-                  MessageEnvironment.MASTER_MESSAGE_RECEIVER).get());
-        } catch (final Exception e) {
-          e.printStackTrace();
-        }
-
-        final BlockManagerWorker blockManagerWorker =
-            new BlockManagerWorker(executorId, new LocalStore(), workerEnv, nodeIdToMsgSenderForWorker);
-
-        if (executorCount == 0) {
-          worker1 = blockManagerWorker;
-        } else {
-          worker2 = blockManagerWorker;
-        }
-
-        // Create the executor!
-        final Executor executor =
-            new Executor("Executor" + executorCount,
-                executorConfiguration.getDefaultExecutorCapacity(),
-                executorConfiguration.getExecutorNumThreads(),
-                workerEnv,
-                nodeIdToMsgSenderForWorker,
-                blockManagerWorker,
-                new DataTransferFactory(blockManagerWorker));
-
-        executorCount++;
-        return Optional.of(executor);
-      }
-      return Optional.empty();
-    }
+  private BlockManagerWorker createWorker(final MessageEnvironment messageEnvironment) {
+    final String executorId = "Executor" + EXECUTOR_COUNT.getAndIncrement();
+    return new BlockManagerWorker(
+        executorId,
+        new LocalStore(),
+        new PersistentConnectionToMaster(messageEnvironment),
+        messageEnvironment);
   }
 
   @Test

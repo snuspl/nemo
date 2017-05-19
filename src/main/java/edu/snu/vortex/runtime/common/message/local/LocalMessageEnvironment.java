@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 
 /**
  * A simple {@link MessageEnvironment} implementation that works on a single node.
+ * Used for unit tests.
  */
 public final class LocalMessageEnvironment implements MessageEnvironment {
 

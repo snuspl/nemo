@@ -21,7 +21,6 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
-import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
@@ -58,14 +57,13 @@ public final class RuntimeMaster {
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
-                       final LocalMessageDispatcher localMessageDispatcher,
                        final MessageEnvironment masterMessageEnvironment,
                        final BlockManagerMaster blockManagerMaster,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
     this.masterMessageEnvironment = masterMessageEnvironment;
-    this.masterMessageEnvironment.setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER,
-        new MasterMessageReceiver());
+    this.masterMessageEnvironment
+        .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
     this.blockManagerMaster = blockManagerMaster;
     this.dagDirectory = dagDirectory;
   }

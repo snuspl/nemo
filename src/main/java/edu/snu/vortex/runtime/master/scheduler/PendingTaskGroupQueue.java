@@ -33,7 +33,7 @@ public final class PendingTaskGroupQueue {
   private final BlockingDeque<TaskGroup> pendingTaskGroups = new LinkedBlockingDeque<>();
 
   @Inject
-  PendingTaskGroupQueue() {
+  public PendingTaskGroupQueue() {
   }
 
   public void addLast(final TaskGroup taskGroup) {
