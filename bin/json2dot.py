@@ -215,8 +215,8 @@ class IREdge:
         self.coder = properties['coder']
     @property
     def dot(self):
-        label = self.id + '\\n' + '/'.join(self.attributes.values()) + '\\n' + self.coder
-        return '{} -> {} [ltail = {}, lhead = {}, label = "{}"];'.format(self.src.oneVertex.idx,
+        label = '{}<BR/>{}<BR/><FONT POINT-SIZE=\'10\'>{}</FONT>'.format(self.id, '/'.join(self.attributes.values()), self.coder)
+        return '{} -> {} [ltail = {}, lhead = {}, label = <{}>];'.format(self.src.oneVertex.idx,
                 self.dst.oneVertex.idx, self.src.logicalEnd, self.dst.logicalEnd, label)
 
 class PhysicalStageEdge:
