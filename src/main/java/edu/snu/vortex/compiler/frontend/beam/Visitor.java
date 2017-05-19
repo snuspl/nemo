@@ -16,6 +16,8 @@
 package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.client.beam.LoopCompositeTransform;
+import edu.snu.vortex.compiler.frontend.Coder;
+import edu.snu.vortex.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
@@ -24,7 +26,6 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -93,7 +94,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
         loopVertexStack);
     beamNode.getOutputs().stream().map(TaggedPValue::getValue)
         .filter(v -> v instanceof PCollection).map(v -> (PCollection) v)
-        .forEach(output -> pValueToCoder.put(output, output.getCoder()));
+        .forEach(output -> pValueToCoder.put(output, new BeamCoder(output.getCoder())));
 
     beamNode.getOutputs().forEach(output -> pValueToVertex.put(output.getValue(), vortexIRVertex));
 

@@ -15,11 +15,11 @@
  */
 package edu.snu.vortex.compiler.ir;
 
+import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 import edu.snu.vortex.utils.dag.Edge;
-import org.apache.beam.sdk.coders.Coder;
 
 /**
  * Physical execution plan of intermediate data movement.
