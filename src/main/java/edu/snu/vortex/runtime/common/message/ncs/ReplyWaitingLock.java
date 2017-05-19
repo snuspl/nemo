@@ -2,6 +2,7 @@ package edu.snu.vortex.runtime.common.message.ncs;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +20,7 @@ class ReplyWaitingLock {
   private final Condition messageArrived;
   private final Map<Long, Future<ControlMessage.Message>> repliedFutureMap;
 
+  @Inject
   ReplyWaitingLock() {
     this.lock = new ReentrantLock();
     this.messageArrived = this.lock.newCondition();
@@ -40,11 +42,11 @@ class ReplyWaitingLock {
     }
   }
 
-  void onSuccessMessage(final ControlMessage.Message successMessage) {
+  void onSuccessMessage(final long id, final ControlMessage.Message successMessage) {
     final CompletableFuture<ControlMessage.Message> future = CompletableFuture.completedFuture(successMessage);
     lock.lock();
     try {
-      repliedFutureMap.put(successMessage.getId(), future);
+      repliedFutureMap.put(id, future);
       messageArrived.signalAll();
     } finally {
       lock.unlock();

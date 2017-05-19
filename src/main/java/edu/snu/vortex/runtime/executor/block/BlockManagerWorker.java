@@ -135,8 +135,11 @@ public final class BlockManagerWorker {
                       .build())
               .build()).get();
       } catch (Exception e) {
+        e.printStackTrace();
         throw new NodeConnectionException(e);
       }
+
+      System.out.println("response: " + responseFromMaster.toString());
 
       final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
       assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);

@@ -114,10 +114,6 @@ public final class VortexDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      System.out.println("Working Directory = " + System.getProperty("user.dir"));
-
-
-
       // Launch resources
       final Set<RuntimeAttribute> completeSetOfResourceType =
           new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));

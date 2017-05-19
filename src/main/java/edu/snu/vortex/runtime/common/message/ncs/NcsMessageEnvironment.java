@@ -41,11 +41,12 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
   private NcsMessageEnvironment(
       final NetworkConnectionService networkConnectionService,
       final IdentifierFactory idFactory,
+      final ReplyWaitingLock replyWaitingLock,
       @Parameter(NcsParameters.SenderId.class) final String senderId) {
     this.networkConnectionService = networkConnectionService;
     this.idFactory = idFactory;
     this.senderId = senderId;
-    this.replyWaitingLock = new ReplyWaitingLock();
+    this.replyWaitingLock = replyWaitingLock;
     this.listenerConcurrentMap = new ConcurrentHashMap<>();
     this.connectionFactory = networkConnectionService.registerConnectionFactory(
         idFactory.getNewInstance(NCS_CONN_FACTORY_ID),
@@ -56,9 +57,9 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
   }
 
   @Override
-  public <T> void setupListener(final String messageTypeId, final MessageListener<T> listener) {
-    if (listenerConcurrentMap.putIfAbsent(messageTypeId, listener) != null) {
-      throw new RuntimeException("A listener for " + messageTypeId + " was already setup");
+  public <T> void setupListener(final String listenerId, final MessageListener<T> listener) {
+    if (listenerConcurrentMap.putIfAbsent(listenerId, listener) != null) {
+      throw new RuntimeException("A listener for " + listenerId + " was already setup");
     }
   }
 
@@ -93,38 +94,38 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
     public void onNext(final Message<ControlMessage.Message> messages) {
       final ControlMessage.Message controlMessage = extractSingleMessage(messages);
-      final boolean isSendMessage = getIsSendMessage(controlMessage);
-      if (isSendMessage) {
-        processSendMessage(controlMessage);
-        return;
-      }
-
-      final boolean isRequestMessage = getIsRequestMessage(controlMessage);
-      if (isRequestMessage) {
-        processRequestMessage(controlMessage);
-        return;
-      }
-
-      final boolean isReplyMessage = getIsReplyMessage(controlMessage);
-      if (isReplyMessage) {
-        processReplyMessage(controlMessage);
+      System.out.println("onNext: " + controlMessage);
+      final MessageType messageType = getMsgType(controlMessage);
+      switch (messageType) {
+        case Send:
+          processSendMessage(controlMessage);
+          break;
+        case Request:
+          processRequestMessage(controlMessage);
+          break;
+        case Reply:
+          processReplyMessage(controlMessage);
+          break;
+        default:
+          throw new IllegalArgumentException(controlMessage.toString());
       }
     }
 
     private void processSendMessage(final ControlMessage.Message controlMessage) {
-      final String messageType = getMessageType(controlMessage);
+      final String messageType = getListenerId(controlMessage);
       listenerConcurrentMap.get(messageType).onMessage(controlMessage);
     }
 
     private void processRequestMessage(final ControlMessage.Message controlMessage) {
-      final String messageType = getMessageType(controlMessage);
+      final String messageType = getListenerId(controlMessage);
       final String executorId = getExecutorId(controlMessage);
       final MessageContext messageContext = new NcsMessageContext(executorId, connectionFactory, idFactory);
       listenerConcurrentMap.get(messageType).onMessageWithContext(controlMessage, messageContext);
     }
 
     private void processReplyMessage(final ControlMessage.Message controlMessage) {
-      replyWaitingLock.onSuccessMessage(controlMessage);
+      final long requestId = getRequestId(controlMessage);
+      replyWaitingLock.onSuccessMessage(requestId, controlMessage);
     }
   }
 
@@ -141,17 +142,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
                             final SocketAddress socketAddress,
                             final Message<ControlMessage.Message> messages) {
       final ControlMessage.Message controlMessage = extractSingleMessage(messages);
-      if (getIsReplyMessage(controlMessage)) {
-        throw new RuntimeException("An exception occurred with replying a message " + controlMessage.getType().name(),
-            throwable);
-      }
-
-      final boolean isRequestMessage = getIsRequestMessage(controlMessage);
-      if (!isRequestMessage) {
-        return;
-      }
-
-      replyWaitingLock.onFailedMessage(controlMessage, throwable);
+      throw new RuntimeException(controlMessage.toString(), throwable);
     }
   }
 
@@ -159,23 +150,69 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     return messages.getData().iterator().next();
   }
 
-  private boolean getIsSendMessage(final ControlMessage.Message controlMessage) {
-    return true;
+  /**
+   * Send: Messages sent without expecting a reply.
+   * Request: Messages sent to get a reply.
+   * Reply: Messages that reply to a request.
+   */
+  enum MessageType {
+    Send,
+    Request,
+    Reply
   }
 
-  private boolean getIsRequestMessage(final ControlMessage.Message controlMessage) {
-    return true;
-  }
-
-  private boolean getIsReplyMessage(final ControlMessage.Message controlMessage) {
-    return true;
-  }
-
-  private String getMessageType(final ControlMessage.Message controlMessage) {
-    return "";
+  private MessageType getMsgType(final ControlMessage.Message controlMessage) {
+    switch (controlMessage.getType()) {
+      case TaskGroupStateChanged:
+      case ScheduleTaskGroup:
+      case BlockStateChanged:
+      case BroadcastPhysicalPlan:
+        return MessageType.Send;
+      case RequestBlockLocation:
+      case RequestBlock:
+        return MessageType.Request;
+      case BlockLocationInfo:
+      case TransferBlock:
+        return MessageType.Reply;
+      default:
+        throw new IllegalArgumentException(controlMessage.toString());
+    }
   }
 
   private String getExecutorId(final ControlMessage.Message controlMessage) {
-    return "";
+    switch (controlMessage.getType()) {
+      case RequestBlockLocation:
+        return controlMessage.getRequestBlockLocationMsg().getExecutorId();
+      case RequestBlock:
+        return controlMessage.getRequestBlockMsg().getExecutorId();
+      default:
+        throw new IllegalArgumentException(controlMessage.toString());
+    }
+  }
+
+  private long getRequestId(final ControlMessage.Message controlMessage) {
+    switch (controlMessage.getType()) {
+      case BlockLocationInfo:
+        return controlMessage.getBlockLocationInfoMsg().getRequestId();
+      case TransferBlock:
+        return controlMessage.getTransferBlockMsg().getRequestId();
+      default:
+        throw new IllegalArgumentException(controlMessage.toString());
+    }
+  }
+
+  private String getListenerId(final ControlMessage.Message controlMessage) {
+    switch (controlMessage.getType()) {
+      case TaskGroupStateChanged:
+      case BlockStateChanged:
+      case RequestBlockLocation:
+        return MessageEnvironment.MASTER_MESSAGE_RECEIVER;
+      case ScheduleTaskGroup:
+      case BroadcastPhysicalPlan:
+      case RequestBlock:
+        return MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER;
+      default:
+        throw new IllegalArgumentException(controlMessage.toString());
+    }
   }
 }

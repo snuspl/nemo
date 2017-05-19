@@ -110,6 +110,7 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
+      System.out.println("onMessage: " + message);
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
@@ -131,6 +132,7 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
+      System.out.println("onMessageWithContext: " + message);
       switch (message.getType()) {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();
@@ -141,6 +143,7 @@ public final class RuntimeMaster {
                 .setType(ControlMessage.MessageType.BlockLocationInfo)
                 .setBlockLocationInfoMsg(
                     ControlMessage.BlockLocationInfoMsg.newBuilder()
+                        .setRequestId(message.getId())
                         .setBlockId(requestBlockLocationMsg.getBlockId())
                         .setOwnerExecutorId(
                             blockManagerMaster.getBlockLocation(requestBlockLocationMsg.getBlockId()).get())

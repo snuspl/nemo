@@ -37,8 +37,9 @@ message ScheduleTaskGroupMsg {
 }
 
 message BlockLocationInfoMsg {
-    string blockId = 1;
-    string ownerExecutorId = 2;
+    int64 requestId = 1; // To find the matching request msg
+    string blockId = 2;
+    string ownerExecutorId = 3;
 }
 
 message BroadcastPhysicalPlanMsg {
@@ -72,11 +73,12 @@ message RequestBlockMsg {
 }
 
 message TransferBlockMsg {
-    string executorId = 1;
-    string blockId = 2;
-    bytes data = 3; // just for now
+    int64 requestId = 1; // To find the matching request msg
+    string executorId = 2;
+    string blockId = 3;
+    bytes data = 4; // just for now
     // TODO #18: Support code/data serialization
-    bool isUnionValue = 4; // just for now
+    bool isUnionValue = 5; // just for now
 }
 
 enum TaskGroupStateFromExecutor {

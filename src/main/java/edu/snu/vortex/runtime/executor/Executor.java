@@ -131,6 +131,7 @@ public final class Executor {
         physicalPlan = SerializationUtils.deserialize(broadcastPhysicalPlanMsg.getPhysicalPlan().toByteArray());
         break;
       case ScheduleTaskGroup:
+        System.out.println("onMessage: " + message.toString());
         final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();
         final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
         onTaskGroupReceived(taskGroup);
@@ -143,6 +144,7 @@ public final class Executor {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
+      System.out.println("onMessageWithContext: " + message.toString());
       switch (message.getType()) {
       case RequestBlock:
         final ControlMessage.RequestBlockMsg requestBlockMsg = message.getRequestBlockMsg();
@@ -184,6 +186,7 @@ public final class Executor {
                 .setType(ControlMessage.MessageType.TransferBlock)
                 .setTransferBlockMsg(
                     ControlMessage.TransferBlockMsg.newBuilder()
+                        .setRequestId(message.getId())
                         .setExecutorId(executorId)
                         .setBlockId(requestBlockMsg.getBlockId())
                         .setIsUnionValue(isUnionValue)
