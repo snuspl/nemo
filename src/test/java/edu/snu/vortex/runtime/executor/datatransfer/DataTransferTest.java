@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
+import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.block.LocalStore;
@@ -53,37 +54,51 @@ import static org.mockito.Mockito.mock;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 public final class DataTransferTest {
+  private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final String EMPTY_DAG_DIRECTORY = "";
+  private static final int EXECUTOR_CAPACITY = 1;
   private static final int SCHEDULE_TIMEOUT = 1000;
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
-  private static final AtomicInteger EXECUTOR_COUNT = new AtomicInteger(0);
 
-  private RuntimeMaster runtimeMaster; // Unused, but necessary for wiring up the message environments
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
 
   @Before
   public void setUp() {
+    final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, new LocalMessageDispatcher());
+        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final Scheduler scheduler =
         new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
+    final AtomicInteger executorCount = new AtomicInteger(0);
+    final BlockManagerMaster master = new BlockManagerMaster();
 
-    this.runtimeMaster = new RuntimeMaster(scheduler, messageEnvironment, master, EMPTY_DAG_DIRECTORY);
-    this.master = new BlockManagerMaster();
-    this.worker1 = createWorker(messageEnvironment);
-    this.worker2 = createWorker(messageEnvironment);
+    // Unused, but necessary for wiring up the message environments
+    final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, messageEnvironment, master, EMPTY_DAG_DIRECTORY);
+
+    this.master = master;
+    this.worker1 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher);
+    this.worker2 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher);
   }
 
-  private BlockManagerWorker createWorker(final MessageEnvironment messageEnvironment) {
-    final String executorId = "Executor" + EXECUTOR_COUNT.getAndIncrement();
-    return new BlockManagerWorker(
+  private BlockManagerWorker createWorker(final String executorId, final LocalMessageDispatcher messageDispatcher) {
+    final LocalMessageEnvironment messageEnvironment = new LocalMessageEnvironment(executorId, messageDispatcher);
+    final PersistentConnectionToMaster conToMaster = new PersistentConnectionToMaster(messageEnvironment);
+    final BlockManagerWorker blockManagerWorker = new BlockManagerWorker(
+        executorId, new LocalStore(), new PersistentConnectionToMaster(messageEnvironment), messageEnvironment);
+
+    // Unused, but necessary for wiring up the message environments
+    final Executor executor = new Executor(
         executorId,
-        new LocalStore(),
-        new PersistentConnectionToMaster(messageEnvironment),
-        messageEnvironment);
+        EXECUTOR_CAPACITY,
+        conToMaster,
+        messageEnvironment,
+        blockManagerWorker,
+        new DataTransferFactory(blockManagerWorker));
+
+    return blockManagerWorker;
   }
 
   @Test
