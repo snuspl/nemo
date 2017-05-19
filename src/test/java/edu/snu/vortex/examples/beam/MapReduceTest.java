@@ -36,6 +36,7 @@ public final class MapReduceTest {
   @Test
   public void test() throws Exception {
     final ArgBuilder builder = new ArgBuilder()
+        .addJobId(MapReduceTest.class.getSimpleName())
         .addUserMain(mapReduce)
         .addOptimizationPolicy(optimizationPolicy)
         .addUserArgs(input, output)

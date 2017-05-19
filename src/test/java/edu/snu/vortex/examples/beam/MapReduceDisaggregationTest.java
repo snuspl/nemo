@@ -36,6 +36,7 @@ public final class MapReduceDisaggregationTest {
   @Test
   public void test() throws Exception {
     final ArgBuilder builder = new ArgBuilder()
+        .addJobId(MapReduceDisaggregationTest.class.getSimpleName())
         .addUserMain(mapReduce)
         .addOptimizationPolicy(optimizationPolicy)
         .addUserArgs(input, output)

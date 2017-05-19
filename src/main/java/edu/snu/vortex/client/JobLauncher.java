@@ -62,7 +62,7 @@ public final class JobLauncher {
     final Configuration driverMessageConfg = getDriverMessageConf();
 
     // Merge Job and Driver Confs
-    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf);
+    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
 
     // Get Runtime Conf
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
@@ -97,7 +97,7 @@ public final class JobLauncher {
   private static Configuration getDriverConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = Tang.Factory.getTang().newInjector(jobConf);
     final String jobId = injector.getNamedInstance(JobConf.JobId.class);
-    final int driverMemory = injector.getNamedInstance(JobConf.DriverMem.class);
+    final int driverMemory = injector.getNamedInstance(JobConf.DriverMemMb.class);
     return DriverConfiguration.CONF
         .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(VortexDriver.class))
         .set(DriverConfiguration.ON_DRIVER_STARTED, VortexDriver.StartHandler.class)
@@ -118,9 +118,9 @@ public final class JobLauncher {
     cl.registerShortNameOfClass(JobConf.UserMainArguments.class);
     cl.registerShortNameOfClass(JobConf.DAGDirectory.class);
     cl.registerShortNameOfClass(JobConf.OptimizationPolicy.class);
-    cl.registerShortNameOfClass(JobConf.DriverMem.class);
+    cl.registerShortNameOfClass(JobConf.DriverMemMb.class);
     cl.registerShortNameOfClass(JobConf.ExecutorCores.class);
-    cl.registerShortNameOfClass(JobConf.ExecutorMem.class);
+    cl.registerShortNameOfClass(JobConf.ExecutorMemMb.class);
     cl.registerShortNameOfClass(JobConf.ExecutorNum.class);
     cl.registerShortNameOfClass(JobConf.ExecutorCapacity.class);
     cl.registerShortNameOfClass(JobConf.SchedulerTimeoutMs.class);

@@ -36,6 +36,7 @@ public final class MultinomialLogisticRegressionTest {
   private static final String dagDirectory = "./target/dag/mlr";
 
   public static final ArgBuilder builder = new ArgBuilder()
+      .addJobId(MultinomialLogisticRegressionTest.class.getSimpleName())
       .addUserMain(mlr)
       .addOptimizationPolicy(optimizationPolicy)
       .addUserArgs(input, numFeatures, numClasses, numIteration)

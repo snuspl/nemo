@@ -42,11 +42,6 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class DAGDirectory implements Name<String> {
   }
 
-  public static final RequiredParameter<String> JOB_ID = new RequiredParameter<>();
-  public static final RequiredParameter<String> USER_MAIN_CLASS = new RequiredParameter<>();
-  public static final RequiredParameter<String> USER_MAIN_ARGS = new RequiredParameter<>();
-  public static final OptionalParameter<String> DAG_DIRECTORY = new OptionalParameter<>();
-
   //////////////////////////////// Compiler Configurations
 
   /**
@@ -56,49 +51,47 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class OptimizationPolicy implements Name<String> {
   }
 
-  public static final OptionalParameter<String> OPTIMIZATION_POLICY = new OptionalParameter<>();
-
   //////////////////////////////// Runtime Configurations
 
   /**
    * Vortex driver memory.
    */
-  @NamedParameter(doc = "Vortex driver memory", short_name = "driver_mem")
-  public final class DriverMem implements Name<Integer> {
+  @NamedParameter(doc = "Vortex driver memory", short_name = "driver_mem_mb", default_value = "1024")
+  public final class DriverMemMb implements Name<Integer> {
   }
 
   /**
    * Number of vortex executors.
    */
-  @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num")
+  @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num", default_value = "2")
   public final class ExecutorNum implements Name<Integer> {
   }
 
   /**
    * Vortex executor memory.
    */
-  @NamedParameter(doc = "Vortex executor memory", short_name = "executor_mem")
-  public final class ExecutorMem implements Name<Integer> {
+  @NamedParameter(doc = "Vortex executor memory", short_name = "executor_mem_mb", default_value = "1024")
+  public final class ExecutorMemMb implements Name<Integer> {
   }
 
   /**
    * Vortex executor cores.
    */
-  @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores")
+  @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores", default_value = "1")
   public final class ExecutorCores implements Name<Integer> {
   }
 
   /**
    * VortexExecutor capacity.
    */
-  @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity")
+  @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity", default_value = "1")
   public final class ExecutorCapacity implements Name<Integer> {
   }
 
   /**
    * Scheduler timeout in ms.
    */
-  @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms")
+  @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms", default_value = "2000")
   public final class SchedulerTimeoutMs implements Name<Integer> {
   }
 
@@ -109,12 +102,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class ExecutorId implements Name<String> {
   }
 
-  public static final RequiredParameter<Integer> DRIVER_MEM = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> EXECUTOR_NUM = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> EXECUTOR_MEM = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> EXECUTOR_CORES = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> EXECUTOR_CAPACITY = new RequiredParameter<>();
-  public static final RequiredParameter<Integer> SCHEDULER_TIMEOUT_MS = new RequiredParameter<>();
+  public static final OptionalParameter<Integer> EXECUTOR_CAPACITY = new OptionalParameter<>();
   public static final RequiredParameter<String> EXECUTOR_ID = new RequiredParameter<>();
 
   public static final ConfigurationModule EXECUTOR_CONF = new JobConf()

@@ -36,6 +36,7 @@ public final class BroadcastTest {
   @Test
   public void test() throws Exception {
     final ArgBuilder builder = new ArgBuilder()
+        .addJobId(BroadcastTest.class.getSimpleName())
         .addUserMain(broadcast)
         .addOptimizationPolicy(optimizationPolicy)
         .addUserArgs(input, output)

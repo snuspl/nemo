@@ -24,7 +24,6 @@ import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.executor.VortexContext;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
-import edu.snu.vortex.runtime.master.scheduler.SchedulerRunner;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
@@ -75,7 +74,6 @@ public final class VortexDriver {
   private final int executorCapacity;
 
   private final UserApplicationRunner userApplicationRunner;
-  private final SchedulerRunner schedulerRunner;
   private final Scheduler scheduler;
   private final MessageEnvironment messageEnvironment;
 
@@ -86,19 +84,17 @@ public final class VortexDriver {
 
   @Inject
   private VortexDriver(final EvaluatorRequestor evaluatorRequestor,
-                       final SchedulerRunner schedulerRunner,
                        final Scheduler scheduler,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
                        final UserApplicationRunner userApplicationRunner,
                        final MessageEnvironment messageEnvironment,
-                       @Parameter(JobConf.ExecutorMem.class) final int executorMem,
+                       @Parameter(JobConf.ExecutorMemMb.class) final int executorMem,
                        @Parameter(JobConf.ExecutorNum.class) final int executorNum,
                        @Parameter(JobConf.ExecutorCores.class) final int executorCores,
                        @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity) {
     this.userApplicationRunner = userApplicationRunner;
     this.scheduler = scheduler;
-    this.schedulerRunner = schedulerRunner;
     this.evaluatorRequestor = evaluatorRequestor;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
@@ -112,38 +108,11 @@ public final class VortexDriver {
   }
 
   /**
-   * Hack for.
-   * TODO #60: Specify Types in Requesting Containers
-   */
-  private final class ExecutorToBeLaunched {
-    private final RuntimeAttribute resourceType;
-    private final int executorCapacity;
-
-    ExecutorToBeLaunched(final RuntimeAttribute resourceType, final int executorCapacity) {
-      this.resourceType = resourceType;
-      this.executorCapacity = executorCapacity;
-    }
-
-    RuntimeAttribute getResourceType() {
-      return resourceType;
-    }
-
-    int getExecutorCapacity() {
-      return executorCapacity;
-    }
-  }
-
-  /**
    * Driver started.
    */
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      // Launch scheduler
-      final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
-      pendingTaskSchedulerThread.execute(schedulerRunner);
-      pendingTaskSchedulerThread.shutdown();
-
       // Launch resources
       final Set<RuntimeAttribute> completeSetOfResourceType =
           new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
@@ -237,6 +206,7 @@ public final class VortexDriver {
 
   private Configuration getExecutorConfiguration(final String executorId) {
     final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
+        .set(JobConf.EXECUTOR_ID, executorId)
         .set(JobConf.EXECUTOR_CAPACITY, executorCapacity)
         .build();
 

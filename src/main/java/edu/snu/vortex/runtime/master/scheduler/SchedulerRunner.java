@@ -22,7 +22,6 @@ import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,10 +36,9 @@ public final class SchedulerRunner implements Runnable {
   private final SchedulingPolicy schedulingPolicy;
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
-  @Inject
-  private SchedulerRunner(final JobStateManager jobStateManager,
-                          final SchedulingPolicy schedulingPolicy,
-                          final PendingTaskGroupQueue pendingTaskGroupQueue) {
+  SchedulerRunner(final JobStateManager jobStateManager,
+                  final SchedulingPolicy schedulingPolicy,
+                  final PendingTaskGroupQueue pendingTaskGroupQueue) {
     this.jobStateManager = jobStateManager;
     this.schedulingPolicy = schedulingPolicy;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;

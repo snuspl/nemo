@@ -35,6 +35,7 @@ public final class AlternatingLeastSquareTest {
   private static final String dagDirectory = "./target/dag/als";
 
   public static final ArgBuilder builder = new ArgBuilder()
+      .addJobId(AlternatingLeastSquareTest.class.getSimpleName())
       .addUserMain(als)
       .addOptimizationPolicy(optimizationPolicy)
       .addUserArgs(input, numFeatures, numIteration)

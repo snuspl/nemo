@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -66,6 +67,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    */
   private final Map<RuntimeAttribute, Integer> nextExecutorIndexByResourceType;
 
+  @Inject
   public RoundRobinSchedulingPolicy(@Parameter(JobConf.SchedulerTimeoutMs.class) final int scheduleTimeoutMs) {
     this.scheduleTimeoutMs = scheduleTimeoutMs;
     this.lock = new ReentrantLock();

@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,6 +86,12 @@ public final class BatchScheduler implements Scheduler {
                                                   final BlockManagerMaster blockManagerMaster) {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
+
+    // Launch scheduler
+    final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
+    pendingTaskSchedulerThread.execute(new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupQueue));
+    pendingTaskSchedulerThread.shutdown();
+
     broadcastPhysicalPlan();
     scheduleNextStage();
     return jobStateManager;
