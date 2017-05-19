@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
 
@@ -113,6 +114,10 @@ public final class VortexDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
+      System.out.println("Working Directory = " + System.getProperty("user.dir"));
+
+
+
       // Launch resources
       final Set<RuntimeAttribute> completeSetOfResourceType =
           new HashSet<>(Arrays.asList(Transient, Reserved, Compute, Storage));
@@ -121,7 +126,9 @@ public final class VortexDriver {
         // These are hacks to get around
         // TODO #60: Specify Types in Requesting Containers
         final ExecutorToBeLaunched executorToBeLaunched = new ExecutorToBeLaunched(resourceType, executorCapacity);
-        pendingEvaluators.add(executorToBeLaunched);
+        IntStream.range(0, executorNum).forEach(i -> {
+          pendingEvaluators.add(executorToBeLaunched);
+        });
         evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
             .setNumber(executorNum)
             .setMemory(executorMem)
