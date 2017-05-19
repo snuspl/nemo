@@ -94,7 +94,8 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
     public void onNext(final Message<ControlMessage.Message> messages) {
       final ControlMessage.Message controlMessage = extractSingleMessage(messages);
-      System.out.println("onNext: " + controlMessage);
+      // print for debugging
+      // System.out.println("onNext: " + controlMessage);
       final MessageType messageType = getMsgType(controlMessage);
       switch (messageType) {
         case Send:

@@ -210,8 +210,10 @@ public final class BatchScheduler implements Scheduler {
     }
   }
 
- @Override
+  @Override
   public void terminate() {
-   // TODO
+   executorRepresenterMap.entrySet().stream().forEach(e -> {
+     e.getValue().shutDown();
+   });
   }
 }

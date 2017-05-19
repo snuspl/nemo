@@ -139,8 +139,6 @@ public final class BlockManagerWorker {
         throw new NodeConnectionException(e);
       }
 
-      System.out.println("response: " + responseFromMaster.toString());
-
       final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
       assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);
       if (blockLocationInfoMsg == null) {

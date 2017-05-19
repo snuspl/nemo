@@ -179,8 +179,9 @@ public final class VortexDriver {
         } catch (final Exception e) {
           throw new RuntimeException(e);
         }
-        final ExecutorRepresenter executorRepresenter = new ExecutorRepresenter(executorId,
-            executorToBeLaunched.getResourceType(), executorToBeLaunched.getExecutorCapacity(), messageSender);
+        final ExecutorRepresenter executorRepresenter =
+            new ExecutorRepresenter(executorId, executorToBeLaunched.getResourceType(),
+                executorToBeLaunched.getExecutorCapacity(), messageSender, activeContext);
 
         scheduler.onExecutorAdded(executorRepresenter);
       }

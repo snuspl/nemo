@@ -86,6 +86,10 @@ public final class RuntimeMaster {
     }
   }
 
+  public void terminate() {
+    scheduler.terminate();
+  }
+
   /**
    * Generates the {@link PhysicalPlan} to be executed.
    * @param executionPlan that should be converted to a physical plan
@@ -110,7 +114,6 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
-      System.out.println("onMessage: " + message);
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
@@ -132,7 +135,6 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
-      System.out.println("onMessageWithContext: " + message);
       switch (message.getType()) {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();

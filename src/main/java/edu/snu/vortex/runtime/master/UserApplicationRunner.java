@@ -75,6 +75,7 @@ public final class UserApplicationRunner implements Runnable {
       final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
       executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan", "execution plan by compiler");
       runtimeMaster.execute(executionPlan);
+      runtimeMaster.terminate();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
