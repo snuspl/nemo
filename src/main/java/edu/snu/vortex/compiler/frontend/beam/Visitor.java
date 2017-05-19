@@ -141,6 +141,12 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       vortexIRVertex = new OperatorVertex(vortexTransform);
       pValueToVertex.put(view.getView(), vortexIRVertex);
       builder.addVertex(vortexIRVertex, loopVertexStack);
+      // Coders for outgoing edges and incoming edges in BroadcastTransform are same.
+      // Since outgoing PValues for BroadcastTransform is PCollectionView, we cannot use PCollection::getCoder to
+      // obtain coders.
+      final Coder coder = pValueToCoder.get(beamNode.getInputs().stream().map(TaggedPValue::getValue).findFirst()
+          .get());
+      beamNode.getOutputs().stream().map(TaggedPValue::getValue).forEach(output -> pValueToCoder.put(output, coder));
     } else if (beamTransform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
