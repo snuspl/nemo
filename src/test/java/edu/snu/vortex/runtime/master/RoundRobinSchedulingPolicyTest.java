@@ -45,13 +45,13 @@ public final class RoundRobinSchedulingPolicyTest {
     schedulingPolicy = new RoundRobinSchedulingPolicy(2000);
 
     // Add compute nodes
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender));
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1, mockMsgSender));
     schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1, mockMsgSender));
+    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1, mockMsgSender));
+    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender));
 
     // Add storage nodes
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1, mockMsgSender));
     schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1, mockMsgSender));
+    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1, mockMsgSender));
   }
 
   @Test
