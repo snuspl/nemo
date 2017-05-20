@@ -65,6 +65,7 @@ public final class JobLauncher {
     final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
 
     // Get Runtime Conf
+    // TODO #212: Run Vortex on YARN
     final Configuration runtimeConf = LocalRuntimeConfiguration.CONF
         .set(LocalRuntimeConfiguration.MAX_NUMBER_OF_EVALUATORS, 20)
         .build();
