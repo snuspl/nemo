@@ -167,13 +167,14 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case TaskGroupStateChanged:
       case ScheduleTaskGroup:
       case BlockStateChanged:
-      case BroadcastPhysicalPlan:
         return MessageType.Send;
       case RequestBlockLocation:
       case RequestBlock:
+      case RequestPhysicalPlan:
         return MessageType.Request;
       case BlockLocationInfo:
       case TransferBlock:
+      case PhysicalPlan:
         return MessageType.Reply;
       default:
         throw new IllegalArgumentException(controlMessage.toString());
@@ -182,6 +183,8 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
   private String getExecutorId(final ControlMessage.Message controlMessage) {
     switch (controlMessage.getType()) {
+      case RequestPhysicalPlan:
+        return controlMessage.getRequestPhysicalPlanMsg().getExecutorId();
       case RequestBlockLocation:
         return controlMessage.getRequestBlockLocationMsg().getExecutorId();
       case RequestBlock:
@@ -193,6 +196,8 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
   private long getRequestId(final ControlMessage.Message controlMessage) {
     switch (controlMessage.getType()) {
+      case PhysicalPlan:
+        return controlMessage.getPhysicalPlanMsg().getRequestId();
       case BlockLocationInfo:
         return controlMessage.getBlockLocationInfoMsg().getRequestId();
       case TransferBlock:
@@ -207,9 +212,10 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case TaskGroupStateChanged:
       case BlockStateChanged:
       case RequestBlockLocation:
+      case RequestPhysicalPlan:
         return MessageEnvironment.MASTER_MESSAGE_RECEIVER;
       case ScheduleTaskGroup:
-      case BroadcastPhysicalPlan:
+      case PhysicalPlan:
       case RequestBlock:
         return MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER;
       default:

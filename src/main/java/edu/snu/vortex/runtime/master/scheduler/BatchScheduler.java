@@ -15,9 +15,6 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
-import com.google.protobuf.ByteString;
-import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.state.StageState;
@@ -29,7 +26,6 @@ import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.JobStateManager;
-import org.apache.commons.lang.SerializationUtils;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -92,23 +88,8 @@ public final class BatchScheduler implements Scheduler {
     pendingTaskSchedulerThread.execute(new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupQueue));
     pendingTaskSchedulerThread.shutdown();
 
-    broadcastPhysicalPlan();
     scheduleNextStage();
     return jobStateManager;
-  }
-
-  private void broadcastPhysicalPlan() {
-    ControlMessage.Message message =
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.BroadcastPhysicalPlan)
-            .setBroadcastPhysicalPlanMsg(
-                ControlMessage.BroadcastPhysicalPlanMsg.newBuilder()
-                    .setPhysicalPlan(ByteString.copyFrom(SerializationUtils.serialize(physicalPlan)))
-                    .build())
-            .build();
-
-    executorRepresenterMap.forEach((executorId, representer) -> representer.sendControlMessage(message));
   }
 
   /**

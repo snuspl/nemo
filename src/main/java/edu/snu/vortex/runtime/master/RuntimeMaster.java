@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import com.google.protobuf.ByteString;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
@@ -32,6 +33,7 @@ import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -54,6 +56,7 @@ public final class RuntimeMaster {
   private JobStateManager jobStateManager;
 
   private final String dagDirectory;
+  private PhysicalPlan physicalPlan;
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
@@ -73,7 +76,7 @@ public final class RuntimeMaster {
    * @param executionPlan to execute.
    */
   public void execute(final ExecutionPlan executionPlan) {
-    final PhysicalPlan physicalPlan = generatePhysicalPlan(executionPlan);
+    physicalPlan = generatePhysicalPlan(executionPlan);
     try {
       // TODO #187: Cleanup Execution Threads
       jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
@@ -99,10 +102,10 @@ public final class RuntimeMaster {
     final DAG<Stage, StageEdge> logicalDAG = executionPlan.getRuntimeStageDAG();
     logicalDAG.storeJSON(dagDirectory, "plan-logical", "logical execution plan");
 
-    final PhysicalPlan physicalPlan = new PhysicalPlan(executionPlan.getId(),
+    final PhysicalPlan plan = new PhysicalPlan(executionPlan.getId(),
         logicalDAG.convert(new PhysicalDAGGenerator()));
-    physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan-physical", "physical execution plan");
-    return physicalPlan;
+    plan.getStageDAG().storeJSON(dagDirectory, "plan-physical", "physical execution plan");
+    return plan;
   }
 
   /**
@@ -138,7 +141,6 @@ public final class RuntimeMaster {
       switch (message.getType()) {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();
-
         messageContext.reply(
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
@@ -149,6 +151,18 @@ public final class RuntimeMaster {
                         .setBlockId(requestBlockLocationMsg.getBlockId())
                         .setOwnerExecutorId(
                             blockManagerMaster.getBlockLocation(requestBlockLocationMsg.getBlockId()).get())
+                        .build())
+                .build());
+        break;
+      case RequestPhysicalPlan:
+        messageContext.reply(
+            ControlMessage.Message.newBuilder()
+                .setId(RuntimeIdGenerator.generateMessageId())
+                .setType(ControlMessage.MessageType.PhysicalPlan)
+                .setPhysicalPlanMsg(
+                    ControlMessage.PhysicalPlanMsg.newBuilder()
+                        .setRequestId(message.getId())
+                        .setPhysicalPlan(ByteString.copyFrom(SerializationUtils.serialize(physicalPlan)))
                         .build())
                 .build());
         break;

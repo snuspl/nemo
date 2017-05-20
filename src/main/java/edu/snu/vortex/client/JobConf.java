@@ -62,13 +62,15 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Number of vortex executors.
+   * TODO #205: Allow for Per-ResourceType Configurations
    */
-  @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num", default_value = "2")
+  @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num", default_value = "1")
   public final class ExecutorNum implements Name<Integer> {
   }
 
   /**
    * Vortex executor memory.
+   * TODO #205: Allow for Per-ResourceType Configurations
    */
   @NamedParameter(doc = "Vortex executor memory", short_name = "executor_mem_mb", default_value = "1024")
   public final class ExecutorMemMb implements Name<Integer> {
@@ -76,6 +78,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Vortex executor cores.
+   * TODO #205: Allow for Per-ResourceType Configurations
    */
   @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores", default_value = "1")
   public final class ExecutorCores implements Name<Integer> {
@@ -83,6 +86,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * VortexExecutor capacity.
+   * TODO #205: Allow for Per-ResourceType Configurations
    */
   @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity", default_value = "1")
   public final class ExecutorCapacity implements Name<Integer> {

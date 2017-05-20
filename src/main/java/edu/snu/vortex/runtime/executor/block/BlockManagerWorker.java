@@ -135,7 +135,6 @@ public final class BlockManagerWorker {
                       .build())
               .build()).get();
       } catch (Exception e) {
-        e.printStackTrace();
         throw new NodeConnectionException(e);
       }
 

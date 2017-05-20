@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -74,7 +75,7 @@ public final class Executor {
    */
   private final DataTransferFactory dataTransferFactory;
 
-  private PhysicalPlan physicalPlan;
+  private volatile PhysicalPlan physicalPlan;
   private TaskGroupStateManager taskGroupStateManager;
 
   private final PersistentConnectionToMaster persistentConnectionToMaster;
@@ -111,6 +112,28 @@ public final class Executor {
    */
   private void launchTaskGroup(final TaskGroup taskGroup) {
     taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, persistentConnectionToMaster);
+
+    // TODO #207: Have Executors lazily fetch PhysicalPlan.
+    synchronized (this) {
+      if (physicalPlan == null) {
+        try {
+          final ControlMessage.Message response =
+              persistentConnectionToMaster.getMessageSender().
+                  <ControlMessage.Message>request(ControlMessage.Message.newBuilder()
+                      .setId(RuntimeIdGenerator.generateMessageId())
+                      .setType(ControlMessage.MessageType.RequestPhysicalPlan)
+                      .setRequestPhysicalPlanMsg(ControlMessage.RequestPhysicalPlanMsg.newBuilder()
+                          .setExecutorId(executorId)
+                          .build())
+                      .build())
+                  .get();
+          physicalPlan = SerializationUtils.deserialize(response.getPhysicalPlanMsg().getPhysicalPlan().toByteArray());
+        } catch (ExecutionException | InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
     new TaskGroupExecutor(taskGroup,
         taskGroupStateManager,
         physicalPlan.getStageDAG().getIncomingEdgesOf(taskGroup.getStageId()),
@@ -126,10 +149,6 @@ public final class Executor {
     @Override
     public void onMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
-      case BroadcastPhysicalPlan:
-        final ControlMessage.BroadcastPhysicalPlanMsg broadcastPhysicalPlanMsg = message.getBroadcastPhysicalPlanMsg();
-        physicalPlan = SerializationUtils.deserialize(broadcastPhysicalPlanMsg.getPhysicalPlan().toByteArray());
-        break;
       case ScheduleTaskGroup:
         final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();
         final TaskGroup taskGroup = SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
