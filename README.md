@@ -13,21 +13,16 @@ Vortex is a data-processing system composed of modular components.
 * Protobuf 3.2.0
 
 ## Examples
-./bin/run.sh -job_id MapReduce_none -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy none -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy disaggregation -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy runtime_opt -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.Broadcast -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
-
-./bin/run.sh -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
-
+```bash
+./bin/run.sh -job_id mr_none -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy none -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id mr_disaggr -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy disaggregation -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id mr_runtime_opt -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy runtime_opt -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id broadcast_pado -user_main edu.snu.vortex.examples.beam.Broadcast -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id als_pado -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
+./bin/run.sh -job_id mlr_pado -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
 java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce
+```
 
 ## DAG Visualization
 Vortex Compiler and Engine stores JSON representation of intermediate DAGs.
