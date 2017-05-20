@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Pending VortexTask Launcher.
+ * Takes a TaskGroup from the pending queue and schedules it to an executor.
  */
 @DriverSide
 public final class SchedulerRunner implements Runnable {

@@ -95,7 +95,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
     public void onNext(final Message<ControlMessage.Message> messages) {
       final ControlMessage.Message controlMessage = extractSingleMessage(messages);
-      // print for debugging
+      // comment out when debugging :)
       // System.out.println("onNext: " + controlMessage);
       final MessageType messageType = getMsgType(controlMessage);
       switch (messageType) {
@@ -156,6 +156,10 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
    * Send: Messages sent without expecting a reply.
    * Request: Messages sent to get a reply.
    * Reply: Messages that reply to a request.
+   *
+   * Not sure these variable names are conventionally used in RPC frameworks...
+   * Let's revisit them when we work on
+   * TODO #206: Rethink/Refactor NCS as our RPC stack
    */
   enum MessageType {
     Send,

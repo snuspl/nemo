@@ -24,14 +24,14 @@ final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
 
   @Override
   public void send(final ControlMessage.Message message) {
-    // print for debugging
+    // comment out when debugging :)
     // System.out.println("send: " + message.toString());
     connection.write(message);
   }
 
   @Override
   public <U> Future<U> request(final ControlMessage.Message message) {
-    // print for debugging
+    // comment out when debugging :)
     // System.out.println("request: " + message.toString());
     connection.write(message);
     return (Future) replyWaitingLock.waitingReply(message.getId());

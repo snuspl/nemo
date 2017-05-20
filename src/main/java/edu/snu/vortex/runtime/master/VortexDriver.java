@@ -80,6 +80,7 @@ public final class VortexDriver {
 
   // These are hacks to get around
   // TODO #60: Specify Types in Requesting Containers
+  // TODO #211: An Abstraction for Managing Resources
   private final List<ExecutorToBeLaunched> pendingEvaluators;
   private final Map<String, ExecutorToBeLaunched> executorIdToPendingContext;
 
@@ -121,6 +122,7 @@ public final class VortexDriver {
         // For each type, request executorNum of evaluators
         // These are hacks to get around
         // TODO #60: Specify Types in Requesting Containers
+        // TODO #211: An Abstraction for Managing Resources
         final ExecutorToBeLaunched executorToBeLaunched = new ExecutorToBeLaunched(resourceType, executorCapacity);
         IntStream.range(0, executorNum).forEach(i -> {
           pendingEvaluators.add(executorToBeLaunched);
@@ -150,6 +152,7 @@ public final class VortexDriver {
         // Match one-by-one from the list assuming homogeneous evaluators
         // These are hacks to get around
         // TODO #60: Specify Types in Requesting Containers
+        // TODO #211: An Abstraction for Managing Resources
         final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
@@ -168,6 +171,7 @@ public final class VortexDriver {
       synchronized (this) {
         // These are hacks to get around
         // TODO #60: Specify Types in Requesting Containers
+        // TODO #211: An Abstraction for Managing Resources
         final String executorId = activeContext.getId(); // Because we set: contextId = executorId
         final ExecutorToBeLaunched executorToBeLaunched = executorIdToPendingContext.get(executorId);
 

@@ -82,6 +82,8 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Vortex executor cores.
+   * Used in requesting resources to a resource manager
+   * (e.g., With 3 executor_cores, we request YARN for YARN containers with 3 cores)
    * TODO #205: Allow for Per-ResourceType Configurations
    */
   @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores", default_value = "1")
@@ -90,6 +92,10 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * VortexExecutor capacity.
+   * Determines the number of TaskGroup 'slots' for each executor.
+   * 1) Master's TaskGroup scheduler can use this number in scheduling.
+   *    (e.g., schedule TaskGroup to the executor currently with the maximum number of available slots)
+   * 2) Executor's number of TaskGroup execution threads is set to this number.
    * TODO #205: Allow for Per-ResourceType Configurations
    */
   @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity", default_value = "1")
