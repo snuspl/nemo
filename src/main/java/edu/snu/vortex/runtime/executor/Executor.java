@@ -113,7 +113,7 @@ public final class Executor {
   private void launchTaskGroup(final TaskGroup taskGroup) {
     taskGroupStateManager = new TaskGroupStateManager(taskGroup, executorId, persistentConnectionToMaster);
 
-    // TODO #207: Have Executors lazily fetch PhysicalPlan.
+    // TODO #207: Multi-job and Versioned PhysicalPlan Fetching
     synchronized (this) {
       if (physicalPlan == null) {
         try {

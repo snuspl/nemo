@@ -49,6 +49,7 @@ public final class SchedulerRunner implements Runnable {
    */
   @Override
   public void run() {
+    // TODO #208: Check for Job Termination in a Cleaner Way
     while (!jobStateManager.checkJobCompletion()) {
       try {
         final TaskGroup taskGroup = pendingTaskGroupQueue.takeFirst();

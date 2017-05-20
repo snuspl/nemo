@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 
 /**
  * Message environment for NCS.
+ * TODO #206: Rethink/Refactor NCS as our RPC stack
  */
 public final class NcsMessageEnvironment implements MessageEnvironment {
 

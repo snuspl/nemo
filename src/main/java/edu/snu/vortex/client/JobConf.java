@@ -63,6 +63,10 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Number of vortex executors.
    * TODO #205: Allow for Per-ResourceType Configurations
+   *
+   * WARNING: THE ACTUAL NUMBER WILL BE 4 * Executor Num due to hacks to get around.
+   * TODO #60: Specify Types in Requesting Containers
+   * See VortexDriver for the hacks. :-)
    */
   @NamedParameter(doc = "Number of vortex executors", short_name = "executor_num", default_value = "1")
   public final class ExecutorNum implements Name<Integer> {

@@ -32,7 +32,7 @@ public final class MapReduceTest {
   private final String optimizationPolicy = "pado";
   private final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
-  private final String dagDirectory = TestUtil.rootDir + "/target/dag/mr";
+  private final String dagDirectory = "./dag";
 
   @Test
   public void test() throws Exception {

@@ -21,8 +21,10 @@ import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
+import org.apache.reef.driver.context.ActiveContext;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.Optional;
 import java.util.Set;
@@ -43,15 +45,22 @@ public final class RoundRobinSchedulingPolicyTest {
   @Before
   public void setUp() {
     schedulingPolicy = new RoundRobinSchedulingPolicy(2000);
+    final ActiveContext activeContext = mock(ActiveContext.class);
+    Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
     // Add compute nodes
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1, mockMsgSender, null));
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1, mockMsgSender, null));
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender, null));
+    schedulingPolicy
+        .onExecutorAdded(new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
+    schedulingPolicy
+        .onExecutorAdded(new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
+    schedulingPolicy
+        .onExecutorAdded(new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
 
     // Add storage nodes
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1, mockMsgSender, null));
-    schedulingPolicy.onExecutorAdded(new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1, mockMsgSender, null));
+    schedulingPolicy
+        .onExecutorAdded(new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1, mockMsgSender, activeContext));
+    schedulingPolicy
+        .onExecutorAdded(new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1, mockMsgSender, activeContext));
   }
 
   @Test

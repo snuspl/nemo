@@ -33,7 +33,7 @@ public final class AlternatingLeastSquareTest {
   private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_als";
   private static final String numFeatures = "10";
   private static final String numIteration = "3";
-  private static final String dagDirectory = "./target/dag/als";
+  private static final String dagDirectory = "./dag";
 
   public static final ArgBuilder builder = new ArgBuilder()
       .addJobId(AlternatingLeastSquareTest.class.getSimpleName())

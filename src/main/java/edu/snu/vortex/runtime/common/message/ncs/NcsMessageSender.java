@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 
 /**
  * MessageSender for NCS.
+ * TODO #206: Rethink/Refactor NCS as our RPC stack
  */
 final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
 
