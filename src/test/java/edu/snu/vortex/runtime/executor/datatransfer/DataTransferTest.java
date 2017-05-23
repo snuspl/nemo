@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
+import edu.snu.vortex.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
@@ -27,6 +28,12 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
+import edu.snu.vortex.runtime.common.plan.logical.Stage;
+import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
@@ -37,6 +44,10 @@ import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.DAGBuilder;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.values.KV;
 import org.apache.reef.tang.InjectionFuture;
@@ -147,12 +158,18 @@ public final class DataTransferTest {
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
     final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
+    final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> srcStageDAG
+        = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(srcVertex).build();
+    final Stage srcStage = new Stage("srcStage", srcStageDAG);
 
     // Dst setup
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
     dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
     final BoundedSourceVertex v2 = new BoundedSourceVertex<>(s);
     final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
+    final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> dstStageDAG
+        = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(dstVertex).build();
+    final Stage dstStage = new Stage("dstStage", dstStageDAG);
 
     // Edge setup
     final String edgeId = "Dummy";
@@ -160,8 +177,30 @@ public final class DataTransferTest {
     edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
     edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
-    final RuntimeEdge<RuntimeVertex> dummyEdge
-        = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, Coder.DUMMY_CODER);
+    final Coder coder = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
+    final StageEdge dummyEdge = new StageEdge(edgeId, edgeAttributes, srcStage, dstStage, coder, srcVertex, dstVertex);
+
+    // Prepare physical DAG
+    final DAG<Stage, StageEdge> logicalDAG = new DAGBuilder<Stage, StageEdge>()
+        .addVertex(srcStage).addVertex(dstStage).connectVertices(dummyEdge).build();
+    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+    final List<PhysicalStage> stages = physicalDAG.getVertices();
+    final PhysicalStage srcPhysicalStage;
+    final PhysicalStage dstPhysicalStage;
+    final PhysicalStageEdge physicalStageEdge;
+    if (physicalDAG.getOutgoingEdgesOf(stages.get(0)).size() != 0) {
+      srcPhysicalStage = stages.get(0);
+      dstPhysicalStage = stages.get(1);
+      physicalStageEdge = physicalDAG.getOutgoingEdgesOf(stages.get(0)).get(0);
+    } else {
+      srcPhysicalStage = stages.get(1);
+      dstPhysicalStage = stages.get(0);
+      physicalStageEdge = physicalDAG.getOutgoingEdgesOf(stages.get(1)).get(0);
+    }
+    final ScheduledTaskGroup srcTaskGroup = new ScheduledTaskGroup(srcPhysicalStage.getTaskGroupList().get(0),
+        Collections.emptyList(), Collections.singletonList(physicalStageEdge));
+    final ScheduledTaskGroup dstTaskGroup = new ScheduledTaskGroup(dstPhysicalStage.getTaskGroupList().get(0),
+        Collections.singletonList(physicalStageEdge), Collections.emptyList());
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
