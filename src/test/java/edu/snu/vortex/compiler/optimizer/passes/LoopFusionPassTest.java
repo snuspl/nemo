@@ -31,6 +31,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test {@link LoopFusionPass}.
@@ -50,6 +51,8 @@ public class LoopFusionPassTest {
       builder.addVertex(v, groupedDAG);
       groupedDAG.getIncomingEdgesOf(v).forEach(builder::connectVertices);
     });
+    // We're going to put this additional loop to the DAG, to test out the LoopFusion.
+    assertTrue(anotherLoop.isPresent());
     anotherLoop.ifPresent(loopVertex -> {
       final LoopVertex newLoopVertex = loopVertex.getClone();
       builder.addVertex(newLoopVertex);
