@@ -21,8 +21,10 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
@@ -33,10 +35,7 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
@@ -84,14 +83,14 @@ public final class DataTransferTest {
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
+  private Scheduler scheduler;
 
   @Before
   public void setUp() {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    final Scheduler scheduler =
-        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
+    this.scheduler = new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
     final AtomicInteger executorCount = new AtomicInteger(0);
     final BlockManagerMaster master = new BlockManagerMaster();
 
@@ -161,24 +160,25 @@ public final class DataTransferTest {
                             final BlockManagerWorker receiver,
                             final RuntimeAttribute commPattern) {
     // Src setup
+    final BoundedSource s = mock(BoundedSource.class);
     final RuntimeAttributeMap srcVertexAttributes = new RuntimeAttributeMap();
     srcVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-
-    final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex v1 = new BoundedSourceVertex<>(s);
     final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
-    final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> srcStageDAG
-        = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(srcVertex).build();
-    final Stage srcStage = new Stage("0", srcStageDAG);
+    final BoundedSourceTask srcTask = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(), "srcTask", 0, null);
+    final TaskGroup srcTaskGroup = new TaskGroup("srcTaskGroup", "srcStage",
+        new DAGBuilder().addVertex(srcTask).build(), RuntimeAttribute.Reserved);
+    final PhysicalStage srcPhysicalStage = new PhysicalStage("srcStage-0", Collections.singletonList(srcTaskGroup));
 
     // Dst setup
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
     dstVertexAttributes.put(RuntimeAttribute.IntegerKey.Parallelism, PARALLELISM_TEN);
     final BoundedSourceVertex v2 = new BoundedSourceVertex<>(s);
     final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
-    final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> dstStageDAG
-        = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(dstVertex).build();
-    final Stage dstStage = new Stage("1", dstStageDAG);
+    final BoundedSourceTask dstTask = new BoundedSourceTask(RuntimeIdGenerator.generateTaskId(), "dstTask", 0, null);
+    final TaskGroup dstTaskGroup = new TaskGroup("dstTaskGroup", "dstStage",
+        new DAGBuilder().addVertex(dstTask).build(), RuntimeAttribute.Reserved);
+    final PhysicalStage dstPhysicalStage = new PhysicalStage("dstStage-1", Collections.singletonList(dstTaskGroup));
 
     // Edge setup
     final String edgeId = "Dummy";
@@ -187,29 +187,18 @@ public final class DataTransferTest {
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
     edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
     final Coder coder = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
-    final StageEdge dummyEdge = new StageEdge(edgeId, edgeAttributes, srcStage, dstStage, coder, srcVertex, dstVertex);
+    final RuntimeEdge<RuntimeVertex> dummyEdge = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, coder);
+    final PhysicalStageEdge physicalStageEdge = new PhysicalStageEdge(edgeId, edgeAttributes, srcVertex, dstVertex,
+        null, srcPhysicalStage, dstPhysicalStage, coder);
 
     // Prepare task group
-    final DAG<Stage, StageEdge> logicalDAG = new DAGBuilder<Stage, StageEdge>()
-        .addVertex(srcStage).addVertex(dstStage).connectVertices(dummyEdge).build();
-    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
-    final List<PhysicalStage> stages = physicalDAG.getVertices();
-    final PhysicalStage srcPhysicalStage;
-    final PhysicalStage dstPhysicalStage;
-    final PhysicalStageEdge physicalStageEdge;
-    if (physicalDAG.getOutgoingEdgesOf(stages.get(0)).size() != 0) {
-      srcPhysicalStage = stages.get(0);
-      dstPhysicalStage = stages.get(1);
-      physicalStageEdge = physicalDAG.getOutgoingEdgesOf(stages.get(0)).get(0);
-    } else {
-      srcPhysicalStage = stages.get(1);
-      dstPhysicalStage = stages.get(0);
-      physicalStageEdge = physicalDAG.getOutgoingEdgesOf(stages.get(1)).get(0);
-    }
-    final ScheduledTaskGroup srcTaskGroup = new ScheduledTaskGroup(srcPhysicalStage.getTaskGroupList().get(0),
+    final PhysicalPlan physicalPlan = new PhysicalPlan("plan", new DAGBuilder().addVertex(srcPhysicalStage)
+        .addVertex(dstPhysicalStage).connectVertices(physicalStageEdge).build());
+    final ScheduledTaskGroup srcScheduledTaskGroup = new ScheduledTaskGroup(srcPhysicalStage.getTaskGroupList().get(0),
         Collections.emptyList(), Collections.singletonList(physicalStageEdge));
-    final ScheduledTaskGroup dstTaskGroup = new ScheduledTaskGroup(dstPhysicalStage.getTaskGroupList().get(0),
+    final ScheduledTaskGroup dstScheduledTaskGroup = new ScheduledTaskGroup(dstPhysicalStage.getTaskGroupList().get(0),
         Collections.singletonList(physicalStageEdge), Collections.emptyList());
+    scheduler.scheduleJob(physicalPlan, master);
 
     // Schedule task group
     final ControlMessage.Message srcSetupMessage = ControlMessage.Message.newBuilder()
@@ -217,7 +206,7 @@ public final class DataTransferTest {
         .setType(ControlMessage.MessageType.ScheduleTaskGroup)
         .setScheduleTaskGroupMsg(
             ControlMessage.ScheduleTaskGroupMsg.newBuilder()
-                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(srcTaskGroup)))
+                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(srcScheduledTaskGroup)))
                 .build())
         .build();
     final ControlMessage.Message dstSetupMessage = ControlMessage.Message.newBuilder()
@@ -225,7 +214,7 @@ public final class DataTransferTest {
         .setType(ControlMessage.MessageType.ScheduleTaskGroup)
         .setScheduleTaskGroupMsg(
             ControlMessage.ScheduleTaskGroupMsg.newBuilder()
-                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(dstTaskGroup)))
+                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(dstScheduledTaskGroup)))
                 .build())
         .build();
     workerToMessageSender.get(sender).send(srcSetupMessage);
