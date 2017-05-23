@@ -24,7 +24,6 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
@@ -46,7 +45,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -75,7 +73,6 @@ public final class Executor {
    */
   private final DataTransferFactory dataTransferFactory;
 
-  private volatile PhysicalPlan physicalPlan;
   private TaskGroupStateManager taskGroupStateManager;
 
   private final PersistentConnectionToMaster persistentConnectionToMaster;
@@ -113,27 +110,6 @@ public final class Executor {
   private void launchTaskGroup(final ScheduledTaskGroup scheduledTaskGroup) {
     taskGroupStateManager = new TaskGroupStateManager(scheduledTaskGroup.getTaskGroup(),
         executorId, persistentConnectionToMaster);
-
-    // TODO #207: Multi-job and Versioned PhysicalPlan Fetching
-    synchronized (this) {
-      if (physicalPlan == null) {
-        try {
-          final ControlMessage.Message response =
-              persistentConnectionToMaster.getMessageSender().
-                  <ControlMessage.Message>request(ControlMessage.Message.newBuilder()
-                      .setId(RuntimeIdGenerator.generateMessageId())
-                      .setType(ControlMessage.MessageType.RequestPhysicalPlan)
-                      .setRequestPhysicalPlanMsg(ControlMessage.RequestPhysicalPlanMsg.newBuilder()
-                          .setExecutorId(executorId)
-                          .build())
-                      .build())
-                  .get();
-          physicalPlan = SerializationUtils.deserialize(response.getPhysicalPlanMsg().getPhysicalPlan().toByteArray());
-        } catch (ExecutionException | InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    }
 
     new TaskGroupExecutor(scheduledTaskGroup.getTaskGroup(),
         taskGroupStateManager,
