@@ -65,7 +65,7 @@ public final class LoopFusionPass implements Pass {
     loopVertices.values().forEach(loops -> loops.forEach(loopVertex -> {
       final List<Map.Entry<IRVertex, Set<IREdge>>> candidates = loopVertex.getNonIterativeIncomingEdges().entrySet()
           .stream().filter(entry ->
-              loopVertex.getDAG().getIncomingEdgesOf(entry.getKey()).size() == 0// no internal inEdges
+              loopVertex.getDAG().getIncomingEdgesOf(entry.getKey()).size() == 0 // no internal inEdges
               && loopVertex.getIterativeIncomingEdges().get(entry.getKey()).size() == 0) // no external inEdges
           .collect(Collectors.toList());
       candidates.forEach(candidate -> {
@@ -100,6 +100,12 @@ public final class LoopFusionPass implements Pass {
             IREdge.copyAttributes(irEdge, newIREdge);
             builder.connectVertices(newIREdge);
           });
+        });
+      } else {
+        loops.forEach(loopVertex -> {
+          builder.addVertex(loopVertex);
+          inEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(builder::connectVertices);
+          outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(builder::connectVertices);
         });
       }
     });
