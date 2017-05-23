@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.datatransfer;
 
+import com.google.protobuf.ByteString;
 import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
@@ -22,9 +23,11 @@ import edu.snu.vortex.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeAttributeMap;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageSender;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeBoundedSourceVertex;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
@@ -50,6 +53,7 @@ import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.values.KV;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -76,6 +80,7 @@ public final class DataTransferTest {
   private static final RuntimeAttribute STORE = RuntimeAttribute.Local;
   private static final int PARALLELISM_TEN = 10;
 
+  private final Map<BlockManagerWorker, LocalMessageSender> workerToMessageSender = new HashMap<>();
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
@@ -115,12 +120,16 @@ public final class DataTransferTest {
         new DataTransferFactory(blockManagerWorker));
     injector.bindVolatileInstance(Executor.class, executor);
 
+    final LocalMessageSender messageSender = new LocalMessageSender(MessageEnvironment.MASTER_COMMUNICATION_ID,
+        executorId, MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, messageDispatcher);
+    workerToMessageSender.put(blockManagerWorker, messageSender);
+
     return blockManagerWorker;
   }
 
   @Test
   public void testOneToOneSameWorker() {
-    // writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
+    writeAndRead(worker1, worker1, RuntimeAttribute.OneToOne);
   }
 
   @Test
@@ -160,7 +169,7 @@ public final class DataTransferTest {
     final RuntimeVertex srcVertex = new RuntimeBoundedSourceVertex(v1, srcVertexAttributes);
     final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> srcStageDAG
         = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(srcVertex).build();
-    final Stage srcStage = new Stage("srcStage", srcStageDAG);
+    final Stage srcStage = new Stage("0", srcStageDAG);
 
     // Dst setup
     final RuntimeAttributeMap dstVertexAttributes = new RuntimeAttributeMap();
@@ -169,7 +178,7 @@ public final class DataTransferTest {
     final RuntimeVertex dstVertex = new RuntimeBoundedSourceVertex(v2, dstVertexAttributes);
     final DAG<RuntimeVertex, RuntimeEdge<RuntimeVertex>> dstStageDAG
         = new DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>>().addVertex(dstVertex).build();
-    final Stage dstStage = new Stage("dstStage", dstStageDAG);
+    final Stage dstStage = new Stage("1", dstStageDAG);
 
     // Edge setup
     final String edgeId = "Dummy";
@@ -180,7 +189,7 @@ public final class DataTransferTest {
     final Coder coder = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
     final StageEdge dummyEdge = new StageEdge(edgeId, edgeAttributes, srcStage, dstStage, coder, srcVertex, dstVertex);
 
-    // Prepare physical DAG
+    // Prepare task group
     final DAG<Stage, StageEdge> logicalDAG = new DAGBuilder<Stage, StageEdge>()
         .addVertex(srcStage).addVertex(dstStage).connectVertices(dummyEdge).build();
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
@@ -201,6 +210,26 @@ public final class DataTransferTest {
         Collections.emptyList(), Collections.singletonList(physicalStageEdge));
     final ScheduledTaskGroup dstTaskGroup = new ScheduledTaskGroup(dstPhysicalStage.getTaskGroupList().get(0),
         Collections.singletonList(physicalStageEdge), Collections.emptyList());
+
+    // Schedule task group
+    final ControlMessage.Message srcSetupMessage = ControlMessage.Message.newBuilder()
+        .setId(0)
+        .setType(ControlMessage.MessageType.ScheduleTaskGroup)
+        .setScheduleTaskGroupMsg(
+            ControlMessage.ScheduleTaskGroupMsg.newBuilder()
+                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(srcTaskGroup)))
+                .build())
+        .build();
+    final ControlMessage.Message dstSetupMessage = ControlMessage.Message.newBuilder()
+        .setId(0)
+        .setType(ControlMessage.MessageType.ScheduleTaskGroup)
+        .setScheduleTaskGroupMsg(
+            ControlMessage.ScheduleTaskGroupMsg.newBuilder()
+                .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(dstTaskGroup)))
+                .build())
+        .build();
+    workerToMessageSender.get(sender).send(srcSetupMessage);
+    workerToMessageSender.get(receiver).send(dstSetupMessage);
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
