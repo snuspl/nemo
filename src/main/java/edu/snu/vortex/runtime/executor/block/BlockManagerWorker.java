@@ -35,6 +35,8 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Executor-side block manager.
@@ -54,6 +56,8 @@ public final class BlockManagerWorker {
 
   private final PersistentConnectionToMaster persistentConnectionToMaster;
 
+  private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
+
   @Inject
   public BlockManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
                             final InjectionFuture<Executor> executor,
@@ -66,6 +70,29 @@ public final class BlockManagerWorker {
     this.messageEnvironment = messageEnvironment;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.idOfBlocksStoredInThisWorker = new HashSet<>();
+    this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Return the coder for the specified runtime edge.
+   * @param runtimeEdgeId id of the runtime edge
+   * @return the corresponding coder
+   */
+  public Coder getCoder(final String runtimeEdgeId) {
+    final Coder coder = runtimeEdgeIdToCoder.get(runtimeEdgeId);
+    if (coder == null) {
+      throw new RuntimeException("No coder is registered for " + runtimeEdgeId);
+    }
+    return coder;
+  }
+
+  /**
+   * Register a coder for runtime edge.
+   * @param runtimeEdgeId id of the runtime edge
+   * @param coder the corresponding coder
+   */
+  public void registerCoder(final String runtimeEdgeId, final Coder coder) {
+    runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
   }
 
   /**
@@ -192,8 +219,7 @@ public final class BlockManagerWorker {
       }
 
       // TODO #199: Introduce Data Plane
-      final Coder coder = executor.get().getTaskGroup().getTaskGroupIncomingEdges().stream()
-          .filter(e -> e.getId().equals(runtimeEdgeId)).findFirst().get().getCoder();
+      final Coder coder = getCoder(runtimeEdgeId);
       final List<Element> deserializedData = new ArrayList<>();
       ArrayList<byte[]> data = SerializationUtils.deserialize(transferBlockMsg.getData().toByteArray());
       data.forEach(bytes -> {

@@ -67,8 +67,6 @@ public final class Executor {
 
   private TaskGroupStateManager taskGroupStateManager;
 
-  private ScheduledTaskGroup taskGroup;
-
   private final PersistentConnectionToMaster persistentConnectionToMaster;
 
   @Inject
@@ -91,10 +89,6 @@ public final class Executor {
     return executorId;
   }
 
-  public ScheduledTaskGroup getTaskGroup() {
-    return taskGroup;
-  }
-
   private synchronized void onTaskGroupReceived(final ScheduledTaskGroup scheduledTaskGroup) {
     LOG.log(Level.FINE, "Executor [{0}] received TaskGroup [{1}] to execute.",
         new Object[]{executorId, scheduledTaskGroup.getTaskGroup().getTaskGroupId()});
@@ -108,7 +102,11 @@ public final class Executor {
   private void launchTaskGroup(final ScheduledTaskGroup scheduledTaskGroup) {
     taskGroupStateManager = new TaskGroupStateManager(scheduledTaskGroup.getTaskGroup(),
         executorId, persistentConnectionToMaster);
-    this.taskGroup = scheduledTaskGroup;
+
+    scheduledTaskGroup.getTaskGroupIncomingEdges()
+        .forEach(e -> blockManagerWorker.registerCoder(e.getId(), e.getCoder()));
+    scheduledTaskGroup.getTaskGroupOutgoingEdges()
+        .forEach(e -> blockManagerWorker.registerCoder(e.getId(), e.getCoder()));
 
     new TaskGroupExecutor(scheduledTaskGroup.getTaskGroup(),
         taskGroupStateManager,
@@ -146,8 +144,7 @@ public final class Executor {
         final Iterable<Element> data = blockManagerWorker.getBlock(requestBlockMsg.getBlockId(),
             requestBlockMsg.getRuntimeEdgeId(), convertBlockStoreType(requestBlockMsg.getBlockStore()));
 
-        final Coder coder = taskGroup.getTaskGroupOutgoingEdges().stream().filter(e -> e.getId()
-            .equals(requestBlockMsg.getRuntimeEdgeId())).findFirst().get().getCoder();
+        final Coder coder = blockManagerWorker.getCoder(requestBlockMsg.getRuntimeEdgeId());
         final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
         for (final Element element : data) {
           try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
