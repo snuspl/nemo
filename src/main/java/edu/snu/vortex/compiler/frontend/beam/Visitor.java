@@ -16,7 +16,6 @@
 package edu.snu.vortex.compiler.frontend.beam;
 
 import edu.snu.vortex.client.beam.LoopCompositeTransform;
-import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.vortex.compiler.frontend.beam.transform.*;
 import edu.snu.vortex.compiler.ir.IREdge;
@@ -26,10 +25,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.coders.IterableCoder;
-import org.apache.beam.sdk.coders.KvCoder;
-import org.apache.beam.sdk.coders.ListCoder;
-import org.apache.beam.sdk.coders.MapCoder;
+import org.apache.beam.sdk.coders.*;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -38,6 +34,7 @@ import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.util.PCollectionViews;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.PValue;
 import org.apache.beam.sdk.values.TaggedPValue;
 
@@ -108,7 +105,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
         .filter(pValueToVertex::containsKey)
         .forEach(pValue -> {
           final IRVertex src = pValueToVertex.get(pValue);
-          final Coder coder = pValueToCoder.get(pValue);
+          final BeamCoder coder = pValueToCoder.get(pValue);
           final IREdge edge = new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder);
           this.builder.connectVertices(edge);
         });
@@ -150,26 +147,10 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       // Coders for outgoing edges in BroadcastTransform.
       // Since outgoing PValues for BroadcastTransform is PCollectionView, we cannot use PCollection::getCoder to
       // obtain coders.
-      final org.apache.beam.sdk.coders.Coder beamInputCoder = beamNode.getInputs().stream().map(TaggedPValue::getValue)
+      final Coder beamInputCoder = beamNode.getInputs().stream().map(TaggedPValue::getValue)
           .filter(v -> v instanceof PCollection).findFirst().map(v -> (PCollection) v).get().getCoder();
-      final org.apache.beam.sdk.coders.Coder beamOutputCoder;
-      if (view.getView() instanceof PCollectionViews.IterablePCollectionView) {
-        beamOutputCoder = IterableCoder.of(beamInputCoder);
-      } else if (view.getView() instanceof PCollectionViews.ListPCollectionView) {
-        beamOutputCoder = ListCoder.of(beamInputCoder);
-      } else if (view.getView() instanceof PCollectionViews.MapPCollectionView) {
-        final KvCoder inputCoder = (KvCoder) beamInputCoder;
-        beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), inputCoder.getValueCoder());
-      } else if (view.getView() instanceof PCollectionViews.MultimapPCollectionView) {
-        final KvCoder inputCoder = (KvCoder) beamInputCoder;
-        beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), IterableCoder.of(inputCoder.getValueCoder()));
-      } else if (view.getView() instanceof PCollectionViews.SingletonPCollectionView) {
-        beamOutputCoder = beamInputCoder;
-      } else {
-        throw new UnsupportedOperationException("Unsupported PCollectionView: " + view.getView().getClass());
-      }
       beamNode.getOutputs().stream().map(TaggedPValue::getValue)
-          .forEach(output -> pValueToCoder.put(output, new BeamCoder(beamOutputCoder)));
+          .forEach(output -> pValueToCoder.put(output, getCoderForView(view.getView(), beamInputCoder)));
     } else if (beamTransform instanceof Window.Bound) {
       final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
@@ -191,7 +172,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
           .filter(pValueToVertex::containsKey)
           .forEach(pValue -> {
             final IRVertex src = pValueToVertex.get(pValue);
-            final Coder coder = pValueToCoder.get(pValue);
+            final BeamCoder coder = pValueToCoder.get(pValue);
             final IREdge edge =
                 new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder)
                     .setAttr(Attribute.Key.SideInput, Attribute.SideInput);
@@ -204,6 +185,32 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamTransform.toString());
     }
     return vortexIRVertex;
+  }
+
+  /**
+   * Get appropriate coder for {@link PCollectionView}.
+   * @param view {@link PCollectionView} from {@link View.CreatePCollectionView} transform.
+   * @param beamInputCoder Beam {@link Coder} for input value to {@link View.CreatePCollectionView}
+   * @return appropriate {@link BeamCoder}
+   */
+  private static BeamCoder getCoderForView(final PCollectionView view, final Coder beamInputCoder) {
+    final Coder beamOutputCoder;
+    if (view instanceof PCollectionViews.IterablePCollectionView) {
+      beamOutputCoder = IterableCoder.of(beamInputCoder);
+    } else if (view instanceof PCollectionViews.ListPCollectionView) {
+      beamOutputCoder = ListCoder.of(beamInputCoder);
+    } else if (view instanceof PCollectionViews.MapPCollectionView) {
+      final KvCoder inputCoder = (KvCoder) beamInputCoder;
+      beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), inputCoder.getValueCoder());
+    } else if (view instanceof PCollectionViews.MultimapPCollectionView) {
+      final KvCoder inputCoder = (KvCoder) beamInputCoder;
+      beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), IterableCoder.of(inputCoder.getValueCoder()));
+    } else if (view instanceof PCollectionViews.SingletonPCollectionView) {
+      beamOutputCoder = beamInputCoder;
+    } else {
+      throw new UnsupportedOperationException("Unsupported PCollectionView: " + view.getClass());
+    }
+    return new BeamCoder(beamOutputCoder);
   }
 
   /**
