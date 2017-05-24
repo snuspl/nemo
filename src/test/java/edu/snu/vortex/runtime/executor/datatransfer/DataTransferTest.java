@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.datatransfer;
 
+import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.Element;
@@ -154,7 +155,8 @@ public final class DataTransferTest {
     edgeAttributes.put(RuntimeAttribute.Key.CommPattern, commPattern);
     edgeAttributes.put(RuntimeAttribute.Key.Partition, RuntimeAttribute.Hash);
     edgeAttributes.put(RuntimeAttribute.Key.BlockStore, STORE);
-    final RuntimeEdge<RuntimeVertex> dummyEdge = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex);
+    final RuntimeEdge<RuntimeVertex> dummyEdge
+        = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, Coder.DUMMY_CODER);
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {

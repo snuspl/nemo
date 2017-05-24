@@ -25,10 +25,8 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
-import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -46,8 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 public final class BlockManagerWorker {
   private final String executorId;
 
-  private final InjectionFuture<Executor> executor;
-
   private final LocalStore localStore;
 
   private final Set<String> idOfBlocksStoredInThisWorker;
@@ -60,12 +56,10 @@ public final class BlockManagerWorker {
 
   @Inject
   public BlockManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
-                            final InjectionFuture<Executor> executor,
                             final LocalStore localStore,
                             final PersistentConnectionToMaster persistentConnectionToMaster,
                             final MessageEnvironment messageEnvironment) {
     this.executorId = executorId;
-    this.executor = executor;
     this.localStore = localStore;
     this.messageEnvironment = messageEnvironment;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
