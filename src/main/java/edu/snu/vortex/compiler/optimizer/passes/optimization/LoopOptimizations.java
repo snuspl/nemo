@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
  * Loop Optimization.
  */
 public class LoopOptimizations {
-
   /**
    * @return a new LoopFusionPass class.
    */
@@ -54,7 +53,7 @@ public class LoopOptimizations {
    * @param builder builder to build the rest of the DAG on.
    */
   private static void collectLoopVertices(final DAG<IRVertex, IREdge> dag,
-                                          final Map<IntPredicate, List<LoopVertex>> loopVertices,
+                                          final List<LoopVertex> loopVertices,
                                           final Map<LoopVertex, List<IREdge>> inEdges,
                                           final Map<LoopVertex, List<IREdge>> outEdges,
                                           final DAGBuilder<IRVertex, IREdge> builder) {
@@ -62,8 +61,7 @@ public class LoopOptimizations {
     dag.topologicalDo(irVertex -> {
       if (irVertex instanceof LoopVertex) {
         final LoopVertex loopVertex = (LoopVertex) irVertex;
-        loopVertices.putIfAbsent(loopVertex.getTerminationCondition(), new ArrayList<>());
-        loopVertices.get(loopVertex.getTerminationCondition()).add(loopVertex);
+        loopVertices.add(loopVertex);
 
         dag.getIncomingEdgesOf(loopVertex).forEach(irEdge -> {
           inEdges.putIfAbsent(loopVertex, new ArrayList<>());
@@ -95,18 +93,47 @@ public class LoopOptimizations {
   public final class LoopFusionPass implements Pass {
     @Override
     public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
-      final Map<IntPredicate, List<LoopVertex>> loopVertices = new HashMap<>();
+      final List<LoopVertex> loopVertices = new ArrayList<>();
       final Map<LoopVertex, List<IREdge>> inEdges = new HashMap<>();
       final Map<LoopVertex, List<IREdge>> outEdges = new HashMap<>();
       final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
       collectLoopVertices(dag, loopVertices, inEdges, outEdges, builder);
 
-      // Merge those with same termination condition.
-      loopVertices.forEach((terminationCondition, loops) -> {
-        if (loops.size() > 1 && loops.stream().allMatch(loopVertex ->
-            loops.get(0).getMaxNumberOfIterations().equals(loopVertex.getMaxNumberOfIterations()))
-            && areSequentiallyConnected(loops, inEdges, outEdges)) {
+      // Collect and group those with same termination condition.
+      final Set<Set<LoopVertex>> setOfLoopsToBeFused = new HashSet<>();
+      loopVertices.forEach(loopVertex -> {
+        final IntPredicate terminationCondition = loopVertex.getTerminationCondition();
+        final Integer numberOfIterations = loopVertex.getMaxNumberOfIterations();
+        final List<LoopVertex> adjacentLoops = getAdjacentLoopVertices(loopVertex, inEdges, outEdges);
+
+        final Set<LoopVertex> loopsToBeFused = new HashSet<>();
+        loopsToBeFused.add(loopVertex);
+        adjacentLoops.forEach(adjacentLoop -> {
+          Boolean canBeMerged = adjacentLoop.getMaxNumberOfIterations().equals(numberOfIterations);
+          for (int i = 0; i < numberOfIterations; i++) {
+            if (adjacentLoop.getTerminationCondition().test(numberOfIterations)
+                != (terminationCondition.test(numberOfIterations))) {
+              canBeMerged = false;
+            }
+          }
+          if (canBeMerged) {
+            loopsToBeFused.add(adjacentLoop);
+          }
+        });
+
+        final Optional<Set<LoopVertex>> listToAddVerticesTo = setOfLoopsToBeFused.stream()
+            .filter(list -> list.stream().anyMatch(loopsToBeFused::contains)).findFirst();
+        if (listToAddVerticesTo.isPresent()) {
+          listToAddVerticesTo.get().addAll(loopsToBeFused);
+        } else {
+          setOfLoopsToBeFused.add(loopsToBeFused);
+        }
+      });
+
+      // merge and add to builder.
+      setOfLoopsToBeFused.forEach(loops -> {
+        if (loops.size() > 1) {
           final LoopVertex newLoopVertex = mergeLoopVertices(loops);
           builder.addVertex(newLoopVertex, dag);
           loops.forEach(loopVertex -> {
@@ -132,11 +159,13 @@ public class LoopOptimizations {
         } else {
           loops.forEach(loopVertex -> {
             builder.addVertex(loopVertex);
+            // inEdges.
             inEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(edge -> {
               if (builder.contains(edge.getSrc())) {
                 builder.connectVertices(edge);
               }
             });
+            // outEdges.
             outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(edge -> {
               if (builder.contains(edge.getDst())) {
                 builder.connectVertices(edge);
@@ -149,7 +178,7 @@ public class LoopOptimizations {
       return builder.build();
     }
 
-    private LoopVertex mergeLoopVertices(final List<LoopVertex> loopVertices) {
+    private LoopVertex mergeLoopVertices(final Set<LoopVertex> loopVertices) {
       final String newName =
           String.join("+", loopVertices.stream().map(LoopVertex::getName).collect(Collectors.toList()));
       final LoopVertex mergedLoopVertex = new LoopVertex(newName);
@@ -169,15 +198,17 @@ public class LoopOptimizations {
       return mergedLoopVertex;
     }
 
-    private Boolean areSequentiallyConnected(final List<LoopVertex> loops,
-                                             final Map<LoopVertex, List<IREdge>> inEdges,
-                                             final Map<LoopVertex, List<IREdge>> outEdges) {
-      return loops.stream().allMatch(loopVertex -> {
-        final List<IRVertex> neighbors = new ArrayList<>();
-        inEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getSrc).forEach(neighbors::add);
-        outEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getDst).forEach(neighbors::add);
-        return loops.stream().anyMatch(neighbors::contains);
-      });
+    private List<LoopVertex> getAdjacentLoopVertices(final LoopVertex loopVertex,
+                                                     final Map<LoopVertex, List<IREdge>> inEdges,
+                                                     final Map<LoopVertex, List<IREdge>> outEdges) {
+      final List<LoopVertex> neighboringLoops = new ArrayList<>();
+      inEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getSrc)
+          .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex)
+          .forEach(neighboringLoops::add);
+      outEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getDst)
+          .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex)
+          .forEach(neighboringLoops::add);
+      return neighboringLoops;
     }
   }
 
@@ -187,7 +218,7 @@ public class LoopOptimizations {
   public final class LoopInvariantCodeMotionPass implements Pass {
     @Override
     public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
-      final Map<IntPredicate, List<LoopVertex>> loopVertices = new HashMap<>();
+      final List<LoopVertex> loopVertices = new ArrayList<>();
       final Map<LoopVertex, List<IREdge>> inEdges = new HashMap<>();
       final Map<LoopVertex, List<IREdge>> outEdges = new HashMap<>();
       final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
@@ -195,7 +226,7 @@ public class LoopOptimizations {
       collectLoopVertices(dag, loopVertices, inEdges, outEdges, builder);
 
       // Refactor those with same data scan / operation, without dependencies in the loop.
-      loopVertices.values().forEach(loops -> loops.forEach(loopVertex -> {
+      loopVertices.forEach(loopVertex -> {
         final List<Map.Entry<IRVertex, Set<IREdge>>> candidates = loopVertex.getNonIterativeIncomingEdges().entrySet()
             .stream().filter(entry ->
                 loopVertex.getDAG().getIncomingEdgesOf(entry.getKey()).size() == 0 // no internal inEdges
@@ -212,14 +243,14 @@ public class LoopOptimizations {
           loopVertex.getBuilder().removeVertex(candidate.getKey());
           loopVertex.getNonIterativeIncomingEdges().remove(candidate.getKey());
         });
-      }));
+      });
 
       // Add LoopVertices.
-      loopVertices.values().forEach(loops -> loops.forEach(loopVertex -> {
+      loopVertices.forEach(loopVertex -> {
         builder.addVertex(loopVertex);
         inEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(builder::connectVertices);
         outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(builder::connectVertices);
-      }));
+      });
 
       return builder.build();
     }

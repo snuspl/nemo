@@ -44,56 +44,63 @@ public class LoopFusionPassTest {
   private DAG<IRVertex, IREdge> groupedDAG;
   private DAG<IRVertex, IREdge> dagToBeFused;
   private DAG<IRVertex, IREdge> dagNotToBeFused;
+  private DAG<IRVertex, IREdge> dagToBePartiallyFused;
+  private DAG<IRVertex, IREdge> dagToBePartiallyFused2;
 
   @Before
   public void setUp() throws Exception {
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    final DAGBuilder<IRVertex, IREdge> builder2 = new DAGBuilder<>();
+    final DAGBuilder<IRVertex, IREdge> dagToBeFusedBuilder = new DAGBuilder<>();
+    final DAGBuilder<IRVertex, IREdge> dagNotToBeFusedBuilder = new DAGBuilder<>();
 
     originalALSDAG = TestUtil.compileALSDAG();
     groupedDAG = new LoopGroupingPass().process(originalALSDAG);
 
-    final Optional<LoopVertex> anotherLoop = groupedDAG.getTopologicalSort().stream()
-        .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex).findFirst();
     groupedDAG.topologicalDo(v -> {
-      builder.addVertex(v, groupedDAG);
-      groupedDAG.getIncomingEdgesOf(v).forEach(builder::connectVertices);
+      dagToBeFusedBuilder.addVertex(v, groupedDAG);
+      groupedDAG.getIncomingEdgesOf(v).forEach(dagToBeFusedBuilder::connectVertices);
 
-      builder2.addVertex(v, groupedDAG);
-      groupedDAG.getIncomingEdgesOf(v).forEach(builder2::connectVertices);
+      dagNotToBeFusedBuilder.addVertex(v, groupedDAG);
+      groupedDAG.getIncomingEdgesOf(v).forEach(dagNotToBeFusedBuilder::connectVertices);
     });
-    assertTrue(anotherLoop.isPresent());
+    final Optional<LoopVertex> loopInDAG = groupedDAG.getTopologicalSort().stream()
+        .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex).findFirst();
+    assertTrue(loopInDAG.isPresent());
 
     // We're going to put this additional loop to the DAG, to test out the LoopFusion.
-    anotherLoop.ifPresent(loopVertex -> {
-      final LoopVertex newLoopVertex = loopVertex.getClone();
-      builder.addVertex(newLoopVertex);
-      newLoopVertex.getIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(edge -> {
-        final IREdge newIREdge = new IREdge(edge.getType(), loopVertex, newLoopVertex, edge.getCoder());
-        builder.connectVertices(newIREdge);
-      }));
-      newLoopVertex.getNonIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(edge -> {
-        final IREdge newIREdge = new IREdge(edge.getType(), edge.getSrc(), newLoopVertex, edge.getCoder());
-        builder.connectVertices(newIREdge);
-      }));
-    });
-    dagToBeFused = builder.build();
+    final LoopVertex newLoop = loopInDAG.get().getClone();
+    addLoopVertexToBuilder(dagToBeFusedBuilder, loopInDAG.get(), newLoop);
+    dagToBeFused = dagToBeFusedBuilder.build();
 
     // additional Loop with different condition.
-    anotherLoop.ifPresent(loopVertex -> {
-      final LoopVertex newLoopVertex = loopVertex.getClone();
-      newLoopVertex.setTerminationCondition((i) -> i == 100);
-      builder2.addVertex(newLoopVertex);
-      newLoopVertex.getIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(edge -> {
-        final IREdge newIREdge = new IREdge(edge.getType(), loopVertex, newLoopVertex, edge.getCoder());
-        builder2.connectVertices(newIREdge);
-      }));
-      newLoopVertex.getNonIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(edge -> {
-        final IREdge newIREdge = new IREdge(edge.getType(), edge.getSrc(), newLoopVertex, edge.getCoder());
-        builder2.connectVertices(newIREdge);
-      }));
-    });
-    dagNotToBeFused = builder2.build();
+    final LoopVertex newLoopWithDiffCondition = loopInDAG.get().getClone();
+    newLoopWithDiffCondition.setTerminationCondition((i) -> i < 100);
+    addLoopVertexToBuilder(dagNotToBeFusedBuilder, loopInDAG.get(), newLoopWithDiffCondition);
+    dagNotToBeFused = dagNotToBeFusedBuilder.build();
+
+    // partially fused: two and one.
+    addLoopVertexToBuilder(dagToBeFusedBuilder, newLoop, newLoopWithDiffCondition);
+    dagToBePartiallyFused = dagToBeFusedBuilder.build();
+
+    // partially fused2: two and two.
+    final LoopVertex newLoopWithDiffDiffCondition = newLoopWithDiffCondition.getClone();
+    newLoopWithDiffDiffCondition.setTerminationCondition((i) -> i < 100);
+    addLoopVertexToBuilder(dagToBeFusedBuilder, newLoopWithDiffCondition, newLoopWithDiffDiffCondition);
+    dagToBePartiallyFused2 = dagToBeFusedBuilder.build();
+  }
+
+  private static void addLoopVertexToBuilder(final DAGBuilder<IRVertex, IREdge> builder,
+                                             final LoopVertex loopVertexToBeFollowed,
+                                             final LoopVertex loopVertexToFollow) {
+    builder.addVertex(loopVertexToFollow);
+    loopVertexToFollow.getIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(irEdge -> {
+      final IREdge newIREdge =
+          new IREdge(irEdge.getType(), loopVertexToBeFollowed, loopVertexToFollow, irEdge.getCoder());
+      builder.connectVertices(newIREdge);
+    }));
+    loopVertexToFollow.getNonIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(irEdge -> {
+      final IREdge newIREdge = new IREdge(irEdge.getType(), irEdge.getSrc(), loopVertexToFollow, irEdge.getCoder());
+      builder.connectVertices(newIREdge);
+    }));
   }
 
   @Test
@@ -117,5 +124,15 @@ public class LoopFusionPassTest {
     final DAG<IRVertex, IREdge> processedNotToBeFusedDAG =
         new LoopOptimizations().getLoopFusionPass().process(dagNotToBeFused);
     assertEquals(numberOfNotToBeFusedVertices, processedNotToBeFusedDAG.getVertices().size());
+
+    // to be partially fused loops: two and one
+    final DAG<IRVertex, IREdge> processedToBePartiallyFusedDAG =
+        new LoopOptimizations().getLoopFusionPass().process(dagToBePartiallyFused);
+    assertEquals(numberOfNotToBeFusedVertices, processedToBePartiallyFusedDAG.getVertices().size());
+
+    // to be partially fused loops: two and two
+    final DAG<IRVertex, IREdge> processedToBePartiallyFusedDAG2 =
+        new LoopOptimizations().getLoopFusionPass().process(dagToBePartiallyFused2);
+    assertEquals(numberOfNotToBeFusedVertices, processedToBePartiallyFusedDAG2.getVertices().size());
   }
 }
