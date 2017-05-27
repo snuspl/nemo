@@ -105,20 +105,22 @@ public class LoopOptimizations {
       loopVertices.forEach(loopVertex -> {
         final IntPredicate terminationCondition = loopVertex.getTerminationCondition();
         final Integer numberOfIterations = loopVertex.getMaxNumberOfIterations();
-        final List<LoopVertex> adjacentLoops = getAdjacentLoopVertices(loopVertex, inEdges, outEdges);
+        final List<LoopVertex> independentLoops = loopVertices.stream().filter(loop ->
+            !dag.pathExistsBetween(loop, loopVertex)).collect(Collectors.toList());
 
         final Set<LoopVertex> loopsToBeFused = new HashSet<>();
         loopsToBeFused.add(loopVertex);
-        adjacentLoops.forEach(adjacentLoop -> {
-          Boolean canBeMerged = adjacentLoop.getMaxNumberOfIterations().equals(numberOfIterations);
+        independentLoops.forEach(independentLoop -> {
+          Boolean canBeMerged = independentLoop.getMaxNumberOfIterations().equals(numberOfIterations);
+          // TODO #?: strengthen this bit of code where terminationCondition has to be checked for convergence.
           for (int i = 0; i < numberOfIterations; i++) {
-            if (adjacentLoop.getTerminationCondition().test(numberOfIterations)
+            if (independentLoop.getTerminationCondition().test(numberOfIterations)
                 != (terminationCondition.test(numberOfIterations))) {
               canBeMerged = false;
             }
           }
           if (canBeMerged) {
-            loopsToBeFused.add(adjacentLoop);
+            loopsToBeFused.add(independentLoop);
           }
         });
 
@@ -196,19 +198,6 @@ public class LoopOptimizations {
         loopVertex.getDagOutgoingEdges().forEach((v, es) -> es.forEach(mergedLoopVertex::addDagOutgoingEdge));
       });
       return mergedLoopVertex;
-    }
-
-    private List<LoopVertex> getAdjacentLoopVertices(final LoopVertex loopVertex,
-                                                     final Map<LoopVertex, List<IREdge>> inEdges,
-                                                     final Map<LoopVertex, List<IREdge>> outEdges) {
-      final List<LoopVertex> neighboringLoops = new ArrayList<>();
-      inEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getSrc)
-          .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex)
-          .forEach(neighboringLoops::add);
-      outEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().map(IREdge::getDst)
-          .filter(irVertex -> irVertex instanceof LoopVertex).map(irVertex -> (LoopVertex) irVertex)
-          .forEach(neighboringLoops::add);
-      return neighboringLoops;
     }
   }
 

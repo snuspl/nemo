@@ -107,7 +107,7 @@ public class LoopFusionPassTest {
   public void testLoopFusionPass() throws Exception {
     final long numberOfGroupedVertices = groupedDAG.getVertices().size();
     final DAG<IRVertex, IREdge> processedDAG = new LoopOptimizations().getLoopFusionPass().process(dagToBeFused);
-    assertEquals(numberOfGroupedVertices, processedDAG.getVertices().size());
+    assertEquals(numberOfGroupedVertices + 1, processedDAG.getVertices().size());
 
     // no loop
     final long numberOfOriginalVertices = originalALSDAG.getVertices().size();
@@ -128,11 +128,11 @@ public class LoopFusionPassTest {
     // to be partially fused loops: two and one
     final DAG<IRVertex, IREdge> processedToBePartiallyFusedDAG =
         new LoopOptimizations().getLoopFusionPass().process(dagToBePartiallyFused);
-    assertEquals(numberOfNotToBeFusedVertices, processedToBePartiallyFusedDAG.getVertices().size());
+    assertEquals(numberOfNotToBeFusedVertices + 1, processedToBePartiallyFusedDAG.getVertices().size());
 
     // to be partially fused loops: two and two
     final DAG<IRVertex, IREdge> processedToBePartiallyFusedDAG2 =
         new LoopOptimizations().getLoopFusionPass().process(dagToBePartiallyFused2);
-    assertEquals(numberOfNotToBeFusedVertices, processedToBePartiallyFusedDAG2.getVertices().size());
+    assertEquals(numberOfNotToBeFusedVertices + 2, processedToBePartiallyFusedDAG2.getVertices().size());
   }
 }
