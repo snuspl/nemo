@@ -210,8 +210,8 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
     final Set<V> reachableFromV1 = new HashSet<>();
     final Set<V> reachableFromV2 = new HashSet<>();
 
-    this.dfsDo(v1, (v) -> {}, TraversalOrder.PostOrder, reachableFromV1);
-    this.dfsDo(v2, (v) -> {}, TraversalOrder.PostOrder, reachableFromV2);
+    this.dfsDo(v1, (v) -> { }, TraversalOrder.PostOrder, reachableFromV1);
+    this.dfsDo(v2, (v) -> { }, TraversalOrder.PostOrder, reachableFromV2);
 
     return reachableFromV1.contains(v2) || reachableFromV2.contains(v1);
   }
