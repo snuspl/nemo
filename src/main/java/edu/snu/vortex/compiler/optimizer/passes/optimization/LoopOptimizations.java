@@ -29,18 +29,24 @@ import java.util.stream.Collectors;
 /**
  * Loop Optimization.
  */
-public class LoopOptimizations {
+public final class LoopOptimizations {
+  /**
+   * Private constructor.
+   */
+  private LoopOptimizations() {
+  }
+
   /**
    * @return a new LoopFusionPass class.
    */
-  public final LoopFusionPass getLoopFusionPass() {
+  public static LoopFusionPass getLoopFusionPass() {
     return new LoopFusionPass();
   }
 
   /**
    * @return a new LoopInvariantCodeMotionPass class.
    */
-  public final LoopInvariantCodeMotionPass getLoopInvariantCodeMotionPass() {
+  public static LoopInvariantCodeMotionPass getLoopInvariantCodeMotionPass() {
     return new LoopInvariantCodeMotionPass();
   }
 
@@ -90,7 +96,7 @@ public class LoopOptimizations {
   /**
    * Pass for Loop Fusion optimization.
    */
-  public final class LoopFusionPass implements Pass {
+  public static final class LoopFusionPass implements Pass {
     @Override
     public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
       final List<LoopVertex> loopVertices = new ArrayList<>();
@@ -106,7 +112,11 @@ public class LoopOptimizations {
         final IntPredicate terminationCondition = loopVertex.getTerminationCondition();
         final Integer numberOfIterations = loopVertex.getMaxNumberOfIterations();
         final List<LoopVertex> independentLoops = loopVertices.stream().filter(loop ->
-            !dag.pathExistsBetween(loop, loopVertex)).collect(Collectors.toList());
+            setOfLoopsToBeFused.stream().anyMatch(list -> list.contains(loop))
+                ? setOfLoopsToBeFused.stream().filter(list -> list.contains(loop)).findFirst()
+                .map(list -> list.stream().noneMatch(loopV -> dag.pathExistsBetween(loopV, loopVertex)))
+                .orElse(false)
+                : !dag.pathExistsBetween(loop, loopVertex)).collect(Collectors.toList());
 
         final Set<LoopVertex> loopsToBeFused = new HashSet<>();
         loopsToBeFused.add(loopVertex);
@@ -204,7 +214,7 @@ public class LoopOptimizations {
   /**
    * Pass for Loop Invariant Code Motion optimization.
    */
-  public final class LoopInvariantCodeMotionPass implements Pass {
+  public static final class LoopInvariantCodeMotionPass implements Pass {
     @Override
     public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
       final List<LoopVertex> loopVertices = new ArrayList<>();

@@ -80,8 +80,8 @@ public final class Optimizer {
         Arrays.asList(
             new ParallelismPass(), // Provides parallelism information.
             new LoopGroupingPass(),
-            new LoopOptimizations().getLoopFusionPass(),
-            new LoopOptimizations().getLoopInvariantCodeMotionPass(),
+            LoopOptimizations.getLoopFusionPass(),
+            LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new PadoVertexPass(), new PadoEdgePass() // Processes vertices and edges with Pado algorithm.
         ));
@@ -89,8 +89,8 @@ public final class Optimizer {
         Arrays.asList(
             new ParallelismPass(), // Provides parallelism information.
             new LoopGroupingPass(),
-            new LoopOptimizations().getLoopFusionPass(),
-            new LoopOptimizations().getLoopInvariantCodeMotionPass(),
+            LoopOptimizations.getLoopFusionPass(),
+            LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new DisaggregationPass() // Processes vertices and edges with Disaggregation algorithm.
         ));
