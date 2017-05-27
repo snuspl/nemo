@@ -111,6 +111,7 @@ public final class LoopOptimizations {
       loopVertices.forEach(loopVertex -> {
         final IntPredicate terminationCondition = loopVertex.getTerminationCondition();
         final Integer numberOfIterations = loopVertex.getMaxNumberOfIterations();
+        // We want loopVertices that are not dependent on each other or the list that is potentially going to be merged.
         final List<LoopVertex> independentLoops = loopVertices.stream().filter(loop ->
             setOfLoopsToBeFused.stream().anyMatch(list -> list.contains(loop))
                 ? setOfLoopsToBeFused.stream().filter(list -> list.contains(loop)).findFirst()
@@ -118,22 +119,19 @@ public final class LoopOptimizations {
                 .orElse(false)
                 : !dag.pathExistsBetween(loop, loopVertex)).collect(Collectors.toList());
 
+        // Find loops to be fused together.
         final Set<LoopVertex> loopsToBeFused = new HashSet<>();
         loopsToBeFused.add(loopVertex);
         independentLoops.forEach(independentLoop -> {
-          Boolean canBeMerged = independentLoop.getMaxNumberOfIterations().equals(numberOfIterations);
-          // TODO #?: strengthen this bit of code where terminationCondition has to be checked for convergence.
-          for (int i = 0; i < numberOfIterations; i++) {
-            if (independentLoop.getTerminationCondition().test(numberOfIterations)
-                != (terminationCondition.test(numberOfIterations))) {
-              canBeMerged = false;
-            }
-          }
-          if (canBeMerged) {
+          // add them to the list if those independent loops have equal termination conditions.
+          if (independentLoop.getMaxNumberOfIterations().equals(numberOfIterations)
+              && checkEqualityOfIntPredicates(independentLoop.getTerminationCondition(), terminationCondition,
+              numberOfIterations)) {
             loopsToBeFused.add(independentLoop);
           }
         });
 
+        // add this information to the setOfLoopsToBeFused set.
         final Optional<Set<LoopVertex>> listToAddVerticesTo = setOfLoopsToBeFused.stream()
             .filter(list -> list.stream().anyMatch(loopsToBeFused::contains)).findFirst();
         if (listToAddVerticesTo.isPresent()) {
@@ -190,6 +188,11 @@ public final class LoopOptimizations {
       return builder.build();
     }
 
+    /**
+     * Merge the list of loopVertices into a single LoopVertex.
+     * @param loopVertices list of LoopVertices to merge.
+     * @return the merged single LoopVertex.
+     */
     private LoopVertex mergeLoopVertices(final Set<LoopVertex> loopVertices) {
       final String newName =
           String.join("+", loopVertices.stream().map(LoopVertex::getName).collect(Collectors.toList()));
@@ -208,6 +211,25 @@ public final class LoopOptimizations {
         loopVertex.getDagOutgoingEdges().forEach((v, es) -> es.forEach(mergedLoopVertex::addDagOutgoingEdge));
       });
       return mergedLoopVertex;
+    }
+
+    /**
+     * Check the equality of two intPredicates.
+     * @param predicate1 the first IntPredicate.
+     * @param predicate2 the second IntPredicate.
+     * @param numberToTestUntil Number to check the IntPredicates from.
+     * @return whether or not we can say that they are equal.
+     */
+    private Boolean checkEqualityOfIntPredicates(final IntPredicate predicate1, final IntPredicate predicate2,
+                                                 final Integer numberToTestUntil) {
+      // TODO #223: strengthen this bit of code where terminationCondition has to be checked for convergence.
+      if (numberToTestUntil.equals(0)) {
+        return predicate1.test(numberToTestUntil) == predicate2.test(numberToTestUntil);
+      } else if (predicate1.test(numberToTestUntil) != predicate2.test(numberToTestUntil)) {
+        return false;
+      } else {
+        return checkEqualityOfIntPredicates(predicate1, predicate2, numberToTestUntil - 1);
+      }
     }
   }
 
