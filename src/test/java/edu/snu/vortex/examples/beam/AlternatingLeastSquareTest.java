@@ -18,15 +18,10 @@ package edu.snu.vortex.examples.beam;
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Test Alternating Least Square program with JobLauncher.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(JobLauncher.class)
 public final class AlternatingLeastSquareTest {
   private static final String als = "edu.snu.vortex.examples.beam.AlternatingLeastSquare";
   private static final String optimizationPolicy = "pado";

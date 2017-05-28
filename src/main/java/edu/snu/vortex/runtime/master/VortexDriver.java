@@ -211,7 +211,6 @@ public final class VortexDriver {
     }
   }
 
-
   private Configuration getExecutorConfiguration(final String executorId) {
     final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
         .set(JobConf.EXECUTOR_ID, executorId)
