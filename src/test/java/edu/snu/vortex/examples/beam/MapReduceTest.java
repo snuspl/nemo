@@ -18,15 +18,10 @@ package edu.snu.vortex.examples.beam;
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Test MapReduce program with JobLauncher.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(JobLauncher.class)
 public final class MapReduceTest {
   private final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
   private final String optimizationPolicy = "pado";
