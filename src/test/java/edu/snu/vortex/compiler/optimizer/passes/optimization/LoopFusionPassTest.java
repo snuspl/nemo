@@ -95,6 +95,14 @@ public class LoopFusionPassTest {
     dagToBePartiallyFused3 = dagToBeFusedBuilder.build();
   }
 
+  /**
+   * This method adds a LoopVertex at the end of the DAG (no more outgoing edges), after the
+   * {@param vertexToBeFollowed}. We assume, as in the MLR, ALS DAG, that iterative incoming edges work to receive
+   * main inputs, and non-iterative incoming edges work to receive side inputs.
+   * @param builder builder to add the LoopVertex to.
+   * @param vertexToBeFollowed vertex that is to be followed by the LoopVertex.
+   * @param loopVertexToFollow the new LoopVertex that will be added.
+   */
   private static void addLoopVertexToBuilder(final DAGBuilder<IRVertex, IREdge> builder,
                                              final IRVertex vertexToBeFollowed,
                                              final LoopVertex loopVertexToFollow) {
