@@ -133,7 +133,7 @@ public final class JobStateManager {
         taskGroupInternalDag.getVertices().forEach(task -> {
           final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
           internalOutgoingEdges.forEach(taskRuntimeEdge ->
-              blockManagerMaster.initializeState(taskRuntimeEdge.getId(), task.getIndex()));
+              blockManagerMaster.initializeState(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx()));
         });
       });
     });
