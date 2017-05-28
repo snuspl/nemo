@@ -30,10 +30,7 @@ import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.JobStateManager;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -134,8 +131,9 @@ public final class BatchScheduler implements Scheduler {
                                             final String taskGroupId) {
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
-    // if the current stage is complete,
-    if (jobStateManager.checkCurrentStageCompletion()) {
+    final Optional<String> stageIdForTaskGroupUponCompletion = jobStateManager.checkStageCompletion(taskGroupId);
+    // if the stage this task group belongs to is complete,
+    if (stageIdForTaskGroupUponCompletion.isPresent()) {
       if (!jobStateManager.checkJobCompletion()) { // and if the job is not yet complete,
         scheduleNextStage();
       }
@@ -195,7 +193,6 @@ public final class BatchScheduler implements Scheduler {
   }
 
   private void scheduleStage(final PhysicalStage stageToSchedule) {
-//    stageToSchedule.g
     final List<PhysicalStageEdge> stageIncomingEdges =
         physicalPlan.getStageDAG().getIncomingEdgesOf(stageToSchedule.getId());
     final List<PhysicalStageEdge> stageOutgoingEdges =
