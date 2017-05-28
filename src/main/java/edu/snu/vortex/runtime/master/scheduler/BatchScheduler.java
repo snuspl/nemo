@@ -90,7 +90,7 @@ public final class BatchScheduler implements Scheduler {
     pendingTaskSchedulerThread.execute(new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupQueue));
     pendingTaskSchedulerThread.shutdown();
 
-    scheduleNextStage();
+    scheduleRootStages();
     return jobStateManager;
   }
 
@@ -167,6 +167,12 @@ public final class BatchScheduler implements Scheduler {
     // Reschedule taskGroupsToReschedule
   }
 
+  private void scheduleRootStages() {
+    final List<PhysicalStage> rootStages = physicalPlan.getStageDAG().getRootVertices();
+
+    rootStages.forEach(this::scheduleStage);
+  }
+
   /**
    * Schedules the next stage to execute.
    * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
@@ -181,19 +187,25 @@ public final class BatchScheduler implements Scheduler {
       }
     }
     if (nextStageToExecute != null) {
-      LOG.log(Level.INFO, "Scheduling Stage: {0}", nextStageToExecute.getId());
-      jobStateManager.onStageStateChanged(nextStageToExecute.getId(), StageState.State.EXECUTING);
-      final List<PhysicalStageEdge> stageIncomingEdges =
-          physicalPlan.getStageDAG().getIncomingEdgesOf(nextStageToExecute.getId());
-      final List<PhysicalStageEdge> stageOutgoingEdges =
-          physicalPlan.getStageDAG().getOutgoingEdgesOf(nextStageToExecute.getId());
-
-      nextStageToExecute.getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges)));
+      scheduleStage(nextStageToExecute);
     } else {
       throw new SchedulingException(new Exception("There is no next stage to execute! "
           + "There must have been something wrong in setting execution states!"));
     }
+  }
+
+  private void scheduleStage(final PhysicalStage stageToSchedule) {
+//    stageToSchedule.g
+    final List<PhysicalStageEdge> stageIncomingEdges =
+        physicalPlan.getStageDAG().getIncomingEdgesOf(stageToSchedule.getId());
+    final List<PhysicalStageEdge> stageOutgoingEdges =
+        physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
+
+    LOG.log(Level.INFO, "Scheduling Stage: {0}", stageToSchedule.getId());
+    jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
+
+    stageToSchedule.getTaskGroupList().forEach(taskGroup ->
+        pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges)));
   }
 
   @Override
