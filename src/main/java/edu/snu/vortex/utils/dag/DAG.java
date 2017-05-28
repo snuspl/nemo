@@ -103,6 +103,14 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
   }
 
   /**
+   * Retrieves the root vertices of this DAG.
+   * @return the set of root vertices.
+   */
+  public List<V> getRootVertices() {
+    return rootVertices;
+  }
+
+  /**
    * Retrieves the incoming edges of the given vertex.
    * @param v the subject vertex.
    * @return the set of incoming edges to the vertex.
@@ -111,6 +119,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
   public List<E> getIncomingEdgesOf(final V v) {
     return getIncomingEdgesOf(v.getId());
   }
+
   /**
    * Retrieves the incoming edges of the given vertex.
    * @param vertexId the ID of the subject vertex.
@@ -130,6 +139,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
   public List<E> getOutgoingEdgesOf(final V v) {
     return getOutgoingEdgesOf(v.getId());
   }
+
   /**
    * Retrieves the outgoing edges of the given vertex.
    * @param vertexId the ID of the subject vertex.
@@ -138,6 +148,28 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    */
   public List<E> getOutgoingEdgesOf(final String vertexId) {
     return outgoingEdges.get(vertexId);
+  }
+
+  /**
+   * Retrieves the parent vertices of the given vertex.
+   * @param vertexId the ID of the subject vertex.
+   * @return the list of parent vertices.
+   */
+  public List<V> getParents(final String vertexId) {
+    final List<V> parentVertices = new ArrayList<>();
+    incomingEdges.get(vertexId).forEach(edge -> parentVertices.add(edge.getSrc()));
+    return parentVertices;
+  }
+
+  /**
+   * Retrieves the children vertices of the given vertex.
+   * @param vertexId the ID of the subject vertex.
+   * @return the list of children vertices.
+   */
+  public List<V> getChildren(final String vertexId) {
+    final List<V> childrenVertices = new ArrayList<>();
+    outgoingEdges.get(vertexId).forEach(edge -> childrenVertices.add(edge.getDst()));
+    return childrenVertices;
   }
 
   /**
@@ -237,10 +269,6 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    */
   public Integer getLoopStackDepthOf(final V v) {
     return this.loopStackDepthMap.get(v.getId());
-  }
-
-  public List<V> getRootVertices() {
-    return rootVertices;
   }
 
   @Override
