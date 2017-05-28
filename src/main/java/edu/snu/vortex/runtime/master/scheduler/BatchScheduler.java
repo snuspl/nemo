@@ -102,8 +102,6 @@ public final class BatchScheduler implements Scheduler {
    * @param newState the state to change to
    * @param failedTaskIds if the task group failed. It is null otherwise.
    */
-  // TODO #83: Introduce Task Group Executor
-  // TODO #94: Implement Distributed Communicator
   @Override
   public void onTaskGroupStateChanged(final String executorId,
                                       final String taskGroupId,
@@ -159,7 +157,6 @@ public final class BatchScheduler implements Scheduler {
   }
 
   // TODO #163: Handle Fault Tolerance
-  // TODO #85: Introduce Resource Manager
   @Override
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
     synchronized (executorRepresenterMap) {

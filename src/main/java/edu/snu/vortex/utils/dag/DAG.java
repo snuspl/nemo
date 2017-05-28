@@ -37,8 +37,11 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
   private static final Logger LOG = Logger.getLogger(DAG.class.getName());
 
   private final List<V> vertices;
+  private final List<V> rootVertices;
   private final Map<String, List<E>> incomingEdges;
   private final Map<String, List<E>> outgoingEdges;
+
+
   private final Map<String, LoopVertex> assignedLoopVertexMap;
   private final Map<String, Integer> loopStackDepthMap;
 
@@ -58,13 +61,22 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
     this.vertices = new ArrayList<>();
     this.incomingEdges = new HashMap<>();
     this.outgoingEdges = new HashMap<>();
-    this.assignedLoopVertexMap = new HashMap<>();
-    this.loopStackDepthMap = new HashMap<>();
     vertices.stream().sorted(Comparator.comparingInt(Vertex::getNumericId)).forEachOrdered(this.vertices::add);
     incomingEdges.forEach((v, es) -> this.incomingEdges.put(v.getId(),
         es.stream().sorted(Comparator.comparingInt(Edge::getNumericId)).collect(Collectors.toList())));
     outgoingEdges.forEach((v, es) -> this.outgoingEdges.put(v.getId(),
         es.stream().sorted(Comparator.comparingInt(Edge::getNumericId)).collect(Collectors.toList())));
+
+    this.rootVertices = new ArrayList<>();
+    vertices.forEach(v -> {
+      final List<E> incomingEdgesForThisVertex = this.incomingEdges.get(v.getId());
+      if (incomingEdgesForThisVertex == null || incomingEdgesForThisVertex.isEmpty()) {
+        this.rootVertices.add(v);
+      }
+    });
+
+    this.assignedLoopVertexMap = new HashMap<>();
+    this.loopStackDepthMap = new HashMap<>();
     assignedLoopVertexMap.forEach((v, loopVertex) -> this.assignedLoopVertexMap.put(v.getId(), loopVertex));
     loopStackDepthMap.forEach(((v, integer) -> this.loopStackDepthMap.put(v.getId(), integer)));
   }
@@ -225,6 +237,10 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    */
   public Integer getLoopStackDepthOf(final V v) {
     return this.loopStackDepthMap.get(v.getId());
+  }
+
+  public List<V> getRootVertices() {
+    return rootVertices;
   }
 
   @Override
