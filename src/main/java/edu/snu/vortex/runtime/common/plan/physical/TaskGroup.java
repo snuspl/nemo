@@ -70,7 +70,7 @@ public final class TaskGroup implements Serializable {
   public String toString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"taskGroupId\": \"").append(taskGroupId).append("\", ");
-    sb.append("{\"taskGroupIdx\": \"").append(taskGroupIdx).append("\", ");
+    sb.append("\"taskGroupIdx\": ").append(taskGroupIdx).append(", ");
     sb.append("\"taskDAG\": ").append(taskDAG).append(", ");
     sb.append("\"resourceType\": \"").append(resourceType).append("\"}");
     return sb.toString();
