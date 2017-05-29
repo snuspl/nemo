@@ -22,7 +22,6 @@ import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
-import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
@@ -135,7 +134,7 @@ public final class BatchScheduler implements Scheduler {
     // if the stage this task group belongs to is complete,
     if (stageIdForTaskGroupUponCompletion.isPresent()) {
       if (!jobStateManager.checkJobCompletion()) { // and if the job is not yet complete,
-        scheduleNextStage();
+        scheduleNextStage(stageIdForTaskGroupUponCompletion.get());
       }
     }
   }
@@ -167,31 +166,88 @@ public final class BatchScheduler implements Scheduler {
 
   private void scheduleRootStages() {
     final List<PhysicalStage> rootStages = physicalPlan.getStageDAG().getRootVertices();
-
     rootStages.forEach(this::scheduleStage);
   }
 
   /**
-   * Schedules the next stage to execute.
-   * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
+   * Schedules the next stage to execute after a stage completion.
+   * @param completedStageId the ID of the stage that just completed and triggered this scheduling.
    */
-  private void scheduleNextStage() {
-    PhysicalStage nextStageToExecute = null;
-    for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getTopologicalSort()) {
-      if (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
-          == StageState.State.READY) {
-        nextStageToExecute = physicalStage;
+  private void scheduleNextStage(final String completedStageId) {
+    final List<PhysicalStage> childrenStages = physicalPlan.getStageDAG().getChildren(completedStageId);
+
+    Optional<PhysicalStage> stageToSchedule;
+    for (final PhysicalStage childStage : childrenStages) {
+      stageToSchedule = selectNextStageToSchedule(childStage);
+      if (stageToSchedule.isPresent()) {
+        scheduleStage(stageToSchedule.get());
         break;
       }
     }
-    if (nextStageToExecute != null) {
-      scheduleStage(nextStageToExecute);
-    } else {
-      throw new SchedulingException(new Exception("There is no next stage to execute! "
-          + "There must have been something wrong in setting execution states!"));
-    }
   }
 
+  /**
+   * Recursively selects the next stage to schedule.
+   * The selection mechanism is as follows:
+   * a) When a stage completes, its children stages become the candidates,
+   *    each child stage given as the input to this method.
+   * b) Examine the parent stages of the given stage, checking if all parent stages are complete.
+   *      - If a parent stage has not yet been scheduled (state = READY),
+   *        check its grandparent stages (with recursive calls to this method)
+   *      - If a parent stage is executing (state = EXECUTING),
+   *        there is nothing we can do but wait for it to complete.
+   * c) When a stage to schedule is selected, return the stage.
+   * @param stageTocheck the subject stage to check for scheduling.
+   * @return the stage to schedule next.
+   */
+  private Optional<PhysicalStage> selectNextStageToSchedule(final PhysicalStage stageTocheck) {
+    Optional<PhysicalStage> selectedStage = Optional.empty();
+    final List<PhysicalStage> parentStageList = physicalPlan.getStageDAG().getParents(stageTocheck.getId());
+    boolean allParentStagesComplete = true;
+    for (PhysicalStage parentStage : parentStageList) {
+      final StageState.State parentStageState =
+          (StageState.State) jobStateManager.getStageState(parentStage.getId()).getStateMachine().getCurrentState();
+
+      switch (parentStageState) {
+      case READY:
+        // look into see grandparent stages
+        allParentStagesComplete = false;
+        selectedStage = selectNextStageToSchedule(parentStage);
+        break;
+      case EXECUTING:
+        // we cannot do anything but wait.
+        allParentStagesComplete = false;
+        break;
+      case COMPLETE:
+        break;
+      case FAILED_RECOVERABLE:
+        // TODO #163: Handle Fault Tolerance
+        allParentStagesComplete = false;
+        break;
+      case FAILED_UNRECOVERABLE:
+        throw new UnrecoverableFailureException(new Throwable("Stage " + parentStage.getId()));
+      default:
+        throw new UnknownExecutionStateException(new Throwable("This stage state is unknown" + parentStageState));
+      }
+
+      // if a parent stage can be scheduled, select it.
+      if (selectedStage.isPresent()) {
+        return selectedStage;
+      }
+    }
+
+    // this stage can be scheduled if all parent stages have completed.
+    if (allParentStagesComplete) {
+      selectedStage = Optional.of(stageTocheck);
+    }
+    return selectedStage;
+  }
+
+  /**
+   * Schedules the given stage.
+   * It adds the list of task groups for the stage where the scheduler thread continuously polls from.
+   * @param stageToSchedule the stage to schedule.
+   */
   private void scheduleStage(final PhysicalStage stageToSchedule) {
     final List<PhysicalStageEdge> stageIncomingEdges =
         physicalPlan.getStageDAG().getIncomingEdgesOf(stageToSchedule.getId());
