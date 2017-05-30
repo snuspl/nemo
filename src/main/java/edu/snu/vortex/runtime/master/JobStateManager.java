@@ -211,6 +211,7 @@ public final class JobStateManager {
       final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
       final String stageId = taskGroup.getStageId();
       stageIdToRemainingTaskGroupSet.get(stageId).remove(taskGroupId);
+      // TODO #235: Cleanup Task State Management
       taskGroup.getTaskDAG().getVertices().forEach(task -> {
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.EXECUTING);

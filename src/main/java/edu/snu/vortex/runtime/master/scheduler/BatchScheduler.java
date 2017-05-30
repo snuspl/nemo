@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  * BatchScheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
  * The policy by which it schedules them is dependent on the implementation of {@link SchedulingPolicy}.
  */
+// TODO #234: Add Unit Tests for Scheduler
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
 
@@ -50,6 +51,7 @@ public final class BatchScheduler implements Scheduler {
    * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
    * This object is synchronized as multiple threads can access and modify {@link ExecutorRepresenter}s.
    */
+  // TODO #233: Introduce Container Manager
   private final Map<String, ExecutorRepresenter> executorRepresenterMap;
 
   /**
@@ -104,6 +106,8 @@ public final class BatchScheduler implements Scheduler {
                                       final TaskGroupState.State newState,
                                       final List<String> failedTaskIds) {
     jobStateManager.onTaskGroupStateChanged(taskGroupId, newState);
+
+    // TODO #233: Introduce Container Manager
     switch (newState) {
     case COMPLETE:
       synchronized (executorRepresenterMap) {
@@ -156,6 +160,7 @@ public final class BatchScheduler implements Scheduler {
   // TODO #163: Handle Fault Tolerance
   @Override
   public void onExecutorRemoved(final ExecutorRepresenter executor) {
+    // TODO #233: Introduce Container Manager
     synchronized (executorRepresenterMap) {
       executorRepresenterMap.remove(executor.getExecutorId());
     }
@@ -213,6 +218,7 @@ public final class BatchScheduler implements Scheduler {
    * @param stageTocheck the subject stage to check for scheduling.
    * @return the stage to schedule next.
    */
+  // TODO #234: Add Unit Tests for Scheduler
   private Optional<PhysicalStage> selectNextStageToSchedule(final PhysicalStage stageTocheck) {
     Optional<PhysicalStage> selectedStage = Optional.empty();
     final List<PhysicalStage> parentStageList = physicalPlan.getStageDAG().getParents(stageTocheck.getId());
