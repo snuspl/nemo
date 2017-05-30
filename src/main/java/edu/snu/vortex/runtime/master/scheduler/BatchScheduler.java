@@ -177,11 +177,24 @@ public final class BatchScheduler implements Scheduler {
     final List<PhysicalStage> childrenStages = physicalPlan.getStageDAG().getChildren(completedStageId);
 
     Optional<PhysicalStage> stageToSchedule;
+    boolean scheduled = false;
     for (final PhysicalStage childStage : childrenStages) {
       stageToSchedule = selectNextStageToSchedule(childStage);
       if (stageToSchedule.isPresent()) {
+        scheduled = true;
         scheduleStage(stageToSchedule.get());
         break;
+      }
+    }
+
+    // No child stage has been selected, but there may be remaining stages.
+    if (!scheduled) {
+      for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
+        if (jobStateManager.getStageState(stage.getId()).getStateMachine().getCurrentState() ==
+            StageState.State.READY) {
+          scheduleStage(stage);
+          break;
+        }
       }
     }
   }

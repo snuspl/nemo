@@ -69,8 +69,9 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
 
     this.rootVertices = new ArrayList<>();
     vertices.forEach(v -> {
+      // this list is empty if there is no incoming edge, and is therefore a root vertex.
       final List<E> incomingEdgesForThisVertex = this.incomingEdges.get(v.getId());
-      if (incomingEdgesForThisVertex == null || incomingEdgesForThisVertex.isEmpty()) {
+      if (incomingEdgesForThisVertex.isEmpty()) {
         this.rootVertices.add(v);
       }
     });
