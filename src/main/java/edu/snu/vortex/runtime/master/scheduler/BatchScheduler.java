@@ -169,7 +169,7 @@ public final class BatchScheduler implements Scheduler {
     // Reschedule taskGroupsToReschedule
   }
 
-  private void scheduleRootStages() {
+  private synchronized void scheduleRootStages() {
     final List<PhysicalStage> rootStages = physicalPlan.getStageDAG().getRootVertices();
     rootStages.forEach(this::scheduleStage);
   }
@@ -178,7 +178,7 @@ public final class BatchScheduler implements Scheduler {
    * Schedules the next stage to execute after a stage completion.
    * @param completedStageId the ID of the stage that just completed and triggered this scheduling.
    */
-  private void scheduleNextStage(final String completedStageId) {
+  private synchronized void scheduleNextStage(final String completedStageId) {
     final List<PhysicalStage> childrenStages = physicalPlan.getStageDAG().getChildren(completedStageId);
 
     Optional<PhysicalStage> stageToSchedule;
@@ -195,10 +195,13 @@ public final class BatchScheduler implements Scheduler {
     // No child stage has been selected, but there may be remaining stages.
     if (!scheduled) {
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
-        if (jobStateManager.getStageState(stage.getId()).getStateMachine().getCurrentState() ==
-            StageState.State.READY) {
-          scheduleStage(stage);
-          break;
+        if (jobStateManager.getStageState(stage.getId()).getStateMachine().getCurrentState()
+            == StageState.State.READY) {
+          stageToSchedule = selectNextStageToSchedule(stage);
+          if (stageToSchedule.isPresent()) {
+            scheduleStage(stageToSchedule.get());
+            break;
+          }
         }
       }
     }
