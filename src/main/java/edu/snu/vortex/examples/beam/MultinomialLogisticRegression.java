@@ -432,7 +432,7 @@ public final class MultinomialLogisticRegression {
 
     // Read input data
     final PCollection<String> readInput = p
-        .apply(TextIO.Read.from(inputFilePath));
+        .apply(TextIO.Read.from(inputFilePath).withoutValidation()); // withoutValidation for hdfs files
 
     // Multiple iterations for convergence.
     for (int i = 1; i <= numItr; i++) {

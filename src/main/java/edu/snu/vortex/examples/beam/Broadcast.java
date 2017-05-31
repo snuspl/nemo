@@ -50,7 +50,10 @@ public final class Broadcast {
     options.setRunner(Runner.class);
 
     final Pipeline p = Pipeline.create(options);
-    final PCollection<String> elemCollection = p.apply(TextIO.Read.from(inputFilePath));
+
+     // withoutValidation for hdfs files
+    final PCollection<String> elemCollection = p.apply(TextIO.Read.from(inputFilePath).withoutValidation());
+
     final PCollectionView<Iterable<String>> allCollection = elemCollection.apply(View.<String>asIterable());
 
     elemCollection.apply(ParDo.withSideInputs(allCollection)

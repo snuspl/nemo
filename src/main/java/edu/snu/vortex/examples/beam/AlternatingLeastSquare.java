@@ -319,7 +319,8 @@ public final class AlternatingLeastSquare {
     p.getCoderRegistry().registerCoder(Pair.class, PairCoder.class);
 
     // Read raw data
-    final PCollection<String> rawData = p.apply(TextIO.Read.from(inputFilePath));
+    // withoutValidation for hdfs files
+    final PCollection<String> rawData = p.apply(TextIO.Read.from(inputFilePath).withoutValidation());
 
     // Parse data for item
     final PCollection<KV<Integer, Pair<int[], float[]>>> parsedItemData = rawData

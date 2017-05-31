@@ -49,7 +49,7 @@ public final class MapReduce {
     options.setJobName("MapReduce");
 
     final Pipeline p = Pipeline.create(options);
-    p.apply(TextIO.Read.from(inputFilePath))
+    p.apply(TextIO.Read.from(inputFilePath).withoutValidation()) // withoutValidation for hdfs files
         .apply(MapElements.via((String line) -> {
           final String[] words = line.split(" +");
           final String documentId = words[0];
