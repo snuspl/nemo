@@ -327,6 +327,10 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    * @param description description of this DAG
    */
   public void storeJSON(final String directory, final String name, final String description) {
+    if (directory.length() == 0) {
+      return;
+    }
+
     final File file = new File(directory, name + ".json");
     file.getParentFile().mkdirs();
     try {

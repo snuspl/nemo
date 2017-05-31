@@ -64,7 +64,7 @@ public final class MapReduce {
 
     // Optimize
     final Optimizer optimizer = new Optimizer();
-    final DAG optimizedDAG = optimizer.optimize(dag, Optimizer.PolicyType.Disaggregation);
+    final DAG optimizedDAG = optimizer.optimize(dag, Optimizer.PolicyType.Disaggregation, "");
 
     // After
     LOG.log(Level.INFO, "After Optimization");
