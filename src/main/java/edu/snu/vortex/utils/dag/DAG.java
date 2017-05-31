@@ -320,7 +320,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
     return sb.toString();
   }
 
-  public static String EMPTY_DAG_DIRECTORY = "";
+  public static final String EMPTY_DAG_DIRECTORY = "";
 
   /**
    * Stores JSON representation of this DAG into a file.
