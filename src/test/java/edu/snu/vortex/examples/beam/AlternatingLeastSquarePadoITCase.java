@@ -27,16 +27,18 @@ import org.powermock.modules.junit4.PowerMockRunner;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public final class AlternatingLeastSquareITCase {
+public final class AlternatingLeastSquarePadoITCase {
   private static final String als = "edu.snu.vortex.examples.beam.AlternatingLeastSquare";
+  private static final String optimizationPolicy = "pado";
   private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_als";
   private static final String numFeatures = "10";
   private static final String numIteration = "3";
   private static final String dagDirectory = "./dag";
 
   public static final ArgBuilder builder = new ArgBuilder()
-      .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
+      .addJobId(AlternatingLeastSquarePadoITCase.class.getSimpleName())
       .addUserMain(als)
+      .addOptimizationPolicy(optimizationPolicy)
       .addUserArgs(input, numFeatures, numIteration)
       .addDAGDirectory(dagDirectory);
 

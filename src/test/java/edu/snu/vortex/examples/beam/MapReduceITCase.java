@@ -29,7 +29,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
   private final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
-  private final String optimizationPolicy = "pado";
   private final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
   private final String dagDirectory = "./dag";
@@ -39,7 +38,6 @@ public final class MapReduceITCase {
     final ArgBuilder builder = new ArgBuilder()
         .addJobId(MapReduceITCase.class.getSimpleName())
         .addUserMain(mapReduce)
-        .addOptimizationPolicy(optimizationPolicy)
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
     JobLauncher.main(builder.build());

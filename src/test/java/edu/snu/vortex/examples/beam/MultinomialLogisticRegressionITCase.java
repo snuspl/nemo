@@ -29,7 +29,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MultinomialLogisticRegressionITCase {
   private static final String mlr = "edu.snu.vortex.examples.beam.MultinomialLogisticRegression";
-  private static final String optimizationPolicy = "pado";
   private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mlr";
   private static final String numFeatures = "100";
   private static final String numClasses = "5";
@@ -39,7 +38,6 @@ public final class MultinomialLogisticRegressionITCase {
   public static final ArgBuilder builder = new ArgBuilder()
       .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
       .addUserMain(mlr)
-      .addOptimizationPolicy(optimizationPolicy)
       .addUserArgs(input, numFeatures, numClasses, numIteration)
       .addDAGDirectory(dagDirectory);
 

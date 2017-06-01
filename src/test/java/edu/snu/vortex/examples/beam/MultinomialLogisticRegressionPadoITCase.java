@@ -23,21 +23,24 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Test Alternating Least Square program with JobLauncher.
+ * Testing Multinomial Logistic Regressions with JobLauncher.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public final class AlternatingLeastSquareITCase {
-  private static final String als = "edu.snu.vortex.examples.beam.AlternatingLeastSquare";
-  private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_als";
-  private static final String numFeatures = "10";
+public final class MultinomialLogisticRegressionPadoITCase {
+  private static final String mlr = "edu.snu.vortex.examples.beam.MultinomialLogisticRegression";
+  private static final String optimizationPolicy = "pado";
+  private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mlr";
+  private static final String numFeatures = "100";
+  private static final String numClasses = "5";
   private static final String numIteration = "3";
   private static final String dagDirectory = "./dag";
 
   public static final ArgBuilder builder = new ArgBuilder()
-      .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
-      .addUserMain(als)
-      .addUserArgs(input, numFeatures, numIteration)
+      .addJobId(MultinomialLogisticRegressionPadoITCase.class.getSimpleName())
+      .addUserMain(mlr)
+      .addOptimizationPolicy(optimizationPolicy)
+      .addUserArgs(input, numFeatures, numClasses, numIteration)
       .addDAGDirectory(dagDirectory);
 
   @Test
