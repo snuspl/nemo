@@ -61,7 +61,7 @@ public class Tmp {
     injector.bindVolatileInstance(TcpPortProvider.class, rtpp);
 
     final RemoteManager rmi = injector.getInstance(RemoteManager.class);
-    System.out.println("SHITTY");
+    System.out.println("Fin");
 
     return;
   }
