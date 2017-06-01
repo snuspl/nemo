@@ -85,7 +85,8 @@ public final class DataTransferTest {
     final BlockManagerMaster master = new BlockManagerMaster();
 
     // Unused, but necessary for wiring up the message environments
-    final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, messageEnvironment, master, EMPTY_DAG_DIRECTORY);
+    final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, containerManager,
+        messageEnvironment, master, EMPTY_DAG_DIRECTORY);
 
     this.master = master;
     this.worker1 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher);

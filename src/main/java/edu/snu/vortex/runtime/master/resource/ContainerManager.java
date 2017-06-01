@@ -149,4 +149,8 @@ public final class ContainerManager {
   public synchronized Map<String, ExecutorRepresenter> getExecutorRepresenterMap() {
     return executorRepresenterMap;
   }
+
+  public synchronized void terminate() {
+    executorRepresenterMap.entrySet().stream().forEach(e -> e.getValue().shutDown());
+  }
 }
