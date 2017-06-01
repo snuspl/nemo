@@ -17,6 +17,7 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -34,11 +35,20 @@ public final class AlternatingLeastSquareITCase {
   private static final String numIteration = "3";
   private static final String dagDirectory = "./dag";
 
-  public static final ArgBuilder builder = new ArgBuilder()
+  public static ArgBuilder builder = new ArgBuilder()
       .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
       .addUserMain(als)
       .addUserArgs(input, numFeatures, numIteration)
       .addDAGDirectory(dagDirectory);
+
+  @Before
+  public void setUp() throws Exception {
+    builder = new ArgBuilder()
+        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
+        .addUserMain(als)
+        .addUserArgs(input, numFeatures, numIteration)
+        .addDAGDirectory(dagDirectory);
+  }
 
   @Test
   public void test() throws Exception {

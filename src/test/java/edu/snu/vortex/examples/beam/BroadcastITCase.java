@@ -17,6 +17,7 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -33,11 +34,20 @@ public final class BroadcastITCase {
   private static final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
   private static final String dagDirectory = "./dag";
 
-  private static final ArgBuilder builder = new ArgBuilder()
+  private static ArgBuilder builder = new ArgBuilder()
       .addJobId(BroadcastITCase.class.getSimpleName())
       .addUserMain(broadcast)
       .addUserArgs(input, output)
       .addDAGDirectory(dagDirectory);
+
+  @Before
+  public void setUp() throws Exception {
+    builder = new ArgBuilder()
+        .addJobId(BroadcastITCase.class.getSimpleName())
+        .addUserMain(broadcast)
+        .addUserArgs(input, output)
+        .addDAGDirectory(dagDirectory);
+  }
 
   @Test
   public void test() throws Exception {
