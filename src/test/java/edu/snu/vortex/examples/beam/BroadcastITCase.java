@@ -28,18 +28,24 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class BroadcastITCase {
-  private final String broadcast = "edu.snu.vortex.examples.beam.Broadcast";
-  private final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mr";
-  private final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
-  private final String dagDirectory = "./dag";
+  private static final String broadcast = "edu.snu.vortex.examples.beam.Broadcast";
+  private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mr";
+  private static final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
+  private static final String dagDirectory = "./dag";
+
+  private static final ArgBuilder builder = new ArgBuilder()
+      .addJobId(BroadcastITCase.class.getSimpleName())
+      .addUserMain(broadcast)
+      .addUserArgs(input, output)
+      .addDAGDirectory(dagDirectory);
 
   @Test
   public void test() throws Exception {
-    final ArgBuilder builder = new ArgBuilder()
-        .addJobId(BroadcastITCase.class.getSimpleName())
-        .addUserMain(broadcast)
-        .addUserArgs(input, output)
-        .addDAGDirectory(dagDirectory);
     JobLauncher.main(builder.build());
+  }
+
+  @Test
+  public void testPado() throws Exception {
+    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
   }
 }

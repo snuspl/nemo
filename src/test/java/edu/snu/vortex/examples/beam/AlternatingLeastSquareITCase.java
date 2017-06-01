@@ -44,4 +44,9 @@ public final class AlternatingLeastSquareITCase {
   public void test() throws Exception {
     JobLauncher.main(builder.build());
   }
+
+  @Test
+  public void testPado() throws Exception {
+    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
+  }
 }
