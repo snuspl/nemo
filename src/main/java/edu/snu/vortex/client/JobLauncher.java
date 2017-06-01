@@ -120,7 +120,6 @@ public final class JobLauncher {
     cl.registerShortNameOfClass(JobConf.DAGDirectory.class);
     cl.registerShortNameOfClass(JobConf.OptimizationPolicy.class);
     cl.registerShortNameOfClass(JobConf.DriverMemMb.class);
-    cl.registerShortNameOfClass(JobConf.ExecutorCores.class);
     cl.registerShortNameOfClass(JobConf.ExecutorMemMb.class);
     cl.registerShortNameOfClass(JobConf.ExecutorNum.class);
     cl.registerShortNameOfClass(JobConf.ExecutorCapacity.class);
