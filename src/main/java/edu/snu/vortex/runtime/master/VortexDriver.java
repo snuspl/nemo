@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.executor.VortexContext;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
@@ -69,9 +70,11 @@ public final class VortexDriver {
 
   private final UserApplicationRunner userApplicationRunner;
   private final ContainerManager containerManager;
+  private final Scheduler scheduler;
 
   @Inject
   private VortexDriver(final ContainerManager containerManager,
+                       final Scheduler scheduler,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
                        final UserApplicationRunner userApplicationRunner,
@@ -80,6 +83,7 @@ public final class VortexDriver {
                        @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity) {
     this.userApplicationRunner = userApplicationRunner;
     this.containerManager = containerManager;
+    this.scheduler = scheduler;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.executorNum = executorNum;
@@ -124,6 +128,7 @@ public final class VortexDriver {
     @Override
     public void onNext(final ActiveContext activeContext) {
       containerManager.onExecutorLaunched(activeContext);
+      scheduler.onExecutorAdded(activeContext.getId());
     }
   }
 

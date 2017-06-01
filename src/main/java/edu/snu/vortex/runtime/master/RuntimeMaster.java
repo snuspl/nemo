@@ -81,6 +81,7 @@ public final class RuntimeMaster {
       while (!jobStateManager.checkJobCompletion()) {
         // Check every 3 seconds for job completion.
         Thread.sleep(3000);
+        jobStateManager.printCurrentJobExecutionState();
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
