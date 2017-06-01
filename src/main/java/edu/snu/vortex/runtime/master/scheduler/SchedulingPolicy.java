@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
-import edu.snu.vortex.runtime.master.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.Optional;
