@@ -45,7 +45,6 @@ public final class MultinomialLogisticRegressionITCase {
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
         .addUserMain(mlr)
         .addUserArgs(input, numFeatures, numClasses, numIteration)
         .addDAGDirectory(dagDirectory);
