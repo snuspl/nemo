@@ -47,11 +47,19 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Name of the optimization policy.
    */
-  @NamedParameter(doc = "Name of the optimization policy", short_name = "optimization_policy", default_value = "none")
+  @NamedParameter(doc = "Name of the optimization policy", short_name = "optimization_policy",
+      default_value = "default")
   public final class OptimizationPolicy implements Name<String> {
   }
 
   //////////////////////////////// Runtime Configurations
+
+  /**
+   * Deploy mode.
+   */
+  @NamedParameter(doc = "Deploy mode", short_name = "deploy_mode", default_value = "local")
+  public final class DeployMode implements Name<String> {
+  }
 
   /**
    * Vortex driver memory.
