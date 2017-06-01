@@ -32,7 +32,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Encapsulates REEF's evaluator management for executors.
+ * Serves as a single point of resource/executor management in Vortex Runtime.
  */
 // TODO #60: Specify Types in Requesting Containers
 // We need an overall cleanup of this class after #60 is resolved.
@@ -43,6 +44,9 @@ public final class ContainerManager {
   private final EvaluatorRequestor evaluatorRequestor;
   private final MessageEnvironment messageEnvironment;
 
+  /**
+   * A map containing a list of executor representations for each resource type.
+   */
   private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorsByResourceType;
 
   /**
@@ -50,7 +54,9 @@ public final class ContainerManager {
    */
   private final Map<String, ExecutorRepresenter> executorRepresenterMap;
 
-
+  /**
+   * Keeps track of evaluator and context requests.
+   */
   private final Map<String, ExecutorSpecification> pendingContextIdToResourceSpec;
   private final Map<RuntimeAttribute, List<ExecutorSpecification>> pendingContainerRequestsByResourceType;
 
@@ -65,24 +71,42 @@ public final class ContainerManager {
     this.pendingContainerRequestsByResourceType = new HashMap<>();
   }
 
+  /**
+   * Requests containers/evaluators with the given specifications.
+   * @param resourceType of the container
+   * @param executorNum number of containers to request
+   * @param executorMemory max memory size of the containers to request
+   * @param executorCapacity max number of task groups that can be run simultaneously (= number of cores for now)
+   */
   public synchronized void requestContainer(final RuntimeAttribute resourceType,
                                final int executorNum,
                                final int executorMemory,
                                final int executorCapacity) {
-    evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
-        .setNumber(executorNum)
-        .setMemory(executorMemory)
-        .setNumberOfCores(executorCapacity)
-        .build());
+    // Create a list of executor specifications to be used when containers are allocated.
     final List<ExecutorSpecification> executorSpecificationList = new ArrayList<>(executorNum);
     for (int i = 0; i < executorNum; i++) {
       executorSpecificationList.add(new ExecutorSpecification(resourceType, executorCapacity, executorMemory));
     }
     executorsByResourceType.putIfAbsent(resourceType, new ArrayList<>(executorNum));
+
+    // Mark the request as pending with the given specifications.
     pendingContainerRequestsByResourceType.putIfAbsent(resourceType, new ArrayList<>());
     pendingContainerRequestsByResourceType.get(resourceType).addAll(executorSpecificationList);
+
+    // Request the evaluators
+    evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
+        .setNumber(executorNum)
+        .setMemory(executorMemory)
+        .setNumberOfCores(executorCapacity)
+        .build());
   }
 
+  /**
+   * Take the necessary actions in container manager once a container a is allocated.
+   * @param executorId of the executor to launch on this container.
+   * @param allocatedContainer the allocated container.
+   * @param executorConfiguration executor related configuration.
+   */
   public synchronized void onContainerAllocated(final String executorId,
                                                 final AllocatedEvaluator allocatedContainer,
                                                 final Configuration executorConfiguration) {
@@ -91,6 +115,14 @@ public final class ContainerManager {
   }
 
   // To be exposed as a public synchronized method in place of the above "onContainerAllocated"
+
+  /**
+   * Launches executor once a container is allocated.
+   * @param executorSpecification of the executor to be launched.
+   * @param executorId of the executor to be launched.
+   * @param allocatedContainer the allocated container.
+   * @param executorConfiguration executor related configuration.
+   */
   private void onContainerAllocated(final ExecutorSpecification executorSpecification,
                                     final String executorId,
                                     final AllocatedEvaluator allocatedContainer,
@@ -102,6 +134,11 @@ public final class ContainerManager {
     allocatedContainer.submitContext(executorConfiguration);
   }
 
+  /**
+   * Selects an executor specification for the executor to be launched on a container.
+   * Important! This is a "hack" to get around the inability to mark evaluators with Node Labels in REEF.
+   * @return the selected executor specification.
+   */
   private ExecutorSpecification selectResourceSpecForContainer() {
     ExecutorSpecification selectedResourceSpec = null;
     for (final Map.Entry<RuntimeAttribute, List<ExecutorSpecification>> entry
@@ -118,6 +155,11 @@ public final class ContainerManager {
     throw new ContainerException(new Throwable("We never requested for an extra container"));
   }
 
+  /**
+   * Initializes master's connection to the executor once launched.
+   * A representation of the executor to reside in master is created.
+   * @param activeContext for the launcned executor.
+   */
   public synchronized void onExecutorLaunched(final ActiveContext activeContext) {
     // We set contextId = executorId in VortexDriver when we generate executor configuration.
     final String executorId = activeContext.getId();
@@ -134,6 +176,8 @@ public final class ContainerManager {
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }
+
+    // Create the executor representation.
     final ExecutorRepresenter executorRepresenter =
         new ExecutorRepresenter(executorId, resourceSpec, messageSender, activeContext);
 
