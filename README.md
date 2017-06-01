@@ -4,7 +4,7 @@
 ## Requirements
 * Java 8
 * Maven
-* Protobuf 3.2.0
+* Protobuf 2.5.0
 
 ## Installing Vortex
 * Run all tests and install: `mvn clean install -T 2C`
@@ -34,10 +34,10 @@ Vortex Compiler and Engine stores JSON representation of intermediate DAGs.
 You can easily visualize a DAG using [online visualizer](https://service.jangho.kr/vortex-dag/) with the corresponding JSON file.
 
 ## Instructions for installing Protobuf
-* Vortex uses v3.2.0 downloadable at: https://github.com/google/protobuf/releases/tag/v3.2.0
+* Vortex uses v2.5.0 downloadable at: https://github.com/google/protobuf/releases/tag/v2.5.0
 * Extract the downloaded tarball and command:
     - sudo ./configure
     - sudo make
     - sudo make check
     - sudo make install
-* To check for a successful installation of v3.2.0: protoc --version
+* To check for a successful installation of v2.5.0: protoc --version
