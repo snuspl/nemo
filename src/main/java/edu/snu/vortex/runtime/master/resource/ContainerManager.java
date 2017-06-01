@@ -15,12 +15,10 @@
  */
 package edu.snu.vortex.runtime.master.resource;
 
-
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.ContainerException;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
@@ -43,25 +41,26 @@ public final class ContainerManager {
   private static final Logger LOG = Logger.getLogger(ContainerManager.class.getName());
 
   private final EvaluatorRequestor evaluatorRequestor;
-  private final Scheduler scheduler;
   private final MessageEnvironment messageEnvironment;
 
   private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorsByResourceType;
-  private final Map<String, ExecutorSpecification> pendingContextIdToResourceSpec;
 
-  // TODO #60: Specify Types in Requesting Containers
-  // Can be removed after #60 is resolved (NodeLabel)
+  /**
+   * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
+   */
+  private final Map<String, ExecutorRepresenter> executorRepresenterMap;
+
+
+  private final Map<String, ExecutorSpecification> pendingContextIdToResourceSpec;
   private final Map<RuntimeAttribute, List<ExecutorSpecification>> pendingContainerRequestsByResourceType;
 
-
   @Inject
-  private ContainerManager(final EvaluatorRequestor evaluatorRequestor,
-                           final Scheduler scheduler,
-                           final MessageEnvironment messageEnvironment) {
+  public ContainerManager(final EvaluatorRequestor evaluatorRequestor,
+                          final MessageEnvironment messageEnvironment) {
     this.evaluatorRequestor = evaluatorRequestor;
-    this.scheduler = scheduler;
     this.messageEnvironment = messageEnvironment;
     this.executorsByResourceType = new HashMap<>();
+    this.executorRepresenterMap = new HashMap<>();
     this.pendingContextIdToResourceSpec = new HashMap<>();
     this.pendingContainerRequestsByResourceType = new HashMap<>();
   }
@@ -139,8 +138,14 @@ public final class ContainerManager {
 
     executorsByResourceType.putIfAbsent(resourceSpec.getResourceType(), new ArrayList<>());
     executorsByResourceType.get(resourceSpec.getResourceType()).add(executorRepresenter);
-
-    scheduler.onExecutorAdded(executorRepresenter);
+    executorRepresenterMap.put(executorId, executorRepresenter);
   }
 
+  // TODO #163: Handle Fault Tolerance
+  public synchronized void onContainerFailed() {
+  }
+
+  public synchronized Map<String, ExecutorRepresenter> getExecutorRepresenterMap() {
+    return executorRepresenterMap;
+  }
 }
