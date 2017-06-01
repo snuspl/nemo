@@ -317,11 +317,7 @@ public final class JobStateManager {
     file.getParentFile().mkdirs();
     try {
       final PrintWriter printWriter = new PrintWriter(file);
-      printWriter.print("[");
-      printWriter.print(physicalPlan.getStageDAG().toString());
-      printWriter.print(", ");
-      printWriter.print(toString());
-      printWriter.print("]");
+      printWriter.println(toStringWithPhysicalPlan());
       printWriter.close();
       LOG.log(Level.INFO, String.format("JSON representation of job state for %s(%s) was saved to %s",
           jobId, suffix, file.getPath()));
@@ -329,6 +325,13 @@ public final class JobStateManager {
       LOG.log(Level.WARNING, String.format("Cannot store JSON representation of job state for %s(%s) to %s: %s",
           jobId, suffix, file.getPath(), e.toString()));
     }
+  }
+
+  public String toStringWithPhysicalPlan() {
+    final StringBuilder sb = new StringBuilder("{");
+    sb.append("\"dag\": ").append(physicalPlan.getStageDAG().toString()).append(", ");
+    sb.append("\"jobState\": ").append(toString()).append("}");
+    return sb.toString();
   }
 
   @Override
