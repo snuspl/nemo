@@ -152,7 +152,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
         }
       }
     }
-    LOG.log(Level.INFO, "Selection successful " + selectedExecutorId);
     return selectedExecutorId;
   }
 
