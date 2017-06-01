@@ -35,6 +35,7 @@ import edu.snu.vortex.utils.dag.DAG;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -81,8 +82,8 @@ public final class RuntimeMaster {
       while (!jobStateManager.checkJobCompletion()) {
         // Check every 3 seconds for job completion.
         Thread.sleep(3000);
-        jobStateManager.printCurrentJobExecutionState();
       }
+      LOG.log(Level.INFO, "**" + executionPlan.getId() + "** is complete!");
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
