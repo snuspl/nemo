@@ -19,13 +19,18 @@
         <netlib.version>1.1.2</netlib.version>
         <apache.commons.version>2.1.1</apache.commons.version>
         <jackson.version>2.8.8</jackson.version>
-        <protobuf.version>3.1.0</protobuf.version>
+        <protobuf.version>2.5.0</protobuf.version>
         <slf4j.version>1.7.14</slf4j.version>
         <commons.lang.version>3.5</commons.lang.version>
         <hadoop.version>2.7.2</hadoop.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.reef</groupId>
             <artifactId>reef-io</artifactId>
@@ -106,11 +111,6 @@
             <artifactId>hadoop-common</artifactId>
             <version>${hadoop.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
         </dependency>
     </dependencies>
 
