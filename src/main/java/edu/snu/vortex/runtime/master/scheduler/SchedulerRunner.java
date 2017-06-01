@@ -67,5 +67,6 @@ public final class SchedulerRunner implements Runnable {
         throw new SchedulingException(e);
       }
     }
+    LOG.log(Level.INFO, "Job is complete, scheduler runner will terminate.");
   }
 }

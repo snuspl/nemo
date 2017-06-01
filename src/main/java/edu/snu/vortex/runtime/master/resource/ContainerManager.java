@@ -90,10 +90,11 @@ public final class ContainerManager {
         allocatedContainer, executorConfiguration);
   }
 
-  public synchronized void onContainerAllocated(final ExecutorSpecification executorSpecification,
-                                                final String executorId,
-                                                final AllocatedEvaluator allocatedContainer,
-                                                final Configuration executorConfiguration) {
+  // To be exposed as a public synchronized method in place of the above "onContainerAllocated"
+  private void onContainerAllocated(final ExecutorSpecification executorSpecification,
+                                    final String executorId,
+                                    final AllocatedEvaluator allocatedContainer,
+                                    final Configuration executorConfiguration) {
     LOG.log(Level.INFO, "Container type (" + executorSpecification.getResourceType()
         + ") allocated, will be used for [" + executorId + "]");
     pendingContextIdToResourceSpec.put(executorId, executorSpecification);
