@@ -16,6 +16,8 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.runtime.master.address.LoopbackAddressProvider;
+import edu.snu.vortex.runtime.master.address.LoopbackTransportFactory;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -43,6 +45,7 @@ import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.IdentifierFactory;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
+import org.apache.reef.wake.remote.transport.TransportFactory;
 import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.event.StopTime;
 
@@ -156,7 +159,13 @@ public final class VortexDriver {
         final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
-        allocatedEvaluator.submitContext(getExecutorConfiguration(executorId));
+
+        final Configuration addrConf = Tang.Factory.getTang().newConfigurationBuilder()
+            .bindImplementation(LocalAddressProvider.class, LoopbackAddressProvider.class)
+            .bindImplementation(TransportFactory.class, LoopbackTransportFactory.class)
+            .build();
+
+        allocatedEvaluator.submitContext(Configurations.merge(getExecutorConfiguration(executorId), addrConf));
       }
     }
   }
@@ -210,7 +219,6 @@ public final class VortexDriver {
     public void onNext(final StopTime stopTime) {
     }
   }
-
 
   private Configuration getExecutorConfiguration(final String executorId) {
     final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
