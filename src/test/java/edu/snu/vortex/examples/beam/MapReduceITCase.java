@@ -43,7 +43,6 @@ public final class MapReduceITCase {
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addJobId(MapReduceITCase.class.getSimpleName())
         .addUserMain(mapReduce)
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
@@ -51,16 +50,24 @@ public final class MapReduceITCase {
 
   @Test
   public void test() throws Exception {
-    JobLauncher.main(builder.build());
+    JobLauncher.main(builder
+        .addJobId(MapReduceITCase.class.getSimpleName())
+        .build());
   }
 
   @Test
   public void testDisaggregation() throws Exception {
-    JobLauncher.main(builder.addOptimizationPolicy("disaggregation").build());
+    JobLauncher.main(builder
+        .addJobId(MapReduceITCase.class.getSimpleName() + "_disaggregation")
+        .addOptimizationPolicy("disaggregation")
+        .build());
   }
 
   @Test
   public void testPado() throws Exception {
-    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
+    JobLauncher.main(builder
+        .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
+        .addOptimizationPolicy("pado")
+        .build());
   }
 }

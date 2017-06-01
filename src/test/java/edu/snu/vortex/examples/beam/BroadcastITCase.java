@@ -43,7 +43,6 @@ public final class BroadcastITCase {
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addJobId(BroadcastITCase.class.getSimpleName())
         .addUserMain(broadcast)
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
@@ -51,11 +50,16 @@ public final class BroadcastITCase {
 
   @Test
   public void test() throws Exception {
-    JobLauncher.main(builder.build());
+    JobLauncher.main(builder
+        .addJobId(BroadcastITCase.class.getSimpleName())
+        .build());
   }
 
   @Test
   public void testPado() throws Exception {
-    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
+    JobLauncher.main(builder
+        .addJobId(BroadcastITCase.class.getSimpleName() + "_pado")
+        .addOptimizationPolicy("pado")
+        .build());
   }
 }

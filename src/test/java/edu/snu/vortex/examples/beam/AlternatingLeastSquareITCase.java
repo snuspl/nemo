@@ -44,7 +44,6 @@ public final class AlternatingLeastSquareITCase {
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
         .addUserMain(als)
         .addUserArgs(input, numFeatures, numIteration)
         .addDAGDirectory(dagDirectory);
@@ -52,11 +51,16 @@ public final class AlternatingLeastSquareITCase {
 
   @Test
   public void test() throws Exception {
-    JobLauncher.main(builder.build());
+    JobLauncher.main(builder
+        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
+        .build());
   }
 
   @Test
   public void testPado() throws Exception {
-    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
+    JobLauncher.main(builder
+        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName() + "_pado")
+        .addOptimizationPolicy("pado")
+        .build());
   }
 }

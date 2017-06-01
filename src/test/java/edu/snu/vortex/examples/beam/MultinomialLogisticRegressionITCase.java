@@ -53,11 +53,16 @@ public final class MultinomialLogisticRegressionITCase {
 
   @Test
   public void test() throws Exception {
-    JobLauncher.main(builder.build());
+    JobLauncher.main(builder
+        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
+        .build());
   }
 
   @Test
   public void testPado() throws Exception {
-    JobLauncher.main(builder.addOptimizationPolicy("pado").build());
+    JobLauncher.main(builder
+        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_pado")
+        .addOptimizationPolicy("pado")
+        .build());
   }
 }
