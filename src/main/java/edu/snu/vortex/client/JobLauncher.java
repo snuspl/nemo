@@ -78,6 +78,7 @@ public final class JobLauncher {
 
     // Launch and wait indefinitely for the job to finish
     final LauncherStatus launcherStatus =  DriverLauncher.getLauncher(deployModeConf).run(jobAndDriverConf);
+        //DriverLauncher.getLauncher(Configurations.merge(runtimeConf, addressConf)).run(jobAndDriverConf);
     final Optional<Throwable> possibleError = launcherStatus.getError();
     if (possibleError.isPresent()) {
       throw new RuntimeException(possibleError.get());
