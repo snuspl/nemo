@@ -20,6 +20,8 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
+import edu.snu.vortex.runtime.master.resource.ExecutorSpecification;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 import org.apache.reef.driver.context.ActiveContext;
@@ -51,18 +53,20 @@ public final class RoundRobinSchedulingPolicyTest {
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
     // Add compute nodes
+    final ExecutorSpecification computeSpec = new ExecutorSpecification(RuntimeAttribute.Compute, 1, 0);
     schedulingPolicy
-        .onExecutorAdded(new ExecutorRepresenter("a3", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
+        .onExecutorAdded(new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext));
     schedulingPolicy
-        .onExecutorAdded(new ExecutorRepresenter("a2", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
+        .onExecutorAdded(new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext));
     schedulingPolicy
-        .onExecutorAdded(new ExecutorRepresenter("a1", RuntimeAttribute.Compute, 1, mockMsgSender, activeContext));
+        .onExecutorAdded(new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext));
 
     // Add storage nodes
+    final ExecutorSpecification storageSpec = new ExecutorSpecification(RuntimeAttribute.Storage, 1, 0);
     schedulingPolicy
-        .onExecutorAdded(new ExecutorRepresenter("b2", RuntimeAttribute.Storage, 1, mockMsgSender, activeContext));
+        .onExecutorAdded(new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext));
     schedulingPolicy
-        .onExecutorAdded(new ExecutorRepresenter("b1", RuntimeAttribute.Storage, 1, mockMsgSender, activeContext));
+        .onExecutorAdded(new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext));
   }
 
   @Test
