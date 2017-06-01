@@ -83,6 +83,8 @@ public final class BatchScheduler implements Scheduler {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
 
+    jobStateManager.storeJSON("target", "initial");
+
     // Launch scheduler
     final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
     pendingTaskSchedulerThread.execute(new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupQueue));
