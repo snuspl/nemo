@@ -21,7 +21,7 @@
 ./bin/run.sh -job_id mlr_pado -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
 java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce
 
-// yarn cluster example
+# yarn cluster example
 ./bin/run.sh -deploy_mode yarn -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy pado -user_args "hdfs://maas-14:9000/sample_input_mr hdfs://maas-14:9000/sample_output_mr"
 ```
 
