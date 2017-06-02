@@ -16,8 +16,8 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.runtime.master.address.LoopbackAddressProvider;
-import edu.snu.vortex.runtime.master.address.LoopbackTransportFactory;
+import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
+import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;

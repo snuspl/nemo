@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.client;
 
-import edu.snu.vortex.runtime.master.address.LoopbackAddressProvider;
-import edu.snu.vortex.runtime.master.address.LoopbackTransportFactory;
+import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
+import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
@@ -71,7 +71,8 @@ public final class JobLauncher {
 
     // Merge Job and Driver Confs
     final Configuration jobAndDriverConf =
-        Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg, addressConf);
+        //Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg, addressConf);
+        Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
 
     // Get DeployMode Conf
     final Configuration deployModeConf = getDeployModeConf(jobConf);
@@ -120,8 +121,8 @@ public final class JobLauncher {
 
   private static Configuration getAddressConf() throws InjectionException {
     return Tang.Factory.getTang().newConfigurationBuilder()
-        .bindImplementation(LocalAddressProvider.class, LoopbackAddressProvider.class)
-        .bindImplementation(TransportFactory.class, LoopbackTransportFactory.class)
+        .bindImplementation(LocalAddressProvider.class, MinLocalAddressProvider.class)
+        .bindImplementation(TransportFactory.class, MinLocalMessagingTransportFactory.class)
         .build();
   }
 

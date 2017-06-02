@@ -47,6 +47,11 @@
             <version>${reef.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.reef</groupId>
+            <artifactId>wake-project</artifactId>
+            <systemPath>${project.basedir}/src/main/resources/wake-project-modified-0.15.0-shaded.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
             <version>${slf4j.version}</version>
