@@ -46,9 +46,14 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
   @Override
   public List<Reader<O>> getReaders(final int desiredNumOfSplits) throws Exception {
     final List<Reader<O>> readers = new ArrayList<>();
+    System.out.println("estimate: " + source.getEstimatedSizeBytes(null));
+    System.out.println("desired: " + desiredNumOfSplits);
+
     source.splitIntoBundles(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null).forEach(boundedSource -> {
       readers.add(new BoundedSourceReader<>(boundedSource));
     });
+
+    System.out.println("readers");
     return readers;
   }
 
