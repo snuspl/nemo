@@ -53,7 +53,7 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
       readers.add(new BoundedSourceReader<>(boundedSource));
     });
 
-    System.out.println("readers");
+    System.out.println("readers: " + readers);
     return readers;
   }
 
