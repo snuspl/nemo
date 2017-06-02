@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.examples.beam;
 
-import edu.snu.vortex.runtime.master.address.LoopbackAddressProvider;
-import edu.snu.vortex.runtime.master.address.LoopbackTransportFactory;
+import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
+import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import org.apache.reef.runtime.common.launch.REEFMessageCodec;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
@@ -32,14 +32,15 @@ import org.apache.reef.wake.remote.transport.netty.NettyMessagingTransport;
 /**
  * Created by sanha on 2017. 5. 31..
  */
-public class Tmp {
+public final class Tmp {
   public static void main(final String[] args) throws Exception {
     System.out.println(Tang.Factory.getTang().newInjector().getInstance(LocalAddressProvider.class).getLocalAddress());
-    System.out.println(Tang.Factory.getTang().newInjector().getInstance(LoopbackAddressProvider.class).getLocalAddress());
+    System.out.println(
+        Tang.Factory.getTang().newInjector().getInstance(MinLocalAddressProvider.class).getLocalAddress());
 
     final Configuration conf = Tang.Factory.getTang().newConfigurationBuilder()
-        .bind(LocalAddressProvider.class, LoopbackAddressProvider.class)
-        .bind(TransportFactory.class, LoopbackTransportFactory.class)
+        .bind(LocalAddressProvider.class, MinLocalAddressProvider.class)
+        .bind(TransportFactory.class, MinLocalMessagingTransportFactory.class)
         .build();
 
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
@@ -64,5 +65,9 @@ public class Tmp {
     System.out.println("Fin");
 
     return;
+  }
+
+  private Tmp() {
+    // do nothing
   }
 }

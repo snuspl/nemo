@@ -30,12 +30,15 @@ import java.util.Enumeration;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class LoopbackAddressProvider implements LocalAddressProvider {
-  private AtomicReference<String> cached = new AtomicReference<>();
+/**
+ * A LocalAddressProvider that sorts all available addresses and return the minimum one.
+ */
+public final class MinLocalAddressProvider implements LocalAddressProvider {
+  private final AtomicReference<String> cached;
 
   @Inject
-  private LoopbackAddressProvider() {
-    // do nothing
+  private MinLocalAddressProvider() {
+    cached = new AtomicReference<>();
   }
 
   @Override
@@ -72,19 +75,15 @@ public final class LoopbackAddressProvider implements LocalAddressProvider {
   @Override
   public Configuration getConfiguration() {
     return Tang.Factory.getTang().newConfigurationBuilder().bind(
-        LocalAddressProvider.class, LoopbackAddressProvider.class).build();
+        LocalAddressProvider.class, MinLocalAddressProvider.class).build();
   }
 
   /**
-   *
+   * Compare two Inet4 addresses.
    */
   private static class AddressComparator implements Comparator<Inet4Address> {
-
-    /**
-     * @return the unsigned byte.
-     */
     private static int u(final byte b) {
-      return ((int) b);// & 0xff;
+      return ((int) b); // & 0xff;
     }
 
     @Override
