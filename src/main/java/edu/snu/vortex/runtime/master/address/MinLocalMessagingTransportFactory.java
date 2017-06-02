@@ -32,11 +32,14 @@ import org.apache.reef.wake.remote.transport.netty.NettyMessagingTransport;
 
 import javax.inject.Inject;
 
-public final class LoopbackTransportFactory implements TransportFactory {
+/**
+ * A TransportFactory that uses MinLocalAddressProvider as the LocalAddressProvider.
+ */
+public final class MinLocalMessagingTransportFactory implements TransportFactory {
   private final String localAddress;
 
   @Inject
-  private LoopbackTransportFactory(final LocalAddressProvider localAddressProvider) {
+  private MinLocalMessagingTransportFactory(final LocalAddressProvider localAddressProvider) {
     this.localAddress = localAddressProvider.getLocalAddress();
   }
 
@@ -46,7 +49,7 @@ public final class LoopbackTransportFactory implements TransportFactory {
                                final EventHandler<TransportEvent> serverHandler,
                                final EventHandler<Exception> exHandler) {
     final Configuration conf = Tang.Factory.getTang().newConfigurationBuilder()
-        .bind(LocalAddressProvider.class, LoopbackAddressProvider.class)
+        .bind(LocalAddressProvider.class, MinLocalAddressProvider.class)
         .build();
     Injector injector = Tang.Factory.getTang().newInjector(conf);
     injector.bindVolatileParameter(RemoteConfiguration.HostAddress.class, this.localAddress);
@@ -55,7 +58,7 @@ public final class LoopbackTransportFactory implements TransportFactory {
     injector.bindVolatileParameter(RemoteConfiguration.RemoteServerStage.class, new SyncStage(serverHandler));
 
     try {
-      final Transport transport = (Transport)injector.getInstance(NettyMessagingTransport.class);
+      final Transport transport = injector.getInstance(NettyMessagingTransport.class);
       transport.registerErrorHandler(exHandler);
       return transport;
     } catch (InjectionException var8) {
@@ -71,8 +74,8 @@ public final class LoopbackTransportFactory implements TransportFactory {
                                final int numberOfTries,
                                final int retryTimeout) {
     try {
-      TcpPortProvider e = (TcpPortProvider) Tang.Factory.getTang().newInjector().getInstance(TcpPortProvider.class);
-      return this.newInstance(hostAddress, port, clientStage, serverStage, numberOfTries, retryTimeout, e);
+      final TcpPortProvider tpp = Tang.Factory.getTang().newInjector().getInstance(TcpPortProvider.class);
+      return this.newInstance(hostAddress, port, clientStage, serverStage, numberOfTries, retryTimeout, tpp);
     } catch (InjectionException var8) {
       throw new RuntimeException(var8);
     }
@@ -87,10 +90,8 @@ public final class LoopbackTransportFactory implements TransportFactory {
                                final int retryTimeout,
                                final TcpPortProvider tcpPortProvider) {
     System.out.println("@@@@@@@@@@@@ factory instance called");
-    // System.out.println(hostAddress + " " + port + " " + clientStage + " " + serverStage + " " +
-    //    numberOfTries + " " + retryTimeout + " " + tcpPortProvider + " " + tcpPortProvider.iterator().hasNext());
     final Configuration conf = Tang.Factory.getTang().newConfigurationBuilder()
-        .bind(LocalAddressProvider.class, LoopbackAddressProvider.class)
+        .bind(LocalAddressProvider.class, MinLocalAddressProvider.class)
         .build();
     final Injector injector = Tang.Factory.getTang().newInjector(conf);
     injector.bindVolatileParameter(RemoteConfiguration.HostAddress.class, hostAddress);
@@ -102,7 +103,7 @@ public final class LoopbackTransportFactory implements TransportFactory {
     injector.bindVolatileInstance(TcpPortProvider.class, tcpPortProvider);
 
     try {
-      return (Transport)injector.getInstance(NettyMessagingTransport.class);
+      return injector.getInstance(NettyMessagingTransport.class);
     } catch (InjectionException var10) {
       throw new RuntimeException(var10);
     }

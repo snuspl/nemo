@@ -16,8 +16,8 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.runtime.master.address.LoopbackAddressProvider;
-import edu.snu.vortex.runtime.master.address.LoopbackTransportFactory;
+import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
+import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -161,11 +161,12 @@ public final class VortexDriver {
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
 
         final Configuration addrConf = Tang.Factory.getTang().newConfigurationBuilder()
-            .bindImplementation(LocalAddressProvider.class, LoopbackAddressProvider.class)
-            .bindImplementation(TransportFactory.class, LoopbackTransportFactory.class)
+            .bindImplementation(LocalAddressProvider.class, MinLocalAddressProvider.class)
+            .bindImplementation(TransportFactory.class, MinLocalMessagingTransportFactory.class)
             .build();
 
-        allocatedEvaluator.submitContext(Configurations.merge(getExecutorConfiguration(executorId), addrConf));
+        //allocatedEvaluator.submitContext(Configurations.merge(getExecutorConfiguration(executorId), addrConf));
+        allocatedEvaluator.submitContext(getExecutorConfiguration(executorId));
       }
     }
   }
