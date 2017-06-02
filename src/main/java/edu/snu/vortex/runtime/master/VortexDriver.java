@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.executor.VortexContext;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
@@ -100,8 +101,9 @@ public final class VortexDriver {
       // Launch resources
       final Set<RuntimeAttribute> completeSetOfResourceType =
           new HashSet<>(Arrays.asList(Default, Transient, Reserved, Compute, Storage));
-      completeSetOfResourceType.forEach(resourceType ->
-        containerManager.requestContainer(resourceType, executorNum, executorMem, executorCapacity));
+      completeSetOfResourceType.forEach(containerType ->
+        containerManager.requestContainer(executorNum,
+            new ResourceSpecification(containerType, executorCapacity, executorMem)));
 
       // Launch user application (with a new thread)
       final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();

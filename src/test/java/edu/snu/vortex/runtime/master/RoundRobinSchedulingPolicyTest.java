@@ -17,17 +17,13 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
-import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
-import edu.snu.vortex.runtime.master.resource.ExecutorSpecification;
-import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
+import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 import org.apache.reef.driver.context.ActiveContext;
 import org.junit.Before;
@@ -65,12 +61,12 @@ public final class RoundRobinSchedulingPolicyTest {
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
-    final ExecutorSpecification computeSpec = new ExecutorSpecification(RuntimeAttribute.Compute, 1, 0);
+    final ResourceSpecification computeSpec = new ResourceSpecification(RuntimeAttribute.Compute, 1, 0);
     final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
 
-    final ExecutorSpecification storageSpec = new ExecutorSpecification(RuntimeAttribute.Storage, 1, 0);
+    final ResourceSpecification storageSpec = new ResourceSpecification(RuntimeAttribute.Storage, 1, 0);
     final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext);
 

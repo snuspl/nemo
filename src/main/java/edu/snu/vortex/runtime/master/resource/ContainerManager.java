@@ -33,7 +33,8 @@ import java.util.logging.Logger;
 
 /**
  * Encapsulates REEF's evaluator management for executors.
- * Serves as a single point of resource/executor management in Vortex Runtime.
+ * Serves as a single point of container/executor management in Vortex Runtime.
+ * We define a unit of resource a container (an evaluator in REEF), and launch a single executor on each container.
  */
 // TODO #60: Specify Types in Requesting Containers
 // We need an overall cleanup of this class after #60 is resolved.
@@ -45,9 +46,9 @@ public final class ContainerManager {
   private final MessageEnvironment messageEnvironment;
 
   /**
-   * A map containing a list of executor representations for each resource type.
+   * A map containing a list of executor representations for each container type.
    */
-  private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorsByResourceType;
+  private final Map<RuntimeAttribute, List<ExecutorRepresenter>> executorsByContainerType;
 
   /**
    * A map of executor ID to the corresponding {@link ExecutorRepresenter}.
@@ -57,47 +58,44 @@ public final class ContainerManager {
   /**
    * Keeps track of evaluator and context requests.
    */
-  private final Map<String, ExecutorSpecification> pendingContextIdToResourceSpec;
-  private final Map<RuntimeAttribute, List<ExecutorSpecification>> pendingContainerRequestsByResourceType;
+  private final Map<String, ResourceSpecification> pendingContextIdToResourceSpec;
+  private final Map<RuntimeAttribute, List<ResourceSpecification>> pendingContainerRequestsByContainerType;
 
   @Inject
   public ContainerManager(final EvaluatorRequestor evaluatorRequestor,
                           final MessageEnvironment messageEnvironment) {
     this.evaluatorRequestor = evaluatorRequestor;
     this.messageEnvironment = messageEnvironment;
-    this.executorsByResourceType = new HashMap<>();
+    this.executorsByContainerType = new HashMap<>();
     this.executorRepresenterMap = new HashMap<>();
     this.pendingContextIdToResourceSpec = new HashMap<>();
-    this.pendingContainerRequestsByResourceType = new HashMap<>();
+    this.pendingContainerRequestsByContainerType = new HashMap<>();
   }
 
   /**
    * Requests containers/evaluators with the given specifications.
-   * @param resourceType of the container
-   * @param executorNum number of containers to request
-   * @param executorMemory max memory size of the containers to request
-   * @param executorCapacity max number of task groups that can be run simultaneously (= number of cores for now)
+   * @param numToRequest number of containers to request
+   * @param resourceSpecification containing the specifications of
    */
-  public synchronized void requestContainer(final RuntimeAttribute resourceType,
-                               final int executorNum,
-                               final int executorMemory,
-                               final int executorCapacity) {
+  public synchronized void requestContainer(final int numToRequest,
+                                            final ResourceSpecification resourceSpecification) {
     // Create a list of executor specifications to be used when containers are allocated.
-    final List<ExecutorSpecification> executorSpecificationList = new ArrayList<>(executorNum);
-    for (int i = 0; i < executorNum; i++) {
-      executorSpecificationList.add(new ExecutorSpecification(resourceType, executorCapacity, executorMemory));
+    final List<ResourceSpecification> resourceSpecificationList = new ArrayList<>(numToRequest);
+    for (int i = 0; i < numToRequest; i++) {
+      resourceSpecificationList.add(resourceSpecification);
     }
-    executorsByResourceType.putIfAbsent(resourceType, new ArrayList<>(executorNum));
+    executorsByContainerType.putIfAbsent(resourceSpecification.getContainerType(), new ArrayList<>(numToRequest));
 
     // Mark the request as pending with the given specifications.
-    pendingContainerRequestsByResourceType.putIfAbsent(resourceType, new ArrayList<>());
-    pendingContainerRequestsByResourceType.get(resourceType).addAll(executorSpecificationList);
+    pendingContainerRequestsByContainerType.putIfAbsent(resourceSpecification.getContainerType(), new ArrayList<>());
+    pendingContainerRequestsByContainerType.get(resourceSpecification.getContainerType())
+        .addAll(resourceSpecificationList);
 
     // Request the evaluators
     evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
-        .setNumber(executorNum)
-        .setMemory(executorMemory)
-        .setNumberOfCores(executorCapacity)
+        .setNumber(numToRequest)
+        .setMemory(resourceSpecification.getMemory())
+        .setNumberOfCores(resourceSpecification.getCapacity())
         .build());
   }
 
@@ -115,21 +113,20 @@ public final class ContainerManager {
   }
 
   // To be exposed as a public synchronized method in place of the above "onContainerAllocated"
-
   /**
    * Launches executor once a container is allocated.
-   * @param executorSpecification of the executor to be launched.
+   * @param resourceSpecification of the executor to be launched.
    * @param executorId of the executor to be launched.
    * @param allocatedContainer the allocated container.
    * @param executorConfiguration executor related configuration.
    */
-  private void onContainerAllocated(final ExecutorSpecification executorSpecification,
+  private void onContainerAllocated(final ResourceSpecification resourceSpecification,
                                     final String executorId,
                                     final AllocatedEvaluator allocatedContainer,
                                     final Configuration executorConfiguration) {
-    LOG.log(Level.INFO, "Container type (" + executorSpecification.getResourceType()
+    LOG.log(Level.INFO, "Container type (" + resourceSpecification.getContainerType()
         + ") allocated, will be used for [" + executorId + "]");
-    pendingContextIdToResourceSpec.put(executorId, executorSpecification);
+    pendingContextIdToResourceSpec.put(executorId, resourceSpecification);
 
     allocatedContainer.submitContext(executorConfiguration);
   }
@@ -139,10 +136,10 @@ public final class ContainerManager {
    * Important! This is a "hack" to get around the inability to mark evaluators with Node Labels in REEF.
    * @return the selected executor specification.
    */
-  private ExecutorSpecification selectResourceSpecForContainer() {
-    ExecutorSpecification selectedResourceSpec = null;
-    for (final Map.Entry<RuntimeAttribute, List<ExecutorSpecification>> entry
-        : pendingContainerRequestsByResourceType.entrySet()) {
+  private ResourceSpecification selectResourceSpecForContainer() {
+    ResourceSpecification selectedResourceSpec = null;
+    for (final Map.Entry<RuntimeAttribute, List<ResourceSpecification>> entry
+        : pendingContainerRequestsByContainerType.entrySet()) {
       if (entry.getValue().size() > 0) {
         selectedResourceSpec = entry.getValue().remove(0);
         break;
@@ -166,7 +163,7 @@ public final class ContainerManager {
 
     LOG.log(Level.INFO, "[" + executorId + "] is up and running");
 
-    final ExecutorSpecification resourceSpec = pendingContextIdToResourceSpec.remove(executorId);
+    final ResourceSpecification resourceSpec = pendingContextIdToResourceSpec.remove(executorId);
 
     // Connect to the executor and initiate Master side's executor representation.
     final MessageSender messageSender;
@@ -181,8 +178,8 @@ public final class ContainerManager {
     final ExecutorRepresenter executorRepresenter =
         new ExecutorRepresenter(executorId, resourceSpec, messageSender, activeContext);
 
-    executorsByResourceType.putIfAbsent(resourceSpec.getResourceType(), new ArrayList<>());
-    executorsByResourceType.get(resourceSpec.getResourceType()).add(executorRepresenter);
+    executorsByContainerType.putIfAbsent(resourceSpec.getContainerType(), new ArrayList<>());
+    executorsByContainerType.get(resourceSpec.getContainerType()).add(executorRepresenter);
     executorRepresenterMap.put(executorId, executorRepresenter);
   }
 

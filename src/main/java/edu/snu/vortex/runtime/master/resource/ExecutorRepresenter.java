@@ -38,17 +38,17 @@ import java.util.Set;
 public final class ExecutorRepresenter {
 
   private final String executorId;
-  private final ExecutorSpecification executorSpecification;
+  private final ResourceSpecification resourceSpecification;
   private final Set<String> runningTaskGroups;
   private final MessageSender<ControlMessage.Message> messageSender;
   private final ActiveContext activeContext;
 
   public ExecutorRepresenter(final String executorId,
-                             final ExecutorSpecification executorSpecification,
+                             final ResourceSpecification resourceSpecification,
                              final MessageSender<ControlMessage.Message> messageSender,
                              final ActiveContext activeContext) {
     this.executorId = executorId;
-    this.executorSpecification = executorSpecification;
+    this.resourceSpecification = resourceSpecification;
     this.messageSender = messageSender;
     this.runningTaskGroups = new HashSet<>();
     this.activeContext = activeContext;
@@ -77,7 +77,7 @@ public final class ExecutorRepresenter {
   }
 
   public int getExecutorCapacity() {
-    return executorSpecification.getExecutorCapacity();
+    return resourceSpecification.getCapacity();
   }
 
   public Set<String> getRunningTaskGroups() {
@@ -89,7 +89,7 @@ public final class ExecutorRepresenter {
   }
 
   public RuntimeAttribute getResourceType() {
-    return executorSpecification.getResourceType();
+    return resourceSpecification.getContainerType();
   }
 
   public void shutDown() {
