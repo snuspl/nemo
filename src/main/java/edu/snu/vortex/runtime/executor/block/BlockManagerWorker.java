@@ -173,6 +173,7 @@ public final class BlockManagerWorker {
       final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
 
       try {
+        // TODO #250: Fetch multiple blocks in parallel
         return blockTransferPeer.fetch(remoteWorkerId, blockId, runtimeEdgeId, blockStore).get();
       } catch (final InterruptedException | ExecutionException e) {
         // TODO #163: Handle Fault Tolerance
