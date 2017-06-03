@@ -87,6 +87,11 @@ public final class TestUtil {
       throw new UnsupportedOperationException("Empty bounded source");
     }
 
+    @Override
+    public List<? extends BoundedSource> split(final long l, final PipelineOptions pipelineOptions) throws Exception {
+      throw new UnsupportedOperationException("Empty bounded source");
+    }
+
     public long getEstimatedSizeBytes(PipelineOptions options) throws Exception {
       return 1;
     }

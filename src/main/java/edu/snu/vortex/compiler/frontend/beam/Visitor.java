@@ -27,16 +27,14 @@ import edu.snu.vortex.utils.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.*;
 import org.apache.beam.sdk.io.Read;
-import org.apache.beam.sdk.io.Write;
+import org.apache.beam.sdk.io.WriteFiles;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.windowing.Window;
-import org.apache.beam.sdk.util.PCollectionViews;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionView;
+import org.apache.beam.sdk.values.PCollectionViews;
 import org.apache.beam.sdk.values.PValue;
-import org.apache.beam.sdk.values.TaggedPValue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -94,14 +92,13 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
 
     final IRVertex vortexIRVertex = convertToVertex(beamNode, builder, pValueToVertex, pValueToCoder, options,
         loopVertexStack);
-    beamNode.getOutputs().stream().map(TaggedPValue::getValue)
+    beamNode.getOutputs().values().stream()
         .filter(v -> v instanceof PCollection).map(v -> (PCollection) v)
         .forEach(output -> pValueToCoder.put(output, new BeamCoder(output.getCoder())));
 
-    beamNode.getOutputs().forEach(output -> pValueToVertex.put(output.getValue(), vortexIRVertex));
+    beamNode.getOutputs().values().forEach(output -> pValueToVertex.put(output, vortexIRVertex));
 
-    beamNode.getInputs().stream()
-        .map(TaggedPValue::getValue)
+    beamNode.getInputs().values().stream()
         .filter(pValueToVertex::containsKey)
         .forEach(pValue -> {
           final IRVertex src = pValueToVertex.get(pValue);
@@ -147,12 +144,12 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       // Coders for outgoing edges in BroadcastTransform.
       // Since outgoing PValues for BroadcastTransform is PCollectionView, we cannot use PCollection::getCoder to
       // obtain coders.
-      final Coder beamInputCoder = beamNode.getInputs().stream().map(TaggedPValue::getValue)
+      final Coder beamInputCoder = beamNode.getInputs().values().stream()
           .filter(v -> v instanceof PCollection).findFirst().map(v -> (PCollection) v).get().getCoder();
-      beamNode.getOutputs().stream().map(TaggedPValue::getValue)
-          .forEach(output -> pValueToCoder.put(output, getCoderForView(view.getView(), beamInputCoder)));
-    } else if (beamTransform instanceof Window.Bound) {
-      final Window.Bound<I> window = (Window.Bound<I>) beamTransform;
+      beamNode.getOutputs().values().stream()
+          .forEach(output -> pValueToCoder.put(output, getCoderForView(view.getView().getViewFn(), beamInputCoder)));
+    } else if (beamTransform instanceof Window) {
+      final Window<I> window = (Window<I>) beamTransform;
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
       vortexIRVertex = new OperatorVertex(vortexTransform);
       builder.addVertex(vortexIRVertex, loopVertexStack);
@@ -161,10 +158,10 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       final WindowTransform vortexTransform = new WindowTransform(window.getWindowFn());
       vortexIRVertex = new OperatorVertex(vortexTransform);
       builder.addVertex(vortexIRVertex, loopVertexStack);
-    } else if (beamTransform instanceof Write) {
+    } else if (beamTransform instanceof WriteFiles) {
       throw new UnsupportedOperationException(beamTransform.toString());
-    } else if (beamTransform instanceof ParDo.Bound) {
-      final ParDo.Bound<I, O> parDo = (ParDo.Bound<I, O>) beamTransform;
+    } else if (beamTransform instanceof ParDo.SingleOutput) {
+      final ParDo.SingleOutput<I, O> parDo = (ParDo.SingleOutput<I, O>) beamTransform;
       final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
       vortexIRVertex = new OperatorVertex(vortexTransform);
       builder.addVertex(vortexIRVertex, loopVertexStack);
@@ -189,26 +186,26 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
 
   /**
    * Get appropriate coder for {@link PCollectionView}.
-   * @param view {@link PCollectionView} from {@link View.CreatePCollectionView} transform.
+   * @param viewFn {@link ViewFn} from the corresponding {@link View.CreatePCollectionView} transform
    * @param beamInputCoder Beam {@link Coder} for input value to {@link View.CreatePCollectionView}
    * @return appropriate {@link BeamCoder}
    */
-  private static BeamCoder getCoderForView(final PCollectionView view, final Coder beamInputCoder) {
+  private static BeamCoder getCoderForView(final ViewFn viewFn, final Coder beamInputCoder) {
     final Coder beamOutputCoder;
-    if (view instanceof PCollectionViews.IterablePCollectionView) {
+    if (viewFn instanceof PCollectionViews.IterableViewFn) {
       beamOutputCoder = IterableCoder.of(beamInputCoder);
-    } else if (view instanceof PCollectionViews.ListPCollectionView) {
+    } else if (viewFn instanceof PCollectionViews.ListViewFn) {
       beamOutputCoder = ListCoder.of(beamInputCoder);
-    } else if (view instanceof PCollectionViews.MapPCollectionView) {
+    } else if (viewFn instanceof PCollectionViews.MapViewFn) {
       final KvCoder inputCoder = (KvCoder) beamInputCoder;
       beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), inputCoder.getValueCoder());
-    } else if (view instanceof PCollectionViews.MultimapPCollectionView) {
+    } else if (viewFn instanceof PCollectionViews.MultimapViewFn) {
       final KvCoder inputCoder = (KvCoder) beamInputCoder;
       beamOutputCoder = MapCoder.of(inputCoder.getKeyCoder(), IterableCoder.of(inputCoder.getValueCoder()));
-    } else if (view instanceof PCollectionViews.SingletonPCollectionView) {
+    } else if (viewFn instanceof PCollectionViews.SingletonViewFn) {
       beamOutputCoder = beamInputCoder;
     } else {
-      throw new UnsupportedOperationException("Unsupported PCollectionView: " + view.getClass());
+      throw new UnsupportedOperationException("Unsupported viewFn: " + viewFn.getClass());
     }
     return new BeamCoder(beamOutputCoder);
   }
