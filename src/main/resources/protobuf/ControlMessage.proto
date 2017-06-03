@@ -61,6 +61,11 @@ message RequestBlockMsg {
     required string runtimeEdgeId = 4;
 }
 
+message BlockTransferMsg {
+    required int64 requestId = 1; // Should be equal to requestId of the corresponding RequestBlockMsg
+    repeated bytes data = 2;
+}
+
 enum TaskGroupStateFromExecutor {
     READY = 0;
     EXECUTING = 1;

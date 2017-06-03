@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.block;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.frontend.Coder;
@@ -22,7 +23,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.EvaluatorSide;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
@@ -38,7 +38,6 @@ import org.apache.reef.wake.remote.transport.TransportFactory;
 import org.apache.reef.wake.remote.transport.netty.LoggingLinkListener;
 
 import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,7 +54,7 @@ import java.util.logging.Logger;
 @EvaluatorSide
 public final class BlockTransferPeer {
   private static final Logger LOG = Logger.getLogger(BlockTransferPeer.class.getName());
-  private static final RequestBlockMessageCodec CODEC = new RequestBlockMessageCodec();
+  private static final RequestBlockMessageCodec REQUEST_MESSAGE_CODEC = new RequestBlockMessageCodec();
   private static final LinkListener LINK_LISTENER = new LoggingLinkListener();
 
   private final Transport transport;
@@ -116,7 +115,7 @@ public final class BlockTransferPeer {
     }
     final Link<ControlMessage.RequestBlockMsg> link;
     try {
-      link = transport.open(remoteAddress, CODEC, LINK_LISTENER);
+      link = transport.open(remoteAddress, REQUEST_MESSAGE_CODEC, LINK_LISTENER);
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
@@ -167,21 +166,21 @@ public final class BlockTransferPeer {
     @Override
     public void onNext(final TransportEvent transportEvent) {
       final BlockManagerWorker worker = blockManagerWorker.get();
-      final ControlMessage.RequestBlockMsg msg = CODEC.decode(transportEvent.getData());
-      final Iterable<Element> data = worker.getBlock(msg.getBlockId(), msg.getRuntimeEdgeId(),
-          convertBlockStoreType(msg.getBlockStore()));
-      final Coder coder = worker.getCoder(msg.getRuntimeEdgeId());
-      final ArrayList<byte[]> dataToSerialize = new ArrayList<>();
+      final ControlMessage.RequestBlockMsg request = REQUEST_MESSAGE_CODEC.decode(transportEvent.getData());
+      final Iterable<Element> data = worker.getBlock(request.getBlockId(), request.getRuntimeEdgeId(),
+          convertBlockStoreType(request.getBlockStore()));
+      final Coder coder = worker.getCoder(request.getRuntimeEdgeId());
+      final ControlMessage.BlockTransferMsg.Builder replyBuilder = ControlMessage.BlockTransferMsg.newBuilder()
+          .setRequestId(request.getRequestId());
       for (final Element element : data) {
         try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
           coder.encode(element, stream);
-          dataToSerialize.add(stream.toByteArray());
+          replyBuilder.addData(ByteString.copyFrom(stream.toByteArray()));
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }
-      dataToSerialize.add(SerializationUtils.serialize(msg.getRequestId()));
-      final byte[] serialized = SerializationUtils.serialize(dataToSerialize);
+      final byte[] serialized = replyBuilder.build().toByteArray();
       transportEvent.getLink().write(serialized);
     }
   }
@@ -200,16 +199,18 @@ public final class BlockTransferPeer {
     @Override
     public void onNext(final TransportEvent transportEvent) {
       final BlockTransferPeer peer = blockTransferPeer.get();
-      final ArrayList<byte[]> data = SerializationUtils.deserialize(transportEvent.getData());
-      final long requestId = SerializationUtils.deserialize(data.get(data.size() - 1));
-      final Coder coder = peer.requestIdToCoder.remove(requestId);
-      data.remove(data.size() - 1);
-      final ArrayList<Element> deserializedData = new ArrayList<>(data.size());
-      data.forEach(bytes -> {
-        final ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-        deserializedData.add(coder.decode(stream));
-      });
-      final CompletableFuture<Iterable<Element>> future = peer.requestIdToFuture.remove(requestId);
+      final ControlMessage.BlockTransferMsg reply;
+      try {
+        reply = ControlMessage.BlockTransferMsg.parseFrom(transportEvent.getData());
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+      final Coder coder = peer.requestIdToCoder.remove(reply.getRequestId());
+      final ArrayList<Element> deserializedData = new ArrayList<>(reply.getDataCount());
+      for (int i = 0; i < reply.getDataCount(); i++) {
+        deserializedData.add(coder.decode(reply.getData(i).newInput()));
+      }
+      final CompletableFuture<Iterable<Element>> future = peer.requestIdToFuture.remove(reply.getRequestId());
       future.complete(deserializedData);
     }
   }
