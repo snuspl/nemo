@@ -38,6 +38,7 @@ import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
 import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.utils.dag.DAG;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
@@ -66,6 +67,7 @@ public final class DataTransferTest {
   private static final int PARALLELISM_TEN = 10;
   private static final String EDGE_ID = "Dummy";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
+  private static final String DAG_DIRECTORY_EMPTY = "";
 
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
@@ -77,7 +79,8 @@ public final class DataTransferTest {
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final Scheduler scheduler =
-        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
+        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue(),
+            DAG_DIRECTORY_EMPTY);
     final AtomicInteger executorCount = new AtomicInteger(0);
     final BlockManagerMaster master = new BlockManagerMaster();
 

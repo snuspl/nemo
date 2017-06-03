@@ -187,6 +187,7 @@ public final class VortexDriver {
             new ExecutorRepresenter(executorId, executorToBeLaunched.getResourceType(),
                 executorToBeLaunched.getExecutorCapacity(), messageSender, activeContext);
 
+        LOG.log(Level.INFO, "Registering {0} to scheduler", executorId);
         scheduler.onExecutorAdded(executorRepresenter);
       }
     }

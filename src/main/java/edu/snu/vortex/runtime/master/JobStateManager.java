@@ -154,11 +154,9 @@ public final class JobStateManager {
     } else if (newState == JobState.State.COMPLETE) {
       LOG.log(Level.FINE, "Job ID {0} complete!", jobId);
       jobState.getStateMachine().setState(newState);
-      dumpPreviousJobExecutionStateToFile();
     } else if (newState == JobState.State.FAILED) {
       LOG.log(Level.FINE, "Job ID {0} failed.", jobId);
       jobState.getStateMachine().setState(newState);
-      dumpPreviousJobExecutionStateToFile();
     } else {
       throw new IllegalStateTransitionException(new Exception("Illegal Job State Transition"));
     }
@@ -276,31 +274,6 @@ public final class JobStateManager {
 
   public synchronized Map<String, TaskState> getIdToTaskStates() {
     return idToTaskStates;
-  }
-
-  // Tentative
-  public void printCurrentJobExecutionState() {
-    final StringBuffer sb = new StringBuffer("Job ID ");
-    sb.append(this.jobId).append(":").append(jobState.getStateMachine().getCurrentState());
-    sb.append("\n{Stages:\n{");
-    physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
-      final StageState stageState = idToStageStates.get(physicalStage.getId());
-      sb.append(physicalStage.getId()).append(":").append(stageState).append("\nTaskGroups:\n{");
-      physicalStage.getTaskGroupList().forEach(taskGroup -> {
-        sb.append(taskGroup.getTaskGroupId()).append(":").append(idToTaskGroupStates.get(taskGroup.getTaskGroupId()))
-            .append(", Tasks:{\n");
-        taskGroup.getTaskDAG().topologicalDo(
-            task -> sb.append(task.getId()).append(":").append(idToTaskStates.get(task.getId())).append(","));
-        sb.append("},\n");
-      });
-      sb.append("}}\n");
-    });
-    LOG.log(Level.INFO, sb.toString());
-  }
-
-  // Tentative
-  private void dumpPreviousJobExecutionStateToFile() {
-
   }
 
   /**

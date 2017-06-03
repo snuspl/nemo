@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -27,6 +28,7 @@ import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.JobStateManager;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -42,6 +44,8 @@ import java.util.logging.Logger;
 // TODO #234: Add Unit Tests for Scheduler
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
+
+  private final String dagDirectory;
 
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
@@ -66,10 +70,12 @@ public final class BatchScheduler implements Scheduler {
 
   @Inject
   public BatchScheduler(final SchedulingPolicy schedulingPolicy,
-                        final PendingTaskGroupQueue pendingTaskGroupQueue) {
+                        final PendingTaskGroupQueue pendingTaskGroupQueue,
+                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.executorRepresenterMap = new HashMap<>();
     this.schedulingPolicy = schedulingPolicy;
+    this.dagDirectory = dagDirectory;
   }
 
   /**
@@ -83,7 +89,8 @@ public final class BatchScheduler implements Scheduler {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
 
-    jobStateManager.storeJSON("target", "initial");
+    LOG.log(Level.INFO, "Job to schedule: {0}", jobToSchedule.getId());
+    jobStateManager.storeJSON(dagDirectory, "initial");
 
     // Launch scheduler
     final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
@@ -134,6 +141,7 @@ public final class BatchScheduler implements Scheduler {
 
   private void onTaskGroupExecutionComplete(final ExecutorRepresenter executor,
                                             final String taskGroupId) {
+    LOG.log(Level.INFO, "TaskGroup {0} completed in {1}", new Object[]{taskGroupId, executor.getExecutorId()});
     schedulingPolicy.onTaskGroupExecutionComplete(executor, taskGroupId);
 
     final Optional<String> stageIdForTaskGroupUponCompletion = jobStateManager.checkStageCompletion(taskGroupId);

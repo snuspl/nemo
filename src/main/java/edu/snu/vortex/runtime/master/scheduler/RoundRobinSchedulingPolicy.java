@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -190,6 +191,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   public void onTaskGroupScheduled(final ExecutorRepresenter executor, final ScheduledTaskGroup scheduledTaskGroup) {
     lock.lock();
     try {
+      LOG.log(Level.INFO, "Scheduling {0} to {1}",
+          new Object[]{scheduledTaskGroup.getTaskGroup().getTaskGroupId(), executor.getExecutorId()});
       executor.onTaskGroupScheduled(scheduledTaskGroup);
     } finally {
       lock.unlock();
