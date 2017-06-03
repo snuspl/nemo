@@ -90,7 +90,6 @@ public final class BatchScheduler implements Scheduler {
     this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
 
     LOG.log(Level.INFO, "Job to schedule: {0}", jobToSchedule.getId());
-    jobStateManager.storeJSON(dagDirectory, "initial");
 
     // Launch scheduler
     final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();

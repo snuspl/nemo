@@ -83,6 +83,7 @@ public final class RuntimeMaster {
         // Check every 3 seconds for job completion.
         Thread.sleep(3000);
       }
+      jobStateManager.storeJSON(dagDirectory, "final");
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
