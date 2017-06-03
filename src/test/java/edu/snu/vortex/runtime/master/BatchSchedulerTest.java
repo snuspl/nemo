@@ -45,12 +45,14 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -103,40 +105,45 @@ public final class BatchSchedulerTest {
     executorRepresenterMap.put(b2.getExecutorId(), b2);
 
     // Add compute nodes
-    schedulingPolicy.onExecutorAdded(a3.getExecutorId());
-    schedulingPolicy.onExecutorAdded(a2.getExecutorId());
-    schedulingPolicy.onExecutorAdded(a1.getExecutorId());
+    scheduler.onExecutorAdded(a1.getExecutorId());
+    scheduler.onExecutorAdded(a2.getExecutorId());
+    scheduler.onExecutorAdded(a3.getExecutorId());
 
     // Add storage nodes
-    schedulingPolicy.onExecutorAdded(b2.getExecutorId());
-    schedulingPolicy.onExecutorAdded(b1.getExecutorId());
+    scheduler.onExecutorAdded(b1.getExecutorId());
+    scheduler.onExecutorAdded(b2.getExecutorId());
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link JobStateManager}.
-   * State changes are explicitly called to check whether states are managed correctly or not.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchScheduler}.
+   * TaskGroup state changes are explicitly submitted to scheduler instead of executor messages.
    */
   @Test
-  public void testPhysicalPlanStateChanges() {
+  public void testMultiInputOutputScheduling() {
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
     v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v3);
 
     final IRVertex v4 = new OperatorVertex(t);
     v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v4.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v4);
 
     final IRVertex v5 = new OperatorVertex(t);
     v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v5.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v5);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
@@ -163,12 +170,55 @@ public final class BatchSchedulerTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
-    physicalDAG.toString();
+    final JobStateManager jobStateManager =
+        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), blockManagerMaster);
 
-    scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), blockManagerMaster);
+    // Start off with the root stages.
+    physicalDAG.getRootVertices().forEach(physicalStage ->
+        sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
 
+    // Then, for the rest of the stages.
+    while (!jobStateManager.checkJobCompletion()) {
+      final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
+      stageList.forEach(physicalStage -> sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
+    }
+
+    // Check that all stages have completed.
+    physicalDAG.getVertices().forEach(physicalStage ->
+        assertTrue(jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+            == StageState.State.COMPLETE));
   }
 
+  /**
+   * Sends task group completion event to scheduler.
+   * This replaces executor's task group completion messages for testing purposes.
+   * @param jobStateManager for the submitted job.
+   * @param physicalStage for which its task groups should be marked as complete.
+   */
+  private void sendTaskGroupCompletionEventToScheduler(final JobStateManager jobStateManager,
+                                                       final PhysicalStage physicalStage) {
+    while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+        == StageState.State.EXECUTING) {
+      physicalStage.getTaskGroupList().forEach(taskGroup -> {
+        if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
+            == TaskGroupState.State.EXECUTING) {
+          final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(taskGroup.getTaskGroupId());
+          if (scheduledExecutor != null) {
+            scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroup.getTaskGroupId(),
+                TaskGroupState.State.COMPLETE, Collections.emptyList());
+          } else { // An executor for this task group must always be found. Otherwise, the scheduler has failed.
+            fail();
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Retrieves the executor to which the given task group was scheduled.
+   * @param taskGroupId of the task group to search.
+   * @return the {@link ExecutorRepresenter} of the executor the task group was scheduled to.
+   */
   private ExecutorRepresenter findExecutorForTaskGroup(final String taskGroupId) {
     for (final ExecutorRepresenter executor : containerManager.getExecutorRepresenterMap().values()) {
       if (executor.getRunningTaskGroups().contains(taskGroupId)) {
