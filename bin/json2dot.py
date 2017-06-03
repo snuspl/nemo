@@ -168,7 +168,7 @@ class NormalVertex:
             label += '\\n{}:{}'.format(m.group(1), m.group(2).split('.')[-1])
         except:
             pass
-        dot = '{} [label="{}", color={}, bgcolor="{}"];'.format(self.idx, label, color, stateToColor(self.state))
+        dot = '{} [label="{}", color={}, style=filled, fillcolor="{}"];'.format(self.idx, label, color, stateToColor(self.state))
         return dot
     @property
     def oneVertex(self):
