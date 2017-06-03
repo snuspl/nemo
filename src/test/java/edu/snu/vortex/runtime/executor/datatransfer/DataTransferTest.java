@@ -67,7 +67,6 @@ public final class DataTransferTest {
   private static final int PARALLELISM_TEN = 10;
   private static final String EDGE_ID = "Dummy";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
-  private static final String DAG_DIRECTORY_EMPTY = "";
 
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
@@ -79,8 +78,7 @@ public final class DataTransferTest {
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final Scheduler scheduler =
-        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue(),
-            DAG_DIRECTORY_EMPTY);
+        new BatchScheduler(new RoundRobinSchedulingPolicy(SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
     final AtomicInteger executorCount = new AtomicInteger(0);
     final BlockManagerMaster master = new BlockManagerMaster();
 
