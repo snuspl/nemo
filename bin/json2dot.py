@@ -203,15 +203,15 @@ class TaskGroup:
         self.taskGroupId = properties['taskGroupId']
         self.taskGroupIdx = properties['taskGroupIdx']
         self.dag = DAG(properties['taskDAG'], state)
-        self.resourceType = properties['resourceType']
+        self.containerType = properties['containerType']
         self.idx = getIdx()
         self.state = state.state
     @property
     def dot(self):
         color = 'black'
-        if self.resourceType == 'Transient':
+        if self.containerType == 'Transient':
             color = 'orange'
-        if self.resourceType == 'Reserved':
+        if self.containerType == 'Reserved':
             color = 'green'
         if self.state is None:
             state = ''
