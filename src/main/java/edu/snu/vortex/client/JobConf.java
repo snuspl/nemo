@@ -47,11 +47,19 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Name of the optimization policy.
    */
-  @NamedParameter(doc = "Name of the optimization policy", short_name = "optimization_policy", default_value = "none")
+  @NamedParameter(doc = "Name of the optimization policy", short_name = "optimization_policy",
+      default_value = "default")
   public final class OptimizationPolicy implements Name<String> {
   }
 
   //////////////////////////////// Runtime Configurations
+
+  /**
+   * Deploy mode.
+   */
+  @NamedParameter(doc = "Deploy mode", short_name = "deploy_mode", default_value = "local")
+  public final class DeployMode implements Name<String> {
+  }
 
   /**
    * Vortex driver memory.
@@ -62,7 +70,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Number of vortex executors.
-   * TODO #205: Allow for Per-ResourceType Configurations
+   * TODO #205: Allow for Per-ContainerType Configurations
    *
    * WARNING: THE ACTUAL NUMBER WILL BE 4 * Executor Num due to hacks to get around.
    * TODO #60: Specify Types in Requesting Containers
@@ -74,20 +82,10 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Vortex executor memory.
-   * TODO #205: Allow for Per-ResourceType Configurations
+   * TODO #205: Allow for Per-ContainerType Configurations
    */
   @NamedParameter(doc = "Vortex executor memory", short_name = "executor_mem_mb", default_value = "1024")
   public final class ExecutorMemMb implements Name<Integer> {
-  }
-
-  /**
-   * Vortex executor cores.
-   * Used in requesting resources to a resource manager
-   * (e.g., With 3 executor_cores, we request YARN for YARN containers with 3 cores)
-   * TODO #205: Allow for Per-ResourceType Configurations
-   */
-  @NamedParameter(doc = "Vortex executor cores", short_name = "executor_cores", default_value = "1")
-  public final class ExecutorCores implements Name<Integer> {
   }
 
   /**
@@ -96,7 +94,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
    * 1) Master's TaskGroup scheduler can use this number in scheduling.
    *    (e.g., schedule TaskGroup to the executor currently with the maximum number of available slots)
    * 2) Executor's number of TaskGroup execution threads is set to this number.
-   * TODO #205: Allow for Per-ResourceType Configurations
+   * TODO #205: Allow for Per-ContainerType Configurations
    */
   @NamedParameter(doc = "VortexExecutor capacity", short_name = "executor_capacity", default_value = "1")
   public final class ExecutorCapacity implements Name<Integer> {
