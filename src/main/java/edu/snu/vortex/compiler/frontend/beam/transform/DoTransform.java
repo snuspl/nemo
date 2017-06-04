@@ -28,6 +28,7 @@ import org.apache.beam.sdk.transforms.reflect.DoFnInvoker;
 import org.apache.beam.sdk.transforms.reflect.DoFnInvokers;
 import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
+import org.apache.beam.sdk.transforms.windowing.GlobalWindow;
 import org.apache.beam.sdk.transforms.windowing.PaneInfo;
 import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.TupleTag;
@@ -262,7 +263,12 @@ public final class DoTransform implements Transform {
 
     @Override
     public BoundedWindow window() {
-      throw new UnsupportedOperationException("window() in ProcessContext under DoTransform");
+      return new BoundedWindow() {
+        @Override
+        public Instant maxTimestamp() {
+          return GlobalWindow.INSTANCE.maxTimestamp();
+        }
+      };
     }
 
     @Override
