@@ -33,10 +33,12 @@ import org.apache.beam.sdk.runners.TransformHierarchy;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.beam.sdk.values.PCollectionViews;
 import org.apache.beam.sdk.values.PValue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -165,16 +167,13 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
       vortexIRVertex = new OperatorVertex(vortexTransform);
       builder.addVertex(vortexIRVertex, loopVertexStack);
-      parDo.getSideInputs().stream()
-          .filter(pValueToVertex::containsKey)
-          .forEach(pValue -> {
-            final IRVertex src = pValueToVertex.get(pValue);
-            final BeamCoder coder = pValueToCoder.get(pValue);
-            final IREdge edge =
-                new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder)
-                    .setAttr(Attribute.Key.SideInput, Attribute.SideInput);
-            builder.connectVertices(edge);
-          });
+      connectSideInputs(builder, parDo.getSideInputs(), pValueToVertex, pValueToCoder, vortexIRVertex);
+    } else if (beamTransform instanceof ParDo.MultiOutput) {
+      final ParDo.MultiOutput<I, O> parDo = (ParDo.MultiOutput<I, O>) beamTransform;
+      final DoTransform vortexTransform = new DoTransform(parDo.getFn(), options);
+      vortexIRVertex = new OperatorVertex(vortexTransform);
+      builder.addVertex(vortexIRVertex, loopVertexStack);
+      connectSideInputs(builder, parDo.getSideInputs(), pValueToVertex, pValueToCoder, vortexIRVertex);
     } else if (beamTransform instanceof Flatten.PCollections) {
       vortexIRVertex = new OperatorVertex(new FlattenTransform());
       builder.addVertex(vortexIRVertex, loopVertexStack);
@@ -182,6 +181,23 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
       throw new UnsupportedOperationException(beamTransform.toString());
     }
     return vortexIRVertex;
+  }
+
+  private static void connectSideInputs(final DAGBuilder<IRVertex, IREdge> builder,
+                                        final List<PCollectionView<?>> sideInputs,
+                                        final Map<PValue, IRVertex> pValueToVertex,
+                                        final Map<PValue, BeamCoder> pValueToCoder,
+                                        final IRVertex vortexIRVertex) {
+    sideInputs.stream()
+        .filter(pValueToVertex::containsKey)
+        .forEach(pValue -> {
+          final IRVertex src = pValueToVertex.get(pValue);
+          final BeamCoder coder = pValueToCoder.get(pValue);
+          final IREdge edge =
+              new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder)
+                  .setAttr(Attribute.Key.SideInput, Attribute.SideInput);
+          builder.connectVertices(edge);
+        });
   }
 
   /**
