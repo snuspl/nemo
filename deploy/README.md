@@ -33,7 +33,7 @@ TODO #252: AWS Setup Guide and Scripts
 * Launch a Vortex job with `-deploy_mode yarn`, and hdfs paths as the input/output
 * Example: `./bin/run.sh -deploy_mode yarn -job_id mr -user_main edu.snu.vortex.examples.beam.MapReduce -user_args "hdfs://v-m:9000/sample_input_mr hdfs://v-m:9000/sample_output_mr"`
 
-## And you're set.....?
+## And you're all set.....?
 * I hope so
 * But the chances are that you'll run into problems that are not covered in this guide
 * When you resolve the problems(with your friend Google), please share what you've learned by updating this README
