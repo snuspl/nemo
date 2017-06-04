@@ -63,3 +63,10 @@ pssh -i -h ~/parallel/hostfile 'ps'
 htop
 ```
 
+## Misc
+```bash
+# When HDFS is being weird... run the following commands in order to hard-format
+pssh -i -h ~/parallel/hostfile 'rm -rf /home/ubuntu/hadoop/dfs'
+hdfs namenode -format
+```
+
