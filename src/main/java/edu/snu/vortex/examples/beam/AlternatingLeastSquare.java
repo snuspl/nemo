@@ -313,6 +313,7 @@ public final class AlternatingLeastSquare {
     final PipelineOptions options = PipelineOptionsFactory.create();
     options.setRunner(Runner.class);
     options.setJobName("ALS");
+    options.setStableUniqueNames(PipelineOptions.CheckEnabled.OFF);
 
     final Pipeline p = Pipeline.create(options);
     p.getCoderRegistry().registerCoder(Pair.class, PairCoder.class);
