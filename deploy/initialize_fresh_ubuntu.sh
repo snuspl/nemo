@@ -1,10 +1,10 @@
+#!/bin/bash
 # My hostname
-sudo echo 127.0.0.1 `hostname` >> /etc/hosts
+sudo sh -c 'echo 127.0.0.1 `hostname` >> /etc/hosts'
 
 # SSH, Rsync, PSSH
-sudo apt-get install -y ssh
-sudo apt-get install -y rsync
-sudo apt-get install python-pip
+sudo apt-get update
+sudo apt-get install -y ssh rsync python-pip
 sudo pip install pssh
 
 # SSH key
