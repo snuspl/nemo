@@ -15,8 +15,6 @@
  */
 package edu.snu.vortex.client;
 
-import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
-import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
@@ -35,8 +33,6 @@ import org.apache.reef.tang.formats.CommandLine;
 import org.apache.reef.util.EnvironmentUtils;
 import org.apache.reef.util.Optional;
 import org.apache.reef.wake.IdentifierFactory;
-import org.apache.reef.wake.remote.address.LocalAddressProvider;
-import org.apache.reef.wake.remote.transport.TransportFactory;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -67,11 +63,9 @@ public final class JobLauncher {
     final Configuration driverConf = getDriverConf(jobConf);
     final Configuration driverNcsConf = getDriverNcsConf();
     final Configuration driverMessageConfg = getDriverMessageConf();
-    final Configuration addressConf = getAddressConf();
 
     // Merge Job and Driver Confs
     final Configuration jobAndDriverConf =
-        //Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg, addressConf);
         Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
 
     // Get DeployMode Conf
@@ -79,7 +73,6 @@ public final class JobLauncher {
 
     // Launch and wait indefinitely for the job to finish
     final LauncherStatus launcherStatus =  DriverLauncher.getLauncher(deployModeConf).run(jobAndDriverConf);
-        //DriverLauncher.getLauncher(Configurations.merge(runtimeConf, addressConf)).run(jobAndDriverConf);
     final Optional<Throwable> possibleError = launcherStatus.getError();
     if (possibleError.isPresent()) {
       throw new RuntimeException(possibleError.get());
@@ -116,13 +109,6 @@ public final class JobLauncher {
         .set(DriverConfiguration.ON_DRIVER_STOP, VortexDriver.DriverStopHandler.class)
         .set(DriverConfiguration.DRIVER_IDENTIFIER, jobId)
         .set(DriverConfiguration.DRIVER_MEMORY, driverMemory)
-        .build();
-  }
-
-  private static Configuration getAddressConf() throws InjectionException {
-    return Tang.Factory.getTang().newConfigurationBuilder()
-        .bindImplementation(LocalAddressProvider.class, MinLocalAddressProvider.class)
-        .bindImplementation(TransportFactory.class, MinLocalMessagingTransportFactory.class)
         .build();
   }
 

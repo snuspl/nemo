@@ -49,6 +49,8 @@
         <dependency>
             <groupId>org.apache.reef</groupId>
             <artifactId>wake-project</artifactId>
+            <version>${reef.version}</version>
+            <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/wake-project-modified-0.15.0-shaded.jar</systemPath>
         </dependency>
         <dependency>
