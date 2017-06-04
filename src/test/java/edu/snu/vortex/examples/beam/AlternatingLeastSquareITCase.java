@@ -17,6 +17,10 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.TestUtil;
+import org.apache.reef.tang.Tang;
+import org.apache.reef.wake.remote.address.HostnameBasedLocalAddressProvider;
+import org.apache.reef.wake.remote.address.LegacyLocalAddressProvider;
+import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
