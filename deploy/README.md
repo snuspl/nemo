@@ -1,4 +1,4 @@
-# Vortex Cluster Deployment Guide
+# Vortex-Hadoop(YARN/HDFS) Cluster Deployment Guide
 
 ## Install the operating system
 * Ubuntu 14.04.4 LTS
@@ -8,28 +8,54 @@
 * `initialize_fresh_ubuntu.sh`
 
 ## Set hostnames
-* Assign a name to each node (v-master, v-worker1, v-worker2, ...)
-* Set `/etc/hosts` accordingly on v-master and `pscp` the file to all v-workers 
+* Assign a name to each node (v-m, v-w1, v-w2, ...)
+* Set `/etc/hosts` accordingly on v-m and `pscp` the file to all v-w
 * Set `hostname` of each node using `set_hostname.sh`
 
-## Set up Hadoop
-* Set up the conf files(core-site.xml, hdfs-site.xml, yarn-site.xml, slaves, ...) on v-master, and `pscp` them to all v-workers
+## Set up YARN/HDFS cluster
+* Set up the conf files(core-site.xml, hdfs-site.xml, yarn-site.xml, slaves, ...) on v-m, and `pscp` them to all v-w
 * hdfs namenode -format (does not always cleanly format... may need to delete the hdfs directory)
 * start-yarn.sh && start-dfs.sh 
 * For more information, refer to the official Hadoop website
 
-## Commands for copying files
+## Viewing the YARN/HDFS Web UI (when the nodes can't be directly accessed from the internet)
+* This is the case for our cmslab cluster
+* Use ssh tunneling: `ssh -D 8123 -f -C -q -N johnyangk@cmscluster.snu.ac.kr`
+* Turn on SOCKS proxy in chrome(web browser) advanced settings
+* Set your mac's `/etc/hosts`
+* Go to `v-m:8088` and `v-m:50070`
+
+## Run Vortex in the cluster
+* git clone Vortex on v-m and install
+* Upload a local input file to HDFS with `hdfs -put`
+* Launch a Vortex job with `-deploy_mode yarn`, and the hdfs file paths as the input/output
+* Example: `./bin/run.sh -deploy_mode yarn -job_id mr -user_main edu.snu.vortex.examples.beam.MapReduce -user_args "hdfs://v-m:9000/sample_input_mr hdfs://v-m:9000/sample_output_mr"`
+
+## And you're set.....?
+* I hope so
+* But the chances are that you'll have problems that are not covered in this guide
+* When you do and if you resolve the problem(with your friend Google), please share your journey with us by updating this README
+
+## Some Example Commands for copying files
 ```bash
+# miss any of these and you'll have a very intersting(?) YARN/HDFS cluster
 pscp -h ~/parallel/hostfile /etc/hosts /etc/hosts 
 pscp -h ~/parallel/hostfile /home/ubuntu/hadoop/etc/hadoop/core-site.xml /home/ubuntu/hadoop/etc/hadoop/core-site.xml
 pscp -h ~/parallel/hostfile /home/ubuntu/hadoop/etc/hadoop/yarn-site.xml /home/ubuntu/hadoop/etc/hadoop/yarn-site.xml
 ```
 
-## Commands for querying cluster status
+## Some Example Commands for querying cluster status
 ```bash
+# sanity check
 pssh -i -h ~/parallel/hostfile 'echo $HADOOP_HOME'
 pssh -i -h ~/parallel/hostfile 'echo $JAVA_HOME'
 pssh -i -h ~/parallel/hostfile 'yarn classpath'
+
+# any zombies?
 pssh -i -h ~/parallel/hostfile 'jps'
+pssh -i -h ~/parallel/hostfile 'ps'
+
+# resource usage
+htop
 ```
 
