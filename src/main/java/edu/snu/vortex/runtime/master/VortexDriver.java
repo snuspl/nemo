@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.runtime.master.address.MinLocalAddressProvider;
-import edu.snu.vortex.runtime.master.address.MinLocalMessagingTransportFactory;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -45,7 +43,6 @@ import org.apache.reef.tang.annotations.Unit;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.IdentifierFactory;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
-import org.apache.reef.wake.remote.transport.TransportFactory;
 import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.event.StopTime;
 
@@ -160,12 +157,6 @@ public final class VortexDriver {
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
 
-        final Configuration addrConf = Tang.Factory.getTang().newConfigurationBuilder()
-            .bindImplementation(LocalAddressProvider.class, MinLocalAddressProvider.class)
-            .bindImplementation(TransportFactory.class, MinLocalMessagingTransportFactory.class)
-            .build();
-
-        //allocatedEvaluator.submitContext(Configurations.merge(getExecutorConfiguration(executorId), addrConf));
         allocatedEvaluator.submitContext(getExecutorConfiguration(executorId));
       }
     }
