@@ -169,7 +169,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
         nextExecutorIndexByContainerType.put(containerType, 0);
         attemptToScheduleByContainerType.put(containerType, lock.newCondition());
       } else { // This container type has been introduced and there may be a TaskGroup waiting to be scheduled.
-        executorIdByContainerType.get(containerType).add(nextExecutorIndexByContainerType.get(containerType), executorId);
+        executorIdByContainerType.get(containerType)
+            .add(nextExecutorIndexByContainerType.get(containerType), executorId);
         attemptToScheduleByContainerType.get(containerType).signal();
       }
     } finally {
