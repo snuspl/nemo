@@ -1,11 +1,13 @@
 # Vortex-Hadoop(YARN/HDFS) Cluster Deployment Guide
 
+TODO #252: AWS Setup Guide and Scripts
+
 ## Install the operating system
 * Ubuntu 14.04.4 LTS
 * Other OS/versions not tested
 
-## Install base software in each node
-* `initialize_fresh_ubuntu.sh`
+## Initialize the fresh OS 
+* Run `initialize_fresh_ubuntu.sh` on each node
 
 ## Set hostnames
 * Assign a name to each node (v-m, v-w1, v-w2, ...)
@@ -28,13 +30,15 @@
 ## Run Vortex in the cluster
 * git clone Vortex on v-m and install
 * Upload a local input file to HDFS with `hdfs -put`
-* Launch a Vortex job with `-deploy_mode yarn`, and the hdfs file paths as the input/output
+* Launch a Vortex job with `-deploy_mode yarn`, and hdfs paths as the input/output
 * Example: `./bin/run.sh -deploy_mode yarn -job_id mr -user_main edu.snu.vortex.examples.beam.MapReduce -user_args "hdfs://v-m:9000/sample_input_mr hdfs://v-m:9000/sample_output_mr"`
 
 ## And you're set.....?
 * I hope so
-* But the chances are that you'll have problems that are not covered in this guide
-* When you do and if you resolve the problem(with your friend Google), please share your journey with us by updating this README
+* But the chances are that you'll run into problems that are not covered in this guide
+* When you resolve the problems(with your friend Google), please share what you've learned by updating this README
+* Final tip: Learn how to use `pssh`, and you'll be able to maintain a n-node cluster as if you're maintaining a single server
+* A great tutorial on pssh: https://www.tecmint.com/execute-commands-on-multiple-linux-servers-using-pssh/
 
 ## Some Example Commands for copying files
 ```bash
@@ -51,7 +55,7 @@ pssh -i -h ~/parallel/hostfile 'echo $HADOOP_HOME'
 pssh -i -h ~/parallel/hostfile 'echo $JAVA_HOME'
 pssh -i -h ~/parallel/hostfile 'yarn classpath'
 
-# any zombies?
+# any zombies? things running alright?
 pssh -i -h ~/parallel/hostfile 'jps'
 pssh -i -h ~/parallel/hostfile 'ps'
 
