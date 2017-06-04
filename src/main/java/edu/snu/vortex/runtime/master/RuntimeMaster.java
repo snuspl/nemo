@@ -30,11 +30,13 @@ import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
+import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,6 +51,7 @@ public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
 
   private final Scheduler scheduler;
+  private final ContainerManager containerManager;
   private final MessageEnvironment masterMessageEnvironment;
   private final BlockManagerMaster blockManagerMaster;
   private JobStateManager jobStateManager;
@@ -58,10 +61,12 @@ public final class RuntimeMaster {
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
+                       final ContainerManager containerManager,
                        final MessageEnvironment masterMessageEnvironment,
                        final BlockManagerMaster blockManagerMaster,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
+    this.containerManager = containerManager;
     this.masterMessageEnvironment = masterMessageEnvironment;
     this.masterMessageEnvironment
         .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
@@ -78,17 +83,21 @@ public final class RuntimeMaster {
     try {
       // TODO #208: Cleanup Execution Threads
       jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
+      int i = 0;
       while (!jobStateManager.checkJobCompletion()) {
+        jobStateManager.storeJSON(dagDirectory, String.valueOf(i++));
         // Check every 3 seconds for job completion.
         Thread.sleep(3000);
       }
+      jobStateManager.storeJSON(dagDirectory, "final");
+      LOG.log(Level.INFO, "{0} is complete!", executionPlan.getId());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   public void terminate() {
-    scheduler.terminate();
+    containerManager.terminate();
   }
 
   /**
@@ -113,6 +122,7 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
+      LOG.log(Level.INFO, "onMessage: {0}", message);
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
@@ -134,6 +144,7 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
+      LOG.log(Level.INFO, "onMessageWithContext: {0}", message);
       switch (message.getType()) {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();

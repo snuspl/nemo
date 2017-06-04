@@ -45,6 +45,9 @@ public final class RuntimeAttributeConverter {
         case Placement:
           final RuntimeAttribute runtimeAttributeVal;
           switch (irAttributeVal) {
+            case Default:
+              runtimeAttributeVal = RuntimeAttribute.Default;
+              break;
             case Transient:
               runtimeAttributeVal = RuntimeAttribute.Transient;
               break;
@@ -61,7 +64,7 @@ public final class RuntimeAttributeConverter {
               throw new UnsupportedAttributeException(
                   "\'" + irAttributeVal + "\' can not be a value of " + irAttributeKey);
           }
-          runtimeVertexAttributes.put(RuntimeAttribute.Key.ResourceType, runtimeAttributeVal);
+          runtimeVertexAttributes.put(RuntimeAttribute.Key.ContainerType, runtimeAttributeVal);
           break;
         default:
           throw new UnsupportedAttributeException("this IR attribute (" + irAttributeKey + ") is not supported.");
