@@ -17,10 +17,13 @@ package edu.snu.vortex.examples.beam;
 
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.FileBasedSink;
+import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.fs.ResourceId;
 import org.apache.beam.sdk.io.hadoop.inputformat.HadoopInputFormatIO;
 import org.apache.beam.sdk.transforms.MapElements;
+import org.apache.beam.sdk.transforms.SimpleFunction;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.TypeDescriptor;
@@ -46,8 +49,21 @@ final class GenericSourceSink {
       hadoopConf.setClass("mapreduce.job.inputformat.class", TextInputFormat.class, InputFormat.class);
       hadoopConf.setClass("key.class", LongWritable.class, Object.class);
       hadoopConf.setClass("value.class", Text.class, Object.class);
-      return pipeline.apply("read", HadoopInputFormatIO.<LongWritable, Text>read().withConfiguration(hadoopConf))
-          .apply(MapElements.into(TypeDescriptor.of(String.class)).via(kv -> kv.getValue().toString()));
+      final HadoopInputFormatIO.Read<Long, String> read = HadoopInputFormatIO.<Long, String>read()
+          .withConfiguration(hadoopConf)
+          .withKeyTranslation(new SimpleFunction<LongWritable, Long>() {
+            @Override
+            public Long apply(final LongWritable longWritable) {
+              return longWritable.get();
+            }
+          })
+          .withValueTranslation(new SimpleFunction<Text, String>() {
+            @Override
+            public String apply(final Text text) {
+              return text.toString();
+            }
+          });
+      return pipeline.apply(read).apply(MapElements.into(TypeDescriptor.of(String.class)).via(KV::getValue));
     } else {
       return pipeline.apply(TextIO.read().from(path));
     }
