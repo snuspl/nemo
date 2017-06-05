@@ -42,6 +42,7 @@ final class GenericSourceSink {
                                          final String path) {
     if (path.startsWith("hdfs://")) {
       final Configuration hadoopConf = new Configuration(false);
+      hadoopConf.set("mapreduce.input.fileinputformat.inputdir", path);
       hadoopConf.setClass("mapreduce.job.inputformat.class", TextInputFormat.class, InputFormat.class);
       hadoopConf.setClass("key.class", LongWritable.class, Object.class);
       hadoopConf.setClass("value.class", Text.class, Object.class);
