@@ -104,9 +104,14 @@ public class LoopInvariantCodeMotionPassTest {
   @Test
   public void testLoopInvariantCodeMotionPass() throws Exception {
     final long numberOfGroupedVertices = groupedDAG.getVertices().size();
+
     final DAG<IRVertex, IREdge> processedDAG = LoopOptimizations.getLoopInvariantCodeMotionPass()
         .process(dagToBeRefactored);
     assertEquals(numberOfGroupedVertices, processedDAG.getVertices().size());
+
+    final DAG<IRVertex, IREdge> notProcessedDAG = LoopOptimizations.getLoopInvariantCodeMotionPass()
+        .process(groupedDAG);
+    assertEquals(numberOfGroupedVertices, notProcessedDAG.getVertices().size());
   }
 
 }
