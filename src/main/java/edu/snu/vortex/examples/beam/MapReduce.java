@@ -17,7 +17,6 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.compiler.frontend.beam.Runner;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.io.hdfs.HadoopFileSystemOptionsRegistrar;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.*;
@@ -44,7 +43,6 @@ public final class MapReduce {
     final PipelineOptions options = PipelineOptionsFactory.create();
     options.setRunner(Runner.class);
     options.setJobName("MapReduce");
-    HadoopFileSystemOptionsRegistrar
 
     final Pipeline p = Pipeline.create(options);
     final PCollection<String> result = GenericSourceSink.read(p, inputFilePath)
