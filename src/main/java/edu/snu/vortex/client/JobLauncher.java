@@ -65,8 +65,7 @@ public final class JobLauncher {
     final Configuration driverMessageConfg = getDriverMessageConf();
 
     // Merge Job and Driver Confs
-    final Configuration jobAndDriverConf =
-        Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
+    final Configuration jobAndDriverConf = Configurations.merge(jobConf, driverConf, driverNcsConf, driverMessageConfg);
 
     // Get DeployMode Conf
     final Configuration deployModeConf = getDeployModeConf(jobConf);
