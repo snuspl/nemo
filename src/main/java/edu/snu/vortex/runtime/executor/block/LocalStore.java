@@ -20,11 +20,14 @@ import edu.snu.vortex.compiler.ir.Element;
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Store data in local memory, unserialized.
  */
 public final class LocalStore implements BlockStore {
+  private static final Logger LOG = Logger.getLogger(LocalStore.class.getName());
   private final HashMap<String, Iterable<Element>> blockIdToData;
 
   @Inject
@@ -35,6 +38,7 @@ public final class LocalStore implements BlockStore {
   public Optional<Iterable<Element>> getBlock(final String blockId) {
     // Memory leak if we don't remove here
     final Optional<Iterable<Element>> result = Optional.ofNullable(blockIdToData.remove(blockId));
+    LOG.log(Level.INFO, "Should be empty {0}", blockIdToData);
     System.out.println("Should be empty: " + blockIdToData);
     return result;
   }
