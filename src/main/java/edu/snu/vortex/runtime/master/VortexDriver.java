@@ -156,7 +156,6 @@ public final class VortexDriver {
         final ExecutorToBeLaunched executorToBeLaunched = pendingEvaluators.remove(0);
         final String executorId = RuntimeIdGenerator.generateExecutorId();
         executorIdToPendingContext.put(executorId, executorToBeLaunched);
-
         allocatedEvaluator.submitContext(getExecutorConfiguration(executorId));
       }
     }
