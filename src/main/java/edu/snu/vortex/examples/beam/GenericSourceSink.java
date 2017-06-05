@@ -46,9 +46,9 @@ final class GenericSourceSink {
       hadoopConf.setClass("key.class", LongWritable.class, Object.class);
       hadoopConf.setClass("value.class", Text.class, Object.class);
       return pipeline.apply("read", HadoopInputFormatIO.<LongWritable, Text>read().withConfiguration(hadoopConf))
-          .apply(MapElements.into(TypeDescriptor.of(String.class)).via(kv -> kv.getValue().toString());
+          .apply(MapElements.into(TypeDescriptor.of(String.class)).via(kv -> kv.getValue().toString()));
     } else {
-      return pipeline.apply(TextIO.Read.from(path));
+      return pipeline.apply(TextIO.read().from(path));
     }
   }
 
@@ -56,19 +56,18 @@ final class GenericSourceSink {
                             final String path) {
     if (path.startsWith("hdfs://")) {
       final ResourceId resource = FileBasedSink.convertToFileResourceIfPossible(path);
+      /*
       if (!resource.isDirectory()) {
         prefix = verifyNotNull(
             resource.getFilename(),
             "A non-directory resource should have a non-null filename: %s",
             resource);
       }
+      */
       System.out.println(resource.getScheme());
       return dataToWrite.apply(TextIO.write().to(resource.getCurrentDirectory()));
-
-      FileBasedSink.WriteOperation
-      return dataToWrite.apply(TextIO.Write(path));
     } else {
-      return dataToWrite.apply(TextIO.Write.to(path));
+      return dataToWrite.apply(TextIO.write().to(path));
     }
   }
 }

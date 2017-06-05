@@ -51,8 +51,7 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
     final List<Reader<O>> readers = new ArrayList<>();
     LOG.log(Level.INFO, "estimate: {0}", source.getEstimatedSizeBytes(null));
     LOG.log(Level.INFO, "desired: {0}", desiredNumOfSplits);
-
-    source.splitIntoBundles(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null).forEach(boundedSource -> {
+    source.split(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null).forEach(boundedSource -> {
       readers.add(new BoundedSourceReader<>(boundedSource));
     });
 
