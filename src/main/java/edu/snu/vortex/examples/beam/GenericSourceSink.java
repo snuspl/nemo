@@ -16,13 +16,19 @@
 package edu.snu.vortex.examples.beam;
 
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.io.Read;
+import org.apache.beam.sdk.io.FileBasedSink;
 import org.apache.beam.sdk.io.TextIO;
-import org.apache.beam.sdk.io.Write;
-import org.apache.beam.sdk.io.hdfs.HDFSFileSink;
-import org.apache.beam.sdk.io.hdfs.HDFSFileSource;
+import org.apache.beam.sdk.io.fs.ResourceId;
+import org.apache.beam.sdk.io.hadoop.inputformat.HadoopInputFormatIO;
+import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
+import org.apache.beam.sdk.values.TypeDescriptor;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 /**
  * Helper class for handling source/sink in a generic way.
@@ -35,7 +41,12 @@ final class GenericSourceSink {
   public static PCollection<String> read(final Pipeline pipeline,
                                          final String path) {
     if (path.startsWith("hdfs://")) {
-      return pipeline.apply(Read.from(HDFSFileSource.fromText(path)));
+      final Configuration hadoopConf = new Configuration(false);
+      hadoopConf.setClass("mapreduce.job.inputformat.class", TextInputFormat.class, InputFormat.class);
+      hadoopConf.setClass("key.class", LongWritable.class, Object.class);
+      hadoopConf.setClass("value.class", Text.class, Object.class);
+      return pipeline.apply("read", HadoopInputFormatIO.<LongWritable, Text>read().withConfiguration(hadoopConf))
+          .apply(MapElements.into(TypeDescriptor.of(String.class)).via(kv -> kv.getValue().toString());
     } else {
       return pipeline.apply(TextIO.Read.from(path));
     }
@@ -44,7 +55,18 @@ final class GenericSourceSink {
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
     if (path.startsWith("hdfs://")) {
-      return dataToWrite.apply(Write.to(HDFSFileSink.toText(path)));
+      final ResourceId resource = FileBasedSink.convertToFileResourceIfPossible(path);
+      if (!resource.isDirectory()) {
+        prefix = verifyNotNull(
+            resource.getFilename(),
+            "A non-directory resource should have a non-null filename: %s",
+            resource);
+      }
+      System.out.println(resource.getScheme());
+      return dataToWrite.apply(TextIO.write().to(resource.getCurrentDirectory()));
+
+      FileBasedSink.WriteOperation
+      return dataToWrite.apply(TextIO.Write(path));
     } else {
       return dataToWrite.apply(TextIO.Write.to(path));
     }
