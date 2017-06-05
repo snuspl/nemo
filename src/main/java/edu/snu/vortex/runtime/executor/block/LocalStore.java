@@ -33,7 +33,7 @@ public final class LocalStore implements BlockStore {
   }
 
   public Optional<Iterable<Element>> getBlock(final String blockId) {
-    return Optional.ofNullable(blockIdToData.get(blockId));
+    return Optional.ofNullable(blockIdToData.remove(blockId));
   }
 
   public void putBlock(final String blockId, final Iterable<Element> data) {
