@@ -38,8 +38,6 @@ public final class LocalStore implements BlockStore {
   public Optional<Iterable<Element>> getBlock(final String blockId) {
     // Memory leak if we don't remove here
     final Optional<Iterable<Element>> result = Optional.ofNullable(blockIdToData.remove(blockId));
-    LOG.log(Level.INFO, "Should be empty {0}", blockIdToData);
-    System.out.println("Should be empty: " + blockIdToData);
     return result;
   }
 
