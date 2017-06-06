@@ -49,6 +49,8 @@ final class GenericSourceSink {
       hadoopConf.setClass("mapreduce.job.inputformat.class", TextInputFormat.class, InputFormat.class);
       hadoopConf.setClass("key.class", LongWritable.class, Object.class);
       hadoopConf.setClass("value.class", Text.class, Object.class);
+
+      // Without translations, Beam internally does some weird cloning
       final HadoopInputFormatIO.Read<Long, String> read = HadoopInputFormatIO.<Long, String>read()
           .withConfiguration(hadoopConf)
           .withKeyTranslation(new SimpleFunction<LongWritable, Long>() {

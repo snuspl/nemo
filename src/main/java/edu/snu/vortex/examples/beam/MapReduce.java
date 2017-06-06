@@ -51,7 +51,7 @@ public final class MapReduce {
           public KV<String, Long> apply(final String line) {
             final String[] words = line.split(" +");
             final String documentId = words[0];
-            final Long count = Long.parseLong(words[1]);
+            final Long count = Long.parseLong(words[2]);
             return KV.of(documentId, count);
           }
         }))
