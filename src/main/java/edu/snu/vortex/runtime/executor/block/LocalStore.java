@@ -20,7 +20,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * Store data in local memory, unserialized.
