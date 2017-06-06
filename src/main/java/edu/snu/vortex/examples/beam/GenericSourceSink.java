@@ -16,11 +16,8 @@
 package edu.snu.vortex.examples.beam;
 
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.hadoop.inputformat.HadoopInputFormatIO;
-import org.apache.beam.sdk.io.hdfs.HadoopFileSystemOptions;
-import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.SimpleFunction;
 import org.apache.beam.sdk.values.KV;
@@ -73,16 +70,6 @@ final class GenericSourceSink {
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
-    final HadoopFileSystemOptions options = PipelineOptionsFactory.as(HadoopFileSystemOptions.class);
-    FileSystems.setDefaultPipelineOptions(options);
-      /*
-      if (!resource.isDirectory()) {
-        prefix = verifyNotNull(
-            resource.getFilename(),
-            "A non-directory resource should have a non-null filename: %s",
-            resource);
-      }
-      */
     return dataToWrite.apply(TextIO.write().to(path));
   }
 }
