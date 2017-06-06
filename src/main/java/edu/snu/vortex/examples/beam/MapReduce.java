@@ -63,7 +63,7 @@ public final class MapReduce {
             return kv.getKey() + ": " + kv.getValue();
           }
         }));
-    // GenericSourceSink.write(result, outputFilePath);
+    GenericSourceSink.write(result, outputFilePath);
     p.run();
   }
 }
