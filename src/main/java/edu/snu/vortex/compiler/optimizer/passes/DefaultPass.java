@@ -21,13 +21,13 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 
 /**
- * Default pass.
+ * Any pass.
  */
 public final class DefaultPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.topologicalDo(vertex -> {
-        vertex.setAttr(Attribute.Key.Placement, Attribute.Default);
+        vertex.setAttr(Attribute.Key.Placement, Attribute.Any);
         dag.getIncomingEdgesOf(vertex).forEach(irEdge -> {
           irEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
           irEdge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);

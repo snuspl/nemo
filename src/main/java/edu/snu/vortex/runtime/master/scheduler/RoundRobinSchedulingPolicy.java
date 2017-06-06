@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * {@inheritDoc}
@@ -133,7 +134,9 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    */
   private String selectExecutorByRR(final RuntimeAttribute containerType) {
     String selectedExecutorId = null;
-    final List<String> executorIds = executorIdByContainerType.get(containerType);
+    final List<String> executorIds = containerType == RuntimeAttribute.Any ?
+        executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()) :
+        executorIdByContainerType.get(containerType);
 
     if (executorIds != null && !executorIds.isEmpty()) {
       final int numExecutors = executorIds.size();

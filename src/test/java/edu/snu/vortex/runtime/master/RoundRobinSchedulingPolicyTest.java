@@ -92,6 +92,16 @@ public final class RoundRobinSchedulingPolicyTest {
   }
 
   @Test
+  public void testAnyPlacement() {
+    final TaskGroup A1 = new TaskGroup("A1", "Stage A", 0, null, RuntimeAttribute.Any);
+    final TaskGroup A2 = new TaskGroup("A2", "Stage A", 0, null, RuntimeAttribute.Any);
+    final TaskGroup A3 = new TaskGroup("A3", "Stage A", 0, null, RuntimeAttribute.Any);
+    final TaskGroup A4 = new TaskGroup("A4", "Stage A", 0, null, RuntimeAttribute.Any);
+    final TaskGroup A5 = new TaskGroup("A5", "Stage A", 0, null, RuntimeAttribute.Any);
+
+  }
+
+  @Test
   public void testSingleCoreTwoTypesOfExecutors() {
     final TaskGroup A1 = new TaskGroup("A1", "Stage A", 0, null, RuntimeAttribute.Compute);
     final TaskGroup A2 = new TaskGroup("A2", "Stage A", 1, null, RuntimeAttribute.Compute);
@@ -179,5 +189,7 @@ public final class RoundRobinSchedulingPolicyTest {
 
     verify(mockMsgSender, times(8)).send(anyObject());
   }
+
+  private 
 }
 

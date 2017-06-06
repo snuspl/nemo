@@ -27,7 +27,7 @@ public enum RuntimeAttribute {
   /**
    * IRVertex container type attributes.
    */
-  Default(Key.ContainerType),
+  Any(Key.ContainerType),
   Transient(Key.ContainerType),
   Reserved(Key.ContainerType),
   Compute(Key.ContainerType),

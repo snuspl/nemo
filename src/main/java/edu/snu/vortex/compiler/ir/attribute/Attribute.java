@@ -22,7 +22,7 @@ public enum Attribute {
   /**
    * IRVertex placement attributes.
    */
-  Default(Key.Placement),
+  Any(Key.Placement),
   Transient(Key.Placement),
   Reserved(Key.Placement),
   Compute(Key.Placement),
