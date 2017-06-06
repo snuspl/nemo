@@ -113,7 +113,6 @@ public final class Executor {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
-      LOG.log(Level.INFO, "onMessage: {0}", message);
       switch (message.getType()) {
       case ScheduleTaskGroup:
         final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();

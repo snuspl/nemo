@@ -122,7 +122,6 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
-      LOG.log(Level.INFO, "onMessage: {0}", message);
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();

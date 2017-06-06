@@ -16,10 +16,8 @@
 package edu.snu.vortex.examples.beam;
 
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.io.FileBasedSink;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.io.TextIO;
-import org.apache.beam.sdk.io.fs.ResourceId;
 import org.apache.beam.sdk.io.hadoop.inputformat.HadoopInputFormatIO;
 import org.apache.beam.sdk.io.hdfs.HadoopFileSystemOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -75,10 +73,8 @@ final class GenericSourceSink {
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
-    if (path.startsWith("hdfs://")) {
-      final HadoopFileSystemOptions options = PipelineOptionsFactory.as(HadoopFileSystemOptions.class);
-      FileSystems.setDefaultPipelineOptions(options);
-      final ResourceId resource = FileBasedSink.convertToFileResourceIfPossible(path);
+    final HadoopFileSystemOptions options = PipelineOptionsFactory.as(HadoopFileSystemOptions.class);
+    FileSystems.setDefaultPipelineOptions(options);
       /*
       if (!resource.isDirectory()) {
         prefix = verifyNotNull(
@@ -87,10 +83,6 @@ final class GenericSourceSink {
             resource);
       }
       */
-      System.out.println(resource.getScheme());
-      return dataToWrite.apply(TextIO.write().to(resource.getCurrentDirectory()));
-    } else {
-      return dataToWrite.apply(TextIO.write().to(path));
-    }
+    return dataToWrite.apply(TextIO.write().to(path));
   }
 }
