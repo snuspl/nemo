@@ -70,6 +70,11 @@ final class GenericSourceSink {
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
-    return dataToWrite.apply(TextIO.write().to(path));
+    if (path.startsWith("hdfs://")) {
+      // TODO #268 Import beam-sdks-java-io-hadoop-file-system
+      throw new UnsupportedOperationException("Writing to HDFS is not yet supported");
+    } else {
+      return dataToWrite.apply(TextIO.write().to(path));
+    }
   }
 }
