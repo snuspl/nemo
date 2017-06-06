@@ -20,14 +20,12 @@ import edu.snu.vortex.compiler.ir.Element;
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Store data in local memory, unserialized.
  */
 public final class LocalStore implements BlockStore {
-  private static final Logger LOG = Logger.getLogger(LocalStore.class.getName());
   private final HashMap<String, Iterable<Element>> blockIdToData;
 
   @Inject
