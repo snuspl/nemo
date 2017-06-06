@@ -15,11 +15,10 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
-import org.apache.beam.sdk.io.hdfs.HadoopFileSystemOptions;
 import org.apache.beam.sdk.options.PipelineOptions;
 
 /**
  * VortexPipelineOptions.
  */
-public interface VortexPipelineOptions extends PipelineOptions, HadoopFileSystemOptions {
+public interface VortexPipelineOptions extends PipelineOptions {
 }

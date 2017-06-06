@@ -195,8 +195,10 @@ public final class RuntimeMaster {
       return BlockState.State.COMMITTED;
     case LOST:
       return BlockState.State.LOST;
+    case REMOVED:
+      return BlockState.State.REMOVED;
     default:
-      throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
+      throw new UnknownExecutionStateException(new Exception("This BlockState is unknown: " + state));
     }
   }
 }
