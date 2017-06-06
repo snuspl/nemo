@@ -103,7 +103,8 @@ public final class Executor {
         taskGroupStateManager,
         scheduledTaskGroup.getTaskGroupIncomingEdges(),
         scheduledTaskGroup.getTaskGroupOutgoingEdges(),
-        dataTransferFactory).execute();
+        dataTransferFactory,
+        blockManagerWorker).execute();
   }
 
   /**
@@ -128,7 +129,6 @@ public final class Executor {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
-      LOG.log(Level.INFO, "onMessageWithContext: {0}", message);
       switch (message.getType()) {
       default:
         throw new IllegalMessageException(

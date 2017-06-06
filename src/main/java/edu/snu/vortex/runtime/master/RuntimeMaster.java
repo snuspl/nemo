@@ -143,7 +143,6 @@ public final class RuntimeMaster {
 
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
-      LOG.log(Level.INFO, "onMessageWithContext: {0}", message);
       switch (message.getType()) {
       case RequestBlockLocation:
         final ControlMessage.RequestBlockLocationMsg requestBlockLocationMsg = message.getRequestBlockLocationMsg();
