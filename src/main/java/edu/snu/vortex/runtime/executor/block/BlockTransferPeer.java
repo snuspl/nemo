@@ -114,6 +114,8 @@ public final class BlockTransferPeer {
       LOG.log(Level.SEVERE, "Cannot lookup BlockTransferPeer {0}", remotePeerIdentifier);
       throw new RuntimeException(e);
     }
+    LOG.log(Level.INFO, "Looked up {0}", remoteAddress);
+
     final Link<ControlMessage.RequestBlockMsg> link;
     try {
       link = transport.open(remoteAddress, REQUEST_MESSAGE_CODEC, LINK_LISTENER);
@@ -131,6 +133,8 @@ public final class BlockTransferPeer {
         .setBlockStore(convertBlockStore(blockStore))
         .build();
     link.write(msg);
+
+    LOG.log(Level.INFO, "Wrote request {0}", msg);
     return future;
   }
 
