@@ -38,6 +38,8 @@ import java.util.concurrent.ExecutionException;
  */
 @ThreadSafe
 public final class BlockManagerWorker {
+  public static final String NO_REMOTE_BLOCK = "";
+
   private final String executorId;
 
   private final LocalStore localStore;
@@ -170,7 +172,7 @@ public final class BlockManagerWorker {
 
       final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
       assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);
-      if (blockLocationInfoMsg == null) {
+      if (blockLocationInfoMsg.getOwnerExecutorId().equals(NO_REMOTE_BLOCK)) {
         // TODO #163: Handle Fault Tolerance
         // We should report this exception to the master, instead of shutting down the JVM
         throw new RuntimeException("Block " + blockId + " not found both in the local storage and the remote storage");
