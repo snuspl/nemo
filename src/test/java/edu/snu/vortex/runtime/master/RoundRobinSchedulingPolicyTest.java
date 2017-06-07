@@ -189,7 +189,5 @@ public final class RoundRobinSchedulingPolicyTest {
 
     verify(mockMsgSender, times(8)).send(anyObject());
   }
-
-  private 
 }
 
