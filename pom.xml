@@ -40,8 +40,6 @@
             <groupId>org.apache.reef</groupId>
             <artifactId>wake</artifactId>
             <version>${reef.version}</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/src/main/resources/wake-0.15.0-shaded.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.apache.reef</groupId>
@@ -70,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.beam</groupId>
-            <artifactId>beam-sdks-java-io-hadoop-file-system</artifactId>
+            <artifactId>beam-sdks-java-io-hadoop-input-format</artifactId>
             <version>${beam.version}</version>
         </dependency>
         <dependency>
@@ -124,6 +122,12 @@
             <version>${hadoop.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -144,7 +148,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -155,6 +159,10 @@
                             <outputFile>
                                 ${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar
                             </outputFile>
+                            <transformers>
+                                <!-- Required for using beam-hadoop: See https://stackoverflow.com/questions/44365545 -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
@@ -219,6 +227,26 @@
                         <goals>
                             <goal>run</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <groupId>org.apache.reef</groupId>
+                            <artifactId>wake</artifactId>
+                            <version>${reef.version}</version>
+                            <packaging>jar</packaging>
+                            <file>${basedir}/src/main/resources/wake-0.15.0-shaded.jar</file>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
