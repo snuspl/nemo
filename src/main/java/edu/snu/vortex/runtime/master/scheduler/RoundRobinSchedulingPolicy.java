@@ -105,7 +105,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
         boolean executorAvailable =
             conditionByContainerType.get(containerType).await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
         if (executorAvailable) { // if an executor has become available before scheduleTimeoutMs,
-          // We can still return Optional.empty() here, if the newly available executor's containerType doesn't match
           return selectExecutorByRR(containerType);
         } else {
           return Optional.empty();
@@ -128,8 +127,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    */
   private Optional<String> selectExecutorByRR(final RuntimeAttribute containerType) {
     final List<String> candidateExecutorIds = (containerType == RuntimeAttribute.Any)
-        ? executorIdByContainerType.get(containerType) // a particular containerType
-        : executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()); // all
+        ? executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()) // all
+        : executorIdByContainerType.get(containerType); // a particular containerType
 
     if (candidateExecutorIds != null && !candidateExecutorIds.isEmpty()) {
       final int numExecutors = candidateExecutorIds.size();
