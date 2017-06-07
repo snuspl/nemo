@@ -32,12 +32,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Executor-side block manager.
  */
 @ThreadSafe
 public final class BlockManagerWorker {
+  private static final Logger LOG = Logger.getLogger(BlockManagerWorker.class.getName());
+
   public static final String NO_REMOTE_BLOCK = "";
 
   private final String executorId;
@@ -86,6 +90,7 @@ public final class BlockManagerWorker {
 
   public Iterable<Element> removeBlock(final String blockId,
                                        final RuntimeAttribute blockStore) {
+    LOG.log(Level.INFO, "RemoveBlock: {0}", blockId);
     final BlockStore store = getBlockStore(blockStore);
     final Optional<Iterable<Element>> optional = store.removeBlock(blockId);
     if (!optional.isPresent()) {
@@ -118,6 +123,7 @@ public final class BlockManagerWorker {
   public void putBlock(final String blockId,
                        final Iterable<Element> data,
                        final RuntimeAttribute blockStore) {
+    LOG.log(Level.INFO, "PutBlock: {0}", blockId);
     final BlockStore store = getBlockStore(blockStore);
     store.putBlock(blockId, data);
 
@@ -146,6 +152,7 @@ public final class BlockManagerWorker {
   public Iterable<Element> getBlock(final String blockId,
                                     final String runtimeEdgeId,
                                     final RuntimeAttribute blockStore) {
+    LOG.log(Level.INFO, "GetBlock: {0}", blockId);
     // Local hit!
     final BlockStore store = getBlockStore(blockStore);
     final Optional<Iterable<Element>> optionalData = store.getBlock(blockId);
