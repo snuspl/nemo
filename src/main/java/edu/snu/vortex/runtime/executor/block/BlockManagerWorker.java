@@ -35,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Executor-side block manager.
- * For now, all its operations are synchronized to guarantee thread safety.
  */
 @ThreadSafe
 public final class BlockManagerWorker {
@@ -83,8 +82,8 @@ public final class BlockManagerWorker {
     runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
   }
 
-  public synchronized Iterable<Element> removeBlock(final String blockId,
-                                                    final RuntimeAttribute blockStore) {
+  public Iterable<Element> removeBlock(final String blockId,
+                                       final RuntimeAttribute blockStore) {
     final BlockStore store = getBlockStore(blockStore);
     final Optional<Iterable<Element>> optional = store.removeBlock(blockId);
     if (!optional.isPresent()) {
@@ -114,9 +113,9 @@ public final class BlockManagerWorker {
    * @param data of the block
    * @param blockStore for storing the block
    */
-  public synchronized void putBlock(final String blockId,
-                                    final Iterable<Element> data,
-                                    final RuntimeAttribute blockStore) {
+  public void putBlock(final String blockId,
+                       final Iterable<Element> data,
+                       final RuntimeAttribute blockStore) {
     final BlockStore store = getBlockStore(blockStore);
     store.putBlock(blockId, data);
 
@@ -142,9 +141,9 @@ public final class BlockManagerWorker {
    * @param blockStore for the data storage
    * @return the block data
    */
-  public synchronized Iterable<Element> getBlock(final String blockId,
-                                                 final String runtimeEdgeId,
-                                                 final RuntimeAttribute blockStore) {
+  public Iterable<Element> getBlock(final String blockId,
+                                    final String runtimeEdgeId,
+                                    final RuntimeAttribute blockStore) {
     // Local hit!
     final BlockStore store = getBlockStore(blockStore);
     final Optional<Iterable<Element>> optionalData = store.getBlock(blockId);
