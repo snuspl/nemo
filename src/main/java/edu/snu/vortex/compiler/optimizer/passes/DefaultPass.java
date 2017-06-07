@@ -29,7 +29,7 @@ public final class DefaultPass implements Pass {
     dag.topologicalDo(vertex -> {
         vertex.setAttr(Attribute.Key.Placement, Attribute.Any);
         dag.getIncomingEdgesOf(vertex).forEach(irEdge -> {
-          irEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+          irEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
           irEdge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
         });
     });
