@@ -88,6 +88,10 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     this.executorRepresenterMap = new HashMap<>();
     this.attemptToScheduleByContainerType = new HashMap<>();
     this.nextExecutorIndexByContainerType = new HashMap<>();
+
+    // initialize 'Any' container type
+    nextExecutorIndexByContainerType.put(RuntimeAttribute.Any, 0);
+    attemptToScheduleByContainerType.put(RuntimeAttribute.Any, lock.newCondition());
   }
 
   public long getScheduleTimeoutMs() {
@@ -134,9 +138,9 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    */
   private String selectExecutorByRR(final RuntimeAttribute containerType) {
     String selectedExecutorId = null;
-    final List<String> executorIds = containerType == RuntimeAttribute.Any
-        ? executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList())
-        : executorIdByContainerType.get(containerType);
+    final List<String> executorIds = containerType == RuntimeAttribute.Any ?
+        executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()) :
+        executorIdByContainerType.get(containerType);
 
     if (executorIds != null && !executorIds.isEmpty()) {
       final int numExecutors = executorIds.size();

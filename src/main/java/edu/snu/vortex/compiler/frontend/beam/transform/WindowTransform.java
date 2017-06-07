@@ -30,7 +30,7 @@ public final class WindowTransform implements Transform {
   private OutputCollector outputCollector;
 
   /**
-   * Any Constructor.
+   * Default Constructor.
    * @param windowFn windowFn for the Transform.
    */
   public WindowTransform(final WindowFn windowFn) {

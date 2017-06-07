@@ -80,7 +80,7 @@ public final class MapReduce {
     private final String name;
 
     /**
-     * Any constructor.
+     * Default constructor.
      * @param name name of the empty transform.
      */
     EmptyTransform(final String name) {

@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 
 /**
- * Any pass.
+ * Default pass.
  */
 public final class DefaultPass implements Pass {
   @Override
