@@ -17,10 +17,12 @@ package edu.snu.vortex.compiler.optimizer.passes;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,6 +31,7 @@ import java.util.List;
 public final class ParallelismPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
+    // Propagate forward source parallelism
     dag.topologicalDo(vertex -> {
       try {
         final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
@@ -46,6 +49,51 @@ public final class ParallelismPass implements Pass {
         throw new RuntimeException(e);
       }
     });
+
+    // Propagate backward with OneToOne edges, fixing conflicts between different sources with different parallelism
+    final List<IRVertex> reverseTopologicalSort = getReverseTopologicalSort(dag);
+    for (final IRVertex vertex : reverseTopologicalSort) {
+      if (vertex instanceof SourceVertex) {
+        final SourceVertex sourceVertex = (SourceVertex) vertex;
+        final int desiredParallelism = sourceVertex.getAttr(Attribute.IntegerKey.Parallelism);
+        final int actualParallelism = sourceVertex.getReaders(desiredParallelism).size();
+        if (sourceVertex.getReaders(desiredParallelism).size() != desiredParallelism) {
+          throw new RuntimeException("Source " + vertex.toString() + " cannot support back-propagated parallelism:"
+              + "desired " + desiredParallelism + ", actual" + actualParallelism);
+        }
+      } else if (vertex instanceof OperatorVertex) {
+        final int parallelism = vertex.getAttr(Attribute.IntegerKey.Parallelism);
+        dag.getIncomingEdgesOf(vertex).stream()
+            .filter(edge -> edge.getAttr(Attribute.Key.CommunicationPattern) == Attribute.OneToOne)
+            .map(IREdge::getSrc)
+            .forEach(src -> {
+              src.setAttr(Attribute.IntegerKey.Parallelism, parallelism);
+            });
+      } else {
+        throw new UnsupportedOperationException("Unknown vertex type: " + vertex.toString());
+      }
+    }
+
+    // Check all OneToOne edges have src/dst with the same parallelism
+    // TODO #22: DAG Integrity Check
+    dag.topologicalDo(vertex -> {
+      final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
+      inEdges.stream()
+          .filter(edge -> edge.getAttr(Attribute.Key.CommunicationPattern) == Attribute.OneToOne)
+          .forEach(edge -> {
+            final int srcParallelism = edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism);
+            final int dstParallelism = edge.getDst().getAttr(Attribute.IntegerKey.Parallelism);
+            if (srcParallelism != dstParallelism) {
+              throw new RuntimeException(edge.toString() + " is OneToOne, but src/dst parallelisms differ");
+            }
+          });
+    });
     return dag;
+  }
+
+  private List<IRVertex> getReverseTopologicalSort(final DAG<IRVertex, IREdge> dag) {
+    final List<IRVertex> reverseTopologicalSort = dag.getTopologicalSort();
+    Collections.reverse(dag.getTopologicalSort());
+    return reverseTopologicalSort;
   }
 }
