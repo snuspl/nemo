@@ -27,7 +27,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Pass for Common Subexpression Elimination optimization.
+ * Pass for Common Subexpression Elimination optimization. It eliminates vertices that are repetitively run without
+ * much meaning, and runs it a single time, instead of multiple times. We consider such vertices as 'common' when
+ * they include the same transform, and has incoming edges from an identical set of vertices.
+ * Refer to CommonSubexpressionEliminationPassTest for such cases.
  */
 public final class CommonSubexpressionEliminationPass implements Pass {
   @Override
@@ -67,22 +70,22 @@ public final class CommonSubexpressionEliminationPass implements Pass {
       }
     });
 
-
     // merge them if they are not dependent on each other, and add IRVertices to the builder.
     operatorVerticesToBeMerged.forEach(((transform, operatorVertices) -> {
-      final Map<List<IRVertex>, List<OperatorVertex>> verticesToBeMergedWithIdenticalSources = new HashMap<>();
+      final Map<Set<IRVertex>, List<OperatorVertex>> verticesToBeMergedWithIdenticalSources = new HashMap<>();
 
       operatorVertices.forEach(operatorVertex -> {
-        final List<IRVertex> incomingSources = dag.getIncomingEdgesOf(operatorVertex).stream().map(IREdge::getSrc)
-            .collect(Collectors.toList());
+        // compare if incoming vertices are identical.
+        final Set<IRVertex> incomingVertices = dag.getIncomingEdgesOf(operatorVertex).stream().map(IREdge::getSrc)
+            .collect(Collectors.toSet());
         if (verticesToBeMergedWithIdenticalSources.keySet().stream().anyMatch(lst ->
-            lst.containsAll(incomingSources) && incomingSources.containsAll(lst))) {
-          final List<IRVertex> foundKey = verticesToBeMergedWithIdenticalSources.keySet().stream().filter(vs ->
-              vs.containsAll(incomingSources) && incomingSources.containsAll(vs)).findFirst().get();
+            lst.containsAll(incomingVertices) && incomingVertices.containsAll(lst))) {
+          final Set<IRVertex> foundKey = verticesToBeMergedWithIdenticalSources.keySet().stream().filter(vs ->
+              vs.containsAll(incomingVertices) && incomingVertices.containsAll(vs)).findFirst().get();
           verticesToBeMergedWithIdenticalSources.get(foundKey).add(operatorVertex);
         } else {
-          verticesToBeMergedWithIdenticalSources.putIfAbsent(incomingSources, new ArrayList<>());
-          verticesToBeMergedWithIdenticalSources.get(incomingSources).add(operatorVertex);
+          verticesToBeMergedWithIdenticalSources.putIfAbsent(incomingVertices, new ArrayList<>());
+          verticesToBeMergedWithIdenticalSources.get(incomingVertices).add(operatorVertex);
         }
       });
 
@@ -91,20 +94,14 @@ public final class CommonSubexpressionEliminationPass implements Pass {
     }));
 
     // process IREdges
-    operatorVerticesToBeMerged.values().forEach(operatorVertices -> {
-      operatorVertices.forEach(operatorVertex -> {
-        inEdges.getOrDefault(operatorVertex, new HashSet<>()).forEach(e -> {
-          if (builder.contains(operatorVertex) && builder.contains(e.getSrc())) {
-            builder.connectVertices(e);
-          }
-        });
-        outEdges.getOrDefault(operatorVertex, new HashSet<>()).forEach(e -> {
-          if (builder.contains(operatorVertex) && builder.contains(e.getDst())) {
-            builder.connectVertices(e);
-          }
-        });
-      });
-    });
+    operatorVerticesToBeMerged.values().forEach(operatorVertices ->
+        operatorVertices.forEach(operatorVertex -> {
+          outEdges.getOrDefault(operatorVertex, new HashSet<>()).forEach(e -> {
+            if (builder.contains(operatorVertex) && builder.contains(e.getDst())) {
+              builder.connectVertices(e);
+            }
+          });
+        }));
 
     return builder.build();
   }
@@ -131,16 +128,8 @@ public final class CommonSubexpressionEliminationPass implements Pass {
           if (dag.pathExistsBetween(operatorVertexToUse, ov)) {
             dependencyFailedOperatorVertices.add(ov);
           } else {
-            final Set<IREdge> inListToModify = inEdges.get(ov);
-            inEdges.getOrDefault(ov, new HashSet<>()).forEach(e -> {
-              inListToModify.remove(e);
-              final IREdge newIrEdge = new IREdge(e.getType(), e.getSrc(), operatorVertexToUse, e.getCoder());
-              inListToModify.add(newIrEdge);
-            });
-            inEdges.remove(ov);
-            inEdges.putIfAbsent(operatorVertexToUse, new HashSet<>());
-            inEdges.get(operatorVertexToUse).addAll(inListToModify);
-
+            // incoming edges do not need to be considered, as they come from identical incoming vertices.
+            // process outEdges
             final Set<IREdge> outListToModify = outEdges.get(ov);
             outEdges.getOrDefault(ov, new HashSet<>()).forEach(e -> {
               outListToModify.remove(e);

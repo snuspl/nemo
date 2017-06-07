@@ -40,18 +40,21 @@ import static org.junit.Assert.assertEquals;
 public class CommonSubexpressionEliminationPassTest {
   private final IRVertex source = new BoundedSourceVertex<>(new TestUtil.EmptyBoundedSource("Source"));
   private final IRVertex map1 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
-  private final IRVertex map1clone = map1.getClone();
   private final IRVertex groupByKey = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey"));
   private final IRVertex combine = new OperatorVertex(new TestUtil.EmptyTransform("Combine"));
   private final IRVertex map2 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements"));
 
-  private DAGBuilder<IRVertex, IREdge> dagBuilder;
+  private final IRVertex map1clone = map1.getClone();
+  private final IRVertex groupByKey2 = new OperatorVertex(new TestUtil.EmptyTransform("GroupByKey2"));
+  private final IRVertex combine2 = new OperatorVertex(new TestUtil.EmptyTransform("Combine2"));
+  private final IRVertex map22 = new OperatorVertex(new TestUtil.EmptyTransform("MapElements2"));
+
   private DAG<IRVertex, IREdge> dagNotToOptimize;
   private DAG<IRVertex, IREdge> dagToOptimize;
 
   @Before
   public void setUp() {
-    dagBuilder = new DAGBuilder<>();
+    final DAGBuilder<IRVertex, IREdge> dagBuilder = new DAGBuilder<>();
     dagNotToOptimize = dagBuilder.addVertex(source).addVertex(map1).addVertex(groupByKey).addVertex(combine)
         .addVertex(map2)
         .connectVertices(new IREdge(IREdge.Type.OneToOne, source, map1, Coder.DUMMY_CODER))
@@ -59,18 +62,21 @@ public class CommonSubexpressionEliminationPassTest {
         .connectVertices(new IREdge(IREdge.Type.OneToOne, groupByKey, combine, Coder.DUMMY_CODER))
         .connectVertices(new IREdge(IREdge.Type.OneToOne, combine, map2, Coder.DUMMY_CODER))
         .build();
-    dagToOptimize = dagBuilder.addVertex(map1clone)
+    dagToOptimize = dagBuilder.addVertex(map1clone).addVertex(groupByKey2).addVertex(combine2).addVertex(map22)
         .connectVertices(new IREdge(IREdge.Type.OneToOne, source, map1clone, Coder.DUMMY_CODER))
-        .connectVertices(new IREdge(IREdge.Type.ScatterGather, map1clone, groupByKey, Coder.DUMMY_CODER))
+        .connectVertices(new IREdge(IREdge.Type.ScatterGather, map1clone, groupByKey2, Coder.DUMMY_CODER))
+        .connectVertices(new IREdge(IREdge.Type.OneToOne, groupByKey2, combine2, Coder.DUMMY_CODER))
+        .connectVertices(new IREdge(IREdge.Type.OneToOne, combine2, map22, Coder.DUMMY_CODER))
         .build();
   }
 
   @Test
   public void testCommonSubexpressionEliminationPass() throws Exception {
     final long originalVerticesNum = dagNotToOptimize.getVertices().size();
+    final long optimizedVerticesNum = dagToOptimize.getVertices().size();
 
     final DAG<IRVertex, IREdge> processedDAG = new CommonSubexpressionEliminationPass().process(dagToOptimize);
-    assertEquals(originalVerticesNum, processedDAG.getVertices().size());
+    assertEquals(optimizedVerticesNum - 1, processedDAG.getVertices().size());
 
     final DAG<IRVertex, IREdge> notProcessedDAG = new CommonSubexpressionEliminationPass().process(dagNotToOptimize);
     assertEquals(originalVerticesNum, notProcessedDAG.getVertices().size());
