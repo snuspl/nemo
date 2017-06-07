@@ -59,7 +59,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * The condition blocks when there is no executor of the container type available,
    * and is released when such an executor becomes available (either by an extra executor, or a task group completion).
    */
-  private final Map<RuntimeAttribute, Condition> attemptToScheduleByContainerType;
+  private final Map<RuntimeAttribute, Condition> conditionByContainerType;
 
   /**
    * The pool of executors available for each container type.
@@ -86,12 +86,9 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     this.lock = new ReentrantLock();
     this.executorIdByContainerType = new HashMap<>();
     this.executorRepresenterMap = new HashMap<>();
-    this.attemptToScheduleByContainerType = new HashMap<>();
+    this.conditionByContainerType = new HashMap<>();
     this.nextExecutorIndexByContainerType = new HashMap<>();
-
-    // initialize 'Any' container type
-    nextExecutorIndexByContainerType.put(RuntimeAttribute.Any, 0);
-    attemptToScheduleByContainerType.put(RuntimeAttribute.Any, lock.newCondition());
+    initializeContainerTypeIfAbsent(RuntimeAttribute.Any); // Need this to avoid potential null errors
   }
 
   public long getScheduleTimeoutMs() {
@@ -103,25 +100,18 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     lock.lock();
     try {
       final RuntimeAttribute containerType = scheduledTaskGroup.getTaskGroup().getContainerType();
-      String executorId = selectExecutorByRR(containerType);
-      if (executorId == null) { // If there is no available executor to schedule this task group now,
-
-        // we must wait until an executor becomes available, by putting a condition on the lock.
-        Condition attemptToSchedule = attemptToScheduleByContainerType.get(containerType);
-        if (attemptToSchedule == null) { // initialize a new condition if this containerType has never waited before.
-          attemptToSchedule = lock.newCondition();
-          attemptToScheduleByContainerType.put(containerType, attemptToSchedule);
-        }
-        boolean executorAvailable = attemptToSchedule.await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
-
+      final Optional<String> executorId = selectExecutorByRR(containerType);
+      if (!executorId.isPresent()) { // If there is no available executor to schedule this task group now,
+        boolean executorAvailable =
+            conditionByContainerType.get(containerType).await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
         if (executorAvailable) { // if an executor has become available before scheduleTimeoutMs,
-          executorId = selectExecutorByRR(containerType);
-          return Optional.of(executorId);
+          // We can still return Optional.empty() here, if the newly available executor's containerType doesn't match
+          return selectExecutorByRR(containerType);
         } else {
           return Optional.empty();
         }
       } else {
-        return Optional.of(executorId);
+        return executorId;
       }
     } catch (final Exception e) {
       throw new SchedulingException(e);
@@ -134,32 +124,47 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * Sticks to the RR policy to select an executor for the next task group.
    * It checks the task groups running (as compared to each executor's capacity).
    * @param containerType to select an executor for.
-   * @return the selected executor.
+   * @return (optionally) the selected executor.
    */
-  private String selectExecutorByRR(final RuntimeAttribute containerType) {
-    String selectedExecutorId = null;
-    final List<String> executorIds = containerType == RuntimeAttribute.Any ?
-        executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()) :
-        executorIdByContainerType.get(containerType);
+  private Optional<String> selectExecutorByRR(final RuntimeAttribute containerType) {
+    final List<String> candidateExecutorIds = (containerType == RuntimeAttribute.Any)
+        ? executorIdByContainerType.get(containerType) // a particular containerType
+        : executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()); // all
 
-    if (executorIds != null && !executorIds.isEmpty()) {
-      final int numExecutors = executorIds.size();
+    if (candidateExecutorIds != null && !candidateExecutorIds.isEmpty()) {
+      final int numExecutors = candidateExecutorIds.size();
       int nextExecutorIndex = nextExecutorIndexByContainerType.get(containerType);
       for (int i = 0; i < numExecutors; i++) {
         final int index = (nextExecutorIndex + i) % numExecutors;
-        selectedExecutorId = executorIds.get(index);
+        final String selectedExecutorId = candidateExecutorIds.get(index);
 
         final ExecutorRepresenter executor = executorRepresenterMap.get(selectedExecutorId);
-        if (executor.getRunningTaskGroups().size() < executor.getExecutorCapacity()) {
+        if (hasFreeSlot(executor)) {
           nextExecutorIndex = (index + 1) % numExecutors;
           nextExecutorIndexByContainerType.put(containerType, nextExecutorIndex);
-          break;
-        } else {
-          selectedExecutorId = null;
+          return Optional.of(selectedExecutorId);
         }
       }
     }
-    return selectedExecutorId;
+
+    return Optional.empty();
+  }
+
+  private boolean hasFreeSlot(final ExecutorRepresenter executor) {
+    return executor.getRunningTaskGroups().size() < executor.getExecutorCapacity();
+  }
+
+  private void initializeContainerTypeIfAbsent(final RuntimeAttribute containerType) {
+    executorIdByContainerType.putIfAbsent(containerType, new ArrayList<>());
+    nextExecutorIndexByContainerType.putIfAbsent(containerType, 0);
+    conditionByContainerType.putIfAbsent(containerType, lock.newCondition());
+  }
+
+  private void signalPossiblyWaitingScheduler(final RuntimeAttribute typeOfContainerWithNewFreeSlot) {
+    conditionByContainerType.get(typeOfContainerWithNewFreeSlot).signal();
+    if (typeOfContainerWithNewFreeSlot != RuntimeAttribute.Any) {
+      conditionByContainerType.get(RuntimeAttribute.Any).signal();
+    }
   }
 
   @Override
@@ -169,17 +174,10 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
       updateCachedExecutorRepresenterMap();
       final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
       final RuntimeAttribute containerType = executor.getContainerType();
-      final List<String> executors = executorIdByContainerType.putIfAbsent(containerType, new ArrayList<>());
+      initializeContainerTypeIfAbsent(containerType);
 
-      if (executors == null) { // This container type is initially being introduced.
-        executorIdByContainerType.get(containerType).add(executorId);
-        nextExecutorIndexByContainerType.put(containerType, 0);
-        attemptToScheduleByContainerType.put(containerType, lock.newCondition());
-      } else { // This container type has been introduced and there may be a TaskGroup waiting to be scheduled.
-        executorIdByContainerType.get(containerType)
-            .add(nextExecutorIndexByContainerType.get(containerType), executorId);
-        attemptToScheduleByContainerType.get(containerType).signal();
-      }
+      executorIdByContainerType.get(containerType).add(executorId);
+      signalPossiblyWaitingScheduler(containerType);
     } finally {
       lock.unlock();
     }
@@ -202,6 +200,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
         nextExecutorIndexByContainerType.put(containerType, 0);
       }
       executorIdList.remove(executorId);
+
       updateCachedExecutorRepresenterMap();
 
       return executor.getRunningTaskGroups();
@@ -233,11 +232,12 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     lock.lock();
     try {
       final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
-      final RuntimeAttribute containerType = executor.getContainerType();
       executor.onTaskGroupExecutionComplete(taskGroupId);
-      LOG.log(Level.INFO, "Completed {" + taskGroupId + "} in ["
-          + executorId + "]");
-      attemptToScheduleByContainerType.get(containerType).signal();
+      LOG.log(Level.INFO, "Completed {" + taskGroupId + "} in [" + executorId + "]");
+
+      // the scheduler thread may be waiting for a free slot...
+      final RuntimeAttribute containerType = executor.getContainerType();
+      signalPossiblyWaitingScheduler(containerType);
     } finally {
       lock.unlock();
     }
