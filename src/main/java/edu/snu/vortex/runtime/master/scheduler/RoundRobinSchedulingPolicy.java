@@ -100,9 +100,11 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     lock.lock();
     try {
       final RuntimeAttribute containerType = scheduledTaskGroup.getTaskGroup().getContainerType();
+      initializeContainerTypeIfAbsent(containerType);
+
       final Optional<String> executorId = selectExecutorByRR(containerType);
       if (!executorId.isPresent()) { // If there is no available executor to schedule this task group now,
-        boolean executorAvailable =
+        final boolean executorAvailable =
             conditionByContainerType.get(containerType).await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
         if (executorAvailable) { // if an executor has become available before scheduleTimeoutMs,
           return selectExecutorByRR(containerType);
@@ -175,7 +177,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
       final RuntimeAttribute containerType = executor.getContainerType();
       initializeContainerTypeIfAbsent(containerType);
 
-      executorIdByContainerType.get(containerType).add(executorId);
+      executorIdByContainerType.get(containerType)
+          .add(nextExecutorIndexByContainerType.get(containerType), executorId);
       signalPossiblyWaitingScheduler(containerType);
     } finally {
       lock.unlock();
