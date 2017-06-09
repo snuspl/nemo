@@ -331,7 +331,7 @@ public final class MultinomialLogisticRegression {
       for (final List<Double> gradient : gradients) {
         if (ret == null) { // initialize
           ret = new ArrayList<>(gradient.size());
-          for (Integer i = 0;i < ret.size(); i++) {
+          for (Integer i = 0; i < ret.size(); i++) {
             ret.add(i, 0.0);
           }
         }
