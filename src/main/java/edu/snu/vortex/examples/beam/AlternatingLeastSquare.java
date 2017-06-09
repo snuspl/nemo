@@ -35,10 +35,7 @@ import org.apache.beam.sdk.values.PCollectionView;
 import org.apache.commons.lang.ArrayUtils;
 import org.netlib.util.intW;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +54,7 @@ public final class AlternatingLeastSquare {
   /**
    * Method for parsing the input line.
    */
-  public static final class ParseLine extends DoFn<String, KV<Integer, Pair<Integer[], Float[]>>> {
+  public static final class ParseLine extends DoFn<String, KV<Integer, Pair<List<Integer>, List<Float>>>> {
     private final Boolean isUserData;
 
     /**
@@ -87,19 +84,19 @@ public final class AlternatingLeastSquare {
       final Float rating = Float.parseFloat(split[2]);
 
 
-      final Integer[] userAry = new Integer[1];
-      userAry[0] = userId;
+      final List<Integer> userList = new ArrayList<>(1);
+      userList.add(userId);
 
-      final Integer[] itemAry = new Integer[1];
-      itemAry[0] = itemId;
+      final List<Integer> itemList = new ArrayList<>(1);
+      itemList.add(itemId);
 
-      final Float[] ratingAry = new Float[1];
-      ratingAry[0] = rating;
+      final List<Float> ratingList = new ArrayList<>(1);
+      ratingList.add(rating);
 
       if (isUserData) {
-        c.output(KV.of(userId, Pair.of(itemAry, ratingAry)));
+        c.output(KV.of(userId, Pair.of(itemList, ratingList)));
       } else {
-        c.output(KV.of(itemId, Pair.of(userAry, ratingAry)));
+        c.output(KV.of(itemId, Pair.of(userList, ratingList)));
       }
     }
   }
@@ -107,46 +104,46 @@ public final class AlternatingLeastSquare {
   /**
    * Combiner for the training data.
    */
-  public static final class TrainingDataCombiner extends
-      Combine.CombineFn<Pair<Integer[], Float[]>, List<Pair<Integer[], Float[]>>, Pair<Integer[], Float[]>> {
+  public static final class TrainingDataCombiner extends Combine.CombineFn<Pair<List<Integer>, List<Float>>,
+      List<Pair<List<Integer>, List<Float>>>, Pair<List<Integer>, List<Float>>> {
 
     @Override
-    public List<Pair<Integer[], Float[]>> createAccumulator() {
+    public List<Pair<List<Integer>, List<Float>>> createAccumulator() {
       return new LinkedList<>();
     }
 
     @Override
-    public List<Pair<Integer[], Float[]>> addInput(final List<Pair<Integer[], Float[]>> accumulator,
-                                               final Pair<Integer[], Float[]> value) {
+    public List<Pair<List<Integer>, List<Float>>> addInput(final List<Pair<List<Integer>, List<Float>>> accumulator,
+                                                           final Pair<List<Integer>, List<Float>> value) {
       accumulator.add(value);
       return accumulator;
     }
 
     @Override
-    public List<Pair<Integer[], Float[]>> mergeAccumulators(
-        final Iterable<List<Pair<Integer[], Float[]>>> accumulators) {
-      final List<Pair<Integer[], Float[]>> merged = new LinkedList<>();
+    public List<Pair<List<Integer>, List<Float>>> mergeAccumulators(
+        final Iterable<List<Pair<List<Integer>, List<Float>>>> accumulators) {
+      final List<Pair<List<Integer>, List<Float>>> merged = new LinkedList<>();
       accumulators.forEach(merged::addAll);
       return merged;
     }
 
     @Override
-    public Pair<Integer[], Float[]> extractOutput(final List<Pair<Integer[], Float[]>> accumulator) {
+    public Pair<List<Integer>, List<Float>> extractOutput(final List<Pair<List<Integer>, List<Float>>> accumulator) {
       Integer dimension = 0;
-      for (final Pair<Integer[], Float[]> pair : accumulator) {
-        dimension += pair.left().length;
+      for (final Pair<List<Integer>, List<Float>> pair : accumulator) {
+        dimension += pair.left().size();
       }
 
-      final Integer[] intArr = new Integer[dimension];
-      final Float[] floatArr = new Float[dimension];
+      final List<Integer> intArr = new ArrayList<>(dimension);
+      final List<Float> floatArr = new ArrayList<>(dimension);
 
       Integer itr = 0;
-      for (final Pair<Integer[], Float[]> pair : accumulator) {
-        final Integer[] ints = pair.left();
-        final Float[] floats = pair.right();
-        for (Integer i = 0; i < ints.length; i++) {
-          intArr[itr] = ints[i];
-          floatArr[itr] = floats[i];
+      for (final Pair<List<Integer>, List<Float>> pair : accumulator) {
+        final List<Integer> ints = pair.left();
+        final List<Float> floats = pair.right();
+        for (Integer i = 0; i < ints.size(); i++) {
+          intArr.add(itr, ints.get(i));
+          floatArr.add(itr, floats.get(i));
           itr++;
         }
       }
@@ -159,15 +156,15 @@ public final class AlternatingLeastSquare {
    * DoFn for calculating next matrix at each iteration.
    */
   public static final class CalculateNextMatrix
-      extends DoFn<KV<Integer, Pair<Integer[], Float[]>>, KV<Integer, Float[]>> {
+      extends DoFn<KV<Integer, Pair<List<Integer>, List<Float>>>, KV<Integer, List<Float>>> {
     private static final LAPACK NETLIB_LAPACK = LAPACK.getInstance();
     private static final BLAS NETLIB_BLAS = BLAS.getInstance();
 
-    private final List<KV<Integer, Float[]>> results;
+    private final List<KV<Integer, List<Float>>> results;
     private final Double[] upperTriangularLeftMatrix;
     private final Integer numFeatures;
     private final Double lambda;
-    private final PCollectionView<Map<Integer, Float[]>> fixedMatrixView;
+    private final PCollectionView<Map<Integer, List<Float>>> fixedMatrixView;
 
     /**
      * Constructor for CalculateNextMatrix DoFn class.
@@ -176,7 +173,7 @@ public final class AlternatingLeastSquare {
      * @param fixedMatrixView a PCollectionView of the fixed matrix (item / user matrix).
      */
     CalculateNextMatrix(final Integer numFeatures, final Double lambda,
-                        final PCollectionView<Map<Integer, Float[]>> fixedMatrixView) {
+                        final PCollectionView<Map<Integer, List<Float>>> fixedMatrixView) {
       this.numFeatures = numFeatures;
       this.lambda = lambda;
       this.fixedMatrixView = fixedMatrixView;
@@ -195,22 +192,26 @@ public final class AlternatingLeastSquare {
         upperTriangularLeftMatrix[j] = 0.0;
       }
 
-      final Map<Integer, Float[]> fixedMatrix = c.sideInput(fixedMatrixView);
+      final Map<Integer, List<Float>> fixedMatrix = c.sideInput(fixedMatrixView);
 
-      final Integer[] indexArr = c.element().getValue().left();
-      final Float[] ratingArr = c.element().getValue().right();
+      final List<Integer> indexArr = c.element().getValue().left();
+      final List<Float> ratingArr = c.element().getValue().right();
 
-      final Integer size = indexArr.length;
+      final Integer size = indexArr.size();
 
-      final Float[] vector = new Float[numFeatures];
+      final List<Float> vector = new ArrayList<>(numFeatures);
       final double[] rightSideVector = new double[numFeatures];
       final Double[] tmp = new Double[numFeatures];
       for (Integer i = 0; i < size; i++) {
-        final Integer ratingIndex = indexArr[i];
-        final Float rating = ratingArr[i];
+        final Integer ratingIndex = indexArr.get(i);
+        final Float rating = ratingArr.get(i);
         for (Integer j = 0; j < numFeatures; j++) {
 //          LOG.log(Level.INFO, "Rating index " + ratingIndex);
-          tmp[j] = fixedMatrix.get(ratingIndex)[j].doubleValue();
+          if (j < fixedMatrix.get(ratingIndex).size()) {
+            tmp[j] = fixedMatrix.get(ratingIndex).get(j).doubleValue();
+          } else {
+            tmp[j] = 0.0;
+          }
         }
 
 
@@ -238,8 +239,8 @@ public final class AlternatingLeastSquare {
         throw new RuntimeException("returned info value : " + info.val);
       }
 
-      for (Integer i = 0; i < vector.length; i++) {
-        vector[i] = (float) rightSideVector[i];
+      for (Integer i = 0; i < numFeatures; i++) {
+        vector.add(i, (float) rightSideVector[i]);
       }
 
       results.add(KV.of(c.element().getKey(), vector));
@@ -260,11 +261,11 @@ public final class AlternatingLeastSquare {
    * The loop updates the user matrix and the item matrix in each iteration.
    */
   public static final class UpdateUserAndItemMatrix extends LoopCompositeTransform<
-      PCollection<KV<Integer, Float[]>>, PCollection<KV<Integer, Float[]>>> {
+      PCollection<KV<Integer, List<Float>>>, PCollection<KV<Integer, List<Float>>>> {
     private final Integer numFeatures;
     private final Double lambda;
-    private final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedUserData;
-    private final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedItemData;
+    private final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedUserData;
+    private final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedItemData;
 
     /**
      * Constructor of UpdateUserAndItemMatrix CompositeTransform.
@@ -274,8 +275,8 @@ public final class AlternatingLeastSquare {
      * @param parsedItemData PCollection of parsed item data.
      */
     UpdateUserAndItemMatrix(final Integer numFeatures, final Double lambda,
-                            final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedUserData,
-                            final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedItemData) {
+                            final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedUserData,
+                            final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedItemData) {
       this.numFeatures = numFeatures;
       this.lambda = lambda;
       this.parsedUserData = parsedUserData;
@@ -283,11 +284,11 @@ public final class AlternatingLeastSquare {
     }
 
     @Override
-    public PCollection<KV<Integer, Float[]>> expand(final PCollection<KV<Integer, Float[]>> itemMatrix) {
+    public PCollection<KV<Integer, List<Float>>> expand(final PCollection<KV<Integer, List<Float>>> itemMatrix) {
       // Make Item Matrix view.
-      final PCollectionView<Map<Integer, Float[]>> itemMatrixView = itemMatrix.apply(View.asMap());
+      final PCollectionView<Map<Integer, List<Float>>> itemMatrixView = itemMatrix.apply(View.asMap());
       // Get new User Matrix
-      final PCollectionView<Map<Integer, Float[]>> userMatrixView = parsedUserData
+      final PCollectionView<Map<Integer, List<Float>>> userMatrixView = parsedUserData
           .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrixView)).withSideInputs(itemMatrixView))
           .apply(View.asMap());
       // return new Item Matrix
@@ -325,32 +326,32 @@ public final class AlternatingLeastSquare {
     final PCollection<String> rawData = GenericSourceSink.read(p, inputFilePath);
 
     // Parse data for item
-    final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedItemData = rawData
+    final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedItemData = rawData
         .apply(ParDo.of(new ParseLine(false)))
         .apply(Combine.perKey(new TrainingDataCombiner()));
 
     // Parse data for user
-    final PCollection<KV<Integer, Pair<Integer[], Float[]>>> parsedUserData = rawData
+    final PCollection<KV<Integer, Pair<List<Integer>, List<Float>>>> parsedUserData = rawData
         .apply(ParDo.of(new ParseLine(true)))
         .apply(Combine.perKey(new TrainingDataCombiner()));
 
     // Create Initial Item Matrix
-    PCollection<KV<Integer, Float[]>> itemMatrix = parsedItemData
-        .apply(ParDo.of(new DoFn<KV<Integer, Pair<Integer[], Float[]>>, KV<Integer, Float[]>>() {
+    PCollection<KV<Integer, List<Float>>> itemMatrix = parsedItemData
+        .apply(ParDo.of(new DoFn<KV<Integer, Pair<List<Integer>, List<Float>>>, KV<Integer, List<Float>>>() {
           @ProcessElement
           public void processElement(final ProcessContext c) throws Exception {
-            final Float[] result = new Float[numFeatures];
-            result[0] = 0f;
+            final List<Float> result = new ArrayList<>(numFeatures);
+            result.add(0, 0f);
 
-            final KV<Integer, Pair<Integer[], Float[]>> element = c.element();
-            final Float[] ratings = element.getValue().right();
-            for (Integer i = 0; i < ratings.length; i++) {
-              result[0] += ratings[i];
+            final KV<Integer, Pair<List<Integer>, List<Float>>> element = c.element();
+            final List<Float> ratings = element.getValue().right();
+            for (Integer i = 0; i < ratings.size(); i++) {
+              result.set(0, result.get(0) + ratings.get(i));
             }
 
-            result[0] /= ratings.length;
-            for (Integer i = 1; i < result.length; i++) {
-              result[i] = (float) (Math.random() * 0.01);
+            result.set(0, result.get(0) / ratings.size());
+            for (Integer i = 1; i < result.size(); i++) {
+              result.add(i, (float) (Math.random() * 0.01));
             }
             c.output(KV.of(element.getKey(), result));
           }
