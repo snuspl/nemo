@@ -52,12 +52,12 @@ public final class MultinomialLogisticRegression {
   /**
    * Calculate Gradient.
    */
-  public static final class CalculateGradient extends DoFn<String, KV<Integer, double[]>> {
-    private double[][] gradients;
-    private final int numClasses;
-    private final int numFeatures;
-    private final PCollectionView<Map<Integer, double[]>> modelView;
-    private Map<Integer, double[]> model;
+  public static final class CalculateGradient extends DoFn<String, KV<Integer, Double[]>> {
+    private Double[][] gradients;
+    private final Integer numClasses;
+    private final Integer numFeatures;
+    private final PCollectionView<Map<Integer, Double[]>> modelView;
+    private Map<Integer, Double[]> model;
 
     /**
      * Constructor for CalculateGradient DoFn class.
@@ -65,9 +65,9 @@ public final class MultinomialLogisticRegression {
      * @param numClasses number of classes.
      * @param numFeatures number of features.
      */
-    CalculateGradient(final PCollectionView<Map<Integer, double[]>> modelView,
-                      final int numClasses,
-                      final int numFeatures) {
+    CalculateGradient(final PCollectionView<Map<Integer, Double[]>> modelView,
+                      final Integer numClasses,
+                      final Integer numFeatures) {
       this.modelView = modelView;
       this.numClasses = numClasses;
       this.numFeatures = numFeatures;
@@ -78,11 +78,17 @@ public final class MultinomialLogisticRegression {
      * Initialization of gradients.
      */
     private void initializeGradients() {
-      this.gradients = new double[this.numClasses][];
-      for (int i = 0; i < this.numClasses - 1; i++) {
-        gradients[i] = new double[numFeatures + 1];
+      this.gradients = new Double[this.numClasses][];
+      for (Integer i = 0; i < this.numClasses - 1; i++) {
+        gradients[i] = new Double[numFeatures + 1];
+        for (Integer j = 0; j < numFeatures + 1; j++) {
+          gradients[i][j] = 0.0;
+        }
       }
-      gradients[this.numClasses - 1] = new double[3];
+      gradients[this.numClasses - 1] = new Double[3];
+      for (Integer i = 0; i < 3; i++) {
+        gradients[this.numClasses - 1][i] = 0.0;
+      }
     }
 
     /**
@@ -90,18 +96,18 @@ public final class MultinomialLogisticRegression {
      * @param input input line.
      * @return the parsed key-value pair.
      */
-    private KV<Integer, Pair<int[], double[]>> parseLine(final String input) {
+    private KV<Integer, Pair<Integer[], Double[]>> parseLine(final String input) {
       final String text = input.trim();
       if (text.startsWith("#") || text.length() == 0) { // comments or newline
         return null;
       }
 
       final String[] split = text.split("\\s+|:");
-      final int output = Integer.parseInt(split[0]);
+      final Integer output = Integer.parseInt(split[0]);
 
-      final int[] indices = new int[split.length / 2];
-      final double[] data = new double[split.length / 2];
-      for (int index = 0; index < split.length / 2; ++index) {
+      final Integer[] indices = new Integer[split.length / 2];
+      final Double[] data = new Double[split.length / 2];
+      for (Integer index = 0; index < split.length / 2; ++index) {
         indices[index] = Integer.parseInt(split[2 * index + 1]) - 1;
         data[index] = Double.parseDouble(split[2 * index + 2]);
       }
@@ -116,7 +122,7 @@ public final class MultinomialLogisticRegression {
      */
     @ProcessElement
     public void processElement(final ProcessContext c) throws Exception {
-      final KV<Integer, Pair<int[], double[]>> data = parseLine(c.element());
+      final KV<Integer, Pair<Integer[], Double[]>> data = parseLine(c.element());
       if (data == null) { // comments and newlines
         return;
       }
@@ -126,21 +132,21 @@ public final class MultinomialLogisticRegression {
       }
 
       this.model = c.sideInput(modelView);
-      final int label = data.getKey();
-      final int[] indices = data.getValue().left();
-      final double[] features = data.getValue().right();
+      final Integer label = data.getKey();
+      final Integer[] indices = data.getValue().left();
+      final Double[] features = data.getValue().right();
 
-      final double[] margins = new double[numClasses - 1];
-      double marginY = 0.0;
-      double maxMargin = -Double.MAX_VALUE;
-      int maxMarginIndex = 0;
+      final Double[] margins = new Double[numClasses - 1];
+      Double marginY = 0.0;
+      Double maxMargin = -Double.MAX_VALUE;
+      Integer maxMarginIndex = 0;
 
-      for (int i = 0; i < numClasses - 1; i++) {
-        final double[] weightArr = model.get(i);
-        double margin = 0.0;
-        for (int indexItr = 0; indexItr < indices.length; indexItr++) {
-          final int index = indices[indexItr];
-          final double value = features[indexItr];
+      for (Integer i = 0; i < numClasses - 1; i++) {
+        final Double[] weightArr = model.get(i);
+        Double margin = 0.0;
+        for (Integer indexItr = 0; indexItr < indices.length; indexItr++) {
+          final Integer index = indices[indexItr];
+          final Double value = features[indexItr];
           if (value != 0.0) {
             margin += value * weightArr[index];
           }
@@ -165,9 +171,9 @@ public final class MultinomialLogisticRegression {
        * We address this by subtracting maxMargin from all the margins, so it's guaranteed
        * that all of the new margins will be smaller than zero to prevent arithmetic overflow.
        */
-      double sum = 0.0;
+      Double sum = 0.0;
       if (maxMargin > 0) {
-        for (int i = 0; i < numClasses - 1; i++) {
+        for (Integer i = 0; i < numClasses - 1; i++) {
           margins[i] -= maxMargin;
           if (i == maxMarginIndex) {
             sum += Math.exp(-maxMargin);
@@ -176,23 +182,23 @@ public final class MultinomialLogisticRegression {
           }
         }
       } else {
-        for (int i = 0; i < numClasses - 1; i++) {
+        for (Integer i = 0; i < numClasses - 1; i++) {
           sum += Math.exp(margins[i]);
         }
       }
 
-      for (int i = 0; i < numClasses - 1; i++) {
-        double multiplier = Math.exp(margins[i]) / (sum + 1.0);
+      for (Integer i = 0; i < numClasses - 1; i++) {
+        Double multiplier = Math.exp(margins[i]) / (sum + 1.0);
         if (label != 0 && label == i + 1) {
           multiplier -= 1;
         }
 
-        final double[] gradientArr = gradients[i];
+        final Double[] gradientArr = gradients[i];
 
-        for (int indexItr = 0; indexItr < indices.length; indexItr++) {
-          final int index = indices[indexItr];
-          final double value = features[indexItr];
-          if (value != 0.0) {
+        for (Integer indexItr = 0; indexItr < indices.length; indexItr++) {
+          final Integer index = indices[indexItr];
+          final Double value = features[indexItr];
+          if (value != 0.0 && gradientArr[index] != null) {
             gradientArr[index] += multiplier * value;
           }
         }
@@ -200,7 +206,7 @@ public final class MultinomialLogisticRegression {
         gradientArr[numFeatures] += 1;
       }
 
-      double partialLoss;
+      Double partialLoss;
       if (label > 0) {
         partialLoss = Math.log1p(sum) - marginY;
       } else {
@@ -221,7 +227,7 @@ public final class MultinomialLogisticRegression {
      */
     @FinishBundle
     public void finishBundle(final FinishBundleContext context) {
-      for (int i = 0; i < gradients.length; i++) {
+      for (Integer i = 0; i < gradients.length; i++) {
         context.output(KV.of(i, gradients[i]), null, null);
       }
       LOG.log(Level.INFO, "stats: " + Arrays.toString(gradients[numClasses - 1]));
@@ -231,12 +237,12 @@ public final class MultinomialLogisticRegression {
   /**
    * DoFn class that applies the gradient to the model.
    */
-  public static final class ApplyGradient extends DoFn<KV<Integer, CoGbkResult>, KV<Integer, double[]>> {
-    private final TupleTag<double[]> gradientTag;
-    private final TupleTag<double[]> modelTag;
-    private final int numFeatures;
-    private final int numClasses;
-    private final int iterationNum;
+  public static final class ApplyGradient extends DoFn<KV<Integer, CoGbkResult>, KV<Integer, Double[]>> {
+    private final TupleTag<Double[]> gradientTag;
+    private final TupleTag<Double[]> modelTag;
+    private final Integer numFeatures;
+    private final Integer numClasses;
+    private final Integer iterationNum;
 
     /**
      * Constructor for ApplyGradient DoFn class.
@@ -246,8 +252,8 @@ public final class MultinomialLogisticRegression {
      * @param gradientTag TupleTag of gradient.
      * @param modelTag TupleTag of model.
      */
-    ApplyGradient(final int numFeatures, final int numClasses, final int iterationNum,
-                  final TupleTag<double[]> gradientTag, final TupleTag<double[]> modelTag) {
+    ApplyGradient(final Integer numFeatures, final Integer numClasses, final Integer iterationNum,
+                  final TupleTag<Double[]> gradientTag, final TupleTag<Double[]> modelTag) {
       this.numFeatures = numFeatures;
       this.numClasses = numClasses;
       this.iterationNum = iterationNum;
@@ -263,10 +269,10 @@ public final class MultinomialLogisticRegression {
     @ProcessElement
     public void processElement(final ProcessContext c) throws Exception {
       final KV<Integer, CoGbkResult> kv = c.element();
-      final double[] gradientArr = kv.getValue().getOnly(gradientTag);
-      final double[] prevModelArr = kv.getValue().getOnly(modelTag);
-      final double[] gradient;
-      final double[] prevModel;
+      final Double[] gradientArr = kv.getValue().getOnly(gradientTag);
+      final Double[] prevModelArr = kv.getValue().getOnly(modelTag);
+      final Double[] gradient;
+      final Double[] prevModel;
       if (gradientArr.length > prevModelArr.length) {
         gradient = gradientArr;
         prevModel = prevModelArr;
@@ -276,17 +282,17 @@ public final class MultinomialLogisticRegression {
       }
 
       if (kv.getKey() == numClasses - 1) {
-        final int numData = (int) gradient[0];
-        final double lossSum = gradient[2];
+        final Integer numData = gradient[0].intValue();
+        final Double lossSum = gradient[2];
         LOG.log(Level.INFO, "[" + iterationNum + "-th] Num Data: " + numData + " Loss : " + lossSum / numData);
         c.output(KV.of(kv.getKey(), prevModel));
       } else {
-        final int numData = (int) gradient[numFeatures];
-        final double stepSize = 1.0 / Math.sqrt(iterationNum);
-        final double multiplier = stepSize / numData;
+        final Integer numData = gradient[numFeatures].intValue();
+        final Double stepSize = 1.0 / Math.sqrt(iterationNum);
+        final Double multiplier = stepSize / numData;
 
-        final double[] ret = new double[prevModel.length];
-        for (int i = 0; i < prevModel.length; i++) {
+        final Double[] ret = new Double[prevModel.length];
+        for (Integer i = 0; i < prevModel.length; i++) {
           ret[i] = prevModel[i] - multiplier * gradient[i];
         }
         c.output(KV.of(kv.getKey(), ret));
@@ -302,12 +308,12 @@ public final class MultinomialLogisticRegression {
   }
 
   /**
-   * Combine Function for two double arrays.
+   * Combine Function for two Double arrays.
    */
-  public static final class CombineFunction extends Combine.BinaryCombineFn<double[]> {
+  public static final class CombineFunction extends Combine.BinaryCombineFn<Double[]> {
     @Override
-    public double[] apply(final double[] left, final double[] right) {
-      for (int i = 0; i < left.length; i++) {
+    public Double[] apply(final Double[] left, final Double[] right) {
+      for (Integer i = 0; i < left.length; i++) {
         left[i] += right[i];
       }
       return left;
@@ -317,16 +323,16 @@ public final class MultinomialLogisticRegression {
   /**
    * Combine Function for Iterable of gradients.
    */
-  public static final class CombineFunctionForIterable implements SerializableFunction<Iterable<double[]>, double[]> {
+  public static final class CombineFunctionForIterable implements SerializableFunction<Iterable<Double[]>, Double[]> {
     @Override
-    public double[] apply(final Iterable<double[]> gradients) {
-      double[] ret = null;
-      for (final double[] gradient : gradients) {
+    public Double[] apply(final Iterable<Double[]> gradients) {
+      Double[] ret = null;
+      for (final Double[] gradient : gradients) {
         if (ret == null) { // initialize
-          ret = new double[gradient.length];
+          ret = new Double[gradient.length];
         }
 
-        for (int i = 0; i < ret.length; i++) {
+        for (Integer i = 0; i < ret.length; i++) {
           ret[i] += gradient[i];
         }
       }
@@ -340,10 +346,10 @@ public final class MultinomialLogisticRegression {
    + The loop updates the model in each iteration.
    */
   public static final class UpdateModel
-      extends LoopCompositeTransform<PCollection<KV<Integer, double[]>>, PCollection<KV<Integer, double[]>>> {
-    private final int numFeatures;
-    private final int numClasses;
-    private final int iterationNum;
+      extends LoopCompositeTransform<PCollection<KV<Integer, Double[]>>, PCollection<KV<Integer, Double[]>>> {
+    private final Integer numFeatures;
+    private final Integer numClasses;
+    private final Integer iterationNum;
     private final PCollection<String> readInput;
 
     /**
@@ -353,7 +359,7 @@ public final class MultinomialLogisticRegression {
      * @param iterationNum iteration number.
      * @param readInput PCollection of
      */
-    UpdateModel(final int numFeatures, final int numClasses, final int iterationNum,
+    UpdateModel(final Integer numFeatures, final Integer numClasses, final Integer iterationNum,
                 final PCollection<String> readInput) {
       this.numFeatures = numFeatures;
       this.numClasses = numClasses;
@@ -362,19 +368,19 @@ public final class MultinomialLogisticRegression {
     }
 
     @Override
-    public PCollection<KV<Integer, double[]>> expand(final PCollection<KV<Integer, double[]>> model) {
+    public PCollection<KV<Integer, Double[]>> expand(final PCollection<KV<Integer, Double[]>> model) {
       // Model as a view.
-      final PCollectionView<Map<Integer, double[]>> modelView = model.apply(View.asMap());
+      final PCollectionView<Map<Integer, Double[]>> modelView = model.apply(View.asMap());
 
       // Find gradient.
-      final PCollection<KV<Integer, double[]>> gradient = readInput
+      final PCollection<KV<Integer, Double[]>> gradient = readInput
           .apply(ParDo.of(
               new CalculateGradient(modelView, numClasses, numFeatures)).withSideInputs(modelView))
           .apply(Combine.perKey(new CombineFunction()));
 
       // Tags for CoGroupByKey.
-      final TupleTag<double[]> gradientTag = new TupleTag<>();
-      final TupleTag<double[]> modelTag = new TupleTag<>();
+      final TupleTag<Double[]> gradientTag = new TupleTag<>();
+      final TupleTag<Double[]> modelTag = new TupleTag<>();
       final KeyedPCollectionTuple<Integer> coGbkInput = KeyedPCollectionTuple
           .of(gradientTag, gradient)
           .and(modelTag, model);
@@ -396,14 +402,14 @@ public final class MultinomialLogisticRegression {
     final long start = System.currentTimeMillis();
     LOG.log(Level.INFO, Arrays.toString(args));
     final String inputFilePath = args[0];
-    final int numFeatures = Integer.parseInt(args[1]);
-    final int numClasses = Integer.parseInt(args[2]);
-    final int numItr = Integer.parseInt(args[3]);
+    final Integer numFeatures = Integer.parseInt(args[1]);
+    final Integer numClasses = Integer.parseInt(args[2]);
+    final Integer numItr = Integer.parseInt(args[3]);
 
-    final double lambda = 0.0;
+    final Double lambda = 0.0;
 
     final List<Integer> initialModelKeys = new ArrayList<>(numClasses);
-    for (int i = 0; i < numClasses; i++) {
+    for (Integer i = 0; i < numClasses; i++) {
       initialModelKeys.add(i);
     }
 
@@ -415,15 +421,20 @@ public final class MultinomialLogisticRegression {
     final Pipeline p = Pipeline.create(options);
 
     // Initialization of the model for Logistic Regression.
-    PCollection<KV<Integer, double[]>> model = p
+    PCollection<KV<Integer, Double[]>> model = p
         .apply(Create.of(initialModelKeys))
-        .apply(ParDo.of(new DoFn<Integer, KV<Integer, double[]>>() {
+        .apply(ParDo.of(new DoFn<Integer, KV<Integer, Double[]>>() {
           @ProcessElement
           public void processElement(final ProcessContext c) throws Exception {
             if (c.element() == numClasses - 1) {
-              c.output(KV.of(c.element(), new double[1]));
+              final Double[] model = new Double[1];
+              model[0] = 0.0;
+              c.output(KV.of(c.element(), model));
             } else {
-              final double[] model = new double[numFeatures];
+              final Double[] model = new Double[numFeatures];
+              for (Integer i = 0; i < numFeatures; i++) {
+                model[i] = 0.0;
+              }
               c.output(KV.of(c.element(), model));
             }
           }
@@ -433,7 +444,7 @@ public final class MultinomialLogisticRegression {
     final PCollection<String> readInput = GenericSourceSink.read(p, inputFilePath);
 
     // Multiple iterations for convergence.
-    for (int i = 1; i <= numItr; i++) {
+    for (Integer i = 1; i <= numItr; i++) {
       // NOTE: a single composite transform for the iteration.
       model = model.apply(new UpdateModel(numFeatures, numClasses, i, readInput));
     }
