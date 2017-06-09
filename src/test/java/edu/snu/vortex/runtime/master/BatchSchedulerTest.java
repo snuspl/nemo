@@ -120,6 +120,7 @@ public final class BatchSchedulerTest {
    */
   @Test
   public void testMultiInputOutputScheduling() {
+
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
@@ -203,12 +204,11 @@ public final class BatchSchedulerTest {
         if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
             == TaskGroupState.State.EXECUTING) {
           final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(taskGroup.getTaskGroupId());
+
           if (scheduledExecutor != null) {
             scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroup.getTaskGroupId(),
                 TaskGroupState.State.COMPLETE, Collections.emptyList());
-          } else { // An executor for this task group must always be found. Otherwise, the scheduler has failed.
-            fail();
-          }
+          } // else pass this round, because the executor hasn't received the scheduled task group yet
         }
       });
     }
@@ -221,7 +221,8 @@ public final class BatchSchedulerTest {
    */
   private ExecutorRepresenter findExecutorForTaskGroup(final String taskGroupId) {
     for (final ExecutorRepresenter executor : containerManager.getExecutorRepresenterMap().values()) {
-      if (executor.getRunningTaskGroups().contains(taskGroupId)) {
+      if (executor.getRunningTaskGroups().contains(taskGroupId)
+          || executor.getExecutedTaskGroups().contains(taskGroupId)) {
         return executor;
       }
     }
