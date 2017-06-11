@@ -24,6 +24,7 @@ import edu.snu.vortex.utils.dag.DAG;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalInt;
 
 /**
  * Optimization pass for tagging parallelism attributes.
@@ -39,11 +40,18 @@ public final class ParallelismPass implements Pass {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
           vertex.setAttr(Attribute.IntegerKey.Parallelism, sourceVertex.getReaders(1).size());
         } else if (!inEdges.isEmpty()) {
-          Integer parallelism = inEdges.stream()
-              // let's be conservative and take the min value so that
+          final OptionalInt parallelism = inEdges.stream()
+              // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
+              // as a sideInput will have their own number of parallelism
+              .filter(edge -> !edge.getAttr(Attribute.Key.CommunicationPattern).equals(Attribute.Broadcast))
+              // Let's be conservative and take the min value so that
               // the sources can support the desired parallelism in the back-propagation phase
-              .mapToInt(edge -> edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism)).min().getAsInt();
-          vertex.setAttr(Attribute.IntegerKey.Parallelism, parallelism);
+              .mapToInt(edge -> edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism)).min();
+          if (parallelism.isPresent()) {
+            vertex.setAttr(Attribute.IntegerKey.Parallelism, parallelism.getAsInt());
+          }
+          // else, this vertex only has Broadcast-type inEdges, so its number of parallelism
+          // will be determined in the back-propagation phase
         } else {
           throw new RuntimeException("Weird situation: there is a non-source vertex that doesn't have any inEdges");
         }
