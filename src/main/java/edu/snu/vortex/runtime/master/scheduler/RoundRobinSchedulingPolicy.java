@@ -88,7 +88,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     this.executorRepresenterMap = new HashMap<>();
     this.conditionByContainerType = new HashMap<>();
     this.nextExecutorIndexByContainerType = new HashMap<>();
-    initializeContainerTypeIfAbsent(RuntimeAttribute.Any); // Need this to avoid potential null errors
+    initializeContainerTypeIfAbsent(RuntimeAttribute.None); // Need this to avoid potential null errors
   }
 
   public long getScheduleTimeoutMs() {
@@ -128,9 +128,9 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * @return (optionally) the selected executor.
    */
   private Optional<String> selectExecutorByRR(final RuntimeAttribute containerType) {
-    final List<String> candidateExecutorIds = (containerType == RuntimeAttribute.Any)
-        ? executorIdByContainerType.values().stream().flatMap(List::stream).collect(Collectors.toList()) // all
-        : executorIdByContainerType.get(containerType); // a particular containerType
+    final List<String> candidateExecutorIds = (containerType == RuntimeAttribute.None)
+        ? getAllContainers() // all containers
+        : executorIdByContainerType.get(containerType); // containers of a particular type
 
     if (candidateExecutorIds != null && !candidateExecutorIds.isEmpty()) {
       final int numExecutors = candidateExecutorIds.size();
@@ -151,6 +151,12 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     return Optional.empty();
   }
 
+  private List<String> getAllContainers() {
+    return executorIdByContainerType.values().stream()
+        .flatMap(List::stream) // flatten the list of lists to a flat stream
+        .collect(Collectors.toList()); // convert the stream to a list
+  }
+
   private boolean hasFreeSlot(final ExecutorRepresenter executor) {
     return executor.getRunningTaskGroups().size() < executor.getExecutorCapacity();
   }
@@ -163,8 +169,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
 
   private void signalPossiblyWaitingScheduler(final RuntimeAttribute typeOfContainerWithNewFreeSlot) {
     conditionByContainerType.get(typeOfContainerWithNewFreeSlot).signal();
-    if (typeOfContainerWithNewFreeSlot != RuntimeAttribute.Any) {
-      conditionByContainerType.get(RuntimeAttribute.Any).signal();
+    if (typeOfContainerWithNewFreeSlot != RuntimeAttribute.None) {
+      conditionByContainerType.get(RuntimeAttribute.None).signal();
     }
   }
 

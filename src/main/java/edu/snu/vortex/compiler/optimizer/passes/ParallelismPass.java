@@ -55,7 +55,18 @@ public final class ParallelismPass implements Pass {
     // Propagate backward with OneToOne edges, fixing conflicts between different sources with different parallelism
     final List<IRVertex> reverseTopologicalSort = getReverseTopologicalSort(dag);
     for (final IRVertex vertex : reverseTopologicalSort) {
-      if (vertex instanceof SourceVertex) {
+      if (vertex instanceof OperatorVertex) {
+        // Backward-propagate parallelism to parents with OneToOne CommunicationPattern
+        final int parallelism = vertex.getAttr(Attribute.IntegerKey.Parallelism);
+        dag.getIncomingEdgesOf(vertex).stream()
+            .filter(edge -> edge.getAttr(Attribute.Key.CommunicationPattern) == Attribute.OneToOne)
+            .map(IREdge::getSrc)
+            .forEach(src -> src.setAttr(Attribute.IntegerKey.Parallelism, parallelism));
+      } else if (vertex instanceof SourceVertex) {
+        // Source parallelism could have been reset due to the back-propagation
+        // However there can be bounds on the parallelism of sources (e.g., cannot be smaller than # of HDFS blocks)
+        // We test here if the (possibly) new desired parallelism can be achieved,
+        // and throw an exception if it cannot
         final SourceVertex sourceVertex = (SourceVertex) vertex;
         final int desiredParallelism = sourceVertex.getAttr(Attribute.IntegerKey.Parallelism);
         final int actualParallelism = sourceVertex.getReaders(desiredParallelism).size();
@@ -63,14 +74,6 @@ public final class ParallelismPass implements Pass {
           throw new RuntimeException("Source " + vertex.toString() + " cannot support back-propagated parallelism:"
               + "desired " + desiredParallelism + ", actual" + actualParallelism);
         }
-      } else if (vertex instanceof OperatorVertex) {
-        final int parallelism = vertex.getAttr(Attribute.IntegerKey.Parallelism);
-        dag.getIncomingEdgesOf(vertex).stream()
-            .filter(edge -> edge.getAttr(Attribute.Key.CommunicationPattern) == Attribute.OneToOne)
-            .map(IREdge::getSrc)
-            .forEach(src -> {
-              src.setAttr(Attribute.IntegerKey.Parallelism, parallelism);
-            });
       } else {
         throw new UnsupportedOperationException("Unknown vertex type: " + vertex.toString());
       }

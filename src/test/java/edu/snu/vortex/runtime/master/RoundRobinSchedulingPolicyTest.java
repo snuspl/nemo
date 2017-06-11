@@ -94,13 +94,13 @@ public final class RoundRobinSchedulingPolicyTest {
   }
 
   @Test
-  public void testAnyContainerType() {
-    final TaskGroup A1 = new TaskGroup("A1", "Stage A", 0, null, RuntimeAttribute.Any);
-    final TaskGroup A2 = new TaskGroup("A2", "Stage A", 0, null, RuntimeAttribute.Any);
-    final TaskGroup A3 = new TaskGroup("A3", "Stage A", 0, null, RuntimeAttribute.Any);
-    final TaskGroup A4 = new TaskGroup("A4", "Stage A", 0, null, RuntimeAttribute.Any);
-    final TaskGroup A5 = new TaskGroup("A5", "Stage A", 0, null, RuntimeAttribute.Any);
-    final TaskGroup A6 = new TaskGroup("A6", "Stage A", 0, null, RuntimeAttribute.Any);
+  public void testNoneContainerType() {
+    final TaskGroup A1 = new TaskGroup("A1", "Stage A", 0, null, RuntimeAttribute.None);
+    final TaskGroup A2 = new TaskGroup("A2", "Stage A", 0, null, RuntimeAttribute.None);
+    final TaskGroup A3 = new TaskGroup("A3", "Stage A", 0, null, RuntimeAttribute.None);
+    final TaskGroup A4 = new TaskGroup("A4", "Stage A", 0, null, RuntimeAttribute.None);
+    final TaskGroup A5 = new TaskGroup("A5", "Stage A", 0, null, RuntimeAttribute.None);
+    final TaskGroup A6 = new TaskGroup("A6", "Stage A", 0, null, RuntimeAttribute.None);
 
     final ScheduledTaskGroup a1Wrapper = wrap(A1);
     final ScheduledTaskGroup a2Wrapper = wrap(A2);

@@ -27,7 +27,7 @@ public final class DefaultPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     dag.topologicalDo(vertex -> {
-        vertex.setAttr(Attribute.Key.Placement, Attribute.Any);
+        vertex.setAttr(Attribute.Key.Placement, Attribute.None);
         dag.getIncomingEdgesOf(vertex).forEach(irEdge -> {
           irEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
           irEdge.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
