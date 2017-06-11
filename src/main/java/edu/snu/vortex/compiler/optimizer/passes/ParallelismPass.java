@@ -68,9 +68,9 @@ public final class ParallelismPass implements Pass {
         // We test here if the (possibly) new desired parallelism can be achieved,
         // and throw an exception if it cannot
         final SourceVertex sourceVertex = (SourceVertex) vertex;
-        final int desiredParallelism = sourceVertex.getAttr(Attribute.IntegerKey.Parallelism);
-        final int actualParallelism = sourceVertex.getReaders(desiredParallelism).size();
-        if (sourceVertex.getReaders(desiredParallelism).size() != desiredParallelism) {
+        final Integer desiredParallelism = sourceVertex.getAttr(Attribute.IntegerKey.Parallelism);
+        final Integer actualParallelism = sourceVertex.getReaders(desiredParallelism).size();
+        if (!actualParallelism.equals(desiredParallelism)) {
           throw new RuntimeException("Source " + vertex.toString() + " cannot support back-propagated parallelism:"
               + "desired " + desiredParallelism + ", actual" + actualParallelism);
         }
@@ -86,9 +86,9 @@ public final class ParallelismPass implements Pass {
       inEdges.stream()
           .filter(edge -> edge.getAttr(Attribute.Key.CommunicationPattern) == Attribute.OneToOne)
           .forEach(edge -> {
-            final int srcParallelism = edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism);
-            final int dstParallelism = edge.getDst().getAttr(Attribute.IntegerKey.Parallelism);
-            if (srcParallelism != dstParallelism) {
+            final Integer srcParallelism = edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism);
+            final Integer dstParallelism = edge.getDst().getAttr(Attribute.IntegerKey.Parallelism);
+            if (!srcParallelism.equals(dstParallelism)) {
               throw new RuntimeException(edge.toString() + " is OneToOne, but src/dst parallelisms differ");
             }
           });
