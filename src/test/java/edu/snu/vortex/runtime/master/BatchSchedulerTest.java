@@ -78,8 +78,8 @@ public final class BatchSchedulerTest {
     containerManager = mock(ContainerManager.class);
     pendingTaskGroupQueue = new PendingTaskGroupQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
-    scheduler = new BatchScheduler(schedulingPolicy, pendingTaskGroupQueue);
     blockManagerMaster = new BlockManagerMaster();
+    scheduler = new BatchScheduler(blockManagerMaster, schedulingPolicy, pendingTaskGroupQueue);
 
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
@@ -172,7 +172,7 @@ public final class BatchSchedulerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final JobStateManager jobStateManager =
-        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), blockManagerMaster);
+        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->

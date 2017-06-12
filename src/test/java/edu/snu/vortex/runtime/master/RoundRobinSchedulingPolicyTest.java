@@ -57,6 +57,7 @@ public final class RoundRobinSchedulingPolicyTest {
   public void setUp() {
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
+    when(containerManager.getFailedExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
 
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TIMEOUT_MS);
 
@@ -212,10 +213,12 @@ public final class RoundRobinSchedulingPolicyTest {
     assertEquals("b1", b3.get());
     schedulingPolicy.onTaskGroupScheduled(b3.get(), b3Wrapper);
 
+    containerManager.onExecutorRemoved(b1.get());
     Set<String> executingTaskGroups = schedulingPolicy.onExecutorRemoved(b1.get());
     assertEquals(1, executingTaskGroups.size());
     assertEquals("B3", executingTaskGroups.iterator().next());
 
+    containerManager.onExecutorRemoved(a1.get());
     executingTaskGroups = schedulingPolicy.onExecutorRemoved(a1.get());
     assertEquals(1, executingTaskGroups.size());
     assertEquals("A4", executingTaskGroups.iterator().next());

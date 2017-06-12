@@ -91,7 +91,7 @@ public final class DataTransferTest {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final Scheduler scheduler =
-        new BatchScheduler(
+        new BatchScheduler(master,
             new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
     final AtomicInteger executorCount = new AtomicInteger(0);
     final BlockManagerMaster master = new BlockManagerMaster();
@@ -218,9 +218,9 @@ public final class DataTransferTest {
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
       if (commPattern == RuntimeAttribute.ScatterGather) {
         IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex ->
-            master.initializeState(EDGE_ID, srcTaskIndex, dstTaskIndex));
+            master.initializeState(EDGE_ID, srcTaskIndex, dstTaskIndex, null));
       } else {
-        master.initializeState(EDGE_ID, srcTaskIndex);
+        master.initializeState(EDGE_ID, srcTaskIndex, null);
       }
     });
 
