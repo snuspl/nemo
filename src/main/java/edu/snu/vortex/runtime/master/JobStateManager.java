@@ -177,16 +177,20 @@ public final class JobStateManager {
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
     if (newState == StageState.State.EXECUTING) {
-      for (final PhysicalStage stage : physicalPlan.getStageDAG().getVertices()) {
-        if (stage.getId().equals(stageId)) {
-          Set<String> remainingTaskGroupIds = new HashSet<>();
-          remainingTaskGroupIds.addAll(
-              stage.getTaskGroupList()
-                  .stream()
-                  .map(taskGroup -> taskGroup.getTaskGroupId())
-                  .collect(Collectors.toSet()));
-          stageIdToRemainingTaskGroupSet.put(stageId, remainingTaskGroupIds);
-          break;
+      // if there exists a mapping, this state change is from a failed_recoverable stage,
+      // and there may be task groups that do not need to be re-executed.
+      if (!stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
+        for (final PhysicalStage stage : physicalPlan.getStageDAG().getVertices()) {
+          if (stage.getId().equals(stageId)) {
+            Set<String> remainingTaskGroupIds = new HashSet<>();
+            remainingTaskGroupIds.addAll(
+                stage.getTaskGroupList()
+                    .stream()
+                    .map(taskGroup -> taskGroup.getTaskGroupId())
+                    .collect(Collectors.toSet()));
+            stageIdToRemainingTaskGroupSet.put(stageId, remainingTaskGroupIds);
+            break;
+          }
         }
       }
     } else if (newState == StageState.State.COMPLETE) {
