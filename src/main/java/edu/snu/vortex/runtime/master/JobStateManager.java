@@ -124,9 +124,11 @@ public final class JobStateManager {
             final int dstParallelism =
                 physicalStageEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
             IntStream.range(0, dstParallelism).forEach(dstTaskIdx ->
-                blockManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx));
+                blockManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx,
+                    taskGroupsForStage.get(srcTaskIdx).getTaskGroupId()));
           } else {
-            blockManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx);
+            blockManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx,
+                taskGroupsForStage.get(srcTaskIdx).getTaskGroupId());
           }
         });
       });
@@ -137,7 +139,8 @@ public final class JobStateManager {
         taskGroupInternalDag.getVertices().forEach(task -> {
           final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
           internalOutgoingEdges.forEach(taskRuntimeEdge ->
-              blockManagerMaster.initializeState(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx()));
+              blockManagerMaster.initializeState(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx(),
+                  taskGroup.getTaskGroupId()));
         });
       });
     });
@@ -191,6 +194,8 @@ public final class JobStateManager {
       if (currentJobStageIds.isEmpty()) {
         onJobStateChanged(JobState.State.COMPLETE);
       }
+    } else if (newState == StageState.State.FAILED_RECOVERABLE) {
+      currentJobStageIds.add(stageId);
     }
   }
 
@@ -210,10 +215,10 @@ public final class JobStateManager {
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
         new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
     taskGroupStateChanged.setState(newState);
+    final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
+    final String stageId = taskGroup.getStageId();
+
     if (newState == TaskGroupState.State.COMPLETE) {
-      final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
-      final String stageId = taskGroup.getStageId();
-      stageIdToRemainingTaskGroupSet.get(stageId).remove(taskGroupId);
       // TODO #235: Cleanup Task State Management
       taskGroup.getTaskDAG().getVertices().forEach(task -> {
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
@@ -222,9 +227,27 @@ public final class JobStateManager {
       });
 
       if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
-        if (stageIdToRemainingTaskGroupSet.get(stageId).isEmpty()) {
+        final Set<String> remainingTaskGroups = stageIdToRemainingTaskGroupSet.get(stageId);
+        remainingTaskGroups.remove(taskGroupId);
+
+        if (remainingTaskGroups.isEmpty()) {
           onStageStateChanged(stageId, StageState.State.COMPLETE);
         }
+      } else {
+        throw new IllegalStateTransitionException(
+            new Throwable("The stage has not yet been submitted for execution"));
+      }
+    } else if (newState == TaskGroupState.State.FAILED_RECOVERABLE) {
+      taskGroup.getTaskDAG().getVertices().forEach(task ->
+        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.FAILED_RECOVERABLE));
+
+      // Mark this stage as failed_recoverable as long as it contains at least one failed_recoverable task group
+      if (idToStageStates.get(stageId).getStateMachine().getCurrentState() != StageState.State.FAILED_RECOVERABLE) {
+        onStageStateChanged(stageId, StageState.State.FAILED_RECOVERABLE);
+      }
+
+      if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
+        stageIdToRemainingTaskGroupSet.get(stageId).add(taskGroupId);
       } else {
         throw new IllegalStateTransitionException(
             new Throwable("The stage has not yet been submitted for execution"));
