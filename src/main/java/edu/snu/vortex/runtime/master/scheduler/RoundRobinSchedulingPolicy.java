@@ -195,7 +195,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   public Set<String> onExecutorRemoved(final String executorId) {
     lock.lock();
     try {
-      final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
+      final ExecutorRepresenter executor = containerManager.getFailedExecutorRepresenterMap().get(executorId);
       final RuntimeAttribute containerType = executor.getContainerType();
 
       final List<String> executorIdList = executorIdByContainerType.get(containerType);
