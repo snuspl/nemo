@@ -15,11 +15,14 @@
  */
 package edu.snu.vortex.utils.dag;
 
-import edu.snu.vortex.compiler.ir.LoopVertex;
+import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
+import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * DAG Builder.
@@ -155,10 +158,71 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   }
 
   /**
+   * DAG integrity check function, that keeps DAG in shape.
+   */
+  private void integrityCheck() {
+    // no cycle check
+    final Stack<V> stack = new Stack<>();
+    final Set<V> visited = new HashSet<>();
+    vertices.stream().filter(v -> incomingEdges.get(v).isEmpty()) // source operators
+        .forEachOrdered(v -> cycleCheck(stack, visited, v));
+
+    // source check
+    if (vertices.stream().filter(v -> incomingEdges.get(v).isEmpty())
+        .anyMatch(v -> (v instanceof  IRVertex) && !(v instanceof SourceVertex))) {
+      final String problematicVertices = vertices.stream().filter(v -> incomingEdges.get(v).isEmpty())
+          .filter(v -> !(v instanceof SourceVertex)).map(V::getId).collect(Collectors.toList()).toString();
+      throw new RuntimeException("DAG source check failed while building DAG. " + problematicVertices);
+    }
+
+    // sink check
+    if (vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty())
+        .anyMatch(v -> (v instanceof IRVertex) && !(v instanceof OperatorVertex || v instanceof LoopVertex))
+        || vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty()).filter(v -> v instanceof OperatorVertex)
+        .map(v -> ((OperatorVertex) v).getTransform()).anyMatch(t -> !(t instanceof DoTransform))) {
+      final String problematicVertices = vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty())
+          .filter(v -> !(v instanceof OperatorVertex || v instanceof LoopVertex))
+          .map(V::getId).collect(Collectors.toList()).toString();
+      throw new RuntimeException("DAG sink check failed while building DAG: " + problematicVertices);
+    }
+
+    // attribute checks
+    //   OneToOne and parallelism check
+    vertices.forEach(v -> incomingEdges.get(v).forEach(e -> {
+      if (e instanceof IREdge && ((IREdge) e).getType() == IREdge.Type.OneToOne
+          && e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
+          && !((IRVertex) e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism)
+          .equals(((IRVertex) e.getDst()).getAttr(Attribute.IntegerKey.Parallelism))) {
+        throw new RuntimeException("DAG attribute check: vertices are connected by OneToOne edge, "
+            + "but has different parallelism attributes");
+      }
+    }));
+  }
+
+  /**
+   * Helper method to check cycles in the DAG.
+   * @param stack stack to push the vertices to.
+   * @param visited set to keep track of visited vertices.
+   * @param vertex vertex to check.
+   */
+  private void cycleCheck(final Stack<V> stack, final Set<V> visited, final V vertex) {
+    visited.add(vertex);
+    stack.push(vertex);
+    if (outgoingEdges.get(vertex).stream().map(Edge::getDst).anyMatch(stack::contains)) {
+      throw new RuntimeException("DAG contains a cycle");
+    } else {
+      outgoingEdges.get(vertex).stream().map(Edge::getDst).filter(v -> !visited.contains(v))
+          .forEachOrdered(v -> cycleCheck(stack, visited, v));
+    }
+    stack.pop();
+  }
+
+  /**
    * Build the DAG.
    * @return the DAG contained by the builder.
    */
   public DAG<V, E> build() {
+    integrityCheck();
     return new DAG<>(vertices, incomingEdges, outgoingEdges, assignedLoopVertexMap, loopStackDepthMap);
   }
 }

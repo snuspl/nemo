@@ -15,8 +15,10 @@
  */
 package edu.snu.vortex.runtime.common.plan;
 
+import edu.snu.vortex.compiler.TestUtil;
 import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
+import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
@@ -49,12 +51,13 @@ public final class DAGConverterTest {
 
   @Test
   public void testSimplePlan() {
-    final Transform t = mock(Transform.class);
-    final IRVertex v1 = new OperatorVertex(t);
+    final BoundedSource s = mock(BoundedSource.class);
+    final DoTransform dt = mock(DoTransform.class);
+    final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     irDAGBuilder.addVertex(v1);
 
-    final IRVertex v2 = new OperatorVertex(t);
+    final IRVertex v2 = new OperatorVertex(dt);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v2);
 
@@ -112,6 +115,7 @@ public final class DAGConverterTest {
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final Transform t = mock(Transform.class);
+    final DoTransform dt = mock(DoTransform.class);
     final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
@@ -124,11 +128,11 @@ public final class DAGConverterTest {
     v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v4.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final IRVertex v5 = new OperatorVertex(t);
+    final IRVertex v5 = new OperatorVertex(dt);
     v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v5.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final IRVertex v6 = new OperatorVertex(t);
+    final IRVertex v6 = new OperatorVertex(dt);
     v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
 
@@ -137,7 +141,7 @@ public final class DAGConverterTest {
 //    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
 //    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
-    final IRVertex v8 = new OperatorVertex(t);
+    final IRVertex v8 = new OperatorVertex(dt);
     v8.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v8.setAttr(Attribute.Key.Placement, Attribute.Compute);
 

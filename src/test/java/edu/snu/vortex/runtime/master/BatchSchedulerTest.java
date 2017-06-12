@@ -16,6 +16,8 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.frontend.Coder;
+import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
+import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
@@ -37,6 +39,7 @@ import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
+import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.reef.driver.context.ActiveContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,8 +124,10 @@ public final class BatchSchedulerTest {
   @Test
   public void testMultiInputOutputScheduling() {
 
+    final BoundedSource s = mock(BoundedSource.class);
     final Transform t = mock(Transform.class);
-    final IRVertex v1 = new OperatorVertex(t);
+    final DoTransform dt = mock(DoTransform.class);
+    final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v1);
@@ -132,17 +137,17 @@ public final class BatchSchedulerTest {
     v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v2);
 
-    final IRVertex v3 = new OperatorVertex(t);
+    final IRVertex v3 = new BoundedSourceVertex<>(s);
     v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
     irDAGBuilder.addVertex(v3);
 
-    final IRVertex v4 = new OperatorVertex(t);
+    final IRVertex v4 = new OperatorVertex(dt);
     v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v4.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v4);
 
-    final IRVertex v5 = new OperatorVertex(t);
+    final IRVertex v5 = new OperatorVertex(dt);
     v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
     v5.setAttr(Attribute.Key.Placement, Attribute.Storage);
     irDAGBuilder.addVertex(v5);
