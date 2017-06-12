@@ -61,6 +61,9 @@ public final class TaskState {
     stateMachineBuilder.addTransition(State.COMPLETE, State.FAILED_UNRECOVERABLE,
         "Executor Failure");
 
+    stateMachineBuilder.addTransition(State.COMPLETE, State.FAILED_RECOVERABLE,
+        "Container Failure");
+
     stateMachineBuilder.addTransition(State.FAILED_RECOVERABLE, State.FAILED_UNRECOVERABLE,
         "");
     stateMachineBuilder.addTransition(State.FAILED_RECOVERABLE, State.READY,
