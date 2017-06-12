@@ -72,19 +72,22 @@ public final class VortexDriver {
   private final UserApplicationRunner userApplicationRunner;
   private final ContainerManager containerManager;
   private final Scheduler scheduler;
+  private final BlockManagerMaster blockManagerMaster;
 
   @Inject
   private VortexDriver(final ContainerManager containerManager,
                        final Scheduler scheduler,
+                       final BlockManagerMaster blockManagerMaster,
+                       final UserApplicationRunner userApplicationRunner,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
-                       final UserApplicationRunner userApplicationRunner,
                        @Parameter(JobConf.ExecutorMemMb.class) final int executorMem,
                        @Parameter(JobConf.ExecutorNum.class) final int executorNum,
                        @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity) {
     this.userApplicationRunner = userApplicationRunner;
     this.containerManager = containerManager;
     this.scheduler = scheduler;
+    this.blockManagerMaster = blockManagerMaster;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.executorNum = executorNum;
@@ -140,6 +143,13 @@ public final class VortexDriver {
   public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
     @Override
     public void onNext(final FailedEvaluator failedEvaluator) {
+      // The list size is 0 if the evaluator failed before an executor started. For now, the size is 1 otherwise.
+      failedEvaluator.getFailedContextList().forEach(failedContext -> {
+        final String failedExecutorId = failedContext.getId();
+        blockManagerMaster.removeWorker(failedExecutorId);
+        containerManager.onExecutorRemoved(failedExecutorId);
+        scheduler.onExecutorRemoved(failedExecutorId);
+      });
       throw new RuntimeException(failedEvaluator.getEvaluatorException());
     }
   }
