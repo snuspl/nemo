@@ -143,9 +143,9 @@ public final class BatchScheduler implements Scheduler {
     schedulingPolicy.onExecutorAdded(executorId);
   }
 
-  // TODO #163: Handle Fault Tolerance
   @Override
   public void onExecutorRemoved(final String executorId) {
+    jobStateManager.on
     final Set<String> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executorId);
 
     // Reschedule taskGroupsToReschedule
