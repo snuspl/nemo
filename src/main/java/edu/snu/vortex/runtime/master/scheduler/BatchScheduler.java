@@ -182,8 +182,8 @@ public final class BatchScheduler implements Scheduler {
     // No child stage has been selected, but there may be remaining stages.
     if (!scheduled) {
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
-        if (jobStateManager.getStageState(stage.getId()).getStateMachine().getCurrentState()
-            == StageState.State.READY) {
+        final Enum stageState = jobStateManager.getStageState(stage.getId()).getStateMachine().getCurrentState();
+        if (stageState == StageState.State.READY || stageState == StageState.State.FAILED_RECOVERABLE) {
           stageToSchedule = selectNextStageToSchedule(stage);
           if (stageToSchedule.isPresent()) {
             scheduleStage(stageToSchedule.get());
@@ -267,8 +267,16 @@ public final class BatchScheduler implements Scheduler {
     LOG.log(Level.INFO, "Scheduling Stage: {0}", stageToSchedule.getId());
     jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
 
-    stageToSchedule.getTaskGroupList().forEach(taskGroup ->
-        pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges)));
+    stageToSchedule.getTaskGroupList().forEach(taskGroup -> {
+      // this happens when the belonging stage's other task groups have failed recoverable,
+      // but this task group's results are safe.
+      if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
+          == TaskGroupState.State.COMPLETE) {
+        LOG.log(Level.INFO, "Skipping {0} because its outputs are safe!", taskGroup.getTaskGroupId());
+      } else {
+        pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges));
+      }
+    });
   }
 
   @Override
