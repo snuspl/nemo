@@ -153,9 +153,11 @@ public final class BlockManagerWorker {
                                     final String runtimeEdgeId,
                                     final RuntimeAttribute blockStore) {
     LOG.log(Level.INFO, "GetBlock: {0}", blockId);
-    // Local hit!
+
     final BlockStore store = getBlockStore(blockStore);
     final Optional<Iterable<Element>> optionalData = store.getBlock(blockId);
+
+    // Local hit!
     if (optionalData.isPresent()) {
       return optionalData.get();
     } else {

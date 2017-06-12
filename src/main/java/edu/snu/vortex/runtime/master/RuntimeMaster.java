@@ -84,7 +84,7 @@ public final class RuntimeMaster {
     physicalPlan = generatePhysicalPlan(executionPlan);
     try {
       // TODO #208: Cleanup Execution Threads
-      jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
+      jobStateManager = scheduler.scheduleJob(physicalPlan);
       int i = 0;
       while (!jobStateManager.checkJobCompletion()) {
         jobStateManager.storeJSON(dagDirectory, String.valueOf(i++));

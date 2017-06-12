@@ -38,7 +38,6 @@ import java.util.logging.Logger;
  * BatchScheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
  * The policy by which it schedules them is dependent on the implementation of {@link SchedulingPolicy}.
  */
-// TODO #234: Add Unit Tests for Scheduler
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
 
@@ -49,6 +48,8 @@ public final class BatchScheduler implements Scheduler {
    */
   private SchedulingPolicy schedulingPolicy;
 
+  private final BlockManagerMaster blockManagerMaster;
+
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
   /**
@@ -57,8 +58,10 @@ public final class BatchScheduler implements Scheduler {
   private PhysicalPlan physicalPlan;
 
   @Inject
-  public BatchScheduler(final SchedulingPolicy schedulingPolicy,
+  public BatchScheduler(final BlockManagerMaster blockManagerMaster,
+                        final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupQueue pendingTaskGroupQueue) {
+    this.blockManagerMaster = blockManagerMaster;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.schedulingPolicy = schedulingPolicy;
   }
@@ -69,8 +72,7 @@ public final class BatchScheduler implements Scheduler {
    * @return the {@link JobStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule,
-                                                  final BlockManagerMaster blockManagerMaster) {
+  public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
 
@@ -135,20 +137,23 @@ public final class BatchScheduler implements Scheduler {
   // TODO #163: Handle Fault Tolerance
   private void onTaskGroupExecutionFailed(final String executorId, final String taskGroupId,
                                           final List<String> taskIdOnFailure) {
-    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
+    // what should we do here?
+//    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
   }
 
   @Override
-  public void onExecutorAdded(final String executorId) {
+  public synchronized void onExecutorAdded(final String executorId) {
     schedulingPolicy.onExecutorAdded(executorId);
   }
 
   @Override
-  public void onExecutorRemoved(final String executorId) {
-    jobStateManager.on
-    final Set<String> taskGroupsToReschedule = schedulingPolicy.onExecutorRemoved(executorId);
+  public synchronized void onExecutorRemoved(final String executorId) {
+    final Set<String> taskGroupsForLostBlocks = blockManagerMaster.removeWorker(executorId);
+    final Set<String> taskGroupsToRecompute = schedulingPolicy.onExecutorRemoved(executorId);
 
-    // Reschedule taskGroupsToReschedule
+    taskGroupsToRecompute.addAll(taskGroupsForLostBlocks);
+    taskGroupsToRecompute.forEach(failedTaskGroupId ->
+        onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null));
   }
 
   private synchronized void scheduleRootStages() {
@@ -225,6 +230,7 @@ public final class BatchScheduler implements Scheduler {
       case COMPLETE:
         break;
       case FAILED_RECOVERABLE:
+        // change the stage state/task group/task states back to ready, and some selection mechanism
         // TODO #163: Handle Fault Tolerance
         allParentStagesComplete = false;
         break;
