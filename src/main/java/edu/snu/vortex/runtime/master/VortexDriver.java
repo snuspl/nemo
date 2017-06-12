@@ -72,12 +72,10 @@ public final class VortexDriver {
   private final UserApplicationRunner userApplicationRunner;
   private final ContainerManager containerManager;
   private final Scheduler scheduler;
-  private final BlockManagerMaster blockManagerMaster;
 
   @Inject
   private VortexDriver(final ContainerManager containerManager,
                        final Scheduler scheduler,
-                       final BlockManagerMaster blockManagerMaster,
                        final UserApplicationRunner userApplicationRunner,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
@@ -87,7 +85,6 @@ public final class VortexDriver {
     this.userApplicationRunner = userApplicationRunner;
     this.containerManager = containerManager;
     this.scheduler = scheduler;
-    this.blockManagerMaster = blockManagerMaster;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
     this.executorNum = executorNum;
@@ -146,7 +143,6 @@ public final class VortexDriver {
       // The list size is 0 if the evaluator failed before an executor started. For now, the size is 1 otherwise.
       failedEvaluator.getFailedContextList().forEach(failedContext -> {
         final String failedExecutorId = failedContext.getId();
-        blockManagerMaster.removeWorker(failedExecutorId);
         containerManager.onExecutorRemoved(failedExecutorId);
         scheduler.onExecutorRemoved(failedExecutorId);
       });
