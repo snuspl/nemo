@@ -21,9 +21,7 @@ import edu.snu.vortex.utils.StateMachine;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,32 +34,44 @@ public final class BlockManagerMaster {
   private static final Logger LOG = Logger.getLogger(BlockManagerMaster.class.getName());
   private final Map<String, BlockState> blockIdToState;
   private final Map<String, String> committedBlockIdToWorkerId;
+  private final Map<String, String> blockIdToParentTaskGroupId;
 
   @Inject
   public BlockManagerMaster() {
     this.blockIdToState = new HashMap<>();
     this.committedBlockIdToWorkerId = new HashMap<>();
+    this.blockIdToParentTaskGroupId = new HashMap<>();
   }
 
-  public synchronized void initializeState(final String edgeId, final int srcTaskIndex) {
+  public synchronized void initializeState(final String edgeId, final int srcTaskIndex,
+                                           final String parentTaskGroupId) {
     final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
     blockIdToState.put(blockId, new BlockState());
+    blockIdToParentTaskGroupId.put(blockId, parentTaskGroupId);
   }
 
-  public synchronized void initializeState(final String edgeId, final int srcTaskIndex, final int partitionIndex) {
+  public synchronized void initializeState(final String edgeId, final int srcTaskIndex, final int partitionIndex,
+                                           final String parentTaskGroupId) {
     final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex, partitionIndex);
     blockIdToState.put(blockId, new BlockState());
+    blockIdToParentTaskGroupId.put(blockId, parentTaskGroupId);
   }
 
-  public synchronized void removeWorker(final String executorId) {
-    // Set block states to lost
+  public synchronized Set<String> removeWorker(final String executorId) {
+    final Set<String> taskGroupsToRecompute = new HashSet<>();
+    // Set block states to lost & add to the set of task groups to recompute for the block
     committedBlockIdToWorkerId.entrySet().stream()
         .filter(e -> e.getValue().equals(executorId))
         .map(Map.Entry::getKey)
-        .forEach(blockId -> onBlockStateChanged(executorId, blockId, BlockState.State.LOST));
+        .forEach(blockId -> {
+          onBlockStateChanged(executorId, blockId, BlockState.State.LOST);
+          taskGroupsToRecompute.add(blockIdToParentTaskGroupId.get(blockId));
+        });
 
     // Update worker-related global variables
     committedBlockIdToWorkerId.entrySet().removeIf(e -> e.getValue().equals(executorId));
+
+    return taskGroupsToRecompute;
   }
 
   public synchronized Optional<String> getBlockLocation(final String blockId) {
