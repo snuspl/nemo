@@ -159,16 +159,22 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
 
   /**
    * DAG integrity check function, that keeps DAG in shape.
+   * @param cycle whether or not to check for cycles.
+   * @param source whether or not to check sources.
+   * @param sink whether or not to check sink.
+   * @param attribute whether or not to check attributes.
    */
-  private void integrityCheck() {
+  private void integrityCheck(final boolean cycle, final boolean source, final boolean sink, final boolean attribute) {
     // no cycle check
-    final Stack<V> stack = new Stack<>();
-    final Set<V> visited = new HashSet<>();
-    vertices.stream().filter(v -> incomingEdges.get(v).isEmpty()) // source operators
-        .forEachOrdered(v -> cycleCheck(stack, visited, v));
+    if (cycle) {
+      final Stack<V> stack = new Stack<>();
+      final Set<V> visited = new HashSet<>();
+      vertices.stream().filter(v -> incomingEdges.get(v).isEmpty()) // source operators
+          .forEachOrdered(v -> cycleCheck(stack, visited, v));
+    }
 
     // source check
-    if (vertices.stream().filter(v -> incomingEdges.get(v).isEmpty())
+    if (source && vertices.stream().filter(v -> incomingEdges.get(v).isEmpty())
         .anyMatch(v -> (v instanceof  IRVertex) && !(v instanceof SourceVertex))) {
       final String problematicVertices = vertices.stream().filter(v -> incomingEdges.get(v).isEmpty())
           .filter(v -> !(v instanceof SourceVertex)).map(V::getId).collect(Collectors.toList()).toString();
@@ -176,7 +182,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     }
 
     // sink check
-    if (vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty())
+    if (sink && vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty())
         .anyMatch(v -> (v instanceof IRVertex) && !(v instanceof OperatorVertex || v instanceof LoopVertex))
         || vertices.stream().filter(v -> outgoingEdges.get(v).isEmpty()).filter(v -> v instanceof OperatorVertex)
         .map(v -> ((OperatorVertex) v).getTransform()).anyMatch(t -> !(t instanceof DoTransform))) {
@@ -187,16 +193,20 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     }
 
     // attribute checks
-    //   OneToOne and parallelism check
-    vertices.forEach(v -> incomingEdges.get(v).forEach(e -> {
-      if (e instanceof IREdge && ((IREdge) e).getType() == IREdge.Type.OneToOne
-          && e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
-          && !((IRVertex) e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism)
-          .equals(((IRVertex) e.getDst()).getAttr(Attribute.IntegerKey.Parallelism))) {
-        throw new RuntimeException("DAG attribute check: vertices are connected by OneToOne edge, "
-            + "but has different parallelism attributes");
-      }
-    }));
+    if (attribute) {
+      //   OneToOne and parallelism check
+      vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge)
+          .filter(e -> ((IREdge) e).getType().equals(IREdge.Type.OneToOne)).forEach(e -> {
+        if (e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
+            && ((IRVertex) e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism) != null
+            && ((IRVertex) e.getDst()).getAttr(Attribute.IntegerKey.Parallelism) != null
+            && !((IRVertex) e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism)
+            .equals(((IRVertex) e.getDst()).getAttr(Attribute.IntegerKey.Parallelism))) {
+          throw new RuntimeException("DAG attribute check: vertices are connected by OneToOne edge, "
+              + "but has different parallelism attributes");
+        }
+      }));
+    }
   }
 
   /**
@@ -218,11 +228,20 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   }
 
   /**
+   * Build the DAG for LoopVertex.
+   * @return the DAG contained by the builder.
+   */
+  public DAG<V, E> buildWithoutSourceSinkCheck() {
+    integrityCheck(true, false, false, true);
+    return new DAG<>(vertices, incomingEdges, outgoingEdges, assignedLoopVertexMap, loopStackDepthMap);
+  }
+
+  /**
    * Build the DAG.
    * @return the DAG contained by the builder.
    */
   public DAG<V, E> build() {
-    integrityCheck();
+    integrityCheck(true, true, true, true);
     return new DAG<>(vertices, incomingEdges, outgoingEdges, assignedLoopVertexMap, loopStackDepthMap);
   }
 }

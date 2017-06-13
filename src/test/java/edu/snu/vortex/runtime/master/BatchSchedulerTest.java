@@ -126,7 +126,7 @@ public final class BatchSchedulerTest {
 
     final BoundedSource s = mock(BoundedSource.class);
     final Transform t = mock(Transform.class);
-    final DoTransform dt = mock(DoTransform.class);
+    final DoTransform dt = new DoTransform(null, null);
     final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);

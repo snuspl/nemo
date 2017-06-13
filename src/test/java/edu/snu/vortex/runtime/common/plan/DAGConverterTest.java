@@ -52,7 +52,7 @@ public final class DAGConverterTest {
   @Test
   public void testSimplePlan() {
     final BoundedSource s = mock(BoundedSource.class);
-    final DoTransform dt = mock(DoTransform.class);
+    final DoTransform dt = new DoTransform(null, null);
     final IRVertex v1 = new BoundedSourceVertex<>(s);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     irDAGBuilder.addVertex(v1);
@@ -115,7 +115,7 @@ public final class DAGConverterTest {
     v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
 
     final Transform t = mock(Transform.class);
-    final DoTransform dt = mock(DoTransform.class);
+    final DoTransform dt = new DoTransform(null, null);
     final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 3);
     v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
