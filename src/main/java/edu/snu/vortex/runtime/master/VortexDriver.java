@@ -142,19 +142,19 @@ public final class VortexDriver {
   public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
     @Override
     public void onNext(final FailedEvaluator failedEvaluator) {
-      failedEvaluator.getEvaluatorException().printStackTrace();
-      throw new RuntimeException(failedEvaluator.getEvaluatorException());
+      throw new RuntimeException(failedEvaluator.getId()
+          + " failed. See driver's log for the stack trace in executor.");
     }
   }
 
   /**
-   * Context/Executor failed.
+   * Context failed.
    */
   public final class FailedContextHandler implements EventHandler<FailedContext> {
     @Override
     public void onNext(final FailedContext failedContext) {
-      LOG.log(Level.INFO, "{0} failed", failedContext.getId());
       failedContext.asError().printStackTrace();
+      LOG.log(Level.INFO, "{0} failed. See driver's log for the stack trace in executor.", failedContext.getId());
     }
   }
 
