@@ -265,6 +265,10 @@ public final class BatchScheduler implements Scheduler {
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
     LOG.log(Level.INFO, "Scheduling Stage: {0}", stageToSchedule.getId());
+    if (jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState()
+        == StageState.State.FAILED_RECOVERABLE) {
+      jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
+    }
     jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
 
     stageToSchedule.getTaskGroupList().forEach(taskGroup -> {
