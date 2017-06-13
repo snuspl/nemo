@@ -68,7 +68,7 @@ public final class BlockManagerMaster {
           taskGroupsToRecompute.add(blockIdToParentTaskGroupId.get(blockId));
         });
 
-    // Update worker-related global variables
+    // Remove the worker's blocks from the committed list
     committedBlockIdToWorkerId.entrySet().removeIf(e -> e.getValue().equals(executorId));
 
     return taskGroupsToRecompute;
