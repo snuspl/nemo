@@ -125,6 +125,7 @@ public final class JobLauncher {
     cl.registerShortNameOfClass(JobConf.ExecutorNum.class);
     cl.registerShortNameOfClass(JobConf.ExecutorCapacity.class);
     cl.registerShortNameOfClass(JobConf.SchedulerTimeoutMs.class);
+    cl.registerShortNameOfClass(JobConf.MaxScheduleAttempt.class);
     cl.processCommandLine(args);
     return confBuilder.build();
   }

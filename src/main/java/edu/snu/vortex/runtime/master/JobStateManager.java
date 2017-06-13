@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -23,8 +24,10 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
+import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.utils.StateMachine;
 import edu.snu.vortex.utils.dag.DAG;
+import org.apache.reef.tang.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +50,8 @@ public final class JobStateManager {
 
   private final String jobId;
 
+  private final int maxScheduleAttempt;
+
   /**
    * The data structures below track the execution states of this job.
    */
@@ -54,6 +59,11 @@ public final class JobStateManager {
   private final Map<String, StageState> idToStageStates;
   private final Map<String, TaskGroupState> idToTaskGroupStates;
   private final Map<String, TaskState> idToTaskStates;
+
+  /**
+   * Keeps track of the number of attempts for a task group.
+   */
+  private final Map<String, Integer> maxScheduleAttemptByTaskGroup;
 
   /**
    * Represents the job to manage.
@@ -77,13 +87,16 @@ public final class JobStateManager {
   private final Set<String> currentJobStageIds;
 
   public JobStateManager(final PhysicalPlan physicalPlan,
-                         final BlockManagerMaster blockManagerMaster) {
+                         final BlockManagerMaster blockManagerMaster,
+                         @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
     this.physicalPlan = physicalPlan;
+    this.maxScheduleAttempt = maxScheduleAttempt;
     this.jobId = physicalPlan.getId();
     this.jobState = new JobState();
     this.idToStageStates = new HashMap<>();
     this.idToTaskGroupStates = new HashMap<>();
     this.idToTaskStates = new HashMap<>();
+    this.maxScheduleAttemptByTaskGroup = new HashMap<>();
     this.stageIdToRemainingTaskGroupSet = new HashMap<>();
     this.currentJobStageIds = new HashSet<>();
     initializeComputationStates();
@@ -240,6 +253,18 @@ public final class JobStateManager {
       } else {
         throw new IllegalStateTransitionException(
             new Throwable("The stage has not yet been submitted for execution"));
+      }
+    } else if (newState == TaskGroupState.State.EXECUTING) {
+      if (maxScheduleAttemptByTaskGroup.containsKey(taskGroupId)) {
+        final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroupId);
+
+        if (numAttempts < maxScheduleAttempt) {
+          maxScheduleAttemptByTaskGroup.put(taskGroupId, numAttempts + 1);
+        } else {
+          throw new SchedulingException(new Throwable("Exceeded max number of scheduling attempts for " + taskGroupId));
+        }
+      } else {
+        maxScheduleAttemptByTaskGroup.put(taskGroupId, 1);
       }
     } else if (newState == TaskGroupState.State.FAILED_RECOVERABLE) {
       taskGroup.getTaskDAG().getVertices().forEach(task ->
