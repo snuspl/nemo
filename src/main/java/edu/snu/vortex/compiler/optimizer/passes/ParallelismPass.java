@@ -21,6 +21,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.utils.dag.DAGBuilder;
 
 import java.util.Collections;
 import java.util.List;
@@ -86,7 +87,12 @@ public final class ParallelismPass implements Pass {
         throw new UnsupportedOperationException("Unknown vertex type: " + vertex.toString());
       }
     }
-    return dag;
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+    dag.topologicalDo(v -> {
+      builder.addVertex(v, dag);
+      dag.getIncomingEdgesOf(v).forEach(builder::connectVertices);
+    });
+    return builder.build();
   }
 
   private List<IRVertex> getReverseTopologicalSort(final DAG<IRVertex, IREdge> dag) {
