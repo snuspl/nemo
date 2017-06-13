@@ -142,6 +142,7 @@ public final class VortexDriver {
   public final class FailedEvaluatorHandler implements EventHandler<FailedEvaluator> {
     @Override
     public void onNext(final FailedEvaluator failedEvaluator) {
+      failedEvaluator.getEvaluatorException().printStackTrace();
       throw new RuntimeException(failedEvaluator.getEvaluatorException());
     }
   }

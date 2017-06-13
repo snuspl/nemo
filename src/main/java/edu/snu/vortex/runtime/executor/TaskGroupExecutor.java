@@ -177,6 +177,7 @@ public final class TaskGroupExecutor {
       }
     });
     LOG.log(Level.INFO, "{0} Execution Complete!", taskGroup.getTaskGroupId());
+    throw new RuntimeException("TEST HERE!!");
   }
 
   /**
