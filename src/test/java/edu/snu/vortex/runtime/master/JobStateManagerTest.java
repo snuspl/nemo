@@ -36,8 +36,12 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -138,5 +142,53 @@ public final class JobStateManagerTest {
     }
   }
 
-  
+  /**
+   * Test whether the methods waiting finish of job works properly.
+   */
+  @Test(timeout = 1000)
+  public void testWaitUntilFinish() throws Exception {
+    // Create a JobStateManager of an empty dag.
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
+    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
+    final JobStateManager jobStateManager =
+        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
+
+    assertFalse(jobStateManager.checkJobFinish());
+
+    // Create a thread waiting for the job to finish.
+    final AtomicReference<JobState> atomicJobState = new AtomicReference<>();
+    final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    final Future future1 = executorService.submit(new Runnable() {
+      public void run() {
+        try {
+          // It have to return EXECUTING state after timeout.
+          atomicJobState.set(jobStateManager.waitUntilFinish(100, TimeUnit.MILLISECONDS));
+        } catch (final Exception e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    // Wait for timeout of the waiting thread and check the job state.
+    future1.get();
+    assertTrue(atomicJobState.get().getStateMachine().getCurrentState() == JobState.State.EXECUTING);
+
+    // Create a thread again and complete the job this time.
+    final Future future2 = executorService.submit(new Runnable() {
+      public void run() {
+        try {
+          // It have to return COMPLETE.
+          atomicJobState.set(jobStateManager.waitUntilFinish());
+        } catch (final Exception e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    // Complete the job and check the result.
+    jobStateManager.onJobStateChanged(JobState.State.COMPLETE);
+    future2.get();
+    assertTrue(atomicJobState.get().getStateMachine().getCurrentState() == JobState.State.COMPLETE);
+  }
 }
