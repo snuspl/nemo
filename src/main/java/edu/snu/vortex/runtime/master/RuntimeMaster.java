@@ -34,6 +34,7 @@ import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.utils.dag.DAG;
+import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
@@ -136,6 +137,14 @@ public final class RuntimeMaster {
         final ControlMessage.BlockStateChangedMsg blockStateChangedMsg = message.getBlockStateChangedMsg();
         blockManagerMaster.onBlockStateChanged(blockStateChangedMsg.getExecutorId(), blockStateChangedMsg.getBlockId(),
             convertBlockState(blockStateChangedMsg.getState()));
+        break;
+      case ExecutorFailed:
+        final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
+        final String failedExecutorId = executorFailedMsg.getExecutorId();
+        final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
+        LOG.log(Level.SEVERE, "{0} failed, Stack Trace: ", failedExecutorId);
+        exception.printStackTrace();
+        containerManager.onContainerFailed();
         break;
       default:
         throw new IllegalMessageException(
