@@ -152,7 +152,7 @@ public final class JobStateManagerTest {
     final JobStateManager jobStateManager =
         new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
 
-    assertFalse(jobStateManager.checkJobFinish());
+    assertFalse(jobStateManager.checkJobTermination());
 
     // Wait for the job to finish and check the job state.
     // It have to return EXECUTING state after timeout.

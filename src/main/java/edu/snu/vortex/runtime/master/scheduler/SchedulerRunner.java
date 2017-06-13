@@ -48,7 +48,7 @@ public final class SchedulerRunner implements Runnable {
    */
   @Override
   public void run() {
-    while (!jobStateManager.checkJobFinish()) {
+    while (!jobStateManager.checkJobTermination()) {
       try {
         final ScheduledTaskGroup scheduledTaskGroup = pendingTaskGroupQueue.takeFirst();
         final Optional<String> executorId = schedulingPolicy.attemptSchedule(scheduledTaskGroup);

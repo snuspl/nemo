@@ -48,6 +48,9 @@ public final class Result implements PipelineResult {
   private final Condition notSet;
   private static final long DEFAULT_JSM_WAIT_IN_MILLIS = 100;
 
+  /**
+   * Construct a Beam result.
+   */
   public Result() {
     this.jobStateManager = Optional.empty();
     this.jsmLock = new ReentrantLock();

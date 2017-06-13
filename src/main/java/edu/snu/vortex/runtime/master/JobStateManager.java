@@ -278,7 +278,7 @@ public final class JobStateManager {
     }
   }
 
-  public synchronized boolean checkJobFinish() {
+  public synchronized boolean checkJobTermination() {
     final Enum currentState = jobState.getStateMachine().getCurrentState();
     return (currentState == JobState.State.COMPLETE || currentState == JobState.State.FAILED);
   }
@@ -290,7 +290,7 @@ public final class JobStateManager {
   public JobState waitUntilFinish() {
     finishLock.lock();
     try {
-      if (!checkJobFinish()) {
+      if (!checkJobTermination()) {
         notFinished.await();
       }
     } catch (final InterruptedException e) {
@@ -312,7 +312,7 @@ public final class JobStateManager {
                                   final TimeUnit unit) {
     finishLock.lock();
     try {
-      if (!checkJobFinish()) {
+      if (!checkJobTermination()) {
         notFinished.await(timeout, unit);
       }
     } catch (final InterruptedException e) {

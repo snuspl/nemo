@@ -179,7 +179,7 @@ public final class BatchSchedulerTest {
         sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
 
     // Then, for the rest of the stages.
-    while (!jobStateManager.checkJobFinish()) {
+    while (!jobStateManager.checkJobTermination()) {
       final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
       stageList.forEach(physicalStage -> sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
     }
