@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.frontend.Coder;
-import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
-import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
@@ -32,7 +30,6 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.utils.dag.DAG;
 import edu.snu.vortex.utils.dag.DAGBuilder;
-import org.apache.beam.sdk.io.BoundedSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,10 +57,8 @@ public final class JobStateManagerTest {
    */
   @Test
   public void testPhysicalPlanStateChanges() {
-    final BoundedSource s = mock(BoundedSource.class);
     final Transform t = mock(Transform.class);
-    final DoTransform dt = new DoTransform(null, null);
-    final IRVertex v1 = new BoundedSourceVertex<>(s);
+    final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     irDAGBuilder.addVertex(v1);
 
@@ -71,15 +66,15 @@ public final class JobStateManagerTest {
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v2);
 
-    final IRVertex v3 = new BoundedSourceVertex<>(s);
+    final IRVertex v3 = new OperatorVertex(t);
     v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
     irDAGBuilder.addVertex(v3);
 
-    final IRVertex v4 = new OperatorVertex(dt);
+    final IRVertex v4 = new OperatorVertex(t);
     v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v4);
 
-    final IRVertex v5 = new OperatorVertex(dt);
+    final IRVertex v5 = new OperatorVertex(t);
     v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v5);
 
@@ -103,7 +98,7 @@ public final class JobStateManagerTest {
     e5.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
     irDAGBuilder.connectVertices(e5);
 
-    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 

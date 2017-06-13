@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.plan;
 
-import edu.snu.vortex.compiler.TestUtil;
 import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
@@ -51,13 +50,12 @@ public final class DAGConverterTest {
 
   @Test
   public void testSimplePlan() {
-    final BoundedSource s = mock(BoundedSource.class);
-    final DoTransform dt = new DoTransform(null, null);
-    final IRVertex v1 = new BoundedSourceVertex<>(s);
+    final Transform t = mock(Transform.class);
+    final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
     irDAGBuilder.addVertex(v1);
 
-    final IRVertex v2 = new OperatorVertex(dt);
+    final IRVertex v2 = new OperatorVertex(t);
     v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
     irDAGBuilder.addVertex(v2);
 
@@ -66,7 +64,7 @@ public final class DAGConverterTest {
     e.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
     irDAGBuilder.connectVertices(e);
 
-    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
+    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
