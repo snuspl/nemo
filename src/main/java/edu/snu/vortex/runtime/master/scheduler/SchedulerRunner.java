@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.master.scheduler;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 
@@ -65,7 +64,8 @@ public final class SchedulerRunner implements Runnable {
           schedulingPolicy.onTaskGroupScheduled(executorId.get(), scheduledTaskGroup);
         }
       } catch (final Exception e) {
-        throw new SchedulingException(e);
+        e.printStackTrace();
+        // TODO #285 make SchedulerRunner failure reportable
       }
     }
     if (jobStateManager.getJobState().getStateMachine().getCurrentState() == JobState.State.COMPLETE) {
