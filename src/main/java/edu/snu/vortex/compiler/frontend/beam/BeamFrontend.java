@@ -28,6 +28,7 @@ import java.lang.reflect.Modifier;
  */
 public final class BeamFrontend implements Frontend {
   private static DAG dag;
+  private static Result result;
 
   @Override
   public DAG<IRVertex, IREdge> compile(final String className, final String[] args) throws Exception {
@@ -49,13 +50,27 @@ public final class BeamFrontend implements Frontend {
   }
 
   /**
-   * Supply the DAG here from the BEAM Runner.
-   * @param supplied the supplied DAG.
+   * Get the result of the BEAM pipeline.
+   * @return the result of BEAM pipeline.
    */
-  static void supplyDAGFromRunner(final DAG supplied) {
+  public static Result getResult() {
+    if (result == null) {
+      throw new IllegalStateException("the result of Beam pipeline is not created yet.");
+    }
+    return result;
+  }
+
+  /**
+   * Supply the DAG here from the BEAM Runner.
+   * @param suppliedDag the supplied DAG.
+   * @return The result of BEAM pipeline.
+   */
+  static Result supplyDAGFromRunner(final DAG suppliedDag) {
     if (dag != null) {
       throw new IllegalArgumentException("Cannot supply DAG twice");
     }
-    dag = supplied;
+    dag = suppliedDag;
+    result = new Result();
+    return result;
   }
 }

@@ -25,6 +25,7 @@ import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.logical.Stage;
 import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
@@ -132,8 +133,10 @@ public final class JobStateManagerTest {
       });
 
       if (stageIdx == stageList.size() - 1) {
-        assertTrue(jobStateManager.checkJobCompletion());
+        assertTrue(jobStateManager.getJobState().getStateMachine().getCurrentState() == JobState.State.COMPLETE);
       }
     }
   }
+
+  
 }

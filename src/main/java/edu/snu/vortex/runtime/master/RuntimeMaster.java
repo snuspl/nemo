@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.compiler.frontend.beam.Result;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
@@ -39,6 +40,10 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,18 +85,30 @@ public final class RuntimeMaster {
   /**
    * Submits the {@link ExecutionPlan} to Runtime.
    * @param executionPlan to execute.
+   * @param beamResult the result of Beam pipeline.
    */
-  public void execute(final ExecutionPlan executionPlan) {
+  public void execute(final ExecutionPlan executionPlan,
+                      final Result beamResult) {
     physicalPlan = generatePhysicalPlan(executionPlan);
     try {
-      // TODO #208: Cleanup Execution Threads
       jobStateManager = scheduler.scheduleJob(physicalPlan, blockManagerMaster);
-      int i = 0;
-      while (!jobStateManager.checkJobCompletion()) {
-        jobStateManager.storeJSON(dagDirectory, String.valueOf(i++));
-        // Check every 3 seconds for job completion.
-        Thread.sleep(3000);
-      }
+      beamResult.setJobStateManager(jobStateManager);
+
+      // Schedule dag logging thread
+      final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+      final ScheduledFuture future = executorService.schedule(new Runnable() {
+        private int i = 0;
+
+        public void run() {
+          jobStateManager.storeJSON(dagDirectory, String.valueOf(i++));
+        }
+      }, 3000, TimeUnit.MILLISECONDS);
+
+      // Wait the job to finish and stop logging
+      jobStateManager.waitUntilFinish();
+      executorService.shutdown();
+      future.get();
+
       jobStateManager.storeJSON(dagDirectory, "final");
       LOG.log(Level.INFO, "{0} is complete!", executionPlan.getId());
     } catch (Exception e) {

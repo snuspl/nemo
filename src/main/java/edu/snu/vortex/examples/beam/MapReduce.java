@@ -18,6 +18,7 @@ package edu.snu.vortex.examples.beam;
 import edu.snu.vortex.compiler.frontend.beam.Runner;
 import edu.snu.vortex.compiler.frontend.beam.VortexPipelineOptions;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.*;
@@ -65,6 +66,6 @@ public final class MapReduce {
           }
         }));
     GenericSourceSink.write(result, outputFilePath);
-    p.run();
+    final PipelineResult beamResult = p.run();
   }
 }

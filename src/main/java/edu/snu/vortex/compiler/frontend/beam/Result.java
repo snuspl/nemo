@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
+import edu.snu.vortex.runtime.master.JobStateManager;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.metrics.MetricResults;
 import org.joda.time.Duration;
@@ -26,6 +27,20 @@ import java.io.IOException;
  * TODO #32: Implement Beam Result
  */
 public final class Result implements PipelineResult {
+
+  /**
+   * The job state manager of the running pipeline.
+   */
+  private JobStateManager jobStateManager;
+
+  /**
+   * Set the job state manager.
+   * @param jobStateManager the job state manager of the running pipeline.
+   */
+  public void setJobStateManager(final JobStateManager jobStateManager) {
+    this.jobStateManager = jobStateManager;
+  }
+
   @Override
   public State getState() {
     throw new UnsupportedOperationException("getState() in frontend.beam.Result");

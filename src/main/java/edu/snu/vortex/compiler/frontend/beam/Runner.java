@@ -56,7 +56,6 @@ public final class Runner extends PipelineRunner<Result> {
     final Visitor visitor = new Visitor(builder, vortexPipelineOptions);
     pipeline.traverseTopologically(visitor);
     final DAG dag = builder.build();
-    BeamFrontend.supplyDAGFromRunner(dag);
-    return new Result();
+    return BeamFrontend.supplyDAGFromRunner(dag);
   }
 }

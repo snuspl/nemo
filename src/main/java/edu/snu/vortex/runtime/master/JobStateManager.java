@@ -30,6 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -76,6 +80,12 @@ public final class JobStateManager {
    */
   private final Set<String> currentJobStageIds;
 
+  /**
+   * A lock and condition to check whether the job is finished or not.
+   */
+  private final Lock finishLock;
+  private final Condition notFinished;
+
   public JobStateManager(final PhysicalPlan physicalPlan,
                          final BlockManagerMaster blockManagerMaster) {
     this.physicalPlan = physicalPlan;
@@ -86,6 +96,8 @@ public final class JobStateManager {
     this.idToTaskStates = new HashMap<>();
     this.stageIdToRemainingTaskGroupSet = new HashMap<>();
     this.currentJobStageIds = new HashSet<>();
+    this.finishLock = new ReentrantLock();
+    this.notFinished = finishLock.newCondition();
     initializeComputationStates();
     initializeBlockStates(blockManagerMaster);
   }
@@ -153,10 +165,24 @@ public final class JobStateManager {
       jobState.getStateMachine().setState(newState);
     } else if (newState == JobState.State.COMPLETE) {
       LOG.log(Level.FINE, "Job ID {0} complete!", jobId);
-      jobState.getStateMachine().setState(newState);
+      // Awake all threads waiting the finish of this job.
+      finishLock.lock();
+      try {
+        jobState.getStateMachine().setState(newState);
+        notFinished.signalAll();
+      } finally {
+        finishLock.unlock();
+      }
     } else if (newState == JobState.State.FAILED) {
       LOG.log(Level.FINE, "Job ID {0} failed.", jobId);
-      jobState.getStateMachine().setState(newState);
+      // Awake all threads waiting the finish of this job.
+      finishLock.lock();
+      try {
+        jobState.getStateMachine().setState(newState);
+        notFinished.signalAll();
+      } finally {
+        finishLock.unlock();
+      }
     } else {
       throw new IllegalStateTransitionException(new Exception("Illegal Job State Transition"));
     }
@@ -252,12 +278,57 @@ public final class JobStateManager {
     }
   }
 
-  public synchronized boolean checkJobCompletion() {
-    return (jobState.getStateMachine().getCurrentState() == JobState.State.COMPLETE);
+  public synchronized boolean checkJobFinish() {
+    final Enum currentState = jobState.getStateMachine().getCurrentState();
+    return (currentState == JobState.State.COMPLETE || currentState == JobState.State.FAILED);
+  }
+
+  /**
+   * Wait for this job to be finished and return the final state.
+   * @return the final state of this job.
+   */
+  public JobState waitUntilFinish() {
+    finishLock.lock();
+    try {
+      if (!checkJobFinish()) {
+        notFinished.await();
+      }
+    } catch (final InterruptedException e) {
+      LOG.log(Level.WARNING, "Interrupted during waiting the finish of Job ID {0}", jobId);
+    } finally {
+      finishLock.unlock();
+    }
+    return getJobState();
+  }
+
+  /**
+   * Wait for this job to be finished and return the final state.
+   * It wait for at most the given time.
+   * @param timeout of waiting.
+   * @param unit of the timeout.
+   * @return the final state of this job.
+   */
+  public JobState waitUntilFinish(final long timeout,
+                                  final TimeUnit unit) {
+    finishLock.lock();
+    try {
+      if (!checkJobFinish()) {
+        notFinished.await(timeout, unit);
+      }
+    } catch (final InterruptedException e) {
+      LOG.log(Level.WARNING, "Interrupted during waiting the finish of Job ID {0}", jobId);
+    } finally {
+      finishLock.unlock();
+    }
+    return getJobState();
   }
 
   public synchronized String getJobId() {
     return jobId;
+  }
+
+  public synchronized JobState getJobState() {
+    return jobState;
   }
 
   public synchronized StageState getStageState(final String stageId) {

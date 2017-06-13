@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
-import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan;
@@ -60,7 +59,7 @@ public final class UserApplicationRunner implements Runnable {
   @Override
   public void run() {
     try {
-      final Frontend frontend = new BeamFrontend();
+      final BeamFrontend frontend = new BeamFrontend();
       final Optimizer optimizer = new Optimizer();
       final Backend<ExecutionPlan> backend = new VortexBackend();
 
@@ -74,7 +73,7 @@ public final class UserApplicationRunner implements Runnable {
 
       final ExecutionPlan executionPlan = backend.compile(optimizedDAG);
       executionPlan.getRuntimeStageDAG().storeJSON(dagDirectory, "plan", "execution plan by compiler");
-      runtimeMaster.execute(executionPlan);
+      runtimeMaster.execute(executionPlan, frontend.getResult());
       runtimeMaster.terminate();
     } catch (Exception e) {
       throw new RuntimeException(e);
