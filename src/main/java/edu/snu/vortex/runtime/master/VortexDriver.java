@@ -28,6 +28,7 @@ import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.context.ContextConfiguration;
+import org.apache.reef.driver.context.FailedContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
 import org.apache.reef.driver.evaluator.FailedEvaluator;
 import org.apache.reef.io.network.naming.NameServer;
@@ -49,6 +50,7 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
@@ -141,6 +143,17 @@ public final class VortexDriver {
     @Override
     public void onNext(final FailedEvaluator failedEvaluator) {
       throw new RuntimeException(failedEvaluator.getEvaluatorException());
+    }
+  }
+
+  /**
+   * Context/Executor failed.
+   */
+  public final class FailedContextHandler implements EventHandler<FailedContext> {
+    @Override
+    public void onNext(final FailedContext failedContext) {
+      LOG.log(Level.INFO, "{0} failed", failedContext.getId());
+      failedContext.asError().printStackTrace();
     }
   }
 
