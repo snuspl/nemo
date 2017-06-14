@@ -50,7 +50,6 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.snu.vortex.runtime.common.RuntimeAttribute.*;
@@ -153,8 +152,8 @@ public final class VortexDriver {
   public final class FailedContextHandler implements EventHandler<FailedContext> {
     @Override
     public void onNext(final FailedContext failedContext) {
-      failedContext.asError().printStackTrace();
-      LOG.log(Level.INFO, "{0} failed. See driver's log for the stack trace in executor.", failedContext.getId());
+      throw new RuntimeException(failedContext.getId() + " failed. See driver's log for the stack trace in executor.",
+          failedContext.asError());
     }
   }
 

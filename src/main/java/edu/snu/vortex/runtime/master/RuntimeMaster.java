@@ -142,10 +142,9 @@ public final class RuntimeMaster {
         final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
         final String failedExecutorId = executorFailedMsg.getExecutorId();
         final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
-        LOG.log(Level.SEVERE, "{0} failed, Stack Trace: ", failedExecutorId);
-        exception.printStackTrace();
+        LOG.log(Level.SEVERE, failedExecutorId + " failed, Stack Trace: ", exception);
         containerManager.onContainerFailed();
-        break;
+        throw new RuntimeException(exception);
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by Master :" + message.getType()));
