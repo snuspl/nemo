@@ -50,6 +50,16 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   }
 
   /**
+   * Constructor of DAGBuilder with a DAG to start from.
+   * @param dag to start the builder from.
+   */
+  public DAGBuilder(final DAG<V, E> dag) {
+    this();
+    dag.getVertices().forEach(v -> this.addVertex(v, dag));
+    vertices.forEach(v -> dag.getIncomingEdgesOf(v).forEach(this::connectVertices));
+  }
+
+  /**
    * Add vertex to the builder.
    * @param v vertex to add.
    * @return the builder.

@@ -87,11 +87,7 @@ public final class ParallelismPass implements Pass {
         throw new UnsupportedOperationException("Unknown vertex type: " + vertex.toString());
       }
     }
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    dag.topologicalDo(v -> {
-      builder.addVertex(v, dag);
-      dag.getIncomingEdgesOf(v).forEach(builder::connectVertices);
-    });
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
     return builder.build();
   }
 
