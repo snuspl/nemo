@@ -50,14 +50,14 @@ public final class MultinomialLogisticRegressionITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
         .build());
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_pado")

@@ -48,14 +48,14 @@ public final class MapReduceITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName())
         .build());
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void testDisaggregation() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disaggregation")
@@ -63,7 +63,7 @@ public final class MapReduceITCase {
         .build());
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")

@@ -48,14 +48,14 @@ public final class BroadcastITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName())
         .build());
   }
 
-  @Test
+  @Test (timeout = 60000)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName() + "_pado")
