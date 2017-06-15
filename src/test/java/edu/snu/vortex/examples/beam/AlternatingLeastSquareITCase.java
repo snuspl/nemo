@@ -23,6 +23,8 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static edu.snu.vortex.examples.beam.BeamTestUtil.INTEGRATION_TEST_TIMEOUT;
+
 /**
  * Test Alternating Least Square program with JobLauncher.
  */
@@ -49,14 +51,14 @@ public final class AlternatingLeastSquareITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test (timeout = 60000)
+  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
         .build());
   }
 
-  @Test (timeout = 60000)
+  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(AlternatingLeastSquareITCase.class.getSimpleName() + "_pado")

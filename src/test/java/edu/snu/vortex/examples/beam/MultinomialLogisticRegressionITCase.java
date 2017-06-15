@@ -23,6 +23,8 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static edu.snu.vortex.examples.beam.BeamTestUtil.INTEGRATION_TEST_TIMEOUT;
+
 /**
  * Testing Multinomial Logistic Regressions with JobLauncher.
  */
@@ -50,14 +52,14 @@ public final class MultinomialLogisticRegressionITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test (timeout = 60000)
+  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
         .build());
   }
 
-  @Test (timeout = 60000)
+  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_pado")
