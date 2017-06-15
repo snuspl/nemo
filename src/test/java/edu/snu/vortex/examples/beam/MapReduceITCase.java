@@ -23,14 +23,13 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static edu.snu.vortex.examples.beam.BeamTestUtil.INTEGRATION_TEST_TIMEOUT;
-
 /**
  * Test MapReduce program with JobLauncher.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
+  private static final int TIMEOUT = 30000;
   private static final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
   private static final String input = TestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private static final String output = TestUtil.rootDir + "/src/main/resources/sample_output";
@@ -50,14 +49,14 @@ public final class MapReduceITCase {
         .addDAGDirectory(dagDirectory);
   }
 
-  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
+  @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName())
         .build());
   }
 
-  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
+  @Test (timeout = TIMEOUT)
   public void testDisaggregation() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disaggregation")
@@ -65,7 +64,7 @@ public final class MapReduceITCase {
         .build());
   }
 
-  @Test (timeout = INTEGRATION_TEST_TIMEOUT)
+  @Test (timeout = TIMEOUT)
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
