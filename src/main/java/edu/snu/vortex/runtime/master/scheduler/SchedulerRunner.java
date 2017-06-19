@@ -64,7 +64,7 @@ public final class SchedulerRunner implements Runnable {
           schedulingPolicy.onTaskGroupScheduled(executorId.get(), scheduledTaskGroup);
         }
       } catch (final Exception e) {
-        e.printStackTrace();
+        e.printStackTrace(System.err);
         // TODO #285 make SchedulerRunner failure reportable
       }
     }

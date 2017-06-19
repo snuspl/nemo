@@ -23,8 +23,8 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
-import edu.snu.vortex.utils.StateMachine;
-import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.common.StateMachine;
+import edu.snu.vortex.common.dag.DAG;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static edu.snu.vortex.utils.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
 /**
  * Manages the states related to a job.
@@ -84,7 +84,7 @@ public final class JobStateManager {
    * A lock and condition to check whether the job is finished or not.
    */
   private final Lock finishLock;
-  private final Condition notFinished;
+  private final Condition jobFinishedCondition;
 
   public JobStateManager(final PhysicalPlan physicalPlan,
                          final BlockManagerMaster blockManagerMaster) {
@@ -97,7 +97,7 @@ public final class JobStateManager {
     this.stageIdToRemainingTaskGroupSet = new HashMap<>();
     this.currentJobStageIds = new HashSet<>();
     this.finishLock = new ReentrantLock();
-    this.notFinished = finishLock.newCondition();
+    this.jobFinishedCondition = finishLock.newCondition();
     initializeComputationStates();
     initializeBlockStates(blockManagerMaster);
   }
@@ -169,7 +169,7 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        notFinished.signalAll();
+        jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
       }
@@ -179,7 +179,7 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        notFinished.signalAll();
+        jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
       }
@@ -291,7 +291,7 @@ public final class JobStateManager {
     finishLock.lock();
     try {
       if (!checkJobTermination()) {
-        notFinished.await();
+        jobFinishedCondition.await();
       }
     } catch (final InterruptedException e) {
       LOG.log(Level.WARNING, "Interrupted during waiting the finish of Job ID {0}", jobId);
@@ -313,7 +313,7 @@ public final class JobStateManager {
     finishLock.lock();
     try {
       if (!checkJobTermination()) {
-        notFinished.await(timeout, unit);
+        jobFinishedCondition.await(timeout, unit);
       }
     } catch (final InterruptedException e) {
       LOG.log(Level.WARNING, "Interrupted during waiting the finish of Job ID {0}", jobId);

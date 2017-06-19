@@ -17,9 +17,8 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.beam.LoopCompositeTransform;
 import edu.snu.vortex.compiler.frontend.beam.Runner;
-import edu.snu.vortex.utils.Pair;
+import edu.snu.vortex.common.Pair;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.*;
@@ -454,7 +453,7 @@ public final class MultinomialLogisticRegression {
       model = model.apply(new UpdateModel(numFeatures, numClasses, i, readInput));
     }
 
-    final PipelineResult beamResult = p.run();
+    p.run();
     LOG.log(Level.INFO, "JCT " + (System.currentTimeMillis() - start));
   }
 }

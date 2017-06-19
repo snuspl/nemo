@@ -29,8 +29,8 @@ import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
-import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.DAGBuilder;
+import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.common.dag.DAGBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +40,6 @@ import java.util.concurrent.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -135,7 +134,7 @@ public final class JobStateManagerTest {
       });
 
       if (stageIdx == stageList.size() - 1) {
-        assertTrue(jobStateManager.getJobState().getStateMachine().getCurrentState() == JobState.State.COMPLETE);
+        assertEquals(jobStateManager.getJobState().getStateMachine().getCurrentState(), JobState.State.COMPLETE);
       }
     }
   }
@@ -157,12 +156,12 @@ public final class JobStateManagerTest {
     // Wait for the job to finish and check the job state.
     // It have to return EXECUTING state after timeout.
     JobState state = jobStateManager.waitUntilFinish(100, TimeUnit.MILLISECONDS);
-    assertTrue(state.getStateMachine().getCurrentState() == JobState.State.EXECUTING);
+    assertEquals(state.getStateMachine().getCurrentState(), JobState.State.EXECUTING);
 
     // Complete the job and check the result again.
     // It have to return COMPLETE.
     jobStateManager.onJobStateChanged(JobState.State.COMPLETE);
     state = jobStateManager.waitUntilFinish();
-    assertTrue(state.getStateMachine().getCurrentState() == JobState.State.COMPLETE);
+    assertEquals(state.getStateMachine().getCurrentState(), JobState.State.COMPLETE);
   }
 }

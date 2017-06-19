@@ -15,10 +15,11 @@
  */
 package edu.snu.vortex.compiler.frontend.beam;
 
+import edu.snu.vortex.common.proxy.ClientEndpoint;
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.utils.dag.DAG;
+import edu.snu.vortex.common.dag.DAG;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -28,7 +29,7 @@ import java.lang.reflect.Modifier;
  */
 public final class BeamFrontend implements Frontend {
   private static DAG dag;
-  private static Result result;
+  private static BeamResult beamResult;
 
   @Override
   public DAG<IRVertex, IREdge> compile(final String className, final String[] args) throws Exception {
@@ -49,28 +50,25 @@ public final class BeamFrontend implements Frontend {
     return dag;
   }
 
-  /**
-   * Get the result of the BEAM pipeline.
-   * @return the result of BEAM pipeline.
-   */
-  public static Result getResult() {
-    if (result == null) {
-      throw new IllegalStateException("the result of Beam pipeline is not created yet.");
+  @Override
+  public ClientEndpoint getClientEndpoint() {
+    if (beamResult == null) {
+      throw new IllegalStateException("The Beam result not supplied.");
     }
-    return result;
+    return beamResult;
   }
 
   /**
    * Supply the DAG here from the BEAM Runner.
    * @param suppliedDag the supplied DAG.
-   * @return The result of BEAM pipeline.
+   * @param suppliedBeamResult the supplied Beam result.
    */
-  static Result supplyDAGFromRunner(final DAG suppliedDag) {
+  static void supplyDAGFromRunner(final DAG suppliedDag,
+                                  final BeamResult suppliedBeamResult) {
     if (dag != null) {
       throw new IllegalArgumentException("Cannot supply DAG twice");
     }
     dag = suppliedDag;
-    result = new Result();
-    return result;
+    beamResult = suppliedBeamResult;
   }
 }

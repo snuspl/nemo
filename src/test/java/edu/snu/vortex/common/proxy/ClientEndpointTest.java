@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.frontend.beam;
+package edu.snu.vortex.common.proxy;
 
+import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.runtime.common.plan.logical.LogicalDAGGenerator;
@@ -27,41 +29,58 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
-import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.DAGBuilder;
-import org.apache.beam.sdk.PipelineResult;
-import org.joda.time.Duration;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Test {@link Result}.
+ * Test {@link ClientEndpoint}.
  */
-public class ResultTest {
+public class ClientEndpointTest {
 
   @Test(timeout = 1000)
   public void testState() throws Exception {
-    final Result result = new Result();
-    assertTrue(result.getState() == PipelineResult.State.UNKNOWN);
+    // Create a simple client endpoint that returns given job state.
+    final StateTranslator stateTranslator = mock(StateTranslator.class);
+    when(stateTranslator.translateState(any())).then(state -> state.getArgumentAt(0, JobState.State.class));
+    final ClientEndpoint clientEndpoint = new TestClientEndpoint(stateTranslator);
+    assertEquals(clientEndpoint.getJobState(), JobState.State.READY);
 
-    // Create a JobStateManager of an empty dag.
+    // Wait for connection but not connected.
+    assertEquals(clientEndpoint.waitUntilJobFinish(100, TimeUnit.MILLISECONDS), JobState.State.READY);
+
+    // Create a JobStateManager of an empty dag and create a DriverEndpoint with it.
     final DAGBuilder<IRVertex, IREdge> irDagBuilder = new DAGBuilder<>();
     final DAG<IRVertex, IREdge> irDAG = irDagBuilder.build();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
     final JobStateManager jobStateManager =
         new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
+    final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
-    // Set it and get the current state.
-    result.setJobStateManager(jobStateManager);
-    assertTrue(result.getState() == PipelineResult.State.RUNNING);
+    // Check the current state.
+    assertEquals(clientEndpoint.getJobState(), JobState.State.EXECUTING);
 
-    // Wait for the pipeline to finish.
-    // It have to be still running.
-    assertTrue(result.waitUntilFinish(Duration.millis(100)) == PipelineResult.State.RUNNING);
+    // Wait for the job to finish but not finished
+    assertEquals(clientEndpoint.waitUntilJobFinish(100, TimeUnit.MILLISECONDS), JobState.State.EXECUTING);
 
+    // Check finish.
     jobStateManager.onJobStateChanged(JobState.State.COMPLETE);
-    assertTrue(result.waitUntilFinish() == PipelineResult.State.DONE);
+    assertEquals(clientEndpoint.waitUntilJobFinish(), JobState.State.COMPLETE);
+  }
+
+  /**
+   * A simple {@link ClientEndpoint} for test.
+   */
+  private final class TestClientEndpoint extends ClientEndpoint {
+
+    TestClientEndpoint(final StateTranslator stateTranslator) {
+      super(stateTranslator);
+    }
   }
 }
