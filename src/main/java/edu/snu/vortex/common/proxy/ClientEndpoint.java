@@ -31,7 +31,7 @@ public abstract class ClientEndpoint {
   /**
    * The request endpoint in driver side of the job.
    */
-  private AtomicReference<DriverEndpoint> driverEndpoint;
+  private final AtomicReference<DriverEndpoint> driverEndpoint;
 
   /**
    * A lock and condition to check whether the driver endpoint is connected or not.

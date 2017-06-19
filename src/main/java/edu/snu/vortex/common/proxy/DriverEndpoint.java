@@ -33,7 +33,7 @@ public final class DriverEndpoint {
   /**
    * The {@link ClientEndpoint} the job.
    */
-  private ClientEndpoint clientEndpoint;
+  private final ClientEndpoint clientEndpoint;
 
   /**
    * Construct an endpoint in driver side.

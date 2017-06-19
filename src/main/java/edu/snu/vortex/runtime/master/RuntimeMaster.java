@@ -96,14 +96,7 @@ public final class RuntimeMaster {
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
       // Schedule dag logging thread
-      final ScheduledExecutorService dagLoggingExecutor = Executors.newSingleThreadScheduledExecutor();
-      dagLoggingExecutor.scheduleAtFixedRate(new Runnable() {
-        private int dagLogFileIndex = 0;
-
-        public void run() {
-          jobStateManager.storeJSON(dagDirectory, String.valueOf(dagLogFileIndex++));
-        }
-      }, DAG_LOGGING_PERIOD, DAG_LOGGING_PERIOD, TimeUnit.MILLISECONDS);
+      final ScheduledExecutorService dagLoggingExecutor = scheduleDagLogging();
 
       // Wait the job to finish and stop logging
       jobStateManager.waitUntilFinish();
@@ -229,5 +222,24 @@ public final class RuntimeMaster {
     default:
       throw new UnknownExecutionStateException(new Exception("This BlockState is unknown: " + state));
     }
+  }
+
+  /**
+   * Schedules a periodic DAG logging thread.
+   * TODO #?: Real-time visualization
+   *
+   * @return the scheduled executor service.
+   */
+  private ScheduledExecutorService scheduleDagLogging() {
+    final ScheduledExecutorService dagLoggingExecutor = Executors.newSingleThreadScheduledExecutor();
+    dagLoggingExecutor.scheduleAtFixedRate(new Runnable() {
+      private int dagLogFileIndex = 0;
+
+      public void run() {
+        jobStateManager.storeJSON(dagDirectory, String.valueOf(dagLogFileIndex++));
+      }
+    }, DAG_LOGGING_PERIOD, DAG_LOGGING_PERIOD, TimeUnit.MILLISECONDS);
+
+    return dagLoggingExecutor;
   }
 }
