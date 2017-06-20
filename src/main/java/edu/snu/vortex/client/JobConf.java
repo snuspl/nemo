@@ -42,6 +42,13 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class DAGDirectory implements Name<String> {
   }
 
+  /**
+   * Directory to store files for storing blocks.
+   */
+  @NamedParameter(doc = "Directory to store blocks", short_name = "block_dir", default_value = "./block")
+  public final class BlockDirectory implements Name<String> {
+  }
+
   //////////////////////////////// Compiler Configurations
 
   /**

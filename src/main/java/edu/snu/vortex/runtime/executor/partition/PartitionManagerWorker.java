@@ -50,6 +50,8 @@ public final class PartitionManagerWorker {
 
   private final LocalStore localStore;
 
+  private final FileStore fileStore;
+
   private final PersistentConnectionToMaster persistentConnectionToMaster;
 
   private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
@@ -59,10 +61,12 @@ public final class PartitionManagerWorker {
   @Inject
   public PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
                                 final LocalStore localStore,
+                                final FileStore fileStore,
                                 final PersistentConnectionToMaster persistentConnectionToMaster,
                                 final PartitionTransferPeer partitionTransferPeer) {
     this.executorId = executorId;
     this.localStore = localStore;
+    this.fileStore = fileStore;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
     this.partitionTransferPeer = partitionTransferPeer;
@@ -212,7 +216,7 @@ public final class PartitionManagerWorker {
         return localStore;
       case File:
         // TODO #69: Implement file channel in Runtime
-        return localStore;
+        return fileStore;
       case MemoryFile:
         // TODO #69: Implement file channel in Runtime
         return localStore;
