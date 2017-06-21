@@ -38,6 +38,7 @@ You can easily visualize a DAG using [online visualizer](https://service.jangho.
 
 ## Instructions for installing Protobuf
 * Vortex uses v2.5.0 downloadable at: https://github.com/google/protobuf/releases/tag/v2.5.0
+* If on ubuntu run `$ sudo apt-get install autoconf automake libtool curl make g++ unzip`
 * Extract the downloaded tarball and command:
     - sudo ./configure
     - sudo make
