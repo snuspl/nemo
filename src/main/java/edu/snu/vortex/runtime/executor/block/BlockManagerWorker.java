@@ -21,6 +21,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.exception.BlockFetchException;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
@@ -182,9 +183,8 @@ public final class BlockManagerWorker {
       final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg = responseFromMaster.getBlockLocationInfoMsg();
       assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);
       if (blockLocationInfoMsg.getOwnerExecutorId().equals(NO_REMOTE_BLOCK)) {
-        // TODO #163: Handle Fault Tolerance
-        // We should report this exception to the master, instead of shutting down the JVM
-        throw new RuntimeException("Block " + blockId + " not found both in the local storage and the remote storage");
+        throw new BlockFetchException(
+            new Throwable("Block " + blockId + " not found both in the local storage and the remote storage"));
       }
       final String remoteWorkerId = blockLocationInfoMsg.getOwnerExecutorId();
 
@@ -192,8 +192,8 @@ public final class BlockManagerWorker {
         // TODO #250: Fetch multiple blocks in parallel
         return blockTransferPeer.fetch(remoteWorkerId, blockId, runtimeEdgeId, blockStore).get();
       } catch (final InterruptedException | ExecutionException e) {
-        // TODO #163: Handle Fault Tolerance
-        throw new NodeConnectionException(e);
+        LOG.log(Level.INFO, "Unable to fetch block {0} from {1}", new Object[]{blockId, remoteWorkerId});
+        throw new BlockFetchException(e);
       }
     }
   }

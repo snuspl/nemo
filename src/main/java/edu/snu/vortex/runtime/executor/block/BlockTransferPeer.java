@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedBlockStoreException;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
@@ -112,7 +113,7 @@ final class BlockTransferPeer {
       remoteAddress = nameResolver.lookup(remotePeerIdentifier);
     } catch (final Exception e) {
       LOG.log(Level.SEVERE, "Cannot lookup BlockTransferPeer {0}", remotePeerIdentifier);
-      throw new RuntimeException(e);
+      throw new NodeConnectionException(e);
     }
     LOG.log(Level.INFO, "Looked up {0}", remoteAddress);
 
@@ -120,7 +121,7 @@ final class BlockTransferPeer {
     try {
       link = transport.open(remoteAddress, REQUEST_MESSAGE_CODEC, LINK_LISTENER);
     } catch (final IOException e) {
-      throw new RuntimeException(e);
+      throw new NodeConnectionException(e);
     }
     final long requestId = requestIdCounter.getAndIncrement();
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
@@ -172,6 +173,8 @@ final class BlockTransferPeer {
     public void onNext(final TransportEvent transportEvent) {
       final BlockManagerWorker worker = blockManagerWorker.get();
       final ControlMessage.RequestBlockMsg request = REQUEST_MESSAGE_CODEC.decode(transportEvent.getData());
+
+      // We are getting the block from local store!
       final Iterable<Element> data = worker.getBlock(request.getBlockId(), request.getRuntimeEdgeId(),
           convertBlockStoreType(request.getBlockStore()));
       final Coder coder = worker.getCoder(request.getRuntimeEdgeId());

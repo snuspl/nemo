@@ -44,6 +44,7 @@ import static org.mockito.Mockito.mock;
  * Tests {@link JobStateManager}.
  */
 public final class JobStateManagerTest {
+  private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
 
   @Before
@@ -103,7 +104,7 @@ public final class JobStateManagerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final JobStateManager jobStateManager =
-        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
+        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertEquals(jobStateManager.getJobId(), "TestPlan");
 

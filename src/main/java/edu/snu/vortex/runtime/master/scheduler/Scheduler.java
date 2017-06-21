@@ -27,7 +27,7 @@ import java.util.List;
  */
 @DefaultImplementation(BatchScheduler.class)
 public interface Scheduler {
-  JobStateManager scheduleJob(final PhysicalPlan physicalPlan);
+  JobStateManager scheduleJob(final PhysicalPlan physicalPlan, final int maxScheduleAttempt);
 
   void onExecutorAdded(String executorId);
 

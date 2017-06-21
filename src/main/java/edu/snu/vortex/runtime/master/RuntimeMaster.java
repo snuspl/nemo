@@ -61,14 +61,17 @@ public final class RuntimeMaster {
 
   private final String dagDirectory;
   private PhysicalPlan physicalPlan;
+  private final int maxScheduleAttempt;
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
                        final ContainerManager containerManager,
                        final MessageEnvironment masterMessageEnvironment,
                        final BlockManagerMaster blockManagerMaster,
-                       @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
+                       @Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
+                       @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
     this.scheduler = scheduler;
+    this.maxScheduleAttempt = maxScheduleAttempt;
     this.containerManager = containerManager;
     this.masterMessageEnvironment = masterMessageEnvironment;
     this.masterMessageEnvironment
@@ -85,7 +88,7 @@ public final class RuntimeMaster {
     physicalPlan = generatePhysicalPlan(executionPlan);
     try {
       // TODO #208: Cleanup Execution Threads
-      jobStateManager = scheduler.scheduleJob(physicalPlan);
+      jobStateManager = scheduler.scheduleJob(physicalPlan, maxScheduleAttempt);
       int i = 0;
       while (!jobStateManager.checkJobCompletion()) {
         jobStateManager.storeJSON(dagDirectory, String.valueOf(i++));
@@ -143,7 +146,7 @@ public final class RuntimeMaster {
         final String failedExecutorId = executorFailedMsg.getExecutorId();
         final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
         LOG.log(Level.SEVERE, failedExecutorId + " failed, Stack Trace: ", exception);
-        containerManager.onContainerFailed();
+        containerManager.onExecutorRemoved(failedExecutorId);
         throw new RuntimeException(exception);
       default:
         throw new IllegalMessageException(

@@ -30,7 +30,6 @@ import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.runtime.common.state.TaskState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -172,7 +171,7 @@ public final class BatchSchedulerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final JobStateManager jobStateManager =
-        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG));
+        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), 1);
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->
@@ -222,7 +221,7 @@ public final class BatchSchedulerTest {
   private ExecutorRepresenter findExecutorForTaskGroup(final String taskGroupId) {
     for (final ExecutorRepresenter executor : containerManager.getExecutorRepresenterMap().values()) {
       if (executor.getRunningTaskGroups().contains(taskGroupId)
-          || executor.getExecutedTaskGroups().contains(taskGroupId)) {
+          || executor.getCompleteTaskGroups().contains(taskGroupId)) {
         return executor;
       }
     }

@@ -88,7 +88,7 @@ public final class JobStateManager {
 
   public JobStateManager(final PhysicalPlan physicalPlan,
                          final BlockManagerMaster blockManagerMaster,
-                         @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
+                         final int maxScheduleAttempt) {
     this.physicalPlan = physicalPlan;
     this.maxScheduleAttempt = maxScheduleAttempt;
     this.jobId = physicalPlan.getId();
@@ -284,7 +284,7 @@ public final class JobStateManager {
     }
   }
 
-  private TaskGroup getTaskGroupById(final String taskGroupId) {
+  public TaskGroup getTaskGroupById(final String taskGroupId) {
     for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getVertices()) {
       for (final TaskGroup taskGroup : physicalStage.getTaskGroupList()) {
         if (taskGroup.getTaskGroupId().equals(taskGroupId)) {

@@ -25,6 +25,8 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
+import edu.snu.vortex.runtime.exception.BlockFetchException;
+import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.executor.datatransfer.InputReader;
@@ -33,6 +35,7 @@ import edu.snu.vortex.runtime.master.irimpl.ContextImpl;
 import edu.snu.vortex.runtime.master.irimpl.OutputCollectorImpl;
 import edu.snu.vortex.utils.dag.DAG;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -171,6 +174,8 @@ public final class TaskGroupExecutor {
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
+      } catch (final BlockFetchException ex) {
+        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE);
       } catch (final Exception e) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE);
         throw new RuntimeException(e);

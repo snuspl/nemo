@@ -72,9 +72,10 @@ public final class BatchScheduler implements Scheduler {
    * @return the {@link JobStateManager} to keep track of the submitted job's states.
    */
   @Override
-  public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule) {
+  public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule,
+                                                  final int maxScheduleAttempt) {
     this.physicalPlan = jobToSchedule;
-    this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster);
+    this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster, maxScheduleAttempt);
 
     LOG.log(Level.INFO, "Job to schedule: {0}", jobToSchedule.getId());
 
@@ -134,11 +135,18 @@ public final class BatchScheduler implements Scheduler {
     }
   }
 
-  // TODO #163: Handle Fault Tolerance
   private void onTaskGroupExecutionFailed(final String executorId, final String taskGroupId,
                                           final List<String> taskIdOnFailure) {
-    // what should we do here?
-//    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
+    LOG.log(Level.INFO, "{0} failed in {1}", new Object[]{taskGroupId, executorId});
+    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
+
+    // the stage this task group belongs to has become failed recoverable,
+    scheduleNextStage(jobStateManager.getTaskGroupById(taskGroupId).getStageId());
+
+    // what about the other task groups of the stage??
+    // what happens if this stage is rescheduled and the others are executing at the moment?
+    // or job state manager says that they are executing, but actually have failed but the event just hasn't arrived?
+
   }
 
   @Override
@@ -152,8 +160,10 @@ public final class BatchScheduler implements Scheduler {
     final Set<String> taskGroupsToRecompute = schedulingPolicy.onExecutorRemoved(executorId);
 
     taskGroupsToRecompute.addAll(taskGroupsForLostBlocks);
-    taskGroupsToRecompute.forEach(failedTaskGroupId ->
-        onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null));
+    taskGroupsToRecompute.forEach(failedTaskGroupId -> {
+      pendingTaskGroupQueue.remove(failedTaskGroupId);
+      onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null);
+    });
   }
 
   private synchronized void scheduleRootStages() {
