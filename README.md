@@ -44,4 +44,3 @@ You can easily visualize a DAG using [online visualizer](https://service.jangho.
     - sudo make check
     - sudo make install
 * To check for a successful installation of v2.5.0: protoc --version
-
