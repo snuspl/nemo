@@ -37,6 +37,8 @@ import java.util.logging.Logger;
 
 /**
  * Sample Alternating Least Square application.
+ * This application have been made separately, to demonstrate the LoopInvariantCodeMotion optimization pass.
+ * This takes the unnecessarily repetitive code that parses user data in every loop, to be performed just a single time.
  */
 public final class AlternatingLeastSquareInefficient {
   private static final Logger LOG = Logger.getLogger(AlternatingLeastSquare.class.getName());
