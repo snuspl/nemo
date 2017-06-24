@@ -266,6 +266,7 @@ public final class LoopOptimizations {
           final List<IREdge> edgesToRemove = new ArrayList<>();
           final List<IREdge> edgesToAdd = new ArrayList<>();
           inEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().filter(e ->
+              // filter edges that have their sources as the refactored vertices.
               candidate.getValue().stream().map(IREdge::getSrc).anyMatch(edgeSrc -> edgeSrc.equals(e.getSrc())))
               .forEach(edge -> {
                 edgesToRemove.add(edge);
@@ -276,6 +277,7 @@ public final class LoopOptimizations {
           listToModify.addAll(edgesToAdd);
           // clear garbage.
           loopVertex.getBuilder().removeVertex(candidate.getKey());
+          loopVertex.getDagIncomingEdges().remove(candidate.getKey());
           loopVertex.getNonIterativeIncomingEdges().remove(candidate.getKey());
         });
       });
