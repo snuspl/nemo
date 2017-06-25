@@ -46,11 +46,11 @@ public class LoopInvariantCodeMotionALSInefficientTest {
 
   @Test
   public void testForInefficientALSDAG() throws Exception {
-    final long numberOfVertices = groupedDAG.getVertices().size() + 3;
+    final long expectedNumOfVertices = groupedDAG.getVertices().size() + 3;
 
     final DAG<IRVertex, IREdge> processedDAG = LoopOptimizations.getLoopInvariantCodeMotionPass()
         .process(groupedDAG);
-    assertEquals(numberOfVertices, processedDAG.getVertices().size());
+    assertEquals(expectedNumOfVertices, processedDAG.getVertices().size());
   }
 
 }
