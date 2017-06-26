@@ -206,7 +206,7 @@ public final class BatchSchedulerTest {
 
           if (scheduledExecutor != null) {
             scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroup.getTaskGroupId(),
-                TaskGroupState.State.COMPLETE, Collections.emptyList());
+                TaskGroupState.State.COMPLETE, Collections.emptyList(), null);
           } // else pass this round, because the executor hasn't received the scheduled task group yet
         }
       });
