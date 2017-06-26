@@ -16,15 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * UnknownExecutionStateException.
- * Thrown when the execution state is undefined in Runtime.
+ * UnknownFailureCauseException.
+ * Thrown when the cause for the recoverable failure is undefined in Runtime.
  */
-public final class UnknownExecutionStateException extends RuntimeException {
+public final class UnknownFailureCauseException extends RuntimeException {
   /**
-   * UnknownExecutionStateException.
+   * UnknownFailureCauseException.
    * @param cause cause
    */
-  public UnknownExecutionStateException(final Throwable cause) {
+  public UnknownFailureCauseException(final Throwable cause) {
     super(cause);
   }
 }
