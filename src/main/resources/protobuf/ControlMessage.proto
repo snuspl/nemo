@@ -42,6 +42,12 @@ message TaskGroupStateChangedMsg {
     required string taskGroupId = 2;
     required TaskGroupStateFromExecutor state = 3;
     repeated string failedTaskIds = 4;
+    optional FailureType failureType = 5;
+}
+
+enum FailureType {
+    InputReadFailure = 0;
+    OutputWriteFailure = 1;
 }
 
 message BlockStateChangedMsg {

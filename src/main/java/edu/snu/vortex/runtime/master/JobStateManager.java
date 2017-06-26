@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -27,7 +26,6 @@ import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.utils.StateMachine;
 import edu.snu.vortex.utils.dag.DAG;
-import org.apache.reef.tang.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
