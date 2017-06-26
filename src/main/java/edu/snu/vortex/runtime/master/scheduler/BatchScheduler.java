@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
+import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
 import edu.snu.vortex.runtime.master.BlockManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
@@ -100,7 +101,8 @@ public final class BatchScheduler implements Scheduler {
   public void onTaskGroupStateChanged(final String executorId,
                                       final String taskGroupId,
                                       final TaskGroupState.State newState,
-                                      final List<String> failedTaskIds) {
+                                      final List<String> failedTaskIds,
+                                      final TaskGroupState.RecoverableFailureCause failureCause) {
     jobStateManager.onTaskGroupStateChanged(taskGroupId, newState);
 
     switch (newState) {
@@ -108,7 +110,7 @@ public final class BatchScheduler implements Scheduler {
       onTaskGroupExecutionComplete(executorId, taskGroupId);
       break;
     case FAILED_RECOVERABLE:
-      onTaskGroupExecutionFailed(executorId, taskGroupId, failedTaskIds);
+      onTaskGroupExecutionFailedRecoverable(executorId, taskGroupId, failedTaskIds, failureCause);
       break;
     case FAILED_UNRECOVERABLE:
       throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on TaskGroup #")
@@ -135,10 +137,24 @@ public final class BatchScheduler implements Scheduler {
     }
   }
 
-  private void onTaskGroupExecutionFailed(final String executorId, final String taskGroupId,
-                                          final List<String> taskIdOnFailure) {
+  private void onTaskGroupExecutionFailedRecoverable(final String executorId, final String taskGroupId,
+                                                     final List<String> taskIdOnFailure,
+                                                     final TaskGroupState.RecoverableFailureCause failureCause) {
     LOG.log(Level.INFO, "{0} failed in {1}", new Object[]{taskGroupId, executorId});
     schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
+
+    switch (failureCause) {
+    // Previous task group must be re-executed, and all task groups of the belonging stage must be rescheduled.
+    case INPUT_READ_FAILURE:
+      break;
+    // The task group executed successfully but there is something wrong with the output store.
+    case OUTPUT_WRITE_FAILURE:
+      break;
+    case CONTAINER_FAILURE:
+      break;
+    default:
+      throw new UnknownFailureCauseException(new Throwable("Unknown cause: " + failureCause));
+    }
 
     // the stage this task group belongs to has become failed recoverable,
     scheduleNextStage(jobStateManager.getTaskGroupById(taskGroupId).getStageId());
@@ -162,7 +178,8 @@ public final class BatchScheduler implements Scheduler {
     taskGroupsToRecompute.addAll(taskGroupsForLostBlocks);
     taskGroupsToRecompute.forEach(failedTaskGroupId -> {
       pendingTaskGroupQueue.remove(failedTaskGroupId);
-      onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null);
+      onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null,
+          TaskGroupState.RecoverableFailureCause.CONTAINER_FAILURE);
     });
   }
 

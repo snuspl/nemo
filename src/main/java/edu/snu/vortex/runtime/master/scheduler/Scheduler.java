@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.JobStateManager;
@@ -35,7 +36,9 @@ public interface Scheduler {
 
   void onTaskGroupStateChanged(final String executorId,
                                final String taskGroupId,
-                               final TaskGroupState.State newState, final List<String> failedTaskIds);
+                               final TaskGroupState.State newState,
+                               final List<String> failedTaskIds,
+                               final TaskGroupState.RecoverableFailureCause failureCause);
 
   void terminate();
 }

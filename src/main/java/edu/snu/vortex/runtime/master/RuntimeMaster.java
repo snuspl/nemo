@@ -30,6 +30,7 @@ import edu.snu.vortex.runtime.common.state.BlockState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
+import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
@@ -134,7 +135,8 @@ public final class RuntimeMaster {
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
             taskGroupStateChangedMsg.getTaskGroupId(),
             convertTaskGroupState(taskGroupStateChangedMsg.getState()),
-            taskGroupStateChangedMsg.getFailedTaskIdsList());
+            taskGroupStateChangedMsg.getFailedTaskIdsList(),
+            convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
         break;
       case BlockStateChanged:
         final ControlMessage.BlockStateChangedMsg blockStateChangedMsg = message.getBlockStateChangedMsg();
@@ -214,6 +216,19 @@ public final class RuntimeMaster {
       return BlockState.State.REMOVED;
     default:
       throw new UnknownExecutionStateException(new Exception("This BlockState is unknown: " + state));
+    }
+  }
+
+  // TODO #164: Cleanup Protobuf Usage
+  private TaskGroupState.RecoverableFailureCause convertFailureCause(
+      final ControlMessage.RecoverableFailureCause cause) {
+    switch (cause) {
+    case InputReadFailure:
+      return TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE;
+    case OutputWriteFailure:
+      return TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE;
+    default:
+      throw new UnknownFailureCauseException(new Throwable("The failure cause for the recoverable failure is unknown"));
     }
   }
 }

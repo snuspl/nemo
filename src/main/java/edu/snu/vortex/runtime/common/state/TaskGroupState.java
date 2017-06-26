@@ -76,6 +76,15 @@ public final class TaskGroupState {
     FAILED_UNRECOVERABLE
   }
 
+  /**
+   * Causes of a recoverable failure.
+   */
+  public enum RecoverableFailureCause {
+    INPUT_READ_FAILURE,
+    OUTPUT_WRITE_FAILURE,
+    CONTAINER_FAILURE
+  }
+
   @Override
   public String toString() {
     final StringBuffer sb = new StringBuffer();
