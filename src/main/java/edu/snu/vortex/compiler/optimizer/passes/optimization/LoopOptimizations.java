@@ -19,8 +19,8 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.compiler.optimizer.passes.Pass;
-import edu.snu.vortex.utils.dag.DAG;
-import edu.snu.vortex.utils.dag.DAGBuilder;
+import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.common.dag.DAGBuilder;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -262,8 +262,22 @@ public final class LoopOptimizations {
           // connect outgoing edges.
           loopVertex.getDAG().getOutgoingEdgesOf(candidate.getKey()).forEach(loopVertex::addDagIncomingEdge);
           loopVertex.getDAG().getOutgoingEdgesOf(candidate.getKey()).forEach(loopVertex::addNonIterativeIncomingEdge);
+          // modify incoming edges of loopVertex.
+          final List<IREdge> edgesToRemove = new ArrayList<>();
+          final List<IREdge> edgesToAdd = new ArrayList<>();
+          inEdges.getOrDefault(loopVertex, new ArrayList<>()).stream().filter(e ->
+              // filter edges that have their sources as the refactored vertices.
+              candidate.getValue().stream().map(IREdge::getSrc).anyMatch(edgeSrc -> edgeSrc.equals(e.getSrc())))
+              .forEach(edge -> {
+                edgesToRemove.add(edge);
+                edgesToAdd.add(new IREdge(edge.getType(), candidate.getKey(), edge.getDst(), edge.getCoder()));
+              });
+          final List<IREdge> listToModify = inEdges.getOrDefault(loopVertex, new ArrayList<>());
+          listToModify.removeAll(edgesToRemove);
+          listToModify.addAll(edgesToAdd);
           // clear garbage.
           loopVertex.getBuilder().removeVertex(candidate.getKey());
+          loopVertex.getDagIncomingEdges().remove(candidate.getKey());
           loopVertex.getNonIterativeIncomingEdges().remove(candidate.getKey());
         });
       });
@@ -275,7 +289,12 @@ public final class LoopOptimizations {
         outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(builder::connectVertices);
       });
 
-      return builder.build();
+      final DAG<IRVertex, IREdge> newDag = builder.build();
+      if (dag.getVertices().size() == newDag.getVertices().size()) {
+        return newDag;
+      } else {
+        return process(newDag);
+      }
     }
   }
 }

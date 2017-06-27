@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.passes;
+package edu.snu.vortex.compiler.optimizer.passes.optimization;
 
 import edu.snu.vortex.client.JobLauncher;
+import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.TestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.optimizer.passes.LoopGroupingPass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,23 +30,27 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link ParallelismPass}.
+ * Test {@link LoopOptimizations.LoopInvariantCodeMotionPass} with ALS Inefficient workload.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class ParallelismPassTest {
-  private DAG<IRVertex, IREdge> compiledDAG;
+public class LoopInvariantCodeMotionALSInefficientTest {
+  private DAG<IRVertex, IREdge> inefficientALSDAG;
+  private DAG<IRVertex, IREdge> groupedDAG;
 
   @Before
   public void setUp() throws Exception {
-    compiledDAG = TestUtil.compileALSDAG();
+    inefficientALSDAG = TestUtil.compileALSInefficientDAG();
+    groupedDAG = new LoopGroupingPass().process(inefficientALSDAG);
   }
 
   @Test
-  public void testParallelism() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG = new ParallelismPass().process(compiledDAG);
+  public void testForInefficientALSDAG() throws Exception {
+    final long expectedNumOfVertices = groupedDAG.getVertices().size() + 3;
 
-    processedDAG.getTopologicalSort().forEach(irVertex ->
-        assertEquals(1, (long) irVertex.getAttr(Attribute.IntegerKey.Parallelism)));
+    final DAG<IRVertex, IREdge> processedDAG = LoopOptimizations.getLoopInvariantCodeMotionPass()
+        .process(groupedDAG);
+    assertEquals(expectedNumOfVertices, processedDAG.getVertices().size());
   }
+
 }

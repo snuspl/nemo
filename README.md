@@ -1,5 +1,5 @@
 # Vortex 
-[![Build Status](http://cmscluster.snu.ac.kr:8080/jenkins/buildStatus/icon?job=Vortex-master)](http://cmscluster.snu.ac.kr:8080/jenkins/job/Vortex-master/)
+[![Build Status](http://147.46.247.143:8080/buildStatus/icon?job=Vortex-master)](http://147.46.247.143:8080/job/Vortex-master/)
 
 ## Requirements
 * Java 8
@@ -18,6 +18,7 @@
 ./bin/run.sh -job_id mr_runtime_opt -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy runtime_opt -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 ./bin/run.sh -job_id broadcast_pado -user_main edu.snu.vortex.examples.beam.Broadcast -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 ./bin/run.sh -job_id als_pado -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
+./bin/run.sh -job_id als_ineff_pado -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquareInefficient -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 ./bin/run.sh -job_id mlr_pado -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
 java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce
 
@@ -38,6 +39,7 @@ You can easily visualize a DAG using [online visualizer](https://service.jangho.
 
 ## Instructions for installing Protobuf
 * Vortex uses v2.5.0 downloadable at: https://github.com/google/protobuf/releases/tag/v2.5.0
+* If on ubuntu run `$ sudo apt-get install autoconf automake libtool curl make g++ unzip`
 * Extract the downloaded tarball and command:
     - sudo ./configure
     - sudo make
