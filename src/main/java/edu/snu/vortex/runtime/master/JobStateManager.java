@@ -222,15 +222,14 @@ public final class JobStateManager {
    * and the call to this method is initiated in {@link edu.snu.vortex.runtime.master.scheduler.BatchScheduler}
    * when the message/event is received.
    * A task group completion implies completion of all its tasks.
-   * @param taskGroupId of the task group.
+   * @param taskGroup the task group.
    * @param newState of the task group.
    */
-  public synchronized void onTaskGroupStateChanged(final String taskGroupId, final TaskGroupState.State newState) {
-    final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroupId).getStateMachine();
+  public synchronized void onTaskGroupStateChanged(final TaskGroup taskGroup, final TaskGroupState.State newState) {
+    final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroup.getTaskGroupId()).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
-        new Object[]{taskGroupId, taskGroupStateChanged.getCurrentState(), newState});
+        new Object[]{taskGroup.getTaskGroupId(), taskGroupStateChanged.getCurrentState(), newState});
     taskGroupStateChanged.setState(newState);
-    final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
     final String stageId = taskGroup.getStageId();
 
     if (newState == TaskGroupState.State.COMPLETE) {
@@ -243,7 +242,7 @@ public final class JobStateManager {
 
       if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
         final Set<String> remainingTaskGroups = stageIdToRemainingTaskGroupSet.get(stageId);
-        remainingTaskGroups.remove(taskGroupId);
+        remainingTaskGroups.remove(taskGroup.getTaskGroupId());
 
         if (remainingTaskGroups.isEmpty()) {
           onStageStateChanged(stageId, StageState.State.COMPLETE);
@@ -253,16 +252,17 @@ public final class JobStateManager {
             new Throwable("The stage has not yet been submitted for execution"));
       }
     } else if (newState == TaskGroupState.State.EXECUTING) {
-      if (maxScheduleAttemptByTaskGroup.containsKey(taskGroupId)) {
-        final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroupId);
+      if (maxScheduleAttemptByTaskGroup.containsKey(taskGroup.getTaskGroupId())) {
+        final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroup.getTaskGroupId());
 
         if (numAttempts < maxScheduleAttempt) {
-          maxScheduleAttemptByTaskGroup.put(taskGroupId, numAttempts + 1);
+          maxScheduleAttemptByTaskGroup.put(taskGroup.getTaskGroupId(), numAttempts + 1);
         } else {
-          throw new SchedulingException(new Throwable("Exceeded max number of scheduling attempts for " + taskGroupId));
+          throw new SchedulingException(
+              new Throwable("Exceeded max number of scheduling attempts for " + taskGroup.getTaskGroupId()));
         }
       } else {
-        maxScheduleAttemptByTaskGroup.put(taskGroupId, 1);
+        maxScheduleAttemptByTaskGroup.put(taskGroup.getTaskGroupId(), 1);
       }
     } else if (newState == TaskGroupState.State.FAILED_RECOVERABLE) {
       taskGroup.getTaskDAG().getVertices().forEach(task ->
@@ -274,7 +274,7 @@ public final class JobStateManager {
       }
 
       if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
-        stageIdToRemainingTaskGroupSet.get(stageId).add(taskGroupId);
+        stageIdToRemainingTaskGroupSet.get(stageId).add(taskGroup.getTaskGroupId());
       } else {
         throw new IllegalStateTransitionException(
             new Throwable("The stage has not yet been submitted for execution"));
@@ -282,24 +282,8 @@ public final class JobStateManager {
     }
   }
 
-  public TaskGroup getTaskGroupById(final String taskGroupId) {
-    for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getVertices()) {
-      for (final TaskGroup taskGroup : physicalStage.getTaskGroupList()) {
-        if (taskGroup.getTaskGroupId().equals(taskGroupId)) {
-          return taskGroup;
-        }
-      }
-    }
-    throw new RuntimeException(new Throwable("This taskGroupId does not exist in the plan"));
-  }
-
-  public synchronized Optional<String> checkStageCompletion(final String taskGroupId) {
-    final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
-    if (stageIdToRemainingTaskGroupSet.get(taskGroup.getStageId()).isEmpty()) {
-      return Optional.of(taskGroup.getStageId());
-    } else {
-      return Optional.empty();
-    }
+  public synchronized boolean checkStageCompletion(final String stageId) {
+    return stageIdToRemainingTaskGroupSet.get(stageId).isEmpty();
   }
 
   public synchronized boolean checkJobCompletion() {

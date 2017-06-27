@@ -15,10 +15,7 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
@@ -103,14 +100,15 @@ public final class BatchScheduler implements Scheduler {
                                       final TaskGroupState.State newState,
                                       final List<String> failedTaskIds,
                                       final TaskGroupState.RecoverableFailureCause failureCause) {
-    jobStateManager.onTaskGroupStateChanged(taskGroupId, newState);
+    final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
+    jobStateManager.onTaskGroupStateChanged(taskGroup, newState);
 
     switch (newState) {
     case COMPLETE:
-      onTaskGroupExecutionComplete(executorId, taskGroupId);
+      onTaskGroupExecutionComplete(executorId, taskGroup);
       break;
     case FAILED_RECOVERABLE:
-      onTaskGroupExecutionFailedRecoverable(executorId, taskGroupId, failedTaskIds, failureCause);
+      onTaskGroupExecutionFailedRecoverable(executorId, taskGroup, failedTaskIds, failureCause);
       break;
     case FAILED_UNRECOVERABLE:
       throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on TaskGroup #")
@@ -124,24 +122,26 @@ public final class BatchScheduler implements Scheduler {
   }
 
   private void onTaskGroupExecutionComplete(final String executorId,
-                                            final String taskGroupId) {
-    LOG.log(Level.INFO, "{0} completed in {1}", new Object[]{taskGroupId, executorId});
-    schedulingPolicy.onTaskGroupExecutionComplete(executorId, taskGroupId);
+                                            final TaskGroup taskGroup) {
+    LOG.log(Level.INFO, "{0} completed in {1}", new Object[]{taskGroup.getTaskGroupId(), executorId});
+    schedulingPolicy.onTaskGroupExecutionComplete(executorId, taskGroup.getTaskGroupId());
+    final String stageIdForTaskGroupUponCompletion = taskGroup.getStageId();
 
-    final Optional<String> stageIdForTaskGroupUponCompletion = jobStateManager.checkStageCompletion(taskGroupId);
+    final boolean stageComplete =
+        jobStateManager.checkStageCompletion(stageIdForTaskGroupUponCompletion);
     // if the stage this task group belongs to is complete,
-    if (stageIdForTaskGroupUponCompletion.isPresent()) {
+    if (stageComplete) {
       if (!jobStateManager.checkJobCompletion()) { // and if the job is not yet complete,
-        scheduleNextStage(stageIdForTaskGroupUponCompletion.get());
+        scheduleNextStage(stageIdForTaskGroupUponCompletion);
       }
     }
   }
 
-  private void onTaskGroupExecutionFailedRecoverable(final String executorId, final String taskGroupId,
+  private void onTaskGroupExecutionFailedRecoverable(final String executorId, final TaskGroup taskGroup,
                                                      final List<String> taskIdOnFailure,
                                                      final TaskGroupState.RecoverableFailureCause failureCause) {
-    LOG.log(Level.INFO, "{0} failed in {1}", new Object[]{taskGroupId, executorId});
-    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroupId);
+    LOG.log(Level.INFO, "{0} failed in {1}", new Object[]{taskGroup.getTaskGroupId(), executorId});
+    schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroup.getTaskGroupId());
 
     switch (failureCause) {
     // Previous task group must be re-executed, and all task groups of the belonging stage must be rescheduled.
@@ -157,7 +157,7 @@ public final class BatchScheduler implements Scheduler {
     }
 
     // the stage this task group belongs to has become failed recoverable,
-    scheduleNextStage(jobStateManager.getTaskGroupById(taskGroupId).getStageId());
+    scheduleNextStage(taskGroup.getStageId());
 
     // what about the other task groups of the stage??
     // what happens if this stage is rescheduled and the others are executing at the moment?
@@ -308,6 +308,17 @@ public final class BatchScheduler implements Scheduler {
         pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges));
       }
     });
+  }
+
+  private TaskGroup getTaskGroupById(final String taskGroupId) {
+    for (final PhysicalStage physicalStage : physicalPlan.getStageDAG().getVertices()) {
+      for (final TaskGroup taskGroup : physicalStage.getTaskGroupList()) {
+        if (taskGroup.getTaskGroupId().equals(taskGroupId)) {
+          return taskGroup;
+        }
+      }
+    }
+    throw new RuntimeException(new Throwable("This taskGroupId does not exist in the plan"));
   }
 
   @Override

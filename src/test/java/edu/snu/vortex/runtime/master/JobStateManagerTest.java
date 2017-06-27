@@ -114,12 +114,10 @@ public final class JobStateManagerTest {
       jobStateManager.onStageStateChanged(physicalStage.getId(), StageState.State.EXECUTING);
       final List<TaskGroup> taskGroupList = physicalStage.getTaskGroupList();
       taskGroupList.forEach(taskGroup -> {
-        jobStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
-            TaskGroupState.State.EXECUTING);
-        jobStateManager.onTaskGroupStateChanged(taskGroup.getTaskGroupId(),
-            TaskGroupState.State.COMPLETE);
+        jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.EXECUTING);
+        jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.COMPLETE);
         if (taskGroup.getTaskGroupIdx() == taskGroupList.size() - 1) {
-          assertEquals(physicalStage.getId(), jobStateManager.checkStageCompletion(taskGroup.getTaskGroupId()).get());
+          assertTrue(jobStateManager.checkStageCompletion(taskGroup.getStageId()));
         }
       });
       final Map<String, TaskGroupState> taskGroupStateMap = jobStateManager.getIdToTaskGroupStates();
