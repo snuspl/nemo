@@ -141,17 +141,25 @@ public final class BatchScheduler implements Scheduler {
   private void onTaskGroupExecutionFailedRecoverable(final String executorId, final TaskGroup taskGroup,
                                                      final List<String> taskIdOnFailure,
                                                      final TaskGroupState.RecoverableFailureCause failureCause) {
-    LOG.log(Level.INFO, "{0} failed in {1}", new Object[]{taskGroup.getTaskGroupId(), executorId});
+    LOG.log(Level.INFO, "{0} failed in {1} by {2}", new Object[]{taskGroup.getTaskGroupId(), executorId, failureCause});
     schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroup.getTaskGroupId());
 
     switch (failureCause) {
     // Previous task group must be re-executed, and all task groups of the belonging stage must be rescheduled.
     case INPUT_READ_FAILURE:
+      LOG.log(Level.INFO, "All task groups of {0} will be made failed_recoverable.");
+      for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
+        if (stage.getId().equals(taskGroup.getStageId())) {
+          stage.getTaskGroupList().forEach(tg ->
+              jobStateManager.onTaskGroupStateChanged(tg, TaskGroupState.State.FAILED_RECOVERABLE));
+          break;
+        }
+      }
       break;
     // The task group executed successfully but there is something wrong with the output store.
     case OUTPUT_WRITE_FAILURE:
-      break;
     case CONTAINER_FAILURE:
+      LOG.log(Level.INFO, "Only the failed task group will be retried.");
       break;
     default:
       throw new UnknownFailureCauseException(new Throwable("Unknown cause: " + failureCause));
