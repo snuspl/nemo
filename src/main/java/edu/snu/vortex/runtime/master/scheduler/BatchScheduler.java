@@ -129,6 +129,7 @@ public final class BatchScheduler implements Scheduler {
 
     final boolean stageComplete =
         jobStateManager.checkStageCompletion(stageIdForTaskGroupUponCompletion);
+
     // if the stage this task group belongs to is complete,
     if (stageComplete) {
       if (!jobStateManager.checkJobCompletion()) { // and if the job is not yet complete,

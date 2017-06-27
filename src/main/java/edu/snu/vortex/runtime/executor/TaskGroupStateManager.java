@@ -70,7 +70,7 @@ public final class TaskGroupStateManager {
    * @param taskGroup to manage.
    */
   private void initializeStates(final TaskGroup taskGroup) {
-    onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty());
+//    onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty(), null);
 
     taskGroup.getTaskDAG().getVertices().forEach(task -> {
       currentTaskGroupTaskIds.add(task.getId());
