@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
  * Test {@link ClientEndpoint}.
  */
 public class ClientEndpointTest {
+  private static final int MAX_SCHEDULE_ATTEMPT = 2;
 
   @Test(timeout = 1000)
   public void testState() throws Exception {
@@ -60,7 +61,7 @@ public class ClientEndpointTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
     final JobStateManager jobStateManager =
-        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
+        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster(), MAX_SCHEDULE_ATTEMPT);
     final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
     // Check the current state.

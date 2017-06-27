@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
@@ -148,7 +149,7 @@ public final class JobStateManagerTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
     final JobStateManager jobStateManager =
-        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster());
+        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertFalse(jobStateManager.checkJobTermination());
 

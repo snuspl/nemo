@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.common.StateMachine;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 
 import java.io.File;
 import java.io.IOException;
@@ -252,13 +253,14 @@ public final class JobStateManager {
    * @param newState of the task group.
    */
   public synchronized void onTaskGroupStateChanged(final TaskGroup taskGroup, final TaskGroupState.State newState) {
-    final StateMachine taskGroupStateChanged = idToTaskGroupStates.get(taskGroup.getTaskGroupId()).getStateMachine();
+    final StateMachine taskGroupState = idToTaskGroupStates.get(taskGroup.getTaskGroupId()).getStateMachine();
     LOG.log(Level.FINE, "Task Group State Transition: id {0} from {1} to {2}",
-        new Object[]{taskGroup.getTaskGroupId(), taskGroupStateChanged.getCurrentState(), newState});
-    taskGroupStateChanged.setState(newState);
+        new Object[]{taskGroup.getTaskGroupId(), taskGroupState.getCurrentState(), newState});
     final String stageId = taskGroup.getStageId();
 
-    if (newState == TaskGroupState.State.COMPLETE) {
+    switch (newState) {
+    case COMPLETE:
+      taskGroupState.setState(newState);
       // TODO #235: Cleanup Task State Management
       taskGroup.getTaskDAG().getVertices().forEach(task -> {
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
@@ -277,7 +279,9 @@ public final class JobStateManager {
         throw new IllegalStateTransitionException(
             new Throwable("The stage has not yet been submitted for execution"));
       }
-    } else if (newState == TaskGroupState.State.EXECUTING) {
+      break;
+    case EXECUTING:
+      taskGroupState.setState(newState);
       if (maxScheduleAttemptByTaskGroup.containsKey(taskGroup.getTaskGroupId())) {
         final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroup.getTaskGroupId());
 
@@ -290,21 +294,34 @@ public final class JobStateManager {
       } else {
         maxScheduleAttemptByTaskGroup.put(taskGroup.getTaskGroupId(), 1);
       }
-    } else if (newState == TaskGroupState.State.FAILED_RECOVERABLE) {
-      taskGroup.getTaskDAG().getVertices().forEach(task ->
-        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.FAILED_RECOVERABLE));
+      break;
+    case FAILED_RECOVERABLE:
+      if (taskGroupState.getCurrentState() != TaskGroupState.State.FAILED_RECOVERABLE) {
+        taskGroup.getTaskDAG().getVertices().forEach(task ->
+            idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.FAILED_RECOVERABLE));
 
-      // Mark this stage as failed_recoverable as long as it contains at least one failed_recoverable task group
-      if (idToStageStates.get(stageId).getStateMachine().getCurrentState() != StageState.State.FAILED_RECOVERABLE) {
-        onStageStateChanged(stageId, StageState.State.FAILED_RECOVERABLE);
-      }
+        // Mark this stage as failed_recoverable as long as it contains at least one failed_recoverable task group
+        if (idToStageStates.get(stageId).getStateMachine().getCurrentState() != StageState.State.FAILED_RECOVERABLE) {
+          onStageStateChanged(stageId, StageState.State.FAILED_RECOVERABLE);
+        }
 
-      if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
-        stageIdToRemainingTaskGroupSet.get(stageId).add(taskGroup.getTaskGroupId());
+        if (stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
+          stageIdToRemainingTaskGroupSet.get(stageId).add(taskGroup.getTaskGroupId());
+        } else {
+          throw new IllegalStateTransitionException(
+              new Throwable("The stage has not yet been submitted for execution"));
+        }
       } else {
-        throw new IllegalStateTransitionException(
-            new Throwable("The stage has not yet been submitted for execution"));
+        LOG.log(Level.INFO, "{0} state is already FAILED_RECOVERABLE. Skipping this event.",
+            taskGroup.getTaskGroupId());
       }
+      break;
+    case READY:
+    case FAILED_UNRECOVERABLE:
+      taskGroupState.setState(newState);
+      break;
+    default:
+      throw new UnknownExecutionStateException(new Throwable("This task group state is unknown"));
     }
   }
 
