@@ -16,6 +16,8 @@
 package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.BlockFetchException;
+import edu.snu.vortex.runtime.exception.BlockWriteException;
 
 import java.util.Optional;
 
@@ -27,15 +29,19 @@ public interface BlockStore {
    * Retrieves a block.
    * @param blockId of the block
    * @return the data of the block (optionally)
+   * @throws BlockFetchException any exception regarding read failure due to a temporary error in the store
+   * must be caught and thrown as this exception.
    */
-  Optional<Iterable<Element>> getBlock(String blockId);
+  Optional<Iterable<Element>> getBlock(String blockId) throws BlockFetchException;
 
   /**
    * Saves a block.
    * @param blockId of the block
    * @param data of the block
+   * @throws BlockWriteException any exception regarding write failure due to a temporary error in the store
+   * must be caught and thrown as this exception.
    */
-  void putBlock(String blockId, Iterable<Element> data);
+  void putBlock(String blockId, Iterable<Element> data) throws BlockWriteException;
 
   /**
    * Removes a block.

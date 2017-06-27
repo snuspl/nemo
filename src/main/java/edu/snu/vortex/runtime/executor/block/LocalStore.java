@@ -16,6 +16,8 @@
 package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.BlockFetchException;
+import edu.snu.vortex.runtime.exception.BlockWriteException;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -36,7 +38,11 @@ public final class LocalStore implements BlockStore {
 
   @Override
   public Optional<Iterable<Element>> getBlock(final String blockId) {
-    return Optional.ofNullable(blockIdToData.get(blockId));
+    try {
+      return Optional.ofNullable(blockIdToData.get(blockId));
+    } catch (final Exception e) {
+      throw new BlockFetchException(new Throwable("An error occurred while trying to get block from local store", e));
+    }
   }
 
   @Override
@@ -44,7 +50,11 @@ public final class LocalStore implements BlockStore {
     if (blockIdToData.containsKey(blockId)) {
       throw new RuntimeException("Trying to overwrite an existing block");
     }
-    blockIdToData.put(blockId, data);
+    try {
+      blockIdToData.put(blockId, data);
+    } catch (final Exception e) {
+      throw new BlockWriteException(new Throwable("An error occurred while trying to put block into local store", e));
+    }
   }
 
   @Override
