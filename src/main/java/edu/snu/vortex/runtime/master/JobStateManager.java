@@ -296,6 +296,9 @@ public final class JobStateManager {
       }
       break;
     case FAILED_RECOVERABLE:
+      // Multiple calls to set a task group's state to failed_recoverable can occur when
+      // a task group is made failed_recoverable early by another task group's failure detection in the same stage
+      // and the task group finds itself failed_recoverable later, propagating the state change event only then.
       if (taskGroupState.getCurrentState() != TaskGroupState.State.FAILED_RECOVERABLE) {
         taskGroup.getTaskDAG().getVertices().forEach(task ->
             idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.FAILED_RECOVERABLE));

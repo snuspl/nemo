@@ -165,13 +165,9 @@ public final class BatchScheduler implements Scheduler {
       throw new UnknownFailureCauseException(new Throwable("Unknown cause: " + failureCause));
     }
 
-    // the stage this task group belongs to has become failed recoverable,
+    // the stage this task group belongs to has become failed recoverable.
+    // it is a good point to start searching for another stage to schedule.
     scheduleNextStage(taskGroup.getStageId());
-
-    // what about the other task groups of the stage??
-    // what happens if this stage is rescheduled and the others are executing at the moment?
-    // or job state manager says that they are executing, but actually have failed but the event just hasn't arrived?
-
   }
 
   @Override
@@ -248,12 +244,13 @@ public final class BatchScheduler implements Scheduler {
     Optional<PhysicalStage> selectedStage = Optional.empty();
     final List<PhysicalStage> parentStageList = physicalPlan.getStageDAG().getParents(stageTocheck.getId());
     boolean allParentStagesComplete = true;
-    for (PhysicalStage parentStage : parentStageList) {
+    for (final PhysicalStage parentStage : parentStageList) {
       final StageState.State parentStageState =
           (StageState.State) jobStateManager.getStageState(parentStage.getId()).getStateMachine().getCurrentState();
 
       switch (parentStageState) {
       case READY:
+      case FAILED_RECOVERABLE:
         // look into see grandparent stages
         allParentStagesComplete = false;
         selectedStage = selectNextStageToSchedule(parentStage);
@@ -263,11 +260,6 @@ public final class BatchScheduler implements Scheduler {
         allParentStagesComplete = false;
         break;
       case COMPLETE:
-        break;
-      case FAILED_RECOVERABLE:
-        // change the stage state/task group/task states back to ready, and some selection mechanism
-        // TODO #163: Handle Fault Tolerance
-        allParentStagesComplete = false;
         break;
       case FAILED_UNRECOVERABLE:
         throw new UnrecoverableFailureException(new Throwable("Stage " + parentStage.getId()));
@@ -300,19 +292,27 @@ public final class BatchScheduler implements Scheduler {
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
     LOG.log(Level.INFO, "Scheduling Stage: {0}", stageToSchedule.getId());
+    // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'.
     if (jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState()
         == StageState.State.FAILED_RECOVERABLE) {
       jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
     }
+
     jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
 
     stageToSchedule.getTaskGroupList().forEach(taskGroup -> {
       // this happens when the belonging stage's other task groups have failed recoverable,
       // but this task group's results are safe.
-      if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
-          == TaskGroupState.State.COMPLETE) {
+      final TaskGroupState.State taskGroupState =
+          (TaskGroupState.State)
+              jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState();
+
+      if (taskGroupState == TaskGroupState.State.COMPLETE) {
         LOG.log(Level.INFO, "Skipping {0} because its outputs are safe!", taskGroup.getTaskGroupId());
       } else {
+        if (taskGroupState == TaskGroupState.State.FAILED_RECOVERABLE) {
+          jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.READY);
+        }
         pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges));
       }
     });
