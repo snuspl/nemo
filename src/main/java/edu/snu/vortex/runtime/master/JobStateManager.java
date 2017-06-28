@@ -263,8 +263,6 @@ public final class JobStateManager {
       taskGroupState.setState(newState);
       // TODO #235: Cleanup Task State Management
       taskGroup.getTaskDAG().getVertices().forEach(task -> {
-        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
-        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.EXECUTING);
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.COMPLETE);
       });
 
@@ -282,6 +280,11 @@ public final class JobStateManager {
       break;
     case EXECUTING:
       taskGroupState.setState(newState);
+      // TODO #235: Cleanup Task State Management
+      taskGroup.getTaskDAG().getVertices().forEach(task -> {
+        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
+        idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.EXECUTING);
+      });
       if (maxScheduleAttemptByTaskGroup.containsKey(taskGroup.getTaskGroupId())) {
         final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroup.getTaskGroupId());
 
@@ -300,6 +303,7 @@ public final class JobStateManager {
       // a task group is made failed_recoverable early by another task group's failure detection in the same stage
       // and the task group finds itself failed_recoverable later, propagating the state change event only then.
       if (taskGroupState.getCurrentState() != TaskGroupState.State.FAILED_RECOVERABLE) {
+        taskGroupState.setState(newState);
         taskGroup.getTaskDAG().getVertices().forEach(task ->
             idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.FAILED_RECOVERABLE));
 
@@ -320,6 +324,11 @@ public final class JobStateManager {
       }
       break;
     case READY:
+      // TODO #235: Cleanup Task State Management
+      taskGroup.getTaskDAG().getVertices().forEach(task ->
+          idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.READY));
+      taskGroupState.setState(newState);
+      break;
     case FAILED_UNRECOVERABLE:
       taskGroupState.setState(newState);
       break;

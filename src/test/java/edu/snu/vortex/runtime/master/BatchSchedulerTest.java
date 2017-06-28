@@ -84,7 +84,7 @@ public final class BatchSchedulerTest {
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
 
-    schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, 2000);
+    schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
 
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();

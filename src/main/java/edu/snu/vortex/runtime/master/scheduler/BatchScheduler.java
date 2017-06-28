@@ -307,7 +307,7 @@ public final class BatchScheduler implements Scheduler {
           (TaskGroupState.State)
               jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState();
 
-      if (taskGroupState == TaskGroupState.State.COMPLETE) {
+      if (taskGroupState == TaskGroupState.State.COMPLETE || taskGroupState == TaskGroupState.State.EXECUTING) {
         LOG.log(Level.INFO, "Skipping {0} because its outputs are safe!", taskGroup.getTaskGroupId());
       } else {
         if (taskGroupState == TaskGroupState.State.FAILED_RECOVERABLE) {
