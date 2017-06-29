@@ -149,18 +149,9 @@ public final class FaultToleranceTest {
 
     jobStateManager = scheduler.scheduleJob(new PhysicalPlan("SimpleJob", physicalDAG), MAX_SCHEDULE_ATTEMPT);
 
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
     scheduler.onExecutorRemoved("a1");
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
     scheduler.onExecutorAdded("a1");
-    System.out.println(jobStateManager.toStringWithPhysicalPlan());
+
+
   }
 }

@@ -21,6 +21,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.runtime.TestUtil;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -176,12 +177,14 @@ public final class BatchSchedulerTest {
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->
-        sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
+        TestUtil.sendTaskGroupCompletionEventToScheduler(jobStateManager, scheduler, containerManager, physicalStage));
 
     // Then, for the rest of the stages.
     while (!jobStateManager.checkJobTermination()) {
       final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
-      stageList.forEach(physicalStage -> sendTaskGroupCompletionEventToScheduler(jobStateManager, physicalStage));
+      stageList.forEach(physicalStage ->
+          TestUtil.sendTaskGroupCompletionEventToScheduler(
+              jobStateManager, scheduler, containerManager, physicalStage));
     }
 
     // Check that the job have completed (not failed)
@@ -191,44 +194,5 @@ public final class BatchSchedulerTest {
     physicalDAG.getVertices().forEach(physicalStage ->
         assertTrue(jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
             == StageState.State.COMPLETE));
-  }
-
-  /**
-   * Sends task group completion event to scheduler.
-   * This replaces executor's task group completion messages for testing purposes.
-   * @param jobStateManager for the submitted job.
-   * @param physicalStage for which its task groups should be marked as complete.
-   */
-  private void sendTaskGroupCompletionEventToScheduler(final JobStateManager jobStateManager,
-                                                       final PhysicalStage physicalStage) {
-    while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
-        == StageState.State.EXECUTING) {
-      physicalStage.getTaskGroupList().forEach(taskGroup -> {
-        if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
-            == TaskGroupState.State.EXECUTING) {
-          final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(taskGroup.getTaskGroupId());
-
-          if (scheduledExecutor != null) {
-            scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroup.getTaskGroupId(),
-                TaskGroupState.State.COMPLETE, Collections.emptyList(), null);
-          } // else pass this round, because the executor hasn't received the scheduled task group yet
-        }
-      });
-    }
-  }
-
-  /**
-   * Retrieves the executor to which the given task group was scheduled.
-   * @param taskGroupId of the task group to search.
-   * @return the {@link ExecutorRepresenter} of the executor the task group was scheduled to.
-   */
-  private ExecutorRepresenter findExecutorForTaskGroup(final String taskGroupId) {
-    for (final ExecutorRepresenter executor : containerManager.getExecutorRepresenterMap().values()) {
-      if (executor.getRunningTaskGroups().contains(taskGroupId)
-          || executor.getCompleteTaskGroups().contains(taskGroupId)) {
-        return executor;
-      }
-    }
-    return null;
   }
 }
