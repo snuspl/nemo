@@ -28,40 +28,60 @@ import java.util.Collections;
  * Utility class for runtime unit tests.
  */
 public final class TestUtil {
+
   /**
-   * Sends task group completion event to scheduler.
+   * Sends a stage's completion event to scheduler, with all its task groups marked as complete as well.
    * This replaces executor's task group completion messages for testing purposes.
    * @param jobStateManager for the submitted job.
-   * @param physicalStage for which its task groups should be marked as complete.
+   * @param scheduler for the submitted job.
+   * @param containerManager used for testing purposes.
+   * @param physicalStage for which the states should be marked as complete.
    */
-  public static void sendTaskGroupCompletionEventToScheduler(final JobStateManager jobStateManager,
-                                                             final Scheduler scheduler,
-                                                             final ContainerManager containerManager,
-                                                             final PhysicalStage physicalStage) {
+  public static void sendStageCompletionEventToScheduler(final JobStateManager jobStateManager,
+                                                         final Scheduler scheduler,
+                                                         final ContainerManager containerManager,
+                                                         final PhysicalStage physicalStage) {
     while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
         == StageState.State.EXECUTING) {
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
         if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
             == TaskGroupState.State.EXECUTING) {
-          final ExecutorRepresenter scheduledExecutor =
-              findExecutorForTaskGroup(containerManager, taskGroup.getTaskGroupId());
-
-          if (scheduledExecutor != null) {
-            scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroup.getTaskGroupId(),
-                TaskGroupState.State.COMPLETE, Collections.emptyList(), null);
-          } // else pass this round, because the executor hasn't received the scheduled task group yet
+          sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroup.getTaskGroupId(),
+              TaskGroupState.State.COMPLETE);
         }
       });
     }
   }
 
   /**
+   * Sends task group state change event to scheduler.
+   * This replaces executor's task group completion messages for testing purposes.
+   * @param scheduler for the submitted job.
+   * @param containerManager used for testing purposes.
+   * @param taskGroupId for the task group to change the state.
+   * @param newState for the task group.
+   */
+  public static void sendTaskGroupStateEventToScheduler(final Scheduler scheduler,
+                                                        final ContainerManager containerManager,
+                                                        final String taskGroupId,
+                                                        final TaskGroupState.State newState) {
+    final ExecutorRepresenter scheduledExecutor =
+        findExecutorForTaskGroup(containerManager, taskGroupId);
+
+    if (scheduledExecutor != null) {
+      scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
+          newState, Collections.emptyList(), null);
+    } // else pass this round, because the executor hasn't received the scheduled task group yet
+  }
+
+  /**
    * Retrieves the executor to which the given task group was scheduled.
    * @param taskGroupId of the task group to search.
+   * @param containerManager used for testing purposes.
    * @return the {@link ExecutorRepresenter} of the executor the task group was scheduled to.
    */
-  public static ExecutorRepresenter findExecutorForTaskGroup(final ContainerManager containerManager,
-                                                             final String taskGroupId) {
+  private static ExecutorRepresenter findExecutorForTaskGroup(final ContainerManager containerManager,
+                                                              final String taskGroupId) {
     for (final ExecutorRepresenter executor : containerManager.getExecutorRepresenterMap().values()) {
       if (executor.getRunningTaskGroups().contains(taskGroupId)
           || executor.getCompleteTaskGroups().contains(taskGroupId)) {

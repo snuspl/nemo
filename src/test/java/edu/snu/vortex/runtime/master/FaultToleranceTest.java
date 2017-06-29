@@ -23,6 +23,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.runtime.TestUtil;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -33,6 +34,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -46,6 +48,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -149,9 +153,37 @@ public final class FaultToleranceTest {
 
     jobStateManager = scheduler.scheduleJob(new PhysicalPlan("SimpleJob", physicalDAG), MAX_SCHEDULE_ATTEMPT);
 
+    // Wait upto 2 seconds for task groups to be scheduled.
+    try {
+      Thread.sleep(2000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    final Set<String> a1TaskGroupIds = new HashSet<>();
+    final Set<String> otherTaskGroupIds = new HashSet<>();
+    executorRepresenterMap.forEach((id, executor) -> {
+      if (id.equals("a1")) {
+        a1TaskGroupIds.addAll(executor.getRunningTaskGroups());
+      } else {
+        otherTaskGroupIds.addAll(executor.getRunningTaskGroups());
+      }
+    });
+
     scheduler.onExecutorRemoved("a1");
+
+    otherTaskGroupIds.forEach(taskGroupId ->
+        TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
+            taskGroupId, TaskGroupState.State.COMPLETE));
+
+    a1TaskGroupIds.forEach(failedTaskGroupId ->
+        assertEquals(jobStateManager.getTaskGroupState(failedTaskGroupId).getStateMachine().getCurrentState(),
+            TaskGroupState.State.FAILED_RECOVERABLE));
+
+    // Start off with the root stages.
+    physicalDAG.getRootVertices().forEach(physicalStage ->
+        TestUtil.sendStageCompletionEventToScheduler(jobStateManager, scheduler, containerManager, physicalStage));
+
     scheduler.onExecutorAdded("a1");
-
-
   }
 }

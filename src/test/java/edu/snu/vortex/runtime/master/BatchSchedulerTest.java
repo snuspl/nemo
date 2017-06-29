@@ -31,7 +31,6 @@ import edu.snu.vortex.runtime.common.plan.logical.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
-import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -46,7 +45,6 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,13 +175,13 @@ public final class BatchSchedulerTest {
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->
-        TestUtil.sendTaskGroupCompletionEventToScheduler(jobStateManager, scheduler, containerManager, physicalStage));
+        TestUtil.sendStageCompletionEventToScheduler(jobStateManager, scheduler, containerManager, physicalStage));
 
     // Then, for the rest of the stages.
     while (!jobStateManager.checkJobTermination()) {
       final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
       stageList.forEach(physicalStage ->
-          TestUtil.sendTaskGroupCompletionEventToScheduler(
+          TestUtil.sendStageCompletionEventToScheduler(
               jobStateManager, scheduler, containerManager, physicalStage));
     }
 
