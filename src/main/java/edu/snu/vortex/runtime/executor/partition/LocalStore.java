@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.block;
+package edu.snu.vortex.runtime.executor.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
 
@@ -26,29 +26,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * Store data in local memory.
  */
 @ThreadSafe
-public final class LocalStore implements BlockStore {
-  private final ConcurrentHashMap<String, Iterable<Element>> blockIdToData;
+public final class LocalStore implements PartitionStore {
+  private final ConcurrentHashMap<String, Iterable<Element>> partitionIdToData;
 
   @Inject
   public LocalStore() {
-    this.blockIdToData = new ConcurrentHashMap<>();
+    this.partitionIdToData = new ConcurrentHashMap<>();
   }
 
   @Override
-  public Optional<Iterable<Element>> getBlock(final String blockId) {
-    return Optional.ofNullable(blockIdToData.get(blockId));
+  public Optional<Iterable<Element>> getPartition(final String partitionId) {
+    return Optional.ofNullable(partitionIdToData.get(partitionId));
   }
 
   @Override
-  public void putBlock(final String blockId, final Iterable<Element> data) {
-    if (blockIdToData.containsKey(blockId)) {
-      throw new RuntimeException("Trying to overwrite an existing block");
+  public void putPartition(final String partitionId, final Iterable<Element> data) {
+    if (partitionIdToData.containsKey(partitionId)) {
+      throw new RuntimeException("Trying to overwrite an existing partition");
     }
-    blockIdToData.put(blockId, data);
+    partitionIdToData.put(partitionId, data);
   }
 
   @Override
-  public Optional<Iterable<Element>> removeBlock(final String blockId) {
-    return Optional.ofNullable(blockIdToData.remove(blockId));
+  public Optional<Iterable<Element>> removePartition(final String partitionId) {
+    return Optional.ofNullable(partitionIdToData.remove(partitionId));
   }
 }
