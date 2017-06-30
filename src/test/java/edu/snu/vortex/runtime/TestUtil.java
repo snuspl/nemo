@@ -47,7 +47,7 @@ public final class TestUtil {
         if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
             == TaskGroupState.State.EXECUTING) {
           sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroup.getTaskGroupId(),
-              TaskGroupState.State.COMPLETE);
+              TaskGroupState.State.COMPLETE, null);
         }
       });
     }
@@ -64,13 +64,14 @@ public final class TestUtil {
   public static void sendTaskGroupStateEventToScheduler(final Scheduler scheduler,
                                                         final ContainerManager containerManager,
                                                         final String taskGroupId,
-                                                        final TaskGroupState.State newState) {
+                                                        final TaskGroupState.State newState,
+                                                        final TaskGroupState.RecoverableFailureCause cause) {
     final ExecutorRepresenter scheduledExecutor =
         findExecutorForTaskGroup(containerManager, taskGroupId);
 
     if (scheduledExecutor != null) {
       scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
-          newState, Collections.emptyList(), null);
+          newState, Collections.emptyList(), cause);
     } // else pass this round, because the executor hasn't received the scheduled task group yet
   }
 

@@ -193,6 +193,8 @@ public final class ContainerManager {
     LOG.log(Level.INFO, "[" + failedExecutorId + "] failure reported.");
 
     final ExecutorRepresenter failedExecutor = executorRepresenterMap.remove(failedExecutorId);
+    failedExecutor.onExecutorFailed();
+
     executorsByContainerType.get(failedExecutor.getContainerType()).remove(failedExecutor);
 
     failedExecutorRepresenterMap.put(failedExecutorId, failedExecutor);

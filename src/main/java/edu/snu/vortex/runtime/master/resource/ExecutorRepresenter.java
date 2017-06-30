@@ -58,6 +58,11 @@ public final class ExecutorRepresenter {
     this.activeContext = activeContext;
   }
 
+  public void onExecutorFailed() {
+    runningTaskGroups.forEach(taskGroupId -> failedTaskGroups.add(taskGroupId));
+    runningTaskGroups.clear();
+  }
+
   public void onTaskGroupScheduled(final ScheduledTaskGroup scheduledTaskGroup) {
     runningTaskGroups.add(scheduledTaskGroup.getTaskGroup().getTaskGroupId());
     failedTaskGroups.remove(scheduledTaskGroup.getTaskGroup().getTaskGroupId());

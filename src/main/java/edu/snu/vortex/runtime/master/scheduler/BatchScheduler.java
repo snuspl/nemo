@@ -145,13 +145,18 @@ public final class BatchScheduler implements Scheduler {
     schedulingPolicy.onTaskGroupExecutionFailed(executorId, taskGroup.getTaskGroupId());
 
     switch (failureCause) {
-    // Previous task group must be re-executed, and all task groups of the belonging stage must be rescheduled.
+    // Previous task group must be re-executed, and incomplete task groups of the belonging stage must be rescheduled.
     case INPUT_READ_FAILURE:
-      LOG.log(Level.INFO, "All task groups of {0} will be made failed_recoverable.");
+      LOG.log(Level.INFO, "All task groups of {0} will be made failed_recoverable.", taskGroup.getStageId());
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
         if (stage.getId().equals(taskGroup.getStageId())) {
-          stage.getTaskGroupList().forEach(tg ->
-              jobStateManager.onTaskGroupStateChanged(tg, TaskGroupState.State.FAILED_RECOVERABLE));
+          stage.getTaskGroupList().forEach(tg -> {
+            pendingTaskGroupQueue.remove(taskGroup.getTaskGroupId());
+            if (jobStateManager.getTaskGroupState(tg.getTaskGroupId()).getStateMachine().getCurrentState()
+                != TaskGroupState.State.COMPLETE) {
+              jobStateManager.onTaskGroupStateChanged(tg, TaskGroupState.State.FAILED_RECOVERABLE);
+            }
+          });
           break;
         }
       }
@@ -311,6 +316,7 @@ public final class BatchScheduler implements Scheduler {
         LOG.log(Level.INFO, "Skipping {0} because its outputs are safe!", taskGroup.getTaskGroupId());
       } else {
         if (taskGroupState == TaskGroupState.State.FAILED_RECOVERABLE) {
+          LOG.log(Level.INFO, "Re-scheduling {0} for failure recovery", taskGroup.getTaskGroupId());
           jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.READY);
         }
         pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges));

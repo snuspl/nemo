@@ -414,6 +414,10 @@ public final class JobStateManager {
     return idToTaskStates;
   }
 
+  public Map<String, Integer> getMaxScheduleAttemptByTaskGroup() {
+    return maxScheduleAttemptByTaskGroup;
+  }
+
   /**
    * Stores JSON representation of job state into a file.
    * @param directory the directory which JSON representation is saved to

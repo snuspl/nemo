@@ -52,8 +52,8 @@ public final class PendingTaskGroupQueue {
     return pendingTaskGroups.takeFirst();
   }
 
-  public void remove(final String taskGroupId) {
-    pendingTaskGroups.removeIf(
+  public boolean remove(final String taskGroupId) {
+    return pendingTaskGroups.removeIf(
         scheduledTaskGroup -> scheduledTaskGroup.getTaskGroup().getTaskGroupId().equals(taskGroupId));
   }
 }

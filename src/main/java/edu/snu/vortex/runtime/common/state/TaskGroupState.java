@@ -41,6 +41,8 @@ public final class TaskGroupState {
     // Add transitions
     stateMachineBuilder.addTransition(State.READY, State.EXECUTING,
         "Scheduling to executor");
+    stateMachineBuilder.addTransition(State.READY, State.FAILED_RECOVERABLE,
+        "Stage Failure by a recoverable failure in another task group");
     stateMachineBuilder.addTransition(State.READY, State.FAILED_UNRECOVERABLE,
         "Stage Failure");
 
