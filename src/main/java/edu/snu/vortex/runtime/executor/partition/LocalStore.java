@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @ThreadSafe
 public final class LocalStore implements PartitionStore {
-  private final ConcurrentHashMap<String, Iterable<Element>> partitionIdToData;
+  private final ConcurrentHashMap<String, Partition> partitionIdToData;
 
   @Inject
   public LocalStore() {
@@ -35,20 +35,45 @@ public final class LocalStore implements PartitionStore {
   }
 
   @Override
-  public Optional<Iterable<Element>> getPartition(final String partitionId) {
+  public Optional<Partition> getPartition(final String partitionId) {
     return Optional.ofNullable(partitionIdToData.get(partitionId));
   }
 
   @Override
-  public void putPartition(final String partitionId, final Iterable<Element> data) {
+  public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     if (partitionIdToData.containsKey(partitionId)) {
       throw new RuntimeException("Trying to overwrite an existing partition");
     }
-    partitionIdToData.put(partitionId, data);
+    partitionIdToData.put(partitionId, new LocalPartition(data));
+
+    // The partition is not serialized.
+    return Optional.empty();
   }
 
   @Override
-  public Optional<Iterable<Element>> removePartition(final String partitionId) {
+  public Optional<Partition> removePartition(final String partitionId) {
     return Optional.ofNullable(partitionIdToData.remove(partitionId));
+  }
+
+  /**
+   * This class represents a {@link Partition} which is stored in {@link LocalStore} and not divided in multiple blocks.
+   */
+  private final class LocalPartition implements Partition {
+
+    private final Iterable<Element> data;
+
+    private LocalPartition(final Iterable<Element> data) {
+      this.data = data;
+    }
+
+    @Override
+    public Iterable<Element> asIterable() {
+      return data;
+    }
+
+    @Override
+    public Optional<Long> size() {
+      return Optional.empty();
+    }
   }
 }

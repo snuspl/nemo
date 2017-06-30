@@ -92,7 +92,7 @@ public final class PartitionManagerWorker {
                                            final RuntimeAttribute partitionStore) {
     LOG.log(Level.INFO, "RemovePartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Iterable<Element>> optional = store.removePartition(partitionId);
+    final Optional<Partition> optional = store.removePartition(partitionId);
     if (!optional.isPresent()) {
       throw new RuntimeException("Trying to remove a non-existent partition");
     }
@@ -109,7 +109,7 @@ public final class PartitionManagerWorker {
                     .build())
             .build());
 
-    return optional.get();
+    return optional.get().asIterable();
   }
 
 
@@ -155,9 +155,9 @@ public final class PartitionManagerWorker {
     LOG.log(Level.INFO, "GetPartition: {0}", partitionId);
     // Local hit!
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Iterable<Element>> optionalData = store.getPartition(partitionId);
+    final Optional<Partition> optionalData = store.getPartition(partitionId);
     if (optionalData.isPresent()) {
-      return optionalData.get();
+      return optionalData.get().asIterable();
     } else {
       // We don't have the partition here... let's see if a remote worker has it
       // Ask Master for the location

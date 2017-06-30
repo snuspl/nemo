@@ -20,28 +20,12 @@ import edu.snu.vortex.compiler.ir.Element;
 import java.util.Optional;
 
 /**
- * Interface for partition placement.
+ * This interface represents an output data of each operation.
+ * It might be divided in multiple blocks.
  */
-public interface PartitionStore {
-  /**
-   * Retrieves a partition.
-   * @param partitionId of the partition
-   * @return the data of the partition (optionally)
-   */
-  Optional<Partition> getPartition(String partitionId);
+interface Partition {
 
-  /**
-   * Saves a partition.
-   * @param partitionId of the partition
-   * @param data of the partition
-   * @return the size of the partition (only when the partition is serialized)
-   */
-  Optional<Long> putPartition(String partitionId, Iterable<Element> data);
+  Iterable<Element> asIterable();
 
-  /**
-   * Removes a partition.
-   * @param partitionId of the partition
-   * @return the data of the partition (optionally)
-   */
-  Optional<Partition> removePartition(String partitionId);
+  Optional<Long> size();
 }
