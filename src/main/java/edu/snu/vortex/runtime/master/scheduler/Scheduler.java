@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
+import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -27,7 +28,9 @@ import java.util.List;
  */
 @DefaultImplementation(BatchScheduler.class)
 public interface Scheduler {
-  JobStateManager scheduleJob(final PhysicalPlan physicalPlan, final int maxScheduleAttempt);
+  JobStateManager scheduleJob(final PhysicalPlan physicalPlan,
+                              final PartitionManagerMaster partitionManagerMaster,
+                              final int maxScheduleAttempt);
 
   void onExecutorAdded(String executorId);
 

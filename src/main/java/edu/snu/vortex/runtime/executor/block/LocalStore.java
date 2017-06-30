@@ -16,8 +16,9 @@
 package edu.snu.vortex.runtime.executor.block;
 
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.exception.BlockFetchException;
-import edu.snu.vortex.runtime.exception.BlockWriteException;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.partition.PartitionStore;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Store data in local memory.
  */
 @ThreadSafe
-public final class LocalStore implements BlockStore {
+public final class LocalStore implements PartitionStore {
   private final ConcurrentHashMap<String, Iterable<Element>> blockIdToData;
 
   @Inject
@@ -41,7 +42,8 @@ public final class LocalStore implements BlockStore {
     try {
       return Optional.ofNullable(blockIdToData.get(blockId));
     } catch (final Exception e) {
-      throw new BlockFetchException(new Throwable("An error occurred while trying to get block from local store", e));
+      throw new PartitionFetchException(
+          new Throwable("An error occurred while trying to get block from local store", e));
     }
   }
 
@@ -53,7 +55,8 @@ public final class LocalStore implements BlockStore {
     try {
       blockIdToData.put(blockId, data);
     } catch (final Exception e) {
-      throw new BlockWriteException(new Throwable("An error occurred while trying to put block into local store", e));
+      throw new PartitionWriteException(
+          new Throwable("An error occurred while trying to put block into local store", e));
     }
   }
 

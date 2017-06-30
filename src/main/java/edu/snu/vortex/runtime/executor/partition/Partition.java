@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.runtime.executor.partition;
+
+import edu.snu.vortex.compiler.ir.Element;
+import java.util.Optional;
 
 /**
- * UnsupportedBlockStoreException.
- * Thrown when the data placement method is undefined in Runtime.
+ * This interface represents an output data of each operation.
+ * It might be divided in multiple blocks.
  */
-public final class UnsupportedBlockStoreException extends RuntimeException {
-  /**
-   * UnsupportedBlockStoreException.
-   * @param cause cause
-   */
-  public UnsupportedBlockStoreException(final Throwable cause) {
-    super(cause);
-  }
+interface Partition {
+
+  Iterable<Element> asIterable();
+  Optional<Long> size();
 }

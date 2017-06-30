@@ -22,7 +22,7 @@ import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
-import edu.snu.vortex.runtime.master.BlockManagerMaster;
+import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
 
 import javax.inject.Inject;
@@ -46,7 +46,7 @@ public final class BatchScheduler implements Scheduler {
    */
   private SchedulingPolicy schedulingPolicy;
 
-  private final BlockManagerMaster blockManagerMaster;
+  private final PartitionManagerMaster partitionManagerMaster;
 
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
@@ -56,10 +56,10 @@ public final class BatchScheduler implements Scheduler {
   private PhysicalPlan physicalPlan;
 
   @Inject
-  public BatchScheduler(final BlockManagerMaster blockManagerMaster,
+  public BatchScheduler(final PartitionManagerMaster partitionManagerMaster,
                         final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupQueue pendingTaskGroupQueue) {
-    this.blockManagerMaster = blockManagerMaster;
+    this.partitionManagerMaster = partitionManagerMaster;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.schedulingPolicy = schedulingPolicy;
   }
@@ -71,9 +71,10 @@ public final class BatchScheduler implements Scheduler {
    */
   @Override
   public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule,
+                                                  final PartitionManagerMaster partitionManagerMaster,
                                                   final int maxScheduleAttempt) {
     this.physicalPlan = jobToSchedule;
-    this.jobStateManager = new JobStateManager(jobToSchedule, blockManagerMaster, maxScheduleAttempt);
+    this.jobStateManager = new JobStateManager(jobToSchedule, partitionManagerMaster, maxScheduleAttempt);
 
     LOG.log(Level.INFO, "Job to schedule: {0}", jobToSchedule.getId());
 
@@ -182,7 +183,7 @@ public final class BatchScheduler implements Scheduler {
 
   @Override
   public synchronized void onExecutorRemoved(final String executorId) {
-    final Set<String> taskGroupsForLostBlocks = blockManagerMaster.removeWorker(executorId);
+    final Set<String> taskGroupsForLostBlocks = partitionManagerMaster.removeWorker(executorId);
     final Set<String> taskGroupsToRecompute = schedulingPolicy.onExecutorRemoved(executorId);
 
     taskGroupsToRecompute.addAll(taskGroupsForLostBlocks);

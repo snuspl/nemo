@@ -25,9 +25,9 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
-import edu.snu.vortex.runtime.exception.BlockFetchException;
-import edu.snu.vortex.runtime.exception.BlockWriteException;
-import edu.snu.vortex.runtime.executor.block.BlockManagerWorker;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.executor.datatransfer.InputReader;
 import edu.snu.vortex.runtime.executor.datatransfer.OutputWriter;
@@ -61,14 +61,14 @@ public final class TaskGroupExecutor {
 
   private boolean isExecutionRequested;
 
-  private final BlockManagerWorker blockManagerWorker;
+  private final PartitionManagerWorker partitionManagerWorker;
 
   public TaskGroupExecutor(final TaskGroup taskGroup,
                            final TaskGroupStateManager taskGroupStateManager,
                            final List<PhysicalStageEdge> stageIncomingEdges,
                            final List<PhysicalStageEdge> stageOutgoingEdges,
                            final DataTransferFactory channelFactory,
-                           final BlockManagerWorker blockManagerWorker) {
+                           final PartitionManagerWorker partitionManagerWorker) {
     this.taskGroup = taskGroup;
     this.taskGroupStateManager = taskGroupStateManager;
     this.stageIncomingEdges = stageIncomingEdges;
@@ -80,7 +80,7 @@ public final class TaskGroupExecutor {
 
     this.isExecutionRequested = false;
 
-    this.blockManagerWorker = blockManagerWorker;
+    this.partitionManagerWorker = partitionManagerWorker;
 
     initializeDataTransfer();
   }
@@ -173,10 +173,10 @@ public final class TaskGroupExecutor {
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
-      } catch (final BlockFetchException ex) {
+      } catch (final PartitionFetchException ex) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE));
-      } catch (final BlockWriteException ex2) {
+      } catch (final PartitionWriteException ex2) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE));
       } catch (final Exception e) {
@@ -198,8 +198,9 @@ public final class TaskGroupExecutor {
     final DAG<Task, RuntimeEdge<Task>> dag = taskGroup.getTaskDAG();
     dag.getIncomingEdgesOf(executedTask).stream() // inEdges within the stage
         .forEach(edge -> {
-          final String blockId = RuntimeIdGenerator.generateBlockId(edge.getId(), edge.getSrc().getIndex());
-          blockManagerWorker.removeBlock(blockId, edge.getEdgeAttributes().get(RuntimeAttribute.Key.BlockStore));
+          final String partitionId = RuntimeIdGenerator.generatePartitionId(edge.getId(), edge.getSrc().getIndex());
+          partitionManagerWorker
+              .removePartition(partitionId, edge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore));
         });
   }
 

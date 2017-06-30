@@ -16,15 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * BlockWriteException.
- * Thrown when any exception occurs while trying to write a block/output of a task.
+ * PartitionFetchException.
+ * Thrown when any exception occurs while trying to fetch a block for task execution.
  */
-public final class BlockWriteException extends RuntimeException {
+public final class PartitionFetchException extends RuntimeException {
   /**
-   * BlockWriteException.
+   * PartitionFetchException.
    * @param exception exception
    */
-  public BlockWriteException(final Throwable exception) {
+  public PartitionFetchException(final Throwable exception) {
     super(exception);
   }
 }

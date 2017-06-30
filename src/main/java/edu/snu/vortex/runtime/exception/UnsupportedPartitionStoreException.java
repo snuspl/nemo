@@ -16,15 +16,15 @@
 package edu.snu.vortex.runtime.exception;
 
 /**
- * BlockFetchException.
- * Thrown when any exception occurs while trying to fetch a block for task execution.
+ * UnsupportedPartitionStoreException.
+ * Thrown when the data placement method is undefined in Runtime.
  */
-public final class BlockFetchException extends RuntimeException {
+public final class UnsupportedPartitionStoreException extends RuntimeException {
   /**
-   * BlockFetchException.
-   * @param exception exception
+   * UnsupportedPartitionStoreException.
+   * @param cause cause
    */
-  public BlockFetchException(final Throwable exception) {
-    super(exception);
+  public UnsupportedPartitionStoreException(final Throwable cause) {
+    super(cause);
   }
 }

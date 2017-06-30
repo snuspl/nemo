@@ -106,12 +106,13 @@ public final class JobStateManagerTest {
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
-    final JobStateManager jobStateManager =
-        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster(), MAX_SCHEDULE_ATTEMPT);
+    final JobStateManager jobStateManager = new JobStateManager(
+            new PhysicalPlan("TestPlan", physicalDAG), new PartitionManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertEquals(jobStateManager.getJobId(), "TestPlan");
 
     final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
+
     for (int stageIdx = 0; stageIdx < stageList.size(); stageIdx++) {
       final PhysicalStage physicalStage = stageList.get(stageIdx);
       jobStateManager.onStageStateChanged(physicalStage.getId(), StageState.State.EXECUTING);
@@ -148,8 +149,8 @@ public final class JobStateManagerTest {
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
     final DAG<Stage, StageEdge> logicalDAG = irDAG.convert(new LogicalDAGGenerator());
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
-    final JobStateManager jobStateManager =
-        new JobStateManager(new PhysicalPlan("TestPlan", physicalDAG), new BlockManagerMaster(), MAX_SCHEDULE_ATTEMPT);
+    final JobStateManager jobStateManager = new JobStateManager(
+        new PhysicalPlan("TestPlan", physicalDAG), new PartitionManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertFalse(jobStateManager.checkJobTermination());
 
