@@ -16,13 +16,20 @@
 package edu.snu.vortex.runtime.executor.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
-import java.util.Optional;
 
 /**
- * This interface represents an output data of each operation.
- * It might be divided in multiple blocks.
+ * This class represents a {@link Partition} which is stored in local memory and not divided in multiple blocks.
  */
-public interface Partition {
+final class LocalPartition implements Partition {
 
-  Iterable<Element> asIterable();
+  private final Iterable<Element> data;
+
+  LocalPartition(final Iterable<Element> data) {
+    this.data = data;
+  }
+
+  @Override
+  public Iterable<Element> asIterable() {
+    return data;
+  }
 }

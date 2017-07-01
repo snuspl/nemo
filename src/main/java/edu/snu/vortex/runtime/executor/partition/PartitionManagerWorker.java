@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.executor.partition;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.compiler.frontend.Coder;
+import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
@@ -158,24 +158,24 @@ public final class PartitionManagerWorker {
    * @param partitionId of the partition
    * @param runtimeEdgeId id of the runtime edge that corresponds to the partition
    * @param partitionStore for the data storage
-   * @return a {@link CompletableFuture} for the partition data
+   * @return a {@link CompletableFuture} for the partition
    */
-  public CompletableFuture<Iterable<Element>> getPartition(final String partitionId,
-                                                           final String runtimeEdgeId,
-                                                           final RuntimeAttribute partitionStore) {
+  public CompletableFuture<Partition> getPartition(final String partitionId,
+                                                   final String runtimeEdgeId,
+                                                   final RuntimeAttribute partitionStore) {
     LOG.log(Level.INFO, "GetPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Partition> optionalData;
+    final Optional<Partition> optionalPartition;
 
     try {
-      optionalData = store.getPartition(partitionId);
+      optionalPartition = store.getPartition(partitionId);
     } catch (final Exception e) {
       throw new PartitionFetchException(e);
     }
 
-    if (optionalData.isPresent()) {
+    if (optionalPartition.isPresent()) {
       // Local hit!
-      return CompletableFuture.completedFuture(optionalData.get().asIterable());
+      return CompletableFuture.completedFuture(optionalPartition.get());
     }
     // We don't have the partition here... let's see if a remote worker has it
     // Ask Master for the location

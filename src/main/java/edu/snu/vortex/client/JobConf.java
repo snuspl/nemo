@@ -45,8 +45,8 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Directory to store files for storing blocks.
    */
-  @NamedParameter(doc = "Directory to store blocks", short_name = "block_dir", default_value = "./block")
-  public final class BlockDirectory implements Name<String> {
+  @NamedParameter(doc = "Directory to store files", short_name = "file_dir", default_value = "./file")
+  public final class FileDirectory implements Name<String> {
   }
 
   //////////////////////////////// Compiler Configurations

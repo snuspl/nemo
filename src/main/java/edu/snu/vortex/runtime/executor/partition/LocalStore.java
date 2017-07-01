@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Store data in local memory.
  */
 @ThreadSafe
-public final class LocalStore implements PartitionStore {
+final class LocalStore implements PartitionStore {
   private final ConcurrentHashMap<String, Partition> partitionIdToData;
 
   @Inject
-  public LocalStore() {
+  LocalStore() {
     this.partitionIdToData = new ConcurrentHashMap<>();
   }
 
@@ -54,27 +54,5 @@ public final class LocalStore implements PartitionStore {
   @Override
   public Optional<Partition> removePartition(final String partitionId) {
     return Optional.ofNullable(partitionIdToData.remove(partitionId));
-  }
-
-  /**
-   * This class represents a {@link Partition} which is stored in {@link LocalStore} and not divided in multiple blocks.
-   */
-  private final class LocalPartition implements Partition {
-
-    private final Iterable<Element> data;
-
-    private LocalPartition(final Iterable<Element> data) {
-      this.data = data;
-    }
-
-    @Override
-    public Iterable<Element> asIterable() {
-      return data;
-    }
-
-    @Override
-    public Optional<Long> size() {
-      return Optional.empty();
-    }
   }
 }
