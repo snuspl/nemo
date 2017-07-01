@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.common.coder;
 
-import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 

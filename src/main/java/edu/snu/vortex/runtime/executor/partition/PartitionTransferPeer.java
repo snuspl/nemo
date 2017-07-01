@@ -181,7 +181,7 @@ final class PartitionTransferPeer {
         throw new RuntimeException(e);
       }
 
-      // TODO: #299 Separate Serialization from Here
+      // TODO #299: Separate Serialization from Here
       // At now, we do unneeded deserialization and serialization for already serialized data.
       final Coder coder = worker.getCoder(request.getRuntimeEdgeId());
 

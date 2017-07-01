@@ -12,6 +12,7 @@ enum MessageType {
     RequestPartitionLocation = 3;
     PartitionLocationInfo = 4;
     ExecutorFailed = 5;
+    SerializedPartition = 6;
 }
 
 message Message {
@@ -23,6 +24,7 @@ message Message {
     optional RequestPartitionLocationMsg requestPartitionLocationMsg = 6;
     optional PartitionLocationInfoMsg partitionLocationInfoMsg = 7;
     optional ExecutorFailedMsg executorFailedMsg = 8;
+    optional SerializedPartitionMsg serializedPartitionMsg = 9;
 }
 
 // Messages from Master to Executors
@@ -74,6 +76,12 @@ message RequestPartitionMsg {
     required string partitionId = 2;
     required PartitionStore partitionStore = 3;
     required string runtimeEdgeId = 4;
+}
+
+
+// Messeages used in a single Executor
+message SerializedPartitionMsg {
+    repeated bytes data = 1;
 }
 
 enum TaskGroupStateFromExecutor {

@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.executor.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
-import java.util.Optional;
 
 /**
  * This interface represents an output data of each operation.
