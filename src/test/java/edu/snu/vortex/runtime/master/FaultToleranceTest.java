@@ -153,7 +153,7 @@ public final class FaultToleranceTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     jobStateManager = scheduler.scheduleJob(
-        new PhysicalPlan("SimpleJob", physicalDAG), partitionManagerMaster, MAX_SCHEDULE_ATTEMPT);
+        new PhysicalPlan("SimpleJob", physicalDAG), MAX_SCHEDULE_ATTEMPT);
 
     // Wait upto 2 seconds for task groups to be scheduled.
     try {

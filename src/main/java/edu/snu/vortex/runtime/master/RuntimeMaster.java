@@ -96,7 +96,7 @@ public final class RuntimeMaster {
                       final ClientEndpoint clientEndpoint) {
     physicalPlan = generatePhysicalPlan(executionPlan);
     try {
-      jobStateManager = scheduler.scheduleJob(physicalPlan, partitionManagerMaster, maxScheduleAttempt);
+      jobStateManager = scheduler.scheduleJob(physicalPlan, maxScheduleAttempt);
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
       // Schedule dag logging thread

@@ -172,7 +172,7 @@ public final class BatchSchedulerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = logicalDAG.convert(new PhysicalDAGGenerator());
 
     final JobStateManager jobStateManager =
-        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), partitionManagerMaster, 1);
+        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG), 1);
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->

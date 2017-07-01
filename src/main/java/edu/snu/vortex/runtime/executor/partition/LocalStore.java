@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -44,7 +45,12 @@ public final class LocalStore implements PartitionStore {
     if (partitionIdToData.containsKey(partitionId)) {
       throw new RuntimeException("Trying to overwrite an existing partition");
     }
-    partitionIdToData.put(partitionId, new LocalPartition(data));
+
+    try {
+      partitionIdToData.put(partitionId, new LocalPartition(data));
+    } catch (final Exception e) {
+      throw new PartitionWriteException(e);
+    }
 
     // The partition is not serialized.
     return Optional.empty();

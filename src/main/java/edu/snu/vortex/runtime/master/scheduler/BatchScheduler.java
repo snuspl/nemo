@@ -71,7 +71,6 @@ public final class BatchScheduler implements Scheduler {
    */
   @Override
   public synchronized JobStateManager scheduleJob(final PhysicalPlan jobToSchedule,
-                                                  final PartitionManagerMaster partitionManagerMaster,
                                                   final int maxScheduleAttempt) {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = new JobStateManager(jobToSchedule, partitionManagerMaster, maxScheduleAttempt);

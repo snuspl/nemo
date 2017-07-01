@@ -29,6 +29,7 @@ public interface PartitionStore {
    * Retrieves a partition.
    * @param partitionId of the partition
    * @return the data of the partition (optionally)
+   * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
    */
   Optional<Partition> getPartition(String partitionId) throws PartitionFetchException;
 
@@ -37,6 +38,7 @@ public interface PartitionStore {
    * @param partitionId of the partition
    * @param data of the partition
    * @return the size of the partition (only when the partition is serialized)
+   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
   Optional<Long> putPartition(String partitionId, Iterable<Element> data) throws PartitionWriteException;
 
