@@ -215,10 +215,9 @@ public final class PartitionManagerWorker {
         // TODO #181: Implement MemoryPartitionStore
         return localStore;
       case File:
-        // TODO #69: Implement file channel in Runtime
         return fileStore;
       case MemoryFile:
-        // TODO #69: Implement file channel in Runtime
+        // TODO #181: Implement MemoryPartitionStore
         return localStore;
       case DistributedStorage:
         // TODO #180: Implement DistributedStorageStore
@@ -227,5 +226,4 @@ public final class PartitionManagerWorker {
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
     }
   }
-
 }

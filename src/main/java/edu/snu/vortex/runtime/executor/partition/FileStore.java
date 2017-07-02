@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Store partitions in file.
- * It conducts asynchronous write and synchronous read.
+ * It writes asynchronously and reads synchronously.
  */
 final class FileStore implements PartitionStore {
 
@@ -54,6 +54,7 @@ final class FileStore implements PartitionStore {
     this.fileDirectory = fileDirectory;
     this.partitionIdToData = new ConcurrentHashMap<>();
     this.partitionManagerWorker = partitionManagerWorker;
+    new File(fileDirectory).mkdirs();
   }
 
   @Override
@@ -77,7 +78,7 @@ final class FileStore implements PartitionStore {
 
     // Serialize the given data
     final PartitionManagerWorker worker = partitionManagerWorker.get();
-    final String runtimeEdgeId = partitionId.split("-")[1];
+    final String runtimeEdgeId = partitionId.split("_")[1];
     final Coder coder = worker.getCoder(runtimeEdgeId);
     final ControlMessage.SerializedPartitionMsg.Builder replyBuilder =
         ControlMessage.SerializedPartitionMsg.newBuilder();
@@ -86,7 +87,7 @@ final class FileStore implements PartitionStore {
       try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
         coder.encode(element, stream);
         replyBuilder.addData(ByteString.copyFrom(stream.toByteArray()));
-      } catch (IOException e) {
+      } catch (final IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -119,7 +120,7 @@ final class FileStore implements PartitionStore {
 
     private Coder coder;
     private Path filePath;
-    private int size;
+    private AsynchronousFileChannel asyncFileChannel;
     private final CompletableFuture<Integer> writeFuture;
 
     /**
@@ -135,14 +136,38 @@ final class FileStore implements PartitionStore {
                            final String filePathToSet) {
       this.coder = coderToSet;
       this.filePath = Paths.get(filePathToSet);
-      this.size = serializedData.length;
       // Wrap the given serialized data (but not copy it)
       final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
       // Write asynchronously
-      try (final AsynchronousFileChannel asyncFileChannel = AsynchronousFileChannel.open(filePath,
-          StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-        asyncFileChannel.write(buf, 0, writeFuture, new WriteCompletionHandler());
+      try {
+        asyncFileChannel = AsynchronousFileChannel.open(filePath,
+            StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+        asyncFileChannel.write(buf, 0, writeFuture, new CompletionHandler<Integer, Object>() {
+              @Override
+              public void completed(final Integer result,
+                                    final Object attachment) {
+                writeFuture.complete(result);
+                closeAsnycChannel();
+              }
+
+              @Override
+              public void failed(final Throwable exc,
+                                 final Object attachment) {
+                closeAsnycChannel();
+                throw new RuntimeException(exc);
+              }
+
+              private void closeAsnycChannel() {
+                if (asyncFileChannel != null && asyncFileChannel.isOpen()) {
+                  try {
+                    asyncFileChannel.close();
+                  } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                }
+              }
+            });
       } catch (final IOException e) {
         throw new RuntimeException(e);
       }
@@ -181,24 +206,8 @@ final class FileStore implements PartitionStore {
           throw new RuntimeException(e);
         }
       }
-      
+
       return deserializedData;
-    }
-  }
-
-  /**
-   * A {@link CompletionHandler} for write.
-   */
-  private final class WriteCompletionHandler implements CompletionHandler<Integer, CompletableFuture<Integer>> {
-
-    @Override
-    public void completed(Integer result, CompletableFuture<Integer> completableFuture) {
-      completableFuture.complete(result);
-    }
-
-    @Override
-    public void failed(Throwable exc, CompletableFuture future) {
-      throw new RuntimeException(exc);
     }
   }
 }
