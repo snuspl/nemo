@@ -138,7 +138,7 @@ public final class JobStateManager {
       final List<TaskGroup> taskGroupsForStage = physicalStage.getTaskGroupList();
       final List<PhysicalStageEdge> stageOutgoingEdges = stageDAG.getOutgoingEdgesOf(physicalStage);
 
-      // Initialize states for blocks of inter-stage edges
+      // Initialize states for partitions of inter-stage edges
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final RuntimeAttribute commPattern =
             physicalStageEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
@@ -157,7 +157,7 @@ public final class JobStateManager {
         });
       });
 
-      // Initialize states for blocks of stage internal edges
+      // Initialize states for partitions of stage internal edges
       taskGroupsForStage.forEach(taskGroup -> {
         final DAG<Task, RuntimeEdge<Task>> taskGroupInternalDag = taskGroup.getTaskDAG();
         taskGroupInternalDag.getVertices().forEach(task -> {

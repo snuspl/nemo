@@ -59,14 +59,12 @@ public final class PartitionManagerMaster {
 
   public synchronized Set<String> removeWorker(final String executorId) {
     final Set<String> taskGroupsToRecompute = new HashSet<>();
+
     // Set partition states to lost
-    committedPartitionIdToWorkerId.entrySet().stream()
-        .filter(e -> e.getValue().equals(executorId))
-        .map(Map.Entry::getKey)
-        .forEach(partitionId -> {
-          onPartitionStateChanged(executorId, partitionId, PartitionState.State.LOST);
-          taskGroupsToRecompute.add(partitionIdToParentTaskGroupId.get(partitionId));
-        });
+    getPartitionsByWorker(executorId).forEach(partitionId -> {
+      onPartitionStateChanged(executorId, partitionId, PartitionState.State.LOST);
+      taskGroupsToRecompute.add(partitionIdToParentTaskGroupId.get(partitionId));
+    });
 
     // Update worker-related global variables
     committedPartitionIdToWorkerId.entrySet().removeIf(e -> e.getValue().equals(executorId));
@@ -77,6 +75,24 @@ public final class PartitionManagerMaster {
   public synchronized Optional<String> getPartitionLocation(final String partitionId) {
     final String executorId = committedPartitionIdToWorkerId.get(partitionId);
     return Optional.ofNullable(executorId);
+  }
+
+  public synchronized String getParentTaskGroupId(final String partitionId) {
+    return partitionIdToParentTaskGroupId.get(partitionId);
+  }
+
+  public synchronized Set<String> getPartitionsByWorker(final String executorId) {
+    final Set<String> partitionIds = new HashSet<>();
+    committedPartitionIdToWorkerId.forEach((partitionId, workerId) -> {
+      if (workerId.equals(executorId)) {
+        partitionIds.add(partitionId);
+      }
+    });
+    return partitionIds;
+  }
+
+  public synchronized PartitionState getPartitionState(final String partitionId) {
+    return partitionIdToState.get(partitionId);
   }
 
   public synchronized void onPartitionStateChanged(final String executorId,
@@ -104,7 +120,9 @@ public final class PartitionManagerMaster {
         committedPartitionIdToWorkerId.remove(partitionId);
         break;
       case LOST:
-        throw new UnsupportedOperationException(newState.toString());
+        LOG.log(Level.INFO, "Partition {0} lost in {1}", new Object[]{partitionId, executorId});
+        committedPartitionIdToWorkerId.remove(partitionId);
+        break;
       default:
         throw new UnsupportedOperationException(newState.toString());
     }

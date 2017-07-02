@@ -15,14 +15,22 @@
  */
 package edu.snu.vortex.runtime;
 
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.runtime.common.RuntimeAttribute;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.plan.physical.*;
+import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.JobStateManager;
+import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Utility class for runtime unit tests.
@@ -73,6 +81,61 @@ public final class TestUtil {
       scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
           newState, Collections.emptyList(), cause);
     } // else pass this round, because the executor hasn't received the scheduled task group yet
+  }
+
+  public static void sendPartitionStateEventForAStage(final PartitionManagerMaster partitionManagerMaster,
+                                                      final ContainerManager containerManager,
+                                                      final List<PhysicalStageEdge> stageOutgoingEdges,
+                                                      final PhysicalStage physicalStage,
+                                                      final PartitionState.State newState) {
+    final List<TaskGroup> taskGroupsForStage = physicalStage.getTaskGroupList();
+
+    // Initialize states for blocks of inter-stage edges
+    stageOutgoingEdges.forEach(physicalStageEdge -> {
+      final RuntimeAttribute commPattern =
+          physicalStageEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern);
+      final int srcParallelism = taskGroupsForStage.size();
+      IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
+        if (commPattern == RuntimeAttribute.ScatterGather) {
+          final int dstParallelism =
+              physicalStageEdge.getExternalVertexAttr().get(RuntimeAttribute.IntegerKey.Parallelism);
+          IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
+            final String partitionId =
+                RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx);
+            sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
+          });
+        } else {
+          final String partitionId =
+              RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx);
+          sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
+        }
+      });
+    });
+
+    // Initialize states for blocks of stage internal edges
+    taskGroupsForStage.forEach(taskGroup -> {
+      final DAG<Task, RuntimeEdge<Task>> taskGroupInternalDag = taskGroup.getTaskDAG();
+      taskGroupInternalDag.getVertices().forEach(task -> {
+        final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
+        internalOutgoingEdges.forEach(taskRuntimeEdge -> {
+          final String partitionId =
+              RuntimeIdGenerator.generatePartitionId(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx());
+          sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
+        });
+      });
+    });
+  }
+
+  public static void sendPartitionStateEventToPartitionManager(final PartitionManagerMaster partitionManagerMaster,
+                                                               final ContainerManager containerManager,
+                                                               final String partitionId,
+                                                               final PartitionState.State newState) {
+    final String parentTaskGroupId = partitionManagerMaster.getParentTaskGroupId(partitionId);
+    final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(containerManager, parentTaskGroupId);
+
+    if (scheduledExecutor != null) {
+      partitionManagerMaster.onPartitionStateChanged(scheduledExecutor.getExecutorId(), partitionId, newState);
+    }
   }
 
   /**

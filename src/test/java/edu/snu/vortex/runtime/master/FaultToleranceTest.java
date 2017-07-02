@@ -34,6 +34,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalDAGGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
@@ -155,6 +156,11 @@ public final class FaultToleranceTest {
     jobStateManager = scheduler.scheduleJob(
         new PhysicalPlan("SimpleJob", physicalDAG), MAX_SCHEDULE_ATTEMPT);
 
+    // HACK: set all partition states to committed to see if they are correctly set to lost later.
+    physicalDAG.getTopologicalSort().forEach(physicalStage ->
+        TestUtil.sendPartitionStateEventForAStage(partitionManagerMaster, containerManager,
+            physicalDAG.getOutgoingEdgesOf(physicalStage), physicalStage, PartitionState.State.COMMITTED));
+
     // Wait upto 2 seconds for task groups to be scheduled.
     try {
       Thread.sleep(2000);
@@ -172,6 +178,7 @@ public final class FaultToleranceTest {
       }
     });
 
+    final Set<String> partitionIdsToRecompute = partitionManagerMaster.getPartitionsByWorker("a1");
     scheduler.onExecutorRemoved("a1");
 
     // There are 2 executors, a2 and a3 left.
@@ -184,6 +191,11 @@ public final class FaultToleranceTest {
     otherTaskGroupIds.forEach(taskGroupId ->
         TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
             taskGroupId, TaskGroupState.State.COMPLETE, null));
+
+    partitionIdsToRecompute.forEach(partitionId -> {
+      assertTrue(taskGroupIdsForFailingExecutor.contains(partitionManagerMaster.getParentTaskGroupId(partitionId)));
+      assertTrue(partitionManagerMaster.getPartitionState(partitionId).getStateMachine().getCurrentState() == PartitionState.State.LOST);
+    });
 
     taskGroupIdsForFailingExecutor.forEach(failedTaskGroupId -> {
       final Enum state =
@@ -210,12 +222,12 @@ public final class FaultToleranceTest {
             taskGroupId, TaskGroupState.State.COMPLETE, null));
 
     // Wait upto 2 seconds for the 3rd stage's task groups to be scheduled.
-//    try {
-//      Thread.sleep(2000);
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();
-//    }
-//
+    try {
+      Thread.sleep(2000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
 //    executorRepresenterMap.forEach((id, executor) -> {
 //      if (id.equals("a2")) {
 //        taskGroupIdsForFailingExecutor.addAll(executor.getRunningTaskGroups());
