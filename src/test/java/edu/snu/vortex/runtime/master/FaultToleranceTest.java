@@ -107,10 +107,6 @@ public final class FaultToleranceTest {
     scheduler.onExecutorAdded(a3.getExecutorId());
     scheduler.onExecutorAdded(a2.getExecutorId());
     scheduler.onExecutorAdded(a1.getExecutorId());
-
-    // Add storage nodes
-    scheduler.onExecutorAdded(b2.getExecutorId());
-    scheduler.onExecutorAdded(b1.getExecutorId());
   }
 
   @Test

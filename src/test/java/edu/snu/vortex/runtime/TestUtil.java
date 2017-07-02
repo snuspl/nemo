@@ -68,6 +68,7 @@ public final class TestUtil {
    * @param containerManager used for testing purposes.
    * @param taskGroupId for the task group to change the state.
    * @param newState for the task group.
+   * @param cause in the case of a recoverable failure.
    */
   public static void sendTaskGroupStateEventToScheduler(final Scheduler scheduler,
                                                         final ContainerManager containerManager,
@@ -83,6 +84,15 @@ public final class TestUtil {
         newState, Collections.emptyList(), cause);
   }
 
+  /**
+   * Sends partition state changes of a stage to PartitionManager.
+   * This replaces executor's partition state messages for testing purposes.
+   * @param partitionManagerMaster used for testing purposes.
+   * @param containerManager used for testing purposes.
+   * @param stageOutgoingEdges to infer partition IDs.
+   * @param physicalStage to change the state.
+   * @param newState for the task group.
+   */
   public static void sendPartitionStateEventForAStage(final PartitionManagerMaster partitionManagerMaster,
                                                       final ContainerManager containerManager,
                                                       final List<PhysicalStageEdge> stageOutgoingEdges,
@@ -126,6 +136,14 @@ public final class TestUtil {
     });
   }
 
+  /**
+   * Sends partition state change event to PartitionManager.
+   * This replaces executor's partition state messages for testing purposes.
+   * @param partitionManagerMaster used for testing purposes.
+   * @param containerManager used for testing purposes.
+   * @param partitionId for the partition to change the state.
+   * @param newState for the task group.
+   */
   public static void sendPartitionStateEventToPartitionManager(final PartitionManagerMaster partitionManagerMaster,
                                                                final ContainerManager containerManager,
                                                                final String partitionId,
