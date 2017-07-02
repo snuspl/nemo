@@ -74,13 +74,13 @@ public final class TestUtil {
                                                         final String taskGroupId,
                                                         final TaskGroupState.State newState,
                                                         final TaskGroupState.RecoverableFailureCause cause) {
-    final ExecutorRepresenter scheduledExecutor =
-        findExecutorForTaskGroup(containerManager, taskGroupId);
+    ExecutorRepresenter scheduledExecutor;
+    do {
+      scheduledExecutor = findExecutorForTaskGroup(containerManager, taskGroupId);
+    } while (scheduledExecutor == null);
 
-    if (scheduledExecutor != null) {
-      scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
-          newState, Collections.emptyList(), cause);
-    } // else pass this round, because the executor hasn't received the scheduled task group yet
+    scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
+        newState, Collections.emptyList(), cause);
   }
 
   public static void sendPartitionStateEventForAStage(final PartitionManagerMaster partitionManagerMaster,

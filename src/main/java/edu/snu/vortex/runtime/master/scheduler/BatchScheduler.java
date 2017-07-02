@@ -151,7 +151,9 @@ public final class BatchScheduler implements Scheduler {
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
         if (stage.getId().equals(taskGroup.getStageId())) {
           stage.getTaskGroupList().forEach(tg -> {
-            pendingTaskGroupQueue.remove(taskGroup.getTaskGroupId());
+            if (pendingTaskGroupQueue.remove(tg.getTaskGroupId())) {
+              LOG.log(Level.INFO, "Removing {0} before it is scheduled to an executor", tg.getTaskGroupId());
+            }
             if (jobStateManager.getTaskGroupState(tg.getTaskGroupId()).getStateMachine().getCurrentState()
                 != TaskGroupState.State.COMPLETE) {
               jobStateManager.onTaskGroupStateChanged(tg, TaskGroupState.State.FAILED_RECOVERABLE);

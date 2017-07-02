@@ -35,6 +35,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.state.PartitionState;
+import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
@@ -94,21 +95,13 @@ public final class FaultToleranceTest {
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
 
-    final ResourceSpecification storageSpec = new ResourceSpecification(RuntimeAttribute.Storage, 1, 0);
-    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext);
-
     executorRepresenterMap.put(a1.getExecutorId(), a1);
     executorRepresenterMap.put(a2.getExecutorId(), a2);
     executorRepresenterMap.put(a3.getExecutorId(), a3);
-    executorRepresenterMap.put(b1.getExecutorId(), b1);
-    executorRepresenterMap.put(b2.getExecutorId(), b2);
 
     failedExecutorRepresenterMap.put(a1.getExecutorId(), a1);
     failedExecutorRepresenterMap.put(a2.getExecutorId(), a2);
     failedExecutorRepresenterMap.put(a3.getExecutorId(), a3);
-    failedExecutorRepresenterMap.put(b1.getExecutorId(), b1);
-    failedExecutorRepresenterMap.put(b2.getExecutorId(), b2);
 
     // Add compute nodes
     scheduler.onExecutorAdded(a3.getExecutorId());
@@ -156,8 +149,12 @@ public final class FaultToleranceTest {
     jobStateManager = scheduler.scheduleJob(
         new PhysicalPlan("SimpleJob", physicalDAG), MAX_SCHEDULE_ATTEMPT);
 
+    // The physical DAG made from the above IR consists of 3 stages.
+    final List<PhysicalStage> dagTopoSorted3Stages = physicalDAG.getTopologicalSort();
+    assertEquals(dagTopoSorted3Stages.size(), 3);
+
     // HACK: set all partition states to committed to see if they are correctly set to lost later.
-    physicalDAG.getTopologicalSort().forEach(physicalStage ->
+    dagTopoSorted3Stages.forEach(physicalStage ->
         TestUtil.sendPartitionStateEventForAStage(partitionManagerMaster, containerManager,
             physicalDAG.getOutgoingEdgesOf(physicalStage), physicalStage, PartitionState.State.COMMITTED));
 
@@ -178,7 +175,7 @@ public final class FaultToleranceTest {
       }
     });
 
-    final Set<String> partitionIdsToRecompute = partitionManagerMaster.getPartitionsByWorker("a1");
+    Set<String> partitionIdsToRecompute = partitionManagerMaster.getPartitionsByWorker("a1");
     scheduler.onExecutorRemoved("a1");
 
     // There are 2 executors, a2 and a3 left.
@@ -194,7 +191,8 @@ public final class FaultToleranceTest {
 
     partitionIdsToRecompute.forEach(partitionId -> {
       assertTrue(taskGroupIdsForFailingExecutor.contains(partitionManagerMaster.getParentTaskGroupId(partitionId)));
-      assertTrue(partitionManagerMaster.getPartitionState(partitionId).getStateMachine().getCurrentState() == PartitionState.State.LOST);
+      assertTrue(partitionManagerMaster.getPartitionState(partitionId).getStateMachine().getCurrentState()
+          == PartitionState.State.LOST);
     });
 
     taskGroupIdsForFailingExecutor.forEach(failedTaskGroupId -> {
@@ -205,58 +203,63 @@ public final class FaultToleranceTest {
           failedTaskGroupId, TaskGroupState.State.COMPLETE, null);
     });
 
-    // Wait upto 2 seconds for the 2nd stage's task groups to be scheduled.
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    // Check every 1.5 seconds for the 1st stage to complete and 2nd stage's task groups to be scheduled.
+    while (!jobStateManager.checkStageCompletion(dagTopoSorted3Stages.get(0).getId())
+        && (jobStateManager.getStageState(dagTopoSorted3Stages.get(1).getId()).getStateMachine().getCurrentState()
+        == StageState.State.EXECUTING)) {
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
 
     taskGroupIdsForFailingExecutor.clear();
     otherTaskGroupIds.clear();
 
     // The 2nd stage will complete without trouble.
-    executorRepresenterMap.forEach((id, executor) -> otherTaskGroupIds.addAll(executor.getRunningTaskGroups()));
-    otherTaskGroupIds.forEach(taskGroupId ->
-        TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-            taskGroupId, TaskGroupState.State.COMPLETE, null));
+    dagTopoSorted3Stages.get(1).getTaskGroupList().forEach(taskGroup ->
+      TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
+          taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE, null));
 
-    // Wait upto 2 seconds for the 3rd stage's task groups to be scheduled.
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    // Check every 2 seconds for the 2nd stage to complete and 3rd stage's task groups to be scheduled.
+    while (!jobStateManager.checkStageCompletion(dagTopoSorted3Stages.get(1).getId())
+        && (jobStateManager.getStageState(dagTopoSorted3Stages.get(2).getId()).getStateMachine().getCurrentState()
+        == StageState.State.EXECUTING)) {
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
 
-//    executorRepresenterMap.forEach((id, executor) -> {
-//      if (id.equals("a2")) {
-//        taskGroupIdsForFailingExecutor.addAll(executor.getRunningTaskGroups());
-//      } else {
-//        otherTaskGroupIds.addAll(executor.getRunningTaskGroups());
-//      }
-//    });
-//
-//    otherTaskGroupIds.forEach(taskGroupId -> {
-//      final Enum state =
-//          jobStateManager.getTaskGroupState(taskGroupId).getStateMachine().getCurrentState();
-//      assertTrue(state == TaskGroupState.State.READY || state == TaskGroupState.State.FAILED_RECOVERABLE);
-//    });
-//
-//    // There is 1 executor, a3 left.
-//    taskGroupIdsForFailingExecutor.forEach(failedTaskGroupId -> {
-//      TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-//          failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE,
-//          TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE);
-//      final Enum state =
-//          jobStateManager.getTaskGroupState(failedTaskGroupId).getStateMachine().getCurrentState();
-//      assertTrue(state == TaskGroupState.State.READY || state == TaskGroupState.State.FAILED_RECOVERABLE);
-//    });
-//
-//    // Since this is an input read failure, other task groups in the stage must be made failed_recoverable as well.
-//    otherTaskGroupIds.forEach(taskGroupId -> {
-//      final Enum state =
-//          jobStateManager.getTaskGroupState(taskGroupId).getStateMachine().getCurrentState();
-//      assertTrue(state == TaskGroupState.State.READY || state == TaskGroupState.State.FAILED_RECOVERABLE);
-//    });
+    // We will forcefully make one of the task groups to fail due to input read failure.
+    executorRepresenterMap.forEach((id, executor) -> {
+      if (id.equals("a2")) {
+        taskGroupIdsForFailingExecutor.addAll(executor.getRunningTaskGroups());
+      } else {
+        otherTaskGroupIds.addAll(executor.getRunningTaskGroups());
+      }
+    });
+
+    // Because our executor capacity is set to 1 in the setup phase
+    assertEquals(1, taskGroupIdsForFailingExecutor.size());
+
+    final String taskGroupIdToFail = taskGroupIdsForFailingExecutor.iterator().next();
+
+    TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
+        taskGroupIdToFail, TaskGroupState.State.FAILED_RECOVERABLE,
+        TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE);
+    final Enum failedTaskGroupState =
+        jobStateManager.getTaskGroupState(taskGroupIdToFail).getStateMachine().getCurrentState();
+    assertTrue(failedTaskGroupState == TaskGroupState.State.READY ||
+        failedTaskGroupState == TaskGroupState.State.FAILED_RECOVERABLE);
+
+    // Since this is an input read failure, other task groups in the stage must be made failed_recoverable as well.
+    otherTaskGroupIds.forEach(taskGroupId -> {
+      final Enum state =
+          jobStateManager.getTaskGroupState(taskGroupId).getStateMachine().getCurrentState();
+      assertTrue(state == TaskGroupState.State.READY || state == TaskGroupState.State.FAILED_RECOVERABLE);
+    });
   }
 }
