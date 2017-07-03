@@ -46,6 +46,7 @@ public interface PartitionStore {
    * Removes a partition.
    * @param partitionId of the partition
    * @return the data of the partition (optionally)
+   * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
    */
-  Optional<Partition> removePartition(String partitionId);
+  Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;
 }

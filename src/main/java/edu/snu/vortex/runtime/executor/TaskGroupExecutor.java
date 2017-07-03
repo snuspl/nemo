@@ -167,9 +167,11 @@ public final class TaskGroupExecutor {
       try {
         if (task instanceof BoundedSourceTask) {
           launchBoundedSourceTask((BoundedSourceTask) task);
+          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
         } else if (task instanceof OperatorTask) {
           launchOperatorTask((OperatorTask) task);
           garbageCollectLocalIntermediateData(task);
+          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
@@ -183,7 +185,6 @@ public final class TaskGroupExecutor {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE, Optional.empty());
         throw new RuntimeException(e);
       }
-      taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
     });
     LOG.log(Level.INFO, "{0} Execution Complete!", taskGroup.getTaskGroupId());
   }

@@ -82,9 +82,9 @@ public final class TaskGroupState {
    * Causes of a recoverable failure.
    */
   public enum RecoverableFailureCause {
-    INPUT_READ_FAILURE,
-    OUTPUT_WRITE_FAILURE,
-    CONTAINER_FAILURE
+    INPUT_READ_FAILURE, // Occurs when a task is unable to read its input block
+    OUTPUT_WRITE_FAILURE, // Occurs when a task successfully generates its output, but is able to write it
+    CONTAINER_FAILURE // When a REEF evaluator fails
   }
 
   @Override

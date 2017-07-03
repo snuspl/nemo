@@ -64,7 +64,7 @@ public final class JobStateManager {
   private final Map<String, TaskState> idToTaskStates;
 
   /**
-   * Keeps track of the number of attempts for a task group.
+   * Keeps track of the number of schedule attempts for each task group.
    */
   private final Map<String, Integer> maxScheduleAttemptByTaskGroup;
 

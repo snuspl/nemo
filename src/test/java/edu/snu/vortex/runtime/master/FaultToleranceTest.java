@@ -232,6 +232,8 @@ public final class FaultToleranceTest {
     // We will forcefully make one of the task groups to fail due to input read failure.
     executorRepresenterMap.forEach((id, executor) -> {
       if (id.equals("a2")) {
+        while (executor.getRunningTaskGroups().isEmpty()) {
+        }
         taskGroupIdsForFailingExecutor.addAll(executor.getRunningTaskGroups());
       } else {
         otherTaskGroupIds.addAll(executor.getRunningTaskGroups());

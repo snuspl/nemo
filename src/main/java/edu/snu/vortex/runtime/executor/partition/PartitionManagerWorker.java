@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import org.apache.reef.tang.annotations.Parameter;
@@ -126,7 +127,12 @@ public final class PartitionManagerWorker {
                            final RuntimeAttribute partitionStore) {
     LOG.log(Level.INFO, "PutPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    store.putPartition(partitionId, data);
+
+    try {
+      store.putPartition(partitionId, data);
+    } catch (final Exception e) {
+      throw new PartitionWriteException(e);
+    }
 
     persistentConnectionToMaster.getMessageSender().send(
         ControlMessage.Message.newBuilder()
@@ -156,7 +162,14 @@ public final class PartitionManagerWorker {
     LOG.log(Level.INFO, "GetPartition: {0}", partitionId);
     // Local hit!
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Partition> optionalData = store.getPartition(partitionId);
+    final Optional<Partition> optionalData;
+
+    try {
+      optionalData = store.getPartition(partitionId);
+    } catch (final Exception e) {
+      throw new PartitionFetchException(e);
+    }
+
     if (optionalData.isPresent()) {
       return optionalData.get().asIterable();
     } else {
