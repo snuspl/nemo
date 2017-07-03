@@ -210,6 +210,7 @@ class LoopVertex:
         self.attributes = properties['attributes']
         self.incoming = properties['dagIncomingEdges']
         self.outgoing = properties['dagOutgoingEdges']
+        self.edgeMapping = properties['edgeWithLoopToEdgeWithInternalVertex']
         self.idx = getIdx()
     @property
     def dot(self):
