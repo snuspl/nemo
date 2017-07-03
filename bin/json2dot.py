@@ -208,6 +208,8 @@ class LoopVertex:
         self.dag = DAG(properties['DAG'], JobState.empty())
         self.remaining_iteration = properties['remainingIteration']
         self.attributes = properties['attributes']
+        self.incoming = properties['dagIncomingEdges']
+        self.outgoing = properties['dagOutgoingEdges']
         self.idx = getIdx()
     @property
     def dot(self):
