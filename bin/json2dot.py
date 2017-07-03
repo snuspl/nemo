@@ -126,6 +126,10 @@ def Vertex(id, properties, state):
         return Stage(id, properties)
     except:
         pass
+    try:
+        return LoopVertex(id, properties)
+    except:
+        pass
     return NormalVertex(id, properties, state)
 
 class NormalVertex:
@@ -197,6 +201,34 @@ class Stage:
     @property
     def logicalEnd(self):
         return 'cluster_{}'.format(self.idx)
+
+class LoopVertex:
+    def __init__(self, id, properties):
+        self.id = id
+        self.dag = properties['DAG']
+        self.remaining_iteration = properties['remainingIteration']
+        self.attributes = properties['attributes']
+        self.idx = getIdx()
+    @property
+    def dot(self):
+        label = self.id
+        try:
+            label += ' (p{})'.format(self.attributes['Parallelism'])
+        except:
+            pass
+        label += '\\n(Remaining iteration: {})'.format(self.remaining_iteration)
+        dot = 'subgraph cluster_{} {{'.format(self.idx)
+        dot += 'label = "{}";'.format(label)
+        dot += self.dag.dot
+        dot += '}'
+        return dot
+    @property
+    def oneVertex(self):
+        return next(iter(self.dag.vertices.values())).oneVertex
+    @property
+    def logicalEnd(self):
+        return 'cluster_{}'.format(self.idx)
+
 
 class TaskGroup:
     def __init__(self, properties, state):

@@ -269,7 +269,7 @@ public final class LoopVertex extends IRVertex {
     final StringBuilder sb = new StringBuilder();
     sb.append("{");
     sb.append(irVertexPropertiesToString());
-    sb.append(", \"Remaining Iteration\": ");
+    sb.append(", \"remainingIteration\": ");
     sb.append(this.maxNumberOfIterations);
     sb.append(", \"DAG\": ");
     sb.append(getDAG());
