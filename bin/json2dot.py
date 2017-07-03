@@ -231,7 +231,14 @@ class LoopVertex:
     @property
     def logicalEnd(self):
         return 'cluster_{}'.format(self.idx)
-
+    def internalSrcFor(self, edgeWithLoopId):
+        edgeId = self.edgeMapping[edgeWithLoopId]
+        vertexId = list(filter(lambda v: edgeId in self.outgoing[v], self.outgoing))[0]
+        return self.dag.vertices[vertexId]
+    def internalDstFor(self, edgeWithLoopId):
+        edgeId = self.edgeMapping[edgeWithLoopId]
+        vertexId = list(filter(lambda v: edgeId in self.incoming[v], self.incoming))[0]
+        return self.dag.vertices[vertexId]
 
 class TaskGroup:
     def __init__(self, properties, state):
@@ -325,9 +332,19 @@ class IREdge:
         self.coder = properties['coder']
     @property
     def dot(self):
+        src = self.src
+        dst = self.dst
+        try:
+            src = src.internalSrcFor(self.id)
+        except:
+            pass
+        try:
+            dst = dst.internalDstFor(self.id)
+        except:
+            pass
         label = '{}<BR/>{}<BR/><FONT POINT-SIZE=\'10\'>{}</FONT>'.format(self.id, '/'.join(self.attributes.values()), self.coder)
-        return '{} -> {} [ltail = {}, lhead = {}, label = <{}>];'.format(self.src.oneVertex.idx,
-                self.dst.oneVertex.idx, self.src.logicalEnd, self.dst.logicalEnd, label)
+        return '{} -> {} [ltail = {}, lhead = {}, label = <{}>];'.format(src.oneVertex.idx,
+                dst.oneVertex.idx, src.logicalEnd, dst.logicalEnd, label)
 
 class PhysicalStageEdge:
     def __init__(self, src, dst, properties):
