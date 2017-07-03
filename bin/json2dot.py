@@ -205,7 +205,7 @@ class Stage:
 class LoopVertex:
     def __init__(self, id, properties):
         self.id = id
-        self.dag = properties['DAG']
+        self.dag = DAG(properties['DAG'], JobState.empty())
         self.remaining_iteration = properties['remainingIteration']
         self.attributes = properties['attributes']
         self.idx = getIdx()
