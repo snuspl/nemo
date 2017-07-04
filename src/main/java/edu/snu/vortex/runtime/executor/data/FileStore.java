@@ -74,7 +74,7 @@ final class FileStore implements PartitionStore {
    * @return the size of the data.
    */
   @Override
-  public Optional<Integer> putPartition(final String partitionId, final Iterable<Element> data) {
+  public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     final FilePartition partition = new FilePartition();
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
     if (previousPartition != null) {
@@ -102,7 +102,7 @@ final class FileStore implements PartitionStore {
     // Synchronously write the serialized data to file
     partition.writeData(serialized, coder, fileDirectory + "/" + partitionId, length);
 
-    return Optional.of(serialized.length);
+    return Optional.of(Long.valueOf(serialized.length));
   }
 
   /**
