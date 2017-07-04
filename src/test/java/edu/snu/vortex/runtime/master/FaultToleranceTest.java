@@ -164,7 +164,7 @@ public final class FaultToleranceTest {
     final List<PhysicalStage> dagTopoSorted3Stages = physicalDAG.getTopologicalSort();
     assertEquals(dagTopoSorted3Stages.size(), 3);
 
-    // HACK: set all partition states to committed to see if they are correctly set to lost later.
+    // HACK: Set all partition states to committed to see if they are correctly set to lost later.
     dagTopoSorted3Stages.forEach(physicalStage ->
         TestUtil.sendPartitionStateEventForAStage(partitionManagerMaster, containerManager,
             physicalDAG.getOutgoingEdgesOf(physicalStage), physicalStage, PartitionState.State.COMMITTED));
