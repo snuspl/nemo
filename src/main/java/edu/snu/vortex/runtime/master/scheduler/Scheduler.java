@@ -37,6 +37,7 @@ public interface Scheduler {
   void onTaskGroupStateChanged(final String executorId,
                                final String taskGroupId,
                                final TaskGroupState.State newState,
+                               final int attemptIdx,
                                final List<String> failedTaskIds,
                                final TaskGroupState.RecoverableFailureCause failureCause);
 

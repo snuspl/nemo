@@ -53,6 +53,9 @@ public final class RoundRobinSchedulingPolicyTest {
   private ContainerManager containerManager = mock(ContainerManager.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
+  // This schedule index will make sure that task group events are not ignored
+  private static final int MAGIC_SCHEDULE_ATTEMPT_INDEX = Integer.MAX_VALUE;
+
   @Before
   public void setUp() {
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
@@ -227,7 +230,8 @@ public final class RoundRobinSchedulingPolicyTest {
   }
 
   private ScheduledTaskGroup wrap(final TaskGroup taskGroup) {
-    return new ScheduledTaskGroup(taskGroup, Collections.emptyList(), Collections.emptyList());
+    return new ScheduledTaskGroup(taskGroup, Collections.emptyList(), Collections.emptyList(),
+        MAGIC_SCHEDULE_ATTEMPT_INDEX);
   }
 }
 

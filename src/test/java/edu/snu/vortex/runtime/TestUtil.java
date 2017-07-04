@@ -48,14 +48,15 @@ public final class TestUtil {
   public static void sendStageCompletionEventToScheduler(final JobStateManager jobStateManager,
                                                          final Scheduler scheduler,
                                                          final ContainerManager containerManager,
-                                                         final PhysicalStage physicalStage) {
+                                                         final PhysicalStage physicalStage,
+                                                         final int attemptIdx) {
     while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
         == StageState.State.EXECUTING) {
       physicalStage.getTaskGroupList().forEach(taskGroup -> {
         if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
             == TaskGroupState.State.EXECUTING) {
           sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroup.getTaskGroupId(),
-              TaskGroupState.State.COMPLETE, null);
+              TaskGroupState.State.COMPLETE, attemptIdx, null);
         }
       });
     }
@@ -74,6 +75,7 @@ public final class TestUtil {
                                                         final ContainerManager containerManager,
                                                         final String taskGroupId,
                                                         final TaskGroupState.State newState,
+                                                        final int attemptIdx,
                                                         final TaskGroupState.RecoverableFailureCause cause) {
     ExecutorRepresenter scheduledExecutor;
     do {
@@ -81,7 +83,7 @@ public final class TestUtil {
     } while (scheduledExecutor == null);
 
     scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
-        newState, Collections.emptyList(), cause);
+        newState, attemptIdx, Collections.emptyList(), cause);
   }
 
   /**

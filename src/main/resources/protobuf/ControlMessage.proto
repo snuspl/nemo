@@ -43,6 +43,7 @@ message TaskGroupStateChangedMsg {
     required TaskGroupStateFromExecutor state = 3;
     repeated string failedTaskIds = 4;
     optional RecoverableFailureCause failureCause = 5;
+    required int32 attemptIdx = 6;
 }
 
 enum RecoverableFailureCause {

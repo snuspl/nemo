@@ -18,10 +18,7 @@ package edu.snu.vortex.runtime.master.scheduler;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
-import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
-import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
-import edu.snu.vortex.runtime.exception.UnrecoverableFailureException;
+import edu.snu.vortex.runtime.exception.*;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
 
@@ -38,6 +35,7 @@ import java.util.logging.Logger;
  */
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = Logger.getLogger(BatchScheduler.class.getName());
+  private static final int SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE = Integer.MAX_VALUE;
 
   private JobStateManager jobStateManager;
 
@@ -98,6 +96,7 @@ public final class BatchScheduler implements Scheduler {
   public void onTaskGroupStateChanged(final String executorId,
                                       final String taskGroupId,
                                       final TaskGroupState.State newState,
+                                      final int attemptIdx,
                                       final List<String> failedTaskIds,
                                       final TaskGroupState.RecoverableFailureCause failureCause) {
     final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
@@ -108,7 +107,16 @@ public final class BatchScheduler implements Scheduler {
       onTaskGroupExecutionComplete(executorId, taskGroup);
       break;
     case FAILED_RECOVERABLE:
-      onTaskGroupExecutionFailedRecoverable(executorId, taskGroup, failedTaskIds, failureCause);
+      final int attemptIndexForStage =
+          jobStateManager.getAttemptCountForStage(getTaskGroupById(taskGroupId).getStageId());
+      if (attemptIdx == attemptIndexForStage || attemptIdx == SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE) {
+        onTaskGroupExecutionFailedRecoverable(executorId, taskGroup, failedTaskIds, failureCause);
+      } else if (attemptIdx < attemptIndexForStage) {
+        // if attemptIdx < attemptIndexForStage, we can ignore this late arriving message.
+        LOG.log(Level.INFO, "{0} state change to failed_recoverable arrived late, we will ignore this.", taskGroupId);
+      } else {
+        throw new SchedulingException(new Throwable("AttemptIdx for a task group cannot be greater than its stage"));
+      }
       break;
     case FAILED_UNRECOVERABLE:
       throw new UnrecoverableFailureException(new Exception(new StringBuffer().append("The job failed on TaskGroup #")
@@ -190,8 +198,8 @@ public final class BatchScheduler implements Scheduler {
     taskGroupsToRecompute.addAll(taskGroupsForLostBlocks);
     taskGroupsToRecompute.forEach(failedTaskGroupId -> {
       pendingTaskGroupQueue.remove(failedTaskGroupId);
-      onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE, null,
-          TaskGroupState.RecoverableFailureCause.CONTAINER_FAILURE);
+      onTaskGroupStateChanged(executorId, failedTaskGroupId, TaskGroupState.State.FAILED_RECOVERABLE,
+          SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE, null, TaskGroupState.RecoverableFailureCause.CONTAINER_FAILURE);
     });
   }
 
@@ -298,14 +306,16 @@ public final class BatchScheduler implements Scheduler {
     final List<PhysicalStageEdge> stageOutgoingEdges =
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
-    LOG.log(Level.INFO, "Scheduling Stage: {0}", stageToSchedule.getId());
     // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'.
     if (jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState()
         == StageState.State.FAILED_RECOVERABLE) {
       jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
     }
 
+    // attemptIdx is only initialized/updated when we set the stage's state to executing
     jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
+    final int attemptIdx = jobStateManager.getAttemptCountForStage(stageToSchedule.getId());
+    LOG.log(Level.INFO, "Scheduling Stage: {0} with attemptIdx={1}", new Object[]{stageToSchedule.getId(), attemptIdx});
 
     stageToSchedule.getTaskGroupList().forEach(taskGroup -> {
       // this happens when the belonging stage's other task groups have failed recoverable,
@@ -321,7 +331,8 @@ public final class BatchScheduler implements Scheduler {
           LOG.log(Level.INFO, "Re-scheduling {0} for failure recovery", taskGroup.getTaskGroupId());
           jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.READY);
         }
-        pendingTaskGroupQueue.addLast(new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges));
+        pendingTaskGroupQueue.addLast(
+            new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges, attemptIdx));
       }
     });
   }

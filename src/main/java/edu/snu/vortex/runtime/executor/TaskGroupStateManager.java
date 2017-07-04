@@ -37,6 +37,7 @@ public final class TaskGroupStateManager {
   private static final Logger LOG = Logger.getLogger(TaskGroupStateManager.class.getName());
 
   private final String taskGroupId;
+  private final int attemptIdx;
   private final String executorId;
 
   /**
@@ -56,9 +57,11 @@ public final class TaskGroupStateManager {
 
 
   public TaskGroupStateManager(final TaskGroup taskGroup,
+                               final int attemptIdx,
                                final String executorId,
                                final PersistentConnectionToMaster persistentConnectionToMaster) {
     this.taskGroupId = taskGroup.getTaskGroupId();
+    this.attemptIdx = attemptIdx;
     this.executorId = executorId;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     idToTaskStates = new HashMap<>();
@@ -163,6 +166,7 @@ public final class TaskGroupStateManager {
         ControlMessage.TaskGroupStateChangedMsg.newBuilder()
           .setExecutorId(executorId)
           .setTaskGroupId(taskGroupId)
+          .setAttemptIdx(attemptIdx)
           .setState(convertState(newState))
           .addAllFailedTaskIds(failedTaskIdList.get());
     if (cause.isPresent()) {

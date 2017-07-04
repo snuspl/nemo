@@ -64,9 +64,9 @@ public final class JobStateManager {
   private final Map<String, TaskState> idToTaskStates;
 
   /**
-   * Keeps track of the number of schedule attempts for each task group.
+   * Keeps track of the number of schedule attempts for each stage.
    */
-  private final Map<String, Integer> maxScheduleAttemptByTaskGroup;
+  private final Map<String, Integer> scheduleAttemptIdxByStage;
 
   /**
    * Represents the job to manage.
@@ -105,7 +105,7 @@ public final class JobStateManager {
     this.idToStageStates = new HashMap<>();
     this.idToTaskGroupStates = new HashMap<>();
     this.idToTaskStates = new HashMap<>();
-    this.maxScheduleAttemptByTaskGroup = new HashMap<>();
+    this.scheduleAttemptIdxByStage = new HashMap<>();
     this.stageIdToRemainingTaskGroupSet = new HashMap<>();
     this.currentJobStageIds = new HashSet<>();
     this.finishLock = new ReentrantLock();
@@ -215,6 +215,19 @@ public final class JobStateManager {
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
     if (newState == StageState.State.EXECUTING) {
+      if (scheduleAttemptIdxByStage.containsKey(stageId)) {
+        final int numAttempts = scheduleAttemptIdxByStage.get(stageId);
+
+        if (numAttempts < maxScheduleAttempt) {
+          scheduleAttemptIdxByStage.put(stageId, numAttempts + 1);
+        } else {
+          throw new SchedulingException(
+              new Throwable("Exceeded max number of scheduling attempts for " + stageId));
+        }
+      } else {
+        scheduleAttemptIdxByStage.put(stageId, 1);
+      }
+
       // if there exists a mapping, this state change is from a failed_recoverable stage,
       // and there may be task groups that do not need to be re-executed.
       if (!stageIdToRemainingTaskGroupSet.containsKey(stageId)) {
@@ -285,18 +298,6 @@ public final class JobStateManager {
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
         idToTaskStates.get(task.getId()).getStateMachine().setState(TaskState.State.EXECUTING);
       });
-      if (maxScheduleAttemptByTaskGroup.containsKey(taskGroup.getTaskGroupId())) {
-        final int numAttempts = maxScheduleAttemptByTaskGroup.get(taskGroup.getTaskGroupId());
-
-        if (numAttempts < maxScheduleAttempt) {
-          maxScheduleAttemptByTaskGroup.put(taskGroup.getTaskGroupId(), numAttempts + 1);
-        } else {
-          throw new SchedulingException(
-              new Throwable("Exceeded max number of scheduling attempts for " + taskGroup.getTaskGroupId()));
-        }
-      } else {
-        maxScheduleAttemptByTaskGroup.put(taskGroup.getTaskGroupId(), 1);
-      }
       break;
     case FAILED_RECOVERABLE:
       // Multiple calls to set a task group's state to failed_recoverable can occur when
@@ -344,6 +345,14 @@ public final class JobStateManager {
   public synchronized boolean checkJobTermination() {
     final Enum currentState = jobState.getStateMachine().getCurrentState();
     return (currentState == JobState.State.COMPLETE || currentState == JobState.State.FAILED);
+  }
+
+  public synchronized int getAttemptCountForStage(final String stageId) {
+    if (scheduleAttemptIdxByStage.containsKey(stageId)) {
+      return scheduleAttemptIdxByStage.get(stageId);
+    } else {
+      throw new IllegalStateException("No mapping for this stage's attemptIdx, an inconsistent state occurred.");
+    }
   }
 
   /**
@@ -412,10 +421,6 @@ public final class JobStateManager {
 
   public synchronized Map<String, TaskState> getIdToTaskStates() {
     return idToTaskStates;
-  }
-
-  public Map<String, Integer> getMaxScheduleAttemptByTaskGroup() {
-    return maxScheduleAttemptByTaskGroup;
   }
 
   /**

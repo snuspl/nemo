@@ -71,6 +71,9 @@ public final class BatchSchedulerTest {
 
   private static final int TEST_TIMEOUT_MS = 1000;
 
+  // This schedule index will make sure that task group events are not ignored
+  private static final int MAGIC_SCHEDULE_ATTEMPT_INDEX = Integer.MAX_VALUE;
+
   @Before
   public void setUp() {
     irDAGBuilder = new DAGBuilder<>();
@@ -176,14 +179,15 @@ public final class BatchSchedulerTest {
 
     // Start off with the root stages.
     physicalDAG.getRootVertices().forEach(physicalStage ->
-        TestUtil.sendStageCompletionEventToScheduler(jobStateManager, scheduler, containerManager, physicalStage));
+        TestUtil.sendStageCompletionEventToScheduler(
+            jobStateManager, scheduler, containerManager, physicalStage, MAGIC_SCHEDULE_ATTEMPT_INDEX));
 
     // Then, for the rest of the stages.
     while (!jobStateManager.checkJobTermination()) {
       final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
       stageList.forEach(physicalStage ->
           TestUtil.sendStageCompletionEventToScheduler(
-              jobStateManager, scheduler, containerManager, physicalStage));
+              jobStateManager, scheduler, containerManager, physicalStage, MAGIC_SCHEDULE_ATTEMPT_INDEX));
     }
 
     // Check that the job have completed (not failed)

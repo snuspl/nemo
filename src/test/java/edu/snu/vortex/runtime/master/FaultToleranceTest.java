@@ -64,6 +64,9 @@ public final class FaultToleranceTest {
   private static final int TEST_TIMEOUT_MS = 1000;
   private static final int MAX_SCHEDULE_ATTEMPT = 5;
 
+  // This schedule index will make sure the failed_recoverable task group events are not ignored
+  private static final int MAGIC_SCHEDULE_ATTEMPT_INDEX = Integer.MAX_VALUE;
+
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private SchedulingPolicy schedulingPolicy;
   private Scheduler scheduler;
@@ -109,7 +112,19 @@ public final class FaultToleranceTest {
     scheduler.onExecutorAdded(a1.getExecutorId());
   }
 
-  @Test
+  /**
+   * a) Builds a job of 3 stages.
+   * b) The 1st stage with 3 task groups, the 2nd with 2 task groups and the last stage with 4 task groups.
+   * c) There are 3 executors upon job submission.
+   * d) When executor a1 is removed during stage 1 execution,
+   *    - Partitions in a1 must be set to LOST
+   *    - Task groups in a1 must be made failed_recoverable, and stage 1 must be failed_recoverable
+   *    - Stage 1 must be rescheduled, task group 1 must be executed again
+   * e) Stage 2 completes without trouble
+   * f) During stage 3, one of the task groups fails due to input read failure
+   *    - all task groups of stage 3 must be made failed_recoverable
+   */
+  @Test(timeout = 10000)
   public void testSimpleJob() {
     final JobStateManager jobStateManager;
     final Transform t = mock(Transform.class);
@@ -183,7 +198,7 @@ public final class FaultToleranceTest {
 
     otherTaskGroupIds.forEach(taskGroupId ->
         TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-            taskGroupId, TaskGroupState.State.COMPLETE, null));
+            taskGroupId, TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null));
 
     partitionIdsToRecompute.forEach(partitionId -> {
       assertTrue(taskGroupIdsForFailingExecutor.contains(partitionManagerMaster.getParentTaskGroupId(partitionId)));
@@ -196,7 +211,7 @@ public final class FaultToleranceTest {
           jobStateManager.getTaskGroupState(failedTaskGroupId).getStateMachine().getCurrentState();
       assertTrue(state == TaskGroupState.State.EXECUTING);
       TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-          failedTaskGroupId, TaskGroupState.State.COMPLETE, null);
+          failedTaskGroupId, TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null);
     });
 
     // Check every 1.5 seconds for the 1st stage to complete and 2nd stage's task groups to be scheduled.
@@ -216,7 +231,7 @@ public final class FaultToleranceTest {
     // The 2nd stage will complete without trouble.
     dagTopoSorted3Stages.get(1).getTaskGroupList().forEach(taskGroup ->
       TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-          taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE, null));
+          taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null));
 
     // Check every 2 seconds for the 2nd stage to complete and 3rd stage's task groups to be scheduled.
     while (!jobStateManager.checkStageCompletion(dagTopoSorted3Stages.get(1).getId())
@@ -246,7 +261,7 @@ public final class FaultToleranceTest {
     final String taskGroupIdToFail = taskGroupIdsForFailingExecutor.iterator().next();
 
     TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-        taskGroupIdToFail, TaskGroupState.State.FAILED_RECOVERABLE,
+        taskGroupIdToFail, TaskGroupState.State.FAILED_RECOVERABLE, MAGIC_SCHEDULE_ATTEMPT_INDEX,
         TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE);
     final Enum failedTaskGroupState =
         jobStateManager.getTaskGroupState(taskGroupIdToFail).getStateMachine().getCurrentState();

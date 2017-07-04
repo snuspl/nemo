@@ -145,6 +145,7 @@ public final class RuntimeMaster {
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
             taskGroupStateChangedMsg.getTaskGroupId(),
             convertTaskGroupState(taskGroupStateChangedMsg.getState()),
+            taskGroupStateChangedMsg.getAttemptIdx(),
             taskGroupStateChangedMsg.getFailedTaskIdsList(),
             convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
         break;
