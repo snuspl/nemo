@@ -45,14 +45,10 @@ public final class ParallelismPass implements Pass {
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
               .filter(edge -> !edge.getAttr(Attribute.Key.CommunicationPattern).equals(Attribute.Broadcast))
-              // Let's be conservative and take the min value so that
-              // the sources can support the desired parallelism in the back-propagation phase
-              .mapToInt(edge -> edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism)).min();
+              .mapToInt(edge -> edge.getSrc().getAttr(Attribute.IntegerKey.Parallelism)).max();
           if (parallelism.isPresent()) {
             vertex.setAttr(Attribute.IntegerKey.Parallelism, parallelism.getAsInt());
           }
-          // else, this vertex only has Broadcast-type inEdges, so its number of parallelism
-          // will be determined in the back-propagation phase
         } else {
           throw new RuntimeException("There is a non-source vertex that doesn't have any inEdges other than SideInput");
         }
