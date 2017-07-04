@@ -33,7 +33,10 @@ public final class OperatorVertex extends IRVertex {
 
   @Override
   public OperatorVertex getClone() {
-    return new OperatorVertex(this.transform);
+    final OperatorVertex that = new OperatorVertex(this.transform);
+    this.getAttributes().forEachAttr((k, v) -> that.getAttributes().put(k, v));
+    this.getAttributes().forEachIntAttr((k, v) -> that.getAttributes().put(k, v));
+    return that;
   }
 
   /**
