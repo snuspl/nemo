@@ -123,8 +123,7 @@ public final class IREdge extends Edge<IRVertex> {
    * @param toEdge the edge to copy attributes to.
    */
   public static void copyAttributes(final IREdge fromEdge, final IREdge toEdge) {
-    fromEdge.getAttributes().forEachAttr(toEdge.getAttributes()::put);
-    fromEdge.getAttributes().forEachIntAttr(toEdge.getAttributes()::put);
+    fromEdge.getAttributes().forEachAttr(toEdge::setAttr);
   }
 
   @Override

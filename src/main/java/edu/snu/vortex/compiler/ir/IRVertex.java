@@ -44,8 +44,8 @@ public abstract class IRVertex extends Vertex {
    * @param toVertex the edge to copy attributes to.
    */
   public static void copyAttributes(final IRVertex fromVertex, final IRVertex toVertex) {
-    fromVertex.getAttributes().forEachAttr(toVertex.getAttributes()::put);
-    fromVertex.getAttributes().forEachIntAttr(toVertex.getAttributes()::put);
+    fromVertex.getAttributes().forEachAttr(toVertex::setAttr);
+    fromVertex.getAttributes().forEachIntAttr(toVertex::setAttr);
   }
 
   /**
