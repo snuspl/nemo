@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -36,6 +35,7 @@ public final class FilePartition implements Partition {
   private final AtomicBoolean written;
   private Coder coder;
   private String filePath;
+  private long numElement;
 
   /**
    * Constructs a file data.
@@ -47,16 +47,20 @@ public final class FilePartition implements Partition {
 
   /**
    * Writes the serialized data of this partition to a file (synchronously).
-   * @param serializedData the serialized data of this partition.
-   * @param coderToSet the coder used to serialize and deserialize the data of this partition.
-   * @param filePathToSet the path of the file which will contain the data of this partition.
+   *
+   * @param serializedData  the serialized data of this partition.
+   * @param coderToSet      the coder used to serialize and deserialize the data of this partition.
+   * @param filePathToSet   the path of the file which will contain the data of this partition.
+   * @param numElementToSet the number of elements in the serialized data.
    * @throws RuntimeException if failed to write.
    */
   public void writeData(final byte[] serializedData,
                         final Coder coderToSet,
-                        final String filePathToSet) throws RuntimeException {
+                        final String filePathToSet,
+                        final long numElementToSet) throws RuntimeException {
     this.coder = coderToSet;
     this.filePath = filePathToSet;
+    this.numElement = numElementToSet;
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
@@ -74,6 +78,7 @@ public final class FilePartition implements Partition {
 
   /**
    * Deletes the file that contains this partition data.
+   *
    * @throws RuntimeException if failed to delete.
    */
   public void deleteFile() throws RuntimeException {
@@ -89,6 +94,7 @@ public final class FilePartition implements Partition {
 
   /**
    * Read the data of this partition from the file and deserialize it.
+   *
    * @return an iterable of deserialized data.
    * @throws RuntimeException if failed to deserialize.
    */
@@ -98,26 +104,19 @@ public final class FilePartition implements Partition {
     if (!written.get()) {
       throw new RuntimeException("This partition is not written yet.");
     }
-    final ControlMessage.SerializedPartitionMsg serializedData;
+
+    // Deserialize the data
+    // TODO 301: Divide a Task's Output Partitions into Smaller Blocks.
+    final ArrayList<Element> deserializedData = new ArrayList<>();
     try (
         final FileInputStream fileStream = new FileInputStream(filePath);
         final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream)
     ) {
-      serializedData = ControlMessage.SerializedPartitionMsg.parseFrom(bufferedInputStream);
+      for (int i = 0; i < numElement; i++) {
+        deserializedData.add(coder.decode(bufferedInputStream));
+      }
     } catch (final Exception e) {
       throw new RuntimeException(e);
-    }
-
-    // Deserialize the data
-    // TODO 301: Divide a Task's Output Partitions into Smaller Blocks.
-    final ArrayList<Element> deserializedData = new ArrayList<>(serializedData.getDataCount());
-    for (int i = 0; i < serializedData.getDataCount(); i++) {
-      // Memory leak if we don't do try-with-resources here
-      try (final InputStream inputStream = serializedData.getData(i).newInput()) {
-        deserializedData.add(coder.decode(inputStream));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
     }
 
     return deserializedData;

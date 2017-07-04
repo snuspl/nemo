@@ -15,11 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
-import com.google.protobuf.ByteString;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -53,6 +51,7 @@ final class FileStore implements PartitionStore {
 
   /**
    * Retrieves a deserialized partition of data through disk.
+   *
    * @param partitionId of the partition.
    * @return the partition (optionally).
    */
@@ -69,8 +68,9 @@ final class FileStore implements PartitionStore {
 
   /**
    * Saves a partition of data as a file.
+   *
    * @param partitionId of the partition.
-   * @param data of the partition.
+   * @param data        of the partition.
    * @return the size of the data.
    */
   @Override
@@ -85,30 +85,29 @@ final class FileStore implements PartitionStore {
     final PartitionManagerWorker worker = partitionManagerWorker.get();
     final String runtimeEdgeId = partitionId.split("_")[1];
     final Coder coder = worker.getCoder(runtimeEdgeId);
-    final ControlMessage.SerializedPartitionMsg.Builder serializedDataBuilder =
-        ControlMessage.SerializedPartitionMsg.newBuilder();
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    long length = 0;
     // TODO 301: Divide a Task's Output Partitions into Smaller Blocks.
-    final ByteArrayOutputStream stream = new ByteArrayOutputStream();
     for (final Element element : data) {
-      coder.encode(element, stream);
-      serializedDataBuilder.addData(ByteString.copyFrom(stream.toByteArray()));
-      stream.reset();
+      coder.encode(element, outputStream);
+      length++;
     }
     try {
-      stream.close();
+      outputStream.close();
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
+    final byte[] serialized = outputStream.toByteArray();
 
-    final byte[] serialized = serializedDataBuilder.build().toByteArray();
     // Synchronously write the serialized data to file
-    partition.writeData(serialized, coder, fileDirectory + "/" + partitionId);
+    partition.writeData(serialized, coder, fileDirectory + "/" + partitionId, length);
 
     return Optional.of(serialized.length);
   }
 
   /**
    * Removes the file that the target partition is stored.
+   *
    * @param partitionId of the partition.
    * @return whether the partition exists or not.
    */

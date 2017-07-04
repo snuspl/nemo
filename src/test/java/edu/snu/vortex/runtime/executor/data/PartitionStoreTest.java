@@ -58,7 +58,7 @@ public final class PartitionStoreTest {
   // Variables for scatter and gather test
   private static final int NUM_WRITE_TASKS = 3;
   private static final int NUM_READ_TASKS = 3;
-  private static final int DATA_SIZE = 5000;
+  private static final int DATA_SIZE = 10000;
   private List<String> partitionIdList;
   private List<Iterable<Element>> dataInPartitionList;
   // Variables for concurrent read test
@@ -180,7 +180,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               IntStream.range(0, NUM_WRITE_TASKS).forEach(
-                  writeTaskNumber ->  {
+                  writeTaskNumber -> {
                     final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskNumber;
                     final Optional<Partition> partition = store.getPartition(partitionIdList.get(partitionNumber));
                     if (!partition.isPresent()) {
@@ -225,9 +225,9 @@ public final class PartitionStoreTest {
   /**
    * Tests concurrent read for {@link PartitionStore}s.
    * Assumes following circumstances:
-   *                                             -> Task 2
+   * -> Task 2
    * Task 1 (write)-> broadcast (concurrent read)-> ...
-   *                                             -> Task 11
+   * -> Task 11
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */
