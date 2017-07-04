@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.partition;
+package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
 
 /**
- * This class represents a {@link Partition} which is stored in local memory and not divided in multiple blocks.
+ * This class represents a {@link Partition} which is stored in local memory and not serialized.
  */
-final class LocalPartition implements Partition {
+public final class LocalPartition implements Partition {
 
   private final Iterable<Element> data;
 
-  LocalPartition(final Iterable<Element> data) {
+  public LocalPartition(final Iterable<Element> data) {
     this.data = data;
   }
 

@@ -67,7 +67,7 @@ public enum RuntimeAttribute {
   Pull(Key.PullOrPush),
 
   /**
-   * IREdge partition type attributes.
+   * IREdge data type attributes.
    */
   Hash(Key.Partition),
   Range(Key.Partition),

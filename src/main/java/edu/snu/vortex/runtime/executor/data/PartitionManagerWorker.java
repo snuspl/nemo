@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.partition;
+package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.coder.Coder;
@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
+import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -38,7 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Executor-side partition manager.
+ * Executor-side data manager.
  */
 @ThreadSafe
 public final class PartitionManagerWorker {
@@ -59,7 +60,7 @@ public final class PartitionManagerWorker {
   private final PartitionTransferPeer partitionTransferPeer;
 
   @Inject
-  public PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
+  private PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
                                 final LocalStore localStore,
                                 final FileStore fileStore,
                                 final PersistentConnectionToMaster persistentConnectionToMaster,
@@ -94,13 +95,13 @@ public final class PartitionManagerWorker {
     runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
   }
 
-  public Iterable<Element> removePartition(final String partitionId,
-                                           final RuntimeAttribute partitionStore) {
+  public void removePartition(final String partitionId,
+                              final RuntimeAttribute partitionStore) {
     LOG.log(Level.INFO, "RemovePartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Partition> optional = store.removePartition(partitionId);
-    if (!optional.isPresent()) {
-      throw new RuntimeException("Trying to remove a non-existent partition");
+    final boolean exist = store.removePartition(partitionId);
+    if (!exist) {
+      throw new RuntimeException("Trying to remove a non-existent data");
     }
 
     persistentConnectionToMaster.getMessageSender().send(
@@ -114,17 +115,15 @@ public final class PartitionManagerWorker {
                     .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
                     .build())
             .build());
-
-    return optional.get().asIterable();
   }
 
 
   /**
-   * Store partition somewhere.
+   * Store data somewhere.
    * Invariant: This should be invoked only once per partitionId.
-   * @param partitionId of the partition
-   * @param data of the partition
-   * @param partitionStore for storing the partition
+   * @param partitionId of the data
+   * @param data of the data
+   * @param partitionStore for storing the data
    */
   public void putPartition(final String partitionId,
                            final Iterable<Element> data,
@@ -152,11 +151,11 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Get the stored partition.
+   * Get the stored data.
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
-   * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
-   * @param partitionId of the partition
-   * @param runtimeEdgeId id of the runtime edge that corresponds to the partition
+   * Here, we first check if we have the data here, and then try to fetch the data from a remote worker.
+   * @param partitionId of the data
+   * @param runtimeEdgeId id of the runtime edge that corresponds to the data
    * @param partitionStore for the data storage
    * @return a {@link CompletableFuture} for the partition
    */

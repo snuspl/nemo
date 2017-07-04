@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.partition;
+package edu.snu.vortex.runtime.executor.data;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.snu.vortex.client.JobConf;
@@ -23,6 +23,8 @@ import edu.snu.vortex.runtime.common.RuntimeAttribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
+import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
+import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -49,7 +51,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Handles partition transfer between {@link edu.snu.vortex.runtime.executor.Executor}s.
+ * Handles data transfer between {@link edu.snu.vortex.runtime.executor.Executor}s.
  */
 @ThreadSafe
 final class PartitionTransferPeer {
@@ -93,12 +95,12 @@ final class PartitionTransferPeer {
   }
 
   /**
-   * Fetches a partition asynchronously.
+   * Fetches a data asynchronously.
    * @param remoteExecutorId id of the remote executor
-   * @param partitionId id of the partition
-   * @param runtimeEdgeId id of the {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge} corresponds to the partition
-   * @param partitionStore type of the partition store
-   * @return {@link CompletableFuture} for the partition
+   * @param partitionId id of the data
+   * @param runtimeEdgeId id of the {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge} corresponds to the data
+   * @param partitionStore type of the data store
+   * @return {@link CompletableFuture} for the data
    */
   CompletableFuture<Partition> fetch(final String remoteExecutorId,
                                      final String partitionId,
@@ -240,7 +242,7 @@ final class PartitionTransferPeer {
   }
 
   /**
-   * An {@link EventHandler} for {@link Exception}s during partition transfer.
+   * An {@link EventHandler} for {@link Exception}s during data transfer.
    */
   private static final class ExceptionHandler implements EventHandler<Exception> {
     @Inject
@@ -287,7 +289,7 @@ final class PartitionTransferPeer {
       case DISTRIBUTED_STORAGE:
         return RuntimeAttribute.DistributedStorage;
       default:
-        throw new UnsupportedPartitionStoreException(new Throwable("This partition store is not yet supported"));
+        throw new UnsupportedPartitionStoreException(new Throwable("This data store is not yet supported"));
     }
   }
 }

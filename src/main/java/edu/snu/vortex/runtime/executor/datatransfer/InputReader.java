@@ -24,8 +24,8 @@ import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
-import edu.snu.vortex.runtime.executor.partition.Partition;
-import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import java.util.ArrayList;
 import java.util.List;

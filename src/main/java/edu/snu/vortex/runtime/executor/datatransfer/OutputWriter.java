@@ -22,7 +22,7 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionerException;
-import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +90,7 @@ public final class OutputWriter extends DataTransfer {
     case Hash:
       final int dstParallelism = dstRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
-      // First partition the data to write,
+      // First data the data to write,
       final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> partitionedOutputList.add(new ArrayList<>()));
       dataToWrite.forEach(element -> {
@@ -99,9 +99,9 @@ public final class OutputWriter extends DataTransfer {
         partitionedOutputList.get(dstIdx).add(element);
       });
 
-      // Then write each partition appropriately to the target data placement.
+      // Then write each data appropriately to the target data placement.
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> {
-        // Give each partition its own partition id
+        // Give each data its own data id
         final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, partitionIdx);
         partitionManagerWorker.putPartition(partitionId,
             partitionedOutputList.get(partitionIdx),

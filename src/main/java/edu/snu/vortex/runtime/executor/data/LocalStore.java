@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.partition;
+package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
+import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -30,7 +32,7 @@ final class LocalStore implements PartitionStore {
   private final ConcurrentHashMap<String, Partition> partitionIdToData;
 
   @Inject
-  LocalStore() {
+  private LocalStore() {
     this.partitionIdToData = new ConcurrentHashMap<>();
   }
 
@@ -43,7 +45,7 @@ final class LocalStore implements PartitionStore {
   public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, new LocalPartition(data));
     if (previousPartition != null) {
-      throw new RuntimeException("Trying to overwrite an existing partition");
+      throw new RuntimeException("Trying to overwrite an existing data");
     }
 
     partitionIdToData.put(partitionId, new LocalPartition(data));
@@ -53,7 +55,7 @@ final class LocalStore implements PartitionStore {
   }
 
   @Override
-  public Optional<Partition> removePartition(final String partitionId) {
-    return Optional.ofNullable(partitionIdToData.remove(partitionId));
+  public boolean removePartition(final String partitionId) {
+    return partitionIdToData.remove(partitionId) != null;
   }
 }

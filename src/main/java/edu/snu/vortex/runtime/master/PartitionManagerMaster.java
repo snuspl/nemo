@@ -26,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Master-side partition manager.
+ * Master-side data manager.
  * For now, all its operations are synchronized to guarantee thread safety.
  */
 @ThreadSafe
