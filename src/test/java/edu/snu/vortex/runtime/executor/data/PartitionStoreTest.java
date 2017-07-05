@@ -225,9 +225,9 @@ public final class PartitionStoreTest {
   /**
    * Tests concurrent read for {@link PartitionStore}s.
    * Assumes following circumstances:
-   * -> Task 2
+   *                                             -> Task 2
    * Task 1 (write)-> broadcast (concurrent read)-> ...
-   * -> Task 11
+   *                                              -> Task 11
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */

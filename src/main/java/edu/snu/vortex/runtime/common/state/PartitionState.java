@@ -31,10 +31,10 @@ public final class PartitionState {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.READY, "The data is ready to be created.");
-    stateMachineBuilder.addState(State.MOVING, "The data is moving.");
-    stateMachineBuilder.addState(State.COMMITTED, "The data has been committed.");
-    stateMachineBuilder.addState(State.REMOVED, "The data has been removed (e.g., GC-ed).");
+    stateMachineBuilder.addState(State.READY, "The partition is ready to be created.");
+    stateMachineBuilder.addState(State.MOVING, "The partition is moving.");
+    stateMachineBuilder.addState(State.COMMITTED, "The partition has been committed.");
+    stateMachineBuilder.addState(State.REMOVED, "The partition has been removed (e.g., GC-ed).");
     stateMachineBuilder.addState(State.LOST, "Partition lost.");
 
     // Add transitions
@@ -68,15 +68,15 @@ public final class PartitionState {
     COMMITTED,
     /**
      * A data can be considered "lost" by PartitionManagerMaster for the following reasons:
-     * 1) The executor that has the data goes down
-     * 2) Local data fetch failure (disk corruption, data evicted due to memory pressure, etc)
-     * 3) Remote data fetch failure (network partitioning, network timeout, etc)
+     * 1) The executor that has the partition goes down
+     * 2) Local data fetch failure (disk corruption, partition evicted due to memory pressure, etc)
+     * 3) Remote partition fetch failure (network partitioning, network timeout, etc)
      *
      * Our current PartitionManager implementation does *not* properly handle the above cases.
      * They should be handled in the future with the issue, TODO #163: Handle Fault Tolerance
      *
      * Moreover, we assume that all lost partitions are recoverable,
-     * meaning that we do not fail the job upon the event of a lost data.
+     * meaning that we do not fail the job upon the event of a lost partition.
      * Thus, we only have a single state(LOST) that represents failure.
      */
     LOST,

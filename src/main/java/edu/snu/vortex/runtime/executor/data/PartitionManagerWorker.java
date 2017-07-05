@@ -39,7 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Executor-side data manager.
+ * Executor-side partition manager.
  */
 @ThreadSafe
 public final class PartitionManagerWorker {
@@ -101,7 +101,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
     final boolean exist = store.removePartition(partitionId);
     if (!exist) {
-      throw new RuntimeException("Trying to remove a non-existent data");
+      throw new RuntimeException("Trying to remove a non-existent partition");
     }
 
     persistentConnectionToMaster.getMessageSender().send(
@@ -119,11 +119,11 @@ public final class PartitionManagerWorker {
 
 
   /**
-   * Store data somewhere.
+   * Store partition somewhere.
    * Invariant: This should be invoked only once per partitionId.
-   * @param partitionId of the data
-   * @param data of the data
-   * @param partitionStore for storing the data
+   * @param partitionId of the partition
+   * @param data of the partition
+   * @param partitionStore for storing the partition
    */
   public void putPartition(final String partitionId,
                            final Iterable<Element> data,
@@ -151,11 +151,11 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Get the stored data.
+   * Get the stored partition.
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
-   * Here, we first check if we have the data here, and then try to fetch the data from a remote worker.
-   * @param partitionId of the data
-   * @param runtimeEdgeId id of the runtime edge that corresponds to the data
+   * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
+   * @param partitionId of the partition
+   * @param runtimeEdgeId id of the runtime edge that corresponds to the partition
    * @param partitionStore for the data storage
    * @return a {@link CompletableFuture} for the partition
    */

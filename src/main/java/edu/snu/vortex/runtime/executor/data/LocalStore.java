@@ -45,7 +45,7 @@ final class LocalStore implements PartitionStore {
   public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, new LocalPartition(data));
     if (previousPartition != null) {
-      throw new RuntimeException("Trying to overwrite an existing data");
+      throw new RuntimeException("Trying to overwrite an existing partition");
     }
 
     partitionIdToData.put(partitionId, new LocalPartition(data));

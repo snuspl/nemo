@@ -78,7 +78,7 @@ final class FileStore implements PartitionStore {
     final FilePartition partition = new FilePartition();
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
     if (previousPartition != null) {
-      throw new RuntimeException("Trying to overwrite an existing data");
+      throw new RuntimeException("Trying to overwrite an existing partition");
     }
 
     // Serialize the given data

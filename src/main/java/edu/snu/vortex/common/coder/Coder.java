@@ -31,6 +31,7 @@ import java.io.Serializable;
 public interface Coder<Data, Key, Value> extends Serializable {
   /**
    * Encodes the given value onto the specified output stream.
+   * It have to be able to encode the given stream consequently by calling this method repeatedly.
    *
    * @param value the value to be encoded
    * @param outStream the stream on which encoded bytes are written
@@ -39,6 +40,7 @@ public interface Coder<Data, Key, Value> extends Serializable {
 
   /**
    * Decodes the a value from the given input stream.
+   * It have to be able to decode the given stream consequently by calling this method repeatedly.
    *
    * @param inStream the stream from which bytes are read
    * @return the decoded value

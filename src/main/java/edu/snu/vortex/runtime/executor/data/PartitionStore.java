@@ -23,7 +23,7 @@ import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import java.util.Optional;
 
 /**
- * Interface for data placement.
+ * Interface for partition placement.
  */
 public interface PartitionStore {
   /**

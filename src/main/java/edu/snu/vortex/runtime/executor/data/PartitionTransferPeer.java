@@ -51,7 +51,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Handles data transfer between {@link edu.snu.vortex.runtime.executor.Executor}s.
+ * Handles partition transfer between {@link edu.snu.vortex.runtime.executor.Executor}s.
  */
 @ThreadSafe
 final class PartitionTransferPeer {
@@ -95,12 +95,12 @@ final class PartitionTransferPeer {
   }
 
   /**
-   * Fetches a data asynchronously.
+   * Fetches a partition asynchronously.
    * @param remoteExecutorId id of the remote executor
-   * @param partitionId id of the data
-   * @param runtimeEdgeId id of the {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge} corresponds to the data
-   * @param partitionStore type of the data store
-   * @return {@link CompletableFuture} for the data
+   * @param partitionId id of the partition
+   * @param runtimeEdgeId id of the {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge} corresponds to the partition
+   * @param partitionStore type of the partition store
+   * @return {@link CompletableFuture} for the partition
    */
   CompletableFuture<Partition> fetch(final String remoteExecutorId,
                                      final String partitionId,
@@ -242,7 +242,7 @@ final class PartitionTransferPeer {
   }
 
   /**
-   * An {@link EventHandler} for {@link Exception}s during data transfer.
+   * An {@link EventHandler} for {@link Exception}s during partition transfer.
    */
   private static final class ExceptionHandler implements EventHandler<Exception> {
     @Inject
@@ -289,7 +289,7 @@ final class PartitionTransferPeer {
       case DISTRIBUTED_STORAGE:
         return RuntimeAttribute.DistributedStorage;
       default:
-        throw new UnsupportedPartitionStoreException(new Throwable("This data store is not yet supported"));
+        throw new UnsupportedPartitionStoreException(new Throwable("This partition store is not yet supported"));
     }
   }
 }

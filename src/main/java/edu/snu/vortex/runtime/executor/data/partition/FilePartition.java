@@ -38,8 +38,8 @@ public final class FilePartition implements Partition {
   private long numElement;
 
   /**
-   * Constructs a file data.
-   * For the synchronicity of the data map, it does not write data at the construction time.
+   * Constructs a file partition.
+   * For the synchronicity of the partition map, it does not write data at the construction time.
    */
   public FilePartition() {
     written = new AtomicBoolean(false);
