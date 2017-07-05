@@ -190,11 +190,7 @@ final class PartitionTransferPeer {
         dataOutputStream.writeInt(numOfElements);
         elementsOutputStream.writeTo(outputStream);
         transportEvent.getLink().write(outputStream.toByteArray());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
 
-      try {
         dataOutputStream.close();
         outputStream.close();
         elementsOutputStream.close();
@@ -235,11 +231,7 @@ final class PartitionTransferPeer {
 
         final CompletableFuture<Iterable<Element>> future = peer.requestIdToFuture.remove(requestId);
         future.complete(data);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
 
-      try {
         inputStream.close();
         dataInputStream.close();
       } catch (IOException e) {
