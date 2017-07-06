@@ -67,11 +67,14 @@ public final class AttributeMap implements Serializable {
    */
   private void setDefaultEdgeValues() {
     this.attributes.put(Attribute.Key.Partitioning, Attribute.Hash);
+    this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.Local);
+    this.attributes.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
   }
   /**
    * Putting default attributes for vertices.
    */
   private void setDefaultVertexValues() {
+    this.attributes.put(Attribute.Key.Placement, Attribute.None);
     this.intAttributes.put(Attribute.IntegerKey.Parallelism, 1);
   }
 
@@ -104,12 +107,12 @@ public final class AttributeMap implements Serializable {
   public Integer put(final Attribute.IntegerKey key, final Integer integer) {
     return intAttributes.put(key, integer);
   }
-
   /**
    * Get the value of the given key in this AttributeMap.
    * @param key the key to look for.
    * @return the attribute corresponding to the key.
    */
+
   public Attribute get(final Attribute.Key key) {
     return attributes.get(key);
   }
@@ -129,6 +132,14 @@ public final class AttributeMap implements Serializable {
    */
   public Attribute remove(final Attribute.Key key) {
     return attributes.remove(key);
+  }
+  /**
+   * remove the attribute.
+   * @param key key of the attribute to remove.
+   * @return the removed attribute.
+   */
+  public Integer remove(final Attribute.IntegerKey key) {
+    return intAttributes.remove(key);
   }
 
   /**
@@ -187,16 +198,16 @@ public final class AttributeMap implements Serializable {
 
     AttributeMap that = (AttributeMap) o;
 
-    if (!attributes.equals(that.attributes)) {
+    if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) {
       return false;
     }
-    return intAttributes.equals(that.intAttributes);
+    return intAttributes != null ? intAttributes.equals(that.intAttributes) : that.intAttributes == null;
   }
 
   @Override
   public int hashCode() {
-    int result = attributes.hashCode();
-    result = 31 * result + intAttributes.hashCode();
+    int result = attributes != null ? attributes.hashCode() : 0;
+    result = 31 * result + (intAttributes != null ? intAttributes.hashCode() : 0);
     return result;
   }
 }
