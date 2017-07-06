@@ -17,7 +17,6 @@ package edu.snu.vortex.compiler.optimizer.passes;
 
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.frontend.Coder;
 import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
 import edu.snu.vortex.compiler.ir.DynamicOptimizationVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
