@@ -154,7 +154,7 @@ public final class PartitionManagerWorker {
    * @param partitionId of the partition
    * @param runtimeEdgeId id of the runtime edge that corresponds to the partition
    * @param partitionStore for the data storage
-   * @return the partition data
+   * @return a {@link CompletableFuture} for the partition data
    */
   public CompletableFuture<Iterable<Element>> getPartition(final String partitionId,
                                                            final String runtimeEdgeId,
