@@ -27,6 +27,7 @@ import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -89,13 +90,17 @@ public final class InputReader extends DataTransfer {
   private Iterable<Element> readBroadcast() throws ExecutionException, InterruptedException {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
+    final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
+    for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
+      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
+      futures.add(partitionManagerWorker.getPartition(partitionId, getId(),
+          runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)));
+    }
+
     final List<Element> concatStreamBase = new ArrayList<>();
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-      final Iterable<Element> dataFromATask =
-          partitionManagerWorker.getPartition(partitionId, getId(),
-              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)).get();
+      final Iterable<Element> dataFromATask = futures.get(srcTaskIdx).get();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
@@ -104,13 +109,17 @@ public final class InputReader extends DataTransfer {
   private Iterable<Element> readScatterGather() throws ExecutionException, InterruptedException {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
+    final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
+    for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
+      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
+      futures.add(partitionManagerWorker.getPartition(partitionId, getId(),
+          runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)));
+    }
+
     final List<Element> concatStreamBase = new ArrayList<>();
     Stream<Element> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
-      final Iterable<Element> dataFromATask =
-          partitionManagerWorker.getPartition(partitionId, getId(),
-              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)).get();
+      final Iterable<Element> dataFromATask = futures.get(srcTaskIdx).get();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
