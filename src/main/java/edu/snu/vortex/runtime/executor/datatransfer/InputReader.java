@@ -27,6 +27,7 @@ import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -63,25 +64,29 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public Iterable<Element> read() {
-    switch (runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern)) {
-      case OneToOne:
-        return readOneToOne();
-      case Broadcast:
-        return readBroadcast();
-      case ScatterGather:
-        return readScatterGather();
-      default:
-        throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
+    try {
+      switch (runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.CommPattern)) {
+        case OneToOne:
+          return readOneToOne();
+        case Broadcast:
+          return readBroadcast();
+        case ScatterGather:
+          return readScatterGather();
+        default:
+          throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private Iterable<Element> readOneToOne() {
+  private Iterable<Element> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.getPartition(partitionId, getId(),
-        runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore));
+        runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)).get();
   }
 
-  private Iterable<Element> readBroadcast() {
+  private Iterable<Element> readBroadcast() throws ExecutionException, InterruptedException {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> concatStreamBase = new ArrayList<>();
@@ -90,13 +95,13 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       final Iterable<Element> dataFromATask =
           partitionManagerWorker.getPartition(partitionId, getId(),
-              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore));
+              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)).get();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
   }
 
-  private Iterable<Element> readScatterGather() {
+  private Iterable<Element> readScatterGather() throws ExecutionException, InterruptedException {
     final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(RuntimeAttribute.IntegerKey.Parallelism);
 
     final List<Element> concatStreamBase = new ArrayList<>();
@@ -105,7 +110,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       final Iterable<Element> dataFromATask =
           partitionManagerWorker.getPartition(partitionId, getId(),
-              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore));
+              runtimeEdge.getEdgeAttributes().get(RuntimeAttribute.Key.PartitionStore)).get();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
