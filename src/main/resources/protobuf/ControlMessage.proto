@@ -76,7 +76,6 @@ message RequestPartitionMsg {
     required string runtimeEdgeId = 4;
 }
 
-
 enum TaskGroupStateFromExecutor {
     READY = 0;
     EXECUTING = 1;
