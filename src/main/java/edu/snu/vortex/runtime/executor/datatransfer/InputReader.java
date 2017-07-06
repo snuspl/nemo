@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.partition.PartitionManagerWorker;
 
@@ -77,7 +78,7 @@ public final class InputReader extends DataTransfer {
           throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
       }
     } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
+      throw new PartitionFetchException(e);
     }
   }
 
