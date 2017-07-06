@@ -176,12 +176,11 @@ final class PartitionTransferPeer {
           convertPartitionStoreType(request.getPartitionStore()));
 
       final Coder coder = worker.getCoder(request.getRuntimeEdgeId());
-      final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      final ByteArrayOutputStream elementsOutputStream = new ByteArrayOutputStream();
-      final DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
 
       int numOfElements = 0;
-      try {
+      try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+           final ByteArrayOutputStream elementsOutputStream = new ByteArrayOutputStream();
+           final DataOutputStream dataOutputStream = new DataOutputStream(outputStream)) {
         for (final Element element : data) {
           coder.encode(element, elementsOutputStream);
           numOfElements++;
@@ -190,10 +189,6 @@ final class PartitionTransferPeer {
         dataOutputStream.writeInt(numOfElements);
         elementsOutputStream.writeTo(outputStream);
         transportEvent.getLink().write(outputStream.toByteArray());
-
-        dataOutputStream.close();
-        outputStream.close();
-        elementsOutputStream.close();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -216,10 +211,9 @@ final class PartitionTransferPeer {
       final PartitionTransferPeer peer = partitionTransferPeer.get();
 
       final byte[] bytes = transportEvent.getData();
-      final InputStream inputStream = new ByteArrayInputStream(bytes);
-      final DataInputStream dataInputStream = new DataInputStream(inputStream);
 
-      try {
+      try (final InputStream inputStream = new ByteArrayInputStream(bytes);
+           final DataInputStream dataInputStream = new DataInputStream(inputStream)) {
         final long requestId = dataInputStream.readLong();
         final Coder coder = peer.requestIdToCoder.remove(requestId);
         final int numOfElements = dataInputStream.readInt();
@@ -231,9 +225,6 @@ final class PartitionTransferPeer {
 
         final CompletableFuture<Iterable<Element>> future = peer.requestIdToFuture.remove(requestId);
         future.complete(data);
-
-        inputStream.close();
-        dataInputStream.close();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
