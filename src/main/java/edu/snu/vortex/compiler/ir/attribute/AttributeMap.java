@@ -107,12 +107,12 @@ public final class AttributeMap implements Serializable {
   public Integer put(final Attribute.IntegerKey key, final Integer integer) {
     return intAttributes.put(key, integer);
   }
+
   /**
    * Get the value of the given key in this AttributeMap.
    * @param key the key to look for.
    * @return the attribute corresponding to the key.
    */
-
   public Attribute get(final Attribute.Key key) {
     return attributes.get(key);
   }
