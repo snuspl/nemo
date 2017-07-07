@@ -59,7 +59,7 @@ public final class DataSkewPass implements Pass {
       }
     });
     final DAG<IRVertex, IREdge> newDAG = builder.build();
-    dynamicOptimizationVertices.forEach(v -> v.setDAG(newDAG));
+    dynamicOptimizationVertices.forEach(v -> v.setDAGSnapshot(newDAG));
     return newDAG;
   }
 }

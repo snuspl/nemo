@@ -25,46 +25,46 @@ import java.util.*;
  */
 public final class DynamicOptimizationVertex extends IRVertex {
   private final Map<String, List<Object>> metricData;
-  private DAG<IRVertex, IREdge> dag;
+  private DAG<IRVertex, IREdge> dagSnapshot;
 
   /**
    * Constructor for dynamic optimization vertex.
    */
   public DynamicOptimizationVertex() {
     this.metricData = new HashMap<>();
-    this.dag = null;
+    this.dagSnapshot = null;
   }
 
   @Override
   public DynamicOptimizationVertex getClone() {
     final DynamicOptimizationVertex that = new DynamicOptimizationVertex();
-    that.setDAG(dag);
+    that.setDAGSnapshot(dagSnapshot);
     IRVertex.copyAttributes(this, that);
     return that;
   }
 
   /**
-   * @param newDAG DAG to set on the vertex.
+   * @param dag DAG to set on the vertex.
    */
-  public void setDAG(final DAG<IRVertex, IREdge> newDAG) {
-    this.dag = newDAG;
+  public void setDAGSnapshot(final DAG<IRVertex, IREdge> dag) {
+    this.dagSnapshot = dag;
   }
 
   /**
    * @return the DAG set to the vertex, or throws an exception otherwise.
    */
-  public DAG<IRVertex, IREdge> getDAG() {
-    if (this.dag == null) {
+  public DAG<IRVertex, IREdge> getDAGSnapshot() {
+    if (this.dagSnapshot == null) {
       throw new RuntimeException("DynamicOptimizationVertex must have been set with a DAG.");
     }
-    return this.dag;
+    return this.dagSnapshot;
   }
 
   /**
    * Method for accumulating metrics in the vertex.
    * @param key key of the metric data.
    * @param value value of the metric data.
-   * @return whether or not it ahs been successfully accumulated.
+   * @return whether or not it has been successfully accumulated.
    */
   public boolean accumulateMetrics(final String key, final Object value) {
     // TODO #315: collect metrics, optimization, resubmit DAG to runtime.
@@ -84,7 +84,7 @@ public final class DynamicOptimizationVertex extends IRVertex {
     final StringBuilder sb = new StringBuilder();
     sb.append("{");
     sb.append(irVertexPropertiesToString());
-    sb.append("\"}");
+    sb.append("}");
     return sb.toString();
   }
 }
