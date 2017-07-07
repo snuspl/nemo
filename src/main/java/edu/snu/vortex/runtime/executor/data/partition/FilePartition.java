@@ -36,6 +36,7 @@ public final class FilePartition implements Partition {
   private Coder coder;
   private String filePath;
   private long numElement;
+  private int size;
 
   /**
    * Constructs a file partition.
@@ -61,6 +62,7 @@ public final class FilePartition implements Partition {
     this.coder = coderToSet;
     this.filePath = filePathToSet;
     this.numElement = numElementToSet;
+    this.size = serializedData.length;
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
@@ -110,7 +112,7 @@ public final class FilePartition implements Partition {
     final ArrayList<Element> deserializedData = new ArrayList<>();
     try (
         final FileInputStream fileStream = new FileInputStream(filePath);
-        final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream)
+        final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream, size)
     ) {
       for (int i = 0; i < numElement; i++) {
         deserializedData.add(coder.decode(bufferedInputStream));
