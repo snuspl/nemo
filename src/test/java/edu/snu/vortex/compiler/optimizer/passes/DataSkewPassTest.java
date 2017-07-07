@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test {@link DataSkewPass}.
+ * Test {@link DataSkewPass} with MR workload.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
@@ -48,9 +48,12 @@ public class DataSkewPassTest {
   @Test
   public void testDataSkewPass() throws Exception {
     final Integer originalVerticesNum = mrDAG.getVertices().size();
+    final Long numOfGroupByKeyOperatorVertices = mrDAG.getVertices().stream().filter(irVertex ->
+        irVertex instanceof OperatorVertex
+            && ((OperatorVertex) irVertex).getTransform() instanceof GroupByKeyTransform).count();
     final DAG<IRVertex, IREdge> processedDAG = new DataSkewPass().process(mrDAG);
 
-    assertEquals(originalVerticesNum + 1, processedDAG.getVertices().size());
+    assertEquals(originalVerticesNum + numOfGroupByKeyOperatorVertices, processedDAG.getVertices().size());
     processedDAG.getVertices().stream().filter(irVertex -> irVertex instanceof OperatorVertex
         && ((OperatorVertex) irVertex).getTransform() instanceof GroupByKeyTransform).forEach(irVertex ->
           processedDAG.getIncomingEdgesOf(irVertex).stream().map(IREdge::getSrc).forEach(irVertex1 ->

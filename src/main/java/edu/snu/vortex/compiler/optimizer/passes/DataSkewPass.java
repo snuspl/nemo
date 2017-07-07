@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pass to perform data skew.
+ * Pass to modify the DAG for the job to perform data skew.
+ * It adds a {@link DynamicOptimizationVertex} before performing GroupByKey transform, to make a barrier before it, and
+ * to use the metrics to repartition the skewed data.
  */
 public final class DataSkewPass implements Pass {
   @Override
@@ -46,6 +48,7 @@ public final class DataSkewPass implements Pass {
         dag.getIncomingEdgesOf(v).forEach(edge -> {
           // we tell the vertex that it needs to collect the metrics.
           edge.getSrc().setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
+          // We then insert the dynamicOptimizationVertex between the vertex and incoming vertices.
           final IREdge newEdge = new IREdge(edge.getType(), edge.getSrc(), dynamicOptimizationVertex, edge.getCoder());
           final IREdge edgeToGbK = new IREdge(edge.getType(), dynamicOptimizationVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, newEdge);
