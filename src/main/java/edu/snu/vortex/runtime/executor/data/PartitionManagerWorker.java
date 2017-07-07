@@ -61,10 +61,10 @@ public final class PartitionManagerWorker {
 
   @Inject
   private PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
-                                final LocalStore localStore,
-                                final FileStore fileStore,
-                                final PersistentConnectionToMaster persistentConnectionToMaster,
-                                final PartitionTransferPeer partitionTransferPeer) {
+                                 final LocalStore localStore,
+                                 final FileStore fileStore,
+                                 final PersistentConnectionToMaster persistentConnectionToMaster,
+                                 final PartitionTransferPeer partitionTransferPeer) {
     this.executorId = executorId;
     this.localStore = localStore;
     this.fileStore = fileStore;
@@ -75,6 +75,7 @@ public final class PartitionManagerWorker {
 
   /**
    * Return the coder for the specified runtime edge.
+   *
    * @param runtimeEdgeId id of the runtime edge
    * @return the corresponding coder
    */
@@ -88,41 +89,51 @@ public final class PartitionManagerWorker {
 
   /**
    * Register a coder for runtime edge.
+   *
    * @param runtimeEdgeId id of the runtime edge
-   * @param coder the corresponding coder
+   * @param coder         the corresponding coder
    */
   public void registerCoder(final String runtimeEdgeId, final Coder coder) {
     runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
   }
 
-  public void removePartition(final String partitionId,
-                              final RuntimeAttribute partitionStore) {
+  /**
+   * Remove the partition from store.
+   *
+   * @param partitionId of the partition to remove.
+   * @param partitionStore tha the partition is stored.
+   * @return whether the partition is removed or not.
+   */
+  public boolean removePartition(final String partitionId,
+                                 final RuntimeAttribute partitionStore) {
     LOG.log(Level.INFO, "RemovePartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final boolean exist = store.removePartition(partitionId);
-    if (!exist) {
-      throw new RuntimeException("Trying to remove a non-existent partition");
+
+    if (exist) {
+      persistentConnectionToMaster.getMessageSender().send(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.PartitionStateChanged)
+              .setPartitionStateChangedMsg(
+                  ControlMessage.PartitionStateChangedMsg.newBuilder()
+                      .setExecutorId(executorId)
+                      .setPartitionId(partitionId)
+                      .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
+                      .build())
+              .build());
     }
 
-    persistentConnectionToMaster.getMessageSender().send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(
-                ControlMessage.PartitionStateChangedMsg.newBuilder()
-                    .setExecutorId(executorId)
-                    .setPartitionId(partitionId)
-                    .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
-                    .build())
-            .build());
+    return exist;
   }
 
 
   /**
    * Store partition somewhere.
    * Invariant: This should be invoked only once per partitionId.
-   * @param partitionId of the partition
-   * @param data of the partition
+   *
+   * @param partitionId    of the partition
+   * @param data           of the partition
    * @param partitionStore for storing the partition
    */
   public void putPartition(final String partitionId,
@@ -154,8 +165,9 @@ public final class PartitionManagerWorker {
    * Get the stored partition.
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
-   * @param partitionId of the partition
-   * @param runtimeEdgeId id of the runtime edge that corresponds to the partition
+   *
+   * @param partitionId    of the partition
+   * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition
    * @param partitionStore for the data storage
    * @return a {@link CompletableFuture} for the partition
    */
