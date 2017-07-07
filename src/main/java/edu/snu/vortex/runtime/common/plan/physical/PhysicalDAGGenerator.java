@@ -99,6 +99,10 @@ public final class PhysicalDAGGenerator
               final RuntimeOperatorVertex operatorVertex = (RuntimeOperatorVertex) vertex;
               newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(), operatorVertex.getId(),
                   taskGroupIdx, operatorVertex.getOperatorVertex().getTransform());
+            } else if (vertex instanceof RuntimeDynamicOptimizationVertex) {
+              final RuntimeDynamicOptimizationVertex optimizationVertex = (RuntimeDynamicOptimizationVertex) vertex;
+              newTaskToAdd = new DynamicOptimizationTask(RuntimeIdGenerator.generateTaskId(),
+                  optimizationVertex.getId(), taskGroupIdx);
             } else {
               throw new IllegalVertexOperationException("This vertex type is not supported");
             }

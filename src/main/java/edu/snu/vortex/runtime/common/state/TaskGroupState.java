@@ -78,7 +78,8 @@ public final class TaskGroupState {
     EXECUTING,
     COMPLETE,
     FAILED_RECOVERABLE,
-    FAILED_UNRECOVERABLE
+    FAILED_UNRECOVERABLE,
+    ON_HOLD, // for dynamic optimization
   }
 
   /**

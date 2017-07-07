@@ -90,7 +90,8 @@ public final class TaskState {
     EXECUTING,
     COMPLETE,
     FAILED_RECOVERABLE,
-    FAILED_UNRECOVERABLE
+    FAILED_UNRECOVERABLE,
+    ON_HOLD, // for dynamic optimization
   }
 
   @Override
