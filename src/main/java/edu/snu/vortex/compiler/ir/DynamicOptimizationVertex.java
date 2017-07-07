@@ -25,6 +25,7 @@ import java.util.*;
  */
 public final class DynamicOptimizationVertex extends IRVertex {
   private final Map<String, List<Object>> metricData;
+  // this DAG snapshot lets the vertex know the state of the DAG and where in the DAG it should optimize.
   private DAG<IRVertex, IREdge> dagSnapshot;
 
   /**
