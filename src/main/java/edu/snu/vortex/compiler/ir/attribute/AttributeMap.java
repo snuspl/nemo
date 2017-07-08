@@ -17,6 +17,8 @@ package edu.snu.vortex.compiler.ir.attribute;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -67,6 +69,7 @@ public final class AttributeMap implements Serializable {
    */
   private void setDefaultEdgeValues() {
     this.attributes.put(Attribute.Key.Partitioning, Attribute.Hash);
+    // TODO #319: Local should be changed to File, upon fixing the bug that prevents integration tests from passing.
     this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.Local);
     this.attributes.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
   }
@@ -187,27 +190,30 @@ public final class AttributeMap implements Serializable {
     return sb.toString();
   }
 
+  // Apache commons-lang 3 Equals/HashCodeBuilder template.
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
+  public boolean equals(final Object obj) {
+    if (this == obj) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+
+    if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
 
-    AttributeMap that = (AttributeMap) o;
+    AttributeMap that = (AttributeMap) obj;
 
-    if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) {
-      return false;
-    }
-    return intAttributes != null ? intAttributes.equals(that.intAttributes) : that.intAttributes == null;
+    return new EqualsBuilder()
+        .append(attributes, that.attributes)
+        .append(intAttributes, that.intAttributes)
+        .isEquals();
   }
 
   @Override
   public int hashCode() {
-    int result = attributes != null ? attributes.hashCode() : 0;
-    result = 31 * result + (intAttributes != null ? intAttributes.hashCode() : 0);
-    return result;
+    return new HashCodeBuilder(17, 37)
+        .append(attributes)
+        .append(intAttributes)
+        .toHashCode();
   }
 }

@@ -18,7 +18,7 @@ package edu.snu.vortex.compiler.optimizer.passes;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
-import edu.snu.vortex.compiler.ir.DynamicOptimizationVertex;
+import edu.snu.vortex.compiler.ir.MetricCollectionVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
@@ -29,19 +29,19 @@ import java.util.List;
 
 /**
  * Pass to modify the DAG for the job to perform data skew.
- * It adds a {@link DynamicOptimizationVertex} before performing GroupByKey transform, to make a barrier before it, and
+ * It adds a {@link MetricCollectionVertex} before performing GroupByKey transform, to make a barrier before it, and
  * to use the metrics to repartition the skewed data.
  */
 public final class DataSkewPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    final List<DynamicOptimizationVertex> dynamicOptimizationVertices = new ArrayList<>();
+    final List<MetricCollectionVertex> dynamicOptimizationVertices = new ArrayList<>();
 
     dag.topologicalDo(v -> {
       // We care about OperatorVertices that have GroupByKeyTransform.
       if (v instanceof OperatorVertex && ((OperatorVertex) v).getTransform() instanceof GroupByKeyTransform) {
-        final DynamicOptimizationVertex dynamicOptimizationVertex = new DynamicOptimizationVertex();
+        final MetricCollectionVertex dynamicOptimizationVertex = new MetricCollectionVertex();
         dynamicOptimizationVertices.add(dynamicOptimizationVertex);
         builder.addVertex(v);
         builder.addVertex(dynamicOptimizationVertex);
