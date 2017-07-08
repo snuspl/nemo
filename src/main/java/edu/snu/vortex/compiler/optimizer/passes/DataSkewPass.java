@@ -31,26 +31,29 @@ import java.util.List;
  * Pass to modify the DAG for the job to perform data skew.
  * It adds a {@link MetricCollectionVertex} before performing GroupByKey transform, to make a barrier before it, and
  * to use the metrics to repartition the skewed data.
+ * NOTE: we currently put the DataSkewPass at the end of the list for each policies, as it needs to take a snapshot at
+ * the end of the pass. This could be prevented by modifying other passes to take the snapshot of the DAG at the end of
+ * each passes for metricCollectionVertices.
  */
 public final class DataSkewPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
-    final List<MetricCollectionVertex> dynamicOptimizationVertices = new ArrayList<>();
+    final List<MetricCollectionVertex> metricCollectionVertices = new ArrayList<>();
 
     dag.topologicalDo(v -> {
       // We care about OperatorVertices that have GroupByKeyTransform.
       if (v instanceof OperatorVertex && ((OperatorVertex) v).getTransform() instanceof GroupByKeyTransform) {
-        final MetricCollectionVertex dynamicOptimizationVertex = new MetricCollectionVertex();
-        dynamicOptimizationVertices.add(dynamicOptimizationVertex);
+        final MetricCollectionVertex metricCollectionVertex = new MetricCollectionVertex();
+        metricCollectionVertices.add(metricCollectionVertex);
         builder.addVertex(v);
-        builder.addVertex(dynamicOptimizationVertex);
+        builder.addVertex(metricCollectionVertex);
         dag.getIncomingEdgesOf(v).forEach(edge -> {
           // we tell the vertex that it needs to collect the metrics.
           edge.getSrc().setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
           // We then insert the dynamicOptimizationVertex between the vertex and incoming vertices.
-          final IREdge newEdge = new IREdge(edge.getType(), edge.getSrc(), dynamicOptimizationVertex, edge.getCoder());
-          final IREdge edgeToGbK = new IREdge(edge.getType(), dynamicOptimizationVertex, v, edge.getCoder());
+          final IREdge newEdge = new IREdge(edge.getType(), edge.getSrc(), metricCollectionVertex, edge.getCoder());
+          final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, newEdge);
           IREdge.copyAttributes(edge, edgeToGbK);
           builder.connectVertices(newEdge);
@@ -62,7 +65,7 @@ public final class DataSkewPass implements Pass {
       }
     });
     final DAG<IRVertex, IREdge> newDAG = builder.build();
-    dynamicOptimizationVertices.forEach(v -> v.setDAGSnapshot(newDAG));
+    metricCollectionVertices.forEach(v -> v.setDAGSnapshot(newDAG));
     return newDAG;
   }
 }
