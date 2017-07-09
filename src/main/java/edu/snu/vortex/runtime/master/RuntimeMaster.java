@@ -154,15 +154,15 @@ public final class RuntimeMaster {
               .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
               .map(Task::getRuntimeVertexId).distinct()
               .collect(Collectors.toList());
-          final List<RuntimeDynamicOptimizationVertex> optimizationRuntimeVertices =
+          final List<RuntimeMetricCollectionBarrierVertex> optimizationRuntimeVertices =
               executionPlanSnapshot.getRuntimeStageDAG().getVertices().stream()
                   .flatMap(stage -> stage.getStageInternalDAG().getVertices().stream())
                   .filter(runtimeVertex -> optimizationRuntimeVertexIds.contains(runtimeVertex.getId()))
-                  .filter(runtimeVertex -> runtimeVertex instanceof RuntimeDynamicOptimizationVertex)
-                  .map(runtimeVertex -> (RuntimeDynamicOptimizationVertex) runtimeVertex)
+                  .filter(runtimeVertex -> runtimeVertex instanceof RuntimeMetricCollectionBarrierVertex)
+                  .map(runtimeVertex -> (RuntimeMetricCollectionBarrierVertex) runtimeVertex)
                   .collect(Collectors.toList());
           optimizationRuntimeVertices.forEach(runtimeDynamicOptimizationVertex ->
-              runtimeDynamicOptimizationVertex.getDynamicOptimizationVertex().triggerDynamicOptimization());
+              runtimeDynamicOptimizationVertex.getMetricCollectionBarrierVertex().triggerDynamicOptimization());
           // TODO #315: do stuff to scheduler before running it.
         }
 

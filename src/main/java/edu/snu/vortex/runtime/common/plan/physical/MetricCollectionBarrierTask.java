@@ -15,25 +15,13 @@
  */
 package edu.snu.vortex.runtime.common.plan.physical;
 
-import edu.snu.vortex.runtime.common.state.TaskState;
-import edu.snu.vortex.runtime.executor.TaskGroupStateManager;
-
-import java.util.Optional;
-
 /**
- * DynamicOptimizationTask.
+ * MetricCollectionBarrierTask.
  */
-public final class DynamicOptimizationTask extends Task {
-  DynamicOptimizationTask(final String taskId,
-                          final String runtimeVertexId,
-                          final int index) {
+public final class MetricCollectionBarrierTask extends Task {
+  MetricCollectionBarrierTask(final String taskId,
+                              final String runtimeVertexId,
+                              final int index) {
     super(taskId, runtimeVertexId, index);
-  }
-
-  /**
-   * Change task state to ON_HOLD to send a message to master and trigger dynamic optimization.
-   * @param taskGroupStateManager TaskGroupStateManager to change the state with.
-   */
-  public void triggerDynamicOptimization(final TaskGroupStateManager taskGroupStateManager) {
   }
 }
