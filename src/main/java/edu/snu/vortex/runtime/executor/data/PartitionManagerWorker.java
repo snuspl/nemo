@@ -139,13 +139,15 @@ public final class PartitionManagerWorker {
                            final Attribute partitionStore) {
     LOG.log(Level.INFO, "PutPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
+    final Optional<Long> dataSize;
 
     try {
-      store.putPartition(partitionId, data);
+      dataSize = store.putPartition(partitionId, data);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
 
+    // TODO #313: send the dataSize with the message
     persistentConnectionToMaster.getMessageSender().send(
         ControlMessage.Message.newBuilder()
             .setId(RuntimeIdGenerator.generateMessageId())
