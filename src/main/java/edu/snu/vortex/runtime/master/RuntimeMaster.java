@@ -147,13 +147,16 @@ public final class RuntimeMaster {
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
         final TaskGroupState.State newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
 
+        // We handle it separately if the new state is ON_HOLD, to perform dynamic optimization at the barrier vertex.
         if (newState.equals(TaskGroupState.State.ON_HOLD)) {
+          // We first extract optimization runtime vertex ids.
           final List<String> optimizationRuntimeVertexIds = physicalPlan.getStageDAG().getVertices().stream()
               .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
               .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
               .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
               .map(Task::getRuntimeVertexId).distinct()
               .collect(Collectors.toList());
+          // then the vertices themselves.
           final List<RuntimeMetricCollectionBarrierVertex> optimizationRuntimeVertices =
               executionPlanSnapshot.getRuntimeStageDAG().getVertices().stream()
                   .flatMap(stage -> stage.getStageInternalDAG().getVertices().stream())
@@ -161,6 +164,7 @@ public final class RuntimeMaster {
                   .filter(runtimeVertex -> runtimeVertex instanceof RuntimeMetricCollectionBarrierVertex)
                   .map(runtimeVertex -> (RuntimeMetricCollectionBarrierVertex) runtimeVertex)
                   .collect(Collectors.toList());
+          // and we will use these vertices to perform metric collection and dynamic optimization.
           optimizationRuntimeVertices.forEach(runtimeDynamicOptimizationVertex ->
               runtimeDynamicOptimizationVertex.getMetricCollectionBarrierVertex().triggerDynamicOptimization());
           // TODO #315: do stuff to scheduler before running it.
