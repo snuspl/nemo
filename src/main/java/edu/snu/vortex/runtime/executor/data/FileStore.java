@@ -88,7 +88,7 @@ final class FileStore implements PartitionStore {
     }
 
     // Serialize the given data into blocks
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(blockSize);
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     long elementsInBlock = 0;
     long partitionSize = 0;
     for (final Element element : data) {
@@ -96,7 +96,7 @@ final class FileStore implements PartitionStore {
       elementsInBlock++;
 
       if (outputStream.size() >= blockSize) {
-        // If this block is large enough, synchronously append it to the file and create a new buffer
+        // If this block is large enough, synchronously append it to the file and reset the buffer
         try {
           outputStream.close();
         } catch (final IOException e) {
@@ -106,8 +106,7 @@ final class FileStore implements PartitionStore {
         final byte[] serialized = outputStream.toByteArray();
         partitionSize += serialized.length;
         partition.writeBlock(serialized, elementsInBlock);
-
-        outputStream = new ByteArrayOutputStream(blockSize);
+        outputStream.reset();
         elementsInBlock = 0;
       }
     }
