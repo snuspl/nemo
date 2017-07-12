@@ -56,6 +56,7 @@ message PartitionStateChangedMsg {
     required string executorId = 1;
     required string partitionId = 2;
     required PartitionStateFromExecutor state = 3;
+    required int64 partitionSize = 4;
 }
 
 message RequestPartitionLocationMsg {

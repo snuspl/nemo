@@ -179,6 +179,7 @@ public final class RuntimeMaster {
         break;
       case PartitionStateChanged:
         final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg = message.getPartitionStateChangedMsg();
+        // TODO #313: process message for the PartitionSize variable.
         partitionManagerMaster.onPartitionStateChanged(
             partitionStateChangedMsg.getExecutorId(), partitionStateChangedMsg.getPartitionId(),
             convertPartitionState(partitionStateChangedMsg.getState()));
