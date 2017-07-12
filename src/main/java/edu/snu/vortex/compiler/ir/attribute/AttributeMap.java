@@ -66,6 +66,7 @@ public final class AttributeMap implements Serializable {
 
   /**
    * Putting default attributes for edges.
+   * @param type type of the edge.
    */
   private void setDefaultEdgeValues(final IREdge.Type type) {
     this.attributes.put(Attribute.Key.Partitioning, Attribute.Hash);
