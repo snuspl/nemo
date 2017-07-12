@@ -69,6 +69,7 @@ public final class AttributeMap implements Serializable {
    */
   private void setDefaultEdgeValues(final IREdge.Type type) {
     this.attributes.put(Attribute.Key.Partitioning, Attribute.Hash);
+    this.attributes.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
     switch (type) {
       case OneToOne:
         this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.Local);
@@ -76,7 +77,6 @@ public final class AttributeMap implements Serializable {
       default:
         this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.File);
     }
-    this.attributes.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
   }
   /**
    * Putting default attributes for vertices.
