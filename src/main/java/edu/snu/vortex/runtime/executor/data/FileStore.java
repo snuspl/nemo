@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.executor.data;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -53,6 +54,29 @@ final class FileStore implements PartitionStore {
   }
 
   /**
+   * Makes the given stream to a block and write it to the given file partition.
+   *
+   * @param elementsInBlock the number of elements in this block.
+   * @param outputStream    the output stream containing data.
+   * @param partition       the partition to write the block.
+   * @return the size of serialized block.
+   */
+  private long writeBlock(final long elementsInBlock,
+                          final ByteArrayOutputStream outputStream,
+                          final FilePartition partition) {
+    try {
+      outputStream.close();
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    final byte[] serialized = outputStream.toByteArray();
+    partition.writeBlock(serialized, elementsInBlock);
+
+    return serialized.length;
+  }
+
+  /**
    * Retrieves a deserialized partition of data through disk.
    *
    * @param partitionId of the partition.
@@ -79,7 +103,7 @@ final class FileStore implements PartitionStore {
   @Override
   public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     final PartitionManagerWorker worker = partitionManagerWorker.get();
-    final String runtimeEdgeId = partitionId.split("_")[1];
+    final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
     final Coder coder = worker.getCoder(runtimeEdgeId);
     final FilePartition partition = new FilePartition(coder, fileDirectory + "/" + partitionId);
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
@@ -97,15 +121,8 @@ final class FileStore implements PartitionStore {
 
       if (outputStream.size() >= blockSize) {
         // If this block is large enough, synchronously append it to the file and reset the buffer
-        try {
-          outputStream.close();
-        } catch (final IOException e) {
-          throw new RuntimeException(e);
-        }
+        partitionSize += writeBlock(elementsInBlock, outputStream, partition);
 
-        final byte[] serialized = outputStream.toByteArray();
-        partitionSize += serialized.length;
-        partition.writeBlock(serialized, elementsInBlock);
         outputStream.reset();
         elementsInBlock = 0;
       }
@@ -113,15 +130,7 @@ final class FileStore implements PartitionStore {
 
     if (outputStream.size() > 0) {
       // If there are any remaining data in stream, write it as another block.
-      try {
-        outputStream.close();
-      } catch (final IOException e) {
-        throw new RuntimeException(e);
-      }
-
-      final byte[] serialized = outputStream.toByteArray();
-      partitionSize += serialized.length;
-      partition.writeBlock(serialized, elementsInBlock);
+      partitionSize += writeBlock(elementsInBlock, outputStream, partition);
     }
     partition.finishWrite();
 

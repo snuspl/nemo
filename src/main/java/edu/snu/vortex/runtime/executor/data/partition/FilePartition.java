@@ -53,7 +53,7 @@ public final class FilePartition implements Partition {
   }
 
   /**
-   * Writes the serialized data of this partition as a block to the file that this partition resides (synchronously).
+   * Writes the serialized data of this partition as a block to the file where this partition resides.
    *
    * @param serializedData the serialized data of this partition.
    * @param numElement     the number of elements in the serialized data.

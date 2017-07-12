@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 @PrepareForTest(PartitionManagerWorker.class)
 public final class PartitionStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
-  private static final int BLOCK_SIZE = 1;
+  private static final int BLOCK_SIZE = 1; // 1 KB
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   // Variables for scatter and gather test
   private static final int NUM_WRITE_TASKS = 3;
