@@ -49,8 +49,7 @@ public final class PhysicalPlanGenerator
   public DAG<PhysicalStage, PhysicalStageEdge> apply(final DAG<IRVertex, IREdge> irDAG) {
     final DAG<Stage, StageEdge> stagedDAG = stagePartitionIrDAG(irDAG);
 //    stagedDAG.storeJSON(DAG_DIRECTORY, "plan-logical", "logical execution plan");
-    final DAG<PhysicalStage, PhysicalStageEdge> physicalPlan = stagesIntoPlan(stagedDAG);
-    return physicalPlan;
+    return stagesIntoPlan(stagedDAG);
   }
 
   /**
@@ -65,11 +64,13 @@ public final class PhysicalPlanGenerator
     final DAGBuilder<Stage, StageEdge> stagedDAGBuilder = new DAGBuilder<>();
 
     final List<List<IRVertex>> vertexListForEachStage = groupVerticesByStage(irDAG);
-    final Set<IRVertex> currentStageVertices = new HashSet<>();
+
     final Map<IRVertex, Stage> vertexStageMap = new HashMap<>();
-    final Set<StageEdgeBuilder> currentStageIncomingEdges = new HashSet<>();
 
     for (final List<IRVertex> stageVertices : vertexListForEachStage) {
+      final Set<IRVertex> currentStageVertices = new HashSet<>();
+      final Set<StageEdgeBuilder> currentStageIncomingEdges = new HashSet<>();
+
       // Create a new stage builder.
       final StageBuilder stageBuilder = new StageBuilder();
 
@@ -216,7 +217,7 @@ public final class PhysicalPlanGenerator
 
   /**
    * Converts the given logical DAG to a physical DAG for execution.
-   * @param stagedDAG submitted to Runtime in {@link ExecutionPlan}.
+   * @param stagedDAG IR DAG partitioned into stages.
    * @return the converted physical DAG to execute,
    * which consists of {@link PhysicalStage} and their relationship represented by {@link PhysicalStageEdge}.
    */

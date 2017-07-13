@@ -212,21 +212,19 @@ public final class DataTransferTest {
                             final Attribute commPattern,
                             final Attribute store) {
     // Src setup
-
-
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap srcVertexAttributes = AttributeMap.of(srcVertex);
+    final AttributeMap srcVertexAttributes = srcVertex.getAttributes();
     srcVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
 
     // Dst setup
     final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap dstVertexAttributes = AttributeMap.of(dstVertex);
+    final AttributeMap dstVertexAttributes = dstVertex.getAttributes();
     dstVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
 
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.OneToOne, srcVertex, dstVertex, CODER);
-    final AttributeMap edgeAttributes = AttributeMap.of(dummyIREdge);
+    final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
     edgeAttributes.put(Attribute.Key.CommunicationPattern, commPattern);
     edgeAttributes.put(Attribute.Key.Partitioning, Attribute.Hash);
     edgeAttributes.put(Attribute.Key.ChannelDataPlacement, store);
