@@ -21,14 +21,14 @@ import edu.snu.vortex.common.dag.DAG;
 
 /**
  * Interface for backend components.
- * @param <ExecPlan> execution plan to compile the DAG into.
+ * @param <PhysicalPlan> execution plan to compile the DAG into.
  */
-public interface Backend<ExecPlan> {
+public interface Backend<PhysicalPlan> {
   /**
    * Compiles a DAG to an execution plan.
    * @param dag DAG to compile.
    * @return the execution plan generated.
    * @throws Exception Exception on the way.
    */
-  ExecPlan compile(DAG<IRVertex, IREdge> dag) throws Exception;
+  PhysicalPlan compile(DAG<IRVertex, IREdge> dag) throws Exception;
 }

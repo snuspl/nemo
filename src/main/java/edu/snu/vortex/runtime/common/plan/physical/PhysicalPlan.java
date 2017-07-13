@@ -16,8 +16,10 @@
 package edu.snu.vortex.runtime.common.plan.physical;
 
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.ir.IRVertex;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -30,10 +32,14 @@ public final class PhysicalPlan implements Serializable {
 
   private final DAG<PhysicalStage, PhysicalStageEdge> stageDAG;
 
+  private final Map<Task, IRVertex> taskIRVertexMap;
+
   public PhysicalPlan(final String id,
-                      final DAG<PhysicalStage, PhysicalStageEdge> stageDAG) {
+                      final DAG<PhysicalStage, PhysicalStageEdge> stageDAG,
+                      final Map<Task, IRVertex> taskIRVertexMap) {
     this.id = id;
     this.stageDAG = stageDAG;
+    this.taskIRVertexMap = taskIRVertexMap;
   }
 
   public String getId() {
@@ -42,6 +48,10 @@ public final class PhysicalPlan implements Serializable {
 
   public DAG<PhysicalStage, PhysicalStageEdge> getStageDAG() {
     return stageDAG;
+  }
+
+  public IRVertex getIRVertexOf(final Task task) {
+    return taskIRVertexMap.get(task);
   }
 
   @Override

@@ -16,11 +16,11 @@
 package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
@@ -46,29 +46,29 @@ public final class InputReader extends DataTransfer {
   /**
    * Attributes that specify how we should read the input.
    */
-  private final RuntimeVertex srcRuntimeVertex;
+  private final IRVertex srcVertex;
   private final RuntimeEdge runtimeEdge;
 
   public InputReader(final int dstTaskIndex,
-                     final RuntimeVertex srcRuntimeVertex,
-                     final RuntimeEdge runtimeEdge,
+                     final IRVertex srcVertex,
+                     final RuntimeEdge irEdge,
                      final PartitionManagerWorker partitionManagerWorker) {
 
-    super(runtimeEdge.getId());
+    super(irEdge.getId());
     this.dstTaskIndex = dstTaskIndex;
-    this.srcRuntimeVertex = srcRuntimeVertex;
-    this.runtimeEdge = runtimeEdge;
+    this.srcVertex = srcVertex;
+    this.runtimeEdge = irEdge;
     this.partitionManagerWorker = partitionManagerWorker;
   }
 
   /**
-   * Reads input data depending on the communication pattern of the srcRuntimeVertex.
+   * Reads input data depending on the communication pattern of the srcVertex.
    *
    * @return the read data.
    */
   public Iterable<Element> read() {
     try {
-      switch (runtimeEdge.getEdgeAttributes().get(Attribute.Key.CommunicationPattern)) {
+      switch (runtimeEdge.getAttributes().get(Attribute.Key.CommunicationPattern)) {
         case OneToOne:
           return readOneToOne();
         case Broadcast:
@@ -86,17 +86,17 @@ public final class InputReader extends DataTransfer {
   private Iterable<Element> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.getPartition(partitionId, getId(),
-        runtimeEdge.getEdgeAttributes().get(Attribute.Key.ChannelDataPlacement)).get().asIterable();
+        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement)).get().asIterable();
   }
 
   private Iterable<Element> readBroadcast() throws ExecutionException, InterruptedException {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int numSrcTasks = srcVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
 
     final List<CompletableFuture<Partition>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.getPartition(partitionId, getId(),
-          runtimeEdge.getEdgeAttributes().get(Attribute.Key.ChannelDataPlacement)));
+          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement)));
     }
 
     final List<Element> concatStreamBase = new ArrayList<>();
@@ -109,13 +109,13 @@ public final class InputReader extends DataTransfer {
   }
 
   private Iterable<Element> readScatterGather() throws ExecutionException, InterruptedException {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int numSrcTasks = srcVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
 
     final List<CompletableFuture<Partition>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.getPartition(partitionId, getId(),
-          runtimeEdge.getEdgeAttributes().get(Attribute.Key.ChannelDataPlacement)));
+          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement)));
     }
 
     final List<Element> concatStreamBase = new ArrayList<>();
@@ -133,15 +133,15 @@ public final class InputReader extends DataTransfer {
 
   public String getSrcRuntimeVertexId() {
     // this src runtime vertex can be either a real vertex or a task. we must check!
-    if (srcRuntimeVertex != null) {
-      return srcRuntimeVertex.getId();
+    if (srcVertex != null) {
+      return srcVertex.getId();
     }
 
     return ((Task) runtimeEdge.getSrc()).getRuntimeVertexId();
   }
 
   public boolean isSideInputReader() {
-    AttributeMap edgeAttributes = runtimeEdge.getEdgeAttributes();
+    AttributeMap edgeAttributes = runtimeEdge.getAttributes();
 
     return edgeAttributes.containsKey(Attribute.Key.SideInput);
   }

@@ -16,12 +16,12 @@
 package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Reader;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
-import edu.snu.vortex.runtime.common.plan.logical.RuntimeOperatorVertex;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.common.state.TaskState;
@@ -203,7 +203,7 @@ public final class TaskGroupExecutor {
         .forEach(edge -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edge.getId(), edge.getSrc().getIndex());
           partitionManagerWorker
-              .removePartition(partitionId, edge.getEdgeAttributes().get(Attribute.Key.ChannelDataPlacement));
+              .removePartition(partitionId, edge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
         });
   }
 
@@ -235,8 +235,8 @@ public final class TaskGroupExecutor {
           final RuntimeEdge inEdge = inputReader.getRuntimeEdge();
           final Transform srcTransform;
           if (inEdge instanceof PhysicalStageEdge) {
-            srcTransform = ((RuntimeOperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
-                .getOperatorVertex().getTransform();
+            srcTransform = ((OperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
+                .getTransform();
           } else {
             srcTransform = ((OperatorTask) inEdge.getSrc()).getTransform();
           }

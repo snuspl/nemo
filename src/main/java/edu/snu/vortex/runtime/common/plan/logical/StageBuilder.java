@@ -15,17 +15,19 @@
  */
 package edu.snu.vortex.runtime.common.plan.logical;
 
-import edu.snu.vortex.common.coder.Coder;
+import edu.snu.vortex.compiler.ir.IREdge;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
-import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.common.dag.DAGBuilder;
+
+import java.util.List;
 
 /**
  * Stage Builder.
  */
 public final class StageBuilder {
-  private final DAGBuilder<RuntimeVertex, RuntimeEdge<RuntimeVertex>> stageInternalDAGBuilder;
+  private final DAGBuilder<IRVertex, IREdge> stageInternalDAGBuilder;
 
   /**
    * Builds a {@link Stage}.
@@ -35,36 +37,37 @@ public final class StageBuilder {
   }
 
   /**
-   * Adds a {@link RuntimeVertex} to this stage.
+   * Adds a {@link IRVertex} to this stage.
    * @param vertex to add.
    */
-  public void addRuntimeVertex(final RuntimeVertex vertex) {
+  public void addVertex(final IRVertex vertex) {
     stageInternalDAGBuilder.addVertex(vertex);
   }
 
   /**
-   * Connects two {@link RuntimeVertex} in this stage.
-   * @param irEdgeId the IR edge ID to be used for this edge.
-   * @param edgeAttributes edge attributes of the edge.
-   * @param srcVertex source vertex.
-   * @param dstVertex destination vertex.
-   * @param coder coder.
+   * Connects two {@link IRVertex} in this stage.
+   * @param edge the IREdge that connects vertices.
    */
-  public void connectInternalRuntimeVertices(final String irEdgeId,
-                                             final AttributeMap edgeAttributes,
-                                             final RuntimeVertex srcVertex,
-                                             final RuntimeVertex dstVertex,
-                                             final Coder coder) {
-    final RuntimeEdge<RuntimeVertex> edge = new RuntimeEdge<>(RuntimeIdGenerator.generateRuntimeEdgeId(irEdgeId),
-        edgeAttributes, srcVertex, dstVertex, coder);
+  public void connectInternalVertices(final IREdge edge) {
     stageInternalDAGBuilder.connectVertices(edge);
   }
 
   /**
-   * @return true if this builder contains any valid {@link RuntimeVertex}.
+   * @return true if this builder contains any valid {@link IRVertex}.
    */
   public boolean isEmpty() {
     return stageInternalDAGBuilder.isEmpty();
+  }
+
+  private void integrityCheck(final Stage stage) {
+    final List<IRVertex> vertices = stage.getStageInternalDAG().getVertices();
+
+    final AttributeMap firstAttrMap = vertices.iterator().next().getAttributes();
+    vertices.forEach(irVertex -> {
+      if (!irVertex.getAttributes().equals(firstAttrMap)) {
+        throw new RuntimeException("Vertices of the same stage have different attributes: " + irVertex.getId());
+      }
+    });
   }
 
   /**
@@ -72,6 +75,9 @@ public final class StageBuilder {
    * @return the runtime stage.
    */
   public Stage build() {
-    return new Stage(RuntimeIdGenerator.generateStageId(), stageInternalDAGBuilder.build());
+    final Stage stage = new Stage(RuntimeIdGenerator.generateStageId(),
+        stageInternalDAGBuilder.buildWithoutSourceSinkCheck());
+    integrityCheck(stage);
+    return stage;
   }
 }
