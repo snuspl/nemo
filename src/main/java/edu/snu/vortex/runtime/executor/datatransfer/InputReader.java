@@ -27,6 +27,7 @@ import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -66,14 +67,10 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
-    final CompletableFuture<Iterable<Element>> completableFuture = new CompletableFuture<>();
-
     try {
       switch (runtimeEdge.getEdgeAttributes().get(Attribute.Key.CommunicationPattern)) {
         case OneToOne:
-          final List<CompletableFuture<Iterable<Element>>> list = new ArrayList<>(1);
-          list.add(readOneToOne());
-          return list;
+          return Collections.singletonList(readOneToOne());
         case Broadcast:
           return readBroadcast();
         case ScatterGather:
