@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Orchestrate message sender and receiver using {@link CompletableFuture} for asynchronous request-reply communication.
+ * @param <T> the type of successful reply
  */
 public final class ReplyFutureMap<T> {
 
