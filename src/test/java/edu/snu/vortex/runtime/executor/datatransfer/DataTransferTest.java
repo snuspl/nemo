@@ -37,7 +37,7 @@ import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
-import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupQueue;
+import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupPriorityQueue;
 import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -97,7 +97,7 @@ public final class DataTransferTest {
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final Scheduler scheduler =
         new BatchScheduler(master,
-            new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupQueue());
+            new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue());
     final AtomicInteger executorCount = new AtomicInteger(0);
     final PartitionManagerMaster master = new PartitionManagerMaster();
 
@@ -166,43 +166,43 @@ public final class DataTransferTest {
   }
 
   @Test
-  public void testOneToOneSameWorker() {
+  public void testOneToOneSameWorker() throws Exception {
     writeAndRead(worker1, worker1, Attribute.OneToOne, STORE);
   }
 
   @Test
-  public void testOneToOneDifferentWorker() {
+  public void testOneToOneDifferentWorker() throws Exception {
     writeAndRead(worker1, worker2, Attribute.OneToOne, STORE);
   }
 
   @Test
-  public void testOneToManySameWorker() {
+  public void testOneToManySameWorker() throws Exception {
     writeAndRead(worker1, worker1, Attribute.Broadcast, STORE);
   }
 
   @Test
-  public void testOneToManyDifferentWorker() {
+  public void testOneToManyDifferentWorker() throws Exception {
     writeAndRead(worker1, worker2, Attribute.Broadcast, STORE);
   }
 
   @Test
-  public void testManyToManySameWorker() {
+  public void testManyToManySameWorker() throws Exception {
     writeAndRead(worker1, worker1, Attribute.ScatterGather, STORE);
   }
 
   @Test
-  public void testManyToManyDifferentWorker() {
+  public void testManyToManyDifferentWorker() throws Exception {
     writeAndRead(worker1, worker2, Attribute.ScatterGather, STORE);
   }
 
   @Test(timeout = 1000)
-  public void testFileManyToManySameWorker() throws IOException {
+  public void testFileManyToManySameWorker() throws Exception {
     writeAndRead(worker1, worker1, Attribute.ScatterGather, FILE_STORE);
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
   @Test(timeout = 1000)
-  public void testFileManyToManyDifferentWorker() throws IOException {
+  public void testFileManyToManyDifferentWorker() throws Exception {
     writeAndRead(worker1, worker2, Attribute.ScatterGather, FILE_STORE);
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
@@ -210,7 +210,7 @@ public final class DataTransferTest {
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
                             final Attribute commPattern,
-                            final Attribute store) {
+                            final Attribute store) throws RuntimeException {
     // Src setup
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
@@ -255,7 +255,11 @@ public final class DataTransferTest {
     IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
       final InputReader reader = new InputReader(dstTaskIndex, srcVertex, dummyEdge, receiver);
       final List<Element> dataRead = new ArrayList<>();
-      reader.read().forEach(dataRead::add);
+      try {
+        InputReader.combineFutures(reader.read()).forEach(dataRead::add);
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
       dataReadList.add(dataRead);
     });
 

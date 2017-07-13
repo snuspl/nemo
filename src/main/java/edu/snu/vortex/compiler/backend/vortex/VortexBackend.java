@@ -44,7 +44,7 @@ public final class VortexBackend implements Backend<PhysicalPlan> {
   public PhysicalPlan compile(final DAG<IRVertex, IREdge> irDAG) throws Exception {
     final PhysicalPlanGenerator physicalPlanGenerator = new PhysicalPlanGenerator();
     final DAG<PhysicalStage, PhysicalStageEdge> physicalStageDAG = irDAG.convert(physicalPlanGenerator);
-    final PhysicalPlan physicalPlan = new PhysicalPlan(RuntimeIdGenerator.generateExecutionPlanId(),
+    final PhysicalPlan physicalPlan = new PhysicalPlan(RuntimeIdGenerator.generatePhysicalPlanId(),
         physicalStageDAG, physicalPlanGenerator.getTaskIRVertexMap());
     return physicalPlan;
   }

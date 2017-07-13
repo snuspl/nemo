@@ -110,7 +110,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Scheduler timeout in ms.
    */
-  @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms", default_value = "2000")
+  @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms", default_value = "10000")
   public final class SchedulerTimeoutMs implements Name<Integer> {
   }
 
@@ -126,6 +126,13 @@ public final class JobConf extends ConfigurationModuleBuilder {
    */
   @NamedParameter(doc = "Max number of schedules", short_name = "max_schedule_attempt", default_value = "3")
   public final class MaxScheduleAttempt implements Name<Integer> {
+  }
+
+  /**
+   * Block size.
+   */
+  @NamedParameter(doc = "Block size (in KB)", short_name = "block_size", default_value = "128000")
+  public final class BlockSize implements Name<Integer> {
   }
 
   public static final OptionalParameter<Integer> EXECUTOR_CAPACITY = new OptionalParameter<>();
