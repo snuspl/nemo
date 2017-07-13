@@ -43,17 +43,17 @@ public final class PendingTaskGroupPriorityQueue {
   /**
    * Pending TaskGroups awaiting to be scheduled for each stage.
    */
-  private final ConcurrentMap<String, BlockingDeque<ScheduledTaskGroup>> stageIdToPendingTaskGroups;
+  private final ConcurrentMap<String, Deque<ScheduledTaskGroup>> stageIdToPendingTaskGroups;
 
   /**
    * Stages with TaskGroups that have not yet been scheduled.
    */
-  private final BlockingDeque<String> pendingStages;
+  private final BlockingDeque<String> schedulableStages;
 
   @Inject
   public PendingTaskGroupPriorityQueue() {
     stageIdToPendingTaskGroups = new ConcurrentHashMap<>();
-    pendingStages = new LinkedBlockingDeque<>();
+    schedulableStages = new LinkedBlockingDeque<>();
   }
 
   /**
@@ -66,11 +66,11 @@ public final class PendingTaskGroupPriorityQueue {
     if (stageIdToPendingTaskGroups.containsKey(stageId)) {
       stageIdToPendingTaskGroups.get(stageId).addLast(scheduledTaskGroup);
     } else {
-      final BlockingDeque<ScheduledTaskGroup> pendingTaskGroupsForStage = new LinkedBlockingDeque<>();
+      final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = new ArrayDeque<>();
       pendingTaskGroupsForStage.add(scheduledTaskGroup);
 
       stageIdToPendingTaskGroups.put(stageId, pendingTaskGroupsForStage);
-      updatePendingStages(stageId);
+      updateSchedulableStages(stageId);
     }
   }
 
@@ -80,16 +80,16 @@ public final class PendingTaskGroupPriorityQueue {
    * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
   public ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
-    final String stageId = pendingStages.takeFirst();
+    final String stageId = schedulableStages.takeFirst();
 
     final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
     final ScheduledTaskGroup taskGroupToSchedule = pendingTaskGroupsForStage.poll();
 
     if (pendingTaskGroupsForStage.isEmpty()) {
       stageIdToPendingTaskGroups.remove(stageId);
-      stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updatePendingStages(scheduledStageId));
+      stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updateSchedulableStages(scheduledStageId));
     } else {
-      pendingStages.addLast(stageId);
+      schedulableStages.addLast(stageId);
     }
 
     return taskGroupToSchedule;
@@ -108,7 +108,7 @@ public final class PendingTaskGroupPriorityQueue {
    * @param stageId for the stage to begin the removal recursively.
    */
   private void removeStageAndChildren(final String stageId) {
-    pendingStages.remove(stageId);
+    schedulableStages.remove(stageId);
     stageIdToPendingTaskGroups.remove(stageId);
 
     physicalPlan.getStageDAG().getChildren(stageId).forEach(
@@ -120,18 +120,18 @@ public final class PendingTaskGroupPriorityQueue {
    * This enables those depending on this stage to begin being scheduled.
    * @param scheduledStageId for the stage that has completed scheduling.
    */
-  private void updatePendingStages(final String scheduledStageId) {
+  private void updateSchedulableStages(final String scheduledStageId) {
     boolean readyToScheduleImmediately = true;
     for (final PhysicalStage parentStage : physicalPlan.getStageDAG().getParents(scheduledStageId)) {
-      if (pendingStages.contains(parentStage.getId())) {
+      if (schedulableStages.contains(parentStage.getId())) {
         readyToScheduleImmediately = false;
         break;
       }
     }
 
     if (readyToScheduleImmediately) {
-      if (!pendingStages.contains(scheduledStageId)) {
-        pendingStages.addLast(scheduledStageId);
+      if (!schedulableStages.contains(scheduledStageId)) {
+        schedulableStages.addLast(scheduledStageId);
       }
     }
   }
