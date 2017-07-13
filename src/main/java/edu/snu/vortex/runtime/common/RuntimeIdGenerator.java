@@ -33,7 +33,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.ExecutionPlan}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.stage.ExecutionPlan}.
    * @return the generated ID
    */
   public static String generateExecutionPlanId() {
@@ -41,7 +41,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.RuntimeVertex}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.stage.RuntimeVertex}.
    * @param irVertexId .
    * @return the generated ID
    */
@@ -50,7 +50,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.stage.StageEdge}.
    * @param irEdgeId .
    * @return the generated ID
    */
@@ -68,7 +68,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.logical.Stage}.
+   * Generates the ID for {@link edu.snu.vortex.runtime.common.plan.stage.Stage}.
    * @return the generated ID
    */
   public static String generateStageId() {

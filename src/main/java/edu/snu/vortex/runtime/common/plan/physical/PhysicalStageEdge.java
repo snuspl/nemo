@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 
 /**
- * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.logical.StageEdge}.
+ * Contains information stage boundary {@link edu.snu.vortex.runtime.common.plan.stage.StageEdge}.
  */
 public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> {
   /**
