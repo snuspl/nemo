@@ -24,6 +24,8 @@ import org.apache.reef.annotations.audience.DriverSide;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -41,7 +43,7 @@ public final class PendingTaskGroupPriorityQueue {
   /**
    * Pending TaskGroups awaiting to be scheduled for each stage.
    */
-  private final Map<String, Deque<ScheduledTaskGroup>> stageIdToPendingTaskGroups;
+  private final ConcurrentMap<String, BlockingDeque<ScheduledTaskGroup>> stageIdToPendingTaskGroups;
 
   /**
    * Stages with TaskGroups that have not yet been scheduled.
@@ -50,21 +52,21 @@ public final class PendingTaskGroupPriorityQueue {
 
   @Inject
   public PendingTaskGroupPriorityQueue() {
-    stageIdToPendingTaskGroups = new HashMap<>();
+    stageIdToPendingTaskGroups = new ConcurrentHashMap<>();
     pendingStages = new LinkedBlockingDeque<>();
   }
 
   /**
    * Enqueues a TaskGroup to this PQ.
-   * @param scheduledTaskGroup
+   * @param scheduledTaskGroup to enqueue.
    */
-  public synchronized void enqueue(final ScheduledTaskGroup scheduledTaskGroup) {
+  public void enqueue(final ScheduledTaskGroup scheduledTaskGroup) {
     final String stageId = scheduledTaskGroup.getTaskGroup().getStageId();
 
     if (stageIdToPendingTaskGroups.containsKey(stageId)) {
       stageIdToPendingTaskGroups.get(stageId).addLast(scheduledTaskGroup);
     } else {
-      final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = new ArrayDeque<>();
+      final BlockingDeque<ScheduledTaskGroup> pendingTaskGroupsForStage = new LinkedBlockingDeque<>();
       pendingTaskGroupsForStage.add(scheduledTaskGroup);
 
       stageIdToPendingTaskGroups.put(stageId, pendingTaskGroupsForStage);
@@ -75,9 +77,9 @@ public final class PendingTaskGroupPriorityQueue {
   /**
    * Dequeues the next TaskGroup to be scheduled according to job dependency priority.
    * @return the next TaskGroup to be scheduled
-   * @throws InterruptedException
+   * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
-  public synchronized ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
+  public ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
     final String stageId = pendingStages.takeFirst();
 
     final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
@@ -97,7 +99,7 @@ public final class PendingTaskGroupPriorityQueue {
    * Removes a stage and its descendant stages from this PQ.
    * @param stageId for the stage to begin the removal recursively.
    */
-  public synchronized void removeStageAndDescendantsFromQueue(final String stageId) {
+  public void removeStageAndDescendantsFromQueue(final String stageId) {
     removeStageAndChildren(stageId);
   }
 
@@ -134,7 +136,7 @@ public final class PendingTaskGroupPriorityQueue {
     }
   }
 
-  public synchronized void onJobScheduled(final PhysicalPlan physicalPlanForJob) {
+  public void onJobScheduled(final PhysicalPlan physicalPlanForJob) {
     this.physicalPlan = physicalPlanForJob;
   }
 }

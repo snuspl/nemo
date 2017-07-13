@@ -78,7 +78,8 @@ public final class BatchScheduler implements Scheduler {
 
     // Launch scheduler
     final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
-    pendingTaskSchedulerThread.execute(new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupPriorityQueue));
+    pendingTaskSchedulerThread.execute(
+        new SchedulerRunner(jobStateManager, schedulingPolicy, pendingTaskGroupPriorityQueue));
     pendingTaskSchedulerThread.shutdown();
 
     scheduleRootStages();
