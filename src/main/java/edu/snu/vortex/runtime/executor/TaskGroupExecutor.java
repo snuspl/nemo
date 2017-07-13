@@ -264,20 +264,20 @@ public final class TaskGroupExecutor {
     // Check for non-side inputs
     // This blocking queue contains the pairs having data and source vertex ids.
     final BlockingQueue<Pair<Iterable<Element>, String>> dataQueue = new LinkedBlockingQueue<>();
-    final AtomicInteger numSrcTasks = new AtomicInteger(0);
+    final AtomicInteger sourceParallelism = new AtomicInteger(0);
     taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
         .filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
           final List<CompletableFuture<Iterable<Element>>> futures = inputReader.read();
           final String srcVtxId = inputReader.getSrcRuntimeVertexId();
-          numSrcTasks.getAndAdd(inputReader.getNumSrcTasks());
+          sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           // Add consumers which will push the data to the data queue when it ready to the futures.
           futures.forEach(compFuture -> compFuture.thenAccept(data -> dataQueue.add(Pair.of(data, srcVtxId))));
         });
 
     // Consumes all of the partitions from incoming edges.
-    IntStream.range(0, numSrcTasks.get()).forEach(srcTaskNum -> {
+    IntStream.range(0, sourceParallelism.get()).forEach(srcTaskNum -> {
       try {
         // Because the data queue is a blocking queue, we may need to wait some available data to be pushed.
         final Pair<Iterable<Element>, String> availableData = dataQueue.take();
