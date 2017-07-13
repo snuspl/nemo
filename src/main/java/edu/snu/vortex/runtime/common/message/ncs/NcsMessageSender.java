@@ -35,8 +35,9 @@ final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
   @Override
   public CompletableFuture<ControlMessage.Message> request(final ControlMessage.Message message) {
     LOG.log(Level.FINE, "request: {0}", message);
+    final CompletableFuture<ControlMessage.Message> future = replyFutureMap.beforeRequest(message.getId());
     connection.write(message);
-    return replyFutureMap.onRequest(message.getId());
+    return future;
   }
 
   @Override

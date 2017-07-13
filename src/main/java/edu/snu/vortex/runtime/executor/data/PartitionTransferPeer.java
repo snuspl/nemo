@@ -126,7 +126,7 @@ final class PartitionTransferPeer {
     }
     final long requestId = requestIdCounter.getAndIncrement();
     requestIdToCoder.put(requestId, coder);
-    final CompletableFuture<Iterable<Element>> future = replyFutureMap.onRequest(requestId);
+    final CompletableFuture<Iterable<Element>> future = replyFutureMap.beforeRequest(requestId);
     final ControlMessage.RequestPartitionMsg msg = ControlMessage.RequestPartitionMsg.newBuilder()
         .setRequestId(requestId)
         .setPartitionId(partitionId)

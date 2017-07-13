@@ -16,11 +16,13 @@ public final class ReplyFutureMap<T> {
   }
 
   /**
-   * Called by message sender, whenever a new request is sent.
+   * Called by message sender, just before a new request is sent.
+   * Note that this method should be used *before* actual message sending.
+   * Otherwise {@code onSuccessMessage} can be called before putting new future to {@code requestIdToFuture}.
    * @param id the request id
    * @return a {@link CompletableFuture} for the reply
    */
-  public CompletableFuture<T> onRequest(final long id) {
+  public CompletableFuture<T> beforeRequest(final long id) {
     final CompletableFuture<T> future = new CompletableFuture<>();
     requestIdToFuture.put(id, future);
     return future;
