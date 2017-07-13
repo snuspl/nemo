@@ -65,19 +65,19 @@ public final class DAGConverterTest {
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();
     final PhysicalPlanGenerator physicalPlanGenerator = new PhysicalPlanGenerator();
-    final DAG<Stage, StageEdge> logicalDAG = physicalPlanGenerator.stagePartitionIrDAG(irDAG);
+    final DAG<Stage, StageEdge> DAGOfStages = physicalPlanGenerator.stagePartitionIrDAG(irDAG);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
 
-    // Test Logical DAG
-    final List<Stage> sortedLogicalDAG = logicalDAG.getTopologicalSort();
-    final Stage stage1 = sortedLogicalDAG.get(0);
-    final Stage stage2 = sortedLogicalDAG.get(1);
+    // Test DAG of stages
+    final List<Stage> sortedDAGOfStages = DAGOfStages.getTopologicalSort();
+    final Stage stage1 = sortedDAGOfStages.get(0);
+    final Stage stage2 = sortedDAGOfStages.get(1);
 
-    assertEquals(logicalDAG.getVertices().size(), 2);
-    assertEquals(logicalDAG.getIncomingEdgesOf(stage1).size(), 0);
-    assertEquals(logicalDAG.getIncomingEdgesOf(stage2).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdgesOf(stage1).size(), 1);
-    assertEquals(logicalDAG.getOutgoingEdgesOf(stage2).size(), 0);
+    assertEquals(DAGOfStages.getVertices().size(), 2);
+    assertEquals(DAGOfStages.getIncomingEdgesOf(stage1).size(), 0);
+    assertEquals(DAGOfStages.getIncomingEdgesOf(stage2).size(), 1);
+    assertEquals(DAGOfStages.getOutgoingEdgesOf(stage1).size(), 1);
+    assertEquals(DAGOfStages.getOutgoingEdgesOf(stage2).size(), 0);
 
     // Test Physical DAG
     final List<PhysicalStage> sortedPhysicalDAG = physicalDAG.getTopologicalSort();

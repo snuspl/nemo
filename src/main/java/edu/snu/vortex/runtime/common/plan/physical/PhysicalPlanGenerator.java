@@ -47,9 +47,9 @@ public final class PhysicalPlanGenerator
    */
   @Override
   public DAG<PhysicalStage, PhysicalStageEdge> apply(final DAG<IRVertex, IREdge> irDAG) {
-    final DAG<Stage, StageEdge> stagedDAG = stagePartitionIrDAG(irDAG);
-//    stagedDAG.storeJSON(DAG_DIRECTORY, "plan-logical", "logical execution plan");
-    return stagesIntoPlan(stagedDAG);
+    final DAG<Stage, StageEdge> dagOfStages = stagePartitionIrDAG(irDAG);
+//    dagOfStages.storeJSON(DAG_DIRECTORY, "plan-logical", "logical execution plan");
+    return stagesIntoPlan(dagOfStages);
   }
 
   /**
@@ -61,7 +61,7 @@ public final class PhysicalPlanGenerator
    * @return the partitioned DAG, composed of stages and stage edges.
    */
   public DAG<Stage, StageEdge> stagePartitionIrDAG(final DAG<IRVertex, IREdge> irDAG) {
-    final DAGBuilder<Stage, StageEdge> stagedDAGBuilder = new DAGBuilder<>();
+    final DAGBuilder<Stage, StageEdge> dagOfStagesBuilder = new DAGBuilder<>();
 
     final List<List<IRVertex>> vertexListForEachStage = groupVerticesByStage(irDAG);
 
@@ -77,11 +77,11 @@ public final class PhysicalPlanGenerator
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {
 
-        // Add vertex to the logical DAG
+        // Add vertex to the stage.
         stageBuilder.addVertex(irVertex);
         currentStageVertices.add(irVertex);
 
-        // Connect all the incoming edges for the runtime vertex
+        // Connect all the incoming edges for the vertex
         final List<IREdge> inEdges = irDAG.getIncomingEdgesOf(irVertex);
         final Optional<List<IREdge>> inEdgeList = (inEdges == null) ? Optional.empty() : Optional.of(inEdges);
         inEdgeList.ifPresent(edges -> edges.forEach(irEdge -> {
@@ -117,13 +117,13 @@ public final class PhysicalPlanGenerator
       // If this runtime stage contains at least one vertex, build it!
       if (!stageBuilder.isEmpty()) {
         final Stage currentStage = stageBuilder.build();
-        stagedDAGBuilder.addVertex(currentStage);
+        dagOfStagesBuilder.addVertex(currentStage);
 
         // Add this stage as the destination stage for all the incoming edges.
         currentStageIncomingEdges.forEach(stageEdgeBuilder -> {
           stageEdgeBuilder.setDstStage(currentStage);
           final StageEdge stageEdge = stageEdgeBuilder.build();
-          stagedDAGBuilder.connectVertices(stageEdge);
+          dagOfStagesBuilder.connectVertices(stageEdge);
         });
         currentStageIncomingEdges.clear();
 
@@ -132,7 +132,7 @@ public final class PhysicalPlanGenerator
       }
     }
 
-    return stagedDAGBuilder.build();
+    return dagOfStagesBuilder.build();
   }
 
   /**
@@ -216,17 +216,17 @@ public final class PhysicalPlanGenerator
   }
 
   /**
-   * Converts the given logical DAG to a physical DAG for execution.
-   * @param stagedDAG IR DAG partitioned into stages.
+   * Converts the given DAG of stages to a physical DAG for execution.
+   * @param dagOfStages IR DAG partitioned into stages.
    * @return the converted physical DAG to execute,
    * which consists of {@link PhysicalStage} and their relationship represented by {@link PhysicalStageEdge}.
    */
-  private DAG<PhysicalStage, PhysicalStageEdge> stagesIntoPlan(final DAG<Stage, StageEdge> stagedDAG) {
+  private DAG<PhysicalStage, PhysicalStageEdge> stagesIntoPlan(final DAG<Stage, StageEdge> dagOfStages) {
     final Map<String, PhysicalStage> runtimeStageIdToPhysicalStageMap = new HashMap<>();
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder = new DAGBuilder<>();
 
     final Map<IRVertex, Task> irVertexTaskMap = new HashMap<>();
-    for (final Stage stage : stagedDAG.getVertices()) {
+    for (final Stage stage : dagOfStages.getVertices()) {
       final PhysicalStageBuilder physicalStageBuilder;
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
@@ -299,8 +299,8 @@ public final class PhysicalPlanGenerator
     }
 
     // Connect Physical stages
-    stagedDAG.getVertices().forEach(stage ->
-      stagedDAG.getIncomingEdgesOf(stage).forEach(stageEdge -> {
+    dagOfStages.getVertices().forEach(stage ->
+      dagOfStages.getIncomingEdgesOf(stage).forEach(stageEdge -> {
         final PhysicalStage srcStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getSrc().getId());
         final PhysicalStage dstStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getDst().getId());
 

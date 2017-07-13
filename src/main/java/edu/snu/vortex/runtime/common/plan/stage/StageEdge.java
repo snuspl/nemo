@@ -30,7 +30,7 @@ public final class StageEdge extends RuntimeEdge<Stage> {
   private final IRVertex dstVertex;
 
   /**
-   * Represents the edge between vertices in a logical plan.
+   * Represents the edge between stages.
    * @param irEdgeId id of this edge.
    * @param edgeAttributes to control the data flow on this edge.
    * @param srcStage source runtime stage.

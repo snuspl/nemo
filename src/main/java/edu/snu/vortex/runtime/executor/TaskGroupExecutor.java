@@ -270,7 +270,7 @@ public final class TaskGroupExecutor {
         .filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
           final List<CompletableFuture<Iterable<Element>>> futures = inputReader.read();
-          final String srcVtxId = inputReader.getSrcRuntimeVertexId();
+          final String srcVtxId = inputReader.getSrcVertexId();
           sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           // Add consumers which will push the data to the data queue when it ready to the futures.
           futures.forEach(compFuture -> compFuture.thenAccept(data -> dataQueue.add(Pair.of(data, srcVtxId))));

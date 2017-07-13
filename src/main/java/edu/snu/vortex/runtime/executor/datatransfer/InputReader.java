@@ -123,8 +123,8 @@ public final class InputReader extends DataTransfer {
     return runtimeEdge;
   }
 
-  public String getSrcRuntimeVertexId() {
-    // this src runtime vertex can be either a real vertex or a task. we must check!
+  public String getSrcVertexId() {
+    // this src vertex can be either a real vertex or a task. we must check!
     if (srcVertex != null) {
       return srcVertex.getId();
     }
