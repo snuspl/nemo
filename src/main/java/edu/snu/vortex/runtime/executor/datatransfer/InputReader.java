@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,7 @@ public final class InputReader extends DataTransfer {
   /**
    * Attributes that specify how we should read the input.
    */
-  private final RuntimeVertex srcRuntimeVertex;
+  @Nullable private final RuntimeVertex srcRuntimeVertex; // This vertex is null if this reader is a local reader.
   private final RuntimeEdge runtimeEdge;
 
   public InputReader(final int dstTaskIndex,
@@ -91,7 +92,7 @@ public final class InputReader extends DataTransfer {
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
       throws ExecutionException, InterruptedException {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int numSrcTasks = this.getNumSrcTasks();
 
     final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
@@ -105,7 +106,7 @@ public final class InputReader extends DataTransfer {
 
   private List<CompletableFuture<Iterable<Element>>> readScatterGather()
       throws ExecutionException, InterruptedException {
-    final int numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int numSrcTasks = this.getNumSrcTasks();
 
     final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
@@ -146,6 +147,21 @@ public final class InputReader extends DataTransfer {
       return futures.get(0).get().iterator().next().getData();
     } catch (InterruptedException | ExecutionException e) {
       throw new PartitionFetchException(e);
+    }
+  }
+
+  /**
+   * Get the number of source tasks.
+   *
+   * @return the number of source tasks.
+   */
+  public int getNumSrcTasks() {
+    if (srcRuntimeVertex != null) {
+      final Integer numSrcTasks = srcRuntimeVertex.getVertexAttributes().get(Attribute.IntegerKey.Parallelism);
+      return numSrcTasks == null ? 1 : numSrcTasks;
+    } else {
+      final Integer numSrcTasks = runtimeEdge.getEdgeAttributes().get(Attribute.IntegerKey.Parallelism);
+      return numSrcTasks == null ? 1 : numSrcTasks;
     }
   }
 
