@@ -51,7 +51,7 @@ public final class LocalMessageDispatcher {
     listener.onMessage(message);
   }
 
-  <T, U> Future<U> dispatchRequestMessage(
+  <T, U> CompletableFuture<U> dispatchRequestMessage(
       final String senderId, final String targetId, final String messageTypeId, final T message) {
 
     final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);
@@ -64,10 +64,7 @@ public final class LocalMessageDispatcher {
 
     final Optional<Object> replyMessage = context.getReplyMessage();
 
-    final CompletableFuture future = new CompletableFuture();
-    future.complete(replyMessage.orElse(null));
-
-    return future;
+    return CompletableFuture.completedFuture((U) replyMessage.orElse(null));
   }
 
   /**
