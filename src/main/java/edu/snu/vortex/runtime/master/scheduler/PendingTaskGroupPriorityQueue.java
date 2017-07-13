@@ -116,13 +116,13 @@ public final class PendingTaskGroupPriorityQueue {
   }
 
   /**
-   * Updates the two-level PQ when all TaskGroups for a stage are scheduled.
-   * This enables those depending on this stage to begin being scheduled.
-   * @param scheduledStageId for the stage that has completed scheduling.
+   * Updates the two-level PQ by examining a new candidate stage.
+   * If there are no stages with higher priority, the candidate can be made schedulable.
+   * @param candidateStageId for the stage that can potentially be scheduled.
    */
-  private void updateSchedulableStages(final String scheduledStageId) {
+  private void updateSchedulableStages(final String candidateStageId) {
     boolean readyToScheduleImmediately = true;
-    for (final PhysicalStage parentStage : physicalPlan.getStageDAG().getParents(scheduledStageId)) {
+    for (final PhysicalStage parentStage : physicalPlan.getStageDAG().getParents(candidateStageId)) {
       if (schedulableStages.contains(parentStage.getId())) {
         readyToScheduleImmediately = false;
         break;
@@ -130,8 +130,8 @@ public final class PendingTaskGroupPriorityQueue {
     }
 
     if (readyToScheduleImmediately) {
-      if (!schedulableStages.contains(scheduledStageId)) {
-        schedulableStages.addLast(scheduledStageId);
+      if (!schedulableStages.contains(candidateStageId)) {
+        schedulableStages.addLast(candidateStageId);
       }
     }
   }
