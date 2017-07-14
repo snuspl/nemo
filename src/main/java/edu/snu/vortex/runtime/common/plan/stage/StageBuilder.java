@@ -40,25 +40,31 @@ public final class StageBuilder {
    * Adds a {@link IRVertex} to this stage.
    * @param vertex to add.
    */
-  public void addVertex(final IRVertex vertex) {
+  public StageBuilder addVertex(final IRVertex vertex) {
     stageInternalDAGBuilder.addVertex(vertex);
+    return this;
   }
 
   /**
    * Connects two {@link IRVertex} in this stage.
    * @param edge the IREdge that connects vertices.
    */
-  public void connectInternalVertices(final IREdge edge) {
+  public StageBuilder connectInternalVertices(final IREdge edge) {
     stageInternalDAGBuilder.connectVertices(edge);
+    return this;
   }
 
   /**
-   * @return true if this builder contains any valid {@link IRVertex}.
+   * @return true if this builder doesn't contain any valid {@link IRVertex}.
    */
   public boolean isEmpty() {
     return stageInternalDAGBuilder.isEmpty();
   }
 
+  /**
+   * Integrity check for stages.
+   * @param stage stage to check for.
+   */
   private void integrityCheck(final Stage stage) {
     final List<IRVertex> vertices = stage.getStageInternalDAG().getVertices();
 

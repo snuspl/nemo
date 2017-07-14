@@ -42,13 +42,15 @@ public final class PhysicalPlanGenerator
     implements Function<DAG<IRVertex, IREdge>, DAG<PhysicalStage, PhysicalStageEdge>> {
   /**
    * Generates the {@link PhysicalPlan} to be executed.
-   * @param irDAG that should be converted to a physical plan
+   * @param irDAG that should be converted to a physical execution plan
    * @return {@link PhysicalPlan} to execute.
    */
   @Override
   public DAG<PhysicalStage, PhysicalStageEdge> apply(final DAG<IRVertex, IREdge> irDAG) {
+    // first, stage-partition the IR DAG.
     final DAG<Stage, StageEdge> dagOfStages = stagePartitionIrDAG(irDAG);
 //    dagOfStages.storeJSON(DAG_DIRECTORY, "plan-logical", "logical execution plan");
+    // then create tasks and make it into a physical execution plan.
     return stagesIntoPlan(dagOfStages);
   }
 
@@ -210,7 +212,12 @@ public final class PhysicalPlanGenerator
     vertexListForEachStage.add(newList);
   }
 
+  // Map that keeps track of the IRVertex of each tasks
   private final Map<Task, IRVertex> taskIRVertexMap = new HashMap<>();
+  /**
+   * Getter for taskIRVertexMap.
+   * @return the taskIRVertexMap.
+   */
   public Map<Task, IRVertex> getTaskIRVertexMap() {
     return taskIRVertexMap;
   }

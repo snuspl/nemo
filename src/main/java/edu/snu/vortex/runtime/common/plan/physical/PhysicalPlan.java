@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * A job's physical plan corresponding to an {@link edu.snu.vortex.runtime.common.plan.stage.ExecutionPlan}.
+ * A job's physical plan, to be executed by the Runtime.
  */
 public final class PhysicalPlan implements Serializable {
   private static final Logger LOG = Logger.getLogger(PhysicalPlan.class.getName());

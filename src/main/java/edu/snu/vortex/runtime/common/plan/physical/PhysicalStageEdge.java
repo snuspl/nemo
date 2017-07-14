@@ -27,13 +27,13 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> {
   /**
    * The source {@link IRVertex}.
-   * This could either belong to the external stage or this stage.
+   * This belongs to the srcStage.
    */
   private final IRVertex srcVertex;
 
   /**
    * The destination {@link IRVertex}.
-   * This could either belong to the external stage or this stage.
+   * This belongs to the dstStage.
    */
   private final IRVertex dstVertex;
 
