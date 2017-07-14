@@ -37,8 +37,11 @@ public final class StageBuilder {
   }
 
   /**
+   */
+  /**
    * Adds a {@link IRVertex} to this stage.
    * @param vertex to add.
+   * @return the stageBuilder.
    */
   public StageBuilder addVertex(final IRVertex vertex) {
     stageInternalDAGBuilder.addVertex(vertex);
@@ -48,6 +51,7 @@ public final class StageBuilder {
   /**
    * Connects two {@link IRVertex} in this stage.
    * @param edge the IREdge that connects vertices.
+   * @return the stageBuilder.
    */
   public StageBuilder connectInternalVertices(final IREdge edge) {
     stageInternalDAGBuilder.connectVertices(edge);
