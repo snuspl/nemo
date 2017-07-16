@@ -196,7 +196,7 @@ public final class FaultToleranceTest {
     });
 
     partitionIdsToRecompute.forEach(partitionId -> {
-      assertTrue(taskGroupIdsForFailingExecutor.contains(partitionManagerMaster.getParentTaskGroupId(partitionId)));
+      assertTrue(taskGroupIdsForFailingExecutor.contains(partitionManagerMaster.getProducerTaskGroupId(partitionId)));
       assertTrue(partitionManagerMaster.getPartitionState(partitionId).getStateMachine().getCurrentState()
           == PartitionState.State.LOST);
     });
