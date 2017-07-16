@@ -150,7 +150,7 @@ public final class TestUtil {
                                                                final ContainerManager containerManager,
                                                                final String partitionId,
                                                                final PartitionState.State newState) {
-    final String parentTaskGroupId = partitionManagerMaster.getParentTaskGroupId(partitionId);
+    final String parentTaskGroupId = partitionManagerMaster.getProducerTaskGroupId(partitionId);
     final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(containerManager, parentTaskGroupId);
 
     if (scheduledExecutor != null) {

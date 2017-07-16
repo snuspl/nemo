@@ -222,10 +222,12 @@ public final class RuntimeMaster {
     switch (state) {
     case PARTITION_READY:
       return PartitionState.State.READY;
-    case MOVING:
-      return PartitionState.State.MOVING;
+    case SCHEDULED:
+      return PartitionState.State.SCHEDULED;
     case COMMITTED:
       return PartitionState.State.COMMITTED;
+    case LOST_BEFORE_COMMIT:
+      return PartitionState.State.LOST_BEFORE_COMMIT;
     case LOST:
       return PartitionState.State.LOST;
     case REMOVED:
