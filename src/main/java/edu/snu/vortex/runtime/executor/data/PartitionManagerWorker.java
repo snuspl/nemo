@@ -134,13 +134,13 @@ public final class PartitionManagerWorker {
    * @param dstIRVertexId of the source task.
    * @param data of the partition.
    * @param partitionStore for storing the partition.
-   * @param isMetricCollection boolean flag to indicate whether or not to collect metrics.
+   * @param isMetricCollectionEdge boolean flag to indicate whether or not to collect metrics.
    */
   public void putPartition(final String partitionId,
                            final String dstIRVertexId,
                            final Iterable<Element> data,
                            final Attribute partitionStore,
-                           final Boolean isMetricCollection) {
+                           final Boolean isMetricCollectionEdge) {
     LOG.log(Level.INFO, "PutPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final Long dataSize;
@@ -156,7 +156,7 @@ public final class PartitionManagerWorker {
             .setPartitionId(partitionId)
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
-    if (isMetricCollection) {
+    if (isMetricCollectionEdge) {
       partitionStateChangedMsgBuilder.setPartitionSize(dataSize);
       partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
     }
