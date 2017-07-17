@@ -34,36 +34,41 @@ public final class PartitionManagerMaster {
   private static final Logger LOG = Logger.getLogger(PartitionManagerMaster.class.getName());
   private final Map<String, PartitionState> partitionIdToState;
   private final Map<String, String> committedPartitionIdToWorkerId;
-  private final Map<String, String> partitionIdToProducerTaskGroupId;
+  private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
 
   @Inject
   public PartitionManagerMaster() {
     this.partitionIdToState = new HashMap<>();
     this.committedPartitionIdToWorkerId = new HashMap<>();
-    this.partitionIdToProducerTaskGroupId = new HashMap<>();
+    this.producerTaskGroupIdToPartitionIds = new HashMap<>();
   }
 
   public synchronized void initializeState(final String edgeId, final int srcTaskIndex,
                                            final String producerTaskGroupId) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
     partitionIdToState.put(partitionId, new PartitionState());
-    partitionIdToProducerTaskGroupId.put(partitionId, producerTaskGroupId);
+    producerTaskGroupIdToPartitionIds.putIfAbsent(producerTaskGroupId, new HashSet<>());
+    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).add(partitionId);
   }
 
   public synchronized void initializeState(final String edgeId, final int srcTaskIndex, final int partitionIndex,
                                            final String producerTaskGroupId) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex, partitionIndex);
     partitionIdToState.put(partitionId, new PartitionState());
-    partitionIdToProducerTaskGroupId.put(partitionId, producerTaskGroupId);
+    producerTaskGroupIdToPartitionIds.putIfAbsent(producerTaskGroupId, new HashSet<>());
+    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).add(partitionId);
   }
 
   public synchronized Set<String> removeWorker(final String executorId) {
     final Set<String> taskGroupsToRecompute = new HashSet<>();
 
-    // Set partition states to lost
-    getPartitionsByWorker(executorId).forEach(partitionId -> {
-      onPartitionStateChanged(executorId, partitionId, PartitionState.State.LOST);
-      taskGroupsToRecompute.add(partitionIdToProducerTaskGroupId.get(partitionId));
+    // Set committed partition states to lost
+    getCommittedPartitionsByWorker(executorId).forEach(partitionId -> {
+      onPartitionStateChanged(partitionId, PartitionState.State.LOST, executorId);
+      final Optional<String> producerTaskGroupForPartition = getProducerTaskGroupId(partitionId);
+      if (producerTaskGroupForPartition.isPresent()) {
+        taskGroupsToRecompute.add(producerTaskGroupForPartition.get());
+      }
     });
 
     // Update worker-related global variables
@@ -77,11 +82,30 @@ public final class PartitionManagerMaster {
     return Optional.ofNullable(executorId);
   }
 
-  public synchronized String getProducerTaskGroupId(final String partitionId) {
-    return partitionIdToProducerTaskGroupId.get(partitionId);
+  public synchronized Optional<String> getProducerTaskGroupId(final String partitionId) {
+    for (Map.Entry<String, Set<String>> entry : producerTaskGroupIdToPartitionIds.entrySet()) {
+      if (entry.getValue().contains(partitionId)) {
+        return Optional.of(entry.getKey());
+      }
+    }
+    return Optional.empty();
   }
 
-  public synchronized Set<String> getPartitionsByWorker(final String executorId) {
+  public synchronized void onProducerTaskGroupScheduled(final String producerTaskGroupId) {
+    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).forEach(partitionId ->
+        onPartitionStateChanged(partitionId, PartitionState.State.SCHEDULED, null));
+  }
+
+  /**
+   * Only the TaskGroups that have not yet completed (i.e. partitions not yet committed) will call this method.
+   * @param producerTaskGroupId
+   */
+  public synchronized void onProducerTaskGroupFailed(final String producerTaskGroupId) {
+    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).forEach(partitionId ->
+        onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null));
+  }
+
+  public synchronized Set<String> getCommittedPartitionsByWorker(final String executorId) {
     final Set<String> partitionIds = new HashSet<>();
     committedPartitionIdToWorkerId.forEach((partitionId, workerId) -> {
       if (workerId.equals(executorId)) {
@@ -95,9 +119,9 @@ public final class PartitionManagerMaster {
     return partitionIdToState.get(partitionId);
   }
 
-  public synchronized void onPartitionStateChanged(final String executorId,
-                                                   final String partitionId,
-                                                   final PartitionState.State newState) {
+  public synchronized void onPartitionStateChanged(final String partitionId,
+                                                   final PartitionState.State newState,
+                                                   final String committedWorkerId) {
     final StateMachine sm = partitionIdToState.get(partitionId).getStateMachine();
     final Enum oldState = sm.getCurrentState();
     LOG.log(Level.FINE, "Partition State Transition: id {0} from {1} to {2}",
@@ -107,18 +131,17 @@ public final class PartitionManagerMaster {
 
     switch (newState) {
       case SCHEDULED:
-
+      case LOST_BEFORE_COMMIT:
+        // No maintained state to update.
         break;
       case COMMITTED:
-        committedPartitionIdToWorkerId.put(partitionId, executorId);
+        committedPartitionIdToWorkerId.put(partitionId, committedWorkerId);
         break;
       case REMOVED:
         committedPartitionIdToWorkerId.remove(partitionId);
         break;
-      case LOST_BEFORE_COMMIT:
-        break;
       case LOST:
-        LOG.log(Level.INFO, "Partition {0} lost in {1}", new Object[]{partitionId, executorId});
+        LOG.log(Level.INFO, "Partition {0} lost in {1}", new Object[]{partitionId, committedWorkerId});
         committedPartitionIdToWorkerId.remove(partitionId);
         break;
       default:
