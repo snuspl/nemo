@@ -22,7 +22,6 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
-import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
@@ -130,32 +129,42 @@ public final class PartitionManagerWorker {
    * Store partition somewhere.
    * Invariant: This should be invoked only once per partitionId.
    *
-   * @param partitionId    of the partition
-   * @param data           of the partition
-   * @param partitionStore for storing the partition
+   * @param partitionId of the partition.
+   * @param dstIRVertexId of the source task.
+   * @param data of the partition.
+   * @param partitionStore for storing the partition.
+   * @param isMetricCollectionEdge boolean flag to indicate whether or not to collect metrics.
    */
   public void putPartition(final String partitionId,
+                           final String dstIRVertexId,
                            final Iterable<Element> data,
-                           final Attribute partitionStore) {
+                           final Attribute partitionStore,
+                           final Boolean isMetricCollectionEdge) {
     LOG.log(Level.INFO, "PutPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
+    final Long dataSize;
 
     try {
-      store.putPartition(partitionId, data);
+      dataSize = store.putPartition(partitionId, data).orElse(0L);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
+    }
+
+    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+        ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
+            .setPartitionId(partitionId)
+            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
+
+    if (isMetricCollectionEdge) {
+      partitionStateChangedMsgBuilder.setPartitionSize(dataSize);
+      partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
     }
 
     persistentConnectionToMaster.getMessageSender().send(
         ControlMessage.Message.newBuilder()
             .setId(RuntimeIdGenerator.generateMessageId())
             .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(
-                ControlMessage.PartitionStateChangedMsg.newBuilder()
-                    .setExecutorId(executorId)
-                    .setPartitionId(partitionId)
-                    .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED)
-                    .build())
+            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
             .build());
   }
 
@@ -188,7 +197,7 @@ public final class PartitionManagerWorker {
     }
     // We don't have the partition here... let's see if a remote worker has it
     // Ask Master for the location
-    final Future<ControlMessage.Message> responseFromMasterFuture =
+    final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
         persistentConnectionToMaster.getMessageSender().request(
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
@@ -200,21 +209,12 @@ public final class PartitionManagerWorker {
                         .build())
                 .build());
 
-    // Convert Future<ControlMessage.Message> to CompletableFuture<ControlMessage.Message>
-    final CompletableFuture<ControlMessage.Message> responseFromMaster = CompletableFuture.supplyAsync(() -> {
-      try {
-        return responseFromMasterFuture.get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new NodeConnectionException(e);
-      }
-    });
-
     // PartitionTransferPeer#fetch returns a CompletableFuture.
     // Composing two CompletableFuture so that fetching partition data starts after getting response from master.
-    return responseFromMaster.thenCompose(response -> {
-      assert (response.getType() == ControlMessage.MessageType.PartitionLocationInfo);
+    return responseFromMasterFuture.thenCompose(responseFromMaster -> {
+      assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
       final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
-          response.getPartitionLocationInfoMsg();
+          responseFromMaster.getPartitionLocationInfoMsg();
       if (partitionLocationInfoMsg.getOwnerExecutorId().equals(NO_REMOTE_PARTITION)) {
         throw new PartitionFetchException(
             new Throwable("Partition " + partitionId + " not found both in the local storage and the remote storage"));
