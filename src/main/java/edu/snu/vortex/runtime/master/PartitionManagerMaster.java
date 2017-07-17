@@ -91,18 +91,22 @@ public final class PartitionManagerMaster {
     return Optional.empty();
   }
 
-  public synchronized void onProducerTaskGroupScheduled(final String producerTaskGroupId) {
-    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).forEach(partitionId ->
-        onPartitionStateChanged(partitionId, PartitionState.State.SCHEDULED, null));
+  public synchronized void onProducerTaskGroupScheduled(final String scheduledTaskGroupId) {
+    if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
+      producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId ->
+          onPartitionStateChanged(partitionId, PartitionState.State.SCHEDULED, null));
+    } // else this task group does not produce any partition
   }
 
   /**
    * Only the TaskGroups that have not yet completed (i.e. partitions not yet committed) will call this method.
-   * @param producerTaskGroupId
+   * @param scheduledTaskGroupId the ID of the task group that failed.
    */
-  public synchronized void onProducerTaskGroupFailed(final String producerTaskGroupId) {
-    producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).forEach(partitionId ->
-        onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null));
+  public synchronized void onProducerTaskGroupFailed(final String scheduledTaskGroupId) {
+    if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
+      producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId ->
+          onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null));
+    } // else this task group does not produce any partition
   }
 
   public synchronized Set<String> getCommittedPartitionsByWorker(final String executorId) {

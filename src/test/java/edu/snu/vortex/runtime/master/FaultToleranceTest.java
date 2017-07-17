@@ -120,7 +120,7 @@ public final class FaultToleranceTest {
    * f) During stage 3, one of the task groups fails due to input read failure
    *    - all task groups of stage 3 must be made failed_recoverable
    */
-  @Test
+  @Test(timeout = 10000)
   public void testSimpleJob() {
     final JobStateManager jobStateManager;
     final Transform t = mock(Transform.class);
