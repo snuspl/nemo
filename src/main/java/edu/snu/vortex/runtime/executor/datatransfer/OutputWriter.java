@@ -33,7 +33,6 @@ import java.util.stream.IntStream;
  */
 public final class OutputWriter extends DataTransfer {
   private final int srcTaskIdx;
-  private final String srcTaskId;
   private final RuntimeEdge runtimeEdge;
   private final IRVertex dstVertex;
 
@@ -43,7 +42,6 @@ public final class OutputWriter extends DataTransfer {
   private final PartitionManagerWorker partitionManagerWorker;
 
   public OutputWriter(final int srcTaskIdx,
-                      final String srcTaskId,
                       final IRVertex dstRuntimeVertex,
                       final RuntimeEdge runtimeEdge,
                       final PartitionManagerWorker partitionManagerWorker) {
@@ -52,7 +50,6 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.srcTaskId = srcTaskId;
   }
 
   /**
@@ -78,13 +75,13 @@ public final class OutputWriter extends DataTransfer {
 
   private void writeOneToOne(final Iterable<Element> dataToWrite, final Boolean isMetricCollection) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    partitionManagerWorker.putPartition(partitionId, srcTaskId, dataToWrite,
+    partitionManagerWorker.putPartition(partitionId, dstVertex.getId(), dataToWrite,
         runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite, final Boolean isMetricCollection) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    partitionManagerWorker.putPartition(partitionId, srcTaskId, dataToWrite,
+    partitionManagerWorker.putPartition(partitionId, dstVertex.getId(), dataToWrite,
         runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
   }
 
@@ -107,7 +104,7 @@ public final class OutputWriter extends DataTransfer {
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> {
         // Give each partition its own partition id
         final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, partitionIdx);
-        partitionManagerWorker.putPartition(partitionId, srcTaskId,
+        partitionManagerWorker.putPartition(partitionId, dstVertex.getId(),
             partitionedOutputList.get(partitionIdx),
             runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
       });

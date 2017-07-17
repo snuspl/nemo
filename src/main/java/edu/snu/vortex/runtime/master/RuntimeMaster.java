@@ -27,7 +27,9 @@ import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.Task;
+import edu.snu.vortex.runtime.common.plan.stage.Stage;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -157,14 +159,9 @@ public final class RuntimeMaster {
         // process message with partition size.
         if (partitionStateChangedMsg.hasPartitionSize()) {
           final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
-          final String sourceTaskId = partitionStateChangedMsg.getSourceTaskId();
-          final Task task = physicalPlan.getStageDAG().getVertices().stream()
-              .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
-              .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
-              .filter(t -> t.getId().equals(sourceTaskId)).findFirst()
-              .orElseThrow(() -> new RuntimeException("This task doesn't exist for some reason: " + sourceTaskId));
+          final String dstVertexId = partitionStateChangedMsg.getDstVertexId();
+          final IRVertex vertexToSendMetricDataTo = physicalPlan.findIRVertexCalled(dstVertexId);
 
-          final IRVertex vertexToSendMetricDataTo = physicalPlan.getIRVertexOf(task);
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
