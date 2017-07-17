@@ -91,6 +91,12 @@ public final class PartitionManagerMaster {
     return Optional.empty();
   }
 
+  /**
+   * To be called when a potential producer task group is scheduled.
+   * To be precise, it is called when the task group is enqueued to
+   * {@link edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupPriorityQueue}
+   * @param scheduledTaskGroupId the ID of the scheduled task group.
+   */
   public synchronized void onProducerTaskGroupScheduled(final String scheduledTaskGroupId) {
     if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
       producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId ->
@@ -99,12 +105,13 @@ public final class PartitionManagerMaster {
   }
 
   /**
+   * To be called when a potential producer task group fails.
    * Only the TaskGroups that have not yet completed (i.e. partitions not yet committed) will call this method.
-   * @param scheduledTaskGroupId the ID of the task group that failed.
+   * @param failedTaskGroupId the ID of the task group that failed.
    */
-  public synchronized void onProducerTaskGroupFailed(final String scheduledTaskGroupId) {
-    if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
-      producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId ->
+  public synchronized void onProducerTaskGroupFailed(final String failedTaskGroupId) {
+    if (producerTaskGroupIdToPartitionIds.containsKey(failedTaskGroupId)) {
+      producerTaskGroupIdToPartitionIds.get(failedTaskGroupId).forEach(partitionId ->
           onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null));
     } // else this task group does not produce any partition
   }
