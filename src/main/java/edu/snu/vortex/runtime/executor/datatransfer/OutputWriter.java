@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
  */
 public final class OutputWriter extends DataTransfer {
   private final int srcTaskIdx;
+  private final String srcTaskId;
   private final RuntimeEdge runtimeEdge;
   private final IRVertex dstVertex;
 
@@ -42,6 +43,7 @@ public final class OutputWriter extends DataTransfer {
   private final PartitionManagerWorker partitionManagerWorker;
 
   public OutputWriter(final int srcTaskIdx,
+                      final String srcTaskId,
                       final IRVertex dstRuntimeVertex,
                       final RuntimeEdge runtimeEdge,
                       final PartitionManagerWorker partitionManagerWorker) {
@@ -50,6 +52,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
+    this.srcTaskId = srcTaskId;
   }
 
   /**
@@ -57,34 +60,35 @@ public final class OutputWriter extends DataTransfer {
    * @param dataToWrite An iterable for the elements to be written.
    */
   public void write(final Iterable<Element> dataToWrite) {
+    final Boolean isMetricCollection = runtimeEdge.getAttributes().get(Attribute.Key.MetricCollection) != null;
     switch (runtimeEdge.getAttributes().get(Attribute.Key.CommunicationPattern)) {
     case OneToOne:
-      writeOneToOne(dataToWrite);
+      writeOneToOne(dataToWrite, isMetricCollection);
       break;
     case Broadcast:
-      writeBroadcast(dataToWrite);
+      writeBroadcast(dataToWrite, isMetricCollection);
       break;
     case ScatterGather:
-      writeScatterGather(dataToWrite);
+      writeScatterGather(dataToWrite, isMetricCollection);
       break;
     default:
       throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
     }
   }
 
-  private void writeOneToOne(final Iterable<Element> dataToWrite) {
+  private void writeOneToOne(final Iterable<Element> dataToWrite, final Boolean isMetricCollection) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    partitionManagerWorker.putPartition(partitionId, dataToWrite,
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+    partitionManagerWorker.putPartition(partitionId, srcTaskId, dataToWrite,
+        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
   }
 
-  private void writeBroadcast(final Iterable<Element> dataToWrite) {
+  private void writeBroadcast(final Iterable<Element> dataToWrite, final Boolean isMetricCollection) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    partitionManagerWorker.putPartition(partitionId, dataToWrite,
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+    partitionManagerWorker.putPartition(partitionId, srcTaskId, dataToWrite,
+        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
   }
 
-  private void writeScatterGather(final Iterable<Element> dataToWrite) {
+  private void writeScatterGather(final Iterable<Element> dataToWrite, final Boolean isMetricCollection) {
     final Attribute partition = runtimeEdge.getAttributes().get(Attribute.Key.Partitioning);
     switch (partition) {
     case Hash:
@@ -103,9 +107,9 @@ public final class OutputWriter extends DataTransfer {
       IntStream.range(0, dstParallelism).forEach(partitionIdx -> {
         // Give each partition its own partition id
         final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, partitionIdx);
-        partitionManagerWorker.putPartition(partitionId,
+        partitionManagerWorker.putPartition(partitionId, srcTaskId,
             partitionedOutputList.get(partitionIdx),
-            runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+            runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), isMetricCollection);
       });
       break;
     case Range:

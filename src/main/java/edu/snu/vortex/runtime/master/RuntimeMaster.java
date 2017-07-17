@@ -18,13 +18,16 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.proxy.ClientEndpoint;
 import edu.snu.vortex.common.proxy.DriverEndpoint;
+import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
+import edu.snu.vortex.compiler.optimizer.passes.DataSkewPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -48,7 +51,7 @@ import java.util.stream.Collectors;
 
 /**
  * Runtime Master is the central controller of Runtime.
- * Compiler submits an {@link ExecutionPlan} to Runtime Master to execute a job.
+ * Compiler submits an {@link PhysicalPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
  *    a) Physical conversion of a job's DAG into a physical plan.
  *    b) Scheduling the job with {@link Scheduler}.
@@ -151,7 +154,25 @@ public final class RuntimeMaster {
         break;
       case PartitionStateChanged:
         final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg = message.getPartitionStateChangedMsg();
-        // TODO #313: process message for the PartitionSize variable.
+        // process message with partition size.
+        if (partitionStateChangedMsg.hasPartitionSize()) {
+          final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
+          final String sourceTaskId = partitionStateChangedMsg.getSourceTaskId();
+          final Task task = physicalPlan.getStageDAG().getVertices().stream()
+              .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
+              .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
+              .filter(t -> t.getId().equals(sourceTaskId)).findFirst()
+              .orElseThrow(() -> new RuntimeException("This task doesn't exist for some reason: " + sourceTaskId));
+
+          final IRVertex vertexToSendMetricDataTo = physicalPlan.getIRVertexOf(task);
+          if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
+            final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
+                (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
+            metricCollectionBarrierVertex.accumulateMetrics(partitionStateChangedMsg.getPartitionId(), partitionSize);
+          } else {
+            throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
+          }
+        }
         partitionManagerMaster.onPartitionStateChanged(
             partitionStateChangedMsg.getExecutorId(), partitionStateChangedMsg.getPartitionId(),
             convertPartitionState(partitionStateChangedMsg.getState()));
