@@ -113,6 +113,16 @@ public final class RuntimeMaster {
     }
   }
 
+  public void update(final PhysicalPlan plan,
+                     final ClientEndpoint clientEndpoint) {
+    this.physicalPlan = plan;
+    try {
+      // compare and update physical plan and tasks.
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public void terminate() {
     containerManager.terminate();
   }
@@ -138,10 +148,10 @@ public final class RuntimeMaster {
               .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
               .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
               .map(physicalPlan::getIRVertexOf).filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
-              .map(irVertex -> (MetricCollectionBarrierVertex) irVertex).collect(Collectors.toList());
+              .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex).collect(Collectors.toList());
           // and we will use these vertices to perform metric collection and dynamic optimization.
           optimizationVertices.forEach(MetricCollectionBarrierVertex::triggerDynamicOptimization);
-          // TODO #315: do stuff to scheduler before running it.
+          break;
         }
 
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),

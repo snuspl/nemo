@@ -76,18 +76,25 @@ public final class UserApplicationRunner implements Runnable {
       final DAG<IRVertex, IREdge> optimizedDAG = optimizer.optimize(dag, optimizationPolicy, dagDirectory);
       optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy, "IR optimized for " + optimizationPolicy);
 
-      supplyDAGToRuntime(optimizedDAG);
+      final PhysicalPlan physicalPlan = backend.compile(dag);
+
+      physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
+      runtimeMaster.execute(physicalPlan, frontend.getClientEndpoint());
+      runtimeMaster.terminate();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void supplyDAGToRuntime(final DAG<IRVertex, IREdge> dag) {
+  public void resubmitDAGToRuntime(final DAG<IRVertex, IREdge> dag) {
     try {
+      final Backend<PhysicalPlan> backend = new VortexBackend();
       final PhysicalPlan physicalPlan = backend.compile(dag);
 
-      physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
-      runtimeMaster.execute(physicalPlan, frontend.getClientEndpoint());
+      physicalPlan.getStageDAG().storeJSON(dagDirectory, "dynamically-optimized-plan",
+          "physical execution plan by compiler");
+      // update DAG in the runtimeMaster.
+      runtimeMaster.update(physicalPlan, frontend.getClientEndpoint());
       runtimeMaster.terminate();
     } catch (Exception e) {
       throw new RuntimeException(e);

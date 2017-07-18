@@ -130,7 +130,7 @@ public final class Optimizer {
    * @return processed DAG.
    */
   public static DAG<IRVertex, IREdge> dynamicOptimization(final DAG<IRVertex, IREdge> dag,
-                                                          final Map<String, List<Object>> metricData) {
+                                                          final Map<String, Long> metricData) {
     // TODO #315: optimization.
     return dag;
   }

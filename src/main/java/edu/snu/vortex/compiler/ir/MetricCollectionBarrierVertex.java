@@ -16,6 +16,8 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.runtime.master.UserApplicationRunner;
 
 import java.util.*;
 
@@ -79,7 +81,9 @@ public final class MetricCollectionBarrierVertex extends IRVertex {
    * It can be accessed by the Runtime Master, and it will trigger dynamic optimization through this method.
    */
   public void triggerDynamicOptimization() {
-    // TODO #315: resubmitting DAG to runtime.
+    final DAG<IRVertex, IREdge> dynamicallyOptimizedDAG = Optimizer.dynamicOptimization(dagSnapshot, metricData);
+
+    // resubmit DAG to Runtime
   }
 
   @Override
