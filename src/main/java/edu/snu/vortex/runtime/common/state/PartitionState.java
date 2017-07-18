@@ -40,7 +40,8 @@ public final class PartitionState {
     stateMachineBuilder.addState(State.LOST, "Partition lost.");
 
     // Add transitions
-    stateMachineBuilder.addTransition(State.READY, State.SCHEDULED, "Partition moving");
+    stateMachineBuilder.addTransition(State.READY, State.SCHEDULED,
+        "The task group that produces the partition is scheduled.");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.COMMITTED, "Successfully moved and committed");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.LOST_BEFORE_COMMIT, "The partition is lost before commit");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
