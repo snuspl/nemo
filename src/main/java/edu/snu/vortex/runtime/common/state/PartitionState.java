@@ -34,19 +34,18 @@ public final class PartitionState {
     stateMachineBuilder.addState(State.READY, "The partition is ready to be created.");
     stateMachineBuilder.addState(State.SCHEDULED, "The partition is scheduled for creation.");
     stateMachineBuilder.addState(State.COMMITTED, "The partition has been committed.");
-    stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The partition has been committed.");
+    stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The task group that produces the partition is scheduled, "
+        + "but failed before committing");
     stateMachineBuilder.addState(State.REMOVED, "The partition has been removed (e.g., GC-ed).");
     stateMachineBuilder.addState(State.LOST, "Partition lost.");
 
     // Add transitions
-    stateMachineBuilder.addTransition(State.READY, State.SCHEDULED, "Partition moving");
+    stateMachineBuilder.addTransition(State.READY, State.SCHEDULED,
+        "The task group that produces the partition is scheduled.");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.COMMITTED, "Successfully moved and committed");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.LOST_BEFORE_COMMIT, "The partition is lost before commit");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.REMOVED, "Removed after committed");
-
-    stateMachineBuilder.addTransition(State.COMMITTED, State.SCHEDULED,
-        "(WARNING) Possible race condition: receiver may have reached us before the sender, or there's sth wrong");
 
     stateMachineBuilder.addTransition(State.LOST, State.SCHEDULED, "The producer of the lost partition is rescheduled");
     stateMachineBuilder.addTransition(State.LOST_BEFORE_COMMIT, State.SCHEDULED,
