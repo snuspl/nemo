@@ -217,12 +217,12 @@ public final class FaultToleranceTest {
           failedTaskGroupId, TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null);
     });
 
-    // Check every 1.5 seconds for the 1st stage to complete and 2nd stage's task groups to be scheduled.
+    // Check every second for the 1st stage to complete and 2nd stage's task groups to be scheduled.
     while (!jobStateManager.checkStageCompletion(dagTopoSorted3Stages.get(0).getId())
         && (jobStateManager.getStageState(dagTopoSorted3Stages.get(1).getId()).getStateMachine().getCurrentState()
         == StageState.State.EXECUTING)) {
       try {
-        Thread.sleep(2000);
+        Thread.sleep(1000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -236,12 +236,12 @@ public final class FaultToleranceTest {
       TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
           taskGroup.getTaskGroupId(), TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null));
 
-    // Check every 2 seconds for the 2nd stage to complete and 3rd stage's task groups to be scheduled.
+    // Check every second for the 2nd stage to complete and 3rd stage's task groups to be scheduled.
     while (!jobStateManager.checkStageCompletion(dagTopoSorted3Stages.get(1).getId())
         && (jobStateManager.getStageState(dagTopoSorted3Stages.get(2).getId()).getStateMachine().getCurrentState()
         == StageState.State.EXECUTING)) {
       try {
-        Thread.sleep(2000);
+        Thread.sleep(1000);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
