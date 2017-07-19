@@ -16,18 +16,20 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.runtime.master.UserApplicationRunner;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
 
 /**
  * IRVertex that collects statistics to send them to the optimizer for dynamic optimization.
  * This class is generated in the DAG through {@link edu.snu.vortex.compiler.optimizer.passes.DataSkewPass}.
+ * @param <T> type of the metric data value.
  */
-public final class MetricCollectionBarrierVertex extends IRVertex {
+public final class MetricCollectionBarrierVertex<T> extends IRVertex {
   // Partition ID to Size data
-  private final Map<String, Long> metricData;
+  private final Map<String, T> metricData;
   // This DAG snapshot is taken at the end of the DataSkewPass, for the vertex to know the state of the DAG at its
   // optimization, and to be able to figure out exactly where in the DAG the vertex exists.
   private DAG<IRVertex, IREdge> dagSnapshot;
@@ -69,21 +71,26 @@ public final class MetricCollectionBarrierVertex extends IRVertex {
 
   /**
    * Method for accumulating metrics in the vertex.
-   * @param partitionID key, or ID of the partition.
-   * @param partitionSize value of the size of the partition data.
+   * @param key metric key, e.g. ID of the partition.
+   * @param value metric value, e.g. size of the partition data.
    */
-  public void accumulateMetrics(final String partitionID, final Long partitionSize) {
-    metricData.putIfAbsent(partitionID, partitionSize);
+  public void accumulateMetrics(final String key, final T value) {
+    metricData.putIfAbsent(key, value);
   }
 
   /**
-   * Method for triggering dynamic optimization.
-   * It can be accessed by the Runtime Master, and it will trigger dynamic optimization through this method.
+   * Method for triggering dynamic optimization in Vortex Master.
+   * It can be accessed by the Runtime Master, and it will perform dynamic optimization through this method.
    */
-  public void triggerDynamicOptimization() {
-    final DAG<IRVertex, IREdge> dynamicallyOptimizedDAG = Optimizer.dynamicOptimization(dagSnapshot, metricData);
+  public PhysicalPlan vortexDynamicOptimization() {
+    try {
+      final DAG<IRVertex, IREdge> dynamicallyOptimizedDAG = Optimizer.dynamicOptimization(getDAGSnapshot(), metricData);
 
-    // resubmit DAG to Runtime
+      // return the generated physical plan.
+      return new VortexBackend().compile(dynamicallyOptimizedDAG);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

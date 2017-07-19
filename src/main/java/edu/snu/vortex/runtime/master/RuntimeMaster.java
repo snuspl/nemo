@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.plan.physical.MetricCollectionBarrierTask;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
@@ -39,14 +40,15 @@ import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtil
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+
+import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.COMPLETE;
+import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.ON_HOLD;
 
 /**
  * Runtime Master is the central controller of Runtime.
@@ -113,11 +115,11 @@ public final class RuntimeMaster {
     }
   }
 
-  public void update(final PhysicalPlan plan,
-                     final ClientEndpoint clientEndpoint) {
+  public void update(final PhysicalPlan plan) {
     this.physicalPlan = plan;
     try {
-      // compare and update physical plan and tasks.
+      // TODO #315: compare and update physical plan and tasks.
+      System.out.println("hello world");
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -137,21 +139,27 @@ public final class RuntimeMaster {
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
-        final TaskGroupState.State newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
+        final TaskGroupState.State newState;
 
         // We handle it separately if the new state is ON_HOLD, to perform dynamic optimization at the barrier vertex.
-        if (newState.equals(TaskGroupState.State.ON_HOLD)) {
+        if (convertTaskGroupState(taskGroupStateChangedMsg.getState()).equals(ON_HOLD)) {
           // get optimization vertices from tasks.
-          final List<MetricCollectionBarrierVertex> optimizationVertices =
+          final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
               physicalPlan.getStageDAG().getVertices().stream()
-              .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
-              .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
-              .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
-              .map(physicalPlan::getIRVertexOf).filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
-              .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex).collect(Collectors.toList());
+                  .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
+                  .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
+                  .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
+                  .map(physicalPlan::getIRVertexOf)
+                  .filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
+                  .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex)
+                  .findFirst().orElseThrow(() -> new RuntimeException(ON_HOLD.name()
+                  + " called by some other task than " + MetricCollectionBarrierTask.class.getSimpleName()));
           // and we will use these vertices to perform metric collection and dynamic optimization.
-          optimizationVertices.forEach(MetricCollectionBarrierVertex::triggerDynamicOptimization);
-          break;
+          final PhysicalPlan physicalPlan = metricCollectionBarrierVertex.vortexDynamicOptimization();
+          update(physicalPlan);
+          newState = COMPLETE;
+        } else {
+          newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
         }
 
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
@@ -237,7 +245,7 @@ public final class RuntimeMaster {
     case FAILED_UNRECOVERABLE:
       return TaskGroupState.State.FAILED_UNRECOVERABLE;
     case ON_HOLD:
-      return TaskGroupState.State.ON_HOLD;
+      return ON_HOLD;
     default:
       throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
     }

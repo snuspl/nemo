@@ -85,19 +85,4 @@ public final class UserApplicationRunner implements Runnable {
       throw new RuntimeException(e);
     }
   }
-
-  public void resubmitDAGToRuntime(final DAG<IRVertex, IREdge> dag) {
-    try {
-      final Backend<PhysicalPlan> backend = new VortexBackend();
-      final PhysicalPlan physicalPlan = backend.compile(dag);
-
-      physicalPlan.getStageDAG().storeJSON(dagDirectory, "dynamically-optimized-plan",
-          "physical execution plan by compiler");
-      // update DAG in the runtimeMaster.
-      runtimeMaster.update(physicalPlan, frontend.getClientEndpoint());
-      runtimeMaster.terminate();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
 }
