@@ -155,8 +155,8 @@ public final class RuntimeMaster {
                   .findFirst().orElseThrow(() -> new RuntimeException(ON_HOLD.name()
                   + " called by some other task than " + MetricCollectionBarrierTask.class.getSimpleName()));
           // and we will use these vertices to perform metric collection and dynamic optimization.
-          final PhysicalPlan physicalPlan = metricCollectionBarrierVertex.vortexDynamicOptimization();
-          update(physicalPlan);
+          final PhysicalPlan newPlan = metricCollectionBarrierVertex.vortexDynamicOptimization();
+          update(newPlan);
           newState = COMPLETE;
         } else {
           newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());

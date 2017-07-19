@@ -81,6 +81,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
   /**
    * Method for triggering dynamic optimization in Vortex Master.
    * It can be accessed by the Runtime Master, and it will perform dynamic optimization through this method.
+   * @return dynamically optimized IR DAG's physical plan.
    */
   public PhysicalPlan vortexDynamicOptimization() {
     try {
