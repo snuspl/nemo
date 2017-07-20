@@ -22,6 +22,7 @@ import edu.snu.vortex.common.StateMachine;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,12 +36,14 @@ public final class PartitionManagerMaster {
   private final Map<String, PartitionState> partitionIdToState;
   private final Map<String, String> committedPartitionIdToWorkerId;
   private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
+  private final Map<String, CompletableFuture<Optional<String>>> partitionIdToLocationFuture;
 
   @Inject
   public PartitionManagerMaster() {
     this.partitionIdToState = new HashMap<>();
     this.committedPartitionIdToWorkerId = new HashMap<>();
     this.producerTaskGroupIdToPartitionIds = new HashMap<>();
+    this.partitionIdToLocationFuture = new HashMap<>();
   }
 
   public synchronized void initializeState(final String edgeId, final int srcTaskIndex,
@@ -79,6 +82,20 @@ public final class PartitionManagerMaster {
   public synchronized Optional<String> getPartitionLocation(final String partitionId) {
     final String executorId = committedPartitionIdToWorkerId.get(partitionId);
     return Optional.ofNullable(executorId);
+  }
+
+  public synchronized CompletableFuture<Optional<String>> getPartitionLocationFuture(final String partitionId) {
+    final PartitionState.State state =
+        (PartitionState.State) getPartitionState(partitionId).getStateMachine().getCurrentState();
+    switch (state) {
+      case READY:
+      case SCHEDULED:
+        return partitionIdToLocationFuture.computeIfAbsent(partitionId, pId -> new CompletableFuture<>());
+      case COMMITTED:
+        return CompletableFuture.completedFuture(Optional.of(committedPartitionIdToWorkerId.get(partitionId)));
+      default:
+        return CompletableFuture.completedFuture(Optional.empty());
+    }
   }
 
   public synchronized Optional<String> getProducerTaskGroupId(final String partitionId) {
@@ -141,21 +158,35 @@ public final class PartitionManagerMaster {
 
     switch (newState) {
       case SCHEDULED:
+        break;
       case LOST_BEFORE_COMMIT:
-        // No maintained state to update.
+        completeLocationFuture(partitionId, Optional.empty());
         break;
       case COMMITTED:
         committedPartitionIdToWorkerId.put(partitionId, committedWorkerId);
+        completeLocationFuture(partitionId, Optional.of(committedWorkerId));
         break;
       case REMOVED:
         committedPartitionIdToWorkerId.remove(partitionId);
+        completeLocationFuture(partitionId, Optional.empty());
         break;
       case LOST:
         LOG.log(Level.INFO, "Partition {0} lost in {1}", new Object[]{partitionId, committedWorkerId});
         committedPartitionIdToWorkerId.remove(partitionId);
+        completeLocationFuture(partitionId, Optional.empty());
         break;
       default:
         throw new UnsupportedOperationException(newState.toString());
     }
+  }
+
+  private synchronized void completeLocationFuture(final String partitionId, final Optional<String> result) {
+    partitionIdToLocationFuture.entrySet().removeIf(e -> {
+      if (e.getKey().equals(partitionId)) {
+        e.getValue().complete(result);
+        return true;
+      }
+      return false;
+    });
   }
 }
