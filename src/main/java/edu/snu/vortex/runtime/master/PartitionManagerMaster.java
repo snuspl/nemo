@@ -16,8 +16,11 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.common.StateMachine;
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -188,5 +191,25 @@ public final class PartitionManagerMaster {
       }
       return false;
     });
+  }
+
+  public synchronized void onRequestPartitionLocation(final ControlMessage.Message message,
+                                                      final MessageContext messageContext) {
+    final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
+        message.getRequestPartitionLocationMsg();
+    final Optional<String> executorId = getPartitionLocation(requestPartitionLocationMsg.getPartitionId());
+    messageContext.reply(
+        ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setType(ControlMessage.MessageType.PartitionLocationInfo)
+            .setPartitionLocationInfoMsg(
+                ControlMessage.PartitionLocationInfoMsg.newBuilder()
+                    .setRequestId(message.getId())
+                    .setPartitionId(requestPartitionLocationMsg.getPartitionId())
+                    .setOwnerExecutorId(executorId.isPresent()
+                        ? executorId.get()
+                        : PartitionManagerWorker.NO_REMOTE_PARTITION)
+                    .build())
+            .build());
   }
 }
