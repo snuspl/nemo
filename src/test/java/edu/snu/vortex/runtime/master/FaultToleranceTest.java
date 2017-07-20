@@ -271,21 +271,6 @@ public final class FaultToleranceTest {
     Enum failedTaskGroupState =
         jobStateManager.getTaskGroupState(taskGroupIdToFail).getStateMachine().getCurrentState();
     while (failedTaskGroupState != TaskGroupState.State.EXECUTING) {
-      // Mark already-executing other task groups as complete to avoid deadlock
-      dagTopoSorted3Stages.get(2).getTaskGroupList().forEach(taskGroup -> {
-
-        final String otherTaskGroupId = taskGroup.getTaskGroupId();
-        if (!otherTaskGroupId.equals(taskGroupIdToFail)) {
-          final ExecutorRepresenter executorForOtherTG =
-              TestUtil.findExecutorForTaskGroup(containerManager, otherTaskGroupId);
-
-          if (executorForOtherTG != null) {
-            TestUtil.sendTaskGroupStateEventToScheduler(scheduler, containerManager,
-                otherTaskGroupId, TaskGroupState.State.COMPLETE, MAGIC_SCHEDULE_ATTEMPT_INDEX, null);
-          }
-        }
-      });
-
       try {
         Thread.sleep(500);
       } catch (InterruptedException e) {
