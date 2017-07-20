@@ -30,6 +30,8 @@ public interface Scheduler {
   JobStateManager scheduleJob(final PhysicalPlan physicalPlan,
                               final int maxScheduleAttempt);
 
+  void updateJob(final PhysicalPlan physicalPlan);
+
   void onExecutorAdded(String executorId);
 
   void onExecutorRemoved(String executorId);

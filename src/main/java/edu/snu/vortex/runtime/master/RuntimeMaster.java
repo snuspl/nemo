@@ -115,16 +115,6 @@ public final class RuntimeMaster {
     }
   }
 
-  public void update(final PhysicalPlan plan) {
-    this.physicalPlan = plan;
-    try {
-      // TODO #315: compare and update physical plan and tasks.
-      System.out.println("hello world");
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   public void terminate() {
     containerManager.terminate();
   }
@@ -155,8 +145,9 @@ public final class RuntimeMaster {
                   .findFirst().orElseThrow(() -> new RuntimeException(ON_HOLD.name()
                   + " called by some other task than " + MetricCollectionBarrierTask.class.getSimpleName()));
           // and we will use these vertices to perform metric collection and dynamic optimization.
-          final PhysicalPlan newPlan = metricCollectionBarrierVertex.vortexDynamicOptimization();
-          update(newPlan);
+          final PhysicalPlan newPlan = metricCollectionBarrierVertex.vortexDynamicOptimization(physicalPlan);
+          scheduler.updateJob(newPlan);
+          physicalPlan = newPlan;
           newState = COMPLETE;
         } else {
           newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());

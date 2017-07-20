@@ -16,7 +16,6 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
@@ -83,15 +82,8 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    * It can be accessed by the Runtime Master, and it will perform dynamic optimization through this method.
    * @return dynamically optimized IR DAG's physical plan.
    */
-  public PhysicalPlan vortexDynamicOptimization() {
-    try {
-      final DAG<IRVertex, IREdge> dynamicallyOptimizedDAG = Optimizer.dynamicOptimization(getDAGSnapshot(), metricData);
-
-      // return the generated physical plan.
-      return new VortexBackend().compile(dynamicallyOptimizedDAG);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+  public PhysicalPlan vortexDynamicOptimization(final PhysicalPlan originalPlan) {
+    return Optimizer.dynamicOptimization(originalPlan, getDAGSnapshot(), metricData);
   }
 
   @Override

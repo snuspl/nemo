@@ -20,6 +20,11 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.plan.physical.MetricCollectionBarrierTask;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.*;
 
@@ -125,16 +130,39 @@ public final class Optimizer {
 
   /**
    * Dynamic optimization method to process the dag with an appropriate pass, decided by the stats.
+   * @param originalPlan original physical execution plan.
    * @param dag DAG to process.
    * @param metricData metric data and statistic information to decide which pass to perform.
    * @return processed DAG.
    */
-  public static DAG<IRVertex, IREdge> dynamicOptimization(final DAG<IRVertex, IREdge> dag,
-                                                          final Map<String, ?> metricData) {
-    if (metricData.values().iterator().next() instanceof Long) { // Data skew
-      return dag;
+  public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
+                                                 final DAG<IRVertex, IREdge> dag,
+                                                 final Map<String, ?> metricData) {
+    if (metricData.values().iterator().next() instanceof Long) { // Data skew dynamic optimization.
+      DescriptiveStatistics stats = new DescriptiveStatistics();
+
+      metricData.forEach((k, v) -> stats.addValue(((Long) v).doubleValue()));
+
+      final double median = stats.getPercentile(50);
+      final double q1 = stats.getPercentile(25);
+      final double q3 = stats.getPercentile(75);
+
+      final double interquartile = q3 - q1;
+      final double outerfence = interquartile * interquartile * 2;
+
+      metricData.forEach((k, v) -> {
+        // TODO #315: do stuff with outlier metric data.
+
+        if (((Long) v).doubleValue() > median + outerfence) {
+          // k (partition id) 에서 runtimeEdge id 뽑아내서 RuntimeEdge == PhysicalStageEdge 찾아서 거기서 나오는
+          // optimizationStage 찾고 그 뒤로 다 연결해줘.
+          // 근데 이거면 outlier 이니까 바꿔서 연결해줘
+        } else {
+          // k (partition id) 에서 runtimeEdge id 뽑아내서 RuntimeEdge == PhysicalStageEdge 찾아서 거기서 나오는
+          // optimizationStage 찾고 그 뒤로 다 연결해줘.
+        }
+      });
     }
-    // TODO #315: optimization.
-    return dag;
+    return originalPlan;
   }
 }

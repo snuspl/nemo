@@ -87,6 +87,15 @@ public final class BatchScheduler implements Scheduler {
   }
 
   /**
+   * Receive and update the scheduled job.
+   * @param newPhysicalPlan new physical plan submitted to scheduler.
+   */
+  @Override
+  public void updateJob(final PhysicalPlan newPhysicalPlan) {
+    this.physicalPlan = newPhysicalPlan;
+  }
+
+  /**
    * Receives a {@link edu.snu.vortex.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
    * The message is received via communicator where this method is called.
    * @param executorId the id of the executor where the message was sent from.
