@@ -197,19 +197,22 @@ public final class PartitionManagerMaster {
                                                       final MessageContext messageContext) {
     final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
         message.getRequestPartitionLocationMsg();
-    final Optional<String> executorId = getPartitionLocation(requestPartitionLocationMsg.getPartitionId());
-    messageContext.reply(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.PartitionLocationInfo)
-            .setPartitionLocationInfoMsg(
-                ControlMessage.PartitionLocationInfoMsg.newBuilder()
-                    .setRequestId(message.getId())
-                    .setPartitionId(requestPartitionLocationMsg.getPartitionId())
-                    .setOwnerExecutorId(executorId.isPresent()
-                        ? executorId.get()
-                        : PartitionManagerWorker.NO_REMOTE_PARTITION)
-                    .build())
-            .build());
+    final CompletableFuture<Optional<String>> executorIdFuture
+        = getPartitionLocationFuture(requestPartitionLocationMsg.getPartitionId());
+    executorIdFuture.thenAccept(executorId -> {
+      messageContext.reply(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.PartitionLocationInfo)
+              .setPartitionLocationInfoMsg(
+                  ControlMessage.PartitionLocationInfoMsg.newBuilder()
+                      .setRequestId(message.getId())
+                      .setPartitionId(requestPartitionLocationMsg.getPartitionId())
+                      .setOwnerExecutorId(executorId.isPresent()
+                          ? executorId.get()
+                          : PartitionManagerWorker.NO_REMOTE_PARTITION)
+                      .build())
+              .build());
+    });
   }
 }
