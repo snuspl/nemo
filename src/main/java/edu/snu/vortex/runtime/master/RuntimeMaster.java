@@ -194,7 +194,7 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
+  private static TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
     case READY:
       return TaskGroupState.State.READY;
@@ -214,7 +214,7 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private PartitionState.State convertPartitionState(final ControlMessage.PartitionStateFromExecutor state) {
+  public static PartitionState.State convertPartitionState(final ControlMessage.PartitionStateFromExecutor state) {
     switch (state) {
     case PARTITION_READY:
       return PartitionState.State.READY;
@@ -230,6 +230,26 @@ public final class RuntimeMaster {
       return PartitionState.State.REMOVED;
     default:
       throw new UnknownExecutionStateException(new Exception("This PartitionState is unknown: " + state));
+    }
+  }
+
+  // TODO #164: Cleanup Protobuf Usage
+  public static ControlMessage.PartitionStateFromExecutor convertPartitionState(final PartitionState.State state) {
+    switch (state) {
+      case READY:
+        return ControlMessage.PartitionStateFromExecutor.PARTITION_READY;
+      case SCHEDULED:
+        return ControlMessage.PartitionStateFromExecutor.SCHEDULED;
+      case COMMITTED:
+        return ControlMessage.PartitionStateFromExecutor.COMMITTED;
+      case LOST_BEFORE_COMMIT:
+        return ControlMessage.PartitionStateFromExecutor.LOST_BEFORE_COMMIT;
+      case LOST:
+        return ControlMessage.PartitionStateFromExecutor.LOST;
+      case REMOVED:
+        return ControlMessage.PartitionStateFromExecutor.REMOVED;
+      default:
+        throw new UnknownExecutionStateException(new Exception("This PartitionState is unknown: " + state));
     }
   }
 
