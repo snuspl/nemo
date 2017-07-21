@@ -15,15 +15,16 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
+import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
-import edu.snu.vortex.runtime.common.plan.physical.MetricCollectionBarrierTask;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.*;
@@ -150,18 +151,48 @@ public final class Optimizer {
       final double interquartile = q3 - q1;
       final double outerfence = interquartile * interquartile * 2;
 
-      metricData.forEach((k, v) -> {
-        // TODO #315: do stuff with outlier metric data.
+      final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
+          new DAGBuilder<>(originalPlan.getStageDAG());
 
-        if (((Long) v).doubleValue() > median + outerfence) {
-          // k (partition id) 에서 runtimeEdge id 뽑아내서 RuntimeEdge == PhysicalStageEdge 찾아서 거기서 나오는
-          // optimizationStage 찾고 그 뒤로 다 연결해줘.
-          // 근데 이거면 outlier 이니까 바꿔서 연결해줘
+      metricData.forEach((partitionId, partitionSize) -> {
+        final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
+        final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
+        final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
+            .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
+            .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
+            .findFirst().orElseThrow(() ->
+                new RuntimeException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
+
+        final PhysicalStage optimizationStage = optimizationEdge.getDst();
+        final IRVertex sourceVertex = optimizationEdge.getSrcVertex();
+        final PhysicalStage sourceStage = optimizationEdge.getSrc();
+
+        final PhysicalStageEdge postOptimizationEdge = originalPlan.getStageDAG().getOutgoingEdgesOf(optimizationStage)
+            .stream().findFirst().orElseThrow(() ->
+                new RuntimeException("Optimization stage must have at least one outgoing edge"));
+        final IRVertex destinationVertex = postOptimizationEdge.getDstVertex();
+        final PhysicalStage destinationStage = postOptimizationEdge.getDst();
+
+        physicalDAGBuilder.removeVertex(optimizationStage);
+        final PhysicalStageEdge newEdge;
+
+        if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
+          // TODO #???: handle outliers using the new method of observing hash histogram.
+          newEdge = new PhysicalStageEdge(optimizationEdge.getId(),
+              optimizationEdge.getAttributes(), sourceVertex, destinationVertex,
+              sourceVertex.getAttributes(), sourceStage, destinationStage,
+              optimizationEdge.getCoder());
         } else {
-          // k (partition id) 에서 runtimeEdge id 뽑아내서 RuntimeEdge == PhysicalStageEdge 찾아서 거기서 나오는
-          // optimizationStage 찾고 그 뒤로 다 연결해줘.
+          newEdge = new PhysicalStageEdge(optimizationEdge.getId(),
+              optimizationEdge.getAttributes(), sourceVertex, destinationVertex,
+              sourceVertex.getAttributes(), sourceStage, destinationStage,
+              optimizationEdge.getCoder());
         }
+
+        physicalDAGBuilder.connectVertices(newEdge);
       });
+
+      return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
     }
     return originalPlan;
   }

@@ -54,6 +54,10 @@ public final class PhysicalPlan implements Serializable {
     return taskIRVertexMap.get(task);
   }
 
+  public Map<Task, IRVertex> getTaskIRVertexMap() {
+    return taskIRVertexMap;
+  }
+
   public IRVertex findIRVertexCalled(final String vertexID) {
     return taskIRVertexMap.values().stream().filter(irVertex -> irVertex.getId().equals(vertexID)).findFirst()
         .orElseThrow(() -> new RuntimeException(vertexID + " doesn't exist on this Physical Plan"));
