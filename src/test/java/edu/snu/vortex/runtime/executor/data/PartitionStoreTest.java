@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.BeamCoder;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
@@ -39,7 +40,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -67,15 +71,24 @@ public final class PartitionStoreTest {
   private static final int CONC_DATA_SIZE = 10000;
   private String concPartitionId;
   private Iterable<Element> dataInConcPartition;
+  // Variables for scatter and gather in range test
+  private static final int NUM_WRITE_HASH_TASKS = 2;
+  private static final int NUM_READ_HASH_TASKS = 3;
+  private static final int HASH_DATA_SIZE = 100;
+  private static final int HASH_RANGE = 4;
+  private List<String> sortedPartitionIdList;
+  private List<List<Iterable<Element>>> sortedDataInPartitionList;
+  private List<Pair<Integer, Integer>> readHashRangeList;
+  private List<List<Iterable<Element>>> expectedDataInRange;
 
   @Before
   public void setUp() {
     // Generate ids and data for scatter and gather test
-    final int numEdges = NUM_WRITE_TASKS * NUM_READ_TASKS;
+    final int numPartitions = NUM_WRITE_TASKS * NUM_READ_TASKS;
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
     final List<String> readTaskIdList = new ArrayList<>(NUM_READ_TASKS);
-    partitionIdList = new ArrayList<>(numEdges);
-    dataInPartitionList = new ArrayList<>(numEdges);
+    partitionIdList = new ArrayList<>(numPartitions);
+    dataInPartitionList = new ArrayList<>(numPartitions);
 
     IntStream.range(0, NUM_WRITE_TASKS).forEach(
         number -> writeTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
@@ -99,6 +112,57 @@ public final class PartitionStoreTest {
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
     dataInConcPartition = getRangedNumList(0, CONC_DATA_SIZE);
+
+    // Generate ids and data for scatter and gather in range test
+    final int numSortedPartitions = NUM_WRITE_HASH_TASKS;
+    final List<String> writeHashTaskIdList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
+    final List<String> readHashTaskIdList = new ArrayList<>(NUM_READ_HASH_TASKS);
+    readHashRangeList = new ArrayList<>(NUM_READ_HASH_TASKS);
+    sortedPartitionIdList = new ArrayList<>(numSortedPartitions);
+    sortedDataInPartitionList = new ArrayList<>(numSortedPartitions);
+    expectedDataInRange = new ArrayList<>(NUM_READ_HASH_TASKS);
+
+    IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
+        number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+    IntStream.range(0, NUM_READ_HASH_TASKS).forEach(
+        number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+
+    IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskNumber -> {
+      sortedPartitionIdList.add(RuntimeIdGenerator.generatePartitionId(
+          RuntimeIdGenerator.generateRuntimeEdgeId("scatter gather in range"),
+          NUM_WRITE_TASKS + NUM_READ_TASKS + 1 + writeTaskNumber));
+      final ArrayList<Iterable<Element>> sortedPartition = new ArrayList<>(HASH_RANGE);
+      IntStream.range(0, HASH_RANGE).forEach(hashValue -> {
+        sortedPartition.add(getFixedKeyRangedNumList(
+            hashValue,
+            writeTaskNumber * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
+            writeTaskNumber * HASH_DATA_SIZE * HASH_RANGE  + (hashValue + 1) * HASH_DATA_SIZE));
+      });
+      sortedDataInPartitionList.add(sortedPartition);
+    });
+
+    final int smallDataRangeEnd = 1 + NUM_READ_HASH_TASKS - NUM_WRITE_HASH_TASKS;
+    readHashRangeList.add(Pair.of(0, smallDataRangeEnd));
+    IntStream.range(0, NUM_READ_HASH_TASKS - 1).forEach(readTaskNumber -> {
+      readHashRangeList.add(Pair.of(smallDataRangeEnd + readTaskNumber, smallDataRangeEnd + readTaskNumber + 1));
+    });
+    IntStream.range(0, NUM_READ_HASH_TASKS).forEach(readTaskNumber -> {
+      final Pair<Integer, Integer> hashRange = readHashRangeList.get(readTaskNumber);
+      final List<Iterable<Element>> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
+      IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskNumber -> {
+        final List<Iterable<Element>> appendingList = new ArrayList<>();
+        IntStream.range(hashRange.left(), hashRange.right()).forEach(hashVal -> {
+          appendingList.add(sortedDataInPartitionList.get(writeTaskNumber).get(hashVal));
+        });
+        final List<Element> concatStreamBase = new ArrayList<>();
+        Stream<Element> concatStream = concatStreamBase.stream();
+        for (final Iterable<Element> data : appendingList) {
+          concatStream = Stream.concat(concatStream, StreamSupport.stream(data.spliterator(), false));
+        }
+        expectedRangeBlocks.add(concatStream.collect(Collectors.toList()));
+      });
+      expectedDataInRange.add(expectedRangeBlocks);
+    });
   }
 
   /**
@@ -126,6 +190,7 @@ public final class PartitionStoreTest {
     final PartitionStore fileStore = injector.getInstance(LocalFileStore.class);
     scatterGather(fileStore);
     concurrentRead(fileStore);
+    scatterGatherInRange(fileStore);
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
@@ -308,10 +373,115 @@ public final class PartitionStoreTest {
             store.getClass().toString());
   }
 
+  /**
+   * Tests scatter and gather in hash range for {@link PartitionStore}s.
+   * Assumes following circumstances:
+   * Task 1 (write (hash 0~3))->         (read (hash 0~1))-> Task 3
+   * Task 2 (write (hash 0~3))-> shuffle (read (hash 2))-> Task 4
+   *                                     (read (hash 3))-> Task 5
+   * It checks that each writer and reader does not throw any exception
+   * and the read data is identical with written data (including the order).
+   */
+  private void scatterGatherInRange(final PartitionStore store) {
+    final ExecutorService writeExecutor = Executors.newFixedThreadPool(NUM_WRITE_HASH_TASKS);
+    final ExecutorService readExecutor = Executors.newFixedThreadPool(NUM_READ_HASH_TASKS);
+    final List<Future<Boolean>> writeFutureList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
+    final List<Future<Boolean>> readFutureList = new ArrayList<>(NUM_READ_HASH_TASKS);
+    final long startNano = System.nanoTime();
+
+    // Write concurrently
+    IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskNumber ->
+        writeFutureList.add(writeExecutor.submit(new Callable<Boolean>() {
+          @Override
+          public Boolean call() {
+            try {
+              store.putSortedPartition(
+                  sortedPartitionIdList.get(writeTaskNumber), sortedDataInPartitionList.get(writeTaskNumber));
+              return true;
+            } catch (final Exception e) {
+              e.printStackTrace();
+              return false;
+            }
+          }
+        })));
+
+    // Wait each writer to success
+    IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writer -> {
+      try {
+        assertTrue(writeFutureList.get(writer).get());
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
+    final long writeEndNano = System.nanoTime();
+
+    // Read concurrently and check whether the result is equal to the expected data
+    IntStream.range(0, NUM_READ_HASH_TASKS).forEach(readTaskNumber ->
+        readFutureList.add(readExecutor.submit(new Callable<Boolean>() {
+          @Override
+          public Boolean call() {
+            try {
+              IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
+                  writeTaskNumber -> {
+                    final Pair<Integer, Integer> hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
+                    final Optional<Partition> partition = store.getPartitionInRange(
+                        sortedPartitionIdList.get(writeTaskNumber),
+                        hashRangeToRetrieve.left(), hashRangeToRetrieve.right());
+                    if (!partition.isPresent()) {
+                      throw new RuntimeException("The result of get partition" +
+                          sortedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
+                          " is empty");
+                    }
+                    final Iterable<Element> getData = partition.get().asIterable();
+                    assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), getData);
+                  });
+              return true;
+            } catch (final Exception e) {
+              e.printStackTrace();
+              return false;
+            }
+          }
+        })));
+
+    // Wait each reader to success
+    IntStream.range(0, NUM_READ_HASH_TASKS).forEach(reader -> {
+      try {
+        assertTrue(readFutureList.get(reader).get());
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
+    final long readEndNano = System.nanoTime();
+
+    // Remove stored partitions
+    IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writer -> {
+          final boolean exist = store.removePartition(sortedPartitionIdList.get(writer));
+          if (!exist) {
+            throw new RuntimeException("The result of removePartition(" +
+                sortedPartitionIdList.get(writer) + ") is false");
+          }});
+
+    writeExecutor.shutdown();
+    readExecutor.shutdown();
+
+    System.out.println(
+        "Scatter and gather in range - write time in millis: " + (writeEndNano - startNano) / 1000000 +
+            ", Read time in millis: " + (readEndNano - writeEndNano) / 1000000 + " in store " +
+            store.getClass().toString());
+  }
+
   private List<Element> getRangedNumList(final int start,
                                          final int end) {
     final List<Element> numList = new ArrayList<>(end - start);
     IntStream.range(start, end).forEach(number -> numList.add(new BeamElement<>(KV.of(number, number))));
+    return numList;
+  }
+
+  private List<Element> getFixedKeyRangedNumList(final int key,
+                                                 final int start,
+                                                 final int end) {
+    final List<Element> numList = new ArrayList<>(end - start);
+    IntStream.range(start, end).forEach(number -> numList.add(new BeamElement<>(KV.of(key, number))));
     return numList;
   }
 }
