@@ -41,7 +41,18 @@ public interface PartitionStore {
    * @return the size of the data (only when the data is serialized).
    * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
-  Optional<Long> putPartition(String partitionId, Iterable<Element> data) throws PartitionWriteException;
+  Optional<Long> putPartition(String partitionId,
+                              Iterable<Element> data) throws PartitionWriteException;
+
+  /**
+   * Saves a sorted partition of data.
+   * @param partitionId of the partition.
+   * @param sortedData of the partition.
+   * @return each size of the data per hash value (only when the data is serialized).
+   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
+   */
+  Optional<Iterable<Long>> putSortedPartition(String partitionId,
+                                              Iterable<Iterable<Element>> sortedData) throws PartitionWriteException;
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;

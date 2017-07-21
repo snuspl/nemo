@@ -129,22 +129,17 @@ public final class PartitionManagerWorker {
    * Invariant: This should be invoked only once per partitionId.
    *
    * @param partitionId of the partition.
-   * @param dstIRVertexId of the source task.
    * @param data of the partition.
    * @param partitionStore for storing the partition.
-   * @param isMetricCollectionEdge boolean flag to indicate whether or not to collect metrics.
    */
   public void putPartition(final String partitionId,
-                           final String dstIRVertexId,
                            final Iterable<Element> data,
-                           final Attribute partitionStore,
-                           final Boolean isMetricCollectionEdge) {
+                           final Attribute partitionStore) {
     LOG.log(Level.INFO, "PutPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Long dataSize;
 
     try {
-      dataSize = store.putPartition(partitionId, data).orElse(0L);
+      store.putPartition(partitionId, data);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -154,10 +149,45 @@ public final class PartitionManagerWorker {
             .setPartitionId(partitionId)
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
-    if (isMetricCollectionEdge) {
-      partitionStateChangedMsgBuilder.setPartitionSize(dataSize);
-      partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
+    persistentConnectionToMaster.getMessageSender().send(
+        ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setType(ControlMessage.MessageType.PartitionStateChanged)
+            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
+            .build());
+  }
+
+  /**
+   * Store a sorted partition somewhere.
+   * The data in this partition is sorted by the hash value of their key to handle the data skew.
+   * Invariant: This should be invoked only once per partitionId.
+   *
+   * @param partitionId of the partition.
+   * @param dstIRVertexId of the source task.
+   * @param sortedData of the partition.
+   * @param partitionStore for storing the partition.
+   */
+  public void putSortedPartition(final String partitionId,
+                                 final String dstIRVertexId,
+                                 final Iterable<Iterable<Element>> sortedData,
+                                 final Attribute partitionStore) {
+    LOG.log(Level.INFO, "PutSortedPartition: {0}", partitionId);
+    final PartitionStore store = getPartitionStore(partitionStore);
+    final Iterable<Long> blockSizeHistogram;
+
+    try {
+      blockSizeHistogram = store.putSortedPartition(partitionId, sortedData).orElse(Collections.emptyList());
+    } catch (final Exception e) {
+      throw new PartitionWriteException(e);
     }
+
+    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+        ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
+            .setPartitionId(partitionId)
+            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
+
+    partitionStateChangedMsgBuilder.addAllBlockSizeHistogram(blockSizeHistogram);
+    partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
 
     persistentConnectionToMaster.getMessageSender().send(
         ControlMessage.Message.newBuilder()

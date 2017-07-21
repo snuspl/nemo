@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.InjectionFuture;
@@ -27,6 +28,8 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -136,6 +139,48 @@ final class LocalFileStore implements PartitionStore {
     partition.finishWrite();
 
     return Optional.of(partitionSize);
+  }
+
+  /**
+   * Saves a sorted partition of data.
+   * This partition is already blocked by the hash value.
+   *
+   * @param partitionId of the partition.
+   * @param sortedData  of the partition.
+   * @return each size of the data per hash value (only when the data is serialized).
+   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
+   */
+  @Override
+  public Optional<Iterable<Long>> putSortedPartition(final String partitionId,
+                                                     final Iterable<Iterable<Element>> sortedData)
+      throws PartitionWriteException {
+    final PartitionManagerWorker worker = partitionManagerWorker.get();
+    final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
+    final Coder coder = worker.getCoder(runtimeEdgeId);
+    final LocalFilePartition partition = new LocalFilePartition(coder, fileDirectory + "/" + partitionId);
+    final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
+    if (previousPartition != null) {
+      throw new RuntimeException("Trying to overwrite an existing partition");
+    }
+
+    // Serialize the given blocks
+    final List<Long> blockSizeList = new ArrayList<>();
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    long elementsInBlock = 0;
+    for (Iterable<Element> block : sortedData) {
+      for (final Element element : block) {
+        coder.encode(element, outputStream);
+        elementsInBlock++;
+      }
+      // Synchronously append the serialized block to the file and reset the buffer
+      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
+
+      outputStream.reset();
+      elementsInBlock = 0;
+    }
+    partition.finishWrite();
+
+    return Optional.of(blockSizeList);
   }
 
   /**

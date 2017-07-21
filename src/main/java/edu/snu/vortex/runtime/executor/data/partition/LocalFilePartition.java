@@ -40,6 +40,7 @@ public final class LocalFilePartition implements Partition {
   private final List<BlockInfo> blockInfoList;
   private FileOutputStream fileOutputStream;
   private FileChannel fileChannel;
+  private long current;
 
   /**
    * Constructs a file partition.
@@ -54,6 +55,7 @@ public final class LocalFilePartition implements Partition {
     opened = new AtomicBoolean(false);
     written = new AtomicBoolean(false);
     blockInfoList = new ArrayList<>();
+    current = 0;
   }
 
   /**
@@ -84,7 +86,7 @@ public final class LocalFilePartition implements Partition {
     if (!opened.get()) {
       throw new RuntimeException("Trying to write a block in a partition that has not been opened for write.");
     }
-    blockInfoList.add(new BlockInfo(serializedData.length, numElement));
+    blockInfoList.add(new BlockInfo(serializedData.length, numElement, current));
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
@@ -94,6 +96,8 @@ public final class LocalFilePartition implements Partition {
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
+
+    current += serializedData.length;
   }
 
   /**
@@ -172,11 +176,14 @@ public final class LocalFilePartition implements Partition {
   private final class BlockInfo {
     private final int blockSize;
     private final long numElements;
+    private final long offset;
 
     private BlockInfo(final int blockSize,
-                      final long numElements) {
+                      final long numElements,
+                      final long offset) {
       this.blockSize = blockSize;
       this.numElements = numElements;
+      this.offset = offset;
     }
 
     private int getBlockSize() {
@@ -185,6 +192,10 @@ public final class LocalFilePartition implements Partition {
 
     private long getNumElements() {
       return numElements;
+    }
+
+    private long getOffset() {
+      return offset;
     }
   }
 }

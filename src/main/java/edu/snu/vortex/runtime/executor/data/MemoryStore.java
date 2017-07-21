@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
@@ -52,6 +53,14 @@ final class MemoryStore implements PartitionStore {
 
     // The partition is not serialized.
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<Iterable<Long>> putSortedPartition(final String partitionId,
+                                                     final Iterable<Iterable<Element>> sortedData)
+      throws PartitionWriteException {
+    throw new PartitionWriteException(new RuntimeException(
+        "Sorted partition " + partitionId + " cannot be stored in LocalStore: unknown data size"));
   }
 
   @Override

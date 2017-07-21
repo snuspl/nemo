@@ -135,6 +135,13 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class BlockSize implements Name<Integer> {
   }
 
+  /**
+   * Hash range multiplier.
+   */
+  @NamedParameter(doc = "Hash range multiplier", short_name = "hash_range_multiplier", default_value = "10")
+  public final class HashRangeMultiplier implements Name<Integer> {
+  }
+
   public static final OptionalParameter<Integer> EXECUTOR_CAPACITY = new OptionalParameter<>();
   public static final RequiredParameter<String> EXECUTOR_ID = new RequiredParameter<>();
 
