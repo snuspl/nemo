@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 /**
  * This class represents a {@link Partition} which is stored in file.
@@ -136,6 +137,42 @@ public final class LocalFilePartition implements Partition {
   }
 
   /**
+   * Retrieve the data of this partition from the file in a specific hash range and deserialize it.
+   *
+   * @param startInclusiveHashVal of the hash range.
+   * @param endExclusiveHashVal of the hash range.
+   * @return an iterable of deserialized data.
+   * @throws RuntimeException if failed to deserialize.
+   */
+  public Iterable<Element> rangeRetrieve(final int startInclusiveHashVal,
+                                         final int endExclusiveHashVal) throws RuntimeException {
+    // Check whether the partition is fully written.
+    if (!written.get()) {
+      throw new RuntimeException("This partition is not written yet.");
+    }
+
+    // Deserialize the data
+    final ArrayList<Element> deserializedData = new ArrayList<>();
+    try (final FileInputStream fileStream = new FileInputStream(filePath)) {
+      // Skip to the offset of the first block.
+      final long startOffset = blockInfoList.get(startInclusiveHashVal).getOffset();
+      final long skippedBytes = fileStream.skip(startOffset);
+      if (skippedBytes != startOffset) {
+        throw new RuntimeException("The file stream failed to skip to the offset.");
+      }
+
+      IntStream.range(startInclusiveHashVal, endExclusiveHashVal).forEach(hashVal -> {
+        final BlockInfo blockInfo = blockInfoList.get(hashVal);
+        deserializeBlock(blockInfo, fileStream, deserializedData);
+      });
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return deserializedData;
+  }
+
+  /**
    * Read the data of this partition from the file and deserialize it.
    *
    * @return an iterable of deserialized data.
@@ -152,22 +189,27 @@ public final class LocalFilePartition implements Partition {
     final ArrayList<Element> deserializedData = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
       blockInfoList.forEach(blockInfo -> {
-        // Deserialize a block
-        final int size = blockInfo.getBlockSize();
-        final long numElements = blockInfo.getNumElements();
-        if (size != 0) {
-          // This stream will be not closed, but it is okay as long as the file stream is closed well.
-          final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream, size);
-          for (int i = 0; i < numElements; i++) {
-            deserializedData.add(coder.decode(bufferedInputStream));
-          }
-        }
+        deserializeBlock(blockInfo, fileStream, deserializedData);
       });
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
 
     return deserializedData;
+  }
+
+  private void deserializeBlock(final BlockInfo blockInfo,
+                                final FileInputStream fileStream,
+                                final List<Element> deserializedData) {
+    final int size = blockInfo.getBlockSize();
+    final long numElements = blockInfo.getNumElements();
+    if (size != 0) {
+      // This stream will be not closed, but it is okay as long as the file stream is closed well.
+      final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream, size);
+      for (int i = 0; i < numElements; i++) {
+        deserializedData.add(coder.decode(bufferedInputStream));
+      }
+    }
   }
 
   /**

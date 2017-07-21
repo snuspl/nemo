@@ -35,6 +35,19 @@ public interface PartitionStore {
   Optional<Partition> getPartition(String partitionId) throws PartitionFetchException;
 
   /**
+   * Retrieves a partition of data in a specific hash range.
+   * @param partitionId of the partition.
+   * @param startInclusiveHashVal of the hash range.
+   * @param endExclusiveHashVal of the hash range.
+   * @return the partition (optionally).
+   * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
+   */
+  Optional<Partition> getPartitionInRange(String partitionId,
+                                          int startInclusiveHashVal,
+                                          int endExclusiveHashVal)
+      throws PartitionFetchException;
+
+  /**
    * Saves a partition of data.
    * @param partitionId of the partition.
    * @param data of the partition.

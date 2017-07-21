@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -43,6 +44,15 @@ final class MemoryStore implements PartitionStore {
   }
 
   @Override
+  public Optional<Partition> getPartitionInRange(final String partitionId,
+                                                 final int startInclusiveHashVal,
+                                                 final int endExclusiveHashVal)
+      throws PartitionFetchException {
+    throw new PartitionFetchException(new RuntimeException(
+        "Retrieving sorted partition " + partitionId + " is not supported in LocalStore"));
+  }
+
+  @Override
   public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data) {
     final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, new LocalPartition(data));
     if (previousPartition != null) {
@@ -60,7 +70,7 @@ final class MemoryStore implements PartitionStore {
                                                      final Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException {
     throw new PartitionWriteException(new RuntimeException(
-        "Sorted partition " + partitionId + " cannot be stored in LocalStore: unknown data size"));
+        "Storing sorted partition " + partitionId + " is not supported in LocalStore: unknown data size"));
   }
 
   @Override

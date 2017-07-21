@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.LocalPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -93,6 +94,20 @@ final class LocalFileStore implements PartitionStore {
       return Optional.empty();
     } else {
       return Optional.of(new LocalPartition(partition.asIterable()));
+    }
+  }
+
+  @Override
+  public Optional<Partition> getPartitionInRange(final String partitionId,
+                                                 final int startInclusiveHashVal,
+                                                 final int endExclusiveHashVal)
+      throws PartitionFetchException {
+    // Deserialize the target data in the corresponding file and pass it as a local data.
+    final LocalFilePartition partition = partitionIdToData.get(partitionId);
+    if (partition == null) {
+      return Optional.empty();
+    } else {
+      return Optional.of(new LocalPartition(partition.rangeRetrieve(startInclusiveHashVal, endExclusiveHashVal)));
     }
   }
 
