@@ -181,6 +181,8 @@ public final class TaskGroupExecutor {
           taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
           LOG.log(Level.INFO, "{0} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof MetricCollectionBarrierTask) {
+          launchMetricCollectionBarrierTask((MetricCollectionBarrierTask) task);
+          garbageCollectLocalIntermediateData(task);
           taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.ON_HOLD, Optional.empty());
           LOG.log(Level.INFO, "{0} Execution Complete!", taskGroup.getTaskGroupId());
         } else {
@@ -296,5 +298,19 @@ public final class TaskGroupExecutor {
     } else {
       LOG.log(Level.INFO, "This is a sink task: {0}", operatorTask.getId());
     }
+  }
+
+  /**
+   * Pass on the data to the following tasks.
+   * @param task the task to carry on the data.
+   */
+  private void launchMetricCollectionBarrierTask(final MetricCollectionBarrierTask task) {
+    final List<Element> data = new ArrayList<>();
+    taskIdToInputReaderMap.get(task.getId()).stream()
+        .filter(inputReader -> !inputReader.isSideInputReader())
+        .forEach(inputReader ->
+            inputReader.read().forEach(compFuture -> compFuture.thenAccept(elements -> elements.forEach(data::add))));
+
+    taskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> outputWriter.write(data));
   }
 }

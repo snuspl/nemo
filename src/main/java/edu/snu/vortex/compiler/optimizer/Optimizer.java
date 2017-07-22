@@ -164,32 +164,15 @@ public final class Optimizer {
                 new RuntimeException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
 
         final PhysicalStage optimizationStage = optimizationEdge.getDst();
-        final IRVertex sourceVertex = optimizationEdge.getSrcVertex();
-        final PhysicalStage sourceStage = optimizationEdge.getSrc();
-
         final PhysicalStageEdge postOptimizationEdge = originalPlan.getStageDAG().getOutgoingEdgesOf(optimizationStage)
             .stream().findFirst().orElseThrow(() ->
                 new RuntimeException("Optimization stage must have at least one outgoing edge"));
-        final IRVertex destinationVertex = postOptimizationEdge.getDstVertex();
-        final PhysicalStage destinationStage = postOptimizationEdge.getDst();
-
-        physicalDAGBuilder.removeVertex(optimizationStage);
-        final PhysicalStageEdge newEdge;
 
         if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
           // TODO #???: handle outliers using the new method of observing hash histogram.
-          newEdge = new PhysicalStageEdge(optimizationEdge.getId(),
-              optimizationEdge.getAttributes(), sourceVertex, destinationVertex,
-              sourceVertex.getAttributes(), sourceStage, destinationStage,
-              optimizationEdge.getCoder());
-        } else {
-          newEdge = new PhysicalStageEdge(optimizationEdge.getId(),
-              optimizationEdge.getAttributes(), sourceVertex, destinationVertex,
-              sourceVertex.getAttributes(), sourceStage, destinationStage,
-              optimizationEdge.getCoder());
+          postOptimizationEdge.getAttributes();
+          postOptimizationEdge.getExternalVertexAttr();
         }
-
-        physicalDAGBuilder.connectVertices(newEdge);
       });
 
       return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
