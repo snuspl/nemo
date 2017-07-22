@@ -18,16 +18,19 @@ package edu.snu.vortex.common;
 import edu.snu.vortex.runtime.exception.IllegalStateTransitionException;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A finite state machine that can be created with user defined states and transitions.
  */
-// TODO #171: Enable StateMachine with Handlers for State Transitions
 // TODO #306: StateMachine Visualization
 public final class StateMachine {
   private static final Logger LOG = Logger.getLogger(StateMachine.class.getName());
+
+  private final List<TransitionHandler> transitionHandlers = new ArrayList<>();
 
   private final Map<Enum, State> stateMap;
   private State currentState;
@@ -80,6 +83,8 @@ public final class StateMachine {
           .toString();
       throw new IllegalStateTransitionException(new Exception(exceptionMessage));
     }
+
+    transitionHandlers.removeIf(handler -> !handler.onTransition(currentState.stateEnum, state));
 
     currentState = toState;
   }
@@ -140,6 +145,25 @@ public final class StateMachine {
   }
 
   /**
+   * Registers the specified {@link TransitionHandler}.
+   * @param transitionHandler the {@link TransitionHandler} to register
+   */
+  public synchronized void registerTransitionHandler(final TransitionHandler transitionHandler) {
+    if (transitionHandler.onReigstration(currentState.stateEnum)) {
+      transitionHandlers.add(transitionHandler);
+    }
+  }
+
+  /**
+   * De-registers the specified {@link TransitionHandler}.
+   * @param transitionHandler the {@link TransitionHandler} to de-register
+   * @return whether the specified {@link TransitionHandler} have been registered or not
+   */
+  public synchronized boolean deregisterTransitionHandler(final TransitionHandler transitionHandler) {
+    return transitionHandlers.remove(transitionHandler);
+  }
+
+  /**
    * @return a builder of StateMachine
    */
   public static Builder newBuilder() {
@@ -172,6 +196,10 @@ public final class StateMachine {
       return transitions.containsKey(to);
     }
 
+    private Transition getTransitionTo(final Enum to) {
+      return transitions.get(to);
+    }
+
     private Collection<Transition> getAllTransitions() {
       return transitions.values();
     }
@@ -198,6 +226,52 @@ public final class StateMachine {
     @Override
     public String toString() {
       return "Transition from " + from + " to " + to + " : " + description;
+    }
+  }
+
+  /**
+   * A class for handling state transition event.
+   */
+  public static final class TransitionHandler {
+    private final Optional<Function<Enum, Boolean>> initialStateHandler;
+    private final BiFunction<Enum, Enum, Boolean> transitionHandler;
+
+    private TransitionHandler(final Optional<Function<Enum, Boolean>> initialStateHandler,
+                              final BiFunction<Enum, Enum, Boolean> transitionHandler) {
+      this.initialStateHandler = initialStateHandler;
+      this.transitionHandler = transitionHandler;
+    }
+
+    private boolean onReigstration(final Enum state) {
+      if (initialStateHandler.isPresent()) {
+        return initialStateHandler.get().apply(state);
+      }
+      return true;
+    }
+
+    private boolean onTransition(final Enum from, final Enum to) {
+      return transitionHandler.apply(from, to);
+    }
+
+    /**
+     * @param transitionHandler {@link BiFunction} to be called on state transition
+     *        This {@link TransitionHandler} will be de-registered if the return value is {@code false}.
+     * @return a new {@link TransitionHandler} instance
+     */
+    public static TransitionHandler of(final BiFunction<Enum, Enum, Boolean> transitionHandler) {
+      return new TransitionHandler(Optional.empty(), transitionHandler);
+    }
+
+    /**
+     * @param initialStateHandler {@link Function} to be called on handler registration with current state
+     *        This {@link TransitionHandler} will be de-registered if the return value is {@code false}.
+     * @param transitionHandler {@link BiFunction} to be called on state transition
+     *        This {@link TransitionHandler} will be de-registered if the return value is {@code false}.
+     * @return a new {@link TransitionHandler} instance
+     */
+    public static TransitionHandler withInitialStateHandler(final Function<Enum, Boolean> initialStateHandler,
+                                                            final BiFunction<Enum, Enum, Boolean> transitionHandler) {
+      return new TransitionHandler(Optional.of(initialStateHandler), transitionHandler);
     }
   }
 

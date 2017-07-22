@@ -25,15 +25,12 @@ import static org.junit.Assert.assertTrue;
  * Tests {@link StateMachine}
  */
 public final class StateMachineTest {
-  private StateMachine.Builder stateMachineBuilder;
+  private final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
+  private Enum expectedFormerState;
+  private Enum expectedCurrentState;
 
   @Before
   public void setUp() {
-    this.stateMachineBuilder = StateMachine.newBuilder();
-  }
-
-  @Test
-  public void testSimpleStateTransitions() {
     stateMachineBuilder.addState(CookingState.SHOPPING, "Shopping for ingredients");
     stateMachineBuilder.addState(CookingState.PREPARING, "Washing vegetables, chopping meat...");
     stateMachineBuilder.addState(CookingState.SEASONING, "Adding salt and pepper");
@@ -46,9 +43,53 @@ public final class StateMachineTest {
     stateMachineBuilder.addTransition(CookingState.COOKING, CookingState.READY_TO_EAT, "");
 
     stateMachineBuilder.setInitialState(CookingState.SHOPPING);
+  }
 
+  private boolean checkState(final Enum state) {
+    assertEquals(expectedCurrentState, state);
+    return true;
+  }
+
+  private boolean checkTransition(final Enum from, final Enum to) {
+    assertEquals(expectedFormerState, from);
+    assertEquals(expectedCurrentState, to);
+    return true;
+  }
+
+  private void expectState(final Enum state) {
+    expectedCurrentState = state;
+  }
+
+  private void expectTransition(final Enum to) {
+    expectedFormerState = expectedCurrentState;
+    expectedCurrentState = to;
+  }
+
+  @Test
+  public void testTransitionHandler() {
     final StateMachine stateMachine = stateMachineBuilder.build();
+    expectState(CookingState.SHOPPING);
+    stateMachine.registerTransitionHandler(StateMachine.TransitionHandler
+        .withInitialStateHandler(state -> checkState(state), (from, to) -> checkTransition(from, to)));
+    stateMachine.registerTransitionHandler(StateMachine.TransitionHandler.of((from, to) -> {
+      assertEquals(CookingState.SHOPPING, from);
+      assertEquals(CookingState.PREPARING, to);
+      return false;
+    }));
 
+    expectTransition(CookingState.PREPARING);
+    stateMachine.setState(CookingState.PREPARING);
+    expectTransition(CookingState.SEASONING);
+    stateMachine.setState(CookingState.SEASONING);
+    expectTransition(CookingState.COOKING);
+    stateMachine.setState(CookingState.COOKING);
+    expectTransition(CookingState.READY_TO_EAT);
+    stateMachine.setState(CookingState.READY_TO_EAT);
+  }
+
+  @Test
+  public void testSimpleStateTransitions() {
+    final StateMachine stateMachine = stateMachineBuilder.build();
     assertEquals(CookingState.SHOPPING, stateMachine.getCurrentState());
     assertTrue(stateMachine.compareAndSetState(CookingState.SHOPPING, CookingState.PREPARING));
 
