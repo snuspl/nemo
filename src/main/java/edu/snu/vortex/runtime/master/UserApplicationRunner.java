@@ -76,7 +76,7 @@ public final class UserApplicationRunner implements Runnable {
       final DAG<IRVertex, IREdge> optimizedDAG = optimizer.optimize(dag, optimizationPolicy, dagDirectory);
       optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy, "IR optimized for " + optimizationPolicy);
 
-      final PhysicalPlan physicalPlan = backend.compile(dag);
+      final PhysicalPlan physicalPlan = backend.compile(optimizedDAG);
 
       physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
       runtimeMaster.execute(physicalPlan, frontend.getClientEndpoint());
