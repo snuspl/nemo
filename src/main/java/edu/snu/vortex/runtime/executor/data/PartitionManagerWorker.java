@@ -125,12 +125,12 @@ public final class PartitionManagerWorker {
 
 
   /**
-   * Store partition somewhere.
+   * Store partition to the target {@code PartitionStore}.
    * Invariant: This should be invoked only once per partitionId.
    *
    * @param partitionId of the partition.
    * @param data of the partition.
-   * @param partitionStore for storing the partition.
+   * @param partitionStore to store the partition.
    */
   public void putPartition(final String partitionId,
                            final Iterable<Element> data,
@@ -139,7 +139,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
-      store.putPartition(partitionId, data);
+      store.putDataAsPartition(partitionId, data);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -158,14 +158,14 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Store a sorted partition somewhere.
+   * Store a sorted partition to the target {@code PartitionStore}.
    * The data in this partition is sorted by the hash value of their key to handle the data skew.
    * Invariant: This should be invoked only once per partitionId.
    *
    * @param partitionId of the partition.
    * @param dstIRVertexId of the source task.
    * @param sortedData of the partition.
-   * @param partitionStore for storing the partition.
+   * @param partitionStore to store the partition.
    */
   public void putSortedPartition(final String partitionId,
                                  final String dstIRVertexId,
@@ -176,7 +176,7 @@ public final class PartitionManagerWorker {
     final Iterable<Long> blockSizeHistogram;
 
     try {
-      blockSizeHistogram = store.putSortedPartition(partitionId, sortedData).orElse(Collections.emptyList());
+      blockSizeHistogram = store.putSortedDataAsPartition(partitionId, sortedData).orElse(Collections.emptyList());
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -186,6 +186,7 @@ public final class PartitionManagerWorker {
             .setPartitionId(partitionId)
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
+    // TODO #355 Support I-file write: send block size information only when it is requested.
     partitionStateChangedMsgBuilder.addAllBlockSizeHistogram(blockSizeHistogram);
     partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
 
@@ -199,7 +200,7 @@ public final class PartitionManagerWorker {
 
   /**
    * Get the stored partition.
-   * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
+   * Unlike putDataAsPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
    *
    * @param partitionId    of the partition

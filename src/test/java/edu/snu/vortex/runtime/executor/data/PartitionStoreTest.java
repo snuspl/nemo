@@ -81,20 +81,25 @@ public final class PartitionStoreTest {
   private List<Pair<Integer, Integer>> readHashRangeList;
   private List<List<Iterable<Element>>> expectedDataInRange;
 
+  /**
+   * Generates the ids and the data which will be used for the partition store tests.
+   */
   @Before
   public void setUp() {
-    // Generate ids and data for scatter and gather test
+    // Following part is for for the scatter and gather test.
     final int numPartitions = NUM_WRITE_TASKS * NUM_READ_TASKS;
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
     final List<String> readTaskIdList = new ArrayList<>(NUM_READ_TASKS);
     partitionIdList = new ArrayList<>(numPartitions);
     dataInPartitionList = new ArrayList<>(numPartitions);
 
+    // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(
         number -> writeTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
     IntStream.range(0, NUM_READ_TASKS).forEach(
         number -> readTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
 
+    // Generates the ids and the data of the partitions to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskNumber ->
         IntStream.range(0, NUM_READ_TASKS).forEach(readTaskNumber -> {
           final int currentNum = partitionIdList.size();
@@ -103,17 +108,18 @@ public final class PartitionStoreTest {
           dataInPartitionList.add(getRangedNumList(currentNum * DATA_SIZE, (currentNum + 1) * DATA_SIZE));
         }));
 
-    // Generate ids and data for concurrent read test
+    // Following part is for the concurrent read test.
     final String writeTaskId = RuntimeIdGenerator.generateTaskId();
     final List<String> concReadTaskIdList = new ArrayList<>(NUM_CONC_READ_TASKS);
+
+    // Generates the ids and the data to be used.
     concPartitionId = RuntimeIdGenerator.generatePartitionId(
         RuntimeIdGenerator.generateRuntimeEdgeId("concurrent read"), NUM_WRITE_TASKS + NUM_READ_TASKS + 1);
-
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
     dataInConcPartition = getRangedNumList(0, CONC_DATA_SIZE);
 
-    // Generate ids and data for scatter and gather in range test
+    // Following part is for the scatter and gather in hash range test
     final int numSortedPartitions = NUM_WRITE_HASH_TASKS;
     final List<String> writeHashTaskIdList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
     final List<String> readHashTaskIdList = new ArrayList<>(NUM_READ_HASH_TASKS);
@@ -122,16 +128,19 @@ public final class PartitionStoreTest {
     sortedDataInPartitionList = new ArrayList<>(numSortedPartitions);
     expectedDataInRange = new ArrayList<>(NUM_READ_HASH_TASKS);
 
+    // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
         number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(
         number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
 
+    // Generates the ids and the data of the partitions to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskNumber -> {
       sortedPartitionIdList.add(RuntimeIdGenerator.generatePartitionId(
           RuntimeIdGenerator.generateRuntimeEdgeId("scatter gather in range"),
           NUM_WRITE_TASKS + NUM_READ_TASKS + 1 + writeTaskNumber));
       final ArrayList<Iterable<Element>> sortedPartition = new ArrayList<>(HASH_RANGE);
+      // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue -> {
         sortedPartition.add(getFixedKeyRangedNumList(
             hashValue,
@@ -141,11 +150,14 @@ public final class PartitionStoreTest {
       sortedDataInPartitionList.add(sortedPartition);
     });
 
+    // Generates the range of hash value to read for each read task.
     final int smallDataRangeEnd = 1 + NUM_READ_HASH_TASKS - NUM_WRITE_HASH_TASKS;
     readHashRangeList.add(Pair.of(0, smallDataRangeEnd));
     IntStream.range(0, NUM_READ_HASH_TASKS - 1).forEach(readTaskNumber -> {
       readHashRangeList.add(Pair.of(smallDataRangeEnd + readTaskNumber, smallDataRangeEnd + readTaskNumber + 1));
     });
+
+    // Generates the expected result of hash range retrieval for each read task.
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(readTaskNumber -> {
       final Pair<Integer, Integer> hashRange = readHashRangeList.get(readTaskNumber);
       final List<Iterable<Element>> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
@@ -173,6 +185,7 @@ public final class PartitionStoreTest {
     final PartitionStore localStore = Tang.Factory.getTang().newInjector().getInstance(MemoryStore.class);
     scatterGather(localStore);
     concurrentRead(localStore);
+    scatterGatherInHashRange(localStore);
   }
 
   /**
@@ -190,7 +203,7 @@ public final class PartitionStoreTest {
     final PartitionStore fileStore = injector.getInstance(LocalFileStore.class);
     scatterGather(fileStore);
     concurrentRead(fileStore);
-    scatterGatherInRange(fileStore);
+    scatterGatherInHashRange(fileStore);
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
@@ -220,7 +233,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               IntStream.range(writeTaskNumber * NUM_READ_TASKS, (writeTaskNumber + 1) * NUM_READ_TASKS).forEach(
-                  partitionNumber -> store.putPartition(
+                  partitionNumber -> store.putDataAsPartition(
                       partitionIdList.get(partitionNumber), dataInPartitionList.get(partitionNumber)));
               return true;
             } catch (final Exception e) {
@@ -310,7 +323,7 @@ public final class PartitionStoreTest {
       @Override
       public Boolean call() {
         try {
-          store.putPartition(concPartitionId, dataInConcPartition);
+          store.putDataAsPartition(concPartitionId, dataInConcPartition);
           return true;
         } catch (final Exception e) {
           e.printStackTrace();
@@ -382,7 +395,7 @@ public final class PartitionStoreTest {
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */
-  private void scatterGatherInRange(final PartitionStore store) {
+  private void scatterGatherInHashRange(final PartitionStore store) {
     final ExecutorService writeExecutor = Executors.newFixedThreadPool(NUM_WRITE_HASH_TASKS);
     final ExecutorService readExecutor = Executors.newFixedThreadPool(NUM_READ_HASH_TASKS);
     final List<Future<Boolean>> writeFutureList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
@@ -395,7 +408,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              store.putSortedPartition(
+              store.putSortedDataAsPartition(
                   sortedPartitionIdList.get(writeTaskNumber), sortedDataInPartitionList.get(writeTaskNumber));
               return true;
             } catch (final Exception e) {
@@ -424,7 +437,7 @@ public final class PartitionStoreTest {
               IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
                   writeTaskNumber -> {
                     final Pair<Integer, Integer> hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
-                    final Optional<Partition> partition = store.getPartitionInRange(
+                    final Optional<Partition> partition = store.retrieveDataFromPartition(
                         sortedPartitionIdList.get(writeTaskNumber),
                         hashRangeToRetrieve.left(), hashRangeToRetrieve.right());
                     if (!partition.isPresent()) {
@@ -465,7 +478,7 @@ public final class PartitionStoreTest {
     readExecutor.shutdown();
 
     System.out.println(
-        "Scatter and gather in range - write time in millis: " + (writeEndNano - startNano) / 1000000 +
+        "Scatter and gather in hash range - write time in millis: " + (writeEndNano - startNano) / 1000000 +
             ", Read time in millis: " + (readEndNano - writeEndNano) / 1000000 + " in store " +
             store.getClass().toString());
   }

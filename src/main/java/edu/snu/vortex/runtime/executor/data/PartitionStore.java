@@ -35,37 +35,39 @@ public interface PartitionStore {
   Optional<Partition> getPartition(String partitionId) throws PartitionFetchException;
 
   /**
-   * Retrieves a partition of data in a specific hash range.
-   * @param partitionId of the partition.
+   * Retrieves data in a specific hash range from a partition.
+   * The result data will be treated as another partition.
+   * @param partitionId of the target partition.
    * @param startInclusiveHashVal of the hash range.
    * @param endExclusiveHashVal of the hash range.
-   * @return the partition (optionally).
+   * @return the result data as a new partition (if the target partition exists).
    * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
    */
-  Optional<Partition> getPartitionInRange(String partitionId,
-                                          int startInclusiveHashVal,
-                                          int endExclusiveHashVal)
+  Optional<Partition> retrieveDataFromPartition(String partitionId,
+                                                int startInclusiveHashVal,
+                                                int endExclusiveHashVal)
       throws PartitionFetchException;
 
   /**
-   * Saves a partition of data.
+   * Saves data as a partition.
    * @param partitionId of the partition.
-   * @param data of the partition.
+   * @param data of to save as a partition.
    * @return the size of the data (only when the data is serialized).
    * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
-  Optional<Long> putPartition(String partitionId,
-                              Iterable<Element> data) throws PartitionWriteException;
+  Optional<Long> putDataAsPartition(String partitionId,
+                                    Iterable<Element> data) throws PartitionWriteException;
 
   /**
-   * Saves a sorted partition of data.
+   * Saves data sorted by the hash value as a partition.
    * @param partitionId of the partition.
-   * @param sortedData of the partition.
+   * @param sortedData to save as a partition.
    * @return each size of the data per hash value (only when the data is serialized).
    * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
-  Optional<Iterable<Long>> putSortedPartition(String partitionId,
-                                              Iterable<Iterable<Element>> sortedData) throws PartitionWriteException;
+  Optional<Iterable<Long>> putSortedDataAsPartition(String partitionId,
+                                                    Iterable<Iterable<Element>> sortedData)
+      throws PartitionWriteException;
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;

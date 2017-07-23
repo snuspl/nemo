@@ -125,10 +125,23 @@ public final class OutputWriter extends DataTransfer {
     }
   }
 
+  /**
+   * Sorts an output according to the hash value and writes it as a single partition.
+   * This function will be called only when we need to split or recombine an output data from a task after it is stored
+   * (e.g., dynamic data skew handling, I-file write).
+   * We extend the hash range with the factor {@link edu.snu.vortex.client.JobConf.HashRangeMultiplier} in advance
+   * to prevent the extra deserialize - rehash - serialize process.
+   * Each data of this partition having same key hash value will be collected as a single block.
+   * This block will be the unit of retrieval and recombination of this partition.
+   *
+   * @param dataToWrite an iterable for the elements to be written.
+   * @param dstVertexId the id of the destination vertex.
+   */
   private void sortAndWrite(final Iterable<Element> dataToWrite,
                             final String dstVertexId) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
     final int dstParallelism = dstVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
+    // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
     // Separate the data into blocks according to the hash of their key.

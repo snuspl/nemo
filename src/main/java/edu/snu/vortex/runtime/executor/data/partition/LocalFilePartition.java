@@ -41,22 +41,26 @@ public final class LocalFilePartition implements Partition {
   private final List<BlockInfo> blockInfoList;
   private FileOutputStream fileOutputStream;
   private FileChannel fileChannel;
-  private long current;
+  private final boolean sorted; // Whether this partition is sorted by the hash value or not.
+  private long writtenBytes; // The written bytes in this file.
 
   /**
    * Constructs a file partition.
    *
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
+   * @param sorted   whether this partition is sorted by the hash value or not.
    */
   public LocalFilePartition(final Coder coder,
-                            final String filePath) {
+                            final String filePath,
+                            final boolean sorted) {
     this.coder = coder;
     this.filePath = filePath;
+    this.sorted = sorted;
     opened = new AtomicBoolean(false);
     written = new AtomicBoolean(false);
     blockInfoList = new ArrayList<>();
-    current = 0;
+    writtenBytes = 0;
   }
 
   /**
@@ -87,7 +91,8 @@ public final class LocalFilePartition implements Partition {
     if (!opened.get()) {
       throw new RuntimeException("Trying to write a block in a partition that has not been opened for write.");
     }
-    blockInfoList.add(new BlockInfo(serializedData.length, numElement, current));
+    blockInfoList.add(new BlockInfo(serializedData.length, numElement, writtenBytes));
+
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
@@ -98,7 +103,7 @@ public final class LocalFilePartition implements Partition {
       throw new RuntimeException(e);
     }
 
-    current += serializedData.length;
+    writtenBytes += serializedData.length;
   }
 
   /**
@@ -137,18 +142,20 @@ public final class LocalFilePartition implements Partition {
   }
 
   /**
-   * Retrieve the data of this partition from the file in a specific hash range and deserialize it.
+   * Retrieves the data of this partition from the file in a specific hash range and deserializes it.
    *
    * @param startInclusiveHashVal of the hash range.
    * @param endExclusiveHashVal of the hash range.
    * @return an iterable of deserialized data.
    * @throws RuntimeException if failed to deserialize.
    */
-  public Iterable<Element> rangeRetrieve(final int startInclusiveHashVal,
-                                         final int endExclusiveHashVal) throws RuntimeException {
-    // Check whether the partition is fully written.
+  public Iterable<Element> retrieveInHashRange(final int startInclusiveHashVal,
+                                               final int endExclusiveHashVal) throws RuntimeException {
+    // Check whether this partition is fully written and sorted by the hash value.
     if (!written.get()) {
       throw new RuntimeException("This partition is not written yet.");
+    } else if (!sorted) {
+      throw new RuntimeException("This partition is not sorted by the hash value.");
     }
 
     // Deserialize the data
@@ -218,7 +225,7 @@ public final class LocalFilePartition implements Partition {
   private final class BlockInfo {
     private final int blockSize;
     private final long numElements;
-    private final long offset;
+    private final long offset; // The byte offset of this block in this file.
 
     private BlockInfo(final int blockSize,
                       final long numElements,
