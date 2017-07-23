@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.master.scheduler;
 
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
@@ -140,9 +141,24 @@ public final class BatchScheduler implements Scheduler {
     final boolean stageComplete =
         jobStateManager.checkStageCompletion(stageIdForTaskGroupUponCompletion);
 
-    // if the stage this task group belongs to is complete,
     if (stageComplete) {
+      // if the stage this task group belongs to is complete,
       if (!jobStateManager.checkJobTermination()) { // and if the job is not yet complete or failed,
+        scheduleNextStage(stageIdForTaskGroupUponCompletion);
+      }
+    } else {
+      // determine if this task group's output must be "pushed"
+      final List<PhysicalStageEdge> outputsOfThisStage =
+          physicalPlan.getStageDAG().getOutgoingEdgesOf(stageIdForTaskGroupUponCompletion);
+      boolean pushOutput = false;
+      for (PhysicalStageEdge outputEdge : outputsOfThisStage) {
+        if (outputEdge.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Push) {
+          pushOutput = true;
+          break;
+        }
+      }
+
+      if (pushOutput) {
         scheduleNextStage(stageIdForTaskGroupUponCompletion);
       }
     }
@@ -245,13 +261,15 @@ public final class BatchScheduler implements Scheduler {
   /**
    * Recursively selects the next stage to schedule.
    * The selection mechanism is as follows:
-   * a) When a stage completes, its children stages become the candidates,
+   * a) When a stage completes, or a task group completes for outputs that must be pushed,
+   *    the children stages become the candidates,
    *    each child stage given as the input to this method.
    * b) Examine the parent stages of the given stage, checking if all parent stages are complete.
    *      - If a parent stage has not yet been scheduled (state = READY),
    *        check its grandparent stages (with recursive calls to this method)
    *      - If a parent stage is executing (state = EXECUTING),
-   *        there is nothing we can do but wait for it to complete.
+   *        then we must examine whether the outputs must be pushed,
+   *        or there is nothing we can do but wait for it to complete.
    * c) When a stage to schedule is selected, return the stage.
    * @param stageTocheck the subject stage to check for scheduling.
    * @return the stage to schedule next.
@@ -259,7 +277,7 @@ public final class BatchScheduler implements Scheduler {
   private Optional<PhysicalStage> selectNextStageToSchedule(final PhysicalStage stageTocheck) {
     Optional<PhysicalStage> selectedStage = Optional.empty();
     final List<PhysicalStage> parentStageList = physicalPlan.getStageDAG().getParents(stageTocheck.getId());
-    boolean allParentStagesComplete = true;
+    boolean safeToScheduleThisStage = true;
     for (final PhysicalStage parentStage : parentStageList) {
       final StageState.State parentStageState =
           (StageState.State) jobStateManager.getStageState(parentStage.getId()).getStateMachine().getCurrentState();
@@ -268,12 +286,20 @@ public final class BatchScheduler implements Scheduler {
       case READY:
       case FAILED_RECOVERABLE:
         // look into see grandparent stages
-        allParentStagesComplete = false;
+        safeToScheduleThisStage = false;
         selectedStage = selectNextStageToSchedule(parentStage);
         break;
       case EXECUTING:
-        // we cannot do anything but wait.
-        allParentStagesComplete = false;
+        final PhysicalStageEdge edgeFromParent =
+            physicalPlan.getStageDAG().getEdgeBetween(parentStage.getId(), stageTocheck.getId());
+
+        if (edgeFromParent.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Push) {
+          // we can schedule this stage even if the parent is executing
+          selectedStage = selectNextStageToSchedule(parentStage);
+        } else {
+          // we cannot do anything but wait.
+          safeToScheduleThisStage = false;
+        }
         break;
       case COMPLETE:
         break;
@@ -289,8 +315,8 @@ public final class BatchScheduler implements Scheduler {
       }
     }
 
-    // this stage can be scheduled if all parent stages have completed.
-    if (allParentStagesComplete) {
+    // if this stage can be scheduled after checking all parent stages,
+    if (safeToScheduleThisStage) {
       selectedStage = Optional.of(stageTocheck);
     }
     return selectedStage;
@@ -307,16 +333,23 @@ public final class BatchScheduler implements Scheduler {
     final List<PhysicalStageEdge> stageOutgoingEdges =
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
-    // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'.
-    if (jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState()
-        == StageState.State.FAILED_RECOVERABLE) {
+    final Enum stageState = jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState();
+
+
+    if (stageState == StageState.State.FAILED_RECOVERABLE) {
+      // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'
       jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
+    } else if (stageState == StageState.State.EXECUTING) {
+      // An 'executing' stage has been selected as the next stage to execute.
+      // This is due to the "Push" data transfer policy. We can skip this round.
+      LOG.log(Level.INFO, "{0} has already been scheduled! Skipping this round.");
+      return;
     }
 
     // attemptIdx is only initialized/updated when we set the stage's state to executing
     jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
     final int attemptIdx = jobStateManager.getAttemptCountForStage(stageToSchedule.getId());
-    LOG.log(Level.INFO, "Scheduling Stage: {0} with attemptIdx={1}", new Object[]{stageToSchedule.getId(), attemptIdx});
+    LOG.log(Level.INFO, "Scheduling Stage {0} with attemptIdx={1}", new Object[]{stageToSchedule.getId(), attemptIdx});
 
     stageToSchedule.getTaskGroupList().forEach(taskGroup -> {
       // this happens when the belonging stage's other task groups have failed recoverable,
