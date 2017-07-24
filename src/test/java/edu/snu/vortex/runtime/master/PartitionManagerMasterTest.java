@@ -111,19 +111,18 @@ public final class PartitionManagerMasterTest {
   public void testBeforeAfterCommit() throws Exception {
     final String edgeId = RuntimeIdGenerator.generateRuntimeEdgeId("Edge-1");
     final int srcTaskIndex = 0;
-    final String taskGroupId0 = RuntimeIdGenerator.generateTaskGroupId();
-    final String taskGroupId1 = RuntimeIdGenerator.generateTaskGroupId();
+    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String executorId = RuntimeIdGenerator.generateExecutorId();
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
 
     // The partition is being scheduled.
-    partitionManagerMaster.initializeState(edgeId, srcTaskIndex, taskGroupId0);
-    partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId0);
+    partitionManagerMaster.initializeState(edgeId, srcTaskIndex, taskGroupId);
+    partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
     final CompletableFuture<String> future0 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
     checkPendingFuture(future0);
 
     // Producer task group fails.
-    partitionManagerMaster.onProducerTaskGroupFailed(taskGroupId0);
+    partitionManagerMaster.onProducerTaskGroupFailed(taskGroupId);
 
     // A future, previously pending on SCHEDULED state, is now completed exceptionally.
     checkPartitionAbsentException(future0, partitionId, PartitionState.State.LOST_BEFORE_COMMIT);
@@ -131,7 +130,7 @@ public final class PartitionManagerMasterTest {
         PartitionState.State.LOST_BEFORE_COMMIT);
 
     // Re-scheduling the taskGroup.
-    partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId1);
+    partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
     final CompletableFuture<String> future1 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
     checkPendingFuture(future1);
 
