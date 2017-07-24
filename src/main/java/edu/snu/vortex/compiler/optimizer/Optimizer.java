@@ -171,7 +171,6 @@ public final class Optimizer {
         if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
           // TODO #362: handle outliers using the new method of observing hash histogram.
           postOptimizationEdge.getAttributes();
-          postOptimizationEdge.getExternalVertexAttr();
         }
       });
 
