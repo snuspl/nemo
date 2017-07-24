@@ -169,7 +169,7 @@ public final class Optimizer {
                 new RuntimeException("Optimization stage must have at least one outgoing edge"));
 
         if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
-          // TODO #???: handle outliers using the new method of observing hash histogram.
+          // TODO #362: handle outliers using the new method of observing hash histogram.
           postOptimizationEdge.getAttributes();
           postOptimizationEdge.getExternalVertexAttr();
         }
