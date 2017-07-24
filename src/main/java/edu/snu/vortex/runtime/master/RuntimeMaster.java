@@ -53,9 +53,8 @@ import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.COMPLETE;
  * Runtime Master is the central controller of Runtime.
  * Compiler submits an {@link PhysicalPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
- *    a) Physical conversion of a job's DAG into a physical plan.
- *    b) Scheduling the job with {@link Scheduler}.
- *    c) (Please list others done by Runtime Master as features are added).
+ *    a) Scheduling the job with {@link Scheduler}.
+ *    b) (Please list others done by Runtime Master as features are added).
  */
 public final class RuntimeMaster {
   private static final Logger LOG = Logger.getLogger(RuntimeMaster.class.getName());
@@ -174,9 +173,9 @@ public final class RuntimeMaster {
             throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
           }
         }
-        partitionManagerMaster.onPartitionStateChanged(
-            partitionStateChangedMsg.getExecutorId(), partitionStateChangedMsg.getPartitionId(),
-            convertPartitionState(partitionStateChangedMsg.getState()));
+        partitionManagerMaster.onPartitionStateChanged(partitionStateChangedMsg.getPartitionId(),
+            convertPartitionState(partitionStateChangedMsg.getState()),
+            partitionStateChangedMsg.getExecutorId());
         break;
       case ExecutorFailed:
         final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
@@ -243,10 +242,12 @@ public final class RuntimeMaster {
     switch (state) {
     case PARTITION_READY:
       return PartitionState.State.READY;
-    case MOVING:
-      return PartitionState.State.MOVING;
+    case SCHEDULED:
+      return PartitionState.State.SCHEDULED;
     case COMMITTED:
       return PartitionState.State.COMMITTED;
+    case LOST_BEFORE_COMMIT:
+      return PartitionState.State.LOST_BEFORE_COMMIT;
     case LOST:
       return PartitionState.State.LOST;
     case REMOVED:

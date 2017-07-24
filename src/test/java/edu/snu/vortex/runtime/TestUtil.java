@@ -30,6 +30,7 @@ import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
@@ -110,7 +111,7 @@ public final class TestUtil {
       IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
         if (commPattern == Attribute.ScatterGather) {
           final int dstParallelism =
-              physicalStageEdge.getExternalVertexAttr().get(Attribute.IntegerKey.Parallelism);
+              physicalStageEdge.getDstVertex().getAttributes().get(Attribute.IntegerKey.Parallelism);
           IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
             final String partitionId =
                 RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx);
@@ -150,11 +151,14 @@ public final class TestUtil {
                                                                final ContainerManager containerManager,
                                                                final String partitionId,
                                                                final PartitionState.State newState) {
-    final String parentTaskGroupId = partitionManagerMaster.getParentTaskGroupId(partitionId);
-    final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(containerManager, parentTaskGroupId);
+    final Optional<String> parentTaskGroupId = partitionManagerMaster.getProducerTaskGroupId(partitionId);
+    if (parentTaskGroupId.isPresent()) {
+      final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(containerManager, parentTaskGroupId.get());
 
-    if (scheduledExecutor != null) {
-      partitionManagerMaster.onPartitionStateChanged(scheduledExecutor.getExecutorId(), partitionId, newState);
+
+      if (scheduledExecutor != null) {
+        partitionManagerMaster.onPartitionStateChanged(partitionId, newState, scheduledExecutor.getExecutorId());
+      }
     }
   }
 
