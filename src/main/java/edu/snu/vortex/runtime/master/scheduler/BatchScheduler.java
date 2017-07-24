@@ -293,13 +293,10 @@ public final class BatchScheduler implements Scheduler {
         final PhysicalStageEdge edgeFromParent =
             physicalPlan.getStageDAG().getEdgeBetween(parentStage.getId(), stageTocheck.getId());
 
-        if (edgeFromParent.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Push) {
-          // we can schedule this stage even if the parent is executing
-          selectedStage = selectNextStageToSchedule(parentStage);
-        } else {
+        if (edgeFromParent.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Pull) {
           // we cannot do anything but wait.
           safeToScheduleThisStage = false;
-        }
+        } // else if the output of the parent stage is being pushed, we may be able to schedule this stage.
         break;
       case COMPLETE:
         break;
