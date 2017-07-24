@@ -305,12 +305,24 @@ public final class TaskGroupExecutor {
    * @param task the task to carry on the data.
    */
   private void launchMetricCollectionBarrierTask(final MetricCollectionBarrierTask task) {
-    final List<Element> data = new ArrayList<>();
+    final BlockingQueue<Iterable<Element>> dataQueue = new LinkedBlockingQueue<>();
+    final AtomicInteger sourceParallelism = new AtomicInteger(0);
     taskIdToInputReaderMap.get(task.getId()).stream()
         .filter(inputReader -> !inputReader.isSideInputReader())
-        .forEach(inputReader ->
-            inputReader.read().forEach(compFuture -> compFuture.thenAccept(elements -> elements.forEach(data::add))));
+        .forEach(inputReader -> {
+          sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
+          inputReader.read().forEach(compFuture -> compFuture.thenAccept(dataQueue::add));
+        });
 
+    final List<Element> data = new ArrayList<>();
+    IntStream.range(0, sourceParallelism.get()).forEach(srcTaskNum -> {
+      try {
+        final Iterable<Element> availableData = dataQueue.take();
+        availableData.forEach(data::add);
+      } catch (final InterruptedException e) {
+        throw new PartitionFetchException(e);
+      }
+    });
     taskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> outputWriter.write(data));
   }
 }

@@ -149,7 +149,6 @@ public final class RuntimeMaster {
           final PhysicalPlan newPlan = metricCollectionBarrierVertex.vortexDynamicOptimization(physicalPlan);
           scheduler.updateJob(newPlan);
           physicalPlan = newPlan;
-          System.out.println("physical plan updated");
         }
 
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),

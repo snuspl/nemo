@@ -49,7 +49,7 @@ public final class PhysicalPlanGenerator
   public DAG<PhysicalStage, PhysicalStageEdge> apply(final DAG<IRVertex, IREdge> irDAG) {
     // first, stage-partition the IR DAG.
     final DAG<Stage, StageEdge> dagOfStages = stagePartitionIrDAG(irDAG);
-    dagOfStages.storeJSON("ah", "plan-logical", "logical execution plan");
+//    dagOfStages.storeJSON("ah", "plan-logical", "logical execution plan");
     // then create tasks and make it into a physical execution plan.
     return stagesIntoPlan(dagOfStages);
   }

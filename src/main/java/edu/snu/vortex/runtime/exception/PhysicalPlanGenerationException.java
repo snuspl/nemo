@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.exception;
 /**
  * PhysicalPlanGenerationException.
  * Thrown when any exception occurs during the conversion
- * from {@link edu.snu.vortex.runtime.common.plan.stage.ExecutionPlan}
+ * from {@link edu.snu.vortex.common.dag.DAG}
  * to {@link edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan}
  */
 public final class PhysicalPlanGenerationException extends RuntimeException {
