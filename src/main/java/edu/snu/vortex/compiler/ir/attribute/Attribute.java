@@ -26,8 +26,6 @@ public enum Attribute {
   Transient(Key.Placement),
   Reserved(Key.Placement),
   Compute(Key.Placement),
-  Storage(Key.Placement),
-
 
   /**
    * IREdge channel data placement attributes.
