@@ -20,7 +20,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.common.StateMachine;
-import edu.snu.vortex.runtime.exception.PartitionAbsentException;
+import edu.snu.vortex.runtime.exception.AbsentPartitionException;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -107,7 +107,7 @@ public final class PartitionManagerMaster {
       case LOST:
       case REMOVED:
         final CompletableFuture<String> future = new CompletableFuture<>();
-        future.completeExceptionally(new PartitionAbsentException(partitionId, state));
+        future.completeExceptionally(new AbsentPartitionException(partitionId, state));
         return future;
       default:
         throw new UnsupportedOperationException(state.toString());
@@ -204,7 +204,7 @@ public final class PartitionManagerMaster {
         if (result.isPresent()) {
           e.getValue().complete(result.get());
         } else {
-          e.getValue().completeExceptionally(new PartitionAbsentException(partitionId, state));
+          e.getValue().completeExceptionally(new AbsentPartitionException(partitionId, state));
         }
         return true;
       }
@@ -226,7 +226,7 @@ public final class PartitionManagerMaster {
       if (throwable == null) {
         infoMsgBuilder.setOwnerExecutorId(location);
       } else {
-        infoMsgBuilder.setState(RuntimeMaster.convertPartitionState(((PartitionAbsentException) throwable).getState()));
+        infoMsgBuilder.setState(RuntimeMaster.convertPartitionState(((AbsentPartitionException) throwable).getState()));
       }
       messageContext.reply(
           ControlMessage.Message.newBuilder()

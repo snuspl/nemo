@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.state.PartitionState;
-import edu.snu.vortex.runtime.exception.PartitionAbsentException;
+import edu.snu.vortex.runtime.exception.AbsentPartitionException;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
@@ -51,10 +51,10 @@ public final class PartitionManagerMasterTest {
       future.get();
       throw new IllegalStateException("An ExecutionException was expected.");
     } catch (final ExecutionException executionException) {
-      final PartitionAbsentException partitionAbsentException
-          = (PartitionAbsentException) executionException.getCause();
-      assertEquals(expectedPartitionId, partitionAbsentException.getPartitionId());
-      assertEquals(expectedState, partitionAbsentException.getState());
+      final AbsentPartitionException absentPartitionException
+          = (AbsentPartitionException) executionException.getCause();
+      assertEquals(expectedPartitionId, absentPartitionException.getPartitionId());
+      assertEquals(expectedState, absentPartitionException.getState());
     }
   }
 

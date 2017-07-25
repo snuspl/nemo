@@ -20,7 +20,7 @@ import edu.snu.vortex.runtime.common.state.PartitionState;
 /**
  * An exception which represents the requested partition is neither COMMITTED nor SCHEDULED.
  */
-public final class PartitionAbsentException extends Exception {
+public final class AbsentPartitionException extends Exception {
   private final String partitionId;
   private final PartitionState.State state;
 
@@ -28,7 +28,7 @@ public final class PartitionAbsentException extends Exception {
    * @param partitionId id of the partition
    * @param state state of the partition
    */
-  public PartitionAbsentException(final String partitionId, final PartitionState.State state) {
+  public AbsentPartitionException(final String partitionId, final PartitionState.State state) {
     this.partitionId = partitionId;
     this.state = state;
   }
