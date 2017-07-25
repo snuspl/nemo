@@ -271,6 +271,8 @@ public final class BatchScheduler implements Scheduler {
    *        then we must examine whether the outputs must be pushed,
    *        or there is nothing we can do but wait for it to complete.
    * c) When a stage to schedule is selected, return the stage.
+   * A stage can only be scheduled when all parent stages connected by a “pull” edge are complete
+   * and all those connected by a “push” edge are at least in the executing state.
    * @param stageTocheck the subject stage to check for scheduling.
    * @return the stage to schedule next.
    */
@@ -331,7 +333,6 @@ public final class BatchScheduler implements Scheduler {
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
     final Enum stageState = jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState();
-
 
     if (stageState == StageState.State.FAILED_RECOVERABLE) {
       // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'
