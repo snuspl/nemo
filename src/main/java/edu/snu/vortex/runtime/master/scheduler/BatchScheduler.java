@@ -147,7 +147,7 @@ public final class BatchScheduler implements Scheduler {
         scheduleNextStage(stageIdForTaskGroupUponCompletion);
       }
     } else {
-      // determine if this task group's output must be "pushed"
+      // determine if at least one of the children stages must receive this task group's output as "push"
       final List<PhysicalStageEdge> outputsOfThisStage =
           physicalPlan.getStageDAG().getOutgoingEdgesOf(stageIdForTaskGroupUponCompletion);
       boolean pushOutput = false;
@@ -260,10 +260,12 @@ public final class BatchScheduler implements Scheduler {
 
   /**
    * Recursively selects the next stage to schedule.
+   * For pull (all of the outputs from the parent stage must be ready before the next stage is scheduled):
+   *    this method is triggered when a stage completes.
+   * For push (at least one task group completes for the next stage to begin consuming the outputs):
+   *    this method is triggered when a task group completes.
    * The selection mechanism is as follows:
-   * a) When a stage completes, or a task group completes for outputs that must be pushed,
-   *    the children stages become the candidates,
-   *    each child stage given as the input to this method.
+   * a) The children stages become the candidates, each child stage given as the input to this method.
    * b) Examine the parent stages of the given stage, checking if all parent stages are complete.
    *      - If a parent stage has not yet been scheduled (state = READY),
    *        check its grandparent stages (with recursive calls to this method)
