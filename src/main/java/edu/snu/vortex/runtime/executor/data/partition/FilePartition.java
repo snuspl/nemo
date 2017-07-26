@@ -90,6 +90,7 @@ public final class FilePartition implements Partition {
 
   /**
    * Notice the end of write.
+   * @throws RuntimeException if failed to close.
    */
   public void finishWrite() throws RuntimeException {
     try {
