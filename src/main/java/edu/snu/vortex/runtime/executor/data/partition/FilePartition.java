@@ -37,6 +37,8 @@ public final class FilePartition implements Partition {
   private final Coder coder;
   private final String filePath;
   private final List<BlockInfo> blockInfoList;
+  private FileOutputStream fileOutputStream;
+  private FileChannel fileChannel;
 
   /**
    * Constructs a file partition.
@@ -53,6 +55,19 @@ public final class FilePartition implements Partition {
   }
 
   /**
+   * Opens partition for writing. The corresponding {@link FilePartition#finishWrite()} is required.
+   * @throws RuntimeException if failed to open
+   */
+  public void openPartitionForWrite() throws RuntimeException {
+    try {
+      fileOutputStream = new FileOutputStream(filePath, true);
+      fileChannel = fileOutputStream.getChannel();
+    } catch (final FileNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
    * Writes the serialized data of this partition as a block to the file where this partition resides.
    *
    * @param serializedData the serialized data of this partition.
@@ -66,10 +81,7 @@ public final class FilePartition implements Partition {
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
     // Write synchronously
-    try (
-        final FileOutputStream fileOutputStream = new FileOutputStream(filePath, true);
-        final FileChannel fileChannel = fileOutputStream.getChannel()
-    ) {
+    try {
       fileChannel.write(buf);
     } catch (final IOException e) {
       throw new RuntimeException(e);
@@ -79,7 +91,13 @@ public final class FilePartition implements Partition {
   /**
    * Notice the end of write.
    */
-  public void finishWrite() {
+  public void finishWrite() throws RuntimeException {
+    try {
+      fileChannel.close();
+      fileOutputStream.close();
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
     written.set(true);
   }
 
