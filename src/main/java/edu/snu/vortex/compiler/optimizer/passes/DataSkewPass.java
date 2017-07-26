@@ -45,6 +45,7 @@ public final class DataSkewPass implements Pass {
       // We care about OperatorVertices that have GroupByKeyTransform.
       if (v instanceof OperatorVertex && ((OperatorVertex) v).getTransform() instanceof GroupByKeyTransform) {
         final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex = new MetricCollectionBarrierVertex<>();
+        metricCollectionBarrierVertex.setAttr(Attribute.Key.DynamicOptimizationType, Attribute.DataSkew);
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -55,6 +56,8 @@ public final class DataSkewPass implements Pass {
           IREdge.copyAttributes(edge, newEdge);
           // we tell the edge that it needs to collect the metrics when transferring data.
           newEdge.setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
+          newEdge.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);
           builder.connectVertices(newEdge);

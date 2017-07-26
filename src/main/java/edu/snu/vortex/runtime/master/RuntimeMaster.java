@@ -20,6 +20,8 @@ import edu.snu.vortex.common.proxy.ClientEndpoint;
 import edu.snu.vortex.common.proxy.DriverEndpoint;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.passes.DataSkewPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
@@ -132,21 +134,26 @@ public final class RuntimeMaster {
         // We handle it separately if the new state is COMPLETE and contains failed task ids,
         // to perform dynamic optimization at the barrier vertex.
         if (newState.equals(COMPLETE) && taskGroupStateChangedMsg.getFailedTaskIdsCount() > 0) {
-          // get optimization vertices from tasks.
-          final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
+          // get optimization vertex from the task.
+          final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex =
               physicalPlan.getStageDAG().getVertices().stream()
                   .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
-                  .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream())
-                  .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId()))
-                  .map(physicalPlan::getIRVertexOf)
+                  .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream()) // get all tasks
+                  .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId())) // find it
+                  .map(physicalPlan::getIRVertexOf) // get the corresponding IRVertex, the MetricCollectionBarrierVertex
                   .filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
-                  .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex)
-                  .findFirst().orElseThrow(() -> new RuntimeException(COMPLETE.name()
+                  .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex) // convert types
+                  .findFirst().orElseThrow(() -> new RuntimeException(COMPLETE.name() // get it
                   + " called with failed task ids by some other task than "
                   + MetricCollectionBarrierTask.class.getSimpleName()));
-          // and we will use these vertices to perform metric collection and dynamic optimization.
-          final PhysicalPlan newPlan = metricCollectionBarrierVertex.vortexDynamicOptimization(physicalPlan);
+          // and we will use this vertex to perform metric collection and dynamic optimization.
+          final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan,
+              metricCollectionBarrierVertex.getMetricData(),
+              metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType));
+          // update the job in the scheduler.
+          // NOTE: what's already been executed is not modified in the new physical plan.
           scheduler.updateJob(newPlan);
+          // update the job here.
           physicalPlan = newPlan;
         }
 

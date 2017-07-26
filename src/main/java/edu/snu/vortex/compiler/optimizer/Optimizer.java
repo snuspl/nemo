@@ -18,6 +18,7 @@ package edu.snu.vortex.compiler.optimizer;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
@@ -132,50 +133,52 @@ public final class Optimizer {
   /**
    * Dynamic optimization method to process the dag with an appropriate pass, decided by the stats.
    * @param originalPlan original physical execution plan.
-   * @param dag DAG to process.
    * @param metricData metric data and statistic information to decide which pass to perform.
+   * @param dynamicOptimizationType type of dynamic optimization to perform.
    * @return processed DAG.
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
-                                                 final DAG<IRVertex, IREdge> dag,
-                                                 final Map<String, ?> metricData) {
-    if (metricData.values().iterator().next() instanceof Long) { // Data skew dynamic optimization.
-      DescriptiveStatistics stats = new DescriptiveStatistics();
+                                                 final Map<String, ?> metricData,
+                                                 final Attribute dynamicOptimizationType) {
+    switch (dynamicOptimizationType) {
+      case DataSkew:
+        final DescriptiveStatistics stats = new DescriptiveStatistics();
 
-      metricData.forEach((k, v) -> stats.addValue(((Long) v).doubleValue()));
+        metricData.forEach((k, v) -> stats.addValue(((Long) v).doubleValue()));
 
-      final double median = stats.getPercentile(50);
-      final double q1 = stats.getPercentile(25);
-      final double q3 = stats.getPercentile(75);
+        final double median = stats.getPercentile(50);
+        final double q1 = stats.getPercentile(25);
+        final double q3 = stats.getPercentile(75);
 
-      final double interquartile = q3 - q1;
-      final double outerfence = interquartile * interquartile * 2;
+        final double interquartile = q3 - q1;
+        final double outerfence = interquartile * interquartile * 2;
 
-      final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
-          new DAGBuilder<>(originalPlan.getStageDAG());
+        final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
+            new DAGBuilder<>(originalPlan.getStageDAG());
 
-      metricData.forEach((partitionId, partitionSize) -> {
-        final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
-        final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
-        final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
-            .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
-            .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
-            .findFirst().orElseThrow(() ->
-                new RuntimeException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
+        metricData.forEach((partitionId, partitionSize) -> {
+          final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
+          final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
+          final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
+              .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
+              .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
+              .findFirst().orElseThrow(() ->
+                  new RuntimeException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
 
-        final PhysicalStage optimizationStage = optimizationEdge.getDst();
-        final PhysicalStageEdge postOptimizationEdge = originalPlan.getStageDAG().getOutgoingEdgesOf(optimizationStage)
-            .stream().findFirst().orElseThrow(() ->
-                new RuntimeException("Optimization stage must have at least one outgoing edge"));
+          final PhysicalStage optimizationStage = optimizationEdge.getDst();
+          final PhysicalStageEdge postOptimizationEdge =
+              originalPlan.getStageDAG().getOutgoingEdgesOf(optimizationStage).stream().findFirst().orElseThrow(() ->
+                  new RuntimeException("Optimization stage must have at least one outgoing edge"));
 
-        if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
-          // TODO #362: handle outliers using the new method of observing hash histogram.
-          postOptimizationEdge.getAttributes();
-        }
-      });
+          if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
+            // TODO #362: handle outliers using the new method of observing hash histogram.
+            postOptimizationEdge.getAttributes();
+          }
+        });
 
-      return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
+        return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
+      default:
+        return originalPlan;
     }
-    return originalPlan;
   }
 }

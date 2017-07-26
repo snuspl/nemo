@@ -30,6 +30,10 @@ public interface Scheduler {
   JobStateManager scheduleJob(final PhysicalPlan physicalPlan,
                               final int maxScheduleAttempt);
 
+  /**
+   * updates the job's physical execution plan to schedule.
+   * @param physicalPlan new physical plan to submit.
+   */
   void updateJob(final PhysicalPlan physicalPlan);
 
   void onExecutorAdded(String executorId);

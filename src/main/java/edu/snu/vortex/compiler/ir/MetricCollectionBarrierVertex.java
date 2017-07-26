@@ -16,8 +16,6 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
 
@@ -61,7 +59,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    * Access the DAG snapshot when triggering dynamic optimization.
    * @return the DAG set to the vertex, or throws an exception otherwise.
    */
-  private DAG<IRVertex, IREdge> getDAGSnapshot() {
+  public DAG<IRVertex, IREdge> getDAGSnapshot() {
     if (this.dagSnapshot == null) {
       throw new RuntimeException("MetricCollectionBarrierVertex must have been set with a DAG.");
     }
@@ -78,13 +76,11 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
   }
 
   /**
-   * Method for triggering dynamic optimization in Vortex Master.
-   * It can be accessed by the Runtime Master, and it will perform dynamic optimization through this method.
-   * @param originalPlan original physical execution plan to optimize.
-   * @return dynamically optimized IR DAG's physical plan.
+   * method for retrieving metrics from the vertex.
+   * @return the accumulated metric data.
    */
-  public PhysicalPlan vortexDynamicOptimization(final PhysicalPlan originalPlan) {
-    return Optimizer.dynamicOptimization(originalPlan, getDAGSnapshot(), metricData);
+  public Map<String, T> getMetricData() {
+    return metricData;
   }
 
   @Override

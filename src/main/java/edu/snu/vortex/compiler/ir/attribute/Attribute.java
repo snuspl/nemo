@@ -28,6 +28,11 @@ public enum Attribute {
   Compute(Key.Placement),
   Storage(Key.Placement),
 
+  /**
+   * MetricCollectionBarrierVertex dynamic optimization type.
+   */
+  DataSkew(Key.DynamicOptimizationType),
+
 
   /**
    * IREdge channel data placement attributes.
@@ -94,6 +99,7 @@ public enum Attribute {
   public enum Key {
     // IRVertex
     Placement,
+    DynamicOptimizationType,
 
     // IREdge
     ChannelDataPlacement,
