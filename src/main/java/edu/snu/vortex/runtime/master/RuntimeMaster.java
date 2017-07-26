@@ -23,7 +23,6 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.passes.DataSkewPass;
-import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -35,14 +34,12 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
-import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -201,23 +198,7 @@ public final class RuntimeMaster {
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
       switch (message.getType()) {
       case RequestPartitionLocation:
-        final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
-            message.getRequestPartitionLocationMsg();
-        final Optional<String> executorId =
-            partitionManagerMaster.getPartitionLocation(requestPartitionLocationMsg.getPartitionId());
-        messageContext.reply(
-            ControlMessage.Message.newBuilder()
-                .setId(RuntimeIdGenerator.generateMessageId())
-                .setType(ControlMessage.MessageType.PartitionLocationInfo)
-                .setPartitionLocationInfoMsg(
-                    ControlMessage.PartitionLocationInfoMsg.newBuilder()
-                        .setRequestId(message.getId())
-                        .setPartitionId(requestPartitionLocationMsg.getPartitionId())
-                        .setOwnerExecutorId(executorId.isPresent()
-                            ? executorId.get()
-                            : PartitionManagerWorker.NO_REMOTE_PARTITION)
-                        .build())
-                .build());
+        partitionManagerMaster.onRequestPartitionLocation(message, messageContext);
         break;
       default:
         throw new IllegalMessageException(
@@ -227,7 +208,7 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
+  private static TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
     case READY:
       return TaskGroupState.State.READY;
@@ -245,7 +226,7 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private PartitionState.State convertPartitionState(final ControlMessage.PartitionStateFromExecutor state) {
+  public static PartitionState.State convertPartitionState(final ControlMessage.PartitionStateFromExecutor state) {
     switch (state) {
     case PARTITION_READY:
       return PartitionState.State.READY;
@@ -261,6 +242,26 @@ public final class RuntimeMaster {
       return PartitionState.State.REMOVED;
     default:
       throw new UnknownExecutionStateException(new Exception("This PartitionState is unknown: " + state));
+    }
+  }
+
+  // TODO #164: Cleanup Protobuf Usage
+  public static ControlMessage.PartitionStateFromExecutor convertPartitionState(final PartitionState.State state) {
+    switch (state) {
+      case READY:
+        return ControlMessage.PartitionStateFromExecutor.PARTITION_READY;
+      case SCHEDULED:
+        return ControlMessage.PartitionStateFromExecutor.SCHEDULED;
+      case COMMITTED:
+        return ControlMessage.PartitionStateFromExecutor.COMMITTED;
+      case LOST_BEFORE_COMMIT:
+        return ControlMessage.PartitionStateFromExecutor.LOST_BEFORE_COMMIT;
+      case LOST:
+        return ControlMessage.PartitionStateFromExecutor.LOST;
+      case REMOVED:
+        return ControlMessage.PartitionStateFromExecutor.REMOVED;
+      default:
+        throw new UnknownExecutionStateException(new Exception("This PartitionState is unknown: " + state));
     }
   }
 
