@@ -111,8 +111,6 @@ public final class LocalFilePartition implements Partition {
     try {
       fileChannel.close();
       fileOutputStream.close();
-      fileChannel = null;
-      fileOutputStream = null;
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
