@@ -163,7 +163,8 @@ public final class PhysicalPlanGenerator
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne)) // One to one edges
             .filter(edge -> edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Memory)) // Memory data placement
-            .filter(edge -> edge.getSrc().getAttributes().equals(edge.getDst().getAttributes())) //Src and Dst same attr
+            .filter(edge -> edge.getSrc().getAttr(Attribute.Key.Placement)
+                .equals(edge.getDst().getAttr(Attribute.Key.Placement))) //Src and Dst same placement
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc())) // Src that is already included in a stage
             // Others don't depend on the candidate stage.
             .filter(edge -> !dependentStagesList.contains(vertexStageNumHashMap.get(edge.getSrc())))
