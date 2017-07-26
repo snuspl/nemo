@@ -111,7 +111,6 @@ final class FileStore implements PartitionStore {
       throw new RuntimeException("Trying to overwrite an existing partition");
     }
 
-
     // Serialize the given data into blocks
     partition.openPartitionForWrite();
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

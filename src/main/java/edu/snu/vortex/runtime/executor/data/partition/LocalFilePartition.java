@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LocalFilePartition implements Partition {
 
+  private final AtomicBoolean opened;
   private final AtomicBoolean written;
   private final Coder coder;
   private final String filePath;
@@ -50,6 +51,7 @@ public final class LocalFilePartition implements Partition {
                             final String filePath) {
     this.coder = coder;
     this.filePath = filePath;
+    opened = new AtomicBoolean(false);
     written = new AtomicBoolean(false);
     blockInfoList = new ArrayList<>();
   }
@@ -59,12 +61,16 @@ public final class LocalFilePartition implements Partition {
    * @throws RuntimeException if failed to open
    */
   public void openPartitionForWrite() throws RuntimeException {
+    if (opened.get()) {
+      throw new RuntimeException("Trying to re-open a partition for write");
+    }
     try {
       fileOutputStream = new FileOutputStream(filePath, true);
       fileChannel = fileOutputStream.getChannel();
     } catch (final FileNotFoundException e) {
       throw new RuntimeException(e);
     }
+    opened.set(true);
   }
 
   /**
@@ -76,6 +82,9 @@ public final class LocalFilePartition implements Partition {
    */
   public void writeBlock(final byte[] serializedData,
                          final long numElement) throws RuntimeException {
+    if (!opened.get()) {
+      throw new RuntimeException("Trying to write a block in a partition that has not been opened for write.");
+    }
     blockInfoList.add(new BlockInfo(serializedData.length, numElement));
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
@@ -93,9 +102,17 @@ public final class LocalFilePartition implements Partition {
    * @throws RuntimeException if failed to close.
    */
   public void finishWrite() throws RuntimeException {
+    if (!opened.get()) {
+      throw new RuntimeException("Trying to finish writing a partition that has not been opened for write.");
+    }
+    if (written.get()) {
+      throw new RuntimeException("Trying to finish writing that has been already finished.");
+    }
     try {
       fileChannel.close();
       fileOutputStream.close();
+      fileChannel = null;
+      fileOutputStream = null;
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
