@@ -61,7 +61,7 @@ public final class LocalFilePartition implements Partition {
    * @throws RuntimeException if failed to open
    */
   public void openPartitionForWrite() throws RuntimeException {
-    if (opened.get()) {
+    if (opened.getAndSet(true)) {
       throw new RuntimeException("Trying to re-open a partition for write");
     }
     try {
@@ -70,7 +70,6 @@ public final class LocalFilePartition implements Partition {
     } catch (final FileNotFoundException e) {
       throw new RuntimeException(e);
     }
-    opened.set(true);
   }
 
   /**
@@ -105,7 +104,7 @@ public final class LocalFilePartition implements Partition {
     if (!opened.get()) {
       throw new RuntimeException("Trying to finish writing a partition that has not been opened for write.");
     }
-    if (written.get()) {
+    if (written.getAndSet(true)) {
       throw new RuntimeException("Trying to finish writing that has been already finished.");
     }
     try {
@@ -114,7 +113,6 @@ public final class LocalFilePartition implements Partition {
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
-    written.set(true);
   }
 
   /**
