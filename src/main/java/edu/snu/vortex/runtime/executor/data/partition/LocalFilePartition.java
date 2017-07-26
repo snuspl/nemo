@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class represents a {@link Partition} which is stored in file.
  * It does not contain any actual data.
  */
-public final class FilePartition implements Partition {
+public final class LocalFilePartition implements Partition {
 
   private final AtomicBoolean written;
   private final Coder coder;
@@ -46,8 +46,8 @@ public final class FilePartition implements Partition {
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
    */
-  public FilePartition(final Coder coder,
-                       final String filePath) {
+  public LocalFilePartition(final Coder coder,
+                            final String filePath) {
     this.coder = coder;
     this.filePath = filePath;
     written = new AtomicBoolean(false);
@@ -55,7 +55,7 @@ public final class FilePartition implements Partition {
   }
 
   /**
-   * Opens partition for writing. The corresponding {@link FilePartition#finishWrite()} is required.
+   * Opens partition for writing. The corresponding {@link LocalFilePartition#finishWrite()} is required.
    * @throws RuntimeException if failed to open
    */
   public void openPartitionForWrite() throws RuntimeException {
