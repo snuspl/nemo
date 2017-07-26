@@ -29,8 +29,6 @@ public enum Attribute {
 
   /**
    * IREdge channel data placement attributes.
-   * Memory: Intermediate data are placed without serialization
-   * and the receiver on the same machine task will take the data.
    *
    * Memory: Intermediate data is stored in sender task's memory,
    * until it is sent to the receiver task.
