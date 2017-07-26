@@ -42,10 +42,11 @@ public final class DataSkewPass implements Pass {
     final List<MetricCollectionBarrierVertex> metricCollectionVertices = new ArrayList<>();
 
     dag.topologicalDo(v -> {
+      // We tell each operator that we will perform data skew optimization.
+      v.setAttr(Attribute.Key.DynamicOptimizationType, Attribute.DataSkew);
       // We care about OperatorVertices that have GroupByKeyTransform.
       if (v instanceof OperatorVertex && ((OperatorVertex) v).getTransform() instanceof GroupByKeyTransform) {
         final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex = new MetricCollectionBarrierVertex<>();
-        metricCollectionBarrierVertex.setAttr(Attribute.Key.DynamicOptimizationType, Attribute.DataSkew);
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -57,7 +58,7 @@ public final class DataSkewPass implements Pass {
           // we tell the edge that it needs to collect the metrics when transferring data.
           newEdge.setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
           newEdge.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
-          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Local);
+          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);
           builder.connectVertices(newEdge);
