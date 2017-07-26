@@ -133,6 +133,7 @@ public final class OutputWriter extends DataTransfer {
    * to prevent the extra deserialize - rehash - serialize process.
    * Each data of this partition having same key hash value will be collected as a single block.
    * This block will be the unit of retrieval and recombination of this partition.
+   * TODO #378: Elaborate block construction during data skew pass
    *
    * @param dataToWrite an iterable for the elements to be written.
    * @param dstVertexId the id of the destination vertex.

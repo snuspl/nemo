@@ -22,7 +22,6 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
-import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.NonSerializedPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.InjectionFuture;
@@ -183,6 +182,7 @@ final class LocalFileStore implements PartitionStore {
     }
 
     // Serialize the given blocks
+    partition.openPartitionForWrite();
     final List<Long> blockSizeList = new ArrayList<>();
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     for (Iterable<Element> block : sortedData) {
