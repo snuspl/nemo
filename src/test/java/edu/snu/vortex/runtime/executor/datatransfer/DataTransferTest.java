@@ -241,7 +241,7 @@ public final class DataTransferTest {
     final List<List<Element>> dataWrittenList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
       final List<Element> dataWritten = getListOfZeroToNine();
-      final OutputWriter writer = new OutputWriter(srcTaskIndex, dstVertex, dummyEdge, sender);
+      final OutputWriter writer = new OutputWriter(srcTaskIndex, srcVertex.getId(), dstVertex, dummyEdge, sender);
       writer.write(dataWritten);
       dataWrittenList.add(dataWritten);
     });

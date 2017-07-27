@@ -166,8 +166,8 @@ public final class RuntimeMaster {
         // process message with partition size.
         if (partitionStateChangedMsg.hasPartitionSize()) {
           final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
-          final String dstVertexId = partitionStateChangedMsg.getDstVertexId();
-          final IRVertex vertexToSendMetricDataTo = physicalPlan.findIRVertexCalled(dstVertexId);
+          final String srcVertexId = partitionStateChangedMsg.getSrcVertexId();
+          final IRVertex vertexToSendMetricDataTo = physicalPlan.findIRVertexCalled(srcVertexId);
 
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =

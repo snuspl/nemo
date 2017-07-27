@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.common.plan.physical;
 
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
@@ -26,7 +27,9 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.stage.*;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 import edu.snu.vortex.runtime.exception.PhysicalPlanGenerationException;
+import org.apache.reef.tang.annotations.Parameter;
 
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -40,6 +43,14 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.Memory;
  */
 public final class PhysicalPlanGenerator
     implements Function<DAG<IRVertex, IREdge>, DAG<PhysicalStage, PhysicalStageEdge>> {
+
+  final String dagDirectory;
+
+  @Inject
+  private PhysicalPlanGenerator(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
+    this.dagDirectory = dagDirectory;
+  }
+
   /**
    * Generates the {@link PhysicalPlan} to be executed.
    * @param irDAG that should be converted to a physical execution plan
@@ -50,7 +61,7 @@ public final class PhysicalPlanGenerator
     // first, stage-partition the IR DAG.
     final DAG<Stage, StageEdge> dagOfStages = stagePartitionIrDAG(irDAG);
     // for debugging purposes.
-//    dagOfStages.storeJSON(DAG_DIRECTORY, "plan-logical", "logical execution plan");
+    dagOfStages.storeJSON(dagDirectory, "plan-logical", "logical execution plan");
     // then create tasks and make it into a physical execution plan.
     return stagesIntoPlan(dagOfStages);
   }

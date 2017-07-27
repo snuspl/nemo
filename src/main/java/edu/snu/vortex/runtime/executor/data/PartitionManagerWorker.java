@@ -129,13 +129,13 @@ public final class PartitionManagerWorker {
    * Invariant: This should be invoked only once per partitionId.
    *
    * @param partitionId of the partition.
-   * @param dstIRVertexId of the source task.
+   * @param srcIRVertexId IRVertex gof the source task.
    * @param data of the partition.
    * @param partitionStore for storing the partition.
    * @param isMetricCollectionEdge boolean flag to indicate whether or not to collect metrics.
    */
   public void putPartition(final String partitionId,
-                           final String dstIRVertexId,
+                           final String srcIRVertexId,
                            final Iterable<Element> data,
                            final Attribute partitionStore,
                            final Boolean isMetricCollectionEdge) {
@@ -156,7 +156,7 @@ public final class PartitionManagerWorker {
 
     if (isMetricCollectionEdge) {
       partitionStateChangedMsgBuilder.setPartitionSize(dataSize);
-      partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
+      partitionStateChangedMsgBuilder.setSrcVertexId(srcIRVertexId);
     }
 
     persistentConnectionToMaster.getMessageSender().send(

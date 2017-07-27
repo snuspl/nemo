@@ -16,10 +16,7 @@
 package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.common.Pair;
-import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.Reader;
-import edu.snu.vortex.compiler.ir.Transform;
+import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;

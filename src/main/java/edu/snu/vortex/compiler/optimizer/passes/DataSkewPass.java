@@ -54,13 +54,13 @@ public final class DataSkewPass implements Pass {
           final IREdge newEdge =
               new IREdge(IREdge.Type.OneToOne, edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
           // we tell the edge that it needs to collect the metrics when transferring data.
-          newEdge.setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
           // we want it to be in the same stage
           newEdge.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
-          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile); // TODO #362: Memory?
+          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);
+          edgeToGbK.setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });
