@@ -126,11 +126,10 @@ public final class RuntimeMaster {
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
-        final TaskGroupState.State newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
+        final TaskGroupState.State newState;
 
-        // We handle it separately if the new state is COMPLETE and contains failed task ids,
-        // to perform dynamic optimization at the barrier vertex.
-        if (newState.equals(COMPLETE) && taskGroupStateChangedMsg.getFailedTaskIdsCount() > 0) {
+        // We handle it separately if the new state is ON_HOLD, to perform dynamic optimization at the barrier vertex.
+        if (convertTaskGroupState(taskGroupStateChangedMsg.getState()).equals(TaskGroupState.State.ON_HOLD)) {
           // get optimization vertex from the task.
           final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex =
               physicalPlan.getStageDAG().getVertices().stream()
@@ -152,6 +151,10 @@ public final class RuntimeMaster {
           scheduler.updateJob(newPlan);
           // update the job here.
           physicalPlan = newPlan;
+          // change state to complete
+          newState = COMPLETE;
+        } else {
+          newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
         }
 
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
