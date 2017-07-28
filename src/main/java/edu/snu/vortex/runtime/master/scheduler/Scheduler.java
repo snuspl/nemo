@@ -38,12 +38,6 @@ public interface Scheduler {
                               int maxScheduleAttempt);
 
   /**
-   * updates the job's physical execution plan to schedule.
-   * @param physicalPlan new physical plan to submit.
-   */
-  void updateJob(PhysicalPlan physicalPlan);
-
-  /**
    * Called when an executor is added to Runtime, so that the extra resource can be used to execute the job.
    * @param executorId of the executor that has been added.
    */

@@ -20,15 +20,13 @@ import edu.snu.vortex.common.proxy.ClientEndpoint;
 import edu.snu.vortex.common.proxy.DriverEndpoint;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.passes.DataSkewPass;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
-import edu.snu.vortex.runtime.common.plan.physical.MetricCollectionBarrierTask;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -40,6 +38,7 @@ import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtil
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +46,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.COMPLETE;
+import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.ON_HOLD;
 
 /**
  * Runtime Master is the central controller of Runtime.
@@ -66,7 +66,7 @@ public final class RuntimeMaster {
   private JobStateManager jobStateManager;
 
   private final String dagDirectory;
-  private PhysicalPlan physicalPlan;
+  private Map<Task, IRVertex> taskIRVertexMap;
   private final int maxScheduleAttempt;
 
   @Inject
@@ -93,7 +93,7 @@ public final class RuntimeMaster {
    */
   public void execute(final PhysicalPlan plan,
                       final ClientEndpoint clientEndpoint) {
-    this.physicalPlan = plan;
+    this.taskIRVertexMap = plan.getTaskIRVertexMap();
     try {
       jobStateManager = scheduler.scheduleJob(plan, maxScheduleAttempt);
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
@@ -126,40 +126,10 @@ public final class RuntimeMaster {
       switch (message.getType()) {
       case TaskGroupStateChanged:
         final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg = message.getTaskStateChangedMsg();
-        final TaskGroupState.State newState;
-
-        // We handle it separately if the new state is ON_HOLD, to perform dynamic optimization at the barrier vertex.
-        if (convertTaskGroupState(taskGroupStateChangedMsg.getState()).equals(TaskGroupState.State.ON_HOLD)) {
-          // get optimization vertex from the task.
-          final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex =
-              physicalPlan.getStageDAG().getVertices().stream()
-                  .flatMap(physicalStage -> physicalStage.getTaskGroupList().stream())
-                  .flatMap(taskGroup -> taskGroup.getTaskDAG().getVertices().stream()) // get all tasks
-                  .filter(task -> taskGroupStateChangedMsg.getFailedTaskIdsList().contains(task.getId())) // find it
-                  .map(physicalPlan::getIRVertexOf) // get the corresponding IRVertex, the MetricCollectionBarrierVertex
-                  .filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
-                  .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex) // convert types
-                  .findFirst().orElseThrow(() -> new RuntimeException(COMPLETE.name() // get it
-                  + " called with failed task ids by some other task than "
-                  + MetricCollectionBarrierTask.class.getSimpleName()));
-          // and we will use this vertex to perform metric collection and dynamic optimization.
-          final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan,
-              metricCollectionBarrierVertex.getMetricData(),
-              metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType));
-          // update the job in the scheduler.
-          // NOTE: what's already been executed is not modified in the new physical plan.
-          scheduler.updateJob(newPlan);
-          // update the job here.
-          physicalPlan = newPlan;
-          // change state to complete
-          newState = COMPLETE;
-        } else {
-          newState = convertTaskGroupState(taskGroupStateChangedMsg.getState());
-        }
 
         scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
             taskGroupStateChangedMsg.getTaskGroupId(),
-            newState,
+            convertTaskGroupState(taskGroupStateChangedMsg.getState()),
             taskGroupStateChangedMsg.getAttemptIdx(),
             taskGroupStateChangedMsg.getFailedTaskIdsList(),
             convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
@@ -170,7 +140,9 @@ public final class RuntimeMaster {
         if (partitionStateChangedMsg.hasPartitionSize()) {
           final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
           final String srcVertexId = partitionStateChangedMsg.getSrcVertexId();
-          final IRVertex vertexToSendMetricDataTo = physicalPlan.findIRVertexCalled(srcVertexId);
+          final IRVertex vertexToSendMetricDataTo = taskIRVertexMap.values().stream()
+              .filter(irVertex -> irVertex.getId().equals(srcVertexId)).findFirst()
+              .orElseThrow(() -> new RuntimeException(srcVertexId + " doesn't exist in the submitted Physical Plan"));
 
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
@@ -223,6 +195,8 @@ public final class RuntimeMaster {
       return TaskGroupState.State.FAILED_RECOVERABLE;
     case FAILED_UNRECOVERABLE:
       return TaskGroupState.State.FAILED_UNRECOVERABLE;
+    case ON_HOLD:
+      return ON_HOLD;
     default:
       throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
     }

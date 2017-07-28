@@ -18,6 +18,7 @@ package edu.snu.vortex.compiler.optimizer;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
@@ -133,13 +134,15 @@ public final class Optimizer {
   /**
    * Dynamic optimization method to process the dag with an appropriate pass, decided by the stats.
    * @param originalPlan original physical execution plan.
-   * @param metricData metric data and statistic information to decide which pass to perform.
-   * @param dynamicOptimizationType type of dynamic optimization to perform.
+   * @param metricCollectionBarrierVertex the vertex that collects metrics and chooses which optimization to perform.
    * @return processed DAG.
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
-                                                 final Map<String, ?> metricData,
-                                                 final Attribute dynamicOptimizationType) {
+                                                 final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex) {
+    final Map<String, ?> metricData = metricCollectionBarrierVertex.getMetricData();
+    final Attribute dynamicOptimizationType =
+        metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
+
     switch (dynamicOptimizationType) {
       case DataSkew:
         final DescriptiveStatistics stats = new DescriptiveStatistics();
