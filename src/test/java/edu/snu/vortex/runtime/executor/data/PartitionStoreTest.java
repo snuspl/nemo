@@ -36,6 +36,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -272,7 +273,12 @@ public final class PartitionStoreTest {
                       throw new RuntimeException("The result of removePartition(" +
                           partitionIdList.get(partitionNumber) + ") is false");
                     }
-                    final Iterable<Element> getData = partition.get().asIterable();
+                    final Iterable<Element> getData;
+                    try {
+                       getData = partition.get().asIterable();
+                    } catch (final IOException e) {
+                      throw new RuntimeException(e);
+                    }
                     assertEquals(dataInPartitionList.get(partitionNumber), getData);
                   });
               return true;

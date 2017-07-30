@@ -223,7 +223,7 @@ final class PartitionTransferPeer {
       final byte[] bytes = transportEvent.getData();
 
       try (final InputStream inputStream = new ByteArrayInputStream(bytes);
-           final DataInputStream dataInputStream = new DataInputStream(inputStream)) {
+            final DataInputStream dataInputStream = new DataInputStream(inputStream)) {
         final long requestId = dataInputStream.readLong();
         final Coder coder = peer.requestIdToCoder.remove(requestId);
         final int numOfElements = dataInputStream.readInt();
@@ -259,10 +259,8 @@ final class PartitionTransferPeer {
       case Memory:
         return ControlMessage.PartitionStore.MEMORY;
       case LocalFile:
-        // TODO #69: Implement file channel in Runtime
         return ControlMessage.PartitionStore.LOCAL_FILE;
       case RemoteFile:
-        // TODO #180: Implement DistributedStorageStore
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));

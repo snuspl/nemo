@@ -49,6 +49,14 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class FileDirectory implements Name<String> {
   }
 
+  /**
+   * Directory points the mounted GlusterFS volume to store files in remote fashion.
+   * If the volume is not mounted to this directory, the remote file store will act like local file store.
+   */
+  @NamedParameter(doc = "Directory points the GlusterFS volume", short_name = "gfs_dir", default_value = "./gfs")
+  public final class GlusterVolumeDirectory implements Name<String> {
+  }
+
   //////////////////////////////// Compiler Configurations
 
   /**

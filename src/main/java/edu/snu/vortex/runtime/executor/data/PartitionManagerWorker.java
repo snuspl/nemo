@@ -216,14 +216,14 @@ public final class PartitionManagerWorker {
 
     try {
       optionalPartition = store.getPartition(partitionId);
+      if (optionalPartition.isPresent()) {
+        // Memory hit!
+        return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
+      }
     } catch (final Exception e) {
       throw new PartitionFetchException(e);
     }
 
-    if (optionalPartition.isPresent()) {
-      // Memory hit!
-      return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
-    }
     // We don't have the partition here... let's see if a remote worker has it
     // Ask Master for the location
     final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =

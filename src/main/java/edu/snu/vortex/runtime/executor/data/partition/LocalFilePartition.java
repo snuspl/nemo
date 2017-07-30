@@ -29,10 +29,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 /**
- * This class represents a {@link Partition} which is stored in file.
- * It does not contain any actual data.
+ * This class implements the {@link FilePartition} which is stored in a local file.
+ * Because the data is stored in a local disk, this partition have to be treated as the actual file
+ * (i.e., construction and removal means the creation and deletion of the file),
+ * even though it does not contain any actual data.
  */
-public final class LocalFilePartition implements Partition {
+public final class LocalFilePartition implements FilePartition {
 
   private final AtomicBoolean opened;
   private final AtomicBoolean written;
@@ -45,7 +47,7 @@ public final class LocalFilePartition implements Partition {
   private long writtenBytes; // The written bytes in this file.
 
   /**
-   * Constructs a file partition.
+   * Constructs a local file partition.
    *
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
@@ -65,31 +67,22 @@ public final class LocalFilePartition implements Partition {
 
   /**
    * Opens partition for writing. The corresponding {@link LocalFilePartition#finishWrite()} is required.
-   * @throws RuntimeException if failed to open
+   *
+   * @throws IOException if fail to open this partition f.
    */
-  public void openPartitionForWrite() throws RuntimeException {
+  public void openPartitionForWrite() throws IOException {
     if (opened.getAndSet(true)) {
-      throw new RuntimeException("Trying to re-open a partition for write");
+      throw new IOException("Trying to re-open a partition for write");
     }
-    try {
-      fileOutputStream = new FileOutputStream(filePath, true);
-      fileChannel = fileOutputStream.getChannel();
-    } catch (final FileNotFoundException e) {
-      throw new RuntimeException(e);
-    }
+    fileOutputStream = new FileOutputStream(filePath, true);
+    fileChannel = fileOutputStream.getChannel();
   }
 
-  /**
-   * Writes the serialized data of this partition as a block to the file where this partition resides.
-   *
-   * @param serializedData the serialized data of this partition.
-   * @param numElement     the number of elements in the serialized data.
-   * @throws RuntimeException if failed to write.
-   */
+  @Override
   public void writeBlock(final byte[] serializedData,
-                         final long numElement) throws RuntimeException {
+                         final long numElement) throws IOException {
     if (!opened.get()) {
-      throw new RuntimeException("Trying to write a block in a partition that has not been opened for write.");
+      throw new IOException("Trying to write a block in a partition that has not been opened for write.");
     }
     blockInfoList.add(new BlockInfo(serializedData.length, numElement, writtenBytes));
 
@@ -97,48 +90,32 @@ public final class LocalFilePartition implements Partition {
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
 
     // Write synchronously
-    try {
-      fileChannel.write(buf);
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
-
+    fileChannel.write(buf);
     writtenBytes += serializedData.length;
   }
 
   /**
    * Notice the end of write.
-   * @throws RuntimeException if failed to close.
+   *
+   * @throws IOException if fail to close.
    */
-  public void finishWrite() throws RuntimeException {
+  public void finishWrite() throws IOException {
     if (!opened.get()) {
-      throw new RuntimeException("Trying to finish writing a partition that has not been opened for write.");
+      throw new IOException("Trying to finish writing a partition that has not been opened for write.");
     }
     if (written.getAndSet(true)) {
-      throw new RuntimeException("Trying to finish writing that has been already finished.");
+      throw new IOException("Trying to finish writing that has been already finished.");
     }
-    try {
-      fileChannel.close();
-      fileOutputStream.close();
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
+    fileChannel.close();
+    fileOutputStream.close();
   }
 
-  /**
-   * Deletes the file that contains this partition data.
-   *
-   * @throws RuntimeException if failed to delete.
-   */
-  public void deleteFile() throws RuntimeException {
+  @Override
+  public void deleteFile() throws IOException {
     if (!written.get()) {
-      throw new RuntimeException("This partition is not written yet.");
+      throw new IOException("This partition is not written yet.");
     }
-    try {
-      Files.delete(Paths.get(filePath));
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
+    Files.delete(Paths.get(filePath));
   }
 
   /**
@@ -183,13 +160,13 @@ public final class LocalFilePartition implements Partition {
    * Read the data of this partition from the file and deserialize it.
    *
    * @return an iterable of deserialized data.
-   * @throws RuntimeException if failed to deserialize.
+   * @throws IOException if fail to deserialize.
    */
   @Override
-  public Iterable<Element> asIterable() throws RuntimeException {
+  public Iterable<Element> asIterable() throws IOException {
     // Read file synchronously
     if (!written.get()) {
-      throw new RuntimeException("This partition is not written yet.");
+      throw new IOException("This partition is not written yet.");
     }
 
     // Deserialize the data
@@ -198,8 +175,6 @@ public final class LocalFilePartition implements Partition {
       blockInfoList.forEach(blockInfo -> {
         deserializeBlock(blockInfo, fileStream, deserializedData);
       });
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
     }
 
     return deserializedData;

@@ -17,6 +17,8 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.compiler.ir.Element;
 
+import java.io.IOException;
+
 /**
  * This interface represents an output data of each operation.
  * It might be divided in multiple blocks.
@@ -26,6 +28,7 @@ public interface Partition {
   /**
    * Gets the representation of this partition as an iterable.
    * @return the iterable of the partition.
+   * @throws IOException if fail to get the iterable.
    */
-  Iterable<Element> asIterable();
+  Iterable<Element> asIterable() throws IOException;
 }
