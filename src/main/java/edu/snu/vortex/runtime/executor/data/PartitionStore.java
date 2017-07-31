@@ -20,6 +20,7 @@ import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -59,14 +60,16 @@ public interface PartitionStore {
                                     Iterable<Element> data) throws PartitionWriteException;
 
   /**
-   * Saves data sorted by the hash value as a partition.
+   * Saves an iterable of data blocks as a partition.
+   * Each block has a specific hash value, and these blocks are sorted by this hash value.
+   * The block becomes a unit of read & write.
    * @param partitionId of the partition.
    * @param sortedData to save as a partition.
-   * @return each size of the data per hash value (only when the data is serialized).
+   * @return the size of data per hash value (only when the data is serialized).
    * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
-  Optional<Iterable<Long>> putSortedDataAsPartition(String partitionId,
-                                                    Iterable<Iterable<Element>> sortedData)
+  Optional<List<Long>> putSortedDataAsPartition(String partitionId,
+                                                Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException;
 
   /**

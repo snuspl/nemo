@@ -22,7 +22,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
-import edu.snu.vortex.runtime.executor.data.partition.NonSerializedPartition;
+import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -93,10 +93,13 @@ final class LocalFileStore implements PartitionStore {
     if (partition == null) {
       return Optional.empty();
     } else {
-      return Optional.of(new NonSerializedPartition(partition.asIterable()));
+      return Optional.of(new MemoryPartition(partition.asIterable()));
     }
   }
 
+  /**
+   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
+   */
   @Override
   public Optional<Partition> retrieveDataFromPartition(final String partitionId,
                                                        final int startInclusiveHashVal,
@@ -108,7 +111,7 @@ final class LocalFileStore implements PartitionStore {
       return Optional.empty();
     } else {
       return Optional.of(
-          new NonSerializedPartition(partition.retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+          new MemoryPartition(partition.retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
     }
   }
 
@@ -160,15 +163,17 @@ final class LocalFileStore implements PartitionStore {
   }
 
   /**
-   * Saves data sorted by the hash value as a partition.
+   * Saves an iterable of data blocks as a partition.
+   * Each block has a specific hash value, and these blocks are sorted by this hash value.
+   * The block becomes a unit of read & write.
    *
    * @param partitionId  of the partition.
    * @param sortedData to save as a partition.
-   * @return each size of the data per hash value (only when the data is serialized).
+   * @return the size of data per hash value.
    * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
    */
   @Override
-  public Optional<Iterable<Long>> putSortedDataAsPartition(final String partitionId,
+  public Optional<List<Long>> putSortedDataAsPartition(final String partitionId,
                                                            final Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException {
     final PartitionManagerWorker worker = partitionManagerWorker.get();

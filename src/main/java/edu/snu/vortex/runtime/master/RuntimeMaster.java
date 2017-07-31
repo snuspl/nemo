@@ -150,8 +150,8 @@ public final class RuntimeMaster {
       case PartitionStateChanged:
         final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg = message.getPartitionStateChangedMsg();
         // process message with partition size.
-        final List<Long> blockSizeHistogram = partitionStateChangedMsg.getBlockSizeHistogramList();
-        if (!blockSizeHistogram.isEmpty()) {
+        final List<Long> blockSizeInfo = partitionStateChangedMsg.getBlockSizeInfoList();
+        if (!blockSizeInfo.isEmpty()) {
           final String dstVertexId = partitionStateChangedMsg.getDstVertexId();
           final IRVertex vertexToSendMetricDataTo = physicalPlan.findIRVertexCalled(dstVertexId);
 
@@ -159,7 +159,7 @@ public final class RuntimeMaster {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
             metricCollectionBarrierVertex.accumulateMetrics(
-                partitionStateChangedMsg.getPartitionId(), blockSizeHistogram);
+                partitionStateChangedMsg.getPartitionId(), blockSizeInfo);
           } else {
             throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
           }

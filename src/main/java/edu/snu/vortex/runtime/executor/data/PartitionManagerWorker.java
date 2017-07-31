@@ -173,10 +173,10 @@ public final class PartitionManagerWorker {
                                  final Attribute partitionStore) {
     LOG.log(Level.INFO, "PutSortedPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final Iterable<Long> blockSizeHistogram;
+    final Iterable<Long> blockSizeInfo;
 
     try {
-      blockSizeHistogram = store.putSortedDataAsPartition(partitionId, sortedData).orElse(Collections.emptyList());
+      blockSizeInfo = store.putSortedDataAsPartition(partitionId, sortedData).orElse(Collections.emptyList());
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -187,7 +187,7 @@ public final class PartitionManagerWorker {
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
     // TODO #355 Support I-file write: send block size information only when it is requested.
-    partitionStateChangedMsgBuilder.addAllBlockSizeHistogram(blockSizeHistogram);
+    partitionStateChangedMsgBuilder.addAllBlockSizeInfo(blockSizeInfo);
     partitionStateChangedMsgBuilder.setDstVertexId(dstIRVertexId);
 
     persistentConnectionToMaster.getMessageSender().send(

@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.executor.data;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
-import edu.snu.vortex.runtime.executor.data.partition.NonSerializedPartition;
+import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -41,42 +41,49 @@ final class MemoryStore implements PartitionStore {
   // A map between partition id and data.
   private final ConcurrentHashMap<String, Iterable<Element>> partitionIdToData;
   // A map between partition id and data blocked and sorted by the hash value.
-  private final ConcurrentHashMap<String, Iterable<Iterable<Element>>> partitionIdToBlockedData;
+  private final ConcurrentHashMap<String, Iterable<Iterable<Element>>> partitionDataInBlocks;
 
   @Inject
   private MemoryStore() {
     this.partitionIdToData = new ConcurrentHashMap<>();
-    this.partitionIdToBlockedData = new ConcurrentHashMap<>();
+    this.partitionDataInBlocks = new ConcurrentHashMap<>();
   }
 
+  /**
+   * @see PartitionStore#getPartition(String).
+   */
   @Override
   public Optional<Partition> getPartition(final String partitionId) {
     final Iterable<Element> partitionData = partitionIdToData.get(partitionId);
-    final Iterable<Iterable<Element>> blockedPartitionData = partitionIdToBlockedData.get(partitionId);
+    final Iterable<Iterable<Element>> blockedPartitionData = partitionDataInBlocks.get(partitionId);
     if (partitionData != null) {
-      return Optional.of(new NonSerializedPartition(partitionData));
+      return Optional.of(new MemoryPartition(partitionData));
     } else if (blockedPartitionData != null) {
-      return Optional.of(new NonSerializedPartition(concatBlocks(blockedPartitionData)));
+      return Optional.of(new MemoryPartition(concatBlocks(blockedPartitionData)));
     } else {
       return Optional.empty();
     }
   }
 
+  /**
+   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
+   */
   @Override
   public Optional<Partition> retrieveDataFromPartition(final String partitionId,
                                                        final int startInclusiveHashVal,
                                                        final int endExclusiveHashVal)
       throws PartitionFetchException {
-    final Iterable<Iterable<Element>> blockedPartitionData = partitionIdToBlockedData.get(partitionId);
+    final Iterable<Iterable<Element>> blocks = partitionDataInBlocks.get(partitionId);
 
-    if (blockedPartitionData != null) {
+    if (blocks != null) {
       // Retrieves data in the hash range from the target partition
       final List<Iterable<Element>> retrievedData = new ArrayList<>(endExclusiveHashVal - startInclusiveHashVal);
-      final Iterator<Iterable<Element>> iterator = blockedPartitionData.iterator();
+      final Iterator<Iterable<Element>> iterator = blocks.iterator();
       IntStream.range(0, endExclusiveHashVal).forEach(hashVal -> {
+        // We cannot start from the startInclusiveHashVal because `blocks` is an iterable.
         if (!iterator.hasNext()) {
           throw new PartitionFetchException(
-              new RuntimeException("Illegal hash range. There are only " + hashVal + " blocks in this partition."));
+              new Throwable("Illegal hash range. There are only " + hashVal + " blocks in this partition."));
         }
         if (hashVal < startInclusiveHashVal) {
           iterator.next();
@@ -85,12 +92,15 @@ final class MemoryStore implements PartitionStore {
         }
       });
 
-      return Optional.of(new NonSerializedPartition(concatBlocks(retrievedData)));
+      return Optional.of(new MemoryPartition(concatBlocks(retrievedData)));
     } else {
       return Optional.empty();
     }
   }
 
+  /**
+   * @see PartitionStore#putDataAsPartition(String, Iterable).
+   */
   @Override
   public Optional<Long> putDataAsPartition(final String partitionId,
                                            final Iterable<Element> data) {
@@ -105,29 +115,36 @@ final class MemoryStore implements PartitionStore {
     return Optional.empty();
   }
 
+  /**
+   * @see PartitionStore#putSortedDataAsPartition(String, Iterable).
+   */
   @Override
-  public Optional<Iterable<Long>> putSortedDataAsPartition(final String partitionId,
+  public Optional<List<Long>> putSortedDataAsPartition(final String partitionId,
                                                            final Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException {
     final Iterable<Iterable<Element>> previousBlockedData =
-        partitionIdToBlockedData.putIfAbsent(partitionId, sortedData);
+        partitionDataInBlocks.putIfAbsent(partitionId, sortedData);
     if (previousBlockedData != null) {
       throw new RuntimeException("Trying to overwrite an existing partition");
     }
 
-    partitionIdToBlockedData.put(partitionId, sortedData);
+    partitionDataInBlocks.put(partitionId, sortedData);
 
     // The partition is not serialized.
     return Optional.empty();
   }
 
+  /**
+   * @see PartitionStore#removePartition(String).
+   */
   @Override
   public boolean removePartition(final String partitionId) {
-    return (partitionIdToData.remove(partitionId) != null) || (partitionIdToBlockedData.remove(partitionId) != null);
+    return (partitionIdToData.remove(partitionId) != null) || (partitionDataInBlocks.remove(partitionId) != null);
   }
 
   /**
    * concatenates an iterable of blocks into a single iterable of elements.
+   *
    * @param blocks the iterable of blocks to concatenate.
    * @return the concatenated iterable of all elements.
    */

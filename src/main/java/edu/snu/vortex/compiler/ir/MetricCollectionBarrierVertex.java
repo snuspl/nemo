@@ -68,10 +68,10 @@ public final class MetricCollectionBarrierVertex extends IRVertex {
   /**
    * Method for accumulating metrics in the vertex.
    * @param partitionID key, or ID of the partition.
-   * @param blockSizeHistogram the block size histogram of the partition data.
+   * @param blockSizeInfo the block size information of the partition data.
    */
-  public void accumulateMetrics(final String partitionID, final Iterable<Long> blockSizeHistogram) {
-    metricData.putIfAbsent(partitionID, blockSizeHistogram);
+  public void accumulateMetrics(final String partitionID, final Iterable<Long> blockSizeInfo) {
+    metricData.putIfAbsent(partitionID, blockSizeInfo);
   }
 
   /**
