@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * This interface represents a {@link Partition} which is stored in (local or remote) file.
  */
-public interface FilePartition extends Partition {
+public interface FilePartition extends Partition, AutoCloseable {
 
   /**
    * Writes the serialized data of this partition as a block to the file where this partition resides.

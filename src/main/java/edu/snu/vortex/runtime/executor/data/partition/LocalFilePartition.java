@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
  * Because the data is stored in a local disk, this partition have to be treated as the actual file
  * (i.e., construction and removal means the creation and deletion of the file),
  * even though it does not contain any actual data.
+ * Also, to prevent the memory leak, this partition have to be closed when any exception is occurred during write.
  */
 public final class LocalFilePartition implements FilePartition {
 
@@ -78,6 +79,9 @@ public final class LocalFilePartition implements FilePartition {
     fileChannel = fileOutputStream.getChannel();
   }
 
+  /**
+   * @see FilePartition#writeBlock(byte[], long).
+   */
   @Override
   public void writeBlock(final byte[] serializedData,
                          final long numElement) throws IOException {
@@ -106,10 +110,28 @@ public final class LocalFilePartition implements FilePartition {
     if (written.getAndSet(true)) {
       throw new IOException("Trying to finish writing that has been already finished.");
     }
-    fileChannel.close();
-    fileOutputStream.close();
+    this.close();
   }
 
+  /**
+   * Closes the file channel and stream if opened.
+   * It does not mean that this partition becomes invalid, but just cannot be written anymore.
+   *
+   * @throws IOException if fail to close.
+   */
+  @Override
+  public void close() throws IOException {
+    if (fileChannel != null) {
+      fileChannel.close();
+    }
+    if (fileOutputStream != null) {
+      fileOutputStream.close();
+    }
+  }
+
+  /**
+   * @see FilePartition#deleteFile().
+   */
   @Override
   public void deleteFile() throws IOException {
     if (!written.get()) {

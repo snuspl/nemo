@@ -105,14 +105,15 @@ final class LocalFileStore extends FileStore {
                                            final Iterable<Element> data)
       throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
-    final LocalFilePartition partition = new LocalFilePartition(coder, partitionIdToFileName(partitionId), false);
-    final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
-    if (previousPartition != null) {
-      throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
-    }
 
-    // Serialize the given data into blocks
-    try {
+    try (final LocalFilePartition partition =
+             new LocalFilePartition(coder, partitionIdToFileName(partitionId), false)) {
+      final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
+      if (previousPartition != null) {
+        throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
+      }
+
+      // Serialize the given data into blocks
       partition.openPartitionForWrite();
       final long partitionSize = serializeAndPutData(coder, partition, data);
       partition.finishWrite();

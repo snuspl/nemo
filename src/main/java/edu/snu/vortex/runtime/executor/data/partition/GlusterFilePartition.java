@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.executor.data.partition;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -39,15 +38,9 @@ public final class GlusterFilePartition implements FilePartition {
 
   private final Coder coder;
   private final String filePath;
+  private boolean openedToWrite; // Whether this partition is opened of not.
   private FileOutputStream fileOutputStream;
   private FileChannel fileChannel;
-  /**
-   * The lock which synchronize the create - write - close process from read and deletion.
-   * May be null if this partition is not being written.
-   * If once this lock is acquired, it have to be released to prevent the locked leftover in the remote storage.
-   */
-  @Nullable
-  private FileLock fileWriteLock;
 
   /**
    * Constructs a gluster file partition.
@@ -59,6 +52,7 @@ public final class GlusterFilePartition implements FilePartition {
                                final String filePath) {
     this.coder = coder;
     this.filePath = filePath;
+    openedToWrite = false;
   }
 
   /**
@@ -67,9 +61,14 @@ public final class GlusterFilePartition implements FilePartition {
    * @throws IOException if fail to open this partition for writing.
    */
   private void openPartitionForWrite() throws IOException {
+    openedToWrite = true;
     fileOutputStream = new FileOutputStream(filePath, true);
     fileChannel = fileOutputStream.getChannel();
-    fileWriteLock = fileChannel.lock();
+
+    // Synchronize the create - write - close process from read and deletion with this lock.
+    // If once this lock is acquired, it have to be released to prevent the locked leftover in the remote storage.
+    // Because of this, we need to close the file channel well.
+    fileChannel.lock();
   }
 
   /**
@@ -84,26 +83,19 @@ public final class GlusterFilePartition implements FilePartition {
   @Override
   public void writeBlock(final byte[] serializedData,
                          final long numElement) throws IOException {
-    try {
-      // Store the block information.
-      try (final DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream)) {
-        dataOutputStream.writeInt(serializedData.length);
-        dataOutputStream.writeLong(numElement);
-      }
-
-      // Wrap the given serialized data (but not copy it)
-      final ByteBuffer buf = ByteBuffer.wrap(serializedData);
-      // Write synchronously
-      fileChannel.write(buf);
-    } catch (final Exception e) {
-      // If any exception is occurred during write, the write lock have to be released.
-      if (fileWriteLock != null) {
-        fileWriteLock.release();
-      } else {
-        throw new IOException("This method is not following GlusterFilePartition#openPartitionForWrite() method");
-      }
-      throw e;
+    if (!openedToWrite) {
+      throw new IOException("Trying to write a block in a partition that has not been opened for write.");
     }
+    // Store the block information.
+    try (final DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream)) {
+      dataOutputStream.writeInt(serializedData.length);
+      dataOutputStream.writeLong(numElement);
+    }
+
+    // Wrap the given serialized data (but not copy it)
+    final ByteBuffer buf = ByteBuffer.wrap(serializedData);
+    // Write synchronously
+    fileChannel.write(buf);
   }
 
   /**
@@ -112,28 +104,42 @@ public final class GlusterFilePartition implements FilePartition {
    * @throws IOException if fail to close.
    */
   public void finishWrite() throws IOException {
-    if (fileWriteLock != null) {
-      fileWriteLock.release();
-    } else {
-      throw new IOException("This method is not following GlusterFilePartition#openPartitionForWrite() method");
+    if (!openedToWrite) {
+      throw new IOException("Trying to finish writing a partition that has not been opened for write.");
     }
-    fileChannel.close();
-    fileOutputStream.close();
+    this.close();
   }
 
+  /**
+   * Closes the file channel and stream if opened.
+   * It does not mean that this partition becomes invalid, but just cannot be written anymore.
+   *
+   * @throws IOException if fail to close.
+   */
+  @Override
+  public void close() throws IOException {
+    if (fileChannel != null) {
+      fileChannel.close();
+    }
+    if (fileOutputStream != null) {
+      fileOutputStream.close();
+    }
+  }
+
+  /**
+   * @see FilePartition#deleteFile().
+   */
   @Override
   public void deleteFile() throws IOException {
-    FileLock fileLock = null;
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      fileLock = fileStream.getChannel().lock();
+      fileStream.getChannel().lock(); // Will be released with the stream automatically.
       Files.delete(Paths.get(filePath));
-    } finally {
-      if (fileLock != null) {
-        fileLock.release();
-      }
     }
   }
 
+  /**
+   * @see Partition#asIterable().
+   */
   @Override
   public Iterable<Element> asIterable() throws IOException {
     // Deserialize the data

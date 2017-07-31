@@ -49,6 +49,8 @@ public final class PartitionManagerWorker {
 
   private final LocalFileStore localFileStore;
 
+  private final RemoteFileStore remoteFileStore;
+
   private final PersistentConnectionToMaster persistentConnectionToMaster;
 
   private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
@@ -59,11 +61,13 @@ public final class PartitionManagerWorker {
   private PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
                                  final MemoryStore memoryStore,
                                  final LocalFileStore localFileStore,
+                                 final RemoteFileStore remoteFileStore,
                                  final PersistentConnectionToMaster persistentConnectionToMaster,
                                  final PartitionTransferPeer partitionTransferPeer) {
     this.executorId = executorId;
     this.memoryStore = memoryStore;
     this.localFileStore = localFileStore;
+    this.remoteFileStore = remoteFileStore;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
     this.partitionTransferPeer = partitionTransferPeer;
@@ -217,7 +221,7 @@ public final class PartitionManagerWorker {
     try {
       optionalPartition = store.getPartition(partitionId);
       if (optionalPartition.isPresent()) {
-        // Memory hit!
+        // Partition resides in this evaluator!
         return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
       }
     } catch (final Exception e) {
@@ -226,6 +230,10 @@ public final class PartitionManagerWorker {
 
     // We don't have the partition here... let's see if a remote worker has it
     // Ask Master for the location
+    if (partitionStore == Attribute.RemoteFile) {
+      LOG.log(Level.WARNING, "The target partition {0} is not found in the remote storage. " +
+          "Maybe the storage is not mounted or linked properly.", partitionId);
+    }
     final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
         persistentConnectionToMaster.getMessageSender().request(
             ControlMessage.Message.newBuilder()
@@ -263,8 +271,7 @@ public final class PartitionManagerWorker {
       case LocalFile:
         return localFileStore;
       case RemoteFile:
-        // TODO #180: Implement DistributedStorageStore
-        return memoryStore;
+        return remoteFileStore;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
     }

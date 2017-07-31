@@ -30,7 +30,7 @@ import java.io.IOException;
 abstract class FileStore implements PartitionStore {
 
   private final int blockSize;
-  private final String fileDirectory;
+  protected final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   protected FileStore(final int blockSize,

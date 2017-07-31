@@ -34,14 +34,14 @@ import java.util.Optional;
 /**
  * Stores partitions in a mounted GlusterFS volume.
  */
-final class GlusterFileStore extends FileStore {
+final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   @Inject
   private GlusterFileStore(@Parameter(JobConf.GlusterVolumeDirectory.class) final String volumeDirectory,
                            @Parameter(JobConf.BlockSize.class) final int blockSize,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
     super(blockSize, volumeDirectory + "/job-" + System.currentTimeMillis(), partitionManagerWorker);
-    new File(volumeDirectory).mkdirs();
+    new File(fileDirectory).mkdirs();
   }
 
   /**
@@ -81,8 +81,8 @@ final class GlusterFileStore extends FileStore {
       throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
 
-    try {
-      final GlusterFilePartition partition = GlusterFilePartition.create(coder, partitionIdToFileName(partitionId));
+    try (final GlusterFilePartition partition =
+             GlusterFilePartition.create(coder, partitionIdToFileName(partitionId))) {
       final long partitionSize = serializeAndPutData(coder, partition, data);
       partition.finishWrite();
       return Optional.of(partitionSize);
