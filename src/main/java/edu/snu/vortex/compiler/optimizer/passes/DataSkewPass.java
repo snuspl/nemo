@@ -49,6 +49,8 @@ public final class DataSkewPass implements Pass {
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
+        final IREdge edgeInSameStage = dag.getIncomingEdgesOf(v).stream().findFirst().orElseThrow(() ->
+            new RuntimeException("This GroupByKey operator doesn't have any incoming edges: " + v.getId()));
         dag.getIncomingEdgesOf(v).forEach(edge -> {
           // We then insert the dynamicOptimizationVertex between the vertex and incoming vertices.
           final IREdge newEdge =
@@ -56,7 +58,11 @@ public final class DataSkewPass implements Pass {
           // we tell the edge that it needs to collect the metrics when transferring data.
           // we want it to be in the same stage
           newEdge.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
-          newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+          if (edge.equals(edgeInSameStage)) {
+            newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+          } else {
+            newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
+          }
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);

@@ -76,7 +76,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
   }
 
   /**
-   * method for retrieving metrics from the vertex.
+   * Method for retrieving metrics from the vertex.
    * @return the accumulated metric data.
    */
   public Map<String, T> getMetricData() {

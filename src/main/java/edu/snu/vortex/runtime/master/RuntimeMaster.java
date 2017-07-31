@@ -26,7 +26,6 @@ import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.common.plan.physical.Task;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
@@ -38,7 +37,8 @@ import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtil
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +66,7 @@ public final class RuntimeMaster {
   private JobStateManager jobStateManager;
 
   private final String dagDirectory;
-  private Map<Task, IRVertex> taskIRVertexMap;
+  private final Set<IRVertex> irVertices;
   private final int maxScheduleAttempt;
 
   @Inject
@@ -84,6 +84,7 @@ public final class RuntimeMaster {
         .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
     this.partitionManagerMaster = partitionManagerMaster;
     this.dagDirectory = dagDirectory;
+    this.irVertices = new HashSet<>();
   }
 
   /**
@@ -93,7 +94,7 @@ public final class RuntimeMaster {
    */
   public void execute(final PhysicalPlan plan,
                       final ClientEndpoint clientEndpoint) {
-    this.taskIRVertexMap = plan.getTaskIRVertexMap();
+    this.irVertices.addAll(plan.getTaskIRVertexMap().values());
     try {
       jobStateManager = scheduler.scheduleJob(plan, maxScheduleAttempt);
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
@@ -140,12 +141,12 @@ public final class RuntimeMaster {
         if (partitionStateChangedMsg.hasPartitionSize()) {
           final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
           final String srcVertexId = partitionStateChangedMsg.getSrcVertexId();
-          final IRVertex vertexToSendMetricDataTo = taskIRVertexMap.values().stream()
+          final IRVertex vertexToSendMetricDataTo = irVertices.stream()
               .filter(irVertex -> irVertex.getId().equals(srcVertexId)).findFirst()
               .orElseThrow(() -> new RuntimeException(srcVertexId + " doesn't exist in the submitted Physical Plan"));
 
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
-            final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
+            final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
             metricCollectionBarrierVertex.accumulateMetrics(partitionStateChangedMsg.getPartitionId(), partitionSize);
           } else {

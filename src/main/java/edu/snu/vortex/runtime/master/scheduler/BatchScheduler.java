@@ -147,11 +147,22 @@ public final class BatchScheduler implements Scheduler {
     }
   }
 
+  /**
+   * Action after task group execution has been completed, not after it has been put on hold.
+   * @param executorId id of the executor.
+   * @param taskGroup task group completed.
+   */
   private void onTaskGroupExecutionComplete(final String executorId,
                                             final TaskGroup taskGroup) {
     onTaskGroupExecutionComplete(executorId, taskGroup, false);
   }
 
+  /**
+   * Action after task group execution has been completed.
+   * @param executorId id of the executor.
+   * @param taskGroup task group completed.
+   * @param isOnHoldToComplete whether or not if it is switched to complete after it has been on hold.
+   */
   private void onTaskGroupExecutionComplete(final String executorId,
                                             final TaskGroup taskGroup,
                                             final Boolean isOnHoldToComplete) {
@@ -187,9 +198,15 @@ public final class BatchScheduler implements Scheduler {
     }
   }
 
+  /**
+   * Action for after task group execution is put on hold.
+   * @param executorId executor id.
+   * @param taskGroup task group.
+   * @param tasksPutOnHold the task that is put on hold.
+   */
   private void onTaskGroupExecutionOnHold(final String executorId,
                                           final TaskGroup taskGroup,
-                                          final List<String> failedTaskIds) {
+                                          final List<String> tasksPutOnHold) {
     LOG.log(Level.INFO, "{0} put on hold in {1}", new Object[]{taskGroup.getTaskGroupId(), executorId});
     schedulingPolicy.onTaskGroupExecutionComplete(executorId, taskGroup.getTaskGroupId());
     final String stageIdForTaskGroupUponCompletion = taskGroup.getStageId();
@@ -201,7 +218,7 @@ public final class BatchScheduler implements Scheduler {
       // get optimization vertex from the task.
       final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex =
           taskGroup.getTaskDAG().getVertices().stream() // get tasks list
-              .filter(task -> failedTaskIds.contains(task.getId())) // find it
+              .filter(task -> tasksPutOnHold.contains(task.getId())) // find it
               .map(physicalPlan::getIRVertexOf) // get the corresponding IRVertex, the MetricCollectionBarrierVertex
               .filter(irVertex -> irVertex instanceof MetricCollectionBarrierVertex)
               .distinct().map(irVertex -> (MetricCollectionBarrierVertex) irVertex) // convert types
