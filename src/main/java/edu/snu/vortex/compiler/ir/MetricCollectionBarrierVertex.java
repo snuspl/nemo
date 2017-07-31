@@ -16,6 +16,7 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.exception.DynamicOptimizationException;
 
 import java.util.*;
 
@@ -61,7 +62,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    */
   public DAG<IRVertex, IREdge> getDAGSnapshot() {
     if (this.dagSnapshot == null) {
-      throw new RuntimeException("MetricCollectionBarrierVertex must have been set with a DAG.");
+      throw new DynamicOptimizationException("MetricCollectionBarrierVertex must have been set with a DAG.");
     }
     return this.dagSnapshot;
   }
@@ -71,7 +72,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    * @param key metric key, e.g. ID of the partition.
    * @param value metric value, e.g. size of the partition data.
    */
-  public void accumulateMetrics(final String key, final T value) {
+  public void accumulateMetric(final String key, final T value) {
     metricData.putIfAbsent(key, value);
   }
 

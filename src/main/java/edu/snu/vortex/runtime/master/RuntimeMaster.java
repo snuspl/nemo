@@ -148,7 +148,7 @@ public final class RuntimeMaster {
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
-            metricCollectionBarrierVertex.accumulateMetrics(partitionStateChangedMsg.getPartitionId(), partitionSize);
+            metricCollectionBarrierVertex.accumulateMetric(partitionStateChangedMsg.getPartitionId(), partitionSize);
           } else {
             throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
           }

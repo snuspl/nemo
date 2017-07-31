@@ -16,6 +16,7 @@
 package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.common.dag.DAGBuilder;
+import edu.snu.vortex.compiler.exception.DynamicOptimizationException;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
@@ -149,33 +150,36 @@ public final class Optimizer {
 
         metricData.forEach((k, v) -> stats.addValue(((Long) v).doubleValue()));
 
+        // We find out the outliers using quartiles.
         final double median = stats.getPercentile(50);
         final double q1 = stats.getPercentile(25);
         final double q3 = stats.getPercentile(75);
 
+        // We find the gap between the quartiles and use it as a parameter to calculate the outer fences for outliers.
         final double interquartile = q3 - q1;
         final double outerfence = interquartile * interquartile * 2;
 
+        // Builder to create new stages.
         final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
             new DAGBuilder<>(originalPlan.getStageDAG());
 
+        // Do the optimization using the information derived above.
         metricData.forEach((partitionId, partitionSize) -> {
           final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
           final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
+          // Edge of the partition.
           final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
               .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
               .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
               .findFirst().orElseThrow(() ->
-                  new RuntimeException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
+                  new DynamicOptimizationException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
 
+          // The following stage to receive the data.
           final PhysicalStage optimizationStage = optimizationEdge.getDst();
-          final PhysicalStageEdge postOptimizationEdge =
-              originalPlan.getStageDAG().getOutgoingEdgesOf(optimizationStage).stream().findFirst().orElseThrow(() ->
-                  new RuntimeException("Optimization stage must have at least one outgoing edge"));
 
-          if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier.
+          if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier with too much data.
             // TODO #362: handle outliers using the new method of observing hash histogram.
-            postOptimizationEdge.getAttributes();
+            optimizationEdge.getAttributes();
           }
         });
 
