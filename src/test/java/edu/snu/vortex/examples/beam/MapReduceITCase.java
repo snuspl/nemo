@@ -71,19 +71,4 @@ public final class MapReduceITCase {
         .addOptimizationPolicy("pado")
         .build());
   }
-
-  /**
-   * This test simply runs the data skew policy, which doesn't do much for now, but has a different flow from other
-   * policies. This currently serves only to see that the system works in the new flow.
-   * TODO #362: modify test to become more meaningful, by testing different methods of handling data skew and
-   * dynamic optimization.
-   * @throws Exception exception on the way.
-   */
-  @Test (timeout = TIMEOUT)
-  public void testDataSkew() throws Exception {
-    JobLauncher.main(builder
-        .addJobId(MapReduceITCase.class.getSimpleName() + "_dataskew")
-        .addOptimizationPolicy("dataskew")
-        .build());
-  }
 }
