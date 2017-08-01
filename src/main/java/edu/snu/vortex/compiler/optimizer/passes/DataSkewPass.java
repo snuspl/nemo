@@ -44,7 +44,7 @@ public final class DataSkewPass implements Pass {
     dag.topologicalDo(v -> {
       // We care about OperatorVertices that have GroupByKeyTransform.
       if (v instanceof OperatorVertex && ((OperatorVertex) v).getTransform() instanceof GroupByKeyTransform) {
-        final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex = new MetricCollectionBarrierVertex<>();
+        final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
         metricCollectionBarrierVertex.setAttr(Attribute.Key.DynamicOptimizationType, Attribute.DataSkew);
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);

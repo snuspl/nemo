@@ -23,11 +23,10 @@ import java.util.*;
 /**
  * IRVertex that collects statistics to send them to the optimizer for dynamic optimization.
  * This class is generated in the DAG through {@link edu.snu.vortex.compiler.optimizer.passes.DataSkewPass}.
- * @param <T> type of the metric data value.
  */
-public final class MetricCollectionBarrierVertex<T> extends IRVertex {
+public final class MetricCollectionBarrierVertex extends IRVertex {
   // Partition ID to Size data
-  private final Map<String, Iterable<T>> metricData;
+  private final Map<String, Iterable> metricData;
   // This DAG snapshot is taken at the end of the DataSkewPass, for the vertex to know the state of the DAG at its
   // optimization, and to be able to figure out exactly where in the DAG the vertex exists.
   private DAG<IRVertex, IREdge> dagSnapshot;
@@ -72,7 +71,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    * @param key metric key, e.g. ID of the partition.
    * @param values metric values, e.g. the block size information of the partition data.
    */
-  public void accumulateMetric(final String key, final Iterable<T> values) {
+  public void accumulateMetric(final String key, final Iterable values) {
     metricData.putIfAbsent(key, values);
   }
 
@@ -80,7 +79,7 @@ public final class MetricCollectionBarrierVertex<T> extends IRVertex {
    * Method for retrieving metrics from the vertex.
    * @return the accumulated metric data.
    */
-  public Map<String, Iterable<T>> getMetricData() {
+  public Map<String, Iterable> getMetricData() {
     return metricData;
   }
 

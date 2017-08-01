@@ -216,7 +216,7 @@ public final class BatchScheduler implements Scheduler {
 
     if (stageComplete) {
       // get optimization vertex from the task.
-      final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex =
+      final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
           taskGroup.getTaskDAG().getVertices().stream() // get tasks list
               .filter(task -> tasksPutOnHold.contains(task.getId())) // find it
               .map(physicalPlan::getIRVertexOf) // get the corresponding IRVertex, the MetricCollectionBarrierVertex

@@ -139,8 +139,8 @@ public final class Optimizer {
    * @return processed DAG.
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
-                                                 final MetricCollectionBarrierVertex<?> metricCollectionBarrierVertex) {
-    final Map<String, ?> metricData = metricCollectionBarrierVertex.getMetricData();
+                                                 final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
+    final Map<String, Iterable> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
 
@@ -148,7 +148,7 @@ public final class Optimizer {
       case DataSkew:
         final DescriptiveStatistics stats = new DescriptiveStatistics();
 
-        metricData.forEach((k, v) -> stats.addValue(((Long) v).doubleValue()));
+        metricData.forEach((k, vs) -> vs.forEach(v -> stats.addValue(((Long) v).doubleValue())));
 
         // We find out the outliers using quartiles.
         final double median = stats.getPercentile(50);
@@ -164,7 +164,7 @@ public final class Optimizer {
             new DAGBuilder<>(originalPlan.getStageDAG());
 
         // Do the optimization using the information derived above.
-        metricData.forEach((partitionId, partitionSize) -> {
+        metricData.forEach((partitionId, partitionSizes) -> {
           final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
           final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
           // Edge of the partition.
@@ -177,10 +177,12 @@ public final class Optimizer {
           // The following stage to receive the data.
           final PhysicalStage optimizationStage = optimizationEdge.getDst();
 
-          if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier with too much data.
-            // TODO #362: handle outliers using the new method of observing hash histogram.
-            optimizationEdge.getAttributes();
-          }
+          partitionSizes.forEach(partitionSize -> {
+            if (((Long) partitionSize).doubleValue() > median + outerfence) { // outlier with too much data.
+              // TODO #362: handle outliers using the new method of observing hash histogram.
+              optimizationEdge.getAttributes();
+            }
+          });
         });
 
         return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
