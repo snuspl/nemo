@@ -38,6 +38,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -138,8 +139,8 @@ public final class RuntimeMaster {
       case PartitionStateChanged:
         final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg = message.getPartitionStateChangedMsg();
         // process message with partition size.
-        if (partitionStateChangedMsg.hasPartitionSize()) {
-          final Long partitionSize = partitionStateChangedMsg.getPartitionSize();
+        final List<Long> blockSizeInfo = partitionStateChangedMsg.getBlockSizeInfoList();
+        if (!blockSizeInfo.isEmpty()) {
           final String srcVertexId = partitionStateChangedMsg.getSrcVertexId();
           final IRVertex vertexToSendMetricDataTo = irVertices.stream()
               .filter(irVertex -> irVertex.getId().equals(srcVertexId)).findFirst()
@@ -148,7 +149,7 @@ public final class RuntimeMaster {
           if (vertexToSendMetricDataTo instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex<Long> metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
-            metricCollectionBarrierVertex.accumulateMetric(partitionStateChangedMsg.getPartitionId(), partitionSize);
+            metricCollectionBarrierVertex.accumulateMetric(partitionStateChangedMsg.getPartitionId(), blockSizeInfo);
           } else {
             throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
           }

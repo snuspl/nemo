@@ -67,7 +67,7 @@ public final class DataSkewPass implements Pass {
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);
-          edgeToGbK.setAttr(Attribute.Key.MetricCollection, Attribute.MetricCollection);
+          edgeToGbK.setAttr(Attribute.Key.DataSizeMetricCollection, Attribute.MetricCollection);
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });
