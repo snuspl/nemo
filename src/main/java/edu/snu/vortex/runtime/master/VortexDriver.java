@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsMessageEnvironment;
@@ -47,6 +46,9 @@ import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.event.StopTime;
 
 import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.stream.JsonParser;
+import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,10 +67,7 @@ public final class VortexDriver {
   private final NameServer nameServer;
   private final LocalAddressProvider localAddressProvider;
 
-  // Resource configuration for single thread pool
-  private final int executorNum;
-  private final int executorMem;
-  private final int executorCapacity;
+  private final String resourceSpecificationString;
 
   private final UserApplicationRunner userApplicationRunner;
   private final ContainerManager containerManager;
@@ -80,17 +79,13 @@ public final class VortexDriver {
                        final UserApplicationRunner userApplicationRunner,
                        final NameServer nameServer,
                        final LocalAddressProvider localAddressProvider,
-                       @Parameter(JobConf.ExecutorMemMb.class) final int executorMem,
-                       @Parameter(JobConf.ExecutorNum.class) final int executorNum,
-                       @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity) {
+                       @Parameter(JobConf.ExecutorJsonContents.class) final String resourceSpecificationString) {
     this.userApplicationRunner = userApplicationRunner;
     this.containerManager = containerManager;
     this.scheduler = scheduler;
     this.nameServer = nameServer;
     this.localAddressProvider = localAddressProvider;
-    this.executorNum = executorNum;
-    this.executorMem = executorMem;
-    this.executorCapacity = executorCapacity;
+    this.resourceSpecificationString = resourceSpecificationString;
   }
 
   /**
@@ -99,12 +94,46 @@ public final class VortexDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      // Launch resources
-      final Set<Attribute> completeSetOfContainerType =
-          new HashSet<>(Arrays.asList(Transient, Reserved, Compute));
-      completeSetOfContainerType.forEach(containerType ->
-        containerManager.requestContainer(executorNum,
-            new ResourceSpecification(containerType, executorCapacity, executorMem)));
+      final JsonParser parser = Json.createParser(new StringReader(resourceSpecificationString));
+      Integer executorNum = null;
+      ResourceSpecification.Builder builder = null;
+
+      while (parser.hasNext()) {
+        final JsonParser.Event event = parser.next();
+        switch (event) {
+          case START_OBJECT:
+            executorNum = 1;
+            builder = ResourceSpecification.newBuilder();
+            break;
+
+          case KEY_NAME:
+            final String keyName = parser.getString();
+            parser.next();
+            switch (keyName) {
+              case "num":
+                executorNum = parser.getInt();
+                break;
+              case "type":
+                builder.setContainerType(parser.getString());
+                break;
+              case "memory_mb":
+                builder.setMemory(parser.getInt());
+                break;
+              case "capacity":
+                builder.setCapacity(parser.getInt());
+                break;
+              default:
+                throw new IllegalArgumentException("Unknown key for resource specification: " + keyName);
+            }
+
+          case END_OBJECT:
+            // Launch resource(s)
+            containerManager.requestContainer(executorNum, builder.build());
+            break;
+          default:
+            break;
+        }
+      }
 
       // Launch user application (with a new thread)
       final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
@@ -120,7 +149,9 @@ public final class VortexDriver {
     @Override
     public void onNext(final AllocatedEvaluator allocatedEvaluator) {
       final String executorId = RuntimeIdGenerator.generateExecutorId();
-      containerManager.onContainerAllocated(executorId, allocatedEvaluator, getExecutorConfiguration(executorId));
+      final int numOfCores = allocatedEvaluator.getEvaluatorDescriptor().getNumberOfCores();
+      containerManager.onContainerAllocated(executorId, allocatedEvaluator,
+          getExecutorConfiguration(executorId, numOfCores));
     }
   }
 
@@ -172,7 +203,7 @@ public final class VortexDriver {
     }
   }
 
-  private Configuration getExecutorConfiguration(final String executorId) {
+  private Configuration getExecutorConfiguration(final String executorId, final int executorCapacity) {
     final Configuration executorConfiguration = JobConf.EXECUTOR_CONF
         .set(JobConf.EXECUTOR_ID, executorId)
         .set(JobConf.EXECUTOR_CAPACITY, executorCapacity)
