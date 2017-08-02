@@ -61,11 +61,11 @@ public final class ResourceSpecification {
 
     public Builder setContainerType(final String inputContainerType) {
       switch (inputContainerType) {
-        case "transient":
+        case "Transient":
           return setContainerType(Attribute.Transient);
-        case "reserved":
+        case "Reserved":
           return setContainerType(Attribute.Reserved);
-        case "compute":
+        case "Compute":
           return setContainerType(Attribute.Compute);
         default:
           throw new IllegalArgumentException("Unknown containerType: " + inputContainerType);

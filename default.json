@@ -1,16 +1,16 @@
 [
   {
-    "type": "transient",
+    "type": "Transient",
     "memory_mb": 1024,
     "capacity": 1
   },
   {
-    "type": "reserved",
+    "type": "Reserved",
     "memory_mb": 1024,
     "capacity": 1
   },
   {
-    "type": "compute",
+    "type": "Compute",
     "memory_mb": 1024,
     "capacity": 1
   }
