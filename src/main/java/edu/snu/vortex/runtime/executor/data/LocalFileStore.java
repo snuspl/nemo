@@ -28,7 +28,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -116,9 +115,9 @@ final class LocalFileStore extends FileStore {
         throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
       }
 
-      // Serialize the given data into blocks
+      // Serialize and write the given data into blocks
       partition.openPartitionForWrite();
-      final long partitionSize = divideAndPut(coder, partition, data);
+      final long partitionSize = divideAndPutData(coder, partition, data);
       partition.finishWrite();
       return Optional.of(partitionSize);
     } catch (final IOException e) {
@@ -141,7 +140,7 @@ final class LocalFileStore extends FileStore {
                                                        final Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
-    final List<Long> blockSizeList = new ArrayList<>();
+    final List<Long> blockSizeList;
 
     try (final LocalFilePartition partition =
              new LocalFilePartition(coder, partitionIdToFileName(partitionId), true)) {
@@ -150,20 +149,9 @@ final class LocalFileStore extends FileStore {
         throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
       }
 
-      // Serialize the given blocks
+      // Serialize and write the given data into blocks
       partition.openPartitionForWrite();
-      final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      for (Iterable<Element> block : sortedData) {
-        long elementsInBlock = 0;
-        for (final Element element : block) {
-          coder.encode(element, outputStream);
-          elementsInBlock++;
-        }
-        // Synchronously append the serialized block to the file and reset the buffer
-        blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
-
-        outputStream.reset();
-      }
+      blockSizeList = putSortedData(coder, partition, sortedData);
       partition.finishWrite();
     } catch (final IOException e) {
       throw new PartitionWriteException(e);

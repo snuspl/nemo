@@ -23,6 +23,8 @@ import org.apache.reef.tang.InjectionFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Stores partitions in (local or remote) files.
@@ -30,7 +32,7 @@ import java.io.IOException;
 abstract class FileStore implements PartitionStore {
 
   private final int blockSize;
-  protected final String fileDirectory;
+  private final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   protected FileStore(final int blockSize,
@@ -87,9 +89,9 @@ abstract class FileStore implements PartitionStore {
    * @return the size of the data.
    * @throws IOException if fail to write the data.
    */
-  protected long divideAndPut(final Coder coder,
-                              final FilePartition partition,
-                              final Iterable<Element> data) throws IOException {
+  protected long divideAndPutData(final Coder coder,
+                                  final FilePartition partition,
+                                  final Iterable<Element> data) throws IOException {
     // Serialize the given data into blocks
     long partitionSize = 0;
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -116,6 +118,36 @@ abstract class FileStore implements PartitionStore {
   }
 
   /**
+   * Serializes and puts the data to a file partition.
+   * The blocks in this data have to be already sorted by their hash value.
+   *
+   * @param coder      the coder used to serialize the data of this partition.
+   * @param partition  to store this data.
+   * @param sortedData to be stored.
+   * @return the size of the data.
+   * @throws IOException if fail to write the data.
+   */
+  protected List<Long> putSortedData(final Coder coder,
+                                     final FilePartition partition,
+                                     final Iterable<Iterable<Element>> sortedData) throws IOException {
+    final List<Long> blockSizeList = new ArrayList<>();
+    // Serialize the given blocks
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    for (Iterable<Element> block : sortedData) {
+      long elementsInBlock = 0;
+      for (final Element element : block) {
+        coder.encode(element, outputStream);
+        elementsInBlock++;
+      }
+      // Synchronously append the serialized block to the file and reset the buffer
+      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
+
+      outputStream.reset();
+    }
+    return blockSizeList;
+  }
+
+  /**
    * Converts a partition id to the corresponding file name.
    *
    * @param partitionId of the partition
@@ -123,5 +155,9 @@ abstract class FileStore implements PartitionStore {
    */
   protected String partitionIdToFileName(final String partitionId) {
     return fileDirectory + "/" + partitionId;
+  }
+
+  protected String getFileDirectory() {
+    return fileDirectory;
   }
 }

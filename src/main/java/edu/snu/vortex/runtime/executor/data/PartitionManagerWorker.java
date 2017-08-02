@@ -76,8 +76,8 @@ public final class PartitionManagerWorker {
   /**
    * Return the coder for the specified runtime edge.
    *
-   * @param runtimeEdgeId id of the runtime edge
-   * @return the corresponding coder
+   * @param runtimeEdgeId id of the runtime edge.
+   * @return the corresponding coder.
    */
   public Coder getCoder(final String runtimeEdgeId) {
     final Coder coder = runtimeEdgeIdToCoder.get(runtimeEdgeId);
@@ -90,8 +90,8 @@ public final class PartitionManagerWorker {
   /**
    * Register a coder for runtime edge.
    *
-   * @param runtimeEdgeId id of the runtime edge
-   * @param coder         the corresponding coder
+   * @param runtimeEdgeId id of the runtime edge.
+   * @param coder         the corresponding coder.
    */
   public void registerCoder(final String runtimeEdgeId, final Coder coder) {
     runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
@@ -231,8 +231,8 @@ public final class PartitionManagerWorker {
     // We don't have the partition here... let's see if a remote worker has it
     // Ask Master for the location
     if (partitionStore == Attribute.RemoteFile) {
-      LOG.log(Level.WARNING, "The target partition {0} is not found in the remote storage. " +
-          "Maybe the storage is not mounted or linked properly.", partitionId);
+      LOG.log(Level.WARNING, "The target partition {0} is not found in the remote storage. "
+          + "Maybe the storage is not mounted or linked properly.", partitionId);
     }
     final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
         persistentConnectionToMaster.getMessageSender().request(

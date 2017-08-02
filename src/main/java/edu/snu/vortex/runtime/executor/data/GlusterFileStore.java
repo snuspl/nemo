@@ -29,6 +29,7 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,7 +42,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
                            @Parameter(JobConf.BlockSize.class) final int blockSize,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
     super(blockSize, volumeDirectory + "/job-" + System.currentTimeMillis(), partitionManagerWorker);
-    new File(fileDirectory).mkdirs();
+    new File(getFileDirectory()).mkdirs();
   }
 
   /**
@@ -69,26 +70,81 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   /**
-   * Saves a partition of data as a file.
-   *
-   * @param partitionId of the partition.
-   * @param data        of the partition.
-   * @return the size of the data.
-   * @throws PartitionWriteException thrown if fail to put the partition.
+   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
    */
   @Override
-  public Optional<Long> putPartition(final String partitionId, final Iterable<Element> data)
+  public Optional<Partition> retrieveDataFromPartition(final String partitionId,
+                                                       final int startInclusiveHashVal,
+                                                       final int endExclusiveHashVal)
+      throws PartitionFetchException {
+    // Deserialize the target data in the corresponding file and pass it as a local data.
+    final Coder coder = getCoderFromWorker(partitionId);
+    try {
+      final Optional<GlusterFilePartition> partition =
+          GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
+      if (partition.isPresent()) {
+        return Optional.of(new MemoryPartition(
+            partition.get().retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+      } else {
+        return Optional.empty();
+      }
+    } catch (final IOException e) {
+      throw new PartitionFetchException(e);
+    }
+  }
+
+  /**
+   * Saves data in a file as a partition.
+   *
+   * @param partitionId of the partition.
+   * @param data        of to save as a partition.
+   * @return the size of the data.
+   * @throws PartitionWriteException if fail to put the partition.
+   */
+  @Override
+  public Optional<Long> putDataAsPartition(final String partitionId,
+                                           final Iterable<Element> data)
       throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
 
     try (final GlusterFilePartition partition =
              GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), false)) {
-      final long partitionSize = divideAndPut(coder, partition, data);
+      // Serialize and write the given data into blocks
+      final long partitionSize = divideAndPutData(coder, partition, data);
       partition.finishWrite();
       return Optional.of(partitionSize);
     } catch (final IOException e) {
       throw new PartitionWriteException(e);
     }
+  }
+
+  /**
+   * Saves an iterable of data blocks as a partition.
+   * Each block has a specific hash value, and these blocks are sorted by this hash value.
+   * The block becomes a unit of read & write.
+   *
+   * @param partitionId of the partition.
+   * @param sortedData  to save as a partition.
+   * @return the size of data per hash value.
+   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
+   */
+  @Override
+  public Optional<List<Long>> putSortedDataAsPartition(final String partitionId,
+                                                       final Iterable<Iterable<Element>> sortedData)
+      throws PartitionWriteException {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final List<Long> blockSizeList;
+
+    try (final GlusterFilePartition partition =
+             GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), true)) {
+      // Serialize and write the given data into blocks
+      blockSizeList = putSortedData(coder, partition, sortedData);
+      partition.finishWrite();
+    } catch (final IOException e) {
+      throw new PartitionWriteException(e);
+    }
+
+    return Optional.of(blockSizeList);
   }
 
   /**

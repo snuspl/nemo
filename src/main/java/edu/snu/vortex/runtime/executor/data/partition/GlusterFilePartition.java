@@ -72,7 +72,7 @@ public final class GlusterFilePartition implements FilePartition {
   private FileChannel metaFileChannel;
   private long writtenBytes; // The written bytes in this file.
 
-  private static int BLOCK_METADATA_SIZE = 20; // length (int) + # of elements (long) + offset (long) = 20 bytes.
+  private static int blockMetadataSize = 20; // length (int) + # of elements (long) + offset (long) = 20 bytes.
 
   /**
    * Constructs a gluster file partition.
@@ -229,8 +229,8 @@ public final class GlusterFilePartition implements FilePartition {
       }
 
       // Find the offset of the first block to read.
-      final long skippedMetadata = metaFilePrimInputStream.skipBytes(BLOCK_METADATA_SIZE * startInclusiveHashVal - 8);
-      if (skippedMetadata != BLOCK_METADATA_SIZE * startInclusiveHashVal - 8) {
+      final long skippedMetadata = metaFilePrimInputStream.skipBytes(blockMetadataSize * startInclusiveHashVal - 8);
+      if (skippedMetadata != blockMetadataSize * startInclusiveHashVal - 8) {
         throw new IOException("Failed to skip the block metadata.");
       }
       final long offset = metaFilePrimInputStream.readLong();
