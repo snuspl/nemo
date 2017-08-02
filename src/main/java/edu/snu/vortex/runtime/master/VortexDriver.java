@@ -125,6 +125,7 @@ public final class VortexDriver {
               default:
                 throw new IllegalArgumentException("Unknown key for resource specification: " + keyName);
             }
+            break;
 
           case END_OBJECT:
             // Launch resource(s)
