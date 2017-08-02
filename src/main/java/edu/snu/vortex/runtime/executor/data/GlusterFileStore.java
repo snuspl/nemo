@@ -82,8 +82,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Coder coder = getCoderFromWorker(partitionId);
 
     try (final GlusterFilePartition partition =
-             GlusterFilePartition.create(coder, partitionIdToFileName(partitionId))) {
-      final long partitionSize = serializeAndPutData(coder, partition, data);
+             GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), false)) {
+      final long partitionSize = divideAndPut(coder, partition, data);
       partition.finishWrite();
       return Optional.of(partitionSize);
     } catch (final IOException e) {

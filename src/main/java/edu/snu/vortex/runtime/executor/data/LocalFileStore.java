@@ -66,8 +66,7 @@ final class LocalFileStore extends FileStore {
       return Optional.empty();
     } else {
       try {
-        final Partition memPartition = new MemoryPartition(partition.asIterable());
-        return Optional.of(memPartition);
+        return Optional.of(new MemoryPartition(partition.asIterable()));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -87,8 +86,12 @@ final class LocalFileStore extends FileStore {
     if (partition == null) {
       return Optional.empty();
     } else {
-      return Optional.of(
-          new MemoryPartition(partition.retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+      try {
+        return Optional.of(
+            new MemoryPartition(partition.retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+      } catch (final IOException e) {
+        throw new PartitionFetchException(e);
+      }
     }
   }
 
@@ -115,7 +118,7 @@ final class LocalFileStore extends FileStore {
 
       // Serialize the given data into blocks
       partition.openPartitionForWrite();
-      final long partitionSize = serializeAndPutData(coder, partition, data);
+      final long partitionSize = divideAndPut(coder, partition, data);
       partition.finishWrite();
       return Optional.of(partitionSize);
     } catch (final IOException e) {
@@ -135,32 +138,36 @@ final class LocalFileStore extends FileStore {
    */
   @Override
   public Optional<List<Long>> putSortedDataAsPartition(final String partitionId,
-                                                           final Iterable<Iterable<Element>> sortedData)
+                                                       final Iterable<Iterable<Element>> sortedData)
       throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
-    final LocalFilePartition partition =
-        new LocalFilePartition(coder, partitionIdToFileName(partitionId), true);
-    final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
-    if (previousPartition != null) {
-      throw new RuntimeException("Trying to overwrite an existing partition");
-    }
-
-    // Serialize the given blocks
-    partition.openPartitionForWrite();
     final List<Long> blockSizeList = new ArrayList<>();
-    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    for (Iterable<Element> block : sortedData) {
-      long elementsInBlock = 0;
-      for (final Element element : block) {
-        coder.encode(element, outputStream);
-        elementsInBlock++;
-      }
-      // Synchronously append the serialized block to the file and reset the buffer
-      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
 
-      outputStream.reset();
+    try (final LocalFilePartition partition =
+             new LocalFilePartition(coder, partitionIdToFileName(partitionId), true)) {
+      final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
+      if (previousPartition != null) {
+        throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
+      }
+
+      // Serialize the given blocks
+      partition.openPartitionForWrite();
+      final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      for (Iterable<Element> block : sortedData) {
+        long elementsInBlock = 0;
+        for (final Element element : block) {
+          coder.encode(element, outputStream);
+          elementsInBlock++;
+        }
+        // Synchronously append the serialized block to the file and reset the buffer
+        blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
+
+        outputStream.reset();
+      }
+      partition.finishWrite();
+    } catch (final IOException e) {
+      throw new PartitionWriteException(e);
     }
-    partition.finishWrite();
 
     return Optional.of(blockSizeList);
   }

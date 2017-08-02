@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor.data.partition;
 
+import edu.snu.vortex.compiler.ir.Element;
+
 import java.io.IOException;
 
 /**
@@ -39,4 +41,15 @@ public interface FilePartition extends Partition, AutoCloseable {
    * @throws IOException if failed to delete.
    */
   void deleteFile() throws IOException;
+
+  /**
+   * Retrieves the data of this partition from the file in a specific hash range and deserializes it.
+   *
+   * @param startInclusiveHashVal of the hash range.
+   * @param endExclusiveHashVal   of the hash range.
+   * @return an iterable of deserialized data.
+   * @throws IOException if failed to deserialize.
+   */
+  Iterable<Element> retrieveInHashRange(final int startInclusiveHashVal,
+                                        final int endExclusiveHashVal) throws IOException;
 }

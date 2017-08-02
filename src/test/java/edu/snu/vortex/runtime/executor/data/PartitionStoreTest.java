@@ -193,7 +193,7 @@ public final class PartitionStoreTest {
    * Test {@link LocalFileStore}.
    */
   @Test(timeout = 10000)
-  public void testFileStore() throws Exception {
+  public void testLocalFileStore() throws Exception {
     final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
     when(worker.getCoder(any())).thenReturn(CODER);
     final Injector injector = Tang.Factory.getTang().newInjector();
@@ -208,8 +208,23 @@ public final class PartitionStoreTest {
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
-  // TODO #181: Implement MemoryPartitionStore (add test for Memory, MemoryFile)
-  // TODO #180: Implement DistributedStorageStore (add test for RemoteFile)
+  /**
+   * Test {@link GlusterFileStore}.
+   */
+  @Test(timeout = 10000)
+  public void testGlusterFileStore() throws Exception {
+    final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
+    when(worker.getCoder(any())).thenReturn(CODER);
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.BlockSize.class, BLOCK_SIZE);
+    injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
+
+    final PartitionStore fileStore = injector.getInstance(GlusterFileStore.class);
+    scatterGather(fileStore);
+    concurrentRead(fileStore);
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
+  }
 
   /**
    * Tests scatter and gather for {@link PartitionStore}s.
@@ -451,7 +466,12 @@ public final class PartitionStoreTest {
                           sortedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
                           " is empty");
                     }
-                    final Iterable<Element> getData = partition.get().asIterable();
+                    final Iterable<Element> getData;
+                    try {
+                      getData = partition.get().asIterable();
+                    } catch (final IOException e) {
+                      throw new RuntimeException(e);
+                    }
                     assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), getData);
                   });
               return true;

@@ -50,9 +50,9 @@ abstract class FileStore implements PartitionStore {
    * @return the size of serialized block.
    * @throws IOException if fail to write.
    */
-  private long writeBlock(final long elementsInBlock,
-                          final ByteArrayOutputStream outputStream,
-                          final FilePartition partition) throws IOException {
+  protected long writeBlock(final long elementsInBlock,
+                            final ByteArrayOutputStream outputStream,
+                            final FilePartition partition) throws IOException {
     try {
       outputStream.close();
     } catch (final IOException e) {
@@ -79,6 +79,7 @@ abstract class FileStore implements PartitionStore {
 
   /**
    * Serializes and puts the data to a file partition.
+   * It divides the data into blocks according to the size of data.
    *
    * @param coder     the coder used to serialize the data of this partition.
    * @param partition to store this data.
@@ -86,9 +87,9 @@ abstract class FileStore implements PartitionStore {
    * @return the size of the data.
    * @throws IOException if fail to write the data.
    */
-  protected long serializeAndPutData(final Coder coder,
-                                     final FilePartition partition,
-                                     final Iterable<Element> data) throws IOException {
+  protected long divideAndPut(final Coder coder,
+                              final FilePartition partition,
+                              final Iterable<Element> data) throws IOException {
     // Serialize the given data into blocks
     long partitionSize = 0;
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
