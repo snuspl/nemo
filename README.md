@@ -35,12 +35,12 @@ The following example describes the schema:
 [
   {
     "num": 12,
-    "type": "transient",
+    "type": "Transient",
     "memory_mb": 1024,
     "capacity": 4
   },
   {
-    "type": "reserved",
+    "type": "Reserved",
     "memory_mb": 1024,
     "capacity": 2
   }
