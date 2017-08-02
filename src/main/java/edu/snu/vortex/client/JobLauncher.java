@@ -152,18 +152,14 @@ public final class JobLauncher {
     }
   }
 
-  public static Configuration getExecutorResourceConf(final Configuration jobConf) {
+  public static Configuration getExecutorResourceConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = TANG.newInjector(jobConf);
-    final JavaConfigurationBuilder builder = TANG.newConfigurationBuilder();
     try {
       final String path = injector.getNamedInstance(JobConf.ExecutorJsonPath.class);
       final String contents = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
-      builder.bindNamedParameter(JobConf.ExecutorJsonContents.class, contents);
-      return builder.build();
-    } catch (final InjectionException e) {
-      // The user haven't specified the JSON file path.
-      // Return empty configuration
-      return builder.build();
+      return TANG.newConfigurationBuilder()
+          .bindNamedParameter(JobConf.ExecutorJsonContents.class, contents)
+          .build();
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
