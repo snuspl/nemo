@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.master;
 
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -46,9 +48,7 @@ import org.apache.reef.wake.time.event.StartTime;
 import org.apache.reef.wake.time.event.StopTime;
 
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.stream.JsonParser;
-import java.io.StringReader;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,6 +73,7 @@ public final class VortexDriver {
   private final ContainerManager containerManager;
   private final Scheduler scheduler;
 
+
   @Inject
   private VortexDriver(final ContainerManager containerManager,
                        final Scheduler scheduler,
@@ -94,46 +95,21 @@ public final class VortexDriver {
   public final class StartHandler implements EventHandler<StartTime> {
     @Override
     public void onNext(final StartTime startTime) {
-      final JsonParser parser = Json.createParser(new StringReader(resourceSpecificationString));
-      Integer executorNum = null;
-      ResourceSpecification.Builder builder = null;
+      try {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final TreeNode jsonRootNode = objectMapper.readTree(resourceSpecificationString);
 
-      while (parser.hasNext()) {
-        final JsonParser.Event event = parser.next();
-        switch (event) {
-          case START_OBJECT:
-            executorNum = 1;
-            builder = ResourceSpecification.newBuilder();
-            break;
-
-          case KEY_NAME:
-            final String keyName = parser.getString();
-            parser.next();
-            switch (keyName) {
-              case "num":
-                executorNum = parser.getInt();
-                break;
-              case "type":
-                builder.setContainerType(parser.getString());
-                break;
-              case "memory_mb":
-                builder.setMemory(parser.getInt());
-                break;
-              case "capacity":
-                builder.setCapacity(parser.getInt());
-                break;
-              default:
-                throw new IllegalArgumentException("Unknown key for resource specification: " + keyName);
-            }
-            break;
-
-          case END_OBJECT:
-            // Launch resource(s)
-            containerManager.requestContainer(executorNum, builder.build());
-            break;
-          default:
-            break;
+        for (int i = 0; i < jsonRootNode.size(); i++) {
+          final TreeNode resourceNode = jsonRootNode.get(i);
+          final ResourceSpecification.Builder builder = ResourceSpecification.newBuilder();
+          builder.setContainerType(resourceNode.get("type").traverse().nextTextValue());
+          builder.setMemory(resourceNode.get("memory_mb").traverse().getIntValue());
+          builder.setCapacity(resourceNode.get("capacity").traverse().getIntValue());
+          final int executorNum = resourceNode.path("num").traverse().nextIntValue(1);
+          containerManager.requestContainer(executorNum, builder.build());
         }
+      } catch (final IOException e) {
+        throw new RuntimeException(e);
       }
 
       // Launch user application (with a new thread)
