@@ -47,11 +47,12 @@ final class LocalFileStore extends FileStore {
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
                          @Parameter(JobConf.BlockSize.class) final int blockSizeInKb,
+                         @Parameter(JobConf.LocalFileStoreNumThreads.class) final int numThreads,
                          final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
     super(blockSizeInKb, fileDirectory, partitionManagerWorker);
     this.partitionIdToData = new ConcurrentHashMap<>();
     new File(fileDirectory).mkdirs();
-    executorService = Executors.newFixedThreadPool(5);
+    executorService = Executors.newFixedThreadPool(numThreads);
   }
 
   /**

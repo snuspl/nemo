@@ -79,6 +79,7 @@ final class PartitionTransferPeer {
                                 final PartitionClientHandler partitionClientHandler,
                                 final PartitionServerHandler partitionServerHandler,
                                 final ExceptionHandler exceptionHandler,
+                                @Parameter(JobConf.PartitionTransferClientNumThreads.class) final int numThreads,
                                 @Parameter(JobConf.ExecutorId.class) final String executorId) {
     this.nameResolver = nameResolver;
     this.partitionManagerWorker = partitionManagerWorker;
@@ -87,7 +88,7 @@ final class PartitionTransferPeer {
     this.replyFutureMap = new ReplyFutureMap<>();
 
     transport = createTransport(localAddressProvider.getLocalAddress(),
-        partitionClientHandler, partitionServerHandler, exceptionHandler, 5);
+        partitionClientHandler, partitionServerHandler, exceptionHandler, numThreads);
 
     final InetSocketAddress serverAddress = (InetSocketAddress) transport.getLocalAddress();
     LOG.log(Level.FINE, "PartitionTransferPeer starting, listening at {0}", serverAddress);

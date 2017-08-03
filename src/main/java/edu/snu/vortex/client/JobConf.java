@@ -111,6 +111,29 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
+   * Number of threads for {@link edu.snu.vortex.runtime.executor.data.LocalFileStore}.
+   */
+  @NamedParameter(doc = "Number of threads for LocalFileStore", short_name = "local_file_threads", default_value = "5")
+  public final class LocalFileStoreNumThreads implements Name<Integer> {
+  }
+
+  /**
+   * Number of threads for {@link edu.snu.vortex.runtime.executor.data.GlusterFileStore}.
+   */
+  @NamedParameter(doc = "Number of threads for GlusterFileStore", short_name = "gluster_file_threads",
+      default_value = "5")
+  public final class GlusterFileStoreNumThreads implements Name<Integer> {
+  }
+
+  /**
+   * Number of threads for client-side stage in {@link edu.snu.vortex.runtime.executor.data.PartitionTransferPeer}.
+   */
+  @NamedParameter(doc = "Number of threads for partition transfer client", short_name = "partition_peer_threads",
+      default_value = "5")
+  public final class PartitionTransferClientNumThreads implements Name<Integer> {
+  }
+
+  /**
    * Scheduler timeout in ms.
    */
   @NamedParameter(doc = "Scheduler timeout in ms", short_name = "scheduler_timeout_ms", default_value = "10000")
