@@ -26,16 +26,23 @@ import edu.snu.vortex.runtime.exception.NodeConnectionException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
+import org.apache.reef.tang.Injector;
+import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.tang.exceptions.InjectionException;
 import org.apache.reef.wake.EventHandler;
 import org.apache.reef.wake.Identifier;
+import org.apache.reef.wake.impl.SyncStage;
+import org.apache.reef.wake.impl.ThreadPoolStage;
 import org.apache.reef.wake.remote.Codec;
+import org.apache.reef.wake.remote.RemoteConfiguration;
+import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.remote.impl.TransportEvent;
 import org.apache.reef.wake.remote.transport.Link;
 import org.apache.reef.wake.remote.transport.LinkListener;
 import org.apache.reef.wake.remote.transport.Transport;
-import org.apache.reef.wake.remote.transport.TransportFactory;
 import org.apache.reef.wake.remote.transport.netty.LoggingLinkListener;
+import org.apache.reef.wake.remote.transport.netty.NettyMessagingTransport;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -68,8 +75,8 @@ final class PartitionTransferPeer {
 
   @Inject
   private PartitionTransferPeer(final NameResolver nameResolver,
-                                final TransportFactory transportFactory,
                                 final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+                                final LocalAddressProvider localAddressProvider,
                                 final PartitionClientHandler partitionClientHandler,
                                 final PartitionServerHandler partitionServerHandler,
                                 final ExceptionHandler exceptionHandler,
@@ -80,7 +87,9 @@ final class PartitionTransferPeer {
     this.requestIdToCoder = new ConcurrentHashMap<>();
     this.replyFutureMap = new ReplyFutureMap<>();
 
-    transport = transportFactory.newInstance(0, partitionClientHandler, partitionServerHandler, exceptionHandler);
+    transport = createTransport(localAddressProvider.getLocalAddress(),
+        partitionClientHandler, partitionServerHandler, exceptionHandler, 5);
+
     final InetSocketAddress serverAddress = (InetSocketAddress) transport.getLocalAddress();
     LOG.log(Level.FINE, "PartitionTransferPeer starting, listening at {0}", serverAddress);
 
@@ -89,6 +98,39 @@ final class PartitionTransferPeer {
       nameResolver.register(serverIdentifier, serverAddress);
     } catch (final Exception e) {
       LOG.log(Level.SEVERE, "Cannot register PartitionTransferPeer to name server");
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Create a Wake {@link Transport} for peer-to-peer communication.
+   * @param localAddress local address from {@link LocalAddressProvider}
+   * @param partitionClientHandler {@link PartitionClientHandler} instance
+   * @param partitionServerHandler {@link PartitionServerHandler} instance
+   * @param exceptionHandler {@link ExceptionHandler} instance
+   * @param clientNumThreads the number of threads for client {@link ThreadPoolStage}
+   * @return Wake {@link Transport}
+   */
+  private Transport createTransport(final String localAddress,
+                                    final PartitionClientHandler partitionClientHandler,
+                                    final PartitionServerHandler partitionServerHandler,
+                                    final ExceptionHandler exceptionHandler,
+                                    final int clientNumThreads) {
+    final Injector transportInjector = Tang.Factory.getTang().newInjector();
+    transportInjector.bindVolatileParameter(RemoteConfiguration.HostAddress.class, localAddress);
+    // NettyMessagingTransport randomly assigns a port number when port is 0
+    transportInjector.bindVolatileParameter(RemoteConfiguration.Port.class, 0);
+    // We need a separate thread pool for reading partition and deserializing it.
+    transportInjector.bindVolatileParameter(RemoteConfiguration.RemoteClientStage.class,
+        new ThreadPoolStage(partitionClientHandler, clientNumThreads));
+    // We rely on asynchronicity provided by PartitionStore
+    transportInjector.bindVolatileParameter(RemoteConfiguration.RemoteServerStage.class,
+        new SyncStage<>(partitionServerHandler));
+    try {
+      final Transport transport = transportInjector.getInstance(NettyMessagingTransport.class);
+      transport.registerErrorHandler(exceptionHandler);
+      return transport;
+    } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
   }
@@ -174,34 +216,31 @@ final class PartitionTransferPeer {
       final PartitionManagerWorker worker = partitionManagerWorker.get();
       final ControlMessage.RequestPartitionMsg request = REQUEST_MESSAGE_CODEC.decode(transportEvent.getData());
 
-      // We are getting the partition from local store!
-      final Iterable<Element> partition;
-      try {
-        partition = worker.getPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-            convertPartitionStoreType(request.getPartitionStore())).get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-
       // TODO #299: Separate Serialization from Here
       // At now, we do unneeded deserialization and serialization for already serialized data.
       final Coder coder = worker.getCoder(request.getRuntimeEdgeId());
 
-      int numOfElements = 0;
-      try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-           final ByteArrayOutputStream elementsOutputStream = new ByteArrayOutputStream();
-           final DataOutputStream dataOutputStream = new DataOutputStream(outputStream)) {
-        for (final Element element : partition) {
-          coder.encode(element, elementsOutputStream);
-          numOfElements++;
+      // We are getting the partition from local store!
+      final CompletableFuture<Iterable<Element>> partitionFuture = worker.getPartition(request.getPartitionId(),
+          request.getRuntimeEdgeId(), convertPartitionStoreType(request.getPartitionStore()));
+
+      partitionFuture.thenAccept(partition -> {
+        int numOfElements = 0;
+        try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             final ByteArrayOutputStream elementsOutputStream = new ByteArrayOutputStream();
+             final DataOutputStream dataOutputStream = new DataOutputStream(outputStream)) {
+          for (final Element element : partition) {
+            coder.encode(element, elementsOutputStream);
+            numOfElements++;
+          }
+          dataOutputStream.writeLong(request.getRequestId());
+          dataOutputStream.writeInt(numOfElements);
+          elementsOutputStream.writeTo(outputStream);
+          transportEvent.getLink().write(outputStream.toByteArray());
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
-        dataOutputStream.writeLong(request.getRequestId());
-        dataOutputStream.writeInt(numOfElements);
-        elementsOutputStream.writeTo(outputStream);
-        transportEvent.getLink().write(outputStream.toByteArray());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      });
     }
   }
 
