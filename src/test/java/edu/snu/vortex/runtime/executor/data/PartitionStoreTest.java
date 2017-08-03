@@ -304,22 +304,6 @@ public final class PartitionStoreTest {
                     }
                     assertEquals(dataInPartitionList.get(partitionNumber), getData);
 
-                    // tmp: second try
-                    final Optional<Partition> partition2 =
-                        readerSideStore.getPartition(partitionIdList.get(partitionNumber));
-                    if (!partition2.isPresent()) {
-                      throw new RuntimeException("The second result of getPartition(" +
-                          partitionIdList.get(partitionNumber) + ") is empty");
-                    }
-                    final Iterable<Element> getData2;
-                    try {
-                      getData2 = partition2.get().asIterable();
-                    } catch (final IOException e) {
-                      throw new RuntimeException(e);
-                    }
-                    assertEquals(getData, getData2);
-
-
                     final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber));
                     if (!exist) {
                       throw new RuntimeException("The result of removePartition(" +
