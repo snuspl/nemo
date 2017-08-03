@@ -31,6 +31,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -108,7 +109,12 @@ public final class PartitionManagerWorker {
                                  final Attribute partitionStore) {
     LOG.log(Level.INFO, "RemovePartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
-    final boolean exist = store.removePartition(partitionId);
+    final boolean exist;
+    try {
+      exist = store.removePartition(partitionId).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
 
     if (exist) {
       persistentConnectionToMaster.getMessageSender().send(
@@ -142,7 +148,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
-      store.putDataAsPartition(partitionId, data);
+      store.putDataAsPartition(partitionId, data).get();
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -179,7 +185,7 @@ public final class PartitionManagerWorker {
     final Iterable<Long> blockSizeInfo;
 
     try {
-      blockSizeInfo = store.putSortedDataAsPartition(partitionId, sortedData).orElse(Collections.emptyList());
+      blockSizeInfo = store.putSortedDataAsPartition(partitionId, sortedData).get().orElse(Collections.emptyList());
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -214,55 +220,58 @@ public final class PartitionManagerWorker {
   public CompletableFuture<Iterable<Element>> getPartition(final String partitionId,
                                                            final String runtimeEdgeId,
                                                            final Attribute partitionStore) {
+    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
     LOG.log(Level.INFO, "GetPartition: {0}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-    final Optional<Partition> optionalPartition;
 
-    try {
-      optionalPartition = store.getPartition(partitionId);
+    final PartitionStore store = getPartitionStore(partitionStore);
+    final CompletableFuture<Optional<Partition>> localPartition = store.getPartition(partitionId);
+    localPartition.thenAccept(optionalPartition -> {
       if (optionalPartition.isPresent()) {
         // Partition resides in this evaluator!
-        // TODO #387: Make the PartitionStore to support asynchronous write and read.
-        return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
+        try {
+          future.complete(optionalPartition.get().asIterable());
+        } catch (final IOException e) {
+          future.completeExceptionally(new PartitionFetchException(e));
+        }
+        return;
       }
-    } catch (final Exception e) {
-      throw new PartitionFetchException(e);
-    }
-
-    // We don't have the partition here... let's see if a remote worker has it
-    // Ask Master for the location
-    if (partitionStore == Attribute.RemoteFile) {
-      LOG.log(Level.WARNING, "The target partition {0} is not found in the remote storage. "
-          + "Maybe the storage is not mounted or linked properly.", partitionId);
-    }
-    final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
-        persistentConnectionToMaster.getMessageSender().request(
-            ControlMessage.Message.newBuilder()
-                .setId(RuntimeIdGenerator.generateMessageId())
-                .setType(ControlMessage.MessageType.RequestPartitionLocation)
-                .setRequestPartitionLocationMsg(
-                    ControlMessage.RequestPartitionLocationMsg.newBuilder()
-                        .setExecutorId(executorId)
-                        .setPartitionId(partitionId)
-                        .build())
-                .build());
-
-    // PartitionTransferPeer#fetch returns a CompletableFuture.
-    // Composing two CompletableFuture so that fetching partition data starts after getting response from master.
-    return responseFromMasterFuture.thenCompose(responseFromMaster -> {
-      assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
-      final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
-          responseFromMaster.getPartitionLocationInfoMsg();
-      if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
-        throw new PartitionFetchException(
-            new Throwable("Partition " + partitionId + " not found both in the local storage and the remote storage: "
-            + "The partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
+      // We don't have the partition here...
+      if (partitionStore == Attribute.RemoteFile) {
+        LOG.log(Level.WARNING, "The target partition {0} is not found in the remote storage. "
+            + "Maybe the storage is not mounted or linked properly.", partitionId);
       }
-      // This is the executor id that we wanted to know
-      final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
-      return partitionTransferPeer.fetch(remoteWorkerId, partitionId, runtimeEdgeId, partitionStore);
+      // Let's see if a remote worker has it
+      // Ask Master for the location
+      final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
+          persistentConnectionToMaster.getMessageSender().request(
+              ControlMessage.Message.newBuilder()
+                  .setId(RuntimeIdGenerator.generateMessageId())
+                  .setType(ControlMessage.MessageType.RequestPartitionLocation)
+                  .setRequestPartitionLocationMsg(
+                      ControlMessage.RequestPartitionLocationMsg.newBuilder()
+                          .setExecutorId(executorId)
+                          .setPartitionId(partitionId)
+                          .build())
+                  .build());
+      // PartitionTransferPeer#fetch returns a CompletableFuture.
+      // Composing two CompletableFuture so that fetching partition data starts after getting response from master.
+      final CompletableFuture<Iterable<Element>> fetched = responseFromMasterFuture.thenCompose(responseFromMaster -> {
+        assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
+        final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
+            responseFromMaster.getPartitionLocationInfoMsg();
+        if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
+          throw new PartitionFetchException(new Throwable
+              ("Partition " + partitionId + " not found both in the local storage and the remote storage: The" +
+                  "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
+        }
+        // This is the executor id that we wanted to know
+        final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
+        return partitionTransferPeer.fetch(remoteWorkerId, partitionId, runtimeEdgeId, partitionStore);
+      });
+      fetched.thenAccept(partition -> future.complete(partition));
     });
 
+    return future;
   }
 
   private PartitionStore getPartitionStore(final Attribute partitionStore) {

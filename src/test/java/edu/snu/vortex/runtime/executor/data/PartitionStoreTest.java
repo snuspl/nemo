@@ -289,25 +289,29 @@ public final class PartitionStoreTest {
             try {
               IntStream.range(0, NUM_WRITE_TASKS).forEach(
                   writeTaskNumber -> {
-                    final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskNumber;
-                    final Optional<Partition> partition =
-                        readerSideStore.getPartition(partitionIdList.get(partitionNumber));
-                    if (!partition.isPresent()) {
-                      throw new RuntimeException("The result of getPartition(" +
-                          partitionIdList.get(partitionNumber) + ") is empty");
-                    }
-                    final Iterable<Element> getData;
                     try {
-                       getData = partition.get().asIterable();
-                    } catch (final IOException e) {
-                      throw new RuntimeException(e);
-                    }
-                    assertEquals(dataInPartitionList.get(partitionNumber), getData);
+                      final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskNumber;
+                      final Optional<Partition> partition =
+                          readerSideStore.getPartition(partitionIdList.get(partitionNumber)).get();
+                      if (!partition.isPresent()) {
+                        throw new RuntimeException("The result of getPartition(" +
+                            partitionIdList.get(partitionNumber) + ") is empty");
+                      }
+                      final Iterable<Element> getData;
+                      try {
+                         getData = partition.get().asIterable();
+                      } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                      assertEquals(dataInPartitionList.get(partitionNumber), getData);
 
-                    final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber));
-                    if (!exist) {
-                      throw new RuntimeException("The result of removePartition(" +
-                          partitionIdList.get(partitionNumber) + ") is false");
+                      final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber)).get();
+                      if (!exist) {
+                        throw new RuntimeException("The result of removePartition(" +
+                            partitionIdList.get(partitionNumber) + ") is false");
+                      }
+                    } catch (final InterruptedException | ExecutionException e) {
+                      throw new RuntimeException(e);
                     }
                   });
               return true;
@@ -382,7 +386,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Partition> partition = readerSideStore.getPartition(concPartitionId);
+              final Optional<Partition> partition = readerSideStore.getPartition(concPartitionId).get();
               if (!partition.isPresent()) {
                 throw new RuntimeException("The result of getPartition(" +
                     concPartitionId + ") is empty");
@@ -407,9 +411,13 @@ public final class PartitionStoreTest {
     });
 
     // Remove the partition
-    final boolean exist = writerSideStore.removePartition(concPartitionId);
-    if (!exist) {
-      throw new RuntimeException("The result of removePartition(" + concPartitionId + ") is false");
+    try {
+      final boolean exist = writerSideStore.removePartition(concPartitionId).get();
+      if (!exist) {
+        throw new RuntimeException("The result of removePartition(" + concPartitionId + ") is false");
+      }
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     }
     final long readEndNano = System.nanoTime();
 
@@ -473,23 +481,27 @@ public final class PartitionStoreTest {
             try {
               IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
                   writeTaskNumber -> {
-                    final Pair<Integer, Integer> hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
-                    final Optional<Partition> partition = readerSideStore.retrieveDataFromPartition(
-                        sortedPartitionIdList.get(writeTaskNumber),
-                        hashRangeToRetrieve.left(), hashRangeToRetrieve.right());
-                    if (!partition.isPresent()) {
-                      throw new RuntimeException("The result of get partition" +
-                          sortedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
-                          " is empty");
-                    }
-                    final Iterable<Element> getData;
                     try {
-                      getData = partition.get().asIterable();
-                    } catch (final IOException e) {
-                      e.printStackTrace();
+                      final Pair<Integer, Integer> hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
+                      final Optional<Partition> partition = readerSideStore.retrieveDataFromPartition(
+                          sortedPartitionIdList.get(writeTaskNumber),
+                          hashRangeToRetrieve.left(), hashRangeToRetrieve.right()).get();
+                      if (!partition.isPresent()) {
+                        throw new RuntimeException("The result of get partition" +
+                            sortedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
+                            " is empty");
+                      }
+                      final Iterable<Element> getData;
+                      try {
+                        getData = partition.get().asIterable();
+                      } catch (final IOException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                      }
+                      assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), getData);
+                    } catch (final InterruptedException | ExecutionException e) {
                       throw new RuntimeException(e);
                     }
-                    assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), getData);
                   });
               return true;
             } catch (final Exception e) {
@@ -512,11 +524,17 @@ public final class PartitionStoreTest {
 
     // Remove stored partitions
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writer -> {
-          final boolean exist = writerSideStore.removePartition(sortedPartitionIdList.get(writer));
-          if (!exist) {
-            throw new RuntimeException("The result of removePartition(" +
-                sortedPartitionIdList.get(writer) + ") is false");
-          }});
+      try {
+
+        final boolean exist = writerSideStore.removePartition(sortedPartitionIdList.get(writer)).get();
+        if (!exist) {
+          throw new RuntimeException("The result of removePartition(" +
+              sortedPartitionIdList.get(writer) + ") is false");
+        }
+      } catch (final InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    });
 
     writeExecutor.shutdown();
     readExecutor.shutdown();
