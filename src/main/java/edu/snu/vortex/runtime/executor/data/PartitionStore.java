@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for partition placement.
@@ -31,9 +32,10 @@ public interface PartitionStore {
    * Retrieves a partition of data.
    * @param partitionId of the partition.
    * @return the partition if exist, or an empty optional else.
-   * @throws PartitionFetchException thrown if the partition is exist but fail to get the partition.
+   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *          if the partition exists but it was unable to get the partition.)
    */
-  Optional<Partition> getPartition(String partitionId) throws PartitionFetchException;
+  CompletableFuture<Optional<Partition>> getPartition(String partitionId);
 
   /**
    * Retrieves data in a specific hash range from a partition.
@@ -42,22 +44,23 @@ public interface PartitionStore {
    * @param startInclusiveHashVal of the hash range.
    * @param endExclusiveHashVal of the hash range.
    * @return the result data as a new partition (if the target partition exists).
-   * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
+   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *          for any error occurred while trying to fetch a partition.)
    */
-  Optional<Partition> retrieveDataFromPartition(String partitionId,
-                                                int startInclusiveHashVal,
-                                                int endExclusiveHashVal)
-      throws PartitionFetchException;
+  CompletableFuture<Optional<Partition>> retrieveDataFromPartition(String partitionId,
+                                                                   int startInclusiveHashVal,
+                                                                   int endExclusiveHashVal);
 
   /**
    * Saves data as a partition.
    * @param partitionId of the partition.
    * @param data of to save as a partition.
    * @return the size of the data (only when the data is serialized).
-   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
+   *         (the future completes with {@link PartitionWriteException}
+   *          for any error occurred while trying to write a partition.)
    */
-  Optional<Long> putDataAsPartition(String partitionId,
-                                    Iterable<Element> data) throws PartitionWriteException;
+  CompletableFuture<Optional<Long>> putDataAsPartition(String partitionId,
+                                                       Iterable<Element> data);
 
   /**
    * Saves an iterable of data blocks as a partition.
@@ -66,18 +69,19 @@ public interface PartitionStore {
    * @param partitionId of the partition.
    * @param sortedData to save as a partition.
    * @return the size of data per hash value (only when the data is serialized).
-   * @throws PartitionWriteException thrown for any error occurred while trying to write a partition
+   *         (the future completes exceptionally with {@link PartitionWriteException}
+   *          for any error occurred while trying to write a partition.)
    */
-  Optional<List<Long>> putSortedDataAsPartition(String partitionId,
-                                                Iterable<Iterable<Element>> sortedData)
-      throws PartitionWriteException;
+  CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(String partitionId,
+                                                                   Iterable<Iterable<Element>> sortedData);
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;
    * Removes a partition of data.
    * @param partitionId of the partition.
    * @return whether the partition exists or not.
-   * @throws PartitionFetchException thrown for any error occurred while trying to remove a partition
+   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *          for any error occurred while trying to remove a partition.)
    */
-  boolean removePartition(String partitionId) throws PartitionFetchException;
+  CompletableFuture<Boolean> removePartition(String partitionId);
 }
