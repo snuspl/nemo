@@ -51,7 +51,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -127,9 +126,9 @@ final class PartitionTransferPeer {
     transportInjector.bindVolatileParameter(RemoteConfiguration.RemoteServerStage.class,
         new SyncStage<>(partitionServerHandler));
     try {
-      final Transport transport = transportInjector.getInstance(NettyMessagingTransport.class);
-      transport.registerErrorHandler(exceptionHandler);
-      return transport;
+      final Transport messagingTransport = transportInjector.getInstance(NettyMessagingTransport.class);
+      messagingTransport.registerErrorHandler(exceptionHandler);
+      return messagingTransport;
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
