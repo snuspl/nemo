@@ -30,7 +30,7 @@ public interface PartitionStore {
    * Retrieves a partition of data.
    * @param partitionId of the partition.
    * @return the partition if exist, or an empty optional else.
-   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          if the partition exists but it was unable to get the partition.)
    */
   CompletableFuture<Optional<Partition>> getPartition(String partitionId);
@@ -42,7 +42,7 @@ public interface PartitionStore {
    * @param startInclusiveHashVal of the hash range.
    * @param endExclusiveHashVal of the hash range.
    * @return the result data as a new partition (if the target partition exists).
-   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
    */
   CompletableFuture<Optional<Partition>> retrieveDataFromPartition(String partitionId,
@@ -54,7 +54,7 @@ public interface PartitionStore {
    * @param partitionId of the partition.
    * @param data of to save as a partition.
    * @return the size of the data (only when the data is serialized).
-   *         (the future completes with {@link PartitionWriteException}
+   *         (the future completes with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
    *          for any error occurred while trying to write a partition.)
    */
   CompletableFuture<Optional<Long>> putDataAsPartition(String partitionId,
@@ -67,7 +67,7 @@ public interface PartitionStore {
    * @param partitionId of the partition.
    * @param sortedData to save as a partition.
    * @return the size of data per hash value (only when the data is serialized).
-   *         (the future completes exceptionally with {@link PartitionWriteException}
+   *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
    *          for any error occurred while trying to write a partition.)
    */
   CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(String partitionId,
@@ -78,7 +78,7 @@ public interface PartitionStore {
    * Removes a partition of data.
    * @param partitionId of the partition.
    * @return whether the partition exists or not.
-   *         (the future completes exceptionally with {@link PartitionFetchException}
+   *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to remove a partition.)
    */
   CompletableFuture<Boolean> removePartition(String partitionId);
