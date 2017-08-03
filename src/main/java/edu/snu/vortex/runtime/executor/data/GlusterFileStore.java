@@ -141,9 +141,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
    * @return the size of data per hash value.
    */
   @Override
-  public CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(final String partitionId,
-                                                                          final Iterable<Iterable<Element>> sortedData)
-  {
+  public CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(
+      final String partitionId, final Iterable<Iterable<Element>> sortedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;

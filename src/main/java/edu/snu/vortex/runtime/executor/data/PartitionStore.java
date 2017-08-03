@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.exception.PartitionFetchException;
-import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import java.util.List;

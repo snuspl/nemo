@@ -260,9 +260,9 @@ public final class PartitionManagerWorker {
         final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
             responseFromMaster.getPartitionLocationInfoMsg();
         if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
-          throw new PartitionFetchException(new Throwable
-              ("Partition " + partitionId + " not found both in the local storage and the remote storage: The" +
-                  "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
+          throw new PartitionFetchException(new Throwable(
+              "Partition " + partitionId + " not found both in the local storage and the remote storage: The"
+                  + "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
         }
         // This is the executor id that we wanted to know
         final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();

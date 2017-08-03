@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
-import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
@@ -126,9 +125,8 @@ final class MemoryStore implements PartitionStore {
    * @see PartitionStore#putSortedDataAsPartition(String, Iterable).
    */
   @Override
-  public CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(final String partitionId,
-                                                                          final Iterable<Iterable<Element>> sortedData)
-  {
+  public CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(
+      final String partitionId, final Iterable<Iterable<Element>> sortedData) {
     final Iterable<Iterable<Element>> previousBlockedData =
         partitionDataInBlocks.putIfAbsent(partitionId, sortedData);
     if (previousBlockedData != null) {
