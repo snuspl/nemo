@@ -261,8 +261,14 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               IntStream.range(writeTaskNumber * NUM_READ_TASKS, (writeTaskNumber + 1) * NUM_READ_TASKS).forEach(
-                  partitionNumber -> writerSideStore.putDataAsPartition(
-                      partitionIdList.get(partitionNumber), dataInPartitionList.get(partitionNumber)));
+                  partitionNumber -> {
+                    try {
+                      writerSideStore.putDataAsPartition(
+                          partitionIdList.get(partitionNumber), dataInPartitionList.get(partitionNumber)).get();
+                    } catch (final InterruptedException | ExecutionException e) {
+                      throw new RuntimeException(e);
+                    }
+                  });
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -363,7 +369,7 @@ public final class PartitionStoreTest {
       @Override
       public Boolean call() {
         try {
-          writerSideStore.putDataAsPartition(concPartitionId, dataInConcPartition);
+          writerSideStore.putDataAsPartition(concPartitionId, dataInConcPartition).get();
           return true;
         } catch (final Exception e) {
           e.printStackTrace();
@@ -454,7 +460,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               writerSideStore.putSortedDataAsPartition(
-                  sortedPartitionIdList.get(writeTaskNumber), sortedDataInPartitionList.get(writeTaskNumber));
+                  sortedPartitionIdList.get(writeTaskNumber), sortedDataInPartitionList.get(writeTaskNumber)).get();
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
