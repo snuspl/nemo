@@ -27,7 +27,7 @@ java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer
 ```
 
 ## Resource Configuration
-The command line parameter `-executor_json` is path to the JSON file that describes resource configuration for executors. Its default value is `default.json`, which specifies one `Transient`, `Reserved`, and `Compute` container, each of which has one core and 1024MB memory.
+The command line parameter `-executor_json` is the path to the JSON file that describes resource configuration for executors. Its default value is `default.json`, which initializes one of each `Transient`, `Reserved`, and `Compute` executor, each of which has one core and 1024MB memory.
 
 The following example describes the schema:
 
@@ -49,7 +49,7 @@ The following example describes the schema:
 
 It specifies 12 transient containers with 4 cores and 1024MB memory each, and one reserved container with 2 cores and 1024MB memory.
 
-The property `num` is optional and its default value is 1. `capacity` is the number of `TaskGroup`s that can be run in the container and same as the number of CPU cores of the container.
+The property `num` is optional and its default value is 1. `capacity` is the number of `TaskGroup`s that can be run in an executor. We define this value to be identical to the number of CPU cores of the container.
 
 ## DAG Visualization
 Vortex Compiler and Engine stores JSON representation of intermediate DAGs.
