@@ -50,26 +50,25 @@ public final class GlusterFilePartition implements FilePartition {
    * /       Written        /
    * /       Sorted         /
    * ........................
+   * /       offset         /
    * /     Block size       /
    * /    # of elements     /
-   * /       offset         /
    * ........................
    * /          .           /
    * /          .           /
    * /          .           /
    * ........................
+   * /       offset         /
    * /     Block size       /
    * /    # of elements     /
-   * /       offset         /
    * ////////////////////////
    */
   private final String dataFilePath; // The path of the file that contains the actual data of this partition.
   private final String metaFilePath; // The path of the file that contains the metadata for this partition.
   private FileOutputStream dataFileOutputStream;
+  private FileChannel dataFileChannel;
   private FileOutputStream metaFileOutputStream;
   private DataOutputStream metaFilePrimOutputStream; // The stream to store primitive values to the metadata file.
-  private FileChannel dataFileChannel;
-  private FileChannel metaFileChannel;
   private long writtenBytes; // The written bytes in this file.
 
   private static int blockMetadataSize = 20; // length (int) + # of elements (long) + offset (long) = 20 bytes.
@@ -100,7 +99,6 @@ public final class GlusterFilePartition implements FilePartition {
     dataFileOutputStream = new FileOutputStream(dataFilePath, true);
     dataFileChannel = dataFileOutputStream.getChannel();
     metaFileOutputStream = new FileOutputStream(metaFilePath, true);
-    metaFileChannel = metaFileOutputStream.getChannel();
     metaFilePrimOutputStream = new DataOutputStream(metaFileOutputStream);
 
     // Synchronize the create - write - close process from read and deletion with this lock.
@@ -108,7 +106,7 @@ public final class GlusterFilePartition implements FilePartition {
     // Because this lock will be released when the file channel is closed, we need to close the file channel well.
     final FileLock fileLock = dataFileChannel.tryLock();
     if (fileLock == null) {
-      throw new IOException("Other thread (maybe in another node) is writing or deleting this file.");
+      throw new IOException("Other thread (maybe in another node) is writing on this file.");
     }
     metaFilePrimOutputStream.writeBoolean(false); // Not written yet.
     metaFilePrimOutputStream.writeBoolean(sorted); // Blocks are sorted or not.
@@ -131,9 +129,9 @@ public final class GlusterFilePartition implements FilePartition {
       throw new IOException("Trying to write a block in a partition that has not been opened for write.");
     }
     // Store the block information to the metadata file.
+    metaFilePrimOutputStream.writeLong(writtenBytes); // The offset of this block.
     metaFilePrimOutputStream.writeInt(serializedData.length); // The block size.
     metaFilePrimOutputStream.writeLong(numElement); // The number of elements in this block.
-    metaFilePrimOutputStream.writeLong(writtenBytes); // The offset of this block.
 
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
@@ -154,10 +152,9 @@ public final class GlusterFilePartition implements FilePartition {
 
     // Make the written boolean true to notice that the write finished.
     try (
-        final FileOutputStream tmpMetaFileOutputStream = new FileOutputStream(metaFilePath, false);
-        final DataOutputStream tmpMetaFilePrimOutputStream = new DataOutputStream(tmpMetaFileOutputStream)
+        final RandomAccessFile metadataFile = new RandomAccessFile(metaFilePath, "rws");
     ) {
-      tmpMetaFilePrimOutputStream.writeBoolean(true);
+      metadataFile.writeBoolean(true);
     }
 
     this.close();
@@ -176,9 +173,6 @@ public final class GlusterFilePartition implements FilePartition {
     }
     if (dataFileOutputStream != null) {
       dataFileOutputStream.close();
-    }
-    if (metaFileChannel != null) {
-      metaFileChannel.close();
     }
     if (metaFileOutputStream != null) {
       metaFileOutputStream.close();
@@ -229,21 +223,36 @@ public final class GlusterFilePartition implements FilePartition {
       }
 
       // Find the offset of the first block to read.
-      final long skippedMetadata = metaFilePrimInputStream.skipBytes(blockMetadataSize * startInclusiveHashVal - 8);
-      if (skippedMetadata != blockMetadataSize * startInclusiveHashVal - 8) {
-        throw new IOException("Failed to skip the block metadata.");
+      final int expectedSkipBytes = blockMetadataSize * startInclusiveHashVal;
+      final long skippedMetadata =
+          metaFilePrimInputStream.skipBytes(expectedSkipBytes);
+      if (skippedMetadata != expectedSkipBytes) {
+        throw new IOException("Failed to skip the block metadata. required: " + expectedSkipBytes
+            + ", skipped: " + skippedMetadata);
       }
-      final long offset = metaFilePrimInputStream.readLong();
+
+      final long offset = metaFilePrimInputStream.readLong(); // The offset of the fist block in the range.
       // Skip to the blocks before the offset.
       final long skippedData = fileInputStream.skip(offset);
       if (skippedData != offset) {
-        throw new IOException("Failed to skip the data and reach the offset.");
+        throw new IOException("Failed to skip the data and reach to the offset.");
       }
 
+      int serializedDataLength = metaFilePrimInputStream.readInt();
+      long numElements = metaFilePrimInputStream.readLong();
+      // Deserialize the first block.
+      deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
+
       // Read the blocks in the given hash range.
-      for (int hashVal = startInclusiveHashVal; hashVal < endExclusiveHashVal; hashVal++) {
+      for (int hashVal = startInclusiveHashVal + 1; hashVal < endExclusiveHashVal; hashVal++) {
+        final int skippedOffset = metaFilePrimInputStream.skipBytes(8);
+        if (skippedOffset != 8) {
+          throw new IOException("The input stream cannot skipped the \"offset\" metadata.");
+        }
+        serializedDataLength = metaFilePrimInputStream.readInt();
+        numElements = metaFilePrimInputStream.readLong();
         // Deserialize the block.
-        deserializeBlock(metaFilePrimInputStream, fileInputStream, deserializedData);
+        deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
       }
     }
 
@@ -273,8 +282,14 @@ public final class GlusterFilePartition implements FilePartition {
       }
 
       while (metaFileInputStream.available() > 0) {
+        final int skippedOffset = metaFilePrimInputStream.skipBytes(8);
+        if (skippedOffset != 8) {
+          throw new IOException("The input stream cannot skipped the \"offset\" metadata.");
+        }
+        final int serializedDataLength = metaFilePrimInputStream.readInt();
+        final long numElements = metaFilePrimInputStream.readLong();
         // Deserialize the block.
-        deserializeBlock(metaFilePrimInputStream, fileInputStream, deserializedData);
+        deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
       }
     }
 
@@ -284,22 +299,17 @@ public final class GlusterFilePartition implements FilePartition {
   /**
    * Reads and deserializes a block.
    *
-   * @param metaPrimInputStream the stream contains the block metadata as primitive values.
-   * @param fileInputStream     the stream contains the actual data.
-   * @param deserializedData    the list of elements to put the deserialized data.
+   * @param serializedDataLength the length of the serialized data of the block.
+   * @param numElements          the number of elements in the block.
+   * @param fileInputStream      the stream contains the actual data.
+   * @param deserializedData     the list of elements to put the deserialized data.
    * @throws IOException if fail to read and deserialize.
    */
-  private void deserializeBlock(final DataInputStream metaPrimInputStream,
+  private void deserializeBlock(final int serializedDataLength,
+                                final long numElements,
                                 final FileInputStream fileInputStream,
                                 final List<Element> deserializedData) throws IOException {
     // Read the block information
-    final int serializedDataLength = metaPrimInputStream.readInt();
-    final long numElements = metaPrimInputStream.readLong();
-    final int skippedOffset = metaPrimInputStream.skipBytes(8);
-    if (skippedOffset != 8) {
-      throw new IOException("The input stream cannot skipped the \"offset\" metadata.");
-    }
-
     if (serializedDataLength != 0) {
       // This stream will be not closed, but it is okay as long as the file stream is closed well.
       final BufferedInputStream bufferedInputStream =

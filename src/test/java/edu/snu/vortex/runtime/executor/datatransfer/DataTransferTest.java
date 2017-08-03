@@ -108,6 +108,7 @@ public final class DataTransferTest {
         messageEnvironment, master, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
     final Injector injector = createNameClientInjector();
+    injector.bindVolatileParameter(JobConf.JobId.class, "data transfer test");
 
     this.master = master;
     this.worker1 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher,

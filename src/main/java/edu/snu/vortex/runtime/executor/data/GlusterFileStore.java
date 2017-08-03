@@ -40,8 +40,9 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   @Inject
   private GlusterFileStore(@Parameter(JobConf.GlusterVolumeDirectory.class) final String volumeDirectory,
                            @Parameter(JobConf.BlockSize.class) final int blockSize,
+                           @Parameter(JobConf.JobId.class) final String jobId,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    super(blockSize, volumeDirectory + "/job-" + System.currentTimeMillis(), partitionManagerWorker);
+    super(blockSize, volumeDirectory + "/" + jobId, partitionManagerWorker);
     new File(getFileDirectory()).mkdirs();
   }
 
@@ -158,7 +159,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public boolean removePartition(final String partitionId) throws PartitionFetchException {
     final Coder coder = getCoderFromWorker(partitionId);
     try {
-      final Optional<GlusterFilePartition> partition = GlusterFilePartition.open(coder, partitionId);
+      final Optional<GlusterFilePartition> partition =
+          GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
       if (partition.isPresent()) {
         partition.get().deleteFile();
         return true;

@@ -223,7 +223,7 @@ final class PartitionTransferPeer {
       final byte[] bytes = transportEvent.getData();
 
       try (final InputStream inputStream = new ByteArrayInputStream(bytes);
-            final DataInputStream dataInputStream = new DataInputStream(inputStream)) {
+           final DataInputStream dataInputStream = new DataInputStream(inputStream)) {
         final long requestId = dataInputStream.readLong();
         final Coder coder = peer.requestIdToCoder.remove(requestId);
         final int numOfElements = dataInputStream.readInt();
