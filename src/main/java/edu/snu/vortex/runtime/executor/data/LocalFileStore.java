@@ -43,9 +43,9 @@ final class LocalFileStore extends FileStore {
 
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
-                         @Parameter(JobConf.BlockSize.class) final int blockSize,
+                         @Parameter(JobConf.BlockSize.class) final int blockSizeInKb,
                          final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    super(blockSize, fileDirectory, partitionManagerWorker);
+    super(blockSizeInKb, fileDirectory, partitionManagerWorker);
     this.partitionIdToData = new ConcurrentHashMap<>();
     new File(fileDirectory).mkdirs();
   }

@@ -39,10 +39,10 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   @Inject
   private GlusterFileStore(@Parameter(JobConf.GlusterVolumeDirectory.class) final String volumeDirectory,
-                           @Parameter(JobConf.BlockSize.class) final int blockSize,
+                           @Parameter(JobConf.BlockSize.class) final int blockSizeInKb,
                            @Parameter(JobConf.JobId.class) final String jobId,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    super(blockSize, volumeDirectory + "/" + jobId, partitionManagerWorker);
+    super(blockSizeInKb, volumeDirectory + "/" + jobId, partitionManagerWorker);
     new File(getFileDirectory()).mkdirs();
   }
 

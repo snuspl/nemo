@@ -31,14 +31,14 @@ import java.util.List;
  */
 abstract class FileStore implements PartitionStore {
 
-  private final int blockSize;
+  private final int blockSizeInMb;
   private final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
-  protected FileStore(final int blockSize,
+  protected FileStore(final int blockSizeInKb,
                       final String fileDirectory,
                       final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    this.blockSize = blockSize * 1000;
+    this.blockSizeInMb = blockSizeInKb * 1000;
     this.fileDirectory = fileDirectory;
     this.partitionManagerWorker = partitionManagerWorker;
   }
@@ -52,14 +52,10 @@ abstract class FileStore implements PartitionStore {
    * @return the size of serialized block.
    * @throws IOException if fail to write.
    */
-  protected long writeBlock(final long elementsInBlock,
-                            final ByteArrayOutputStream outputStream,
-                            final FilePartition partition) throws IOException {
-    try {
-      outputStream.close();
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
+  private long writeBlock(final long elementsInBlock,
+                          final ByteArrayOutputStream outputStream,
+                          final FilePartition partition) throws IOException {
+    outputStream.close();
 
     final byte[] serialized = outputStream.toByteArray();
     partition.writeBlock(serialized, elementsInBlock);
@@ -100,7 +96,7 @@ abstract class FileStore implements PartitionStore {
       coder.encode(element, outputStream);
       elementsInBlock++;
 
-      if (outputStream.size() >= blockSize) {
+      if (outputStream.size() >= blockSizeInMb) {
         // If this block is large enough, synchronously append it to the file and reset the buffer
         partitionSize += writeBlock(elementsInBlock, outputStream, partition);
 

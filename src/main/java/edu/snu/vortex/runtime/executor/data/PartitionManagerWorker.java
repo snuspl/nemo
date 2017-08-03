@@ -203,7 +203,7 @@ public final class PartitionManagerWorker {
 
   /**
    * Get the stored partition.
-   * Unlike putDataAsPartition, this can be invoked multiple times per partitionId (maybe due to failures).
+   * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
    *
    * @param partitionId    of the partition
@@ -222,6 +222,7 @@ public final class PartitionManagerWorker {
       optionalPartition = store.getPartition(partitionId);
       if (optionalPartition.isPresent()) {
         // Partition resides in this evaluator!
+        // TODO #387: Make the PartitionStore to support asynchronous write and read.
         return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
       }
     } catch (final Exception e) {
