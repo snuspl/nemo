@@ -77,6 +77,8 @@ message RequestPartitionMsg {
     required string partitionId = 2;
     required PartitionStore partitionStore = 3;
     required string runtimeEdgeId = 4;
+    required int32 startInclusiveHashVal = 5;
+    required int32 endExclusiveHashVal = 6;
 }
 
 enum TaskGroupStateFromExecutor {

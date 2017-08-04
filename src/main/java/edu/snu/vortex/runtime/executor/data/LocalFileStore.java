@@ -58,7 +58,7 @@ final class LocalFileStore extends FileStore {
    * @throws PartitionFetchException if the partition is exist but fail to get the partition.
    */
   @Override
-  public Optional<Partition> getPartition(final String partitionId) throws PartitionFetchException {
+  public Optional<Partition> retrieveDataFromPartition(final String partitionId) throws PartitionFetchException {
     // Deserialize the target data in the corresponding file and pass it as a local data.
     final LocalFilePartition partition = partitionIdToData.get(partitionId);
     if (partition == null) {

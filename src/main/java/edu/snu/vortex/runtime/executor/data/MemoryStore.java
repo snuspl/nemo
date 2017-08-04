@@ -50,10 +50,10 @@ final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#getPartition(String).
+   * @see PartitionStore#retrieveDataFromPartition(String).
    */
   @Override
-  public Optional<Partition> getPartition(final String partitionId) {
+  public Optional<Partition> retrieveDataFromPartition(final String partitionId) {
     final Iterable<Element> partitionData = partitionIdToData.get(partitionId);
     final Iterable<Iterable<Element>> blockedPartitionData = partitionDataInBlocks.get(partitionId);
     if (partitionData != null) {

@@ -140,6 +140,7 @@ public final class Optimizer {
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
                                                  final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
+    // Partition ID to Size data.
     final Map<String, Iterable> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
