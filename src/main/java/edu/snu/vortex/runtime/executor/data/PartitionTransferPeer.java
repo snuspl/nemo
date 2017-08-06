@@ -102,16 +102,16 @@ final class PartitionTransferPeer {
    * @param runtimeEdgeId    id of the {@link edu.snu.vortex.runtime.common.plan.RuntimeEdge}
    *                         corresponds to the partition
    * @param partitionStore   type of the partition store
-   * @param startInclusiveHashVal of the hash range.
-   * @param endExclusiveHashVal   of the hash range.
+   * @param hashRangeStartVal of the hash range (included in the range).
+   * @param hashRangeEndVal   of the hash range (excluded from the range).
    * @return {@link CompletableFuture} for the partition
    */
   CompletableFuture<Iterable<Element>> fetch(final String remoteExecutorId,
                                              final String partitionId,
                                              final String runtimeEdgeId,
                                              final Attribute partitionStore,
-                                             final int startInclusiveHashVal,
-                                             final int endExclusiveHashVal) {
+                                             final int hashRangeStartVal,
+                                             final int hashRangeEndVal) {
     final Identifier remotePeerIdentifier = new PartitionTransferPeerIdentifier(remoteExecutorId);
     final InetSocketAddress remoteAddress;
     final Coder coder = partitionManagerWorker.get().getCoder(runtimeEdgeId);
@@ -137,8 +137,8 @@ final class PartitionTransferPeer {
         .setPartitionId(partitionId)
         .setRuntimeEdgeId(runtimeEdgeId)
         .setPartitionStore(convertPartitionStore(partitionStore))
-        .setStartInclusiveHashVal(startInclusiveHashVal)
-        .setEndExclusiveHashVal(endExclusiveHashVal)
+        .setHashRangeStartVal(hashRangeStartVal)
+        .setHashRangeEndVal(hashRangeEndVal)
         .build();
     link.write(msg);
 
@@ -182,18 +182,18 @@ final class PartitionTransferPeer {
       final ControlMessage.RequestPartitionMsg request = REQUEST_MESSAGE_CODEC.decode(transportEvent.getData());
 
       // We are getting the partition from local store!
-      final int startInclusiveHashVal = request.getStartInclusiveHashVal();
-      final int endExclusiveHashVal = request.getEndExclusiveHashVal();
+      final int hashRangeStartVal = request.getHashRangeStartVal(); // Inclusive
+      final int hashRangeEndVal = request.getHashRangeEndVal(); // Exclusive
       final Iterable<Element> partition;
       try {
-        if (startInclusiveHashVal == 0 && endExclusiveHashVal == Integer.MAX_VALUE) {
+        if (hashRangeStartVal == 0 && hashRangeEndVal == Integer.MAX_VALUE) {
           // Retrieve whole data.
           partition = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
               convertPartitionStoreType(request.getPartitionStore())).get();
         } else {
           // Retrieve data in a specific hash value range.
           partition = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-              convertPartitionStoreType(request.getPartitionStore()), startInclusiveHashVal, endExclusiveHashVal).get();
+              convertPartitionStoreType(request.getPartitionStore()), hashRangeStartVal, hashRangeEndVal).get();
         }
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);

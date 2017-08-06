@@ -240,21 +240,21 @@ public final class PartitionManagerWorker {
    * @param partitionId           of the partition.
    * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
    * @param partitionStore        for the data storage.
-   * @param startInclusiveHashVal of the hash range.
-   * @param endExclusiveHashVal   of the hash range.
+   * @param hashRangeStartVal     of the hash range (included in the range).
+   * @param hashRangeEndVal       of the hash range (excluded from the range).
    * @return a {@link CompletableFuture} for the partition.
    */
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore,
-                                                                        final int startInclusiveHashVal,
-                                                                        final int endExclusiveHashVal) {
-    LOG.info(g"retrieveDataFromPartition: {0}", partitionId);
+                                                                        final int hashRangeStartVal,
+                                                                        final int hashRangeEndVal) {
+    LOG.info("retrieveDataFromPartition: {0}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
       final Optional<Partition> optionalPartition =
-          store.retrieveDataFromPartition(partitionId, startInclusiveHashVal, endExclusiveHashVal);
+          store.retrieveDataFromPartition(partitionId, hashRangeStartVal, hashRangeEndVal);
       if (optionalPartition.isPresent()) {
         // Partition resides in this evaluator!
         return CompletableFuture.completedFuture(optionalPartition.get().asIterable());
@@ -264,7 +264,7 @@ public final class PartitionManagerWorker {
     }
 
     return requestPartitionInRemoteWorker(
-        partitionId, runtimeEdgeId, partitionStore, startInclusiveHashVal, endExclusiveHashVal);
+        partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal);
   }
 
   /**
@@ -274,15 +274,15 @@ public final class PartitionManagerWorker {
    * @param partitionId           of the partition.
    * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
    * @param partitionStore        for the data storage.
-   * @param startInclusiveHashVal of the hash range.
-   * @param endExclusiveHashVal   of the hash range.
+   * @param hashRangeStartVal     of the hash range (included in the range).
+   * @param hashRangeEndVal       of the hash range (excluded from the range).
    * @return the {@link CompletableFuture} of the partition.
    */
   private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
                                                                               final String runtimeEdgeId,
                                                                               final Attribute partitionStore,
-                                                                              final int startInclusiveHashVal,
-                                                                              final int endExclusiveHashVal) {
+                                                                              final int hashRangeStartVal,
+                                                                              final int hashRangeEndVal) {
     // We don't have the partition here... let's see if a remote worker has it.
     if (partitionStore == Attribute.RemoteFile) {
       LOG.warn("The target partition {} is not found in the remote storage. "
@@ -315,7 +315,7 @@ public final class PartitionManagerWorker {
       // This is the executor id that we wanted to know
       final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
       return partitionTransferPeer.fetch(
-          remoteWorkerId, partitionId, runtimeEdgeId, partitionStore, startInclusiveHashVal, endExclusiveHashVal);
+          remoteWorkerId, partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal);
     });
   }
 

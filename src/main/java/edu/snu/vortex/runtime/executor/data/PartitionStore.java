@@ -39,14 +39,14 @@ public interface PartitionStore {
    * Retrieves data in a specific hash range from a partition.
    * The result data will be treated as another partition.
    * @param partitionId of the target partition.
-   * @param startInclusiveHashVal of the hash range.
-   * @param endExclusiveHashVal of the hash range.
+   * @param hashRangeStartVal of the hash range (included in the range).
+   * @param hashRangeEndVal of the hash range (excluded from the range).
    * @return the result data as a new partition (if the target partition exists).
    * @throws PartitionFetchException thrown for any error occurred while trying to fetch a partition
    */
   Optional<Partition> retrieveDataFromPartition(String partitionId,
-                                                int startInclusiveHashVal,
-                                                int endExclusiveHashVal) throws PartitionFetchException;
+                                                int hashRangeStartVal,
+                                                int hashRangeEndVal) throws PartitionFetchException;
 
   /**
    * Saves data as a partition.

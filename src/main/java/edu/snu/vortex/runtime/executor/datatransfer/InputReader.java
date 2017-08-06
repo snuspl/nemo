@@ -145,16 +145,17 @@ public final class InputReader extends DataTransfer {
     if (hashRangeToRead == null) {
       throw new PartitionFetchException(new Throwable("The hash range to read is not assigned to " + taskGroupId));
     }
-    final int startInclusiveHashVal = hashRangeToRead.left();
-    final int endExclusiveHashVal = hashRangeToRead.right();
+    final int hashRangeStartVal = hashRangeToRead.left();
+    final int hashRangeEndVal = hashRangeToRead.right();
 
     final int numSrcTasks = this.getSourceParallelism();
     final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-      futures.add(partitionManagerWorker.retrieveDataFromPartition(
-          partitionId, getId(), runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement),
-          startInclusiveHashVal, endExclusiveHashVal));
+      futures.add(
+          partitionManagerWorker.retrieveDataFromPartition(
+              partitionId, getId(), runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement),
+              hashRangeStartVal, hashRangeEndVal));
     }
 
     return futures;

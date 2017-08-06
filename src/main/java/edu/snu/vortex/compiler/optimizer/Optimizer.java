@@ -32,7 +32,6 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Optimizer class.
@@ -142,8 +141,8 @@ public final class Optimizer {
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
                                                  final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    // Partition ID to Size data.
-    final Map<String, Iterable> metricData = metricCollectionBarrierVertex.getMetricData();
+    // Map between a partition ID to corresponding metric data (e.g., the size of each block).
+    final Map<String, List> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
 
@@ -155,10 +154,8 @@ public final class Optimizer {
             new DAGBuilder<>(originalPlan.getStageDAG());
 
         // Count the hash range.
-        final Iterator firstMetricIterable = metricData.values().stream().findFirst().orElseThrow(() ->
-            new DynamicOptimizationException("no valid metric data.")).iterator();
-        final AtomicInteger hashRange = new AtomicInteger(0);
-        firstMetricIterable.forEachRemaining((blockSize) -> hashRange.getAndAdd(1));
+        final int hashRange = metricData.values().stream().findFirst().orElseThrow(() ->
+            new DynamicOptimizationException("no valid metric data.")).size();
 
         // Do the optimization using the information derived above.
         metricData.forEach((partitionId, partitionSizes) -> {
@@ -178,8 +175,8 @@ public final class Optimizer {
           final List<TaskGroup> taskGroups = optimizationEdge.getDst().getTaskGroupList();
           final Map<String, Pair<Integer, Integer>> taskGroupIdToHashRangeMap =
               optimizationEdge.getTaskGroupIdToHashRangeMap();
-          final int quotient = hashRange.get() / taskGroups.size();
-          final int remainder = hashRange.get() % taskGroups.size();
+          final int quotient = hashRange / taskGroups.size();
+          final int remainder = hashRange % taskGroups.size();
           int assignedHashValue = 0;
           for (int i = 0; i < taskGroups.size(); i++) {
             final TaskGroup taskGroup = taskGroups.get(i);
