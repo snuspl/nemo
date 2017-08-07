@@ -101,12 +101,19 @@ public final class GlusterFilePartition implements FilePartition {
     metaFileOutputStream = new FileOutputStream(metaFilePath, true);
     metaFilePrimOutputStream = new DataOutputStream(metaFileOutputStream);
 
-    // Synchronize the create - write - close process from read and deletion with this lock.
+    // Prevent concurrent write by using the file lock of this file.
     // If once this lock is acquired, it have to be released to prevent the locked leftover in the remote storage.
     // Because this lock will be released when the file channel is closed, we need to close the file channel well.
     final FileLock fileLock = dataFileChannel.tryLock();
     if (fileLock == null) {
       throw new IOException("Other thread (maybe in another node) is writing on this file.");
+    }
+    try (final FileInputStream metaFileInputStream = new FileInputStream(metaFilePath)) {
+      if (metaFileInputStream.available() > 0) {
+        // Very rare case: multiple threads get into this method and one thread conducted
+        // the create - write - close process and released the file lock before this thread tried to lock.
+        throw new IOException("This partition is written and the file lock is released already.");
+      }
     }
     metaFilePrimOutputStream.writeBoolean(false); // Not written yet.
     metaFilePrimOutputStream.writeBoolean(sorted); // Blocks are sorted or not.
