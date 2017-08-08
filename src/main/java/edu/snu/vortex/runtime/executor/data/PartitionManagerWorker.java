@@ -253,8 +253,8 @@ public final class PartitionManagerWorker {
                           .setPartitionId(partitionId)
                           .build())
                   .build());
-      // PartitionTransferPeer#fetch returns a CompletableFuture.
-      // Composing two CompletableFuture so that fetching partition data starts after getting response from master.
+      // responseFromMasterFuture is a CompletableFuture, and PartitionTransferPeer#fetch returns a CompletableFuture.
+      // Using thenCompose so that fetching partition data starts after getting response from master.
       final CompletableFuture<Iterable<Element>> fetched = responseFromMasterFuture.thenCompose(responseFromMaster -> {
         assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
         final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =

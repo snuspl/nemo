@@ -127,10 +127,20 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * Number of threads for client-side stage in {@link edu.snu.vortex.runtime.executor.data.PartitionTransferPeer}.
+   * These threads are responsible for de-serializing bytes into Partition.
    */
-  @NamedParameter(doc = "Number of threads for partition transfer client", short_name = "partition_peer_threads",
+  @NamedParameter(doc = "Number of threads for partition transfer client", short_name = "partition_client_threads",
       default_value = "5")
   public final class PartitionTransferClientNumThreads implements Name<Integer> {
+  }
+
+  /**
+   * Number of threads for server-side stage in {@link edu.snu.vortex.runtime.executor.data.PartitionTransferPeer}.
+   * These threads are responsible for serializing Partition into bytes.
+   */
+  @NamedParameter(doc = "Number of threads for partition transfer server", short_name = "partition_server_threads",
+      default_value = "5")
+  public final class PartitionTransferServerNumThreads implements Name<Integer> {
   }
 
   /**

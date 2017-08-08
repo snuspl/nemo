@@ -51,6 +51,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +81,7 @@ final class PartitionTransferPeer {
                                 final PartitionClientHandler partitionClientHandler,
                                 final PartitionServerHandler partitionServerHandler,
                                 final ExceptionHandler exceptionHandler,
-                                @Parameter(JobConf.PartitionTransferClientNumThreads.class) final int numThreads,
+                                @Parameter(JobConf.PartitionTransferClientNumThreads.class) final int numClientThreads,
                                 @Parameter(JobConf.ExecutorId.class) final String executorId) {
     this.nameResolver = nameResolver;
     this.partitionManagerWorker = partitionManagerWorker;
@@ -88,7 +90,7 @@ final class PartitionTransferPeer {
     this.replyFutureMap = new ReplyFutureMap<>();
 
     transport = createTransport(localAddressProvider.getLocalAddress(),
-        partitionClientHandler, partitionServerHandler, exceptionHandler, numThreads);
+        partitionClientHandler, partitionServerHandler, exceptionHandler, numClientThreads);
 
     final InetSocketAddress serverAddress = (InetSocketAddress) transport.getLocalAddress();
     LOG.debug("PartitionTransferPeer starting, listening at {}", serverAddress);
@@ -205,10 +207,14 @@ final class PartitionTransferPeer {
    */
   private static final class PartitionServerHandler implements EventHandler<TransportEvent> {
     private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
+    private final ExecutorService serverExecutorService;
 
     @Inject
-    private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+    private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+                                   @Parameter(JobConf.PartitionTransferServerNumThreads.class)
+                                   final int numServerThreads) {
       this.partitionManagerWorker = partitionManagerWorker;
+      this.serverExecutorService = Executors.newFixedThreadPool(numServerThreads);
     }
 
     @Override
@@ -224,7 +230,7 @@ final class PartitionTransferPeer {
       final CompletableFuture<Iterable<Element>> partitionFuture = worker.getPartition(request.getPartitionId(),
           request.getRuntimeEdgeId(), convertPartitionStoreType(request.getPartitionStore()));
 
-      partitionFuture.thenAccept(partition -> {
+      partitionFuture.thenAcceptAsync(partition -> {
         int numOfElements = 0;
         try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
              final ByteArrayOutputStream elementsOutputStream = new ByteArrayOutputStream();
@@ -240,7 +246,7 @@ final class PartitionTransferPeer {
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      });
+      }, serverExecutorService);
     }
   }
 
