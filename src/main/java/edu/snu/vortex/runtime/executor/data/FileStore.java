@@ -64,6 +64,28 @@ abstract class FileStore implements PartitionStore {
   }
 
   /**
+   * Makes the given stream to a block and write it to the given file partition.
+   *
+   * @param elementsInBlock the number of elements in this block.
+   * @param outputStream    the output stream containing data.
+   * @param partition       the partition to write the block.
+   * @param hashVal         the hash value of the block.
+   * @return the size of serialized block.
+   * @throws IOException if fail to write.
+   */
+  private long writeBlock(final long elementsInBlock,
+                          final ByteArrayOutputStream outputStream,
+                          final FilePartition partition,
+                          final int hashVal) throws IOException {
+    outputStream.close();
+
+    final byte[] serialized = outputStream.toByteArray();
+    partition.writeBlock(serialized, elementsInBlock, hashVal);
+
+    return serialized.length;
+  }
+
+  /**
    * Gets data coder from the {@link PartitionManagerWorker}.
    *
    * @param partitionId to get the coder.
@@ -115,28 +137,29 @@ abstract class FileStore implements PartitionStore {
 
   /**
    * Serializes and puts the data to a file partition.
-   * The blocks in this data have to be already sorted by their hash value.
+   * Each block in this data has a single hash value.
    *
    * @param coder      the coder used to serialize the data of this partition.
    * @param partition  to store this data.
-   * @param sortedData to be stored.
+   * @param hashedData to be stored.
    * @return the size of the data.
    * @throws IOException if fail to write the data.
    */
-  protected List<Long> putSortedData(final Coder coder,
+  protected List<Long> putHashedData(final Coder coder,
                                      final FilePartition partition,
-                                     final Iterable<Iterable<Element>> sortedData) throws IOException {
+                                     final Iterable<Iterable<Element>> hashedData) throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    for (Iterable<Element> block : sortedData) {
+    int hashIdx = 0;
+    for (final Iterable<Element> block : hashedData) {
       long elementsInBlock = 0;
       for (final Element element : block) {
         coder.encode(element, outputStream);
         elementsInBlock++;
       }
       // Synchronously append the serialized block to the file and reset the buffer
-      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition));
+      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition, hashIdx++));
 
       outputStream.reset();
     }

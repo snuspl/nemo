@@ -27,12 +27,25 @@ public interface FilePartition extends Partition, AutoCloseable {
   /**
    * Writes the serialized data of this partition as a block to the file where this partition resides.
    *
-   * @param serializedData the serialized data of this partition.
+   * @param serializedData the serialized data which will become a block.
    * @param numElement     the number of elements in the serialized data.
    * @throws IOException if fail to write.
    */
   void writeBlock(final byte[] serializedData,
                   final long numElement) throws IOException;
+
+  /**
+   * Writes the serialized data of this partition having a specific hash value as a block to the file
+   * where this partition resides.
+   *
+   * @param serializedData the serialized data which will become a block.
+   * @param numElement     the number of elements in the serialized data.
+   * @param hashVal        the hash value of this block.
+   * @throws IOException if fail to write.
+   */
+  void writeBlock(final byte[] serializedData,
+                  final long numElement,
+                  final int hashVal) throws IOException;
 
   /**
    * Deletes the file that contains this partition data.

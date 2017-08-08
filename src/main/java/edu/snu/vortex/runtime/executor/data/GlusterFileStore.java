@@ -134,16 +134,15 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   /**
    * Saves an iterable of data blocks as a partition.
-   * Each block has a specific hash value, and these blocks are sorted by this hash value.
-   * The block becomes a unit of read & write.
+   * Each block has a specific hash value, and the block becomes a unit of read & write.
    *
    * @param partitionId of the partition.
-   * @param sortedData  to save as a partition.
+   * @param hashedData  to save as a partition.
    * @return the size of data per hash value.
    */
   @Override
-  public CompletableFuture<Optional<List<Long>>> putSortedDataAsPartition(
-      final String partitionId, final Iterable<Iterable<Element>> sortedData) {
+  public CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
+      final String partitionId, final Iterable<Iterable<Element>> hashedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
@@ -151,7 +150,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       try (final GlusterFilePartition partition =
                GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), true)) {
         // Serialize and write the given data into blocks
-        blockSizeList = putSortedData(coder, partition, sortedData);
+        blockSizeList = putHashedData(coder, partition, hashedData);
         partition.finishWrite();
       } catch (final IOException e) {
         throw new PartitionWriteException(e);

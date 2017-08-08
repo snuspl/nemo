@@ -43,14 +43,14 @@ public final class GlusterFilePartition implements FilePartition {
    * A single partition will have two separate files: actual data file and metadata file.
    * The actual data file will only have the serialized data.
    * The metadata file will contain the information for this data,
-   * such as whether whole data is written, the blocks in the partition is sorted by their hash value or not,
+   * such as whether whole data is written, each block in the partition has a single hash value or not,
    * the size, offset, and number of elements in each block, etc.
    * <p>
    * /////Meta data File/////
    * /       Written        /
-   * /       Sorted         /
+   * /       Hashed         /
    * ........................
-   * /       offset         /
+   * /     hash value       /
    * /     Block size       /
    * /    # of elements     /
    * ........................
@@ -58,7 +58,7 @@ public final class GlusterFilePartition implements FilePartition {
    * /          .           /
    * /          .           /
    * ........................
-   * /       offset         /
+   * /     hash value       /
    * /     Block size       /
    * /    # of elements     /
    * ////////////////////////
@@ -69,9 +69,9 @@ public final class GlusterFilePartition implements FilePartition {
   private FileChannel dataFileChannel;
   private FileOutputStream metaFileOutputStream;
   private DataOutputStream metaFilePrimOutputStream; // The stream to store primitive values to the metadata file.
-  private long writtenBytes; // The written bytes in this file.
 
-  private static int blockMetadataSize = 20; // length (int) + # of elements (long) + offset (long) = 20 bytes.
+  // hash value (int) + length (int) + # of elements (long) = 16 bytes.
+  private static int blockMetadataSize = 16;
 
   /**
    * Constructs a gluster file partition.
@@ -92,10 +92,10 @@ public final class GlusterFilePartition implements FilePartition {
   /**
    * Opens partition for writing. The corresponding {@link GlusterFilePartition#finishWrite()} is required.
    *
-   * @param sorted whether the blocks in this partition are sorted by the hash value or not.
+   * @param hashed whether each block in this partition has a single hash value or not.
    * @throws IOException if fail to open this partition for writing.
    */
-  private void openPartitionForWrite(final boolean sorted) throws IOException {
+  private void openPartitionForWrite(final boolean hashed) throws IOException {
     dataFileOutputStream = new FileOutputStream(dataFilePath, true);
     dataFileChannel = dataFileOutputStream.getChannel();
     metaFileOutputStream = new FileOutputStream(metaFilePath, true);
@@ -116,8 +116,7 @@ public final class GlusterFilePartition implements FilePartition {
       }
     }
     metaFilePrimOutputStream.writeBoolean(false); // Not written yet.
-    metaFilePrimOutputStream.writeBoolean(sorted); // Blocks are sorted or not.
-    writtenBytes = 0;
+    metaFilePrimOutputStream.writeBoolean(hashed); // Each block has a single hash value or not.
   }
 
   /**
@@ -132,11 +131,29 @@ public final class GlusterFilePartition implements FilePartition {
   @Override
   public void writeBlock(final byte[] serializedData,
                          final long numElement) throws IOException {
+    writeBlock(serializedData, numElement, Integer.MIN_VALUE);
+  }
+
+  /**
+   * Writes the serialized data of this partition having a specific hash value as a block to the file
+   * where this partition resides.
+   * To maintain the block information globally,
+   * the size and the number of elements of the block is stored before the data in the file.
+   *
+   * @param serializedData the serialized data of this partition.
+   * @param numElement     the number of elements in the serialized data.
+   * @param hashVal        the hash value of this block.
+   * @throws IOException if fail to write.
+   */
+  @Override
+  public void writeBlock(final byte[] serializedData,
+                         final long numElement,
+                         final int hashVal) throws IOException {
     if (!openedToWrite) {
       throw new IOException("Trying to write a block in a partition that has not been opened for write.");
     }
     // Store the block information to the metadata file.
-    metaFilePrimOutputStream.writeLong(writtenBytes); // The offset of this block.
+    metaFilePrimOutputStream.writeInt(hashVal); // The offset of this block.
     metaFilePrimOutputStream.writeInt(serializedData.length); // The block size.
     metaFilePrimOutputStream.writeLong(numElement); // The number of elements in this block.
 
@@ -144,7 +161,6 @@ public final class GlusterFilePartition implements FilePartition {
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
     // Write synchronously
     dataFileChannel.write(buf);
-    writtenBytes += serializedData.length;
   }
 
   /**
@@ -223,43 +239,27 @@ public final class GlusterFilePartition implements FilePartition {
       if (!written) {
         throw new IOException("This partition is not written yet.");
       }
-      // We have to check whether the blocks in this partition is sorted by their hash value or not.
-      final boolean sorted = metaFilePrimInputStream.readBoolean(); // Whether the whole data is written or not.
-      if (!sorted) {
-        throw new IOException("The blocks in this partition are not sorted.");
+
+      // We have to check whether each block in this partition has a single hash value or not.
+      final boolean hashed = metaFilePrimInputStream.readBoolean();
+      if (!hashed) {
+        throw new IOException("The blocks in this partition are not hashed.");
       }
 
-      // Find the offset of the first block to read.
-      final int expectedSkipBytes = blockMetadataSize * hashRangeStartVal;
-      final long skippedMetadata =
-          metaFilePrimInputStream.skipBytes(expectedSkipBytes);
-      if (skippedMetadata != expectedSkipBytes) {
-        throw new IOException("Failed to skip the block metadata. required: " + expectedSkipBytes
-            + ", skipped: " + skippedMetadata);
-      }
-
-      final long offset = metaFilePrimInputStream.readLong(); // The offset of the fist block in the range.
-      // Skip to the blocks before the offset.
-      final long skippedData = fileInputStream.skip(offset);
-      if (skippedData != offset) {
-        throw new IOException("Failed to skip the data and reach to the offset.");
-      }
-
-      int serializedDataLength = metaFilePrimInputStream.readInt();
-      long numElements = metaFilePrimInputStream.readLong();
-      // Deserialize the first block.
-      deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
-
-      // Read the blocks in the given hash range.
-      for (int hashVal = hashRangeStartVal + 1; hashVal < hashRangeEndVal; hashVal++) {
-        final int skippedOffset = metaFilePrimInputStream.skipBytes(8);
-        if (skippedOffset != 8) {
-          throw new IOException("The input stream cannot skipped the \"offset\" metadata.");
+      while (metaFileInputStream.available() > 0) {
+        final int hashVal = metaFilePrimInputStream.readInt();
+        final int serializedDataLength = metaFilePrimInputStream.readInt();
+        final long numElements = metaFilePrimInputStream.readLong();
+        if (hashVal >= hashRangeStartVal && hashVal < hashRangeEndVal) {
+          // The hash value of this block is in the range.
+          deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
+        } else {
+          // Have to skip this block.
+          final long skippedBytes = fileInputStream.skip(serializedDataLength); // Skip to the next block.
+          if (skippedBytes != serializedDataLength) {
+            throw new IOException("The file stream failed to skip to the next block.");
+          }
         }
-        serializedDataLength = metaFilePrimInputStream.readInt();
-        numElements = metaFilePrimInputStream.readLong();
-        // Deserialize the block.
-        deserializeBlock(serializedDataLength, numElements, fileInputStream, deserializedData);
       }
     }
 
@@ -282,16 +282,17 @@ public final class GlusterFilePartition implements FilePartition {
       if (!written) {
         throw new IOException("This partition is not written yet.");
       }
-      // We don't need to know whether the blocks in this file is sorted or not.
+      // We don't need to know whether each block in this file has a single hash value or not.
       final int skippedSorted = metaFilePrimInputStream.skipBytes(1);
       if (skippedSorted != 1) {
-        throw new IOException("The input stream cannot skipped the \"sorted\" metadata.");
+        throw new IOException("The input stream cannot skipped the \"hashed\" metadata.");
       }
 
       while (metaFileInputStream.available() > 0) {
-        final int skippedOffset = metaFilePrimInputStream.skipBytes(8);
-        if (skippedOffset != 8) {
-          throw new IOException("The input stream cannot skipped the \"offset\" metadata.");
+        final int bytesToSkip = 4; // hash value (int) -> 4 bytes.
+        final int skippedOffset = metaFilePrimInputStream.skipBytes(bytesToSkip);
+        if (skippedOffset != bytesToSkip) {
+          throw new IOException("The input stream cannot skipped the \"hash value\" metadata.");
         }
         final int serializedDataLength = metaFilePrimInputStream.readInt();
         final long numElements = metaFilePrimInputStream.readLong();
@@ -333,16 +334,16 @@ public final class GlusterFilePartition implements FilePartition {
    *
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
-   * @param sorted whether the blocks in this partition are sorted by the hash value or not.
+   * @param hashed   whether each block in this partition has a single hash value or not.
    * @return the corresponding partition.
    * @throws IOException if the file exist already.
    */
   public static GlusterFilePartition create(final Coder coder,
                                             final String filePath,
-                                            final boolean sorted) throws IOException {
+                                            final boolean hashed) throws IOException {
     if (!new File(filePath).isFile()) {
       final GlusterFilePartition partition = new GlusterFilePartition(coder, filePath, true);
-      partition.openPartitionForWrite(sorted);
+      partition.openPartitionForWrite(hashed);
       return partition;
     } else {
       throw new IOException("Trying to overwrite an existing partition.");

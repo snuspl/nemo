@@ -167,25 +167,25 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Store a sorted partition to the target {@code PartitionStore}.
-   * The data in this partition is sorted by the hash value of their key to handle the data skew.
+   * Store a hashed partition to the target {@code PartitionStore}.
+   * Each block (an {@link Iterable} of elements} has a single hash value.
    * Invariant: This should be invoked only once per partitionId.
    *
    * @param partitionId    of the partition.
    * @param srcIRVertexId  IRVertex gof the source task.
-   * @param sortedData     of the partition.
+   * @param hashedData     of the partition.
    * @param partitionStore to store the partition.
    */
-  public void putSortedPartition(final String partitionId,
+  public void putHashedPartition(final String partitionId,
                                  final String srcIRVertexId,
-                                 final Iterable<Iterable<Element>> sortedData,
+                                 final Iterable<Iterable<Element>> hashedData,
                                  final Attribute partitionStore) {
     LOG.info("PutSortedPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final Iterable<Long> blockSizeInfo;
 
     try {
-      blockSizeInfo = store.putSortedDataAsPartition(partitionId, sortedData).get().orElse(Collections.emptyList());
+      blockSizeInfo = store.putHashedDataAsPartition(partitionId, hashedData).get().orElse(Collections.emptyList());
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
