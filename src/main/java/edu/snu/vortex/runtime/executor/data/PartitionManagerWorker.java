@@ -137,8 +137,8 @@ public final class PartitionManagerWorker {
    * Store partition to the target {@code PartitionStore}.
    * Invariant: This should be invoked only once per partitionId.
    *
-   * @param partitionId of the partition.
-   * @param data of the partition.
+   * @param partitionId    of the partition.
+   * @param data           of the partition.
    * @param partitionStore to store the partition.
    */
   public void putPartition(final String partitionId,
@@ -171,9 +171,9 @@ public final class PartitionManagerWorker {
    * The data in this partition is sorted by the hash value of their key to handle the data skew.
    * Invariant: This should be invoked only once per partitionId.
    *
-   * @param partitionId of the partition.
-   * @param srcIRVertexId IRVertex gof the source task.
-   * @param sortedData of the partition.
+   * @param partitionId    of the partition.
+   * @param srcIRVertexId  IRVertex gof the source task.
+   * @param sortedData     of the partition.
    * @param partitionStore to store the partition.
    */
   public void putSortedPartition(final String partitionId,
@@ -208,23 +208,23 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Get the stored partition.
+   * Retrieves whole data from the stored partition.
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
    *
-   * @param partitionId    of the partition
-   * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition
-   * @param partitionStore for the data storage
-   * @return a {@link CompletableFuture} for the partition
+   * @param partitionId    of the partition.
+   * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
+   * @param partitionStore for the data storage.
+   * @return a {@link CompletableFuture} for the partition.
    */
-  public CompletableFuture<Iterable<Element>> getPartition(final String partitionId,
-                                                           final String runtimeEdgeId,
-                                                           final Attribute partitionStore) {
+  public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
+                                                                        final String runtimeEdgeId,
+                                                                        final Attribute partitionStore) {
+    LOG.info("retrieveDataFromPartition: {0}", partitionId);
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-    LOG.info("GetPartition: {}", partitionId);
 
     final PartitionStore store = getPartitionStore(partitionStore);
-    final CompletableFuture<Optional<Partition>> localPartition = store.getPartition(partitionId);
+    final CompletableFuture<Optional<Partition>> localPartition = store.retrieveDataFromPartition(partitionId);
     localPartition.thenAccept(optionalPartition -> {
       if (optionalPartition.isPresent()) {
         // Partition resides in this evaluator!
@@ -233,45 +233,107 @@ public final class PartitionManagerWorker {
         } catch (final IOException e) {
           future.completeExceptionally(new PartitionFetchException(e));
         }
-        return;
+      } else {
+        // We don't have the partition here...
+        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, 0, Integer.MAX_VALUE)
+            .thenAccept(partition -> future.complete(partition));
       }
-      // We don't have the partition here...
-      if (partitionStore == Attribute.RemoteFile) {
-        LOG.warn("The target partition {} is not found in the remote storage. "
-            + "Maybe the storage is not mounted or linked properly.", partitionId);
-      }
-      // Let's see if a remote worker has it
-      // Ask Master for the location
-      final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
-          persistentConnectionToMaster.getMessageSender().request(
-              ControlMessage.Message.newBuilder()
-                  .setId(RuntimeIdGenerator.generateMessageId())
-                  .setType(ControlMessage.MessageType.RequestPartitionLocation)
-                  .setRequestPartitionLocationMsg(
-                      ControlMessage.RequestPartitionLocationMsg.newBuilder()
-                          .setExecutorId(executorId)
-                          .setPartitionId(partitionId)
-                          .build())
-                  .build());
-      // responseFromMasterFuture is a CompletableFuture, and PartitionTransferPeer#fetch returns a CompletableFuture.
-      // Using thenCompose so that fetching partition data starts after getting response from master.
-      final CompletableFuture<Iterable<Element>> fetched = responseFromMasterFuture.thenCompose(responseFromMaster -> {
-        assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
-        final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
-            responseFromMaster.getPartitionLocationInfoMsg();
-        if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
-          throw new PartitionFetchException(new Throwable(
-              "Partition " + partitionId + " not found both in the local storage and the remote storage: The"
-                  + "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
-        }
-        // This is the executor id that we wanted to know
-        final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
-        return partitionTransferPeer.fetch(remoteWorkerId, partitionId, runtimeEdgeId, partitionStore);
-      });
-      fetched.thenAccept(partition -> future.complete(partition));
     });
 
     return future;
+  }
+
+  /**
+   * Retrieves data in a specific hash value range from the stored partition.
+   * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
+   * Here, we first check if we have the partition here, and then try to fetch the data from a remote worker.
+   *
+   * @param partitionId           of the partition.
+   * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
+   * @param partitionStore        for the data storage.
+   * @param hashRangeStartVal     of the hash range (included in the range).
+   * @param hashRangeEndVal       of the hash range (excluded from the range).
+   * @return a {@link CompletableFuture} for the partition.
+   */
+  public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
+                                                                        final String runtimeEdgeId,
+                                                                        final Attribute partitionStore,
+                                                                        final int hashRangeStartVal,
+                                                                        final int hashRangeEndVal) {
+    LOG.info("retrieveDataFromPartition: {0}", partitionId);
+    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
+
+    final PartitionStore store = getPartitionStore(partitionStore);
+    final CompletableFuture<Optional<Partition>> localPartition =
+        store.retrieveDataFromPartition(partitionId, hashRangeStartVal, hashRangeEndVal);
+    localPartition.thenAccept(optionalPartition -> {
+      if (optionalPartition.isPresent()) {
+        // Partition resides in this evaluator!
+        try {
+          future.complete(optionalPartition.get().asIterable());
+        } catch (final IOException e) {
+          future.completeExceptionally(new PartitionFetchException(e));
+        }
+      } else {
+        // We don't have the partition here...
+        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal)
+            .thenAccept(partition -> future.complete(partition));
+      }
+    });
+
+    return future;
+  }
+
+  /**
+   * Requests data in a specific hash value range from a partition which resides in a remote worker asynchronously.
+   * If the hash value range is [0, int.max), it will retrieve the whole data from the partition.
+   *
+   * @param partitionId           of the partition.
+   * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
+   * @param partitionStore        for the data storage.
+   * @param hashRangeStartVal     of the hash range (included in the range).
+   * @param hashRangeEndVal       of the hash range (excluded from the range).
+   * @return the {@link CompletableFuture} of the partition.
+   */
+  private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
+                                                                              final String runtimeEdgeId,
+                                                                              final Attribute partitionStore,
+                                                                              final int hashRangeStartVal,
+                                                                              final int hashRangeEndVal) {
+    // We don't have the partition here...
+    if (partitionStore == Attribute.RemoteFile) {
+      LOG.warn("The target partition {} is not found in the remote storage. "
+          + "Maybe the storage is not mounted or linked properly.", partitionId);
+    }
+    // Let's see if a remote worker has it
+    // Ask Master for the location
+    final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
+        persistentConnectionToMaster.getMessageSender().request(
+            ControlMessage.Message.newBuilder()
+                .setId(RuntimeIdGenerator.generateMessageId())
+                .setType(ControlMessage.MessageType.RequestPartitionLocation)
+                .setRequestPartitionLocationMsg(
+                    ControlMessage.RequestPartitionLocationMsg.newBuilder()
+                        .setExecutorId(executorId)
+                        .setPartitionId(partitionId)
+                        .build())
+                .build());
+    // responseFromMasterFuture is a CompletableFuture, and PartitionTransferPeer#fetch returns a CompletableFuture.
+    // Using thenCompose so that fetching partition data starts after getting response from master.
+    return responseFromMasterFuture.thenCompose(responseFromMaster -> {
+      assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
+      final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
+          responseFromMaster.getPartitionLocationInfoMsg();
+      if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
+        throw new PartitionFetchException(new Throwable(
+            "Partition " + partitionId + " not found both in the local storage and the remote storage: The"
+                + "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
+      }
+      // This is the executor id that we wanted to know
+      final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
+      return partitionTransferPeer.fetch(
+          remoteWorkerId, partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal);
+    });
   }
 
   private PartitionStore getPartitionStore(final Attribute partitionStore) {

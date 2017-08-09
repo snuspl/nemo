@@ -62,7 +62,7 @@ final class LocalFileStore extends FileStore {
    * @return the partition if exist, or an empty optional else.
    */
   @Override
-  public CompletableFuture<Optional<Partition>> getPartition(final String partitionId) {
+  public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId) {
     final LocalFilePartition partition = partitionIdToData.get(partitionId);
     if (partition == null) {
       return CompletableFuture.completedFuture(Optional.empty());
@@ -83,8 +83,8 @@ final class LocalFileStore extends FileStore {
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int startInclusiveHashVal,
-                                                                          final int endExclusiveHashVal) {
+                                                                          final int hashRangeStartVal,
+                                                                          final int hashRangeEndVal) {
     // Deserialize the target data in the corresponding file and pass it as a local data.
     final LocalFilePartition partition = partitionIdToData.get(partitionId);
     if (partition == null) {
@@ -93,7 +93,7 @@ final class LocalFileStore extends FileStore {
     final Supplier<Optional<Partition>> supplier = () -> {
       try {
         return Optional.of(
-            new MemoryPartition(partition.retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+            new MemoryPartition(partition.retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }

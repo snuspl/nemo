@@ -50,10 +50,10 @@ final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#getPartition(String).
+   * @see PartitionStore#retrieveDataFromPartition(String).
    */
   @Override
-  public CompletableFuture<Optional<Partition>> getPartition(final String partitionId) {
+  public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId) {
     final Iterable<Element> partitionData = partitionIdToData.get(partitionId);
     final Iterable<Iterable<Element>> blockedPartitionData = partitionDataInBlocks.get(partitionId);
 
@@ -73,22 +73,22 @@ final class MemoryStore implements PartitionStore {
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int startInclusiveHashVal,
-                                                                          final int endExclusiveHashVal) {
+                                                                          final int hashRangeStartVal,
+                                                                          final int hashRangeEndVal) {
     final CompletableFuture<Optional<Partition>> future = new CompletableFuture<>();
     final Iterable<Iterable<Element>> blocks = partitionDataInBlocks.get(partitionId);
 
     if (blocks != null) {
       // Retrieves data in the hash range from the target partition
-      final List<Iterable<Element>> retrievedData = new ArrayList<>(endExclusiveHashVal - startInclusiveHashVal);
+      final List<Iterable<Element>> retrievedData = new ArrayList<>(hashRangeEndVal - hashRangeStartVal);
       final Iterator<Iterable<Element>> iterator = blocks.iterator();
-      IntStream.range(0, endExclusiveHashVal).forEach(hashVal -> {
+      IntStream.range(0, hashRangeEndVal).forEach(hashVal -> {
         // We cannot start from the startInclusiveHashVal because `blocks` is an iterable.
         if (!iterator.hasNext()) {
           future.completeExceptionally(new PartitionFetchException(
               new Throwable("Illegal hash range. There are only " + hashVal + " blocks in this partition.")));
         }
-        if (hashVal < startInclusiveHashVal) {
+        if (hashVal < hashRangeStartVal) {
           iterator.next();
         } else {
           retrievedData.add(iterator.next());

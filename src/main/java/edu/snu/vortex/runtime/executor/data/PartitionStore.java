@@ -27,27 +27,27 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface PartitionStore {
   /**
-   * Retrieves a partition of data.
+   * Retrieves whole data from a partition.
    * @param partitionId of the partition.
    * @return the partition if exist, or an empty optional else.
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          if the partition exists but it was unable to get the partition.)
    */
-  CompletableFuture<Optional<Partition>> getPartition(String partitionId);
+  CompletableFuture<Optional<Partition>> retrieveDataFromPartition(String partitionId);
 
   /**
    * Retrieves data in a specific hash range from a partition.
    * The result data will be treated as another partition.
    * @param partitionId of the target partition.
-   * @param startInclusiveHashVal of the hash range.
-   * @param endExclusiveHashVal of the hash range.
+   * @param hashRangeStartVal of the hash range (included in the range).
+   * @param hashRangeEndVal of the hash range (excluded from the range).
    * @return the result data as a new partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
    */
   CompletableFuture<Optional<Partition>> retrieveDataFromPartition(String partitionId,
-                                                                   int startInclusiveHashVal,
-                                                                   int endExclusiveHashVal);
+                                                                   int hashRangeStartVal,
+                                                                   int hashRangeEndVal);
 
   /**
    * Saves data as a partition.

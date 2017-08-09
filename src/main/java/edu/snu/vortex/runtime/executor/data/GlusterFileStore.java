@@ -61,7 +61,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
    * @return the partition if exist, or an empty optional else.
    */
   @Override
-  public CompletableFuture<Optional<Partition>> getPartition(final String partitionId) {
+  public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId) {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
@@ -85,8 +85,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int startInclusiveHashVal,
-                                                                          final int endExclusiveHashVal) {
+                                                                          final int hashRangeStartVal,
+                                                                          final int hashRangeEndVal) {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
@@ -95,7 +95,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
             GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
         if (partition.isPresent()) {
           return Optional.of(new MemoryPartition(
-              partition.get().retrieveInHashRange(startInclusiveHashVal, endExclusiveHashVal)));
+              partition.get().retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
         } else {
           return Optional.empty();
         }
