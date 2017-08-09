@@ -48,29 +48,26 @@ public final class DataTransferFactory {
    * Creates an {@link InputReader} between two stages.
    *
    * @param dstTask          the {@link Task} that takes the input data.
-   * @param dstTaskGroupId   the id of the task group that the destination task resides.
    * @param srcRuntimeVertex the {@link IRVertex} that output the data to be read.
    * @param runtimeEdge      that connects the tasks belonging to srcRuntimeVertex to dstTask.
    * @return the {@link InputReader} created.
    */
   public InputReader createReader(final Task dstTask,
-                                  final String dstTaskGroupId,
                                   final IRVertex srcRuntimeVertex,
                                   final RuntimeEdge runtimeEdge) {
-    return new InputReader(dstTask.getIndex(), dstTaskGroupId, srcRuntimeVertex, runtimeEdge, partitionManagerWorker);
+    return new InputReader(
+        dstTask.getIndex(), dstTask.getTaskGroupId(), srcRuntimeVertex, runtimeEdge, partitionManagerWorker);
   }
 
   /**
    * Creates a local {@link InputReader} between two task in a single task group.
    *
    * @param dstTask          the {@link Task} that takes the input data.
-   * @param dstTaskGroupId   the id of the task group that the destination task resides.
    * @param runtimeEdge      that connects the tasks belonging to srcRuntimeVertex to dstTask.
    * @return the {@link InputReader} created.
    */
   public InputReader createLocalReader(final Task dstTask,
-                                       final String dstTaskGroupId,
                                        final RuntimeEdge runtimeEdge) {
-    return createReader(dstTask, dstTaskGroupId, null, runtimeEdge);
+    return createReader(dstTask, null, runtimeEdge);
   }
 }

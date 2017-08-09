@@ -99,7 +99,7 @@ public final class TaskGroupExecutor {
 
       inEdgesFromOtherStages.forEach(physicalStageEdge -> {
         final InputReader inputReader = channelFactory.createReader(
-            task, taskGroup.getTaskGroupId(), physicalStageEdge.getSrcVertex(), physicalStageEdge);
+            task, physicalStageEdge.getSrcVertex(), physicalStageEdge);
         addInputReader(task, inputReader);
       });
 
@@ -132,7 +132,7 @@ public final class TaskGroupExecutor {
 
   // Helper functions to initializes stage-internal edges.
   private void createLocalReader(final Task task, final RuntimeEdge<Task> internalEdge) {
-    final InputReader inputReader = channelFactory.createLocalReader(task, taskGroup.getTaskGroupId(), internalEdge);
+    final InputReader inputReader = channelFactory.createLocalReader(task, internalEdge);
     addInputReader(task, inputReader);
   }
 

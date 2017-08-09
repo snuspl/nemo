@@ -134,7 +134,7 @@ public final class InputReader extends DataTransfer {
   /**
    * Read data in the assigned range of hash value.
    * Constraint: If a partition is written by {@link OutputWriter#sortAndWrite(Iterable)},
-   * it have to be read by this method.
+   * it must be read using this method.
    *
    * @return the list of the completable future of the data.
    */
