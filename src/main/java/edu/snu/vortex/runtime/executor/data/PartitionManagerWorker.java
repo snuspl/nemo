@@ -252,11 +252,11 @@ public final class PartitionManagerWorker {
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the data from a remote worker.
    *
-   * @param partitionId           of the partition.
-   * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
-   * @param partitionStore        for the data storage.
-   * @param hashRangeStartVal     of the hash range (included in the range).
-   * @param hashRangeEndVal       of the hash range (excluded from the range).
+   * @param partitionId       of the partition.
+   * @param runtimeEdgeId     id of the runtime edge that corresponds to the partition.
+   * @param partitionStore    for the data storage.
+   * @param hashRangeStartVal of the hash range (included in the range).
+   * @param hashRangeEndVal   of the hash range (excluded from the range).
    * @return a {@link CompletableFuture} for the partition.
    */
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
@@ -292,11 +292,11 @@ public final class PartitionManagerWorker {
    * Requests data in a specific hash value range from a partition which resides in a remote worker asynchronously.
    * If the hash value range is [0, int.max), it will retrieve the whole data from the partition.
    *
-   * @param partitionId           of the partition.
-   * @param runtimeEdgeId         id of the runtime edge that corresponds to the partition.
-   * @param partitionStore        for the data storage.
-   * @param hashRangeStartVal     of the hash range (included in the range).
-   * @param hashRangeEndVal       of the hash range (excluded from the range).
+   * @param partitionId       of the partition.
+   * @param runtimeEdgeId     id of the runtime edge that corresponds to the partition.
+   * @param partitionStore    for the data storage.
+   * @param hashRangeStartVal of the hash range (included in the range).
+   * @param hashRangeEndVal   of the hash range (excluded from the range).
    * @return the {@link CompletableFuture} of the partition.
    */
   private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
