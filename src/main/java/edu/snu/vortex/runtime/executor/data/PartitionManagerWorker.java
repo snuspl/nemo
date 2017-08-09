@@ -220,7 +220,7 @@ public final class PartitionManagerWorker {
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore) {
-    LOG.info("retrieveDataFromPartition: {0}", partitionId);
+    LOG.info("retrieveDataFromPartition: {}", partitionId);
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
 
     final PartitionStore store = getPartitionStore(partitionStore);
@@ -260,7 +260,7 @@ public final class PartitionManagerWorker {
                                                                         final Attribute partitionStore,
                                                                         final int hashRangeStartVal,
                                                                         final int hashRangeEndVal) {
-    LOG.info("retrieveDataFromPartition: {0}", partitionId);
+    LOG.info("retrieveDataFromPartition: {}", partitionId);
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
 
     final PartitionStore store = getPartitionStore(partitionStore);
