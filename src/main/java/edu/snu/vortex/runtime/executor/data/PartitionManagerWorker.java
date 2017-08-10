@@ -113,7 +113,7 @@ public final class PartitionManagerWorker {
     try {
       exist = store.removePartition(partitionId).get();
     } catch (final InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
+      throw new PartitionFetchException(e);
     }
 
     if (exist) {
@@ -224,7 +224,11 @@ public final class PartitionManagerWorker {
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
 
     final PartitionStore store = getPartitionStore(partitionStore);
+
+    // First, try to fetch the partition from local PartitionStore.
+    // If it doesn't have the partition, this future will be completed to Optional.empty()
     final CompletableFuture<Optional<Partition>> localPartition = store.retrieveDataFromPartition(partitionId);
+
     localPartition.thenAccept(optionalPartition -> {
       if (optionalPartition.isPresent()) {
         // Partition resides in this evaluator!
