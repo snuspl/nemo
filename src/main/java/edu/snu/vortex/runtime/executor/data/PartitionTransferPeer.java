@@ -23,7 +23,6 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.ReplyFutureMap;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
-import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
@@ -50,7 +49,10 @@ import javax.inject.Inject;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,11 +250,6 @@ final class PartitionTransferPeer {
       }
 
       partitionFuture.thenAcceptAsync(partition -> {
-        try {
-          partitionFuture.get();
-        } catch (final ExecutionException | InterruptedException e) {
-          throw new PartitionFetchException(e);
-        }
         // TODO #299: Separate Serialization from Here
         // At now, we do unneeded deserialization and serialization for already serialized data.
         int numOfElements = 0;
