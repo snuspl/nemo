@@ -31,9 +31,9 @@ import java.util.Optional;
 /**
  * This class implements the {@link Partition} which is stored in a GlusterFS volume.
  * Because the data is stored in a remote file and globally accessed by multiple nodes,
- * each access (create - write - close, read, or deletion) for a file needs one instance of this partition,
- * and has to be judiciously synchronized with the {@link FileLock}.
- * To be specific, writing and deleting whole partition have to be done atomically and not interrupted by read.
+ * each access (create - write - close, read, or deletion) for a file needs one instance of this partition.
+ * It supports concurrent write for a single file, but each writer has to have separate instance of this class.
+ * These accesses are judiciously synchronized with the {@link FileLock} in here.
  */
 public final class GlusterFilePartition implements FilePartition {
 
@@ -51,6 +51,7 @@ public final class GlusterFilePartition implements FilePartition {
    * /       Hashed         /
    * ........................
    * /     hash value       /
+   * /       offset         /
    * /     Block size       /
    * /    # of elements     /
    * ........................
@@ -59,6 +60,7 @@ public final class GlusterFilePartition implements FilePartition {
    * /          .           /
    * ........................
    * /     hash value       /
+   * /       offset         /
    * /     Block size       /
    * /    # of elements     /
    * ////////////////////////
@@ -70,8 +72,8 @@ public final class GlusterFilePartition implements FilePartition {
   private FileOutputStream metaFileOutputStream;
   private DataOutputStream metaFilePrimOutputStream; // The stream to store primitive values to the metadata file.
 
-  // hash value (int) + length (int) + # of elements (long) = 16 bytes.
-  private static int blockMetadataSize = 16;
+  // hash value (int) + length (int) + # of elements (long) + offset (long) = 24 bytes.
+  private static int blockMetadataSize = 24;
 
   /**
    * Constructs a gluster file partition.
@@ -154,6 +156,7 @@ public final class GlusterFilePartition implements FilePartition {
     }
     // Store the block information to the metadata file.
     metaFilePrimOutputStream.writeInt(hashVal); // The offset of this block.
+    metaFilePrimOutputStream.writeLong(dataFileChannel.position()); // Current data file position.
     metaFilePrimOutputStream.writeInt(serializedData.length); // The block size.
     metaFilePrimOutputStream.writeLong(numElement); // The number of elements in this block.
 
@@ -248,6 +251,10 @@ public final class GlusterFilePartition implements FilePartition {
 
       while (metaFileInputStream.available() > 0) {
         final int hashVal = metaFilePrimInputStream.readInt();
+        final int skippedOffsetBytes = metaFilePrimInputStream.skipBytes(8); // Skip the offset metadata.
+        if (skippedOffsetBytes != 8) {
+          throw new IOException("The metadata input stream cannot skip the \"offset\" metadata.");
+        }
         final int serializedDataLength = metaFilePrimInputStream.readInt();
         final long numElements = metaFilePrimInputStream.readLong();
         if (hashVal >= hashRangeStartVal && hashVal < hashRangeEndVal) {
@@ -289,10 +296,10 @@ public final class GlusterFilePartition implements FilePartition {
       }
 
       while (metaFileInputStream.available() > 0) {
-        final int bytesToSkip = 4; // hash value (int) -> 4 bytes.
+        final int bytesToSkip = 12; // hash value (int) + offset (long) -> 12 bytes.
         final int skippedOffset = metaFilePrimInputStream.skipBytes(bytesToSkip);
         if (skippedOffset != bytesToSkip) {
-          throw new IOException("The input stream cannot skipped the \"hash value\" metadata.");
+          throw new IOException("The metadata input stream cannot skip the \"hash value\" and \"offset\" metadata.");
         }
         final int serializedDataLength = metaFilePrimInputStream.readInt();
         final long numElements = metaFilePrimInputStream.readLong();

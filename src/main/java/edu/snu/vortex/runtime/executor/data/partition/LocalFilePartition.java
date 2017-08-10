@@ -89,9 +89,9 @@ public final class LocalFilePartition implements FilePartition {
    * @see FilePartition#writeBlock(byte[], long, int).
    */
   @Override
-  public void writeBlock(final byte[] serializedData,
-                         final long numElement,
-                         final int hashVal) throws IOException {
+  public synchronized void writeBlock(final byte[] serializedData,
+                                      final long numElement,
+                                      final int hashVal) throws IOException {
     if (!opened.get()) {
       throw new IOException("Trying to write a block in a partition that has not been opened for write.");
     }
