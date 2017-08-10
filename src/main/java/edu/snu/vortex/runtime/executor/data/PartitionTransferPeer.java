@@ -248,6 +248,11 @@ final class PartitionTransferPeer {
       }
 
       partitionFuture.thenAcceptAsync(partition -> {
+        try {
+          partitionFuture.get();
+        } catch (final ExecutionException | InterruptedException e) {
+          throw new PartitionFetchException(e);
+        }
         // TODO #299: Separate Serialization from Here
         // At now, we do unneeded deserialization and serialization for already serialized data.
         int numOfElements = 0;
