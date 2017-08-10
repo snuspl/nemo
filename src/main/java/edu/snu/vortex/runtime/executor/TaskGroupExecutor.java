@@ -36,6 +36,7 @@ import edu.snu.vortex.common.dag.DAG;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
@@ -242,16 +243,20 @@ public final class TaskGroupExecutor {
         .stream()
         .filter(InputReader::isSideInputReader)
         .forEach(inputReader -> {
-          final Object sideInput = inputReader.getSideInput();
-          final RuntimeEdge inEdge = inputReader.getRuntimeEdge();
-          final Transform srcTransform;
-          if (inEdge instanceof PhysicalStageEdge) {
-            srcTransform = ((OperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
-                .getTransform();
-          } else {
-            srcTransform = ((OperatorTask) inEdge.getSrc()).getTransform();
+          try {
+            final Object sideInput = inputReader.getSideInput().get();
+            final RuntimeEdge inEdge = inputReader.getRuntimeEdge();
+            final Transform srcTransform;
+            if (inEdge instanceof PhysicalStageEdge) {
+              srcTransform = ((OperatorVertex) ((PhysicalStageEdge) inEdge).getSrcVertex())
+                  .getTransform();
+            } else {
+              srcTransform = ((OperatorTask) inEdge.getSrc()).getTransform();
+            }
+            sideInputMap.put(srcTransform, sideInput);
+          } catch (final ExecutionException | InterruptedException e) {
+            throw new PartitionFetchException(e);
           }
-          sideInputMap.put(srcTransform, sideInput);
         });
 
     final Transform.Context transformContext = new ContextImpl(sideInputMap);
@@ -262,7 +267,7 @@ public final class TaskGroupExecutor {
 
     // Check for non-side inputs
     // This blocking queue contains the pairs having data and source vertex ids.
-    final BlockingQueue<Pair<Iterable<Element>, String>> dataQueue = new LinkedBlockingQueue<>();
+    final List<Pair<CompletableFuture<Iterable<Element>>, String>> dataFutures = new ArrayList<>();
     final AtomicInteger sourceParallelism = new AtomicInteger(0);
     taskIdToInputReaderMap.get(operatorTask.getId())
         .stream()
@@ -272,16 +277,17 @@ public final class TaskGroupExecutor {
           final String srcVtxId = inputReader.getSrcVertexId();
           sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           // Add consumers which will push the data to the data queue when it ready to the futures.
-          futures.forEach(compFuture -> compFuture.thenAccept(data -> dataQueue.add(Pair.of(data, srcVtxId))));
+          futures.forEach(compFuture -> dataFutures.add(Pair.of(compFuture, srcVtxId)));
         });
 
     // Consumes all of the partitions from incoming edges.
     IntStream.range(0, sourceParallelism.get()).forEach(srcTaskNum -> {
       try {
-        // Because the data queue is a blocking queue, we may need to wait some available data to be pushed.
-        final Pair<Iterable<Element>, String> availableData = dataQueue.take();
-        transform.onData(availableData.left(), availableData.right());
-      } catch (final InterruptedException e) {
+        // We may need to wait some available data to be pushed.
+        final String srcVtxId = dataFutures.get(srcTaskNum).right();
+        final Iterable<Element> availableData = dataFutures.get(srcTaskNum).left().get();
+        transform.onData(availableData, srcVtxId);
+      } catch (final ExecutionException | InterruptedException e) {
         throw new PartitionFetchException(e);
       }
     });
