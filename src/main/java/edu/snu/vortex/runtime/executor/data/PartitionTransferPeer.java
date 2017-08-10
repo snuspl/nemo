@@ -23,7 +23,6 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.ReplyFutureMap;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
-import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
