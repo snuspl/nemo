@@ -89,7 +89,7 @@ final class PartitionTransferPeer {
     this.requestIdToCoder = new ConcurrentHashMap<>();
     this.replyFutureMap = new ReplyFutureMap<>();
 
-    transport = createTransport(localAddressProvider.getLocalAddress(),
+    this.transport = createTransport(localAddressProvider.getLocalAddress(),
         partitionClientHandler, partitionServerHandler, exceptionHandler, numClientThreads);
 
     final InetSocketAddress serverAddress = (InetSocketAddress) transport.getLocalAddress();
