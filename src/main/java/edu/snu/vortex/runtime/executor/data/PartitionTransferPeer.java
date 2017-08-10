@@ -216,12 +216,16 @@ final class PartitionTransferPeer {
     private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
     private final ExecutorService serverExecutorService;
 
+    /**
+     * @param partitionManagerWorker {@link PartitionManagerWorker} instance.
+     * @param numServerSerThreads The number of threads, responsible for serialization.
+     */
     @Inject
     private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
                                    @Parameter(JobConf.PartitionTransferServerNumThreads.class)
-                                   final int numServerThreads) {
+                                   final int numServerSerThreads) {
       this.partitionManagerWorker = partitionManagerWorker;
-      this.serverExecutorService = Executors.newFixedThreadPool(numServerThreads);
+      this.serverExecutorService = Executors.newFixedThreadPool(numServerSerThreads);
     }
 
     @Override
