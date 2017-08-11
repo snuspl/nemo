@@ -180,7 +180,7 @@ public final class PartitionManagerWorker {
                                  final String srcIRVertexId,
                                  final Iterable<Iterable<Element>> hashedData,
                                  final Attribute partitionStore) {
-    LOG.info("PutSortedPartition: {}", partitionId);
+    LOG.info("PutHashedPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final Iterable<Long> blockSizeInfo;
 

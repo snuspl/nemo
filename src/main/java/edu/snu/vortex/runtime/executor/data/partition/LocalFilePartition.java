@@ -17,6 +17,8 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
+import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -25,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class implements the {@link FilePartition} which is stored in a local file.
@@ -36,42 +37,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LocalFilePartition implements FilePartition {
 
-  private final AtomicBoolean opened;
-  private final AtomicBoolean written;
   private final Coder coder;
   private final String filePath;
-  private final List<BlockInfo> blockInfoList;
   private FileOutputStream fileOutputStream;
   private FileChannel fileChannel;
-  private final boolean hashed; // Whether each block in this partition has a single hash value or not.
+  private FileMetadata metadata;
 
   /**
    * Constructs a local file partition.
+   * Corresponding {@link LocalFilePartition#finishWrite()} is required.
    *
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
-   * @param hashed   whether each block in this partition has a single hash value or not.
+   * @throws IOException if fail to open this partition to write.
    */
   public LocalFilePartition(final Coder coder,
                             final String filePath,
-                            final boolean hashed) {
+                            final FileMetadata metadata) throws IOException {
     this.coder = coder;
     this.filePath = filePath;
-    this.hashed = hashed;
-    opened = new AtomicBoolean(false);
-    written = new AtomicBoolean(false);
-    blockInfoList = new ArrayList<>();
-  }
-
-  /**
-   * Opens partition for writing. The corresponding {@link LocalFilePartition#finishWrite()} is required.
-   *
-   * @throws IOException if fail to open this partition.
-   */
-  public void openPartitionForWrite() throws IOException {
-    if (opened.getAndSet(true)) {
-      throw new IOException("Trying to re-open a partition for write");
-    }
+    this.metadata = metadata;
     fileOutputStream = new FileOutputStream(filePath, true);
     fileChannel = fileOutputStream.getChannel();
   }
@@ -92,10 +77,7 @@ public final class LocalFilePartition implements FilePartition {
   public synchronized void writeBlock(final byte[] serializedData,
                                       final long numElement,
                                       final int hashVal) throws IOException {
-    if (!opened.get()) {
-      throw new IOException("Trying to write a block in a partition that has not been opened for write.");
-    }
-    blockInfoList.add(new BlockInfo(serializedData.length, numElement, hashVal));
+    metadata.appendBlockMetadata(hashVal, serializedData.length, numElement);
 
     // Wrap the given serialized data (but not copy it)
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
@@ -110,10 +92,7 @@ public final class LocalFilePartition implements FilePartition {
    * @throws IOException if fail to close.
    */
   public void finishWrite() throws IOException {
-    if (!opened.get()) {
-      throw new IOException("Trying to finish writing a partition that has not been opened for write.");
-    }
-    if (written.getAndSet(true)) {
+    if (metadata.getAndSetWritten()) {
       throw new IOException("Trying to finish writing that has been already finished.");
     }
     this.close();
@@ -140,9 +119,10 @@ public final class LocalFilePartition implements FilePartition {
    */
   @Override
   public void deleteFile() throws IOException {
-    if (!written.get()) {
+    if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
     }
+    metadata.deleteMetadata();
     Files.delete(Paths.get(filePath));
   }
 
@@ -153,23 +133,23 @@ public final class LocalFilePartition implements FilePartition {
   public Iterable<Element> retrieveInHashRange(final int hashRangeStartVal,
                                                final int hashRangeEndVal) throws IOException {
     // Check whether this partition is fully written and sorted by the hash value.
-    if (!written.get()) {
+    if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
-    } else if (!hashed) {
+    } else if (!metadata.isHashed()) {
       throw new IOException("The blocks in this partition are not hashed.");
     }
 
     // Deserialize the data
     final ArrayList<Element> deserializedData = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      for (final BlockInfo blockInfo : blockInfoList) {
-        final int hashVal = blockInfo.getHashVal();
+      for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
+        final int hashVal = blockMetadata.getHashValue();
         if (hashVal >= hashRangeStartVal && hashVal < hashRangeEndVal) {
           // The hash value of this block is in the range.
-          deserializeBlock(blockInfo, fileStream, deserializedData);
+          deserializeBlock(blockMetadata, fileStream, deserializedData);
         } else {
           // Have to skip this block.
-          final long bytesToSkip = blockInfo.getBlockSize();
+          final long bytesToSkip = blockMetadata.getBlockSize();
           final long skippedBytes = fileStream.skip(bytesToSkip);
           if (skippedBytes != bytesToSkip) {
             throw new IOException("The file stream failed to skip to the next block.");
@@ -190,14 +170,14 @@ public final class LocalFilePartition implements FilePartition {
   @Override
   public Iterable<Element> asIterable() throws IOException {
     // Read file synchronously
-    if (!written.get()) {
+    if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
     }
 
     // Deserialize the data
     final ArrayList<Element> deserializedData = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      blockInfoList.forEach(blockInfo -> {
+      metadata.getBlockMetadataList().forEach(blockInfo -> {
         deserializeBlock(blockInfo, fileStream, deserializedData);
       });
     }
@@ -208,51 +188,22 @@ public final class LocalFilePartition implements FilePartition {
   /**
    * Reads and deserializes a block.
    *
-   * @param blockInfo        the block information.
+   * @param blockMetadata    the block metadata.
    * @param fileInputStream  the stream contains the actual data.
    * @param deserializedData the list of elements to put the deserialized data.
    * @throws IOException if fail to read and deserialize.
    */
-  private void deserializeBlock(final BlockInfo blockInfo,
+  private void deserializeBlock(final BlockMetadata blockMetadata,
                                 final FileInputStream fileInputStream,
                                 final List<Element> deserializedData) {
-    final int size = blockInfo.getBlockSize();
-    final long numElements = blockInfo.getNumElements();
+    final int size = blockMetadata.getBlockSize();
+    final long numElements = blockMetadata.getNumElements();
     if (size != 0) {
       // This stream will be not closed, but it is okay as long as the file stream is closed well.
       final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream, size);
       for (int i = 0; i < numElements; i++) {
         deserializedData.add(coder.decode(bufferedInputStream));
       }
-    }
-  }
-
-  /**
-   * This class represents the block information.
-   */
-  private final class BlockInfo {
-    private final int blockSize;
-    private final long numElements;
-    private final int hashVal;
-
-    private BlockInfo(final int blockSize,
-                      final long numElements,
-                      final int hashVal) {
-      this.blockSize = blockSize;
-      this.numElements = numElements;
-      this.hashVal = hashVal;
-    }
-
-    private int getBlockSize() {
-      return blockSize;
-    }
-
-    private long getNumElements() {
-      return numElements;
-    }
-
-    private int getHashVal() {
-      return hashVal;
     }
   }
 }

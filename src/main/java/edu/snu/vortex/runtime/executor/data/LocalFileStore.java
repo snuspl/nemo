@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.data.metadata.LocalFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -113,16 +114,16 @@ final class LocalFileStore extends FileStore {
                                                               final Iterable<Element> data) {
     final Supplier<Optional<Long>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
+      final LocalFileMetadata metadata = new LocalFileMetadata(false);
 
       try (final LocalFilePartition partition =
-               new LocalFilePartition(coder, partitionIdToFileName(partitionId), false)) {
+               new LocalFilePartition(coder, partitionIdToFileName(partitionId), metadata)) {
         final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
         if (previousPartition != null) {
           throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
         }
 
         // Serialize and write the given data into blocks
-        partition.openPartitionForWrite();
         final long partitionSize = divideAndPutData(coder, partition, data);
         partition.finishWrite();
         return Optional.of(partitionSize);
@@ -147,16 +148,16 @@ final class LocalFileStore extends FileStore {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
+      final LocalFileMetadata metadata = new LocalFileMetadata(true);
 
       try (final LocalFilePartition partition =
-               new LocalFilePartition(coder, partitionIdToFileName(partitionId), true)) {
+               new LocalFilePartition(coder, partitionIdToFileName(partitionId), metadata)) {
         final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
         if (previousPartition != null) {
           throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
         }
 
         // Serialize and write the given data into blocks
-        partition.openPartitionForWrite();
         blockSizeList = putHashedData(coder, partition, hashedData);
         partition.finishWrite();
       } catch (final IOException e) {
