@@ -117,7 +117,7 @@ final class LocalFileStore extends FileStore {
       final LocalFileMetadata metadata = new LocalFileMetadata(false);
 
       try (final LocalFilePartition partition =
-               new LocalFilePartition(coder, partitionIdToFileName(partitionId), metadata)) {
+               new LocalFilePartition(coder, partitionIdToFilePath(partitionId), metadata)) {
         final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
         if (previousPartition != null) {
           throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));
@@ -151,7 +151,7 @@ final class LocalFileStore extends FileStore {
       final LocalFileMetadata metadata = new LocalFileMetadata(true);
 
       try (final LocalFilePartition partition =
-               new LocalFilePartition(coder, partitionIdToFileName(partitionId), metadata)) {
+               new LocalFilePartition(coder, partitionIdToFilePath(partitionId), metadata)) {
         final Partition previousPartition = partitionIdToData.putIfAbsent(partitionId, partition);
         if (previousPartition != null) {
           throw new PartitionWriteException(new Throwable("Trying to overwrite an existing partition"));

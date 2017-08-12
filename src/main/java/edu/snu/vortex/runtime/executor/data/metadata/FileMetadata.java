@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,10 +25,9 @@ import java.util.List;
  */
 public abstract class FileMetadata {
 
-  private boolean hashed; // Each block in the corresponding partition has a single hash value or not.
-  private List<BlockMetadata> blockMetadataList;
-  protected long position; // How many bytes are (at least, logically) written in the file.
-
+  private final boolean hashed; // Each block in the corresponding partition has a single hash value or not.
+  private final List<BlockMetadata> blockMetadataList;
+  private long position; // How many bytes are (at least, logically) written in the file.
 
   protected FileMetadata(final boolean hashed) {
     this(hashed, new LinkedList<>());
@@ -41,9 +41,9 @@ public abstract class FileMetadata {
 
   /**
    * Appends a metadata for a block.
-   * It does not do any synchronization, so this change will valid in local only.
+   * This method is not designed for concurrent write.
+   * Therefore, it does not do any synchronization and this change will valid in local only.
    * Further synchronization will be done in {@link FileMetadata#getAndSetWritten()} if needed.
-   * Also, this method is not designed for concurrent write.
    *
    * @param hashValue   of the block.
    * @param blockSize   of the block.
@@ -77,8 +77,9 @@ public abstract class FileMetadata {
    * This method synchronizes all changes if needed.
    *
    * @return {@code true} if already set, or {@code false} if not.
+   * @throws IOException if fail to finish the write.
    */
-  public abstract boolean getAndSetWritten();
+  public abstract boolean getAndSetWritten() throws IOException;
 
   /**
    * Gets whether each block in the corresponding partition has a single hash value or not.
@@ -91,6 +92,7 @@ public abstract class FileMetadata {
 
   /**
    * Deletes the metadata.
+   * @throws IOException if fail to delete.
    */
-  public abstract void deleteMetadata();
+  public abstract void deleteMetadata() throws IOException;
 }

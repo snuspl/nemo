@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.data.metadata.RemoteFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.GlusterFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
@@ -65,9 +66,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
+      final String filePath = partitionIdToFilePath(partitionId);
       try {
+        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
         final Optional<GlusterFilePartition> partition =
-            GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
+            GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
           return Optional.of(new MemoryPartition(partition.get().asIterable()));
         } else {
@@ -90,9 +93,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
+      final String filePath = partitionIdToFilePath(partitionId);
       try {
+        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
         final Optional<GlusterFilePartition> partition =
-            GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
+            GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
           return Optional.of(new MemoryPartition(
               partition.get().retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
@@ -118,9 +123,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
                                                               final Iterable<Element> data) {
     final Supplier<Optional<Long>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
+      final String filePath = partitionIdToFilePath(partitionId);
+      final RemoteFileMetadata metadata = RemoteFileMetadata.create(filePath, false);
 
       try (final GlusterFilePartition partition =
-               GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), false)) {
+               GlusterFilePartition.create(coder, filePath, metadata)) {
         // Serialize and write the given data into blocks
         final long partitionSize = divideAndPutData(coder, partition, data);
         partition.finishWrite();
@@ -145,10 +152,12 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final String partitionId, final Iterable<Iterable<Element>> hashedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
+      final String filePath = partitionIdToFilePath(partitionId);
       final List<Long> blockSizeList;
+      final RemoteFileMetadata metadata = RemoteFileMetadata.create(filePath, true);
 
       try (final GlusterFilePartition partition =
-               GlusterFilePartition.create(coder, partitionIdToFileName(partitionId), true)) {
+               GlusterFilePartition.create(coder, filePath, metadata)) {
         // Serialize and write the given data into blocks
         blockSizeList = putHashedData(coder, partition, hashedData);
         partition.finishWrite();
@@ -170,9 +179,12 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public CompletableFuture<Boolean> removePartition(final String partitionId) {
     final Supplier<Boolean> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
+      final String filePath = partitionIdToFilePath(partitionId);
+
       try {
+        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
         final Optional<GlusterFilePartition> partition =
-            GlusterFilePartition.open(coder, partitionIdToFileName(partitionId));
+            GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
           partition.get().deleteFile();
           return true;

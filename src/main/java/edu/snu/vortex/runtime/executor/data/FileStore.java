@@ -167,12 +167,12 @@ abstract class FileStore implements PartitionStore {
   }
 
   /**
-   * Converts a partition id to the corresponding file name.
+   * Converts a partition id to the corresponding file path.
    *
    * @param partitionId of the partition
-   * @return the file name of the partition.
+   * @return the file path of the partition.
    */
-  protected String partitionIdToFileName(final String partitionId) {
+  protected String partitionIdToFilePath(final String partitionId) {
     return fileDirectory + "/" + partitionId;
   }
 
