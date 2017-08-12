@@ -131,6 +131,7 @@ abstract class FileStore implements PartitionStore {
       // If there are any remaining data in stream, write it as another block.
       partitionSize += writeBlock(elementsInBlock, outputStream, partition);
     }
+    partition.finishWrite();
 
     return partitionSize;
   }
@@ -163,6 +164,8 @@ abstract class FileStore implements PartitionStore {
 
       outputStream.reset();
     }
+    partition.finishWrite();
+
     return blockSizeList;
   }
 

@@ -60,7 +60,6 @@ import java.util.Optional;
  */
 public final class RemoteFileMetadata extends FileMetadata {
 
-  private final boolean openedToWrite; // Whether this partition is opened for write or not.
   private boolean written; // The whole data for this partition is written or not yet.
   // TODO #404: Introduce metadata server model.
   private final String metaFilePath; // The path of the file that contains the metadata for this partition.
@@ -74,7 +73,6 @@ public final class RemoteFileMetadata extends FileMetadata {
   private RemoteFileMetadata(final boolean hashed,
                              final String metaFilePath) {
     super(hashed);
-    this.openedToWrite = true;
     this.written = false;
     // TODO #404: Introduce metadata server model.
     this.metaFilePath = metaFilePath;
@@ -91,7 +89,6 @@ public final class RemoteFileMetadata extends FileMetadata {
                              final String metaFilePath,
                              final List<BlockMetadata> blockMetadataList) {
     super(hashed, blockMetadataList);
-    this.openedToWrite = false;
     this.written = true;
     // TODO #404: Introduce metadata server model.
     this.metaFilePath = metaFilePath;
@@ -160,15 +157,6 @@ public final class RemoteFileMetadata extends FileMetadata {
   @Override
   public boolean isWritten() {
     return written;
-  }
-
-  /**
-   * Gets whether this file is opened to write or not.
-   *
-   * @return whether this file is opened to write or not.
-   */
-  public boolean isOpenedToWrite() {
-    return openedToWrite;
   }
 
   /**

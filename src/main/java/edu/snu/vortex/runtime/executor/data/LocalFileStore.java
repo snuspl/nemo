@@ -125,7 +125,6 @@ final class LocalFileStore extends FileStore {
 
         // Serialize and write the given data into blocks
         final long partitionSize = divideAndPutData(coder, partition, data);
-        partition.finishWrite();
         return Optional.of(partitionSize);
       } catch (final IOException e) {
         throw new PartitionWriteException(e);
@@ -159,7 +158,6 @@ final class LocalFileStore extends FileStore {
 
         // Serialize and write the given data into blocks
         blockSizeList = putHashedData(coder, partition, hashedData);
-        partition.finishWrite();
       } catch (final IOException e) {
         throw new PartitionWriteException(e);
       }
