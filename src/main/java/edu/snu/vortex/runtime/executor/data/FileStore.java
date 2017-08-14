@@ -31,14 +31,14 @@ import java.util.List;
  */
 abstract class FileStore implements PartitionStore {
 
-  private final int blockSizeInMb;
+  private final int blockSizeInBytes;
   private final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   protected FileStore(final int blockSizeInKb,
                       final String fileDirectory,
                       final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    this.blockSizeInMb = blockSizeInKb * 1000;
+    this.blockSizeInBytes = blockSizeInKb * 1000;
     this.fileDirectory = fileDirectory;
     this.partitionManagerWorker = partitionManagerWorker;
   }
@@ -118,7 +118,7 @@ abstract class FileStore implements PartitionStore {
       coder.encode(element, outputStream);
       elementsInBlock++;
 
-      if (outputStream.size() >= blockSizeInMb) {
+      if (outputStream.size() >= blockSizeInBytes) {
         // If this block is large enough, synchronously append it to the file and reset the buffer
         partitionSize += writeBlock(elementsInBlock, outputStream, partition);
 

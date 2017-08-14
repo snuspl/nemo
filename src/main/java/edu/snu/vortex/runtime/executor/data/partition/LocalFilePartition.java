@@ -35,6 +35,7 @@ public final class LocalFilePartition extends FilePartition {
    *
    * @param coder    the coder used to serialize and deserialize the data of this partition.
    * @param filePath the path of the file which will contain the data of this partition.
+   * @param metadata     the metadata for this partition.
    * @throws IOException if fail to open this partition to write.
    */
   public LocalFilePartition(final Coder coder,

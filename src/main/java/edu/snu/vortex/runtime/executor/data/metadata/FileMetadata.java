@@ -49,9 +49,9 @@ public abstract class FileMetadata {
    * @param blockSize   of the block.
    * @param numElements of the block.
    */
-  public void appendBlockMetadata(final int hashValue,
-                                  final int blockSize,
-                                  final long numElements) {
+  public final void appendBlockMetadata(final int hashValue,
+                                        final int blockSize,
+                                        final long numElements) {
     blockMetadataList.add(new BlockMetadata(hashValue, blockSize, position, numElements));
     position += blockSize;
   }
@@ -61,7 +61,7 @@ public abstract class FileMetadata {
    *
    * @return the list of block metadata.
    */
-  public List<BlockMetadata> getBlockMetadataList() {
+  public final List<BlockMetadata> getBlockMetadataList() {
     return Collections.unmodifiableList(blockMetadataList);
   }
 
@@ -86,7 +86,7 @@ public abstract class FileMetadata {
    *
    * @return whether each block in the corresponding partition has a single hash value or not.
    */
-  public boolean isHashed() {
+  public final boolean isHashed() {
     return hashed;
   }
 

@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * This class represents a metadata for a remote file partition.
@@ -104,8 +103,8 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @param numElements of the block.
    */
   public void reserveBlock(final int hashValue,
-                          final int blockSize,
-                          final long numElements) {
+                           final int blockSize,
+                           final long numElements) {
     // TODO #404: Introduce metadata server model.
     // TODO #355: Support I-file write.
     throw new UnsupportedMethodException("reserveBlock(...) is not supported yet.");
@@ -204,7 +203,7 @@ public final class RemoteFileMetadata extends FileMetadata {
       hashed = metaFilePrimInputStream.readBoolean();
 
       // Read the block metadata.
-      while(metaFileInputStream.available() > 0) {
+      while (metaFileInputStream.available() > 0) {
         blockMetadataList.add(new BlockMetadata(
             metaFilePrimInputStream.readInt(), // Hash value.
             metaFilePrimInputStream.readInt(), // Block size.

@@ -40,7 +40,8 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   private final String filePath;
   private final FileMetadata metadata;
   private FileOutputStream fileOutputStream;
-  protected FileChannel fileChannel;
+  private FileChannel fileChannel;
+  private boolean writable; // Whether this partition is writable or not.
 
   protected FilePartition(final Coder coder,
                           final String filePath,
@@ -48,6 +49,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
     this.coder = coder;
     this.filePath = filePath;
     this.metadata = metadata;
+    this.writable = false;
   }
 
   /**
@@ -55,7 +57,8 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    *
    * @throws IOException if fail to open the file stream.
    */
-  protected void openFileStream() throws IOException {
+  protected final void openFileStream() throws IOException {
+    writable = true;
     this.fileOutputStream = new FileOutputStream(filePath, true);
     this.fileChannel = fileOutputStream.getChannel();
   }
@@ -67,8 +70,8 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    * @param numElement     the number of elements in the serialized data.
    * @throws IOException if fail to write.
    */
-  public void writeBlock(final byte[] serializedData,
-                         final long numElement) throws IOException {
+  public final void writeBlock(final byte[] serializedData,
+                               final long numElement) throws IOException {
     writeBlock(serializedData, numElement, Integer.MIN_VALUE);
   }
 
@@ -81,9 +84,12 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    * @param hashVal        the hash value of this block.
    * @throws IOException if fail to write.
    */
-  public synchronized void writeBlock(final byte[] serializedData,
-                                      final long numElement,
-                                      final int hashVal) throws IOException {
+  public final synchronized void writeBlock(final byte[] serializedData,
+                                            final long numElement,
+                                            final int hashVal) throws IOException {
+    if (!writable) {
+      throw new IOException("This partition is non-writable.");
+    }
     metadata.appendBlockMetadata(hashVal, serializedData.length, numElement);
 
     // Wrap the given serialized data (but not copy it)
@@ -98,9 +104,13 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    *
    * @throws IOException if fail to close.
    */
-  public void finishWrite() throws IOException {
+  public final void finishWrite() throws IOException {
+    if (!writable) {
+      throw new IOException("This partition is non-writable.");
+    }
+    writable = false;
     if (metadata.getAndSetWritten()) {
-      throw new IOException("Trying to finish writing that has been already finished.");
+      throw new IOException("The writing for this partition is already finished.");
     }
     this.close();
   }
@@ -112,7 +122,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    * @throws IOException if fail to close.
    */
   @Override
-  public void close() throws IOException {
+  public final void close() throws IOException {
     if (fileChannel != null) {
       fileChannel.close();
     }
@@ -127,7 +137,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    *
    * @throws IOException if failed to delete.
    */
-  public void deleteFile() throws IOException {
+  public final void deleteFile() throws IOException {
     if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
     }
@@ -143,8 +153,8 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    * @return an iterable of deserialized data.
    * @throws IOException if failed to deserialize.
    */
-  public Iterable<Element> retrieveInHashRange(final int hashRangeStartVal,
-                                               final int hashRangeEndVal) throws IOException {
+  public final Iterable<Element> retrieveInHashRange(final int hashRangeStartVal,
+                                                     final int hashRangeEndVal) throws IOException {
     // Check whether this partition is fully written and sorted by the hash value.
     if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
@@ -178,7 +188,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    * @see Partition#asIterable().
    */
   @Override
-  public Iterable<Element> asIterable() throws IOException {
+  public final Iterable<Element> asIterable() throws IOException {
     // Read file synchronously
     if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
@@ -215,5 +225,9 @@ public abstract class FilePartition implements Partition, AutoCloseable {
         deserializedData.add(coder.decode(bufferedInputStream));
       }
     }
+  }
+
+  protected final FileChannel getFileChannel() {
+    return fileChannel;
   }
 }
