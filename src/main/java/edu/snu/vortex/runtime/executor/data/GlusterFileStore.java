@@ -68,7 +68,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
+        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
@@ -95,7 +95,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
+        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
@@ -180,7 +180,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final String filePath = partitionIdToFilePath(partitionId);
 
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.open(filePath);
+        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {

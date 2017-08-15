@@ -138,7 +138,7 @@ abstract class FileStore implements PartitionStore {
 
   /**
    * Serializes and puts the data to a file partition.
-   * Each block in this data has a single hash value.
+   * The data consists of multiple blocks and each block has a single value.
    *
    * @param coder      the coder used to serialize the data of this partition.
    * @param partition  to store this data.

@@ -180,15 +180,17 @@ public final class RemoteFileMetadata extends FileMetadata {
   }
 
   /**
-   * Opens the corresponding file metadata for a partition in the remote storage to read.
+   * Gets the corresponding file metadata for a partition in the remote storage to read.
+   * It will communicates with the metadata server to get the metadata.
    *
    * @param filePath the path of the file which will contain the actual data.
    * @return the read file metadata.
    * @throws IOException if fail to read the metadata.
    */
-  public static RemoteFileMetadata open(final String filePath) throws IOException {
+  public static RemoteFileMetadata get(final String filePath) throws IOException {
     final List<BlockMetadata> blockMetadataList = new ArrayList<>();
     final boolean hashed;
+    // TODO #410: Implement metadata caching for the RemoteFileMetadata.
     // TODO #404: Introduce metadata server model.
     final String metaFilePath = filePath + "-metadata";
     try (
