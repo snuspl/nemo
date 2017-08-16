@@ -45,7 +45,6 @@ import java.util.function.BiFunction;
 @ThreadSafe
 @DriverSide
 public final class PendingTaskGroupPriorityQueue {
-  private static final Logger LOG = LoggerFactory.getLogger(PendingTaskGroupPriorityQueue.class.getName());
   private PhysicalPlan physicalPlan;
 
   /**
@@ -86,7 +85,6 @@ public final class PendingTaskGroupPriorityQueue {
             }
           }
         });
-    LOG.info("Enqueue {} success!", scheduledTaskGroup.getTaskGroup().getTaskGroupId());
   }
 
   /**
@@ -97,7 +95,6 @@ public final class PendingTaskGroupPriorityQueue {
   public ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
     ScheduledTaskGroup taskGroupToSchedule = null;
     final String stageId = schedulableStages.takeFirst();
-    LOG.info("{} selected", stageId);
 
     while (taskGroupToSchedule == null) {
       final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
