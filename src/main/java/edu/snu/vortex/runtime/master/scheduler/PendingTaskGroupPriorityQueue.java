@@ -23,6 +23,8 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -30,6 +32,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.BiFunction;
 
 /**
  * Keep tracks of all pending task groups.
@@ -42,6 +45,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 @ThreadSafe
 @DriverSide
 public final class PendingTaskGroupPriorityQueue {
+  private static final Logger LOG = LoggerFactory.getLogger(PendingTaskGroupPriorityQueue.class.getName());
   private PhysicalPlan physicalPlan;
 
   /**
@@ -67,15 +71,22 @@ public final class PendingTaskGroupPriorityQueue {
   public void enqueue(final ScheduledTaskGroup scheduledTaskGroup) {
     final String stageId = scheduledTaskGroup.getTaskGroup().getStageId();
 
-    if (stageIdToPendingTaskGroups.containsKey(stageId)) {
-      stageIdToPendingTaskGroups.get(stageId).addLast(scheduledTaskGroup);
-    } else {
-      final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = new ArrayDeque<>();
-      pendingTaskGroupsForStage.add(scheduledTaskGroup);
-
-      stageIdToPendingTaskGroups.put(stageId, pendingTaskGroupsForStage);
-      updateSchedulableStages(stageId);
-    }
+    stageIdToPendingTaskGroups.compute(stageId,
+        new BiFunction<String, Deque<ScheduledTaskGroup>, Deque<ScheduledTaskGroup>>() {
+          @Override
+          public Deque<ScheduledTaskGroup> apply(final String s, final Deque<ScheduledTaskGroup> scheduledTaskGroups) {
+            if (scheduledTaskGroups == null) {
+              final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = new ArrayDeque<>();
+              pendingTaskGroupsForStage.add(scheduledTaskGroup);
+              updateSchedulableStages(stageId);
+              return pendingTaskGroupsForStage;
+            } else {
+              scheduledTaskGroups.addLast(scheduledTaskGroup);
+              return scheduledTaskGroups;
+            }
+          }
+        });
+    LOG.info("Enqueue {} success!", scheduledTaskGroup.getTaskGroup().getTaskGroupId());
   }
 
   /**
@@ -84,16 +95,25 @@ public final class PendingTaskGroupPriorityQueue {
    * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
   public ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
+    ScheduledTaskGroup taskGroupToSchedule = null;
     final String stageId = schedulableStages.takeFirst();
+    LOG.info("{} selected", stageId);
 
-    final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
-    final ScheduledTaskGroup taskGroupToSchedule = pendingTaskGroupsForStage.poll();
+    while (taskGroupToSchedule == null) {
+      final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
 
-    if (pendingTaskGroupsForStage.isEmpty()) {
-      stageIdToPendingTaskGroups.remove(stageId);
-      stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updateSchedulableStages(scheduledStageId));
-    } else {
-      schedulableStages.addLast(stageId);
+      if (pendingTaskGroupsForStage == null) {
+        schedulableStages.addLast(stageId);
+        taskGroupToSchedule = dequeueNextTaskGroup();
+      } else {
+        taskGroupToSchedule = pendingTaskGroupsForStage.poll();
+        if (pendingTaskGroupsForStage.isEmpty()) {
+          stageIdToPendingTaskGroups.remove(stageId);
+          stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updateSchedulableStages(scheduledStageId));
+        } else {
+          schedulableStages.addLast(stageId);
+        }
+      }
     }
 
     return taskGroupToSchedule;
