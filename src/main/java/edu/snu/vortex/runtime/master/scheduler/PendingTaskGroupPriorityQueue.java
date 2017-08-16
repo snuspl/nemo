@@ -26,10 +26,7 @@ import org.apache.reef.annotations.audience.DriverSide;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 
 /**
@@ -71,14 +68,15 @@ public final class PendingTaskGroupPriorityQueue {
     stageIdToPendingTaskGroups.compute(stageId,
         new BiFunction<String, Deque<ScheduledTaskGroup>, Deque<ScheduledTaskGroup>>() {
           @Override
-          public Deque<ScheduledTaskGroup> apply(final String s, final Deque<ScheduledTaskGroup> scheduledTaskGroups) {
+          public Deque<ScheduledTaskGroup> apply(final String s,
+                                                         final Deque<ScheduledTaskGroup> scheduledTaskGroups) {
             if (scheduledTaskGroups == null) {
               final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = new ArrayDeque<>();
               pendingTaskGroupsForStage.add(scheduledTaskGroup);
               updateSchedulableStages(stageId);
               return pendingTaskGroupsForStage;
             } else {
-              scheduledTaskGroups.addLast(scheduledTaskGroup);
+              scheduledTaskGroups.add(scheduledTaskGroup);
               return scheduledTaskGroups;
             }
           }
@@ -90,28 +88,25 @@ public final class PendingTaskGroupPriorityQueue {
    * @return the next TaskGroup to be scheduled
    * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
-  public ScheduledTaskGroup dequeueNextTaskGroup() throws InterruptedException {
+  public Optional<ScheduledTaskGroup> dequeueNextTaskGroup() throws InterruptedException {
     ScheduledTaskGroup taskGroupToSchedule = null;
     final String stageId = schedulableStages.takeFirst();
 
-    while (taskGroupToSchedule == null) {
-      final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
+    final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
 
-      if (pendingTaskGroupsForStage == null) {
-        schedulableStages.addLast(stageId);
-        taskGroupToSchedule = dequeueNextTaskGroup();
+    if (pendingTaskGroupsForStage == null) {
+      schedulableStages.addLast(stageId);
+    } else {
+      taskGroupToSchedule = pendingTaskGroupsForStage.poll();
+      if (pendingTaskGroupsForStage.isEmpty()) {
+        stageIdToPendingTaskGroups.remove(stageId);
+        stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updateSchedulableStages(scheduledStageId));
       } else {
-        taskGroupToSchedule = pendingTaskGroupsForStage.poll();
-        if (pendingTaskGroupsForStage.isEmpty()) {
-          stageIdToPendingTaskGroups.remove(stageId);
-          stageIdToPendingTaskGroups.keySet().forEach(scheduledStageId -> updateSchedulableStages(scheduledStageId));
-        } else {
-          schedulableStages.addLast(stageId);
-        }
+        schedulableStages.addLast(stageId);
       }
     }
 
-    return taskGroupToSchedule;
+    return (taskGroupToSchedule == null) ? Optional.empty() : Optional.of(taskGroupToSchedule);
   }
 
   /**
