@@ -27,6 +27,7 @@ import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
+import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.function.Supplier;
 /**
  * Stores partitions in a mounted GlusterFS volume.
  */
+@ThreadSafe
 final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   private final ExecutorService executorService;

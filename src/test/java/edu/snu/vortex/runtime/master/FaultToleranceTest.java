@@ -81,7 +81,7 @@ public final class FaultToleranceTest {
     when(containerManager.getFailedExecutorRepresenterMap()).thenReturn(failedExecutorRepresenterMap);
 
     irDAGBuilder = new DAGBuilder<>();
-    partitionManagerMaster = new PartitionManagerMaster();
+    partitionManagerMaster = new PartitionManagerMaster(null);
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     scheduler = new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue);
