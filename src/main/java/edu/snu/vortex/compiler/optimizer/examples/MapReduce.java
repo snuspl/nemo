@@ -46,7 +46,7 @@ public final class MapReduce {
    * @throws Exception Exceptions on the way.
    */
   public static void main(final String[] args) throws Exception {
-    final IRVertex source =  new BoundedSourceVertex<>(new EmptyComponents.EmptyBoundedSource("Source"));
+    final IRVertex source = new BoundedSourceVertex<>(new EmptyComponents.EmptyBoundedSource("Source"));
     final IRVertex map = new OperatorVertex(new EmptyComponents.EmptyTransform("MapVertex"));
     final IRVertex reduce = new OperatorVertex(new DoTransform(null, null));
 

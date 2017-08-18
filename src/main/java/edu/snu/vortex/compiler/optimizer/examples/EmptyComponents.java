@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by wonook on 18/08/2017.
+ * Empty components to mock transform and source, for tests and examples.
  */
 public class EmptyComponents {
 
