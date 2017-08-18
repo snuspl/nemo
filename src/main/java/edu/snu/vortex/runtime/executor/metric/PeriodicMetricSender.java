@@ -47,7 +47,7 @@ public final class PeriodicMetricSender implements MetricSender {
     this.closed = new AtomicBoolean(false);
     this.objectMapper = new ObjectMapper();
     this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-      while (!closed.get()) {
+      while (!closed.get() || !metricMessageQueue.isEmpty()) {
         // Build batched metric messages
         int size = metricMessageQueue.size();
         final ControlMessage.MetricMsg.Builder metricMsgBuilder = ControlMessage.MetricMsg.newBuilder();
