@@ -94,6 +94,9 @@ public final class CompilerTestUtil {
     return beamFrontend.compile(className, arguments);
   }
 
+  /**
+   * An empty bounded source.
+   */
   public static final class EmptyBoundedSource extends BoundedSource {
     private final String name;
 
@@ -102,7 +105,7 @@ public final class CompilerTestUtil {
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
       final StringBuilder sb = new StringBuilder();
       sb.append(super.toString());
       sb.append(", name: ");
@@ -110,11 +113,11 @@ public final class CompilerTestUtil {
       return sb.toString();
     }
 
-    public boolean producesSortedKeys(PipelineOptions options) throws Exception {
+    public boolean producesSortedKeys(final PipelineOptions options) throws Exception {
       throw new UnsupportedOperationException("Empty bounded source");
     }
 
-    public BoundedReader createReader(PipelineOptions options) throws IOException {
+    public BoundedReader createReader(final PipelineOptions options) throws IOException {
       throw new UnsupportedOperationException("Empty bounded source");
     }
 
@@ -123,19 +126,19 @@ public final class CompilerTestUtil {
       return Arrays.asList(this);
     }
 
-    public long getEstimatedSizeBytes(PipelineOptions options) throws Exception {
+    public long getEstimatedSizeBytes(final PipelineOptions options) throws Exception {
       return 1;
     }
 
     public List<? extends BoundedSource> splitIntoBundles(
-        long desiredBundleSizeBytes, PipelineOptions options) throws Exception {
+        final long desiredBundleSizeBytes, final PipelineOptions options) throws Exception {
       return new ArrayList<>();
     }
 
     public void validate() {
     }
 
-    public Coder getDefaultOutputCoder() {
+    public org.apache.beam.sdk.coders.Coder getDefaultOutputCoder() {
       throw new UnsupportedOperationException("Empty bounded source");
     }
   }

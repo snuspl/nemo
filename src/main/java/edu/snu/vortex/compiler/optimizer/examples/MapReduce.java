@@ -16,13 +16,22 @@
 package edu.snu.vortex.compiler.optimizer.examples;
 
 import edu.snu.vortex.common.coder.Coder;
+import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
+import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 
+import org.apache.beam.sdk.io.BoundedSource;
+import org.apache.beam.sdk.options.PipelineOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
@@ -44,9 +53,9 @@ public final class MapReduce {
    * @throws Exception Exceptions on the way.
    */
   public static void main(final String[] args) throws Exception {
-    final IRVertex source = new OperatorVertex(new EmptyTransform("SourceVertex"));
+    final IRVertex source =  new BoundedSourceVertex<>(new EmptyBoundedSource("Source"));
     final IRVertex map = new OperatorVertex(new EmptyTransform("MapVertex"));
-    final IRVertex reduce = new OperatorVertex(new EmptyTransform("ReduceVertex"));
+    final IRVertex reduce = new OperatorVertex(new DoTransform(null, null));
 
     // Before
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
@@ -106,6 +115,55 @@ public final class MapReduce {
 
     @Override
     public void close() {
+    }
+  }
+
+  /**
+   * An empty bounded source.
+   */
+  public static final class EmptyBoundedSource extends BoundedSource {
+    private final String name;
+
+    public EmptyBoundedSource(final String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String toString() {
+      final StringBuilder sb = new StringBuilder();
+      sb.append(super.toString());
+      sb.append(", name: ");
+      sb.append(name);
+      return sb.toString();
+    }
+
+    public boolean producesSortedKeys(final PipelineOptions options) throws Exception {
+      throw new UnsupportedOperationException("Empty bounded source");
+    }
+
+    public BoundedReader createReader(final PipelineOptions options) throws IOException {
+      throw new UnsupportedOperationException("Empty bounded source");
+    }
+
+    @Override
+    public List<? extends BoundedSource> split(final long l, final PipelineOptions pipelineOptions) throws Exception {
+      return Arrays.asList(this);
+    }
+
+    public long getEstimatedSizeBytes(final PipelineOptions options) throws Exception {
+      return 1;
+    }
+
+    public List<? extends BoundedSource> splitIntoBundles(
+        final long desiredBundleSizeBytes, final PipelineOptions options) throws Exception {
+      return new ArrayList<>();
+    }
+
+    public void validate() {
+    }
+
+    public org.apache.beam.sdk.coders.Coder getDefaultOutputCoder() {
+      throw new UnsupportedOperationException("Empty bounded source");
     }
   }
 }
