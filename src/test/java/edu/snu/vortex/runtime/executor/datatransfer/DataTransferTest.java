@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.optimizer.CompilerPubSubEventHandler;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
@@ -56,7 +57,11 @@ import org.apache.reef.wake.IdentifierFactory;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,6 +76,8 @@ import static org.mockito.Mockito.mock;
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(CompilerPubSubEventHandler.class)
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
@@ -99,9 +106,10 @@ public final class DataTransferTest {
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
+    final CompilerPubSubEventHandler pubSubEventHandler = mock(CompilerPubSubEventHandler.class);
     final Scheduler scheduler =
-        new BatchScheduler(master,
-            new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue());
+        new BatchScheduler(master, new RoundRobinSchedulingPolicy(
+            containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue(), pubSubEventHandler);
     final AtomicInteger executorCount = new AtomicInteger(0);
     final PartitionManagerMaster master = new PartitionManagerMaster();
 
