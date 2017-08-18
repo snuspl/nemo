@@ -178,7 +178,7 @@ public final class TaskGroupStateManager {
           .setTaskGroupId(taskGroupId)
           .setAttemptIdx(attemptIdx)
           .setState(convertState(newState))
-          .addAllFailedTaskIds(tasksPutOnHoldList.get());
+          .addAllTasksPutOnHoldIds(tasksPutOnHoldList.get());
     if (cause.isPresent()) {
       msgBuilder.setFailureCause(convertFailureCause(cause.get()));
     }
