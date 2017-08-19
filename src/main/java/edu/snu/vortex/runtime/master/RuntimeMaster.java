@@ -142,7 +142,7 @@ public final class RuntimeMaster {
             taskGroupStateChangedMsg.getTaskGroupId(),
             convertTaskGroupState(taskGroupStateChangedMsg.getState()),
             taskGroupStateChangedMsg.getAttemptIdx(),
-            taskGroupStateChangedMsg.getFailedTaskIdsList(),
+            taskGroupStateChangedMsg.getTasksPutOnHoldIdsList(),
             convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
         break;
       case PartitionStateChanged:
