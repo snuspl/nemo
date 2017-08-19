@@ -11,9 +11,9 @@ enum MessageType {
     PartitionStateChanged = 2;
     RequestPartitionLocation = 3;
     PartitionLocationInfo = 4;
-    // Messages for metadata passing
     ExecutorFailed = 5;
     MetricMessageReceived = 6;
+    // Messages for metadata passing
     StoreMetadata = 7;
     RemoveMetadata = 8;
     RequestMetadata = 9;
@@ -143,7 +143,8 @@ message RemoveMetadataMsg {
 }
 
 message RequestMetadataMsg {
-    required string partitionId = 1;
+    required string executorId = 1;
+    required string partitionId = 2;
 }
 
 // Common messages

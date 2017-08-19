@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master;
+package edu.snu.vortex.runtime.master.metadata;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.exception.AbsentPartitionException;
+import edu.snu.vortex.runtime.master.PartitionManagerMaster;
+import edu.snu.vortex.runtime.master.RuntimeMaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * For now, all its operations are synchronized to guarantee thread safety.
  */
 @ThreadSafe
-final class MetadataManager {
+public final class MetadataManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataManager.class.getName());
   private final Map<String, MetadataInServer> partitionIdToMetadata;
@@ -52,6 +54,7 @@ final class MetadataManager {
    * @param message the message having metadata to store.
    */
   public synchronized void onStoreMetadata(final ControlMessage.Message message) {
+    assert (message.getType() == ControlMessage.MessageType.StoreMetadata);
     final ControlMessage.StoreMetadataMsg storeMsg = message.getStoreMetadataMsg();
     final String partitionId = storeMsg.getPartitionId();
     final boolean hashed = storeMsg.getHashed();
@@ -71,10 +74,12 @@ final class MetadataManager {
    */
   public synchronized void onRequestMetadata(final ControlMessage.Message message,
                                              final MessageContext messageContext) {
+    assert (message.getType() == ControlMessage.MessageType.RequestMetadata);
     final ControlMessage.RequestMetadataMsg requestMsg = message.getRequestMetadataMsg();
     final String partitionId = requestMsg.getPartitionId();
+    // Check whether the partition is committed. The actual location is not important.
     final CompletableFuture<String> locationFuture =
-        partitionManagerMaster.getPartitionLocationFuture(partitionId); // Check whether the partition is committed.
+        partitionManagerMaster.getPartitionLocationFuture(partitionId);
 
     locationFuture.whenComplete((location, throwable) -> {
       final ControlMessage.MetadataResponseMsg.Builder responseBuilder =
@@ -107,7 +112,8 @@ final class MetadataManager {
    *
    * @param message the message pointing the metadata to remove.
    */
-  private synchronized void onRemoveMetadata(final ControlMessage.Message message) {
+  public synchronized void onRemoveMetadata(final ControlMessage.Message message) {
+    assert (message.getType() == ControlMessage.MessageType.RemoveMetadata);
     final ControlMessage.RemoveMetadataMsg removeMsg = message.getRemoveMetadataMsg();
     final String partitionId = removeMsg.getPartitionId();
 

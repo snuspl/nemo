@@ -193,6 +193,8 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     switch (controlMessage.getType()) {
       case RequestPartitionLocation:
         return controlMessage.getRequestPartitionLocationMsg().getExecutorId();
+      case RequestMetadata:
+        return controlMessage.getRequestMetadataMsg().getExecutorId();
       default:
         throw new IllegalArgumentException(controlMessage.toString());
     }

@@ -33,6 +33,7 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
+import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
@@ -185,8 +186,11 @@ public final class RuntimeMaster {
             .forEach((msg) -> metricMessageHandler.onMetricMessageReceived(executorId, msg));
         break;
       case StoreMetadata:
-
+        metadataManager.onStoreMetadata(message);
+        break;
       case RemoveMetadata:
+        metadataManager.onRemoveMetadata(message);
+        break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be received by Master :" + message.getType()));
@@ -198,6 +202,9 @@ public final class RuntimeMaster {
       switch (message.getType()) {
       case RequestPartitionLocation:
         partitionManagerMaster.onRequestPartitionLocation(message, messageContext);
+        break;
+      case RequestMetadata:
+        metadataManager.onRequestMetadata(message, messageContext);
         break;
       default:
         throw new IllegalMessageException(

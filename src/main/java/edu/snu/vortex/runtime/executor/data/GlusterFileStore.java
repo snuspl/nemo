@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.metadata.RemoteFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.GlusterFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -45,16 +47,22 @@ import java.util.function.Supplier;
 final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   private final ExecutorService executorService;
+  private final PersistentConnectionToMaster persistentConnectionToMaster;
+  private final String executorId;
 
   @Inject
   private GlusterFileStore(@Parameter(JobConf.GlusterVolumeDirectory.class) final String volumeDirectory,
                            @Parameter(JobConf.BlockSize.class) final int blockSizeInKb,
                            @Parameter(JobConf.JobId.class) final String jobId,
                            @Parameter(JobConf.GlusterFileStoreNumThreads.class) final int numThreads,
-                           final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+                           @Parameter(JobConf.ExecutorId.class) final String executorId,
+                           final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+                           final PersistentConnectionToMaster persistentConnectionToMaster) {
     super(blockSizeInKb, volumeDirectory + "/" + jobId, partitionManagerWorker);
     new File(getFileDirectory()).mkdirs();
-    executorService = Executors.newFixedThreadPool(numThreads);
+    this.executorService = Executors.newFixedThreadPool(numThreads);
+    this.executorId = executorId;
+    this.persistentConnectionToMaster = persistentConnectionToMaster;
   }
 
   /**
@@ -70,7 +78,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
+        final RemoteFileMetadata metadata =
+            RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
@@ -78,7 +87,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         } else {
           return Optional.empty();
         }
-      } catch (final IOException e) {
+      } catch (final IOException | InterruptedException | ExecutionException e) {
         throw new PartitionFetchException(e);
       }
     };
@@ -97,7 +106,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
+        final RemoteFileMetadata metadata =
+            RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
@@ -106,7 +116,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         } else {
           return Optional.empty();
         }
-      } catch (final IOException e) {
+      } catch (final IOException | InterruptedException | ExecutionException e) {
         throw new PartitionFetchException(e);
       }
     };
@@ -126,7 +136,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Supplier<Optional<Long>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
-      final RemoteFileMetadata metadata = RemoteFileMetadata.create(filePath, false);
+      final RemoteFileMetadata metadata = RemoteFileMetadata.create(partitionId, false, persistentConnectionToMaster);
 
       try (final GlusterFilePartition partition =
                GlusterFilePartition.create(coder, filePath, metadata)) {
@@ -155,7 +165,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       final List<Long> blockSizeList;
-      final RemoteFileMetadata metadata = RemoteFileMetadata.create(filePath, true);
+      final RemoteFileMetadata metadata = RemoteFileMetadata.create(partitionId, true, persistentConnectionToMaster);
 
       try (final GlusterFilePartition partition =
                GlusterFilePartition.create(coder, filePath, metadata)) {
@@ -182,7 +192,8 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final String filePath = partitionIdToFilePath(partitionId);
 
       try {
-        final RemoteFileMetadata metadata = RemoteFileMetadata.get(filePath);
+        final RemoteFileMetadata metadata =
+            RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
         final Optional<GlusterFilePartition> partition =
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
@@ -191,7 +202,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         } else {
           return false;
         }
-      } catch (final IOException e) {
+      } catch (final IOException | InterruptedException | ExecutionException e) {
         throw new PartitionFetchException(e);
       }
     };

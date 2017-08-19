@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master;
+package edu.snu.vortex.runtime.master.metadata;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 
@@ -44,7 +44,7 @@ final class MetadataInServer {
    *
    * @return the list of block metadata.
    */
-  public List<ControlMessage.BlockMetadataMsg> getBlockMetadataList() {
+  List<ControlMessage.BlockMetadataMsg> getBlockMetadataList() {
     return Collections.unmodifiableList(blockMetadataList);
   }
 
@@ -53,7 +53,7 @@ final class MetadataInServer {
    *
    * @return whether the whole data for this partition is written or not yet.
    */
-  public boolean isWritten() {
+  boolean isWritten() {
     return written.get();
   }
 
@@ -62,7 +62,7 @@ final class MetadataInServer {
    *
    * @return whether each block in the corresponding partition has a single hash value or not.
    */
-  public boolean isHashed() {
+  boolean isHashed() {
     return hashed;
   }
 }
