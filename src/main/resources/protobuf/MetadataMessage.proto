@@ -1,0 +1,50 @@
+syntax = "proto2";
+
+package protobuf;
+
+option java_package = "edu.snu.vortex.runtime.common.comm";
+option java_outer_classname = "MetadataMessage";
+
+enum MessageType {
+    StoreMetadata = 0;
+    RemoveMetadata = 1;
+    GetMetadata = 2;
+    MetadataResponse = 3;
+}
+
+message Message {
+    required MessageType type = 1;
+    required int64 id = 2;
+    optional MetadataResponseMsg metadataResponseMsg = 3;
+    optional StoreMetadataMsg storeMetadataMsg = 4;
+    optional RemoveMetadataMsg removeMetadataMsg = 5;
+    optional GetMetadataMsg getMetadataMsg = 6;
+}
+
+// Messages from Master to Executors
+message MetadataResponseMsg {
+    repeated BlockMetadata blockMetadata = 1;
+    required bool hashed = 2;
+}
+
+// Messages from Executors to Master
+message StoreMetadataMsg {
+    repeated BlockMetadata blockMetadata = 1;
+    required bool hashed = 2;
+}
+
+message RemoveMetadataMsg {
+    required string filePath = 1;
+}
+
+message GetMetadataMsg {
+    required string filePath = 1;
+}
+
+// Common messages
+message BlockMetadata {
+    required int32 hashValue = 1;
+    required int32 blockSize = 2;
+    required int64 offset = 3;
+    required int64 numElements = 4;
+}

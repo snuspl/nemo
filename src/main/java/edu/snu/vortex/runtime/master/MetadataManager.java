@@ -15,66 +15,105 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageContext;
+import edu.snu.vortex.runtime.exception.AbsentPartitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Manages the metadata of remote files.
+ * Manages the metadata of remote partitions.
+ * For now, all its operations are synchronized to guarantee thread safety.
  */
 @ThreadSafe
 final class MetadataManager {
 
-  private final Map<String, MetadataInServer> filePathToMetadata;
+  private static final Logger LOG = LoggerFactory.getLogger(MetadataManager.class.getName());
+  private final Map<String, MetadataInServer> partitionIdToMetadata;
+  private final PartitionManagerMaster partitionManagerMaster;
 
   @Inject
-  private MetadataManager() {
-    this.filePathToMetadata = new ConcurrentHashMap<>();
+  private MetadataManager(final PartitionManagerMaster partitionManagerMaster) {
+    this.partitionIdToMetadata = new HashMap<>();
+    this.partitionManagerMaster = partitionManagerMaster;
   }
 
   /**
-   * Stores a new (whole) metadata for a remote file.
+   * Stores a new (whole) metadata for a remote partition.
    *
-   * @param filePath          the path of the file.
-   * @param hashed            whether each block in the file has a single hash value or not.
-   * @param blockMetadataList the list of the block metadata in the file.
-   * @return {@code true} if success to store, or {@code false} if it already exists.
+   * @param message the message having metadata to store.
    */
-  public boolean storeMetadata(final String filePath,
-                               final boolean hashed,
-                               final List<BlockMetadata> blockMetadataList) {
+  public synchronized void onStoreMetadata(final ControlMessage.Message message) {
+    final ControlMessage.StoreMetadataMsg storeMsg = message.getStoreMetadataMsg();
+    final String partitionId = storeMsg.getPartitionId();
+    final boolean hashed = storeMsg.getHashed();
+    final List<ControlMessage.BlockMetadataMsg> blockMetadataList = storeMsg.getBlockMetadataList();
     final MetadataInServer previousMetadata =
-        filePathToMetadata.putIfAbsent(filePath, new MetadataInServer(hashed, blockMetadataList));
-    return previousMetadata == null;
-  }
-
-  /**
-   * Gets the metadata for a remote file.
-   *
-   * @param filePath the path of the file.
-   * @return the metadata if exists, or an empty optional else.
-   */
-  public Optional<MetadataInServer> getMetadata(final String filePath) {
-    final MetadataInServer metadata = filePathToMetadata.get(filePath);
-    if (metadata == null) {
-      return Optional.empty();
-    } else {
-      return Optional.of(metadata);
+        partitionIdToMetadata.putIfAbsent(partitionId, new MetadataInServer(hashed, blockMetadataList));
+    if (previousMetadata != null) {
+      LOG.error("Metadata for {} already exists. It will be replaced.", partitionId);
     }
   }
 
   /**
-   * Removes the metadata for a remote file.
+   * Accepts a request for a metadata and replies with the metadata for a remote partition.
    *
-   * @param filePath the path of the file.
-   * @return whether success to remove or not.
+   * @param message        the message having metadata to store.
+   * @param messageContext the context to reply.
    */
-  public boolean removeMetadata(final String filePath) {
-    return filePathToMetadata.remove(filePath) != null;
+  public synchronized void onRequestMetadata(final ControlMessage.Message message,
+                                             final MessageContext messageContext) {
+    final ControlMessage.RequestMetadataMsg requestMsg = message.getRequestMetadataMsg();
+    final String partitionId = requestMsg.getPartitionId();
+    final CompletableFuture<String> locationFuture =
+        partitionManagerMaster.getPartitionLocationFuture(partitionId); // Check whether the partition is committed.
+
+    locationFuture.whenComplete((location, throwable) -> {
+      final ControlMessage.MetadataResponseMsg.Builder responseBuilder =
+          ControlMessage.MetadataResponseMsg.newBuilder()
+              .setRequestId(message.getId());
+      if (throwable == null) {
+        // Well committed.
+        final MetadataInServer metadata = partitionIdToMetadata.get(partitionId);
+        if (metadata != null) {
+          responseBuilder.setHashed(metadata.isHashed());
+          responseBuilder.addAllBlockMetadata(metadata.getBlockMetadataList());
+        } else {
+          LOG.error("Metadata for {} dose not exist. Failed to get it.", partitionId);
+        }
+      } else {
+        responseBuilder.setState(
+            RuntimeMaster.convertPartitionState(((AbsentPartitionException) throwable).getState()));
+      }
+      messageContext.reply(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.MetadataResponse)
+              .setMetadataResponseMsg(responseBuilder.build())
+              .build());
+    });
+  }
+
+  /**
+   * Removes the metadata for a remote partition.
+   *
+   * @param message the message pointing the metadata to remove.
+   */
+  private synchronized void onRemoveMetadata(final ControlMessage.Message message) {
+    final ControlMessage.RemoveMetadataMsg removeMsg = message.getRemoveMetadataMsg();
+    final String partitionId = removeMsg.getPartitionId();
+
+    final boolean removed = partitionIdToMetadata.remove(partitionId) != null;
+    if (!removed) {
+      LOG.error("Metadata for {} dose not exist. Failed to delete it.", partitionId);
+    }
   }
 }

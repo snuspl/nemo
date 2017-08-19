@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Collections;
@@ -30,10 +30,10 @@ final class MetadataInServer {
 
   private AtomicBoolean written; // The whole data for this file is written or not yet.
   private final boolean hashed; // Each block in the corresponding file has a single hash value or not.
-  private final List<BlockMetadata> blockMetadataList;
+  private final List<ControlMessage.BlockMetadataMsg> blockMetadataList;
 
   MetadataInServer(final boolean hashed,
-                   final List<BlockMetadata> blockMetadataList) {
+                   final List<ControlMessage.BlockMetadataMsg> blockMetadataList) {
     this.hashed = hashed;
     this.written = new AtomicBoolean(true);
     this.blockMetadataList = blockMetadataList;
@@ -44,7 +44,7 @@ final class MetadataInServer {
    *
    * @return the list of block metadata.
    */
-  public final List<BlockMetadata> getBlockMetadataList() {
+  public List<ControlMessage.BlockMetadataMsg> getBlockMetadataList() {
     return Collections.unmodifiableList(blockMetadataList);
   }
 

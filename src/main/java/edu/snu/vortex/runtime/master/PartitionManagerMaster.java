@@ -42,15 +42,13 @@ public final class PartitionManagerMaster {
   private final Map<String, String> committedPartitionIdToWorkerId;
   private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
   private final Map<String, CompletableFuture<String>> partitionIdToLocationFuture;
-  private final MetadataManager metadataManager;
 
   @Inject
-  public PartitionManagerMaster(final MetadataManager metadataManager) {
+  public PartitionManagerMaster() {
     this.partitionIdToState = new HashMap<>();
     this.committedPartitionIdToWorkerId = new HashMap<>();
     this.producerTaskGroupIdToPartitionIds = new HashMap<>();
     this.partitionIdToLocationFuture = new HashMap<>();
-    this.metadataManager = metadataManager;
   }
 
   public synchronized void initializeState(final String edgeId, final int srcTaskIndex,

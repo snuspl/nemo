@@ -71,6 +71,7 @@ public final class RuntimeMaster {
   // For converting json data. This is a thread safe.
   // [Vortex-420] Create a Singleton ObjectMapper
   private final ObjectMapper objectMapper;
+  private final MetadataManager metadataManager;
 
   private final String dagDirectory;
   private final Set<IRVertex> irVertices;
@@ -82,6 +83,7 @@ public final class RuntimeMaster {
                        final MessageEnvironment masterMessageEnvironment,
                        final PartitionManagerMaster partitionManagerMaster,
                        final MetricMessageHandler metricMessageHandler,
+                       final MetadataManager metadataManager,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                        @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
     this.scheduler = scheduler;
@@ -89,8 +91,9 @@ public final class RuntimeMaster {
     this.containerManager = containerManager;
     this.masterMessageEnvironment = masterMessageEnvironment;
     this.masterMessageEnvironment
-        .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterMessageReceiver());
+        .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterControlMessageReceiver());
     this.partitionManagerMaster = partitionManagerMaster;
+    this.metadataManager = metadataManager;
     this.dagDirectory = dagDirectory;
     this.metricMessageHandler = metricMessageHandler;
     this.irVertices = new HashSet<>();
@@ -128,9 +131,9 @@ public final class RuntimeMaster {
   }
 
   /**
-   * Handler for messages received by Master.
+   * Handler for control messages received by Master.
    */
-  public final class MasterMessageReceiver implements MessageListener<ControlMessage.Message> {
+  public final class MasterControlMessageReceiver implements MessageListener<ControlMessage.Message> {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
@@ -181,9 +184,12 @@ public final class RuntimeMaster {
             .map(new JsonStringToMapFunction())
             .forEach((msg) -> metricMessageHandler.onMetricMessageReceived(executorId, msg));
         break;
-        default:
-          throw new IllegalMessageException(
-              new Exception("This message should not be received by Master :" + message.getType()));
+      case StoreMetadata:
+
+      case RemoveMetadata:
+      default:
+        throw new IllegalMessageException(
+            new Exception("This message should not be received by Master :" + message.getType()));
       }
     }
 

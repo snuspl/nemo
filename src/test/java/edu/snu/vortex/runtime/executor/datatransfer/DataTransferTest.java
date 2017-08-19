@@ -108,7 +108,7 @@ public final class DataTransferTest {
 
     // Unused, but necessary for wiring up the message environments
     final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, containerManager,
-        messageEnvironment, master, new DefaultMetricMessageHandler(), EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
+        messageEnvironment, master, new DefaultMetricMessageHandler(), null, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
     final Injector injector = createNameClientInjector();
     injector.bindVolatileParameter(JobConf.JobId.class, "data transfer test");

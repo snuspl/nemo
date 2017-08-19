@@ -107,7 +107,7 @@ public final class JobStateManagerTest {
 
     final JobStateManager jobStateManager = new JobStateManager(
         new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-        new PartitionManagerMaster(null), MAX_SCHEDULE_ATTEMPT);
+        new PartitionManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertEquals(jobStateManager.getJobId(), "TestPlan");
 
@@ -148,7 +148,7 @@ public final class JobStateManagerTest {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
     final JobStateManager jobStateManager = new JobStateManager(
         new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-        new PartitionManagerMaster(null), MAX_SCHEDULE_ATTEMPT);
+        new PartitionManagerMaster(), MAX_SCHEDULE_ATTEMPT);
 
     assertFalse(jobStateManager.checkJobTermination());
 
