@@ -24,20 +24,14 @@ import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDyn
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.master.scheduler.SchedulerPubSubEventHandler;
 
-import javax.inject.Inject;
 import java.util.*;
 
 /**
  * Optimizer class.
  */
 public final class Optimizer {
-  private final SchedulerPubSubEventHandler pubSubEventHandler;
-
-  @Inject
-  Optimizer(final SchedulerPubSubEventHandler pubSubEventHandler) {
-    this.pubSubEventHandler = pubSubEventHandler;
+  private Optimizer() {
   }
 
   /**

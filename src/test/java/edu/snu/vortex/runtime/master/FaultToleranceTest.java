@@ -23,7 +23,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.CompilerPubSubEventHandler;
+import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -46,7 +46,6 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import javax.inject.Inject;
 import java.util.*;
 
 import static junit.framework.TestCase.assertTrue;
@@ -57,7 +56,7 @@ import static org.mockito.Mockito.*;
  * Tests the fault tolerance mechanism implemented in {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, CompilerPubSubEventHandler.class})
+@PrepareForTest({ContainerManager.class, PubSubEventHandlerWrapper.class})
 public final class FaultToleranceTest {
   private static final int TEST_TIMEOUT_MS = 500;
   private static final int MAX_SCHEDULE_ATTEMPT = 5;
@@ -70,7 +69,7 @@ public final class FaultToleranceTest {
   private Scheduler scheduler;
   private PartitionManagerMaster partitionManagerMaster;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
-  private CompilerPubSubEventHandler pubSubEventHandler;
+  private PubSubEventHandlerWrapper pubSubEventHandler;
   private final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
   private final Map<String, ExecutorRepresenter> failedExecutorRepresenterMap = new HashMap<>();
   private ContainerManager containerManager = mock(ContainerManager.class);
@@ -87,7 +86,7 @@ public final class FaultToleranceTest {
     partitionManagerMaster = new PartitionManagerMaster();
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
-    pubSubEventHandler = mock(CompilerPubSubEventHandler.class);
+    pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
 
     scheduler =
         new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue, pubSubEventHandler);

@@ -16,13 +16,12 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.CompilerPubSubEventHandler;
+import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
@@ -45,7 +44,6 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,14 +56,14 @@ import static org.mockito.Mockito.when;
  * Tests {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, CompilerPubSubEventHandler.class})
+@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, PubSubEventHandlerWrapper.class})
 public final class BatchSchedulerTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
   private SchedulingPolicy schedulingPolicy;
   private ContainerManager containerManager;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
-  private CompilerPubSubEventHandler pubSubEventHandler;
+  private PubSubEventHandlerWrapper pubSubEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
@@ -80,7 +78,7 @@ public final class BatchSchedulerTest {
     containerManager = mock(ContainerManager.class);
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
-    pubSubEventHandler = mock(CompilerPubSubEventHandler.class);
+    pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     scheduler =
         new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue, pubSubEventHandler);
 

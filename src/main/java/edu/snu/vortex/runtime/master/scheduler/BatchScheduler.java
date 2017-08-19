@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.master.scheduler;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.CompilerPubSubEventHandler;
+import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.compiler.optimizer.DynamicOptimizationEvent;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
@@ -55,7 +55,7 @@ public final class BatchScheduler implements Scheduler {
 
   private final PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
 
-  private final CompilerPubSubEventHandler pubSubEventHandler;
+  private final PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   /**
    * The current job being executed.
@@ -66,11 +66,11 @@ public final class BatchScheduler implements Scheduler {
   public BatchScheduler(final PartitionManagerMaster partitionManagerMaster,
                         final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue,
-                        final CompilerPubSubEventHandler pubSubEventHandler) {
+                        final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
     this.partitionManagerMaster = partitionManagerMaster;
     this.pendingTaskGroupPriorityQueue = pendingTaskGroupPriorityQueue;
     this.schedulingPolicy = schedulingPolicy;
-    this.pubSubEventHandler = pubSubEventHandler;
+    this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
   }
 
   /**
@@ -233,7 +233,7 @@ public final class BatchScheduler implements Scheduler {
               + MetricCollectionBarrierTask.class.getSimpleName()));
       // and we will use this vertex to perform metric collection and dynamic optimization.
 
-      pubSubEventHandler.getDynamicOptimizationEventPubSubEventHandler().onNext(
+      pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
           new DynamicOptimizationEvent(this, physicalPlan, metricCollectionBarrierVertex,
               Pair.of(executorId, taskGroup)));
     } else {

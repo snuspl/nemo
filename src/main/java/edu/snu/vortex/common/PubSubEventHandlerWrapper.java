@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.vortex.compiler.optimizer;
+package edu.snu.vortex.common;
 
 import org.apache.reef.wake.impl.PubSubEventHandler;
 
@@ -25,18 +25,18 @@ import javax.inject.Inject;
 /**
  * Wrapper class with a pub/sub event handler.
  */
-public final class CompilerPubSubEventHandler {
-  private final PubSubEventHandler<DynamicOptimizationEvent> dynamicOptimizationEventPubSubEventHandler;
+public final class PubSubEventHandlerWrapper {
+  private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private CompilerPubSubEventHandler() {
-    this.dynamicOptimizationEventPubSubEventHandler = new PubSubEventHandler<>();
+  private PubSubEventHandlerWrapper() {
+    this.pubSubEventHandler = new PubSubEventHandler();
   }
 
   /**
    * @return the pub/sub event handler.
    */
-  public PubSubEventHandler getDynamicOptimizationEventPubSubEventHandler() {
-    return dynamicOptimizationEventPubSubEventHandler;
+  public PubSubEventHandler getPubSubEventHandler() {
+    return pubSubEventHandler;
   }
 }

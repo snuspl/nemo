@@ -18,12 +18,12 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
+import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
-import edu.snu.vortex.runtime.master.scheduler.SchedulerPubSubEventHandler;
 import edu.snu.vortex.runtime.master.scheduler.UpdatePhysicalPlanEvent;
 import org.apache.reef.wake.EventHandler;
 
@@ -33,15 +33,12 @@ import javax.inject.Inject;
  * Class for handling events related to the compiler optimizer.
  */
 public final class DynamicOptimizationEventHandler implements EventHandler<DynamicOptimizationEvent> {
-  private SchedulerPubSubEventHandler schedulerPubSubEventHandler;
+  private PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   @Inject
-  private DynamicOptimizationEventHandler(final CompilerPubSubEventHandler compilerPubSubEventHandler,
-                                          final SchedulerPubSubEventHandler schedulerPubSubEventHandler) {
-    this.schedulerPubSubEventHandler = schedulerPubSubEventHandler;
-
-    compilerPubSubEventHandler.getDynamicOptimizationEventPubSubEventHandler()
-        .subscribe(DynamicOptimizationEvent.class, this);
+  private DynamicOptimizationEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+    this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
+    pubSubEventHandlerWrapper.getPubSubEventHandler().subscribe(DynamicOptimizationEvent.class, this);
   }
 
   @Override
@@ -55,7 +52,7 @@ public final class DynamicOptimizationEventHandler implements EventHandler<Dynam
 
     final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan, metricCollectionBarrierVertex);
 
-    schedulerPubSubEventHandler.getUpdatePhysicalPlanEventPubSubEventHandler().onNext(
+    pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
         new UpdatePhysicalPlanEvent(scheduler, newPlan, taskInfo));
   }
 }
