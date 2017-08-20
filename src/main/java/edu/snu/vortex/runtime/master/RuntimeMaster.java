@@ -33,7 +33,6 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
-import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
@@ -72,7 +71,6 @@ public final class RuntimeMaster {
   // For converting json data. This is a thread safe.
   // [Vortex-420] Create a Singleton ObjectMapper
   private final ObjectMapper objectMapper;
-  private final MetadataManager metadataManager;
 
   private final String dagDirectory;
   private final Set<IRVertex> irVertices;
@@ -84,7 +82,6 @@ public final class RuntimeMaster {
                        final MessageEnvironment masterMessageEnvironment,
                        final PartitionManagerMaster partitionManagerMaster,
                        final MetricMessageHandler metricMessageHandler,
-                       final MetadataManager metadataManager,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                        @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
     this.scheduler = scheduler;
@@ -94,7 +91,6 @@ public final class RuntimeMaster {
     this.masterMessageEnvironment
         .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterControlMessageReceiver());
     this.partitionManagerMaster = partitionManagerMaster;
-    this.metadataManager = metadataManager;
     this.dagDirectory = dagDirectory;
     this.metricMessageHandler = metricMessageHandler;
     this.irVertices = new HashSet<>();
@@ -186,10 +182,10 @@ public final class RuntimeMaster {
             .forEach((msg) -> metricMessageHandler.onMetricMessageReceived(executorId, msg));
         break;
       case StoreMetadata:
-        metadataManager.onStoreMetadata(message);
+        partitionManagerMaster.getMetadataManager().onStoreMetadata(message);
         break;
       case RemoveMetadata:
-        metadataManager.onRemoveMetadata(message);
+        partitionManagerMaster.getMetadataManager().onRemoveMetadata(message);
         break;
       default:
         throw new IllegalMessageException(
@@ -204,7 +200,7 @@ public final class RuntimeMaster {
         partitionManagerMaster.onRequestPartitionLocation(message, messageContext);
         break;
       case RequestMetadata:
-        metadataManager.onRequestMetadata(message, messageContext);
+        partitionManagerMaster.getMetadataManager().onRequestMetadata(message, messageContext);
         break;
       default:
         throw new IllegalMessageException(

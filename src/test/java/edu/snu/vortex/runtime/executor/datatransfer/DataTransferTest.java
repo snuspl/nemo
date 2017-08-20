@@ -107,14 +107,13 @@ public final class DataTransferTest {
         new BatchScheduler(master,
             new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue());
     final AtomicInteger executorCount = new AtomicInteger(0);
-    final PartitionManagerMaster master = new PartitionManagerMaster();
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
-    injector1.bindVolatileInstance(PartitionManagerMaster.class, master);
+    final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
+    final MetadataManager metadataManager = injector1.getInstance(MetadataManager.class);
     // Unused, but necessary for wiring up the message environments
-    final RuntimeMaster runtimeMaster =
-        new RuntimeMaster(scheduler, containerManager, messageEnvironment, master, new DefaultMetricMessageHandler(),
-            injector1.getInstance(MetadataManager.class), EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
+    final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, containerManager, messageEnvironment,
+        master, new DefaultMetricMessageHandler(), EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
     final Injector injector2 = createNameClientInjector();
     injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");

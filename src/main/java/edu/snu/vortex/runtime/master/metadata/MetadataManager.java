@@ -21,6 +21,7 @@ import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.exception.AbsentPartitionException;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
+import org.apache.reef.tang.InjectionFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,10 +41,10 @@ public final class MetadataManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataManager.class.getName());
   private final Map<String, MetadataInServer> partitionIdToMetadata;
-  private final PartitionManagerMaster partitionManagerMaster;
+  private final InjectionFuture<PartitionManagerMaster> partitionManagerMaster;
 
   @Inject
-  private MetadataManager(final PartitionManagerMaster partitionManagerMaster) {
+  private MetadataManager(final InjectionFuture<PartitionManagerMaster> partitionManagerMaster) {
     this.partitionIdToMetadata = new HashMap<>();
     this.partitionManagerMaster = partitionManagerMaster;
   }
@@ -79,7 +80,7 @@ public final class MetadataManager {
     final String partitionId = requestMsg.getPartitionId();
     // Check whether the partition is committed. The actual location is not important.
     final CompletableFuture<String> locationFuture =
-        partitionManagerMaster.getPartitionLocationFuture(partitionId);
+        partitionManagerMaster.get().getPartitionLocationFuture(partitionId);
 
     locationFuture.whenComplete((location, throwable) -> {
       final ControlMessage.MetadataResponseMsg.Builder responseBuilder =
