@@ -245,6 +245,7 @@ public final class PartitionManagerMaster {
 
   /**
    * Gets the metadata manger.
+   * TODO #414: Replace NCS with Wake -> reconsider the messaging path of the partition managing and metadata managing.
    *
    * @return the metadata manager.
    */
