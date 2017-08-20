@@ -75,14 +75,15 @@ final class PartitionTransferPeer {
   private final ReplyFutureMap<Iterable<Element>> replyFutureMap;
 
   @Inject
-  private PartitionTransferPeer(final NameResolver nameResolver,
-                                final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
-                                final LocalAddressProvider localAddressProvider,
-                                final PartitionClientHandler partitionClientHandler,
-                                final PartitionServerHandler partitionServerHandler,
-                                final ExceptionHandler exceptionHandler,
-                                @Parameter(JobConf.PartitionTransferClientNumThreads.class) final int numClientThreads,
-                                @Parameter(JobConf.ExecutorId.class) final String executorId) {
+  private PartitionTransferPeer(
+      final NameResolver nameResolver,
+      final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+      final LocalAddressProvider localAddressProvider,
+      final PartitionClientHandler partitionClientHandler,
+      final PartitionServerHandler partitionServerHandler,
+      final ExceptionHandler exceptionHandler,
+      @Parameter(JobConf.PartitionTransferNumDecodingThreads.class) final int numClientThreads,
+      @Parameter(JobConf.ExecutorId.class) final String executorId) {
     this.nameResolver = nameResolver;
     this.partitionManagerWorker = partitionManagerWorker;
     this.requestIdCounter = new AtomicLong(1);
@@ -222,7 +223,7 @@ final class PartitionTransferPeer {
      */
     @Inject
     private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
-                                   @Parameter(JobConf.PartitionTransferServerNumThreads.class)
+                                   @Parameter(JobConf.PartitionTransferNumEncodingThreads.class)
                                    final int numServerSerThreads) {
       this.partitionManagerWorker = partitionManagerWorker;
       this.serverExecutorService = Executors.newFixedThreadPool(numServerSerThreads);
