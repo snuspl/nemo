@@ -177,6 +177,15 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
+   * The maximum length which the pending connection queue of
+   * {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport} may grow to.
+   */
+  @NamedParameter(doc = "The maximum number of pending connections to PartitionTransport server",
+      short_name = "partition_backlog", default_value = "128")
+  public final class PartitionTransportServerBacklog implements Name<Integer> {
+  }
+
+  /**
    * The number of listening threads of
    * {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport} server.
    */
