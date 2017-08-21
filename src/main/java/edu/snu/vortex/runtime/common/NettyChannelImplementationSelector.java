@@ -22,89 +22,42 @@ import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.local.LocalChannel;
-import io.netty.channel.local.LocalEventLoopGroup;
-import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Selects appropriate {@link io.netty.channel.Channel} implementation, depending on implementation availabilities.
+ * Uses {@link Epoll} if possible (on Linux).
  */
-@DefaultImplementation(NettyChannelImplementationSelector.NetworkChannelImplementationSelector.class)
-public interface NettyChannelImplementationSelector {
+public final class NettyChannelImplementationSelector {
+
   /**
-   * Constructs a new {@link EventLoopGroup} instance.
-   *
-   * @return a new {@link EventLoopGroup} instance
+   * Private constructor.
    */
-  EventLoopGroup newEventLoopGroup();
+  private NettyChannelImplementationSelector() {
+  }
+
+  // We may want to add selection of KQueue (for BSD)
+
+  /**
+   * {@link Function} that takes the number of threads and returns a new {@link EventLoopGroup} instance.
+   */
+  public static final Function<Integer, EventLoopGroup> EVENT_LOOP_GROUP_FUNCTION =
+      Epoll.isAvailable() ? numThreads -> new EpollEventLoopGroup(numThreads)
+          : numThreads -> new NioEventLoopGroup(numThreads);
 
   /**
    * Selects {@link ServerChannel} implementation.
-   *
-   * @return {@link Class} of {@link ServerChannel}
    */
-  Class<? extends ServerChannel> getServerChannelClass();
+  public static final Class<? extends ServerChannel> SERVER_CHANNEL_CLASS =
+      Epoll.isAvailable() ? EpollServerSocketChannel.class : NioServerSocketChannel.class;
 
   /**
    * Selects {@link Channel} implementation.
-   *
-   * @return {@link Class} of {@link Channel}
    */
-  Class<? extends Channel> getChannelClass();
-
-  /**
-   * A {@link NettyChannelImplementationSelector} implementation for communication between nodes.
-   * Uses {@link Epoll} if possible (on Linux).
-   */
-  class NetworkChannelImplementationSelector implements NettyChannelImplementationSelector {
-
-    private static final Supplier<EventLoopGroup> EVENT_LOOP_GROUP_SUPPLIER =
-        Epoll.isAvailable() ? () -> new EpollEventLoopGroup() : () -> new NioEventLoopGroup();
-    private static final Class<? extends ServerChannel> SERVER_CHANNEL_CLASS =
-        Epoll.isAvailable() ? EpollServerSocketChannel.class : NioServerSocketChannel.class;
-    private static final Class<? extends Channel> CHANNEL_CLASS =
-        Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class;
-
-    @Override
-    public EventLoopGroup newEventLoopGroup() {
-      return EVENT_LOOP_GROUP_SUPPLIER.get();
-    }
-
-    @Override
-    public Class<? extends ServerChannel> getServerChannelClass() {
-      return SERVER_CHANNEL_CLASS;
-    }
-
-    @Override
-    public Class<? extends Channel> getChannelClass() {
-      return CHANNEL_CLASS;
-    }
-  }
-
-  /**
-   * A {@link NettyChannelImplementationSelector} implementation for local communication and unit tests.
-   */
-  class LocalChannelImplementationSelector implements NettyChannelImplementationSelector {
-
-    @Override
-    public EventLoopGroup newEventLoopGroup() {
-      return new LocalEventLoopGroup();
-    }
-
-    @Override
-    public Class<? extends ServerChannel> getServerChannelClass() {
-      return LocalServerChannel.class;
-    }
-
-    @Override
-    public Class<? extends Channel> getChannelClass() {
-      return LocalChannel.class;
-    }
-  }
+  public static final Class<? extends Channel> CHANNEL_CLASS =
+      Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class;
 }

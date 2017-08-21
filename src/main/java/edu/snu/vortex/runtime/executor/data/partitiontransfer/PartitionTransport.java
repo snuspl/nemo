@@ -37,7 +37,6 @@ public final class PartitionTransport implements AutoCloseable {
   /**
    * Constructs a partition transport.
    *
-   * @param nettyChannelImplementationSelector  provides appropriate netty channel implementation
    * @param tcpPortProvider       provides an iterator of random tcp ports
    * @param localAddressProvider  provides the local address of the node to bind to
    * @param port                  the listening port of the server; 0 means random assign using {@code tcpPortProvider}
@@ -47,7 +46,6 @@ public final class PartitionTransport implements AutoCloseable {
    */
   @Inject
   private PartitionTransport(
-      final NettyChannelImplementationSelector nettyChannelImplementationSelector,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,
@@ -58,6 +56,8 @@ public final class PartitionTransport implements AutoCloseable {
     if (port < 0) {
       throw new IllegalArgumentException(String.format("Invalid PartitionTransportPort: %d", port));
     }
+
+    final String host = localAddressProvider.getLocalAddress();
   }
 
   /**
