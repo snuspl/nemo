@@ -56,7 +56,6 @@ public final class PeriodicMetricSender implements MetricSender {
           final String metricMsg = metricMessageQueue.poll();
           metricMsgBuilder.setExecutorId(executorId);
           metricMsgBuilder.setMessages(index, metricMsg);
-          index += 1;
         }
 
         // Send msg
