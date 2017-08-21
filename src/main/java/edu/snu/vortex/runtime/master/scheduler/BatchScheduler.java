@@ -66,7 +66,8 @@ public final class BatchScheduler implements Scheduler {
   public BatchScheduler(final PartitionManagerMaster partitionManagerMaster,
                         final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue,
-                        final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+                        final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
+                        final UpdatePhysicalPlanEventHandler handler) {
     this.partitionManagerMaster = partitionManagerMaster;
     this.pendingTaskGroupPriorityQueue = pendingTaskGroupPriorityQueue;
     this.schedulingPolicy = schedulingPolicy;

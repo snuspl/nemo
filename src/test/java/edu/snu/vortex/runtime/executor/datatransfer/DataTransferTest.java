@@ -37,10 +37,7 @@ import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
-import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
-import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupPriorityQueue;
-import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
@@ -76,7 +73,7 @@ import static org.mockito.Mockito.mock;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(PubSubEventHandlerWrapper.class)
+@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
@@ -106,9 +103,10 @@ public final class DataTransferTest {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
+    final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
-        new BatchScheduler(master, new RoundRobinSchedulingPolicy(
-            containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue(), pubSubEventHandler);
+        new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
+            new PendingTaskGroupPriorityQueue(), pubSubEventHandler, updatePhysicalPlanEventHandler);
     final AtomicInteger executorCount = new AtomicInteger(0);
     final PartitionManagerMaster master = new PartitionManagerMaster();
 

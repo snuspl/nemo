@@ -56,7 +56,7 @@ import static org.mockito.Mockito.*;
  * Tests the fault tolerance mechanism implemented in {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PubSubEventHandlerWrapper.class})
+@PrepareForTest({ContainerManager.class, PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
 public final class FaultToleranceTest {
   private static final int TEST_TIMEOUT_MS = 500;
   private static final int MAX_SCHEDULE_ATTEMPT = 5;
@@ -70,6 +70,7 @@ public final class FaultToleranceTest {
   private PartitionManagerMaster partitionManagerMaster;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
+  private UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler;
   private final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
   private final Map<String, ExecutorRepresenter> failedExecutorRepresenterMap = new HashMap<>();
   private ContainerManager containerManager = mock(ContainerManager.class);
@@ -87,9 +88,11 @@ public final class FaultToleranceTest {
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
+    updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
 
     scheduler =
-        new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue, pubSubEventHandler);
+        new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue,
+            pubSubEventHandler, updatePhysicalPlanEventHandler);
 
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
