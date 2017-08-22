@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data.metadata;
 
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
-import edu.snu.vortex.runtime.exception.UnsupportedMethodException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 
@@ -32,28 +31,32 @@ import java.util.concurrent.ExecutionException;
  * This class represents a metadata for a remote file partition.
  * Because the data is stored in a remote file and globally accessed by multiple nodes,
  * each access (create - write - close, read, or deletion) for a partition needs one instance of this metadata.
- * TODO #355: Support I-file write.
  * It supports concurrent write for a single partition, but each writer has to have separate instance of this class.
  * These accesses are judiciously synchronized by the metadata server in master.
  */
 public final class RemoteFileMetadata extends FileMetadata {
 
   private boolean written; // The whole data for this partition is written or not yet.
+  private final boolean concWritable; // Whether the partition is concurrently writable or not.
   private String partitionId;
   private final PersistentConnectionToMaster connectionToMaster;
 
   /**
-   * Creates a new partition metadata to write.
+   * Opens a partition metadata to write.
    *
    * @param hashed             each block has a single hash value or not.
+   * @param concWritable       Whether the partition is concurrently writable.
+   *                           If so, the metadata is needed to be synchronized in every block metadata write.
    * @param partitionId        the id of the partition.
    * @param connectionToMaster the connection for sending messages to master.
    */
   private RemoteFileMetadata(final boolean hashed,
+                             final boolean concWritable,
                              final String partitionId,
                              final PersistentConnectionToMaster connectionToMaster) {
     super(hashed);
     this.written = false;
+    this.concWritable = concWritable;
     this.partitionId = partitionId;
     this.connectionToMaster = connectionToMaster;
   }
@@ -72,24 +75,36 @@ public final class RemoteFileMetadata extends FileMetadata {
                              final PersistentConnectionToMaster connectionToMaster) {
     super(hashed, blockMetadataList);
     this.written = true;
+    this.concWritable = false;
     this.partitionId = partitionId;
     this.connectionToMaster = connectionToMaster;
   }
 
   /**
-   * Reserves a region for storing a block and appends a metadata for the block.
-   * This method is designed for concurrent write.
-   * Therefore, it will communicate with the metadata server and synchronize the write.
+   * Appends a metadata for a block.
+   * If the reservation is enabled,
+   * it reserves a region for this block metadata and write the metadata to the server right away.
+   * If else, it does not do any synchronization and this change will valid in local only.
+   * In this case, further synchronization will be done in {@link FileMetadata#getAndSetWritten()}.
    *
    * @param hashValue   of the block.
    * @param blockSize   of the block.
    * @param numElements of the block.
+   * @return the position in the file to write the block.
+   * @throws IOException if fail to append the block metadata.
    */
-  public void reserveBlock(final int hashValue,
-                           final int blockSize,
-                           final long numElements) {
-    // TODO #355: Support I-file write.
-    throw new UnsupportedMethodException("reserveBlock(...) is not supported yet.");
+  @Override
+  public long appendBlockMetadata(final int hashValue,
+                                  final int blockSize,
+                                  final long numElements) throws IOException {
+    //if (concWritable) {
+    //  throw new UnsupportedMethodException("reserveBlock(...) is not supported yet."); TODO
+    //} else {
+      final long currentPosition = getPosition();
+      getBlockMetadataList().add(new BlockMetadata(hashValue, blockSize, currentPosition, numElements));
+      setPosition(currentPosition + blockSize);
+      return currentPosition;
+    //}
   }
 
   /**
@@ -106,29 +121,31 @@ public final class RemoteFileMetadata extends FileMetadata {
     }
     written = true;
 
-    // Send the whole metadata to the metadata server.
-    final List<ControlMessage.BlockMetadataMsg> blockMetadataMsgList = new LinkedList<>();
-    for (final BlockMetadata blockMetadata : getBlockMetadataList()) {
-      // Convert the block metadata to a block metadata message.
-      blockMetadataMsgList.add(
-          ControlMessage.BlockMetadataMsg.newBuilder()
-              .setHashValue(blockMetadata.getHashValue())
-              .setBlockSize(blockMetadata.getBlockSize())
-              .setOffset(blockMetadata.getOffset())
-              .setNumElements(blockMetadata.getNumElements())
-              .build()
-      );
+    if (!concWritable) {
+      // Send the whole metadata to the metadata server.
+      final List<ControlMessage.BlockMetadataMsg> blockMetadataMsgList = new LinkedList<>();
+      for (final BlockMetadata blockMetadata : getBlockMetadataList()) {
+        // Convert the block metadata to a block metadata message.
+        blockMetadataMsgList.add(
+            ControlMessage.BlockMetadataMsg.newBuilder()
+                .setHashValue(blockMetadata.getHashValue())
+                .setBlockSize(blockMetadata.getBlockSize())
+                .setOffset(blockMetadata.getOffset())
+                .setNumElements(blockMetadata.getNumElements())
+                .build()
+        );
+      }
+      connectionToMaster.getMessageSender().send(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.StoreMetadata)
+              .setStoreMetadataMsg(
+                  ControlMessage.StoreMetadataMsg.newBuilder()
+                      .setPartitionId(partitionId)
+                      .setHashed(isHashed())
+                      .addAllBlockMetadata(blockMetadataMsgList))
+              .build());
     }
-    connectionToMaster.getMessageSender().send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.StoreMetadata)
-            .setStoreMetadataMsg(
-                ControlMessage.StoreMetadataMsg.newBuilder()
-                    .setPartitionId(partitionId)
-                    .setHashed(isHashed())
-                    .addAllBlockMetadata(blockMetadataMsgList))
-            .build());
 
     return false;
   }
@@ -159,22 +176,25 @@ public final class RemoteFileMetadata extends FileMetadata {
   }
 
   /**
-   * Creates a file metadata for a partition in the remote storage to write.
+   * Opens a file metadata for a partition in the remote storage to write.
    * The corresponding {@link FileMetadata#getAndSetWritten()}} for the returned metadata is required.
    *
-   * @param partitionId        the id of the partition.
    * @param hashed             whether each block in this partition has a single hash value or not.
+   * @param concWritable       Whether the partition is concurrently writable.
+   *                           If so, the metadata is needed to be synchronized in every block metadata write
+   * @param partitionId        the id of the partition.
    * @param connectionToMaster the connection for sending messages to master.
    * @return the created file metadata.
    */
-  public static RemoteFileMetadata create(final String partitionId,
-                                          final boolean hashed,
-                                          final PersistentConnectionToMaster connectionToMaster) {
-    return new RemoteFileMetadata(hashed, partitionId, connectionToMaster);
+  public static RemoteFileMetadata openToWrite(final boolean hashed,
+                                               final boolean concWritable,
+                                               final String partitionId,
+                                               final PersistentConnectionToMaster connectionToMaster) {
+    return new RemoteFileMetadata(hashed, concWritable, partitionId, connectionToMaster);
   }
 
   /**
-   * Gets the corresponding file metadata for a partition in the remote storage to read.
+   * Opens the corresponding file metadata for a partition in the remote storage to read.
    * It will communicates with the metadata server to get the metadata.
    *
    * @param partitionId        the id of the partition.
@@ -185,9 +205,9 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @throws InterruptedException if interrupted during waiting the response from the metadata server.
    * @throws ExecutionException if the request to the metadata server completed exceptionally.
    */
-  public static RemoteFileMetadata get(final String partitionId,
-                                       final String executorId,
-                                       final PersistentConnectionToMaster connectionToMaster)
+  public static RemoteFileMetadata openToRead(final String partitionId,
+                                              final String executorId,
+                                              final PersistentConnectionToMaster connectionToMaster)
       throws IOException, InterruptedException, ExecutionException {
     final List<BlockMetadata> blockMetadataList = new ArrayList<>();
     // TODO #410: Implement metadata caching for the RemoteFileMetadata.
@@ -234,5 +254,14 @@ public final class RemoteFileMetadata extends FileMetadata {
     }
 
     return new RemoteFileMetadata(hashed, partitionId, blockMetadataList, connectionToMaster);
+  }
+
+  /**
+   * Gets whether the partition is concurrently writable.
+   *
+   * @return whether the partition is concurrently writable.
+   */
+  public boolean isConcWritable() {
+    return concWritable;
   }
 }
