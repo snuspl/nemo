@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.frontend.Frontend;
@@ -25,13 +26,12 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.DynamicOptimizationEventHandler;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import org.apache.reef.tang.annotations.Parameter;
-
-import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 import static edu.snu.vortex.compiler.optimizer.Optimizer.POLICY_NAME;
 

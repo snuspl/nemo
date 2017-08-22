@@ -12,6 +12,12 @@ enum MessageType {
     RequestPartitionLocation = 3;
     PartitionLocationInfo = 4;
     ExecutorFailed = 5;
+    MetricMessageReceived = 6;
+    // Messages for metadata passing
+    StoreMetadata = 7;
+    RemoveMetadata = 8;
+    RequestMetadata = 9;
+    MetadataResponse = 10;
 }
 
 message Message {
@@ -23,6 +29,12 @@ message Message {
     optional RequestPartitionLocationMsg requestPartitionLocationMsg = 6;
     optional PartitionLocationInfoMsg partitionLocationInfoMsg = 7;
     optional ExecutorFailedMsg executorFailedMsg = 8;
+    optional MetricMsg metricMsg = 9;
+    // Messages for metadata passing
+    optional MetadataResponseMsg metadataResponseMsg = 10;
+    optional StoreMetadataMsg storeMetadataMsg = 11;
+    optional RemoveMetadataMsg removeMetadataMsg = 12;
+    optional RequestMetadataMsg requestMetadataMsg = 13;
 }
 
 // Messages from Master to Executors
@@ -71,6 +83,11 @@ message ExecutorFailedMsg {
     required bytes exception = 2;
 }
 
+message MetricMsg {
+    required string executorId = 1;
+    repeated string messages = 2;
+}
+
 // Messages between Executors
 message RequestPartitionMsg {
     required int64 requestId = 1; // To handle multiple outstanding requests on one link between PartitionTransferPeers
@@ -103,4 +120,37 @@ enum PartitionStore {
     MEMORY = 0;
     LOCAL_FILE = 1;
     REMOTE_FILE = 2;
+}
+
+// Messages for metadata passing
+// Messages from Master to Executors
+message MetadataResponseMsg {
+    required int64 requestId = 1; // To find the matching request msg
+    optional bool hashed = 2;
+    repeated BlockMetadataMsg blockMetadata = 3;
+    optional PartitionStateFromExecutor state = 4;
+}
+
+// Messages from Executors to Master
+message StoreMetadataMsg {
+    required bool hashed = 1;
+    required string partitionId = 2;
+    repeated BlockMetadataMsg blockMetadata = 3;
+}
+
+message RemoveMetadataMsg {
+    required string partitionId = 1;
+}
+
+message RequestMetadataMsg {
+    required string executorId = 1;
+    required string partitionId = 2;
+}
+
+// Common messages
+message BlockMetadataMsg {
+    required int32 hashValue = 1;
+    required int32 blockSize = 2;
+    required int64 offset = 3;
+    required int64 numElements = 4;
 }

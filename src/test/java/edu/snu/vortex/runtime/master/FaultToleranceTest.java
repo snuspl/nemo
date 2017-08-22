@@ -40,6 +40,7 @@ import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.tang.Tang;
+import org.apache.reef.tang.exceptions.InjectionException;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -77,14 +78,14 @@ public final class FaultToleranceTest {
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
   @Before
-  public void setUp() {
+  public void setUp() throws InjectionException {
     executorRepresenterMap.clear();
     failedExecutorRepresenterMap.clear();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
     when(containerManager.getFailedExecutorRepresenterMap()).thenReturn(failedExecutorRepresenterMap);
 
     irDAGBuilder = new DAGBuilder<>();
-    partitionManagerMaster = new PartitionManagerMaster();
+    partitionManagerMaster = Tang.Factory.getTang().newInjector().getInstance(PartitionManagerMaster.class);
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
