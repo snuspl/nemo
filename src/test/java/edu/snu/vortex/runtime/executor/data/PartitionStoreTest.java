@@ -381,15 +381,15 @@ public final class PartitionStoreTest {
   /**
    * Tests concurrent read for {@link PartitionStore}s.
    * Assumes following circumstances:
-   * -> Task 2
+   *                                             -> Task 2
    * Task 1 (write)-> broadcast (concurrent read)-> ...
-   * -> Task 11
+   *                                             -> Task 11
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */
   private void concurrentRead(final PartitionStore writerSideStore,
                               final PartitionStore readerSideStore) {
-    final ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
+    final ExecutorService writeExecutor = Executors.newSingleThreadExecutor() ;
     final ExecutorService readExecutor = Executors.newFixedThreadPool(NUM_CONC_READ_TASKS);
     final Future<Boolean> writeFuture;
     final List<Future<Boolean>> readFutureList = new ArrayList<>(NUM_CONC_READ_TASKS);
@@ -472,7 +472,7 @@ public final class PartitionStoreTest {
    * Assumes following circumstances:
    * Task 1 (write (hash 0~3))->         (read (hash 0~1))-> Task 3
    * Task 2 (write (hash 0~3))-> shuffle (read (hash 2))-> Task 4
-   * (read (hash 3))-> Task 5
+   *                                     (read (hash 3))-> Task 5
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */

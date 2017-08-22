@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
@@ -155,12 +156,13 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
    * Each block has a specific hash value, and the block becomes a unit of read & write.
    *
    * @param partitionId of the partition.
-   * @param hashedData  to save as a partition.
+   * @param hashedData  to save as a partition. Each pair consists of the hash value and the block data.
    * @return the size of data per hash value.
    */
   @Override
   public CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
-      final String partitionId, final Iterable<Iterable<Element>> hashedData) {
+      final String partitionId,
+      final Iterable<Pair<Integer, Iterable<Element>>> hashedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
@@ -186,7 +188,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
    */
   @Override
   public CompletableFuture<List<Long>> appendHashedData(final String partitionId,
-                                                        final Iterable<Iterable<Element>> hashedData) {
+                                                        final Iterable<Pair<Integer, Iterable<Element>>> hashedData) {
     final Supplier<List<Long>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);

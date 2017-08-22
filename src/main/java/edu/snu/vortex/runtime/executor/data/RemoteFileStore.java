@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -33,11 +34,11 @@ interface RemoteFileStore extends PartitionStore {
    * However, the blocks may not be saved consecutively.
    *
    * @param partitionId of the partition.
-   * @param hashedData  to save.
+   * @param hashedData  to save . Each pair consists of the hash value and the block data.
    * @return the size of data per hash value.
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
    *          for any error occurred while trying to write a partition.)
    */
   CompletableFuture<List<Long>> appendHashedData(String partitionId,
-                                                 Iterable<Iterable<Element>> hashedData);
+                                                 Iterable<Pair<Integer, Iterable<Element>>> hashedData);
 }

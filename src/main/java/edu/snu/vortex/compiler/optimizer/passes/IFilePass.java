@@ -15,30 +15,28 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
-import edu.snu.vortex.compiler.CompilerTestUtil;
+import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.common.dag.DAG;
-import org.junit.Before;
-import org.junit.Test;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 
-import static org.junit.Assert.assertEquals;
+import java.util.List;
 
 /**
- * Test {@link LoopGroupingPass}.
+ * Pass which enables I-File style write optimization.
  */
-public class LoopGroupingPassTest {
-  private DAG<IRVertex, IREdge> compiledDAG;
-
-  @Before
-  public void setUp() throws Exception {
-    compiledDAG = CompilerTestUtil.compileALSDAG();
-  }
-
-  @Test
-  public void testLoopGrouping() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG = new LoopGroupingPass().process(compiledDAG);
-
-    assertEquals(9, processedDAG.getTopologicalSort().size());
+public final class IFilePass implements Pass {
+  @Override
+  public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) throws Exception {
+    dag.getVertices().forEach(vertex -> {
+      final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
+      inEdges.forEach(edge -> {
+        if (edge.getType().equals(IREdge.Type.ScatterGather) &&
+            edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile)) {
+          edge.setAttr(Attribute.Key.WriteOptimization, Attribute.IFileWrite);
+        }
+      });
+    });
+    return dag;
   }
 }

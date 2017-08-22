@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
-import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
@@ -23,9 +22,6 @@ import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.dag.DAG;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,8 +32,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test {@link LoopUnrollingPass}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(JobLauncher.class)
 public class LoopUnrollingPassTest {
   private DAG<IRVertex, IREdge> compiledDAG;
 
