@@ -34,11 +34,32 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
   /**
    * Creates netty channel active handler.
    *
+   * Inbound pipeline:
+   * <pre>
+   *                                           +-----------------------+
+   *                            |== Control => | ControlMessageHandler | ==> (PartitionTransferRequest)
+   *       +----------------+   |              +-----------------------+
+   *   ==> | MessageDecoder | ==|
+   *       +----------------+   |              +---------------------+
+   *                            |=== Data ===> | RequestReplyMatcher | ==> fetch response
+   *                                           +---------------------+
+   * </pre>
+   *
+   * Outbound pipeline:
+   * <pre>
+   *       +-----------------------+     +---------------------+
+   *   <== | ControlMessageEncoder | <== | RequestReplyMatcher | <== fetch request
+   *       +-----------------------+     +---------------------+
+   *          +--------------------+
+   *   <===== | DataMessageEncoder | <== PartitionOutputStream (for MemoryPartition) <== (PartitionTransferRequest)
+   *          +--------------------+        or PartitionRegion (for FilePartition)
+   * </pre>
+   *
    * @param channelGroup  the {@link ChannelGroup} to which active channels are added
    * @param channelMap    the map to which active channels are added
    */
   NettyChannelInitializer(final ChannelGroup channelGroup,
-                                 final ConcurrentMap<SocketAddress, Channel> channelMap) {
+                          final ConcurrentMap<SocketAddress, Channel> channelMap) {
     nettyChannelActiveHandler = new NettyChannelActiveHandler(channelGroup, channelMap);
   }
 
@@ -46,6 +67,14 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
   protected void initChannel(final SocketChannel ch) {
     // TODO add more handlers
     ch.pipeline()
+        // inbound
+        .addLast(new MessageDecoder())
+
+        // outbound
+
+        // duplex
+
+        // channel management
         .addLast(nettyChannelActiveHandler);
   }
 
@@ -67,7 +96,7 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
      * @param channelMap    the map to which active channels are added
      */
     NettyChannelActiveHandler(final ChannelGroup channelGroup,
-                                     final ConcurrentMap<SocketAddress, Channel> channelMap) {
+                              final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
       this.channelMap = channelMap;
     }
