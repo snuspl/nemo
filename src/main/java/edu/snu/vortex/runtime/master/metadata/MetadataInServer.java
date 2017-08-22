@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class represents a metadata stored in the metadata server.
+ * TODO #430: Handle Concurrency at Partition Level.
+ * TODO #431: Include Partition Metadata in a Partition.
  */
 @ThreadSafe
 final class MetadataInServer {

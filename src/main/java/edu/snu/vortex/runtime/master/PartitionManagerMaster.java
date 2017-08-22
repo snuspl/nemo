@@ -36,6 +36,8 @@ import static edu.snu.vortex.runtime.common.state.PartitionState.State.SCHEDULED
 /**
  * Master-side partition manager.
  * For now, all its operations are synchronized to guarantee thread safety.
+ * TODO #430: Handle Concurrency at Partition Level.
+ * TODO #431: Include Partition Metadata in a Partition.
  */
 @ThreadSafe
 public final class PartitionManagerMaster {

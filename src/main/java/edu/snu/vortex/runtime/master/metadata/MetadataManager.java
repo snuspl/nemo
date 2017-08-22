@@ -35,6 +35,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Manages the metadata of remote partitions.
  * For now, all its operations are synchronized to guarantee thread safety.
+ * TODO #430: Handle Concurrency at Partition Level.
+ * TODO #431: Include Partition Metadata in a Partition.
  */
 @ThreadSafe
 public final class MetadataManager {
