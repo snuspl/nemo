@@ -211,22 +211,6 @@ public final class JobConf extends ConfigurationModuleBuilder {
   public final class PartitionTransportClientNumThreads implements Name<Integer> {
   }
 
-  /**
-   * TODO: DESCRIPTION_HERE
-   */
-  @NamedParameter(doc = "The number of threads responsible for encoding partitions into bytes",
-      short_name = "partition_threads_encoding", default_value = "10")
-  public final class PartitionTransferNumEncodingThreads implements Name<Integer> {
-  }
-
-  /**
-   * TODO: DESCRIPTION_HERE
-   */
-  @NamedParameter(doc = "The number of threads responsible for decoding bytes into partitions",
-      short_name = "partition_threads_decoding", default_value = "10")
-  public final class PartitionTransferNumDecodingThreads implements Name<Integer> {
-  }
-
   public static final RequiredParameter<String> EXECUTOR_ID = new RequiredParameter<>();
   public static final OptionalParameter<Integer> EXECUTOR_CAPACITY = new OptionalParameter<>();
   public static final RequiredParameter<String> JOB_ID = new RequiredParameter<>();

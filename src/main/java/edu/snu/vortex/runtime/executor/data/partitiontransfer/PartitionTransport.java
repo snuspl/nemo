@@ -20,6 +20,7 @@ import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
@@ -41,7 +42,7 @@ import java.util.Iterator;
 /**
  * Transport implementation for peer-to-peer {@link edu.snu.vortex.runtime.executor.data.partition.Partition} transfer.
  */
-public final class PartitionTransport implements AutoCloseable {
+final class PartitionTransport implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
 
   private final SocketAddress serverListeningAddress;
@@ -82,18 +83,20 @@ public final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    // TODO: Handler, with channelGroup
+    final NettyChannelInitializer channelInitializer = new NettyChannelInitializer(channelGroup);
+
     clientBootstrap = new Bootstrap();
     clientBootstrap
         .group(clientGroup)
         .channel(NettyChannelImplementationSelector.CHANNEL_CLASS)
+        .handler(channelInitializer)
         .option(ChannelOption.SO_REUSEADDR, true);
 
-    // TODO: Child handler, with channelGroup
     final ServerBootstrap serverBootstrap = new ServerBootstrap();
     serverBootstrap
         .group(serverListeningGroup, serverWorkingGroup)
         .channel(NettyChannelImplementationSelector.SERVER_CHANNEL_CLASS)
+        .childHandler(channelInitializer)
         .option(ChannelOption.SO_BACKLOG, serverBacklog)
         .option(ChannelOption.SO_REUSEADDR, true);
 
@@ -149,12 +152,23 @@ public final class PartitionTransport implements AutoCloseable {
 
     final ChannelGroupFuture channelGroupCloseFuture = channelGroup.close();
     final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
-    final Future serverWorkingGroupCloseFurture = serverWorkingGroup.shutdownGracefully();
+    final Future serverWorkingGroupCloseFuture = serverWorkingGroup.shutdownGracefully();
     final Future clientGroupCloseFuture = clientGroup.shutdownGracefully();
 
     channelGroupCloseFuture.awaitUninterruptibly();
     serverListeningGroupCloseFuture.awaitUninterruptibly();
-    serverWorkingGroupCloseFurture.awaitUninterruptibly();
+    serverWorkingGroupCloseFuture.awaitUninterruptibly();
     clientGroupCloseFuture.awaitUninterruptibly();
+  }
+
+  /**
+   * Asynchronously connects to a remote transport.
+   * @todo chancache
+   *
+   * @param remoteAddress the socket address to connect to
+   * @return {@link ChannelFuture} that completes on connection
+   */
+  public ChannelFuture connectTo(final SocketAddress remoteAddress) {
+    return clientBootstrap.connect(remoteAddress);
   }
 }
