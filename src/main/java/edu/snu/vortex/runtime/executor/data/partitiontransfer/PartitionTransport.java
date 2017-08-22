@@ -19,8 +19,14 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.remote.ports.TcpPortProvider;
@@ -43,6 +49,7 @@ public final class PartitionTransport implements AutoCloseable {
   private final EventLoopGroup serverWorkingGroup;
   private final EventLoopGroup clientGroup;
   private final Bootstrap clientBootstrap;
+  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
   /**
    * Constructs a partition transport.
@@ -71,18 +78,18 @@ public final class PartitionTransport implements AutoCloseable {
 
     final String host = localAddressProvider.getLocalAddress();
 
-    this.serverListeningGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numListeningThreads);
-    this.serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
-    this.clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
+    serverListeningGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numListeningThreads);
+    serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
+    clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    // TODO: Handler
-    this.clientBootstrap = new Bootstrap();
+    // TODO: Handler, with channelGroup
+    clientBootstrap = new Bootstrap();
     clientBootstrap
         .group(clientGroup)
         .channel(NettyChannelImplementationSelector.CHANNEL_CLASS)
         .option(ChannelOption.SO_REUSEADDR, true);
 
-    // TODO: Child handler
+    // TODO: Child handler, with channelGroup
     final ServerBootstrap serverBootstrap = new ServerBootstrap();
     serverBootstrap
         .group(serverListeningGroup, serverWorkingGroup)
@@ -94,7 +101,8 @@ public final class PartitionTransport implements AutoCloseable {
     if (port == 0) {
       for (final int candidatePort : tcpPortProvider) {
         try {
-          serverBootstrap.bind(host, candidatePort).sync();
+          final Channel channel = serverBootstrap.bind(host, candidatePort).sync().channel();
+          channelGroup.add(channel);
           boundPort = candidatePort;
         } catch (final InterruptedException e) {
           LOG.debug(String.format("Cannot bind to %s:%d", host, candidatePort), e);
@@ -108,7 +116,8 @@ public final class PartitionTransport implements AutoCloseable {
       }
     } else {
       try {
-        serverBootstrap.bind(host, port).sync();
+        final Channel channel = serverBootstrap.bind(host, port).sync().channel();
+        channelGroup.add(channel);
         boundPort = port;
       } catch (final InterruptedException e) {
         serverListeningGroup.shutdownGracefully();
@@ -118,8 +127,8 @@ public final class PartitionTransport implements AutoCloseable {
       }
     }
 
-    LOG.debug("Server listening at {}:{}", host, boundPort);
-    this.serverListeningAddress = new InetSocketAddress(host, boundPort);
+    serverListeningAddress = new InetSocketAddress(host, boundPort);
+    LOG.info("Server listening at {}", serverListeningAddress);
   }
 
   /**
@@ -131,8 +140,21 @@ public final class PartitionTransport implements AutoCloseable {
     return serverListeningAddress;
   }
 
+  /**
+   * Closes all channels and releases all resources.
+   */
   @Override
   public void close() {
+    LOG.info("Stopping listening at {} and closing", serverListeningAddress);
 
+    final ChannelGroupFuture channelGroupCloseFuture = channelGroup.close();
+    final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
+    final Future serverWorkingGroupCloseFurture = serverWorkingGroup.shutdownGracefully();
+    final Future clientGroupCloseFuture = clientGroup.shutdownGracefully();
+
+    channelGroupCloseFuture.awaitUninterruptibly();
+    serverListeningGroupCloseFuture.awaitUninterruptibly();
+    serverWorkingGroupCloseFurture.awaitUninterruptibly();
+    clientGroupCloseFuture.awaitUninterruptibly();
   }
 }
