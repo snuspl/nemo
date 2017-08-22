@@ -20,7 +20,6 @@ import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
@@ -37,7 +36,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Transport implementation for peer-to-peer {@link edu.snu.vortex.runtime.executor.data.partition.Partition} transfer.
@@ -51,9 +51,10 @@ final class PartitionTransport implements AutoCloseable {
   private final EventLoopGroup clientGroup;
   private final Bootstrap clientBootstrap;
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+  private final ConcurrentMap<SocketAddress, Channel> channelMap = new ConcurrentHashMap<>();
 
   /**
-   * Constructs a partition transport.
+   * Constructs a partition transport and starts listening.
    *
    * @param tcpPortProvider       provides an iterator of random tcp ports
    * @param localAddressProvider  provides the local address of the node to bind to
@@ -83,7 +84,7 @@ final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    final NettyChannelInitializer channelInitializer = new NettyChannelInitializer(channelGroup);
+    final NettyChannelInitializer channelInitializer = new NettyChannelInitializer(channelGroup, channelMap);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap
@@ -135,15 +136,6 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Gets a local socket address on which the server is listening
-   *
-   * @return a local socket address on which the server is listening
-   */
-  public SocketAddress getServerListeningAddress() {
-    return serverListeningAddress;
-  }
-
-  /**
    * Closes all channels and releases all resources.
    */
   @Override
@@ -162,13 +154,17 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Asynchronously connects to a remote transport.
-   * @todo chancache
+   * Synchronously connects to a remote transport, or returns a cached channel.
    *
    * @param remoteAddress the socket address to connect to
-   * @return {@link ChannelFuture} that completes on connection
+   * @return a {@link Channel} to {@code remoteAddress}
    */
-  public ChannelFuture connectTo(final SocketAddress remoteAddress) {
-    return clientBootstrap.connect(remoteAddress);
+  public Channel getChannelTo(final SocketAddress remoteAddress) {
+    final Channel cachedChannel = channelMap.get(remoteAddress);
+    if (cachedChannel == null) {
+      return clientBootstrap.connect(remoteAddress).syncUninterruptibly().channel();
+    } else {
+      return cachedChannel;
+    }
   }
 }

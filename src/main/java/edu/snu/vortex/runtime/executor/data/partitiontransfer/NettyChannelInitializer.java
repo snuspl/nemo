@@ -15,12 +15,14 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.SocketAddress;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * {@link ChannelInitializer} implementation for {@link PartitionTransport}.
@@ -32,10 +34,12 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
   /**
    * Creates netty channel active handler.
    *
-   * @param channelGroup the {@link ChannelGroup} to which active channels are added
+   * @param channelGroup  the {@link ChannelGroup} to which active channels are added
+   * @param channelMap    the map to which active channels are added
    */
-  public NettyChannelInitializer(final ChannelGroup channelGroup) {
-    nettyChannelActiveHandler = new NettyChannelActiveHandler(channelGroup);
+  public NettyChannelInitializer(final ChannelGroup channelGroup,
+                                 final ConcurrentMap<SocketAddress, Channel> channelMap) {
+    nettyChannelActiveHandler = new NettyChannelActiveHandler(channelGroup, channelMap);
   }
 
   @Override
@@ -46,25 +50,50 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
   }
 
   /**
-   * Registers a {@link io.netty.channel.Channel} when it becomes active.
+   * Registers a {@link Channel} to the channel group and the channel map when it becomes active.
    */
   @ChannelHandler.Sharable
   private static final class NettyChannelActiveHandler extends ChannelInboundHandlerAdapter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(NettyChannelActiveHandler.class);
+
     private final ChannelGroup channelGroup;
+    private final ConcurrentMap<SocketAddress, Channel> channelMap;
 
     /**
      * Creates netty channel active handler.
      *
      * @param channelGroup the {@link ChannelGroup} to which active channels are added
+     * @param channelMap    the map to which active channels are added
      */
-    public NettyChannelActiveHandler(final ChannelGroup channelGroup) {
+    public NettyChannelActiveHandler(final ChannelGroup channelGroup,
+                                     final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
+      this.channelMap = channelMap;
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-      channelGroup.add(ctx.channel());
+      final Channel channel = ctx.channel();
+      channelGroup.add(channel);
+      if (channelMap.put(channel.remoteAddress(), channel) != null) {
+        LOG.warn("Multiple channels with remote address {} are active", channel.remoteAddress());
+      }
+    }
+
+    @Override
+    public void channelInactive(final ChannelHandlerContext ctx) {
+      final Channel channel = ctx.channel();
+      LOG.warn("A channel with remote address {} is now inactive", channel.remoteAddress());
+      channelMap.computeIfPresent(channel.remoteAddress(), (address, mappedChannel) -> {
+        if (mappedChannel == channel) {
+          // If the inactive channel is in the map, remove it
+          return null;
+        } else {
+          // Otherwise, leave the map untouched
+          return mappedChannel;
+        }
+      });
     }
   }
 }
