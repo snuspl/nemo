@@ -38,7 +38,8 @@ public final class RemoteFileMetadata extends FileMetadata {
 
   private boolean written; // The whole data for this partition is written or not yet.
   private final boolean syncPerWrite; // Whether the partition have to synchronize the metadata per every block write.
-  private String partitionId;
+  private final String partitionId;
+  private final String executorId;
   private final PersistentConnectionToMaster connectionToMaster;
 
   /**
@@ -48,16 +49,19 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @param syncPerWrite       Whether the partition have to synchronize the metadata per every block write.
    *                           If so, the partition can be written concurrently.
    * @param partitionId        the id of the partition.
+   * @param executorId         the id of the executor.
    * @param connectionToMaster the connection for sending messages to master.
    */
   private RemoteFileMetadata(final boolean hashed,
                              final boolean syncPerWrite,
                              final String partitionId,
+                             final String executorId,
                              final PersistentConnectionToMaster connectionToMaster) {
     super(hashed);
     this.written = false;
     this.syncPerWrite = syncPerWrite;
     this.partitionId = partitionId;
+    this.executorId = executorId;
     this.connectionToMaster = connectionToMaster;
   }
 
@@ -66,17 +70,20 @@ public final class RemoteFileMetadata extends FileMetadata {
    *
    * @param hashed             each block has a single hash value or not.
    * @param partitionId        the id of the partition.
+   * @param executorId         the id of the executor.
    * @param blockMetadataList  the list of block metadata.
    * @param connectionToMaster the connection for sending messages to master.
    */
   private RemoteFileMetadata(final boolean hashed,
                              final String partitionId,
+                             final String executorId,
                              final List<BlockMetadata> blockMetadataList,
                              final PersistentConnectionToMaster connectionToMaster) {
     super(hashed, blockMetadataList);
     this.written = true;
     this.syncPerWrite = false;
     this.partitionId = partitionId;
+    this.executorId = executorId;
     this.connectionToMaster = connectionToMaster;
   }
 
@@ -114,6 +121,7 @@ public final class RemoteFileMetadata extends FileMetadata {
                   .setType(ControlMessage.MessageType.ReserveBlock)
                   .setReserveBlockMsg(
                       ControlMessage.ReserveBlockMsg.newBuilder()
+                          .setExecutorId(executorId)
                           .setPartitionId(partitionId)
                           .setHashed(isHashed())
                           .setBlockMetadata(blockMetadataMsg))
@@ -218,14 +226,16 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @param syncPerWrite       Whether the partition have to synchronize the metadata per every block write.
    *                           If so, the partition can be written concurrently.
    * @param partitionId        the id of the partition.
+   * @param executorId         the id of the executor.
    * @param connectionToMaster the connection for sending messages to master.
    * @return the created file metadata.
    */
   public static RemoteFileMetadata openToWrite(final boolean hashed,
                                                final boolean syncPerWrite,
                                                final String partitionId,
+                                               final String executorId,
                                                final PersistentConnectionToMaster connectionToMaster) {
-    return new RemoteFileMetadata(hashed, syncPerWrite, partitionId, connectionToMaster);
+    return new RemoteFileMetadata(hashed, syncPerWrite, partitionId, executorId, connectionToMaster);
   }
 
   /**
@@ -292,7 +302,7 @@ public final class RemoteFileMetadata extends FileMetadata {
       ));
     }
 
-    return new RemoteFileMetadata(hashed, partitionId, blockMetadataList, connectionToMaster);
+    return new RemoteFileMetadata(hashed, partitionId, executorId, blockMetadataList, connectionToMaster);
   }
 
   /**

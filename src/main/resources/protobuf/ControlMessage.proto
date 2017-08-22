@@ -73,8 +73,9 @@ message PartitionStateChangedMsg {
     required string executorId = 1;
     required string partitionId = 2;
     required PartitionStateFromExecutor state = 3;
-    repeated int64 blockSizeInfo = 4;
-    optional string srcVertexId = 5;
+    optional int32 srcTaskIdx = 4;
+    repeated int64 blockSizeInfo = 5;
+    optional string srcIRVertexId = 6;
 }
 
 message RequestPartitionLocationMsg {
@@ -115,9 +116,10 @@ enum PartitionStateFromExecutor {
     PARTITION_READY = 0;
     SCHEDULED = 1;
     COMMITTED = 2;
-    LOST = 3;
-    LOST_BEFORE_COMMIT = 4;
-    REMOVED = 5;
+    PARTIAL_COMMITTED = 3;
+    LOST = 4;
+    LOST_BEFORE_COMMIT = 5;
+    REMOVED = 6;
 }
 
 enum PartitionStore {

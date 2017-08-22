@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
+import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.frontend.beam.transform.GroupByKeyTransform;
@@ -24,6 +25,9 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +35,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test {@link DataSkewPass} with MR workload.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(JobLauncher.class)
 public class DataSkewPassTest {
   private DAG<IRVertex, IREdge> mrDAG;
 

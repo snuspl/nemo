@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
@@ -27,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 

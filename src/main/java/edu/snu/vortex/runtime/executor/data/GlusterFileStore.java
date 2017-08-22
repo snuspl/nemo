@@ -137,7 +137,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(false, false, partitionId, persistentConnectionToMaster);
+          RemoteFileMetadata.openToWrite(false, false, partitionId, executorId, persistentConnectionToMaster);
 
       try (final GlusterFilePartition partition =
                GlusterFilePartition.openToWrite(coder, filePath, metadata)) {
@@ -167,7 +167,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(true, false, partitionId, persistentConnectionToMaster);
+          RemoteFileMetadata.openToWrite(true, false, partitionId, executorId, persistentConnectionToMaster);
       final List<Long> blockSizeList;
 
       try (final GlusterFilePartition partition =
@@ -193,7 +193,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
       final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(true, true, partitionId, persistentConnectionToMaster);
+          RemoteFileMetadata.openToWrite(true, true, partitionId, executorId, persistentConnectionToMaster);
       final List<Long> blockSizeList;
 
       try (final GlusterFilePartition partition =

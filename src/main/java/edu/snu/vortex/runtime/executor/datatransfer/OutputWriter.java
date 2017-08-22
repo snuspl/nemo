@@ -25,6 +25,7 @@ import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -47,7 +48,7 @@ public final class OutputWriter extends DataTransfer {
   public OutputWriter(final int hashRangeMultiplier,
                       final int srcTaskIdx,
                       final String srcRuntimeVertexId,
-                      final IRVertex dstRuntimeVertex,
+                      @Nullable final IRVertex dstRuntimeVertex, // Null if it is not a runtime vertex.
                       final RuntimeEdge runtimeEdge,
                       final PartitionManagerWorker partitionManagerWorker) {
     super(runtimeEdge.getId());
@@ -169,8 +170,7 @@ public final class OutputWriter extends DataTransfer {
    * Hashes an output according to the hash value and constructs I-Files with the hashed data blocks.
    * Each destination task will have a single I-File to read regardless of the input parallelism.
    * To prevent the extra sort process in the source task and deserialize - merge process in the destination task,
-   * we extend the hash range with the factor {@link edu.snu.vortex.client.JobConf.HashRangeMultiplier} in advance
-   * and make the blocks as the unit of retrieval.
+   * we hash the data into blocks and make the blocks as the unit of write and retrieval.
    * Constraint: If a partition is written by this method, it have to be read by {@link InputReader#readIFile()}.
    * TODO #378: Elaborate block construction during data skew pass
    *
@@ -202,7 +202,7 @@ public final class OutputWriter extends DataTransfer {
     // Then append each blocks to corresponding partition appropriately.
     IntStream.range(0, dstParallelism).forEach(dstIdx -> {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstIdx);
-      partitionManagerWorker.appendHashedDataToPartition(partitionId, outputList.get(dstIdx),
+      partitionManagerWorker.appendHashedDataToPartition(partitionId, srcTaskIdx, outputList.get(dstIdx),
           runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
     });
   }

@@ -31,8 +31,8 @@ public final class IFilePass implements Pass {
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
-        if (edge.getType().equals(IREdge.Type.ScatterGather) &&
-            edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile)) {
+        if (edge.getType().equals(IREdge.Type.ScatterGather)
+            && edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile)) {
           edge.setAttr(Attribute.Key.WriteOptimization, Attribute.IFileWrite);
         }
       });

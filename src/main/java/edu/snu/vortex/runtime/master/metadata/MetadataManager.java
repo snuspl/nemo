@@ -79,7 +79,7 @@ public final class MetadataManager {
    */
   public synchronized void onReserveBlock(final ControlMessage.Message message,
                                           final MessageContext messageContext) {
-    assert (message.getType() == ControlMessage.MessageType.ReserveBlockResponse);
+    assert (message.getType() == ControlMessage.MessageType.ReserveBlock);
     final ControlMessage.ReserveBlockMsg reserveBlockMsg = message.getReserveBlockMsg();
     final String partitionId = reserveBlockMsg.getPartitionId();
     partitionIdToMetadata.putIfAbsent(partitionId, new MetadataInServer(reserveBlockMsg.getHashed()));
