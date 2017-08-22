@@ -82,7 +82,6 @@ final class PartitionTransferPeer {
       final PartitionClientHandler partitionClientHandler,
       final PartitionServerHandler partitionServerHandler,
       final ExceptionHandler exceptionHandler,
-      @Parameter(JobConf.PartitionTransferNumDecodingThreads.class) final int numClientThreads,
       @Parameter(JobConf.ExecutorId.class) final String executorId) {
     this.nameResolver = nameResolver;
     this.partitionManagerWorker = partitionManagerWorker;
@@ -91,7 +90,7 @@ final class PartitionTransferPeer {
     this.replyFutureMap = new ReplyFutureMap<>();
 
     this.transport = createTransport(localAddressProvider.getLocalAddress(),
-        partitionClientHandler, partitionServerHandler, exceptionHandler, numClientThreads);
+        partitionClientHandler, partitionServerHandler, exceptionHandler, 5);
 
     final InetSocketAddress serverAddress = (InetSocketAddress) transport.getLocalAddress();
     LOG.debug("PartitionTransferPeer starting, listening at {}", serverAddress);
@@ -219,14 +218,11 @@ final class PartitionTransferPeer {
 
     /**
      * @param partitionManagerWorker {@link PartitionManagerWorker} instance.
-     * @param numServerSerThreads The number of threads, responsible for serialization.
      */
     @Inject
-    private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
-                                   @Parameter(JobConf.PartitionTransferNumEncodingThreads.class)
-                                   final int numServerSerThreads) {
+    private PartitionServerHandler(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
       this.partitionManagerWorker = partitionManagerWorker;
-      this.serverExecutorService = Executors.newFixedThreadPool(numServerSerThreads);
+      this.serverExecutorService = Executors.newFixedThreadPool(5);
     }
 
     @Override

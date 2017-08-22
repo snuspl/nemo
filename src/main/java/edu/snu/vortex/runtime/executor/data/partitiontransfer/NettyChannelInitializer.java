@@ -37,7 +37,7 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
    * @param channelGroup  the {@link ChannelGroup} to which active channels are added
    * @param channelMap    the map to which active channels are added
    */
-  public NettyChannelInitializer(final ChannelGroup channelGroup,
+  NettyChannelInitializer(final ChannelGroup channelGroup,
                                  final ConcurrentMap<SocketAddress, Channel> channelMap) {
     nettyChannelActiveHandler = new NettyChannelActiveHandler(channelGroup, channelMap);
   }
@@ -66,7 +66,7 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
      * @param channelGroup the {@link ChannelGroup} to which active channels are added
      * @param channelMap    the map to which active channels are added
      */
-    public NettyChannelActiveHandler(final ChannelGroup channelGroup,
+    NettyChannelActiveHandler(final ChannelGroup channelGroup,
                                      final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
       this.channelMap = channelMap;
