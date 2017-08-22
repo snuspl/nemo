@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.executor.data.metadata;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -37,6 +36,7 @@ public abstract class FileMetadata {
                          final List<BlockMetadata> blockMetadataList) {
     this.hashed = hashed;
     this.blockMetadataList = blockMetadataList;
+    this.position = 0;
   }
 
   /**

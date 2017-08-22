@@ -627,6 +627,8 @@ public final class PartitionStoreTest {
         case RequestMetadata:
           metadataManager.onRequestMetadata(message, messageContext);
           break;
+        case ReserveBlock:
+          metadataManager.onReserveBlock(message, messageContext);
         default:
           throw new IllegalMessageException(
               new Exception("This message should not be received by metadata server :" + message.getType()));

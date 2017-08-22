@@ -52,7 +52,7 @@ public final class GlusterFilePartition extends FilePartition {
   private void beforeWrite() throws IOException {
     openFileStream();
 
-    if (!((RemoteFileMetadata) getMetadata()).isConcWritable()) {
+    if (!((RemoteFileMetadata) getMetadata()).needToSyncPerWrite()) {
       // Prevent concurrent write by using the file lock of this file.
       // If once this lock is acquired, it have to be released to prevent the locked leftover in the remote storage.
       // Because this lock will be released when the file channel is closed, we need to close the file channel well.
@@ -85,7 +85,7 @@ public final class GlusterFilePartition extends FilePartition {
         getMetadata().appendBlockMetadata(hashVal, serializedData.length, numElement);
     getFileChannel().position(positionToWrite);
 
-    if (((RemoteFileMetadata) getMetadata()).isConcWritable()) {
+    if (((RemoteFileMetadata) getMetadata()).needToSyncPerWrite()) {
       try (final FileLock fileLock = getFileChannel().tryLock(positionToWrite, serializedData.length, false)) {
         if (fileLock == null) {
           throw new IOException("Other thread (maybe in another node) is writing on this file region.");

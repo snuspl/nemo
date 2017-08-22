@@ -202,6 +202,9 @@ public final class RuntimeMaster {
       case RequestMetadata:
         partitionManagerMaster.getMetadataManager().onRequestMetadata(message, messageContext);
         break;
+      case ReserveBlock:
+        partitionManagerMaster.getMetadataManager().onReserveBlock(message, messageContext);
+        break;
       default:
         throw new IllegalMessageException(
             new Exception("This message should not be requested to Master :" + message.getType()));

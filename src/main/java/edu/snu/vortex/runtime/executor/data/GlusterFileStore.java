@@ -133,10 +133,10 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public CompletableFuture<Optional<Long>> putDataAsPartition(final String partitionId,
                                                               final Iterable<Element> data) {
     final Supplier<Optional<Long>> supplier = () -> {
-      final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(false, false, partitionId, persistentConnectionToMaster);
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      final RemoteFileMetadata metadata =
+          RemoteFileMetadata.openToWrite(false, false, partitionId, persistentConnectionToMaster);
 
       try (final GlusterFilePartition partition =
                GlusterFilePartition.openToWrite(coder, filePath, metadata)) {
@@ -162,10 +162,10 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
       final String partitionId, final Iterable<Iterable<Element>> hashedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
-      final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(true, false, partitionId, persistentConnectionToMaster);
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      final RemoteFileMetadata metadata =
+          RemoteFileMetadata.openToWrite(true, false, partitionId, persistentConnectionToMaster);
       final List<Long> blockSizeList;
 
       try (final GlusterFilePartition partition =
@@ -188,10 +188,10 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public CompletableFuture<List<Long>> appendHashedData(final String partitionId,
                                                         final Iterable<Iterable<Element>> hashedData) {
     final Supplier<List<Long>> supplier = () -> {
-      final RemoteFileMetadata metadata =
-          RemoteFileMetadata.openToWrite(true, true, partitionId, persistentConnectionToMaster);
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      final RemoteFileMetadata metadata =
+          RemoteFileMetadata.openToWrite(true, true, partitionId, persistentConnectionToMaster);
       final List<Long> blockSizeList;
 
       try (final GlusterFilePartition partition =
