@@ -49,15 +49,15 @@ import java.util.concurrent.ConcurrentMap;
  *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
  *      +---------------------+                   +--------------------------------------+
  *
- *      +------------------------+
- *   <= | DataFrameHeaderEncoder | <= DataFrame header =+
- *      +------------------------+                      |== PartitionOutputStream buffer flush
- *   <=== ByteBuf ======================================+
+ *      +--------------------------+
+ *   <= | (DataFrameHeaderEncoder) | <= DataFrame header =+
+ *      +--------------------------+                      |== PartitionOutputStream buffer flush
+ *   <=== ByteBuf ========================================+
  *
- *      +------------------------+
- *   <= | DataFrameHeaderEncoder | <= DataFrame header =+
- *      +------------------------+                      |== A FileRegion added to PartitionOutputStream
- *   <= FileRegion =====================================+
+ *      +--------------------------+
+ *   <= | (DataFrameHeaderEncoder) | <= DataFrame header =+
+ *      +--------------------------+                      |== A FileRegion added to PartitionOutputStream
+ *   <= FileRegion =======================================+
  * </pre>
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
@@ -79,6 +79,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     // TODO add more handlers
     // TODO ControlFrameEncoder is sharable! create just once
+    // TODO DataFrameHeaderEncoder is not a netty encoder. just a static function wrapper class.
     ch.pipeline()
         // inbound
         .addLast(FrameDecoder.class.getName(), new FrameDecoder())
