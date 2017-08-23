@@ -36,9 +36,9 @@ import java.util.concurrent.ConcurrentMap;
  *       +----------------+   |           |                       +------------------------+    A new
  *   ==> | MessageDecoder | ==|           += Push notification => | MessageIdToStreamCodec | => PartitionInputStream
  *       +----------------+   |                                   +------------------------+
- *                            |                            +------------------------+
- *                            +== Data: ByteBuf tagged ==> | MessageIdToStreamCodec | => Add data to an existing
- *                                      with messageId     +------------------------+      PartitionInputStream
+ *                            |
+ *                            +== Data: ByteBuf tagged ==> Add data to an existing PartitionInputStream
+ *                                      with messageId
  * </pre>
  *
  * Outbound pipeline:
@@ -77,14 +77,14 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
     // TODO add more handlers
     ch.pipeline()
         // inbound
-        .addLast(new MessageDecoder())
+        .addLast(MessageDecoder.class.getName(), new MessageDecoder())
 
         // outbound
 
         // duplex
 
         // channel management
-        .addLast(nettyChannelActiveHandler);
+        .addLast(NettyChannelActiveHandler.class.getName(), nettyChannelActiveHandler);
   }
 
   /**
