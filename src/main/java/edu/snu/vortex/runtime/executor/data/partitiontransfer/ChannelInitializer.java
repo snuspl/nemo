@@ -49,11 +49,15 @@ import java.util.concurrent.ConcurrentMap;
  *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
  *      +---------------------+                   +--------------------------------------+
  *
- *                                       +------------------+
- *   <=============== DataFrame Header = |                  |
- *   <=== ByteBuf ==+                    | DataFrameEncoder | <= PartitionOutputStream buffer flush
- *                  |= DataFrame Body == |                  |
- *   <= FileRegion =+                    +------------------+ <= A FileRegion added to PartitionOutputStream
+ *      +------------------------+
+ *   <= | DataFrameHeaderEncoder | <= DataFrame header =+
+ *      +------------------------+                      |== PartitionOutputStream buffer flush
+ *   <=== ByteBuf ======================================+
+ *
+ *      +------------------------+
+ *   <= | DataFrameHeaderEncoder | <= DataFrame header =+
+ *      +------------------------+                      |== A FileRegion added to PartitionOutputStream
+ *   <= FileRegion =====================================+
  * </pre>
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
