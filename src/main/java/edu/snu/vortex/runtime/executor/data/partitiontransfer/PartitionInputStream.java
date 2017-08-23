@@ -6,6 +6,8 @@ public final class PartitionInputStream implements Iterable<Element> {
   // internally store ByteBufInputStream and decoder for DecodingThread to decode data
   // internally store requestId
 
+  // some methods are package scope
+
   PartitionInputStream() {
     // constructor with default access modifier
   }
