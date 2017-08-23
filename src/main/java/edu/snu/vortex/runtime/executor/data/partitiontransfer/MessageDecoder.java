@@ -24,17 +24,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Interprets inbound byte streams to compose frames, and decodes them to emit messages.
+ * Interprets inbound byte streams to compose frames.
  *
  * More specifically,
  * <ul>
  *   <li>Recognizes the type of the frame, namely control or data.</li>
- *   <li>If the received bytes are a part of a control message, waits until the full content of the frame becomes
- *   available and decode the frame to emit a control message object.</li>
- *   <li>If the received bytes consists a data frame, emits a new {@link PartitionInputStream}
- *   and begins supplying contents of the following frames to it.</li>
- *   <li>If the ending frame of a data message is recognized, closes the corresponding
- *   {@link PartitionInputStream}.</li>
+ *   <li>If the received bytes are a part of a control frame, waits until the full content of the frame becomes
+ *   available and decode the frame to emit a control frame object.</li>
+ *   <li>If the received bytes consists a data frame, supply the data to the corresponding {@link PartitionInputStream}.
+ *   <li>If the end of a data message is recognized, closes the corresponding {@link PartitionInputStream}.</li>
  * </ul>
  *
  * Control frame specification:
@@ -97,7 +95,7 @@ final class MessageDecoder extends ByteToMessageDecoder {
    * @return {@code true} if a header was decoded, {@code false} otherwise
    */
   private boolean onFrameBegins(final ByteBuf in, final List<Object> out) {
-
+    return true;
   }
 
   /**
