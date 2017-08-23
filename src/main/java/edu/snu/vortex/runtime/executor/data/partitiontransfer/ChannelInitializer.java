@@ -29,31 +29,31 @@ import java.util.concurrent.ConcurrentMap;
  *
  * Inbound pipeline:
  * <pre>
- *                                            Pull         +-----------------------------+    A new
- *                                      +==== request ===> | ControlMessageToStreamCodec | => PartitionOutputStream
- *                                      |                  +-----------------------------+
- *                          += Control =|
- *       +--------------+   |           |  Push            +-----------------------------+    A new
- *   ==> | FrameDecoder | ==|           += notification => | ControlMessageToStreamCodec | => PartitionInputStream
- *       +--------------+   |                              +-----------------------------+
- *                          |
- *                          +== Data ====================> Add data to an existing PartitionInputStream
+ *                                         Pull       +--------------------------------------+    A new
+ *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
+ *                                    |               +--------------------------------------+
+ *                        += Control =|
+ *      +--------------+  |           |               +--------------------------------------+
+ *   => | FrameDecoder | =|           += Push      => | ControlMessageToPartitionStreamCodec | => A new
+ *      +--------------+  |             notification  +--------------------------------------+    PartitionInputStream
+ *                        |
+ *                        += Data ====================> Add data to an existing PartitionInputStream
  * </pre>
  *
  * Outbound pipeline:
  * <pre>
- *       +---------------------+                     +-----------------------------+     Pull request with
- *   <== | ControlFrameEncoder | <== Pull request == | ControlMessageToStreamCodec | <== a new PartitionInputStream
- *       +---------------------+                     +-----------------------------+
- *       +---------------------+     Push            +-----------------------------+     Push notification with
- *   <== | ControlFrameEncoder | <== notification == | ControlMessageToStreamCodec | <== a new PartitionOutputStream
- *       +---------------------+                     +-----------------------------+
+ *      +---------------------+                   +--------------------------------------+    Pull request with a
+ *   <= | ControlFrameEncoder | <= Pull request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
+ *      +---------------------+                   +--------------------------------------+
+ *      +---------------------+    Push           +--------------------------------------+    Push notification with a
+ *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
+ *      +---------------------+                   +--------------------------------------+
  *
- *                                          +------------------+
- *   <================= DataFrame Header == |                  |
- *   <==== ByteBuf ===+                     | DataFrameEncoder | <== PartitionOutputStream buffer flush
- *                    |== DataFrame Body == |                  |
- *   <== FileRegion ==+                     +------------------+ <== A FileRegion added to PartitionOutputStream
+ *                                       +------------------+
+ *   <=============== DataFrame Header = |                  |
+ *   <=== ByteBuf ==+                    | DataFrameEncoder | <= PartitionOutputStream buffer flush
+ *                  |= DataFrame Body == |                  |
+ *   <= FileRegion =+                    +------------------+ <= A FileRegion added to PartitionOutputStream
  * </pre>
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
@@ -74,9 +74,10 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   @Override
   protected void initChannel(final SocketChannel ch) {
     // TODO add more handlers
+    // TODO ControlFrameEncoder is sharable! create just once
     ch.pipeline()
         // inbound
-        .addLast(MessageDecoder.class.getName(), new MessageDecoder())
+        .addLast(FrameDecoder.class.getName(), new FrameDecoder())
 
         // outbound
 

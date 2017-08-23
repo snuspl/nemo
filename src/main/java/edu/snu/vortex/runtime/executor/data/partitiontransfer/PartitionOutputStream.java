@@ -3,7 +3,8 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import java.io.Closeable;
 import java.io.Flushable;
 
-public final class PartitionOutputStream implements Closeable, Flushable {
+public final class PartitionOutputStream
+    implements Closeable, Flushable, ControlMessageToPartitionStreamCodec.PartitionStream {
   // internally store requestId
   // internally store ConcurrentQueue and encoder for EncodingThread to encode data
 

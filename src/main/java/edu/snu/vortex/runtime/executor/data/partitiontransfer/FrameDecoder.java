@@ -70,7 +70,7 @@ import java.util.Map;
  *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
  */
-final class MessageDecoder extends ByteToMessageDecoder {
+final class FrameDecoder extends ByteToMessageDecoder {
 
   /**
    * A mapping with MsgId and the corresponding {@link PartitionInputStream}.
