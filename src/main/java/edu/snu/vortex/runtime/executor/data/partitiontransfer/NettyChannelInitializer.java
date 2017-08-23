@@ -25,35 +25,35 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * {@link ChannelInitializer} implementation for {@link PartitionTransport}.
+ * Sets up {@link io.netty.channel.ChannelPipeline} for {@link PartitionTransport}.
  *
  * Inbound pipeline:
  * <pre>
- *                                              Pull         +-----------------------------+    A new
- *                                        +==== request ===> | ControlMessageToStreamCodec | => PartitionOutputStream
- *                                        |                  +-----------------------------+
- *                            += Control =|
- *       +----------------+   |           |  Push            +-----------------------------+    A new
- *   ==> | MessageDecoder | ==|           += notification => | ControlMessageToStreamCodec | => PartitionInputStream
- *       +----------------+   |                              +-----------------------------+
- *                            |
- *                            +== Data ====================> Add data to an existing PartitionInputStream
+ *                                            Pull         +-----------------------------+    A new
+ *                                      +==== request ===> | ControlMessageToStreamCodec | => PartitionOutputStream
+ *                                      |                  +-----------------------------+
+ *                          += Control =|
+ *       +--------------+   |           |  Push            +-----------------------------+    A new
+ *   ==> | FrameDecoder | ==|           += notification => | ControlMessageToStreamCodec | => PartitionInputStream
+ *       +--------------+   |                              +-----------------------------+
+ *                          |
+ *                          +== Data ====================> Add data to an existing PartitionInputStream
  * </pre>
  *
  * Outbound pipeline:
  * <pre>
- *       +-----------------------+                     +-----------------------------+     Pull request with
- *   <== | ControlMessageEncoder | <== Pull request == | ControlMessageToStreamCodec | <== a new PartitionInputStream
- *       +-----------------------+                     +-----------------------------+
- *       +-----------------------+     Push            +-----------------------------+     Push notification with
- *   <== | ControlMessageEncoder | <== notification == | ControlMessageToStreamCodec | <== a new PartitionOutputStream
- *       +-----------------------+                     +-----------------------------+
+ *       +---------------------+                     +-----------------------------+     Pull request with
+ *   <== | ControlFrameEncoder | <== Pull request == | ControlMessageToStreamCodec | <== a new PartitionInputStream
+ *       +---------------------+                     +-----------------------------+
+ *       +---------------------+     Push            +-----------------------------+     Push notification with
+ *   <== | ControlFrameEncoder | <== notification == | ControlMessageToStreamCodec | <== a new PartitionOutputStream
+ *       +---------------------+                     +-----------------------------+
  *
- *                                          +------------------+         PartitionOutputStream
- *   <================= DataFrame Header == |                  | <======   ByteBuf flush
- *   <==== ByteBuf ===+                     | DataFrameEncoder |
- *                    |== DataFrame Body == |                  |         A FileRegion added to
- *   <== FileRegion ==+                     +------------------+ <======   PartitionOutputStream
+ *                                          +------------------+
+ *   <================= DataFrame Header == |                  |
+ *   <==== ByteBuf ===+                     | DataFrameEncoder | <== PartitionOutputStream buffer flush
+ *                    |== DataFrame Body == |                  |
+ *   <== FileRegion ==+                     +------------------+ <== A FileRegion added to PartitionOutputStream
  * </pre>
  */
 final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
