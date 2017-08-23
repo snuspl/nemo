@@ -31,7 +31,7 @@ import java.util.Map;
  *   <li>Recognizes the type of the frame, namely control or data.</li>
  *   <li>If the received bytes are a part of a control message, waits until the full content of the frame becomes
  *   available and decode the frame to emit a control message object.</li>
- *   <li>If the beginning frame of a data message is recognized, emits a new {@link PartitionInputStream}
+ *   <li>If the received bytes consists a data frame, emits a new {@link PartitionInputStream}
  *   and begins supplying contents of the following frames to it.</li>
  *   <li>If the ending frame of a data message is recognized, closes the corresponding
  *   {@link PartitionInputStream}.</li>

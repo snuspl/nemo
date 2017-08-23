@@ -26,43 +26,43 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * {@link ChannelInitializer} implementation for {@link PartitionTransport}.
+ *
+ * Inbound pipeline:
+ * <pre>
+ *                                                                +------------------------+    A new
+ *                                        +==== Pull request ===> | MessageIdToStreamCodec | => PartitionOutputStream
+ *                                        |                       +------------------------+
+ *                            += Control =|
+ *       +----------------+   |           |                       +------------------------+    A new
+ *   ==> | MessageDecoder | ==|           += Push notification => | MessageIdToStreamCodec | => PartitionInputStream
+ *       +----------------+   |                                   +------------------------+
+ *                            |                            +------------------------+
+ *                            +== Data: ByteBuf tagged ==> | MessageIdToStreamCodec | => Add data to an existing
+ *                                      with messageId     +------------------------+      PartitionInputStream
+ * </pre>
+ *
+ * Outbound pipeline:
+ * <pre>
+ *       +-----------------------+                     +------------------------+     Pull request with
+ *   <== | ControlMessageEncoder | <== Pull request == | MessageIdToStreamCodec | <== a new PartitionInputStream
+ *       +-----------------------+                     +------------------------+
+ *       +-----------------------+     Push            +------------------------+     Push notification with
+ *   <== | ControlMessageEncoder | <== notification == | MessageIdToStreamCodec | <== a new PartitionOutputStream
+ *       +-----------------------+                     +------------------------+
+ *
+ *       +------------------------+      DataFrame     +------------------------+         PartitionOutputStream
+ *   <== | DataFrameHeaderEncoder | <===   Header  === |                        |     +==   ByteBuf flush
+ *       +------------------------+                    | MessageIdToStreamCodec | <===|
+ *   <==== DataFrame Body ========== ByteBuf ========= |                        |     |   A FileRegion added to
+ *   <==== DataFrame Body ======== FileRegion ======== +------------------------+     +==   PartitionOutputStream
+ * </pre>
  */
 final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
 
   private final NettyChannelActiveHandler nettyChannelActiveHandler;
 
   /**
-   * Creates netty channel active handler.
-   *
-   * Inbound pipeline:
-   * <pre>
-   *                                                                +------------------------+    A new
-   *                                        +==== Pull request ===> | MessageIdToStreamCodec | => PartitionOutputStream
-   *                                        |                       +------------------------+
-   *                            += Control =|
-   *       +----------------+   |           |                       +------------------------+    A new
-   *   ==> | MessageDecoder | ==|           += Push notification => | MessageIdToStreamCodec | => PartitionInputStream
-   *       +----------------+   |                                   +------------------------+
-   *                            |                            +------------------------+
-   *                            +== Data: ByteBuf tagged ==> | MessageIdToStreamCodec | => Add data to an existing
-   *                                      with messageId     +------------------------+      PartitionInputStream
-   * </pre>
-   *
-   * Outbound pipeline:
-   * <pre>
-   *       +-----------------------+                     +------------------------+     Pull request with
-   *   <== | ControlMessageEncoder | <== Pull request == | MessageIdToStreamCodec | <== a new PartitionInputStream
-   *       +-----------------------+                     +------------------------+
-   *       +-----------------------+     Push            +------------------------+     Push notification with
-   *   <== | ControlMessageEncoder | <== notification == | MessageIdToStreamCodec | <== a new PartitionOutputStream
-   *       +-----------------------+                     +------------------------+
-   *
-   *       +------------------------+      DataFrame     +------------------------+         PartitionOutputStream
-   *   <== | DataFrameHeaderEncoder | <===   Header  === |                        |     +==   ByteBuf flush
-   *       +------------------------+                    | MessageIdToStreamCodec | <===|
-   *   <==== DataFrame Body ========== ByteBuf ========= |                        |     |   A FileRegion added to
-   *   <==== DataFrame Body ======== FileRegion ======== +------------------------+     +==   PartitionOutputStream
-   * </pre>
+   * Creates a netty channel initializer.
    *
    * @param channelGroup  the {@link ChannelGroup} to which active channels are added
    * @param channelMap    the map to which active channels are added
