@@ -29,32 +29,31 @@ import java.util.concurrent.ConcurrentMap;
  *
  * Inbound pipeline:
  * <pre>
- *                                                                +------------------------+    A new
- *                                        +==== Pull request ===> | MessageIdToStreamCodec | => PartitionOutputStream
- *                                        |                       +------------------------+
+ *                                              Pull         +-----------------------------+    A new
+ *                                        +==== request ===> | ControlMessageToStreamCodec | => PartitionOutputStream
+ *                                        |                  +-----------------------------+
  *                            += Control =|
- *       +----------------+   |           |                       +------------------------+    A new
- *   ==> | MessageDecoder | ==|           += Push notification => | MessageIdToStreamCodec | => PartitionInputStream
- *       +----------------+   |                                   +------------------------+
+ *       +----------------+   |           |  Push            +-----------------------------+    A new
+ *   ==> | MessageDecoder | ==|           += notification => | ControlMessageToStreamCodec | => PartitionInputStream
+ *       +----------------+   |                              +-----------------------------+
  *                            |
- *                            +== Data: ByteBuf tagged ==> Add data to an existing PartitionInputStream
- *                                      with messageId
+ *                            +== Data ====================> Add data to an existing PartitionInputStream
  * </pre>
  *
  * Outbound pipeline:
  * <pre>
- *       +-----------------------+                     +------------------------+     Pull request with
- *   <== | ControlMessageEncoder | <== Pull request == | MessageIdToStreamCodec | <== a new PartitionInputStream
- *       +-----------------------+                     +------------------------+
- *       +-----------------------+     Push            +------------------------+     Push notification with
- *   <== | ControlMessageEncoder | <== notification == | MessageIdToStreamCodec | <== a new PartitionOutputStream
- *       +-----------------------+                     +------------------------+
+ *       +-----------------------+                     +-----------------------------+     Pull request with
+ *   <== | ControlMessageEncoder | <== Pull request == | ControlMessageToStreamCodec | <== a new PartitionInputStream
+ *       +-----------------------+                     +-----------------------------+
+ *       +-----------------------+     Push            +-----------------------------+     Push notification with
+ *   <== | ControlMessageEncoder | <== notification == | ControlMessageToStreamCodec | <== a new PartitionOutputStream
+ *       +-----------------------+                     +-----------------------------+
  *
- *       +------------------------+      DataFrame     +------------------------+         PartitionOutputStream
- *   <== | DataFrameHeaderEncoder | <===   Header  === |                        |     +==   ByteBuf flush
- *       +------------------------+                    | MessageIdToStreamCodec | <===|
- *   <==== DataFrame Body ========== ByteBuf ========= |                        |     |   A FileRegion added to
- *   <==== DataFrame Body ======== FileRegion ======== +------------------------+     +==   PartitionOutputStream
+ *                                          +------------------+         PartitionOutputStream
+ *   <================= DataFrame Header == |                  | <======   ByteBuf flush
+ *   <==== ByteBuf ===+                     | DataFrameEncoder |
+ *                    |== DataFrame Body == |                  |         A FileRegion added to
+ *   <== FileRegion ==+                     +------------------+ <======   PartitionOutputStream
  * </pre>
  */
 final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
