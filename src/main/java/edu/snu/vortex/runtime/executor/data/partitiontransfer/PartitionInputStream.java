@@ -1,4 +1,12 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-final class PartitionInputStream {
+import edu.snu.vortex.compiler.ir.Element;
+
+public final class PartitionInputStream implements Iterable<Element> {
+  // internally store ByteBufInputStream and decoder for DecodingThread to decode data
+  // internally store requestId
+
+  PartitionInputStream() {
+    // constructor with default access modifier
+  }
 }

@@ -36,23 +36,32 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
    *
    * Inbound pipeline:
    * <pre>
-   *                                           +-----------------------+
-   *                            |== Control => | ControlMessageHandler | ==> (PartitionTransferRequest)
-   *       +----------------+   |              +-----------------------+
-   *   ==> | MessageDecoder | ==|
-   *       +----------------+   |              +---------------------+
-   *                            |=== Data ===> | RequestReplyMatcher | ==> fetch response
-   *                                           +---------------------+
+   *                                                                +------------------------+    A new
+   *                                        +==== Pull request ===> | MessageIdToStreamCodec | => PartitionOutputStream
+   *                                        |                       +------------------------+
+   *                            += Control =|
+   *       +----------------+   |           |                       +------------------------+    A new
+   *   ==> | MessageDecoder | ==|           += Push notification => | MessageIdToStreamCodec | => PartitionInputStream
+   *       +----------------+   |                                   +------------------------+
+   *                            |                            +------------------------+
+   *                            +== Data: ByteBuf tagged ==> | MessageIdToStreamCodec | => Add data to an existing
+   *                                      with messageId     +------------------------+      PartitionInputStream
    * </pre>
    *
    * Outbound pipeline:
    * <pre>
-   *       +-----------------------+     +---------------------+
-   *   <== | ControlMessageEncoder | <== | RequestReplyMatcher | <== fetch request
-   *       +-----------------------+     +---------------------+
-   *          +--------------------+
-   *   <===== | DataMessageEncoder | <== PartitionOutputStream (for MemoryPartition) <== (PartitionTransferRequest)
-   *          +--------------------+        or PartitionRegion (for FilePartition)
+   *       +-----------------------+                     +------------------------+     Pull request with
+   *   <== | ControlMessageEncoder | <== Pull request == | MessageIdToStreamCodec | <== a new PartitionInputStream
+   *       +-----------------------+                     +------------------------+
+   *       +-----------------------+     Push            +------------------------+     Push notification with
+   *   <== | ControlMessageEncoder | <== notification == | MessageIdToStreamCodec | <== a new PartitionOutputStream
+   *       +-----------------------+                     +------------------------+
+   *
+   *       +------------------------+      DataFrame     +------------------------+         PartitionOutputStream
+   *   <== | DataFrameHeaderEncoder | <===   Header  === |                        |     +==   ByteBuf flush
+   *       +------------------------+                    | MessageIdToStreamCodec | <===|
+   *   <==== DataFrame Body ========== ByteBuf ========= |                        |     |   A FileRegion added to
+   *   <==== DataFrame Body ======== FileRegion ======== +------------------------+     +==   PartitionOutputStream
    * </pre>
    *
    * @param channelGroup  the {@link ChannelGroup} to which active channels are added
