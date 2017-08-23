@@ -56,9 +56,9 @@ import java.util.concurrent.ConcurrentMap;
  *   <== FileRegion ==+                     +------------------+ <== A FileRegion added to PartitionOutputStream
  * </pre>
  */
-final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
+final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
 
-  private final NettyChannelActiveHandler nettyChannelActiveHandler;
+  private final ChannelActiveHandler channelActiveHandler;
 
   /**
    * Creates a netty channel initializer.
@@ -66,9 +66,9 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
    * @param channelGroup  the {@link ChannelGroup} to which active channels are added
    * @param channelMap    the map to which active channels are added
    */
-  NettyChannelInitializer(final ChannelGroup channelGroup,
-                          final ConcurrentMap<SocketAddress, Channel> channelMap) {
-    nettyChannelActiveHandler = new NettyChannelActiveHandler(channelGroup, channelMap);
+  ChannelInitializer(final ChannelGroup channelGroup,
+                     final ConcurrentMap<SocketAddress, Channel> channelMap) {
+    channelActiveHandler = new ChannelActiveHandler(channelGroup, channelMap);
   }
 
   @Override
@@ -83,28 +83,28 @@ final class NettyChannelInitializer extends ChannelInitializer<SocketChannel> {
         // duplex
 
         // channel management
-        .addLast(NettyChannelActiveHandler.class.getName(), nettyChannelActiveHandler);
+        .addLast(ChannelActiveHandler.class.getName(), channelActiveHandler);
   }
 
   /**
    * Registers a {@link Channel} to the channel group and the channel map when it becomes active.
    */
   @ChannelHandler.Sharable
-  private static final class NettyChannelActiveHandler extends ChannelInboundHandlerAdapter {
+  private static final class ChannelActiveHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NettyChannelActiveHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelActiveHandler.class);
 
     private final ChannelGroup channelGroup;
     private final ConcurrentMap<SocketAddress, Channel> channelMap;
 
     /**
-     * Creates netty channel active handler.
+     * Creates a netty channel active handler.
      *
      * @param channelGroup the {@link ChannelGroup} to which active channels are added
      * @param channelMap    the map to which active channels are added
      */
-    NettyChannelActiveHandler(final ChannelGroup channelGroup,
-                              final ConcurrentMap<SocketAddress, Channel> channelMap) {
+    ChannelActiveHandler(final ChannelGroup channelGroup,
+                         final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
       this.channelMap = channelMap;
     }

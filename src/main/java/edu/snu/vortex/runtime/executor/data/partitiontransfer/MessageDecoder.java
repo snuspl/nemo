@@ -35,6 +35,8 @@ import java.util.Map;
  *   <li>If the end of a data message is recognized, closes the corresponding {@link PartitionInputStream}.</li>
  * </ul>
  *
+ * @see ChannelInitializer for the interactions with other handlers
+ *
  * Control frame specification:
  * <pre>
  *   <---------- HEADER ----------> <----- BODY ----->
@@ -55,10 +57,17 @@ import java.util.Map;
  *
  * Literals used in frame header:
  * <ul>
- *   <li>Type: 0 for control frame, and 2 or 3 for data frame.
- *   2 if this is the last frame of a data message, and 3 otherwise.</li>
- *   <li>MsgId: the message id to distinguish which message this frame belongs to.</li>
- *   <li>Length: the number of bytes in the body, not the entire frame.</li>
+ *   <li>Type
+ *     <ul>
+ *       <li>0: control frame</li>
+ *       <li>2: data frame for pull-based transfer</li>
+ *       <li>3: data frame for pull-based transfer, the last frame of the message</li>
+ *       <li>4: data frame for push-based transfer</li>
+ *       <li>5: data frame for push-based transfer, the last frame of the message</li>
+ *     </ul>
+ *   </li>
+ *   <li>MsgId: the message id to distinguish which message this frame belongs to</li>
+ *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
  */
 final class MessageDecoder extends ByteToMessageDecoder {

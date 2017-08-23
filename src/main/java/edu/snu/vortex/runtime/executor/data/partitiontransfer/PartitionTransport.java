@@ -84,7 +84,7 @@ final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    final NettyChannelInitializer channelInitializer = new NettyChannelInitializer(channelGroup, channelMap);
+    final ChannelInitializer channelInitializer = new ChannelInitializer(channelGroup, channelMap);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap
