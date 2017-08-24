@@ -39,7 +39,7 @@ public final class PartitionTransfer {
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
-  PartitionInputStream pull(final String executorId, final String partitionId, final Coder coder) {
+  public PartitionInputStream pull(final String executorId, final String partitionId, final Coder coder) {
     return null;
   }
 
@@ -51,7 +51,7 @@ public final class PartitionTransfer {
    * @param coder       the coder
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
-  PartitionOutputStream push(final String executorId, final String partitionId, final Coder coder) {
+  public PartitionOutputStream push(final String executorId, final String partitionId, final Coder coder) {
     return null;
   }
 }

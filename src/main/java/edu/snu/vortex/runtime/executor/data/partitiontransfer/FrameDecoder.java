@@ -33,24 +33,26 @@ import java.util.List;
  *   <li>If the end of a data message is recognized, closes the corresponding {@link PartitionInputStream}.</li>
  * </ul>
  *
- * @see ChannelInitializer for the interactions with other handlers
- *
  * Control frame specification:
  * <pre>
+ * {@literal
  *   <------------ HEADER -----------> <----- BODY ----->
  *   +---------+------------+---------+-------...-------+
  *   |   Type  |   Unused   |  Length |       Body      |
  *   | 2 bytes |  2 bytes   | 4 bytes | Variable length |
  *   +---------+------------+---------+-------...-------+
+ * }
  * </pre>
  *
  * Data frame specification:
  * <pre>
+ * {@literal
  *   <------------ HEADER -----------> <----- BODY ----->
  *   +---------+------------+---------+-------...-------+
  *   |   Type  | TransferId |  Length |       Body      |
  *   | 2 bytes |  2 bytes   | 4 bytes | Variable length |
  *   +---------+------------+---------+-------...-------+
+ * }
  * </pre>
  *
  * Literals used in frame header:
@@ -67,6 +69,8 @@ import java.util.List;
  *   <li>TransferId: the transfer id to distinguish which transfer this frame belongs to</li>
  *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
+ *
+ * @see ChannelInitializer
  */
 final class FrameDecoder extends ByteToMessageDecoder {
 

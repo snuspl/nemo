@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * Inbound pipeline:
  * <pre>
+ * {@literal
  *                                         Pull       +--------------------------------------+    A new
  *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
  *                                    |               +--------------------------------------+
@@ -38,10 +39,12 @@ import java.util.concurrent.ConcurrentMap;
  *      +--------------+  |             notification  +--------------------------------------+    PartitionInputStream
  *                        |
  *                        += Data ====================> Add data to an existing PartitionInputStream
+ * }
  * </pre>
  *
  * Outbound pipeline:
  * <pre>
+ * {@literal
  *      +---------------------+                   +--------------------------------------+    Pull request with a
  *   <= | ControlFrameEncoder | <= Pull request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
  *      +---------------------+                   +--------------------------------------+
@@ -58,6 +61,7 @@ import java.util.concurrent.ConcurrentMap;
  *   <= | (DataFrameHeaderEncoder) | <= DataFrame header =+
  *      +--------------------------+                      |== A FileRegion added to PartitionOutputStream
  *   <= FileRegion =======================================+
+ * }
  * </pre>
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
