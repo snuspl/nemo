@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Encodes a control frame into bytes.
  *
- * @see FrameDecoder for the frame specification.
+ * @see FrameDecoder
  */
 @ChannelHandler.Sharable
 final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.PartitionTransferControlMessage> {

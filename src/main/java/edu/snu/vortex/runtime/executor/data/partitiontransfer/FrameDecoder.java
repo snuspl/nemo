@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * Interprets inbound byte streams to compose frames.
  *
+ * <p>
  * More specifically,
  * <ul>
  *   <li>Recognizes the type of the frame, namely control or data.</li>
@@ -33,7 +34,7 @@ import java.util.List;
  *   <li>If the end of a data message is recognized, closes the corresponding {@link PartitionInputStream}.</li>
  * </ul>
  *
- * Control frame specification:
+ * <h3>Control frame specification:</h3>
  * <pre>
  * {@literal
  *   <------------ HEADER -----------> <----- BODY ----->
@@ -44,7 +45,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * Data frame specification:
+ * <h3>Data frame specification:</h3>
  * <pre>
  * {@literal
  *   <------------ HEADER -----------> <----- BODY ----->
@@ -55,7 +56,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * Literals used in frame header:
+ * <h3>Literals used in frame header:</h3>
  * <ul>
  *   <li>Type
  *     <ul>

@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * Encodes a data frame into bytes.
  *
- * @see FrameDecoder for the frame specification.
+ * @see FrameDecoder
  */
 final class DataFrameHeaderEncoder {
 

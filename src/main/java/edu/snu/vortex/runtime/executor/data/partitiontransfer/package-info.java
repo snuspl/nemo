@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 /**
- * Responsible for transferring {@link edu.snu.vortex.runtime.executor.data.partition.Partition}
- * from one {@link edu.snu.vortex.runtime.executor.data.PartitionStore} to another.
+ * Responsible for transferring partition content from one executor to another.
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;

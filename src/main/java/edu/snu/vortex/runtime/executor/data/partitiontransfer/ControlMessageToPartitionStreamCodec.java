@@ -24,7 +24,7 @@ import java.util.List;
  * Responses to control message by emitting a new {@link PartitionStream},
  * and responses to {@link PartitionStream} by emitting a new control message.
  *
- * @see ChannelInitializer for the interactions with other handlers
+ * @see ChannelInitializer
  */
 final class ControlMessageToPartitionStreamCodec
     extends MessageToMessageCodec<Object, ControlMessageToPartitionStreamCodec.PartitionStream> {

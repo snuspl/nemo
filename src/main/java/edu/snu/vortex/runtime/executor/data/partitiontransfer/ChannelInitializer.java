@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Sets up {@link io.netty.channel.ChannelPipeline} for {@link PartitionTransport}.
  *
- * Inbound pipeline:
+ * <h3>Inbound pipeline:</h3>
  * <pre>
  * {@literal
  *                                         Pull       +--------------------------------------+    A new
@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentMap;
  * }
  * </pre>
  *
- * Outbound pipeline:
+ * <h3>Outbound pipeline:</h3>
  * <pre>
  * {@literal
  *      +---------------------+                   +--------------------------------------+    Pull request with a
