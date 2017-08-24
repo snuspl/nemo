@@ -19,7 +19,9 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Responses to control message by emitting a new {@link PartitionTransfer.PartitionStream},
@@ -30,15 +32,74 @@ import java.util.List;
 final class ControlMessageToPartitionStreamCodec
     extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionTransfer.PartitionStream> {
 
+  private final Map<Short, PartitionInputStream> pullInputStreamMap = new HashMap<>();
+  private final Map<Short, PartitionInputStream> pushInputStreamMap = new HashMap<>();
+  private final Map<Short, PartitionOutputStream> pullOutputStreamMap = new HashMap<>();
+  private final Map<Short, PartitionOutputStream> pushOutputStreamMap = new HashMap<>();
+
   @Override
   protected void encode(final ChannelHandlerContext ctx,
                         final PartitionTransfer.PartitionStream in,
                         final List<Object> out) {
+    if (in instanceof PartitionInputStream) {
+      onOutboundPullRequest(ctx, (PartitionInputStream) in, out);
+    } else {
+      onOutboundPushNotification(ctx, (PartitionOutputStream) in, out);
+    }
+  }
 
+  /**
+   * Respond to {@link PartitionInputStream} by emitting outbound pull request.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the {@link PartitionInputStream}
+   * @param out the {@link List} into which the created control message is added
+   */
+  private void onOutboundPullRequest(final ChannelHandlerContext ctx,
+                                     final PartitionInputStream in,
+                                     final List<Object> out) {
+  }
+
+  /**
+   * Respond to {@link PartitionOutputStream} by emitting outbound push notification.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the {@link PartitionOutputStream}
+   * @param out the {@link List} into which the created control message is added
+   */
+  private void onOutboundPushNotification(final ChannelHandlerContext ctx,
+                                          final PartitionOutputStream in,
+                                          final List<Object> out) {
   }
 
   @Override
-  protected void decode(final ChannelHandlerContext ctx, final ControlMessage.PartitionTransferControlMessage in, List<Object> list) throws Exception {
+  protected void decode(final ChannelHandlerContext ctx,
+                        final ControlMessage.PartitionTransferControlMessage in,
+                        final List<Object> out) {
 
+  }
+
+  /**
+   * Respond to pull request by other executors by emitting a new {@link PartitionOutputStream}.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the control message
+   * @param out the {@link List} into which the created {@link PartitionOutputStream} is added
+   */
+  private void onInboundPullRequest(final ChannelHandlerContext ctx,
+                                    final ControlMessage.PartitionTransferControlMessage in,
+                                    final List<Object> out) {
+  }
+
+  /**
+   * Respond to push notification by other executors by emitting a new {@link PartitionInputStream}.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the control message
+   * @param out the {@link List} into which the created {@link PartitionInputStream} is added
+   */
+  private void onInboundPushNotification(final ChannelHandlerContext ctx,
+                                         final ControlMessage.PartitionTransferControlMessage in,
+                                         final List<Object> out) {
   }
 }

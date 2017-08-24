@@ -72,7 +72,13 @@ message ExecutorFailedMsg {
 }
 
 // Messages between Executors
+enum PartitionTransferType {
+    PULL = 0;
+    PUSH = 1;
+}
+
 message PartitionTransferControlMessage {
+    required PartitionTransferType type = 1;
 }
 
 message RequestPartitionMsg {
