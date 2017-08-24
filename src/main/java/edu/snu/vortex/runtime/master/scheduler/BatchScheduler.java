@@ -19,13 +19,14 @@ import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.optimizer.DynamicOptimizationEvent;
+import edu.snu.vortex.compiler.eventhandler.DynamicOptimizationEvent;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.*;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
+import edu.snu.vortex.runtime.master.eventhandler.RuntimeEventHandler;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
@@ -67,7 +68,7 @@ public final class BatchScheduler implements Scheduler {
                         final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue,
                         final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
-                        final UpdatePhysicalPlanEventHandler handler) {
+                        final RuntimeEventHandler handler) {
     this.partitionManagerMaster = partitionManagerMaster;
     this.pendingTaskGroupPriorityQueue = pendingTaskGroupPriorityQueue;
     this.schedulingPolicy = schedulingPolicy;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.vortex.compiler.optimizer;
+package edu.snu.vortex.compiler.eventhandler;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
@@ -27,7 +27,7 @@ import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 /**
  * An event related to the compiler optimizer.
  */
-public final class DynamicOptimizationEvent {
+public final class DynamicOptimizationEvent implements CompilerEvent {
   private final Scheduler scheduler;
   private final PhysicalPlan physicalPlan;
   private final MetricCollectionBarrierVertex metricCollectionBarrierVertex;

@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.vortex.runtime.master.scheduler;
+package edu.snu.vortex.runtime.master.eventhandler;
 
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
@@ -29,18 +30,23 @@ import javax.inject.Inject;
 /**
  * Class for handling events related to the scheduler.
  */
-public final class UpdatePhysicalPlanEventHandler implements EventHandler<UpdatePhysicalPlanEvent> {
+public final class RuntimeEventHandler implements EventHandler<RuntimeEvent> {
   @Inject
-  private UpdatePhysicalPlanEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+  private RuntimeEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+    // You can see the list of events that are handled by this handler.
     pubSubEventHandlerWrapper.getPubSubEventHandler().subscribe(UpdatePhysicalPlanEvent.class, this);
   }
 
   @Override
-  public void onNext(final UpdatePhysicalPlanEvent updatePhysicalPlanEvent) {
-    final Scheduler scheduler = updatePhysicalPlanEvent.getScheduler();
-    final PhysicalPlan newPlan = updatePhysicalPlanEvent.getNewPhysicalPlan();
-    final Pair<String, TaskGroup> taskInfo = updatePhysicalPlanEvent.getTaskInfo();
+  public void onNext(final RuntimeEvent runtimeEvent) {
+    if (runtimeEvent instanceof UpdatePhysicalPlanEvent) {
+      final UpdatePhysicalPlanEvent updatePhysicalPlanEvent = (UpdatePhysicalPlanEvent) runtimeEvent;
 
-    scheduler.updateJob(newPlan, taskInfo);
+      final Scheduler scheduler = updatePhysicalPlanEvent.getScheduler();
+      final PhysicalPlan newPlan = updatePhysicalPlanEvent.getNewPhysicalPlan();
+      final Pair<String, TaskGroup> taskInfo = updatePhysicalPlanEvent.getTaskInfo();
+
+      scheduler.updateJob(newPlan, taskInfo);
+    }
   }
 }

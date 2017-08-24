@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master.scheduler;
+package edu.snu.vortex.runtime.master.eventhandler;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
+import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 
 /**
  * An event for updating the physical plan in the scheduler.
  */
-public final class UpdatePhysicalPlanEvent {
+public final class UpdatePhysicalPlanEvent implements RuntimeEvent {
   private final Scheduler scheduler;
   private final PhysicalPlan newPhysicalPlan;
   private final Pair<String, TaskGroup> taskInfo;

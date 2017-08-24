@@ -16,15 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.vortex.compiler.optimizer;
+package edu.snu.vortex.compiler.eventhandler;
 
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
+import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
-import edu.snu.vortex.runtime.master.scheduler.UpdatePhysicalPlanEvent;
+import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEvent;
 import org.apache.reef.wake.EventHandler;
 
 import javax.inject.Inject;
@@ -32,27 +33,32 @@ import javax.inject.Inject;
 /**
  * Class for handling events related to the compiler optimizer.
  */
-public final class DynamicOptimizationEventHandler implements EventHandler<DynamicOptimizationEvent> {
+public final class CompilerEventHandler implements EventHandler<CompilerEvent> {
   private PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   @Inject
-  private DynamicOptimizationEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+  private CompilerEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
     this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
+    // You can see the list of events that are handled by this handler.
     pubSubEventHandlerWrapper.getPubSubEventHandler().subscribe(DynamicOptimizationEvent.class, this);
   }
 
   @Override
-  public void onNext(final DynamicOptimizationEvent dynamicOptimizationEvent) {
-    final PhysicalPlan physicalPlan = dynamicOptimizationEvent.getPhysicalPlan();
-    final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
-        dynamicOptimizationEvent.getMetricCollectionBarrierVertex();
+  public void onNext(final CompilerEvent compilerEvent) {
+    if (compilerEvent instanceof DynamicOptimizationEvent) {
+      final DynamicOptimizationEvent dynamicOptimizationEvent = (DynamicOptimizationEvent) compilerEvent;
 
-    final Scheduler scheduler = dynamicOptimizationEvent.getScheduler();
-    final Pair<String, TaskGroup> taskInfo = dynamicOptimizationEvent.getTaskInfo();
+      final PhysicalPlan physicalPlan = dynamicOptimizationEvent.getPhysicalPlan();
+      final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
+              dynamicOptimizationEvent.getMetricCollectionBarrierVertex();
 
-    final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan, metricCollectionBarrierVertex);
+      final Scheduler scheduler = dynamicOptimizationEvent.getScheduler();
+      final Pair<String, TaskGroup> taskInfo = dynamicOptimizationEvent.getTaskInfo();
 
-    pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
-        new UpdatePhysicalPlanEvent(scheduler, newPlan, taskInfo));
+      final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan, metricCollectionBarrierVertex);
+
+      pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
+              new UpdatePhysicalPlanEvent(scheduler, newPlan, taskInfo));
+    }
   }
 }

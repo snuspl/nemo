@@ -36,6 +36,7 @@ import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.master.DefaultMetricMessageHandler;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
+import edu.snu.vortex.runtime.master.eventhandler.RuntimeEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
@@ -77,7 +78,7 @@ import static org.mockito.Mockito.mock;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
+@PrepareForTest({PubSubEventHandlerWrapper.class, RuntimeEventHandler.class})
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
@@ -107,10 +108,10 @@ public final class DataTransferTest {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
-    final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
+    final RuntimeEventHandler runtimeEventHandler = mock(RuntimeEventHandler.class);
     final Scheduler scheduler =
         new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
-            new PendingTaskGroupPriorityQueue(), pubSubEventHandler, updatePhysicalPlanEventHandler);
+            new PendingTaskGroupPriorityQueue(), pubSubEventHandler, runtimeEventHandler);
     final AtomicInteger executorCount = new AtomicInteger(0);
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();

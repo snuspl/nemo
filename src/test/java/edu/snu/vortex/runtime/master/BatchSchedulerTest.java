@@ -29,6 +29,7 @@ import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
+import edu.snu.vortex.runtime.master.eventhandler.RuntimeEventHandler;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -57,7 +58,7 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ContainerManager.class, PartitionManagerMaster.class,
-    PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
+    PubSubEventHandlerWrapper.class, RuntimeEventHandler.class})
 public final class BatchSchedulerTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
@@ -65,7 +66,7 @@ public final class BatchSchedulerTest {
   private ContainerManager containerManager;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
-  private UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler;
+  private RuntimeEventHandler runtimeEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
@@ -81,10 +82,10 @@ public final class BatchSchedulerTest {
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
-    updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
+    runtimeEventHandler = mock(RuntimeEventHandler.class);
     scheduler =
         new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue,
-            pubSubEventHandler, updatePhysicalPlanEventHandler);
+            pubSubEventHandler, runtimeEventHandler);
 
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
