@@ -15,6 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
@@ -27,8 +30,24 @@ import java.util.List;
  * @see FrameDecoder for the frame specification.
  */
 @ChannelHandler.Sharable
-final class ControlFrameEncoder extends MessageToMessageEncoder<Object> {
+final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.PartitionTransferControlMessage> {
+
+  static final int TYPE_LENGTH = Short.BYTES;
+  static final int UNUSED_LENGTH = Short.BYTES;
+  static final int TYPE_AND_UNUSED_LENGTH = TYPE_LENGTH + UNUSED_LENGTH;
+  static final int LENGTH_LENGTH = Integer.BYTES;
+  static final int HEADER_LENGTH = TYPE_AND_UNUSED_LENGTH + LENGTH_LENGTH;
+
+  static final ByteBuf TYPE_AND_UNUSED = Unpooled.directBuffer(TYPE_AND_UNUSED_LENGTH, TYPE_AND_UNUSED_LENGTH)
+      .writeShort(FrameDecoder.CONTROL_TYPE).writeZero(UNUSED_LENGTH);
+
   @Override
-  protected void encode(final ChannelHandlerContext channelHandlerContext, final Object o, final List<Object> list) {
+  protected void encode(final ChannelHandlerContext ctx,
+                        final ControlMessage.PartitionTransferControlMessage in,
+                        final List<Object> out) {
+    final byte[] controlMessage = in.toByteArray();
+    out.add(TYPE_AND_UNUSED.retain());
+    out.add(ctx.alloc().ioBuffer(LENGTH_LENGTH, LENGTH_LENGTH).writeInt(controlMessage.length));
+    out.add(Unpooled.wrappedBuffer(controlMessage));
   }
 }

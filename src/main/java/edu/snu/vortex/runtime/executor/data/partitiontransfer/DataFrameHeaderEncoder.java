@@ -24,8 +24,8 @@ import io.netty.buffer.ByteBuf;
  */
 final class DataFrameHeaderEncoder {
 
-  static final int TYPE_AND_TRANSFERID_LENGTH = 4;
-  static final int LENGTH_LENGTH = 4;
+  static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
+  static final int LENGTH_LENGTH = Integer.BYTES;
   static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
 
   /**
