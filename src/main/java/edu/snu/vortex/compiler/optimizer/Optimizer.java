@@ -138,7 +138,7 @@ public final class Optimizer {
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
                                                  final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    // TODO: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
+    // TODO#??: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
     // Map between a partition ID to corresponding metric data (e.g., the size of each block).
     final Map<String, List> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
