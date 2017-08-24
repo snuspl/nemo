@@ -24,8 +24,7 @@ import java.util.function.Consumer;
 /**
  * Input stream for partition transfer.
  */
-public final class PartitionInputStream
-    implements Iterable<Element>, ControlMessageToPartitionStreamCodec.PartitionStream {
+public final class PartitionInputStream implements Iterable<Element>, PartitionTransfer.PartitionStream {
   // internally store ByteBufInputStream and decoder for DecodingThread to decode data
   // internally store requestId
 

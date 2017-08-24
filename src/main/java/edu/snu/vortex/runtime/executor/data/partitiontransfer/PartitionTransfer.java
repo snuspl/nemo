@@ -54,4 +54,10 @@ public final class PartitionTransfer {
   public PartitionOutputStream push(final String executorId, final String partitionId, final Coder coder) {
     return null;
   }
+
+  /**
+   * {@link PartitionInputStream} and {@link PartitionOutputStream}.
+   */
+  interface PartitionStream {
+  }
 }

@@ -15,35 +15,30 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 
 import java.util.List;
 
 /**
- * Responses to control message by emitting a new {@link PartitionStream},
- * and responses to {@link PartitionStream} by emitting a new control message.
+ * Responses to control message by emitting a new {@link PartitionTransfer.PartitionStream},
+ * and responses to {@link PartitionTransfer.PartitionStream} by emitting a new control message.
  *
  * @see ChannelInitializer
  */
 final class ControlMessageToPartitionStreamCodec
-    extends MessageToMessageCodec<Object, ControlMessageToPartitionStreamCodec.PartitionStream> {
+    extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionTransfer.PartitionStream> {
 
   @Override
-  protected void encode(final ChannelHandlerContext channelHandlerContext,
-                        final PartitionStream partitionStream, final List<Object> list) {
+  protected void encode(final ChannelHandlerContext ctx,
+                        final PartitionTransfer.PartitionStream in,
+                        final List<Object> out) {
 
   }
 
   @Override
-  protected void decode(final ChannelHandlerContext channelHandlerContext,
-                        final Object o, final List<Object> list) {
+  protected void decode(final ChannelHandlerContext ctx, final ControlMessage.PartitionTransferControlMessage in, List<Object> list) throws Exception {
 
-  }
-
-  /**
-   * {@link PartitionInputStream} and {@link PartitionOutputStream}.
-   */
-  interface PartitionStream {
   }
 }

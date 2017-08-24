@@ -22,8 +22,7 @@ import java.io.IOException;
 /**
  * Output stream for partition transfer.
  */
-public final class PartitionOutputStream
-    implements Closeable, Flushable, ControlMessageToPartitionStreamCodec.PartitionStream {
+public final class PartitionOutputStream implements Closeable, Flushable, PartitionTransfer.PartitionStream {
   // internally store requestId
   // internally store ConcurrentQueue and encoder for EncodingThread to encode data
 
