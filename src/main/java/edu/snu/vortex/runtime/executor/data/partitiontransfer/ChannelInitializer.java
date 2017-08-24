@@ -95,7 +95,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   }
 
   /**
-   * Manages {@link Channel} registration to the channel group and the channel map.
+   * Manages {@link Channel} registration to the channel group and the channel map, and handles exception.
    */
   @ChannelHandler.Sharable
   private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
@@ -127,6 +127,12 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
       final SocketAddress address = ctx.channel().remoteAddress();
       channelMap.remove(address);
       LOG.warn("A channel with remote address {} is now inactive", address);
+    }
+
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+      LOG.error(String.format("Exception caught in the channel to %s", ctx.channel().remoteAddress()), cause);
+      ctx.close();
     }
   }
 }
