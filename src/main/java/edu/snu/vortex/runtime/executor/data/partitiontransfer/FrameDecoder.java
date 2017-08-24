@@ -39,20 +39,20 @@ import java.util.Map;
  *
  * Control frame specification:
  * <pre>
- *   <---------- HEADER ----------> <----- BODY ----->
- *   +---------+---------+---------+-------...-------+
- *   |   Type  |  Unused |  Length |       Body      |
- *   | 2 bytes | 2 bytes | 4 bytes | Variable length |
- *   +---------+---------+---------+-------...-------+
+ *   <------------ HEADER -----------> <----- BODY ----->
+ *   +---------+------------+---------+-------...-------+
+ *   |   Type  |   Unused   |  Length |       Body      |
+ *   | 2 bytes |  2 bytes   | 4 bytes | Variable length |
+ *   +---------+------------+---------+-------...-------+
  * </pre>
  *
  * Data frame specification:
  * <pre>
- *   <---------- HEADER ----------> <----- BODY ----->
- *   +---------+---------+---------+-------...-------+
- *   |   Type  |  MsgId  |  Length |       Body      |
- *   | 2 bytes | 2 bytes | 4 bytes | Variable length |
- *   +---------+---------+---------+-------...-------+
+ *   <------------ HEADER -----------> <----- BODY ----->
+ *   +---------+------------+---------+-------...-------+
+ *   |   Type  | TransferId |  Length |       Body      |
+ *   | 2 bytes |  2 bytes   | 4 bytes | Variable length |
+ *   +---------+------------+---------+-------...-------+
  * </pre>
  *
  * Literals used in frame header:
@@ -66,27 +66,17 @@ import java.util.Map;
  *       <li>5: data frame for push-based transfer, the last frame of the message</li>
  *     </ul>
  *   </li>
- *   <li>MsgId: the message id to distinguish which message this frame belongs to</li>
+ *   <li>TransferId: the transfer id to distinguish which transfer this frame belongs to</li>
  *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
  */
 final class FrameDecoder extends ByteToMessageDecoder {
 
   /**
-   * A mapping with MsgId and the corresponding {@link PartitionInputStream}.
-   */
-  private final Map<Short, PartitionInputStream> partitionInputStreamHashMap = new HashMap<>();
-
-  /**
    * The number of bytes consisting body of a data frame to be read next.
    * Decoder expects beginning of a frame if this value is 0.
    */
   private int dataBodyBytesToRead = 0;
-
-  /**
-   * The {@link PartitionInputStream} to write next.
-   */
-  private PartitionInputStream partitionInputStreamToWrite;
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out) {

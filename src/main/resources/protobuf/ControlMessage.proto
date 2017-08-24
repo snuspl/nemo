@@ -72,8 +72,9 @@ message ExecutorFailedMsg {
 }
 
 // Messages between Executors
-message PartitionTransferControl {
+message PartitionTransferControlMessage {
 }
+
 message RequestPartitionMsg {
     required int64 requestId = 1; // To handle multiple outstanding requests on one link between PartitionTransferPeers
     required string partitionId = 2;
