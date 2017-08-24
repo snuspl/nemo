@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.Channel;
 
@@ -69,12 +68,12 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   /**
    * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
    *
-   * @param coder           the coder
-   * @param executorService the executor service
+   * @param cdr     the coder
+   * @param service the executor service
    */
-  void setCoderAndExecutorService(final Coder<T, ?, ?> coder, final ExecutorService executorService) {
-    this.coder = coder;
-    this.executorService = executorService;
+  void setCoderAndExecutorService(final Coder<T, ?, ?> cdr, final ExecutorService service) {
+    this.coder = cdr;
+    this.executorService = service;
   }
 
   /**

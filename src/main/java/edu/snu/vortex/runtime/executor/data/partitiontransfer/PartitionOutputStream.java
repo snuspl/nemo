@@ -63,25 +63,25 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
   /**
    * Sets transfer type, transfer id, and {@link io.netty.channel.Channel}.
    *
-   * @param type    the transfer type
-   * @param id      the transfer id
-   * @param channel the channel
+   * @param type  the transfer type
+   * @param id    the transfer id
+   * @param ch    the channel
    */
-  void setTransferIdAndChannel(final ControlMessage.PartitionTransferType type, final short id, final Channel channel) {
+  void setTransferIdAndChannel(final ControlMessage.PartitionTransferType type, final short id, final Channel ch) {
     this.transferType = type;
     this.transferId = id;
-    this.channel = channel;
+    this.channel = ch;
   }
 
   /**
-   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
+   * Sets {@link Coder} and {@link ExecutorService} to serialize bytes into partition.
    *
-   * @param coder           the coder
-   * @param executorService the executor service
+   * @param cdr     the coder
+   * @param service the executor service
    */
-  void setCoderAndExecutorService(final Coder<T, ?, ?> coder, final ExecutorService executorService) {
-    this.coder = coder;
-    this.executorService = executorService;
+  void setCoderAndExecutorService(final Coder<T, ?, ?> cdr, final ExecutorService service) {
+    this.coder = cdr;
+    this.executorService = service;
   }
 
   @Override
