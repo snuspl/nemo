@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import io.netty.buffer.ByteBuf;
 
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -54,6 +55,21 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
     this.coder = coder;
+  }
+
+  /**
+   * Supply {@link ByteBuf} to this stream.
+   *
+   * @param byteBuf the {@link ByteBuf} to supply
+   */
+  void addByteBuf(final ByteBuf byteBuf) {
+    // Make sure to call release after using this byteBuf
+  }
+
+  /**
+   * Mark as {@link #addByteBuf(ByteBuf)} event is no longer expected.
+   */
+  void close() {
   }
 
   @Override

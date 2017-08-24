@@ -51,6 +51,7 @@ final class ControlMessageToPartitionStreamCodec
 
   private final String localExecutorId;
   private final PartitionManagerWorker partitionManagerWorker;
+  private SocketAddress remoteAddress;
 
   private short nextOutboundPullTransferId = 0;
   private short nextOutboundPushTransferId = 0;
@@ -65,6 +66,11 @@ final class ControlMessageToPartitionStreamCodec
                                        final PartitionManagerWorker partitionManagerWorker) {
     this.localExecutorId = localExecutorId;
     this.partitionManagerWorker = partitionManagerWorker;
+  }
+
+  @Override
+  public void channelActive(final ChannelHandlerContext ctx) {
+    this.remoteAddress = ctx.channel().remoteAddress();
   }
 
   @Override
@@ -89,8 +95,7 @@ final class ControlMessageToPartitionStreamCodec
                                      final PartitionInputStream in,
                                      final List<Object> out) {
     final short transferId = nextOutboundPullTransferId++;
-    checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId,
-        ctx.channel().remoteAddress());
+    checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
   }
@@ -106,8 +111,7 @@ final class ControlMessageToPartitionStreamCodec
                                           final PartitionOutputStream in,
                                           final List<Object> out) {
     final short transferId = nextOutboundPushTransferId++;
-    checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId,
-        ctx.channel().remoteAddress());
+    checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId);
     pushTransferIdToOutputStream.put(transferId, in);
     in.setTransferId(ControlMessage.PartitionTransferType.PUSH, transferId);
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
@@ -165,12 +169,10 @@ final class ControlMessageToPartitionStreamCodec
    * @param map           the map with transfer id as key
    * @param transferType  the transfer type
    * @param transferId    the transfer id
-   * @param remoteAddress the address of the remote executor to which this channel is connected
    */
   private void checkTransferIdAvailability(final Map<Short, ?> map,
                                            final ControlMessage.PartitionTransferType transferType,
-                                           final short transferId,
-                                           final SocketAddress remoteAddress) {
+                                           final short transferId) {
     if (map.get(transferId) != null) {
       LOG.error("Transfer id {}-{} to {} is still being used, ignoring",
           new Object[]{transferType, transferId, remoteAddress});
@@ -198,5 +200,23 @@ final class ControlMessageToPartitionStreamCodec
         .setRuntimeEdgeId(in.getRuntimeEdgeId())
         .build();
     out.add(controlMessage);
+  }
+
+  /**
+   * Gets {@code pullTransferIdToInputStream}.
+   *
+   * @return {@code pullTransferIdToInputStream}
+   */
+  Map<Short, PartitionInputStream> getPullTransferIdToInputStream() {
+    return pullTransferIdToInputStream;
+  }
+
+  /**
+   * Gets {@code pushTransferIdToInputStream}.
+   *
+   * @return {@code pushTransferIdToInputStream}
+   */
+  Map<Short, PartitionInputStream> getPushTransferIdToInputStream() {
+    return pushTransferIdToInputStream;
   }
 }

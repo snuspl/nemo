@@ -95,14 +95,13 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
         // inbound
-        .addLast(FrameDecoder.class.getName(), new FrameDecoder())
+        .addLast(new FrameDecoder())
         // outbound
-        .addLast(CONTROL_FRAME_ENCODER.getClass().getName(), CONTROL_FRAME_ENCODER)
+        .addLast(CONTROL_FRAME_ENCODER)
         // duplex
-        .addLast(ControlMessageToPartitionStreamCodec.class.getName(),
-            new ControlMessageToPartitionStreamCodec(localExecutorId, partitionManagerWorker.get()))
+        .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId, partitionManagerWorker.get()))
         // channel management
-        .addLast(ChannelLifecycleTracker.class.getName(), channelLifecycleTracker);
+        .addLast(channelLifecycleTracker);
   }
 
   /**

@@ -15,11 +15,14 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interprets inbound byte streams to compose frames.
@@ -81,28 +84,131 @@ final class FrameDecoder extends ByteToMessageDecoder {
   static final short PUSH_NONENDING = 4;
   static final short PUSH_ENDING = 5;
 
+  static final int HEADER_LENGTH = ControlFrameEncoder.HEADER_LENGTH;
+
+  private Map<Short, PartitionInputStream> pullTransferIdToInputStream;
+  private Map<Short, PartitionInputStream> pushTransferIdToInputStream;
+
+  /**
+   * The number of bytes consisting body of a control frame to be read next.
+   */
+  private int controlBodyBytesToRead = 0;
+
   /**
    * The number of bytes consisting body of a data frame to be read next.
-   * Decoder expects beginning of a frame if this value is 0.
    */
   private int dataBodyBytesToRead = 0;
 
+  /**
+   * The {@link PartitionInputStream} to which received bytes are added.
+   */
+  private PartitionInputStream inputStream;
+
+  /**
+   * Whether or not the frame currently being read is an ending frame.
+   */
+  private boolean isEndingFrame;
+
+  /**
+   * Creates a frame decoder.
+   */
+  FrameDecoder() {
+    assert (ControlFrameEncoder.HEADER_LENGTH == DataFrameHeaderEncoder.HEADER_LENGTH);
+  }
+
   @Override
-  protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out) {
-    // TODO #1: there can be multiple frames in single ByteBuf. Repeat until no decoding is available.
-    // TODO #1: there can be multiple data frames in single ByteBuf. Make a derived *retained* buffer
+  public void channelActive(final ChannelHandlerContext ctx) {
+    final ControlMessageToPartitionStreamCodec duplexHandler
+        = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
+    pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
+    pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
+  }
 
-
+  @Override
+  protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
+      throws InvalidProtocolBufferException {
+    while (true) {
+      final boolean toContinue;
+      if (controlBodyBytesToRead > 0) {
+        toContinue = onControlBodyAdded(in, out);
+      } else if (dataBodyBytesToRead > 0) {
+        onDataBodyAdded(in);
+        toContinue = in.readableBytes() > 0;
+      } else {
+        toContinue = onFrameBegins(in, out);
+      }
+      if (!toContinue) {
+        break;
+      }
+    }
   }
 
   /**
-   * Decode a new frame.
+   * Try to decode a frame header.
    *
    * @param in  the {@link ByteBuf} from which to read data
    * @param out the {@link List} to which decoded messages are added
    * @return {@code true} if a header was decoded, {@code false} otherwise
    */
   private boolean onFrameBegins(final ByteBuf in, final List<Object> out) {
+    assert (controlBodyBytesToRead == 0);
+    assert (dataBodyBytesToRead == 0);
+    assert (inputStream == null);
+
+    if (in.readableBytes() < HEADER_LENGTH) {
+      // cannot read frame now
+      return false;
+    }
+    final short type = in.readShort();
+    final short transferId = in.readShort();
+    final int length = in.readInt();
+    if (type == CONTROL_TYPE) {
+      // setup context for reading control frame body
+      controlBodyBytesToRead = length;
+    } else {
+      // setup context for reading data frame body
+      dataBodyBytesToRead = length;
+      final boolean isPullTransfer = type == PULL_NONENDING || type == PULL_ENDING;
+      inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
+      isEndingFrame = type == PULL_ENDING || type == PUSH_ENDING;
+    }
+    return true;
+  }
+
+  /**
+   * Try to emit the body of the control frame.
+   *
+   * @param in  the {@link ByteBuf} from which to read data
+   * @param out the list to which the body of the control frame is added
+   * @return {@code true} if the control frame body was emitted, {@code false} otherwise
+   * @throws InvalidProtocolBufferException when failed to parse
+   */
+  private boolean onControlBodyAdded(final ByteBuf in, final List<Object> out) throws InvalidProtocolBufferException {
+    assert (controlBodyBytesToRead > 0);
+    assert (dataBodyBytesToRead == 0);
+    assert (inputStream == null);
+
+    if (in.readableBytes() < controlBodyBytesToRead) {
+      // cannot read body now
+      return false;
+    }
+
+    final byte[] bytes;
+    final int offset;
+    if (in.hasArray()) {
+      bytes = in.array();
+      offset = in.arrayOffset() + in.readerIndex();
+    } else {
+      bytes = new byte[controlBodyBytesToRead];
+      in.getBytes(in.readerIndex(), bytes, 0, controlBodyBytesToRead);
+      offset = 0;
+    }
+    final ControlMessage.PartitionTransferControlMessage controlMessage
+        = ControlMessage.PartitionTransferControlMessage.PARSER.parseFrom(bytes, offset, controlBodyBytesToRead);
+
+    out.add(controlMessage);
+    in.skipBytes(controlBodyBytesToRead);
+    controlBodyBytesToRead = 0;
     return true;
   }
 
@@ -112,6 +218,20 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param in  the {@link ByteBuf} from which to read data
    */
   private void onDataBodyAdded(final ByteBuf in) {
+    assert (controlBodyBytesToRead == 0);
+    assert (dataBodyBytesToRead > 0);
+    assert (inputStream != null);
 
+    final int length = Math.min(dataBodyBytesToRead, in.readableBytes());
+    final ByteBuf body = in.readSlice(length).retain();
+    inputStream.addByteBuf(body);
+
+    dataBodyBytesToRead -= length;
+    if (dataBodyBytesToRead == 0) {
+      if (isEndingFrame) {
+        inputStream.close();
+      }
+      inputStream = null;
+    }
   }
 }
