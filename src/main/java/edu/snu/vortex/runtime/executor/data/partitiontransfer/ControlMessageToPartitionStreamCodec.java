@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 
@@ -27,15 +28,39 @@ import java.util.Map;
  * Responses to control message by emitting a new {@link PartitionTransfer.PartitionStream},
  * and responses to {@link PartitionTransfer.PartitionStream} by emitting a new control message.
  *
+ * <h3>Type of partition transfer:</h3>
+ * <ul>
+ *   <li>In push-based transfer, the sender initiates partition transfer and issues transfer id.</li>
+ *   <li>In pull-based transfer, the receiver initiates partition transfer and issues transfer id.</li>
+ * </ul>
+ *
  * @see ChannelInitializer
  */
 final class ControlMessageToPartitionStreamCodec
     extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionTransfer.PartitionStream> {
 
-  private final Map<Short, PartitionInputStream> pullInputStreamMap = new HashMap<>();
-  private final Map<Short, PartitionInputStream> pushInputStreamMap = new HashMap<>();
-  private final Map<Short, PartitionOutputStream> pullOutputStreamMap = new HashMap<>();
-  private final Map<Short, PartitionOutputStream> pushOutputStreamMap = new HashMap<>();
+  private final Map<Short, PartitionInputStream> pullTransferIdToInputStream = new HashMap<>();
+  private final Map<Short, PartitionInputStream> pushTransferIdToInputStream = new HashMap<>();
+  private final Map<Short, PartitionOutputStream> pullTransferIdToOutputStream = new HashMap<>();
+  private final Map<Short, PartitionOutputStream> pushTransferIdToOutputStream = new HashMap<>();
+
+  private final String localExecutorId;
+  private final PartitionManagerWorker partitionManagerWorker;
+
+  private short nextOutboundPullTransferId = 0;
+  private short nextOutboundPushTransferId = 0;
+
+  /**
+   * Creates a {@link ControlMessageToPartitionStreamCodec}.
+   *
+   * @param localExecutorId         the id of this executor
+   * @param partitionManagerWorker  needed to get {@link edu.snu.vortex.common.coder.Coder} from runtimeEdgeId
+   */
+  ControlMessageToPartitionStreamCodec(final String localExecutorId,
+                                       final PartitionManagerWorker partitionManagerWorker) {
+    this.localExecutorId = localExecutorId;
+    this.partitionManagerWorker = partitionManagerWorker;
+  }
 
   @Override
   protected void encode(final ChannelHandlerContext ctx,
@@ -58,6 +83,17 @@ final class ControlMessageToPartitionStreamCodec
   private void onOutboundPullRequest(final ChannelHandlerContext ctx,
                                      final PartitionInputStream in,
                                      final List<Object> out) {
+    final short transferId = nextOutboundPullTransferId++;
+    pullTransferIdToInputStream.put(transferId, in);
+    final ControlMessage.PartitionTransferControlMessage controlMessage
+        = ControlMessage.PartitionTransferControlMessage.newBuilder()
+        .setControlMessageSourceId(localExecutorId)
+        .setType(ControlMessage.PartitionTransferType.PULL)
+        .setTransferId(transferId)
+        .setPartitionId(in.getPartitionId())
+        .setRuntimeEdgeId(in.getRuntimeEdgeId())
+        .build();
+    out.add(controlMessage);
   }
 
   /**
@@ -70,13 +106,29 @@ final class ControlMessageToPartitionStreamCodec
   private void onOutboundPushNotification(final ChannelHandlerContext ctx,
                                           final PartitionOutputStream in,
                                           final List<Object> out) {
+    final short transferId = nextOutboundPushTransferId++;
+    pushTransferIdToOutputStream.put(transferId, in);
+    in.setTransferId(ControlMessage.PartitionTransferType.PUSH, transferId);
+    final ControlMessage.PartitionTransferControlMessage controlMessage
+        = ControlMessage.PartitionTransferControlMessage.newBuilder()
+        .setControlMessageSourceId(localExecutorId)
+        .setType(ControlMessage.PartitionTransferType.PUSH)
+        .setTransferId(transferId)
+        .setPartitionId(in.getPartitionId())
+        .setRuntimeEdgeId(in.getRuntimeEdgeId())
+        .build();
+    out.add(controlMessage);
   }
 
   @Override
   protected void decode(final ChannelHandlerContext ctx,
                         final ControlMessage.PartitionTransferControlMessage in,
                         final List<Object> out) {
-
+    if (in.getType() == ControlMessage.PartitionTransferType.PULL) {
+      onInboundPullRequest(ctx, in, out);
+    } else {
+      onInboundPushNotification(ctx, in, out);
+    }
   }
 
   /**
@@ -89,6 +141,12 @@ final class ControlMessageToPartitionStreamCodec
   private void onInboundPullRequest(final ChannelHandlerContext ctx,
                                     final ControlMessage.PartitionTransferControlMessage in,
                                     final List<Object> out) {
+    final short transferId = (short) in.getTransferId();
+    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
+        in.getPartitionId(), in.getRuntimeEdgeId(), partitionManagerWorker.getCoder(in.getRuntimeEdgeId()));
+    pullTransferIdToOutputStream.put(transferId, outputStream);
+    outputStream.setTransferId(ControlMessage.PartitionTransferType.PULL, transferId);
+    out.add(outputStream);
   }
 
   /**
@@ -101,5 +159,10 @@ final class ControlMessageToPartitionStreamCodec
   private void onInboundPushNotification(final ChannelHandlerContext ctx,
                                          final ControlMessage.PartitionTransferControlMessage in,
                                          final List<Object> out) {
+    final short transferId = (short) in.getTransferId();
+    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
+        in.getPartitionId(), in.getRuntimeEdgeId(), partitionManagerWorker.getCoder(in.getRuntimeEdgeId()));
+    pushTransferIdToInputStream.put(transferId, inputStream);
+    out.add(inputStream);
   }
 }

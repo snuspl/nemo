@@ -15,24 +15,76 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.common.coder.Coder;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
 
 /**
  * Output stream for partition transfer.
+ *
+ * @param <T> the type of element
  */
-public final class PartitionOutputStream implements Closeable, Flushable, PartitionTransfer.PartitionStream {
+public final class PartitionOutputStream<T> implements Closeable, Flushable, PartitionTransfer.PartitionStream {
   // internally store requestId
   // internally store ConcurrentQueue and encoder for EncodingThread to encode data
 
   // may write FileRegion
 
+  private final String receiverExecutorId;
+  private final String partitionId;
+  private final String runtimeEdgeId;
+  private final Coder<T, ?, ?> coder;
+  private ControlMessage.PartitionTransferType transferType;
+  private short transferId;
+
   /**
    * Creates a partition output stream.
+   *
+   * @param receiverExecutorId  the id of the remote executor
+   * @param partitionId         the partition id
+   * @param runtimeEdgeId       the runtime edge id
+   * @param coder               the coder
    */
-  PartitionOutputStream() {
-    // constructor with default access modifier
+  PartitionOutputStream(final String receiverExecutorId,
+                        final String partitionId,
+                        final String runtimeEdgeId,
+                        final Coder<T, ?, ?> coder) {
+    this.receiverExecutorId = receiverExecutorId;
+    this.partitionId = partitionId;
+    this.runtimeEdgeId = runtimeEdgeId;
+    this.coder = coder;
+  }
+
+  /**
+   * Gets the partition id.
+   *
+   * @return the partition id
+   */
+  public String getPartitionId() {
+    return partitionId;
+  }
+
+  /**
+   * Gets the runtime edge id.
+   *
+   * @return the runtime edge id
+   */
+  public String getRuntimeEdgeId() {
+    return runtimeEdgeId;
+  }
+
+  /**
+   * Sets transfer type and transfer id.
+   *
+   * @param type  the transfer type
+   * @param id    the transfer id
+   */
+  void setTransferId(final ControlMessage.PartitionTransferType type, final short id) {
+    this.transferType = type;
+    this.transferId = id;
   }
 
   @Override

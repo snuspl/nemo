@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -27,6 +28,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.remote.ports.TcpPortProvider;
@@ -56,16 +58,20 @@ final class PartitionTransport implements AutoCloseable {
   /**
    * Constructs a partition transport and starts listening.
    *
-   * @param tcpPortProvider       provides an iterator of random tcp ports
-   * @param localAddressProvider  provides the local address of the node to bind to
-   * @param port                  the listening port of the server; 0 means random assign using {@code tcpPortProvider}
-   * @param serverBacklog         the maximum number of pending connections to the server
-   * @param numListeningThreads   the number of listening threads of the server
-   * @param numWorkingThreads     the number of working threads of the server
-   * @param numClientThreads      the number of client threads
+   * @param localExecutorId         the id of this executor
+   * @param partitionManagerWorker  provides {@link edu.snu.vortex.common.coder.Coder}s
+   * @param tcpPortProvider         provides an iterator of random tcp ports
+   * @param localAddressProvider    provides the local address of the node to bind to
+   * @param port                    the listening port; 0 means random assign using {@code tcpPortProvider}
+   * @param serverBacklog           the maximum number of pending connections to the server
+   * @param numListeningThreads     the number of listening threads of the server
+   * @param numWorkingThreads       the number of working threads of the server
+   * @param numClientThreads        the number of client threads
    */
   @Inject
   private PartitionTransport(
+      @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
+      final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,
@@ -84,7 +90,8 @@ final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    final ChannelInitializer channelInitializer = new ChannelInitializer(channelGroup, channelMap);
+    final ChannelInitializer channelInitializer
+        = new ChannelInitializer(channelGroup, channelMap, localExecutorId, partitionManagerWorker);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap

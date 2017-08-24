@@ -78,7 +78,11 @@ enum PartitionTransferType {
 }
 
 message PartitionTransferControlMessage {
-    required PartitionTransferType type = 1;
+    required string controlMessageSourceId = 1;
+    required PartitionTransferType type = 2;
+    required int32 transferId = 3;
+    required string partitionId = 4;
+    required string runtimeEdgeId = 5;
 }
 
 message RequestPartitionMsg {

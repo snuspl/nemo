@@ -15,9 +15,11 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.apache.reef.tang.InjectionFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,16 +71,24 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
 
   private final ChannelLifecycleTracker channelLifecycleTracker;
+  private final String localExecutorId;
+  private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   /**
    * Creates a netty channel initializer.
    *
-   * @param channelGroup  the {@link ChannelGroup} to which active channels are added
-   * @param channelMap    the map to which active channels are added
+   * @param channelGroup            the {@link ChannelGroup} to which active channels are added
+   * @param channelMap              the map to which active channels are added
+   * @param localExecutorId         the id of this executor
+   * @param partitionManagerWorker  the {@link PartitionManagerWorker}
    */
   ChannelInitializer(final ChannelGroup channelGroup,
-                     final ConcurrentMap<SocketAddress, Channel> channelMap) {
-    channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
+                     final ConcurrentMap<SocketAddress, Channel> channelMap,
+                     final String localExecutorId,
+                     final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+    this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
+    this.localExecutorId = localExecutorId;
+    this.partitionManagerWorker = partitionManagerWorker;
   }
 
   @Override
@@ -89,7 +99,8 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         // outbound
         .addLast(CONTROL_FRAME_ENCODER.getClass().getName(), CONTROL_FRAME_ENCODER)
         // duplex
-        .addLast(ControlMessageToPartitionStreamCodec.class.getName(), new ControlMessageToPartitionStreamCodec())
+        .addLast(ControlMessageToPartitionStreamCodec.class.getName(),
+            new ControlMessageToPartitionStreamCodec(localExecutorId, partitionManagerWorker.get()))
         // channel management
         .addLast(ChannelLifecycleTracker.class.getName(), channelLifecycleTracker);
   }

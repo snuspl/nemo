@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -29,17 +30,6 @@ final class DataFrameHeaderEncoder {
   static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
 
   /**
-   * Type of partition transfer.
-   *
-   * In push-based transfer, the sender initiates partition transfer and issues transfer id.
-   * In pull-based transfer, the receiver initiates partition transfer and issues transfer id.
-   */
-  enum PartitionTransferType {
-    Push,
-    Pull
-  }
-
-  /**
    * Private constructor.
    */
   private DataFrameHeaderEncoder() {
@@ -52,10 +42,10 @@ final class DataFrameHeaderEncoder {
    * @param transferId            the id of transfer
    * @param out                   the {@link ByteBuf} into which the encoded numbers will be written
    */
-  static void encodeTypeAndTransferId(final PartitionTransferType partitionTransferType,
+  static void encodeTypeAndTransferId(final ControlMessage.PartitionTransferType partitionTransferType,
                                       final short transferId,
                                       final ByteBuf out) {
-    out.writeShort(partitionTransferType == PartitionTransferType.Pull ? FrameDecoder.PULL_NONENDING
+    out.writeShort(partitionTransferType == ControlMessage.PartitionTransferType.PULL ? FrameDecoder.PULL_NONENDING
         : FrameDecoder.PUSH_NONENDING);
     out.writeShort(transferId);
   }
@@ -68,11 +58,11 @@ final class DataFrameHeaderEncoder {
    * @param length                the length of frame body
    * @param out                   the {@link ByteBuf} into which the encoded numbers will be written
    */
-  static void encodeLastFrame(final PartitionTransferType partitionTransferType,
+  static void encodeLastFrame(final ControlMessage.PartitionTransferType partitionTransferType,
                               final short transferId,
                               final int length,
                               final ByteBuf out) {
-    out.writeShort(partitionTransferType == PartitionTransferType.Pull ? FrameDecoder.PULL_ENDING
+    out.writeShort(partitionTransferType == ControlMessage.PartitionTransferType.PULL ? FrameDecoder.PULL_ENDING
         : FrameDecoder.PUSH_ENDING);
     out.writeShort(transferId);
     out.writeInt(length);
