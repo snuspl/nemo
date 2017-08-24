@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Responses to control message by emitting a new {@link PartitionTransfer.PartitionStream},
- * and responses to {@link PartitionTransfer.PartitionStream} by emitting a new control message.
+ * Responses to control message by emitting a new {@link PartitionStream},
+ * and responses to {@link PartitionStream} by emitting a new control message.
  *
  * <h3>Type of partition transfer:</h3>
  * <ul>
@@ -40,7 +40,7 @@ import java.util.Map;
  * @see ChannelInitializer
  */
 final class ControlMessageToPartitionStreamCodec
-    extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionTransfer.PartitionStream> {
+    extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionStream> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ControlMessageToPartitionStreamCodec.class);
 
@@ -69,7 +69,7 @@ final class ControlMessageToPartitionStreamCodec
 
   @Override
   protected void encode(final ChannelHandlerContext ctx,
-                        final PartitionTransfer.PartitionStream in,
+                        final PartitionStream in,
                         final List<Object> out) {
     if (in instanceof PartitionInputStream) {
       onOutboundPullRequest(ctx, (PartitionInputStream) in, out);
@@ -187,7 +187,7 @@ final class ControlMessageToPartitionStreamCodec
    */
   private void emitControlMessage(final ControlMessage.PartitionTransferType transferType,
                                   final short transferId,
-                                  final PartitionTransfer.PartitionStream in,
+                                  final PartitionStream in,
                                   final List<Object> out) {
     final ControlMessage.PartitionTransferControlMessage controlMessage
         = ControlMessage.PartitionTransferControlMessage.newBuilder()

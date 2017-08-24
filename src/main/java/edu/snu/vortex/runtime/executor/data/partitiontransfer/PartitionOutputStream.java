@@ -27,7 +27,7 @@ import java.io.IOException;
  *
  * @param <T> the type of element
  */
-public final class PartitionOutputStream<T> implements Closeable, Flushable, PartitionTransfer.PartitionStream {
+public final class PartitionOutputStream<T> implements Closeable, Flushable, PartitionStream {
   // internally store requestId
   // internally store ConcurrentQueue and encoder for EncodingThread to encode data
 

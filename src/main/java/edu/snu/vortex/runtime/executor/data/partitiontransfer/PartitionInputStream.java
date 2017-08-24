@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  *
  * @param <T> the type of element
  */
-public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionTransfer.PartitionStream {
+public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionStream {
   // internally store ByteBufInputStream and decoder for DecodingThread to decode data
   // internally store requestId
 
