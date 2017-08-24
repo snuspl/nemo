@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Input stream for partition transfer.
@@ -36,6 +37,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final String partitionId;
   private final String runtimeEdgeId;
   private Coder<T, ?, ?> coder;
+  private ExecutorService executorService;
 
   /**
    * Creates a partition input stream.
@@ -53,6 +55,17 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   /**
+   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
+   *
+   * @param coder           the coder
+   * @param executorService the executor service
+   */
+  void setCoderAndExecutorService(final Coder<T, ?, ?> coder, final ExecutorService executorService) {
+    this.coder = coder;
+    this.executorService = executorService;
+  }
+
+  /**
    * Supply {@link ByteBuf} to this stream.
    *
    * @param byteBuf the {@link ByteBuf} to supply
@@ -65,6 +78,11 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * Mark as {@link #addByteBuf(ByteBuf)} event is no longer expected.
    */
   void close() {
+  }
+
+  @Override
+  public String getRemoteExecutorId() {
+    return senderExecutorId;
   }
 
   @Override

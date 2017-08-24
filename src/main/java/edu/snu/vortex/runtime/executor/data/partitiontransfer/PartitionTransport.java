@@ -27,6 +27,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.remote.ports.TcpPortProvider;
@@ -56,17 +57,19 @@ final class PartitionTransport implements AutoCloseable {
   /**
    * Constructs a partition transport and starts listening.
    *
-   * @param localExecutorId         the id of this executor
-   * @param tcpPortProvider         provides an iterator of random tcp ports
-   * @param localAddressProvider    provides the local address of the node to bind to
-   * @param port                    the listening port; 0 means random assign using {@code tcpPortProvider}
-   * @param serverBacklog           the maximum number of pending connections to the server
-   * @param numListeningThreads     the number of listening threads of the server
-   * @param numWorkingThreads       the number of working threads of the server
-   * @param numClientThreads        the number of client threads
+   * @param partitionTransfer     provides handler for inbound control messages
+   * @param localExecutorId       the id of this executor
+   * @param tcpPortProvider       provides an iterator of random tcp ports
+   * @param localAddressProvider  provides the local address of the node to bind to
+   * @param port                  the listening port; 0 means random assign using {@code tcpPortProvider}
+   * @param serverBacklog         the maximum number of pending connections to the server
+   * @param numListeningThreads   the number of listening threads of the server
+   * @param numWorkingThreads     the number of working threads of the server
+   * @param numClientThreads      the number of client threads
    */
   @Inject
   private PartitionTransport(
+      final InjectionFuture<PartitionTransfer> partitionTransfer,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
@@ -86,7 +89,8 @@ final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
-    final ChannelInitializer channelInitializer = new ChannelInitializer(channelGroup, channelMap, localExecutorId);
+    final ChannelInitializer channelInitializer
+        = new ChannelInitializer(channelGroup, channelMap, partitionTransfer, localExecutorId);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap

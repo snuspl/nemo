@@ -105,9 +105,19 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private PartitionInputStream inputStream;
 
   /**
-   * Whether or not the frame currently being read is an ending frame.
+   * Whether or not the data frame currently being read is an ending frame.
    */
   private boolean isEndingFrame;
+
+  /**
+   * Whether or not the data frame currently being read consists a pull-based transfer.
+   */
+  private boolean isPullTransfer;
+
+  /**
+   * The id of transfer currently being executed.
+   */
+  private short transferId;
 
   /**
    * Creates a frame decoder.
@@ -160,7 +170,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
       return false;
     }
     final short type = in.readShort();
-    final short transferId = in.readShort();
+    transferId = in.readShort();
     final int length = in.readInt();
     if (type == CONTROL_TYPE) {
       // setup context for reading control frame body
@@ -168,9 +178,12 @@ final class FrameDecoder extends ByteToMessageDecoder {
     } else {
       // setup context for reading data frame body
       dataBodyBytesToRead = length;
-      final boolean isPullTransfer = type == PULL_NONENDING || type == PULL_ENDING;
-      inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
+      isPullTransfer = type == PULL_NONENDING || type == PULL_ENDING;
       isEndingFrame = type == PULL_ENDING || type == PUSH_ENDING;
+      inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
+      if (dataBodyBytesToRead == 0) {
+        onDataFrameEnd();
+      }
     }
     return true;
   }
@@ -228,10 +241,18 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
     dataBodyBytesToRead -= length;
     if (dataBodyBytesToRead == 0) {
-      if (isEndingFrame) {
-        inputStream.close();
-      }
-      inputStream = null;
+      onDataFrameEnd();
     }
+  }
+
+  /**
+   * Closes {@link PartitionInputStream} if necessary and resets the internal states of the decoder.
+   */
+  private void onDataFrameEnd() {
+    if (isEndingFrame) {
+      inputStream.close();
+      (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);
+    }
+    inputStream = null;
   }
 }

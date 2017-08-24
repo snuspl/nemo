@@ -21,6 +21,13 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 public interface PartitionStream {
 
   /**
+   * Gets the id of the remote executor.
+   *
+   * @return the remote executor id
+   */
+  String getRemoteExecutorId();
+
+  /**
    * Gets the partition id.
    *
    * @return the partition id

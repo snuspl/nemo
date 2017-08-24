@@ -17,6 +17,9 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.Recycler;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
@@ -26,13 +29,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Interface for {@link edu.snu.vortex.runtime.executor.data.PartitionManagerWorker} to initiate a partition transfer.
+ * Interface for interplay with {@link PartitionManagerWorker}.
  */
-public final class PartitionTransfer {
+@ChannelHandler.Sharable
+public final class PartitionTransfer extends SimpleChannelInboundHandler<PartitionStream> {
 
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransfer.class);
 
@@ -50,7 +55,7 @@ public final class PartitionTransfer {
    * @param nameResolver            provides naming registry
    * @param executorId              the id of this executor
    * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
-   * @param outboundThreads         the nubmer of threads in thread pool for outbound partition transfer
+   * @param outboundThreads         the number of threads in thread pool for outbound partition transfer
    */
   @Inject
   private PartitionTransfer(
@@ -63,6 +68,8 @@ public final class PartitionTransfer {
     this.partitionManagerWorker = partitionManagerWorker;
     this.partitionTransport = partitionTransport;
     this.nameResolver = nameResolver;
+    // Inbound thread pool can be easily saturated with multiple incremental data transfers.
+    // We may consider other solutions than using fixed thread pool.
     this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads);
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads);
 
@@ -102,11 +109,54 @@ public final class PartitionTransfer {
   }
 
   /**
+   * Lookup {@link PartitionTransport} listening address.
+   *
+   * @param executorId  the executor id
+   * @return            the listening address of the {@link PartitionTransport} of the specified executor
+   */
+  private InetSocketAddress lookup(final String executorId) {
+    try {
+      final PartitionTransferIdentifier identifier = PartitionTransferIdentifier.newInstance(executorId);
+      final InetSocketAddress address = nameResolver.lookup(identifier);
+      identifier.recycle();
+      return address;
+    } catch (final Exception e) {
+      LOG.error(String.format("Cannot lookup PartitionTransport listening address of executor %s", executorId), e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void channelRead0(final ChannelHandlerContext ctx, final PartitionStream stream) {
+    if (stream instanceof PartitionInputStream) {
+      onPushNotification((PartitionInputStream) stream);
+    } else {
+      onPullRequest((PartitionOutputStream) stream);
+    }
+  }
+
+  /**
+   * Respond to a new pull request.
+   *
+   * @param stream  {@link PartitionOutputStream}
+   */
+  private void onPullRequest(final PartitionOutputStream stream) {
+
+  }
+
+  /**
+   * Respond to a new push notification.
+   *
+   * @param stream  {@link PartitionInputStream}
+   */
+  private void onPushNotification(final PartitionInputStream stream) {
+
+  }
+
+  /**
    * {@link Identifier} for {@link PartitionTransfer}.
    */
   private static final class PartitionTransferIdentifier implements Identifier {
-
-    private final Recycler.Handle handle;
 
     private static final Recycler<PartitionTransferIdentifier> RECYCLER = new Recycler<PartitionTransferIdentifier>() {
       @Override
@@ -114,6 +164,8 @@ public final class PartitionTransfer {
         return new PartitionTransferIdentifier(handle);
       }
     };
+
+    private final Recycler.Handle handle;
 
     /**
      * Creates a {@link PartitionTransferIdentifier}.
@@ -150,23 +202,6 @@ public final class PartitionTransfer {
     @Override
     public String toString() {
       return "partition://" + executorId;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final PartitionTransferIdentifier that = (PartitionTransferIdentifier) o;
-      return executorId.equals(that.executorId);
-    }
-
-    @Override
-    public int hashCode() {
-      return executorId.hashCode();
     }
   }
 }

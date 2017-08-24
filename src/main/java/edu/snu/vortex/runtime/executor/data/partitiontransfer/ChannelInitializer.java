@@ -15,13 +15,16 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.apache.reef.tang.InjectionFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -69,19 +72,23 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
 
   private final ChannelLifecycleTracker channelLifecycleTracker;
+  private final InjectionFuture<PartitionTransfer> partitionTransfer;
   private final String localExecutorId;
 
   /**
    * Creates a netty channel initializer.
    *
-   * @param channelGroup            the {@link ChannelGroup} to which active channels are added
-   * @param channelMap              the map to which active channels are added
-   * @param localExecutorId         the id of this executor
+   * @param channelGroup      the {@link ChannelGroup} to which active channels are added
+   * @param channelMap        the map to which active channels are added
+   * @param partitionTransfer provides handler for inbound control messages
+   * @param localExecutorId   the id of this executor
    */
   ChannelInitializer(final ChannelGroup channelGroup,
                      final ConcurrentMap<SocketAddress, Channel> channelMap,
+                     final InjectionFuture<PartitionTransfer> partitionTransfer,
                      final String localExecutorId) {
     this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
+    this.partitionTransfer = partitionTransfer;
     this.localExecutorId = localExecutorId;
   }
 
@@ -89,11 +96,14 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
         // inbound
+        .addLast(new EndOfOutputStreamEventHandler())
         .addLast(new FrameDecoder())
         // outbound
         .addLast(CONTROL_FRAME_ENCODER)
         // duplex
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
+        // inbound
+        .addLast(partitionTransfer.get())
         // channel management
         .addLast(channelLifecycleTracker);
   }
@@ -137,6 +147,30 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
       LOG.error(String.format("Exception caught in the channel to %s", ctx.channel().remoteAddress()), cause);
       ctx.close();
+    }
+  }
+
+  /**
+   * Handles {@link PartitionOutputStream.EndOfOutputStreamEvent}.
+   */
+  private static final class EndOfOutputStreamEventHandler extends ChannelInboundHandlerAdapter {
+    private Map<Short, PartitionOutputStream> pullTransferIdToOutputStream;
+    private Map<Short, PartitionOutputStream> pushTransferIdToOutputStream;
+
+    @Override
+    public void channelActive(final ChannelHandlerContext ctx) {
+      final ControlMessageToPartitionStreamCodec duplexHandler
+          = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
+      pullTransferIdToOutputStream = duplexHandler.getPullTransferIdToOutputStream();
+      pushTransferIdToOutputStream = duplexHandler.getPushTransferIdToOutputStream();
+    }
+
+    @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+      final PartitionOutputStream.EndOfOutputStreamEvent event = (PartitionOutputStream.EndOfOutputStreamEvent) evt;
+      (event.getTransferType() == ControlMessage.PartitionTransferType.PULL ? pullTransferIdToOutputStream
+          : pushTransferIdToOutputStream).remove(event.getTransferId());
+      event.recycle();
     }
   }
 }

@@ -17,10 +17,13 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import io.netty.channel.Channel;
+import io.netty.util.Recycler;
 
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Output stream for partition transfer.
@@ -36,9 +39,11 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
   private final String receiverExecutorId;
   private final String partitionId;
   private final String runtimeEdgeId;
-  private Coder<T, ?, ?> coder;
   private ControlMessage.PartitionTransferType transferType;
   private short transferId;
+  private Channel channel;
+  private Coder<T, ?, ?> coder;
+  private ExecutorService executorService;
 
   /**
    * Creates a partition output stream.
@@ -56,14 +61,32 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
   }
 
   /**
-   * Sets transfer type and transfer id.
+   * Sets transfer type, transfer id, and {@link io.netty.channel.Channel}.
    *
-   * @param type  the transfer type
-   * @param id    the transfer id
+   * @param type    the transfer type
+   * @param id      the transfer id
+   * @param channel the channel
    */
-  void setTransferId(final ControlMessage.PartitionTransferType type, final short id) {
+  void setTransferIdAndChannel(final ControlMessage.PartitionTransferType type, final short id, final Channel channel) {
     this.transferType = type;
     this.transferId = id;
+    this.channel = channel;
+  }
+
+  /**
+   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
+   *
+   * @param coder           the coder
+   * @param executorService the executor service
+   */
+  void setCoderAndExecutorService(final Coder<T, ?, ?> coder, final ExecutorService executorService) {
+    this.coder = coder;
+    this.executorService = executorService;
+  }
+
+  @Override
+  public String getRemoteExecutorId() {
+    return receiverExecutorId;
   }
 
   @Override
@@ -78,9 +101,77 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
 
   @Override
   public void close() throws IOException {
+    channel.pipeline().fireUserEventTriggered(EndOfOutputStreamEvent.newInstance(transferType, transferId));
   }
 
   @Override
   public void flush() throws IOException {
+  }
+
+  /**
+   * An event meaning the end of a {@link PartitionOutputStream}.
+   */
+  static final class EndOfOutputStreamEvent {
+
+    private static final Recycler<EndOfOutputStreamEvent> RECYCLER = new Recycler<EndOfOutputStreamEvent>() {
+      @Override
+      protected EndOfOutputStreamEvent newObject(final Recycler.Handle handle) {
+        return new EndOfOutputStreamEvent(handle);
+      }
+    };
+
+    private final Recycler.Handle handle;
+
+    /**
+     * Creates a {@link EndOfOutputStreamEvent}.
+     *
+     * @param handle  the recycler handle
+     */
+    private EndOfOutputStreamEvent(final Recycler.Handle handle) {
+      this.handle = handle;
+    }
+
+    private ControlMessage.PartitionTransferType transferType;
+    private short transferId;
+
+    /**
+     * Creates an {@link EndOfOutputStreamEvent}.
+     *
+     * @param transferType  the transfer type
+     * @param transferId    the transfer id
+     * @return an {@link EndOfOutputStreamEvent}
+     */
+    private static EndOfOutputStreamEvent newInstance(final ControlMessage.PartitionTransferType transferType,
+                                                      final short transferId) {
+      final EndOfOutputStreamEvent event = RECYCLER.get();
+      event.transferType = transferType;
+      event.transferId = transferId;
+      return event;
+    }
+
+    /**
+     * Recycles this object.
+     */
+    void recycle() {
+      RECYCLER.recycle(this, handle);
+    }
+
+    /**
+     * Gets the transfer type.
+     *
+     * @return the transfer type
+     */
+    ControlMessage.PartitionTransferType getTransferType() {
+      return transferType;
+    }
+
+    /**
+     * Gets the transfer id.
+     *
+     * @return the transfer id
+     */
+    short getTransferId() {
+      return transferId;
+    }
   }
 }

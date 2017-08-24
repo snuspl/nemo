@@ -108,7 +108,7 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = nextOutboundPushTransferId++;
     checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId);
     pushTransferIdToOutputStream.put(transferId, in);
-    in.setTransferId(ControlMessage.PartitionTransferType.PUSH, transferId);
+    in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
   }
 
@@ -137,7 +137,7 @@ final class ControlMessageToPartitionStreamCodec
     final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
         in.getPartitionId(), in.getRuntimeEdgeId());
     pullTransferIdToOutputStream.put(transferId, outputStream);
-    outputStream.setTransferId(ControlMessage.PartitionTransferType.PULL, transferId);
+    outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
   }
 
@@ -213,5 +213,23 @@ final class ControlMessageToPartitionStreamCodec
    */
   Map<Short, PartitionInputStream> getPushTransferIdToInputStream() {
     return pushTransferIdToInputStream;
+  }
+
+  /**
+   * Gets {@code pullTransferIdToOutputStream}.
+   *
+   * @return {@code pullTransferIdToOutputStream}
+   */
+  Map<Short, PartitionOutputStream> getPullTransferIdToOutputStream() {
+    return pullTransferIdToOutputStream;
+  }
+
+  /**
+   * Gets {@code pushTransferIdToOutputStream}.
+   *
+   * @return {@code pushTransferIdToOutputStream}
+   */
+  Map<Short, PartitionOutputStream> getPushTransferIdToOutputStream() {
+    return pushTransferIdToOutputStream;
   }
 }
