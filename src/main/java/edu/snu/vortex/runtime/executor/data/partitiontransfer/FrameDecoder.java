@@ -19,9 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Interprets inbound byte streams to compose frames.
@@ -72,6 +70,12 @@ import java.util.Map;
  */
 final class FrameDecoder extends ByteToMessageDecoder {
 
+  static final short CONTROL_TYPE = 0;
+  static final short PULL_NONENDING = 2;
+  static final short PULL_ENDING = 3;
+  static final short PUSH_NONENDING = 4;
+  static final short PUSH_ENDING = 5;
+
   /**
    * The number of bytes consisting body of a data frame to be read next.
    * Decoder expects beginning of a frame if this value is 0.
@@ -80,8 +84,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out) {
-    // TODO: there can be multiple frames in single ByteBuf. Repeat until no decoding is available.
-    // TODO: there can be multiple data frames in single ByteBuf. Make a derived *retained* buffer
+    // TODO #1: there can be multiple frames in single ByteBuf. Repeat until no decoding is available.
+    // TODO #1: there can be multiple data frames in single ByteBuf. Make a derived *retained* buffer
 
 
   }

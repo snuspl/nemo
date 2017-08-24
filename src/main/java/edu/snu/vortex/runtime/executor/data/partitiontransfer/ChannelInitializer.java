@@ -62,6 +62,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
 
+  private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
+
   private final ChannelActiveHandler channelActiveHandler;
 
   /**
@@ -77,17 +79,13 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
 
   @Override
   protected void initChannel(final SocketChannel ch) {
-    // TODO add more handlers
-    // TODO ControlFrameEncoder is sharable! create just once
-    // TODO DataFrameHeaderEncoder is not a netty encoder. just a static function wrapper class.
     ch.pipeline()
         // inbound
         .addLast(FrameDecoder.class.getName(), new FrameDecoder())
-
         // outbound
-
+        .addLast(CONTROL_FRAME_ENCODER.getClass().getName(), CONTROL_FRAME_ENCODER)
         // duplex
-
+        .addLast(ControlMessageToPartitionStreamCodec.class.getName(), new ControlMessageToPartitionStreamCodec())
         // channel management
         .addLast(ChannelActiveHandler.class.getName(), channelActiveHandler);
   }
