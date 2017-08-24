@@ -15,11 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
-import org.apache.reef.tang.InjectionFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +70,6 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
 
   private final ChannelLifecycleTracker channelLifecycleTracker;
   private final String localExecutorId;
-  private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   /**
    * Creates a netty channel initializer.
@@ -80,15 +77,12 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
    * @param channelGroup            the {@link ChannelGroup} to which active channels are added
    * @param channelMap              the map to which active channels are added
    * @param localExecutorId         the id of this executor
-   * @param partitionManagerWorker  the {@link PartitionManagerWorker}
    */
   ChannelInitializer(final ChannelGroup channelGroup,
                      final ConcurrentMap<SocketAddress, Channel> channelMap,
-                     final String localExecutorId,
-                     final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+                     final String localExecutorId) {
     this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
     this.localExecutorId = localExecutorId;
-    this.partitionManagerWorker = partitionManagerWorker;
   }
 
   @Override
@@ -99,7 +93,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         // outbound
         .addLast(CONTROL_FRAME_ENCODER)
         // duplex
-        .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId, partitionManagerWorker.get()))
+        .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // channel management
         .addLast(channelLifecycleTracker);
   }

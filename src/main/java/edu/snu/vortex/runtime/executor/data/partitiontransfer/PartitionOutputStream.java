@@ -36,7 +36,7 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
   private final String receiverExecutorId;
   private final String partitionId;
   private final String runtimeEdgeId;
-  private final Coder<T, ?, ?> coder;
+  private Coder<T, ?, ?> coder;
   private ControlMessage.PartitionTransferType transferType;
   private short transferId;
 
@@ -46,16 +46,13 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
    * @param receiverExecutorId  the id of the remote executor
    * @param partitionId         the partition id
    * @param runtimeEdgeId       the runtime edge id
-   * @param coder               the coder
    */
   PartitionOutputStream(final String receiverExecutorId,
                         final String partitionId,
-                        final String runtimeEdgeId,
-                        final Coder<T, ?, ?> coder) {
+                        final String runtimeEdgeId) {
     this.receiverExecutorId = receiverExecutorId;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
-    this.coder = coder;
   }
 
   @Override

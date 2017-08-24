@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
-import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -50,7 +49,6 @@ final class ControlMessageToPartitionStreamCodec
   private final Map<Short, PartitionOutputStream> pushTransferIdToOutputStream = new HashMap<>();
 
   private final String localExecutorId;
-  private final PartitionManagerWorker partitionManagerWorker;
   private SocketAddress remoteAddress;
 
   private short nextOutboundPullTransferId = 0;
@@ -60,12 +58,9 @@ final class ControlMessageToPartitionStreamCodec
    * Creates a {@link ControlMessageToPartitionStreamCodec}.
    *
    * @param localExecutorId         the id of this executor
-   * @param partitionManagerWorker  needed to get {@link edu.snu.vortex.common.coder.Coder} from runtimeEdgeId
    */
-  ControlMessageToPartitionStreamCodec(final String localExecutorId,
-                                       final PartitionManagerWorker partitionManagerWorker) {
+  ControlMessageToPartitionStreamCodec(final String localExecutorId) {
     this.localExecutorId = localExecutorId;
-    this.partitionManagerWorker = partitionManagerWorker;
   }
 
   @Override
@@ -140,7 +135,7 @@ final class ControlMessageToPartitionStreamCodec
                                     final List<Object> out) {
     final short transferId = (short) in.getTransferId();
     final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
-        in.getPartitionId(), in.getRuntimeEdgeId(), partitionManagerWorker.getCoder(in.getRuntimeEdgeId()));
+        in.getPartitionId(), in.getRuntimeEdgeId());
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferId(ControlMessage.PartitionTransferType.PULL, transferId);
     out.add(outputStream);
@@ -158,7 +153,7 @@ final class ControlMessageToPartitionStreamCodec
                                          final List<Object> out) {
     final short transferId = (short) in.getTransferId();
     final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
-        in.getPartitionId(), in.getRuntimeEdgeId(), partitionManagerWorker.getCoder(in.getRuntimeEdgeId()));
+        in.getPartitionId(), in.getRuntimeEdgeId());
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
   }
