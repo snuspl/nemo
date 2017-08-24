@@ -43,15 +43,15 @@ public final class MetricDataBuilder {
     this.endAt = 0;
   }
 
-  public void startMeasure(final int attemptIdx, final String from, final long start) {
+  public void beginMeasurement(final int attemptIdx, final String startState, final long beginTimestamp) {
     this.scheduleAttemptIdx = attemptIdx;
-    this.fromState = from;
-    this.startAt = start;
+    this.fromState = startState;
+    this.startAt = beginTimestamp;
   }
 
-  public void endMeasure(final String to, final long end) {
-    this.toState = to;
-    this.endAt = end;
+  public void endMeasurement(final String endState, final long endTimestamp) {
+    this.toState = endState;
+    this.endAt = endTimestamp;
   }
 
   public Enum getComputationUnit() {
@@ -78,7 +78,7 @@ public final class MetricDataBuilder {
 
   /**
    * Builds immutable MetricData.
-   * @return the MetricData contained by the builder.
+   * @return the MetricData constructed by the builder.
    */
   public MetricData build() {
     return new MetricData(getComputationUnit(), getComputationUnitId(), getExecutorId(),
