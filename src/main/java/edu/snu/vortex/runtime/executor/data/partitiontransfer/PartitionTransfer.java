@@ -93,7 +93,10 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
   public PartitionInputStream pull(final String executorId, final String partitionId, final String runtimeEdgeId) {
-    return null;
+    final PartitionInputStream stream = new PartitionInputStream(executorId, partitionId, runtimeEdgeId);
+    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
+    partitionTransport.getChannelTo(lookup(executorId)).write(stream);
+    return stream;
   }
 
   /**
@@ -105,7 +108,10 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
   public PartitionOutputStream push(final String executorId, final String partitionId, final String runtimeEdgeId) {
-    return null;
+    final PartitionOutputStream stream = new PartitionOutputStream(executorId, partitionId, runtimeEdgeId);
+    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), outboundExecutorService);
+    partitionTransport.getChannelTo(lookup(executorId)).write(stream);
+    return stream;
   }
 
   /**
@@ -141,7 +147,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param stream  {@link PartitionOutputStream}
    */
   private void onPullRequest(final PartitionOutputStream stream) {
-
+    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
+        outboundExecutorService);
+    partitionManagerWorker.get().onPullRequest(stream);
   }
 
   /**
@@ -150,7 +158,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param stream  {@link PartitionInputStream}
    */
   private void onPushNotification(final PartitionInputStream stream) {
-
+    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
+        inboundExecutorService);
+    partitionManagerWorker.get().onPushNotification(stream);
   }
 
   /**
