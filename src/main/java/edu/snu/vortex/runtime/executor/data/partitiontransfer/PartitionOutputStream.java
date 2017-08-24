@@ -58,20 +58,12 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
     this.coder = coder;
   }
 
-  /**
-   * Gets the partition id.
-   *
-   * @return the partition id
-   */
+  @Override
   public String getPartitionId() {
     return partitionId;
   }
 
-  /**
-   * Gets the runtime edge id.
-   *
-   * @return the runtime edge id
-   */
+  @Override
   public String getRuntimeEdgeId() {
     return runtimeEdgeId;
   }

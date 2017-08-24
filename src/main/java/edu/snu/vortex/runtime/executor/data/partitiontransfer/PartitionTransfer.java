@@ -57,5 +57,20 @@ public final class PartitionTransfer {
    * {@link PartitionInputStream} and {@link PartitionOutputStream}.
    */
   interface PartitionStream {
+
+    /**
+     * Gets the partition id.
+     *
+     * @return the partition id
+     */
+    String getPartitionId();
+
+    /**
+     * Gets the runtime edge id.
+     *
+     * @return the runtime edge id
+     */
+    String getRuntimeEdgeId();
+
   }
 }

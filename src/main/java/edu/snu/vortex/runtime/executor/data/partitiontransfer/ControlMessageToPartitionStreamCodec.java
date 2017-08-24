@@ -19,7 +19,10 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,8 @@ import java.util.Map;
  */
 final class ControlMessageToPartitionStreamCodec
     extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionTransfer.PartitionStream> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ControlMessageToPartitionStreamCodec.class);
 
   private final Map<Short, PartitionInputStream> pullTransferIdToInputStream = new HashMap<>();
   private final Map<Short, PartitionInputStream> pushTransferIdToInputStream = new HashMap<>();
@@ -84,16 +89,10 @@ final class ControlMessageToPartitionStreamCodec
                                      final PartitionInputStream in,
                                      final List<Object> out) {
     final short transferId = nextOutboundPullTransferId++;
+    checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId,
+        ctx.channel().remoteAddress());
     pullTransferIdToInputStream.put(transferId, in);
-    final ControlMessage.PartitionTransferControlMessage controlMessage
-        = ControlMessage.PartitionTransferControlMessage.newBuilder()
-        .setControlMessageSourceId(localExecutorId)
-        .setType(ControlMessage.PartitionTransferType.PULL)
-        .setTransferId(transferId)
-        .setPartitionId(in.getPartitionId())
-        .setRuntimeEdgeId(in.getRuntimeEdgeId())
-        .build();
-    out.add(controlMessage);
+    emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
   }
 
   /**
@@ -107,17 +106,11 @@ final class ControlMessageToPartitionStreamCodec
                                           final PartitionOutputStream in,
                                           final List<Object> out) {
     final short transferId = nextOutboundPushTransferId++;
+    checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId,
+        ctx.channel().remoteAddress());
     pushTransferIdToOutputStream.put(transferId, in);
     in.setTransferId(ControlMessage.PartitionTransferType.PUSH, transferId);
-    final ControlMessage.PartitionTransferControlMessage controlMessage
-        = ControlMessage.PartitionTransferControlMessage.newBuilder()
-        .setControlMessageSourceId(localExecutorId)
-        .setType(ControlMessage.PartitionTransferType.PUSH)
-        .setTransferId(transferId)
-        .setPartitionId(in.getPartitionId())
-        .setRuntimeEdgeId(in.getRuntimeEdgeId())
-        .build();
-    out.add(controlMessage);
+    emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
   }
 
   @Override
@@ -164,5 +157,46 @@ final class ControlMessageToPartitionStreamCodec
         in.getPartitionId(), in.getRuntimeEdgeId(), partitionManagerWorker.getCoder(in.getRuntimeEdgeId()));
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
+  }
+
+  /**
+   * Check whether the transfer id is not being used.
+   *
+   * @param map           the map with transfer id as key
+   * @param transferType  the transfer type
+   * @param transferId    the transfer id
+   * @param remoteAddress the address of the remote executor to which this channel is connected
+   */
+  private void checkTransferIdAvailability(final Map<Short, ?> map,
+                                           final ControlMessage.PartitionTransferType transferType,
+                                           final short transferId,
+                                           final SocketAddress remoteAddress) {
+    if (map.get(transferId) != null) {
+      LOG.error("Transfer id {}-{} to {} is still being used, ignoring",
+          new Object[]{transferType, transferId, remoteAddress});
+    }
+  }
+
+  /**
+   * Builds and emits control message.
+   *
+   * @param transferType  the transfer type
+   * @param transferId    the transfer id
+   * @param in            {@link PartitionInputStream} or {@link PartitionOutputStream}
+   * @param out           the {@link List} into which the created control message is added
+   */
+  private void emitControlMessage(final ControlMessage.PartitionTransferType transferType,
+                                  final short transferId,
+                                  final PartitionTransfer.PartitionStream in,
+                                  final List<Object> out) {
+    final ControlMessage.PartitionTransferControlMessage controlMessage
+        = ControlMessage.PartitionTransferControlMessage.newBuilder()
+        .setControlMessageSourceId(localExecutorId)
+        .setType(transferType)
+        .setTransferId(transferId)
+        .setPartitionId(in.getPartitionId())
+        .setRuntimeEdgeId(in.getRuntimeEdgeId())
+        .build();
+    out.add(controlMessage);
   }
 }
