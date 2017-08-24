@@ -115,7 +115,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
      * @param channelGroup the {@link ChannelGroup} to which active channels are added
      * @param channelMap    the map to which active channels are added
      */
-    ChannelLifecycleTracker(final ChannelGroup channelGroup,
+    private ChannelLifecycleTracker(final ChannelGroup channelGroup,
                             final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
       this.channelMap = channelMap;

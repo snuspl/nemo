@@ -55,16 +55,6 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
     this.runtimeEdgeId = runtimeEdgeId;
   }
 
-  @Override
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  @Override
-  public String getRuntimeEdgeId() {
-    return runtimeEdgeId;
-  }
-
   /**
    * Sets transfer type and transfer id.
    *
@@ -74,6 +64,16 @@ public final class PartitionOutputStream<T> implements Closeable, Flushable, Par
   void setTransferId(final ControlMessage.PartitionTransferType type, final short id) {
     this.transferType = type;
     this.transferId = id;
+  }
+
+  @Override
+  public String getPartitionId() {
+    return partitionId;
+  }
+
+  @Override
+  public String getRuntimeEdgeId() {
+    return runtimeEdgeId;
   }
 
   @Override

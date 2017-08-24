@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
 final class PartitionTransport implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
 
-  private final SocketAddress serverListeningAddress;
+  private final InetSocketAddress serverListeningAddress;
   private final EventLoopGroup serverListeningGroup;
   private final EventLoopGroup serverWorkingGroup;
   private final EventLoopGroup clientGroup;
@@ -103,18 +103,17 @@ final class PartitionTransport implements AutoCloseable {
         .option(ChannelOption.SO_BACKLOG, serverBacklog)
         .option(ChannelOption.SO_REUSEADDR, true);
 
-    int boundPort = 0;
+    Channel listeningChannel = null;
     if (port == 0) {
       for (final int candidatePort : tcpPortProvider) {
         try {
-          final Channel channel = serverBootstrap.bind(host, candidatePort).sync().channel();
-          channelGroup.add(channel);
-          boundPort = candidatePort;
+          listeningChannel = serverBootstrap.bind(host, candidatePort).sync().channel();
+          channelGroup.add(listeningChannel);
         } catch (final InterruptedException e) {
           LOG.debug(String.format("Cannot bind to %s:%d", host, candidatePort), e);
         }
       }
-      if (boundPort == 0) {
+      if (listeningChannel == null) {
         serverListeningGroup.shutdownGracefully();
         serverWorkingGroup.shutdownGracefully();
         clientGroup.shutdownGracefully();
@@ -122,9 +121,8 @@ final class PartitionTransport implements AutoCloseable {
       }
     } else {
       try {
-        final Channel channel = serverBootstrap.bind(host, port).sync().channel();
-        channelGroup.add(channel);
-        boundPort = port;
+        listeningChannel = serverBootstrap.bind(host, port).sync().channel();
+        channelGroup.add(listeningChannel);
       } catch (final InterruptedException e) {
         serverListeningGroup.shutdownGracefully();
         serverWorkingGroup.shutdownGracefully();
@@ -133,7 +131,7 @@ final class PartitionTransport implements AutoCloseable {
       }
     }
 
-    serverListeningAddress = new InetSocketAddress(host, boundPort);
+    serverListeningAddress = (InetSocketAddress) listeningChannel.localAddress();
     LOG.info("Server listening at {}", serverListeningAddress);
   }
 
@@ -156,12 +154,21 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
+   * Gets server listening address.
+   *
+   * @return server listening address
+   */
+  InetSocketAddress getServerListeningAddress() {
+    return serverListeningAddress;
+  }
+
+  /**
    * Asynchronously connects to a remote transport, or returns a cached channel.
    *
    * @param remoteAddress the socket address to connect to
    * @return a {@link Channel} to {@code remoteAddress}
    */
-  public Channel getChannelTo(final SocketAddress remoteAddress) {
+  Channel getChannelTo(final SocketAddress remoteAddress) {
     return channelMap.computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address).channel());
   }
 }

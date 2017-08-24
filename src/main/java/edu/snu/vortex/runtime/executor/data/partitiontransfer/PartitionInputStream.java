@@ -20,8 +20,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Iterator;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
 /**
  * Input stream for partition transfer.
@@ -81,18 +79,6 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   @Override
   public Iterator<Element<T, ?, ?>> iterator() {
-    return null;
-  }
-
-  @Override
-  public void forEach(final Consumer<? super Element<T, ?, ?>> consumer) {
-    // use default?
-
-  }
-
-  @Override
-  public Spliterator<Element<T, ?, ?>> spliterator() {
-    // use default?
     return null;
   }
 }
