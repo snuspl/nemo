@@ -45,9 +45,9 @@ final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.P
   protected void encode(final ChannelHandlerContext ctx,
                         final ControlMessage.PartitionTransferControlMessage in,
                         final List<Object> out) {
-    final byte[] controlMessage = in.toByteArray();
+    final byte[] frameBody = in.toByteArray();
     out.add(TYPE_AND_UNUSED.retain());
-    out.add(ctx.alloc().ioBuffer(LENGTH_LENGTH, LENGTH_LENGTH).writeInt(controlMessage.length));
-    out.add(Unpooled.wrappedBuffer(controlMessage));
+    out.add(ctx.alloc().ioBuffer(LENGTH_LENGTH, LENGTH_LENGTH).writeInt(frameBody.length));
+    out.add(Unpooled.wrappedBuffer(frameBody));
   }
 }
