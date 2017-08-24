@@ -154,17 +154,12 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Synchronously connects to a remote transport, or returns a cached channel.
+   * Asynchronously connects to a remote transport, or returns a cached channel.
    *
    * @param remoteAddress the socket address to connect to
    * @return a {@link Channel} to {@code remoteAddress}
    */
   public Channel getChannelTo(final SocketAddress remoteAddress) {
-    final Channel cachedChannel = channelMap.get(remoteAddress);
-    if (cachedChannel == null) {
-      return clientBootstrap.connect(remoteAddress).syncUninterruptibly().channel();
-    } else {
-      return cachedChannel;
-    }
+    return channelMap.computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address).channel());
   }
 }

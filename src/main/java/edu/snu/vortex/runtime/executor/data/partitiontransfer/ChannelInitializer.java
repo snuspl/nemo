@@ -64,7 +64,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
 
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
 
-  private final ChannelActiveHandler channelActiveHandler;
+  private final ChannelLifecycleTracker channelLifecycleTracker;
 
   /**
    * Creates a netty channel initializer.
@@ -74,7 +74,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
    */
   ChannelInitializer(final ChannelGroup channelGroup,
                      final ConcurrentMap<SocketAddress, Channel> channelMap) {
-    channelActiveHandler = new ChannelActiveHandler(channelGroup, channelMap);
+    channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
   }
 
   @Override
@@ -87,54 +87,42 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         // duplex
         .addLast(ControlMessageToPartitionStreamCodec.class.getName(), new ControlMessageToPartitionStreamCodec())
         // channel management
-        .addLast(ChannelActiveHandler.class.getName(), channelActiveHandler);
+        .addLast(ChannelLifecycleTracker.class.getName(), channelLifecycleTracker);
   }
 
   /**
-   * Registers a {@link Channel} to the channel group and the channel map when it becomes active.
+   * Manages {@link Channel} registration to the channel group and the channel map.
    */
   @ChannelHandler.Sharable
-  private static final class ChannelActiveHandler extends ChannelInboundHandlerAdapter {
+  private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ChannelActiveHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelLifecycleTracker.class);
 
     private final ChannelGroup channelGroup;
     private final ConcurrentMap<SocketAddress, Channel> channelMap;
 
     /**
-     * Creates a netty channel active handler.
+     * Creates a channel lifecycle handler.
      *
      * @param channelGroup the {@link ChannelGroup} to which active channels are added
      * @param channelMap    the map to which active channels are added
      */
-    ChannelActiveHandler(final ChannelGroup channelGroup,
-                         final ConcurrentMap<SocketAddress, Channel> channelMap) {
+    ChannelLifecycleTracker(final ChannelGroup channelGroup,
+                            final ConcurrentMap<SocketAddress, Channel> channelMap) {
       this.channelGroup = channelGroup;
       this.channelMap = channelMap;
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-      final Channel channel = ctx.channel();
-      channelGroup.add(channel);
-      if (channelMap.put(channel.remoteAddress(), channel) != null) {
-        LOG.warn("Multiple channels with remote address {} are active", channel.remoteAddress());
-      }
+      channelGroup.add(ctx.channel());
     }
 
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) {
-      final Channel channel = ctx.channel();
-      LOG.warn("A channel with remote address {} is now inactive", channel.remoteAddress());
-      channelMap.computeIfPresent(channel.remoteAddress(), (address, mappedChannel) -> {
-        if (mappedChannel == channel) {
-          // If the inactive channel is in the map, remove it
-          return null;
-        } else {
-          // Otherwise, leave the map untouched
-          return mappedChannel;
-        }
-      });
+      final SocketAddress address = ctx.channel().remoteAddress();
+      channelMap.remove(address);
+      LOG.warn("A channel with remote address {} is now inactive", address);
     }
   }
 }
