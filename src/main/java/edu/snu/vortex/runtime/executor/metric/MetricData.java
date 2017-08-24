@@ -16,106 +16,75 @@
 package edu.snu.vortex.runtime.executor.metric;
 
 import java.util.*;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * MetricData to collect executor side metrics.
+ * MetricData that holds executor side metrics.
  */
 public class MetricData {
 
-  private final Enum levelEnum;
-  private final String levelId;
+  private final Enum computationUnitEnum;
+  private final String computationUnitId;
   private final String executorId;
-  private final List<Integer> stageScheduleAttemptIdx;
-  private final Map<String, String> stateChange;
-  private final Map<String, Long> timestamp;
+  private final int stageScheduleAttemptIdx;
+  private final String startState;
+  private final String endState;
+  private final long elapsedTime;
 
-  public MetricData(final Enum level,
-                    final String levelId,
+  public MetricData(final Enum computationUnit,
+                    final String computationUnitId,
                     final String executorId,
-                    final List<Integer> stageScheduleAttempt,
-                    final Map<String, String> stateChange,
-                    final Map<String, Long> timestamp) {
-    this.levelEnum = level;
-    this.levelId = levelId;
+                    final int stageScheduleAttemptIdx,
+                    final String startState,
+                    final String endState,
+                    final long elapsedTime) {
+    this.computationUnitEnum = computationUnit;
+    this.computationUnitId = computationUnitId;
     this.executorId = executorId;
-    this.stageScheduleAttemptIdx = stageScheduleAttempt;
-    this.stateChange = stateChange;
-    this.timestamp = timestamp;
+    this.stageScheduleAttemptIdx = stageScheduleAttemptIdx;
+    this.startState = startState;
+    this.endState = endState;
+    this.elapsedTime = elapsedTime;
   }
 
-  public final Enum getLevel() {
-    return levelEnum;
+  public final Enum getComputationUnit() {
+    return computationUnitEnum; }
+  public final String getComputationUnitId() {
+    return computationUnitId;
   }
-
-  public final String getLevelId() {
-    return levelId;
-  }
-
   public final String getExecutorId() {
     return executorId;
   }
-
-  public final void setStageScheduleAttemptIdx(final Integer stageScheduleAttemptIdx) {
-    this.stageScheduleAttemptIdx.set(0, stageScheduleAttemptIdx);
-  }
-
   public final int getStageScheduleAttemptIdx() {
-    return stageScheduleAttemptIdx.get(0);
+    return stageScheduleAttemptIdx;
   }
-
-  public final void setStartState(final String startState) {
-    this.stateChange.put("StartState", startState);
-  }
-
   public final String getStartState() {
-    return stateChange.get("StartState");
+    return startState;
   }
-
-  public final void setEndState(final String endState) {
-    stateChange.put("EndState", endState);
-  }
-
   public final String getEndState() {
-    return stateChange.get("EndState");
+    return endState;
   }
-
-  public final void setStartTime(final Long startTime) {
-    timestamp.put("StartTime", startTime);
-  }
-
-  public final long getStartTime() {
-    return timestamp.get("StartTime");
-  }
-
-  public final void setEndTime(final Long endTime) {
-    timestamp.put("EndTime", endTime);
-  }
-
-  public final long getEndTime() {
-    return timestamp.get("EndTime");
+  public final long getElapsedTime() {
+    return elapsedTime;
   }
 
   /**
-   * MetricData levels.
+   * Computation units to measure.
    */
-  public enum Level {
+  public enum ComputationUnit {
     JOB,
     STAGE,
     TASKGROUP,
     TASK
   }
 
-  @JsonValue
   public final Map<String, Object> toJson() {
     final Map<String, Object> jsonMetricData = new HashMap<>();
-    Long elapsedTime = getEndTime() - getStartTime();
-    jsonMetricData.put(getLevel().toString(), getLevelId());
+    jsonMetricData.put(getComputationUnit().toString(), getComputationUnitId());
     jsonMetricData.put("Executor", getExecutorId());
     jsonMetricData.put("StageScheduleAttemptIdx", getStageScheduleAttemptIdx());
     jsonMetricData.put("StartState", getStartState());
     jsonMetricData.put("EndState", getEndState());
-    jsonMetricData.put("ElapsedTime", elapsedTime.toString());
+    jsonMetricData.put("ElapsedTime", getElapsedTime());
 
     return jsonMetricData;
   }
