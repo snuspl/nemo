@@ -18,9 +18,17 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.channel.Channel;
 
+import java.io.InputStream;
 import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 
 /**
  * Input stream for partition transfer.
@@ -38,6 +46,10 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final String runtimeEdgeId;
   private Coder<T, ?, ?> coder;
   private ExecutorService executorService;
+
+  private final BlockingQueue<Element<T, ?, ?>> elementQueue = new LinkedBlockingQueue<>();
+  private CompositeByteBuf compositeByteBuf;
+  private InputStream inputStream;
 
   /**
    * Creates a partition input stream.
@@ -63,6 +75,16 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   void setCoderAndExecutorService(final Coder<T, ?, ?> coder, final ExecutorService executorService) {
     this.coder = coder;
     this.executorService = executorService;
+  }
+
+  /**
+   * Starts this stream.
+   *
+   * @param channel the corresponding {@link Channel} to this stream
+   */
+  void start(final Channel channel) {
+    // make sure decoder thread calls compositeByteBuf.release on completion
+    compositeByteBuf = channel.alloc().compositeBuffer();
   }
 
   /**
@@ -97,6 +119,16 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   @Override
   public Iterator<Element<T, ?, ?>> iterator() {
-    return null;
+    return elementQueue.iterator();
+  }
+
+  @Override
+  public void forEach(final Consumer<? super Element<T, ?, ?>> consumer) {
+    elementQueue.forEach(consumer);
+  }
+
+  @Override
+  public Spliterator<Element<T, ?, ?>> spliterator() {
+    return elementQueue.spliterator();
   }
 }
