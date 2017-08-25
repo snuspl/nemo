@@ -132,6 +132,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
         = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
     pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
     pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
+    ctx.fireChannelActive();
   }
 
   @Override

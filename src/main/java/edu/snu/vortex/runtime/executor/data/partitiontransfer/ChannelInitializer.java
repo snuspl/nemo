@@ -163,6 +163,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
           = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
       pullTransferIdToOutputStream = duplexHandler.getPullTransferIdToOutputStream();
       pushTransferIdToOutputStream = duplexHandler.getPushTransferIdToOutputStream();
+      ctx.fireChannelActive();
     }
 
     @Override

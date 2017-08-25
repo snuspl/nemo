@@ -70,6 +70,7 @@ final class ControlMessageToPartitionStreamCodec
   @Override
   public void channelActive(final ChannelHandlerContext ctx) {
     this.remoteAddress = ctx.channel().remoteAddress();
+    ctx.fireChannelActive();
   }
 
   @Override
