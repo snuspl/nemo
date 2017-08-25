@@ -291,6 +291,9 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
      * @return whether or not the end of this stream is reached
      */
     private boolean isEnded() {
+      if (byteBufDeque.peekFirst() == null) {
+        return false;
+      }
       return byteBufDeque.peekFirst().readableBytes() == 0;
     }
   }
