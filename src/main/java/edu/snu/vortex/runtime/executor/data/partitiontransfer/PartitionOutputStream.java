@@ -191,8 +191,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
 
   /**
    * Writes a {@link FileRegion}. Zero-copy transfer is used if possible.
+   * The number of bytes should be within the range of {@link Integer}.
    *
-   * @warning The number of bytes should be within the range of {@link Integer}.
    * @param fileRegion  provides the descriptor of the file to write
    * @return {@link PartitionOutputStream} (i.e. {@code this})
    */
@@ -344,8 +344,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
 
     /**
      * Writes a data frame from {@link FileRegion}.
+     * The number of bytes should be within the range of {@link Integer}.
      *
-     * @warning The number of bytes should be within the range of {@link Integer}.
      * @param ending      whether or not the frame is an ending frame
      * @param fileRegion  the {@link FileRegion} to transfer
      */
