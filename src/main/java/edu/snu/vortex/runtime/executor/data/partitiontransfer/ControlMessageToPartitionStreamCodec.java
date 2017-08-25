@@ -99,8 +99,8 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
     in.start();
-    LOG.debug("Sending pull request %d to %s for the partition %s (runtime edge id: %s, partition store: %s, "
-        + "hash range: %s)", new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(),
+    LOG.debug("Sending pull request {} to {} for the partition {} (runtime edge id: {}, partition store: {}, "
+        + "hash range: {})", new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(),
         in.getRuntimeEdgeId(), in.getPartitionStore().get().toString(), in.getHashRange().toString()});
   }
 
@@ -120,7 +120,7 @@ final class ControlMessageToPartitionStreamCodec
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
     in.start();
-    LOG.debug("Sending push notification %d to %s for the partition %s (runtime edge id: %s, hash range: %s)",
+    LOG.debug("Sending push notification {} to {} for the partition {} (runtime edge id: {}, hash range: {})",
         new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(), in.getRuntimeEdgeId(),
         in.getHashRange().toString()});
   }
@@ -154,8 +154,8 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
-    LOG.debug("Received pull request %d from %s for the partition %s (runtime edge id: %s, partition store: %s, "
-        + "hash range: %s)", new Object[]{transferId, in.getControlMessageSourceId(), in.getPartitionId(),
+    LOG.debug("Received pull request {} from {} for the partition {} (runtime edge id: {}, partition store: {}, "
+        + "hash range: {})", new Object[]{transferId, in.getControlMessageSourceId(), in.getPartitionId(),
         in.getRuntimeEdgeId(), outputStream.getPartitionStore().get().toString(),
         outputStream.getHashRange().toString()});
   }
