@@ -159,6 +159,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param in  the {@link ByteBuf} from which to read data
    * @param out the {@link List} to which decoded messages are added
    * @return {@code true} if a header was decoded, {@code false} otherwise
+   * @throws InterruptedException when interrupted while marking the end of stream
    */
   private boolean onFrameBegins(final ByteBuf in, final List<Object> out) throws InterruptedException {
     assert (controlBodyBytesToRead == 0);

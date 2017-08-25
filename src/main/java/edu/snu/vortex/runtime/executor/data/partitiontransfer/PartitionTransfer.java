@@ -45,6 +45,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private final NameResolver nameResolver;
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
+  private final int bufferSize;
+  private final int dataFrameSize;
 
   /**
    * Creates a partition transfer and registers this transfer to the name server.
@@ -55,6 +57,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param executorId              the id of this executor
    * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
    * @param outboundThreads         the number of threads in thread pool for outbound partition transfer
+   * @param bufferSize              the size of outbound buffers
+   * @param dataFrameSize           the soft limit of the size of data frames
    */
   @Inject
   private PartitionTransfer(
@@ -63,7 +67,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
       final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String executorId,
       @Parameter(JobConf.PartitionTransferInboundNumThreads.class) final int inboundThreads,
-      @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads) {
+      @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads,
+      @Parameter(JobConf.PartitionTransferOutboundBufferSize.class) final int bufferSize,
+      @Parameter(JobConf.PartitionTransferDataFrameSize.class) final int dataFrameSize) {
     this.partitionManagerWorker = partitionManagerWorker;
     this.partitionTransport = partitionTransport;
     this.nameResolver = nameResolver;
@@ -71,6 +77,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     // We may consider other solutions than using fixed thread pool.
     this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads);
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads);
+    this.bufferSize = bufferSize;
+    this.dataFrameSize = dataFrameSize;
 
     try {
       final PartitionTransferIdentifier identifier = new PartitionTransferIdentifier(executorId);
@@ -111,7 +119,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
                                             final String partitionId,
                                             final String runtimeEdgeId) {
     final PartitionOutputStream stream = new PartitionOutputStream(executorId, partitionId, runtimeEdgeId);
-    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), outboundExecutorService);
+    stream.setCoderAndExecutorServiceAndSizes(partitionManagerWorker.get().getCoder(runtimeEdgeId),
+        outboundExecutorService, bufferSize, dataFrameSize);
     partitionTransport.getChannelTo(lookup(executorId)).write(stream);
     return stream;
   }
@@ -148,9 +157,10 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param stream  {@link PartitionOutputStream}
    */
   private void onPullRequest(final PartitionOutputStream stream) {
-    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
-        outboundExecutorService);
+    stream.setCoderAndExecutorServiceAndSizes(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
+        outboundExecutorService, bufferSize, dataFrameSize);
     partitionManagerWorker.get().onPullRequest(stream);
+    stream.start();
   }
 
   /**
@@ -162,6 +172,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
     partitionManagerWorker.get().onPushNotification(stream);
+    stream.start();
   }
 
   /**

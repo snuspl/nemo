@@ -93,6 +93,7 @@ final class ControlMessageToPartitionStreamCodec
     checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
+    in.start();
   }
 
   /**
@@ -110,6 +111,7 @@ final class ControlMessageToPartitionStreamCodec
     pushTransferIdToOutputStream.put(transferId, in);
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
+    in.start();
   }
 
   @Override

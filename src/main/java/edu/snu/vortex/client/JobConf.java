@@ -190,6 +190,23 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
+   * The size of outbound buffers for {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransfer},
+   * in bytes.
+   */
+  @NamedParameter(doc = "Size of outbound buffers for partition transfer, in bytes",
+      short_name = "partition_outbound_buffer", default_value = "1024")
+  public final class PartitionTransferOutboundBufferSize implements Name<Integer> {
+  }
+
+  /**
+   * The soft limit of the size of data frames, in bytes.
+   */
+  @NamedParameter(doc = "Soft limit of size of data frames, in bytes", short_name = "partition_dataframe_size",
+      default_value = "16777216")
+  public final class PartitionTransferDataFrameSize implements Name<Integer> {
+  }
+
+  /**
    * The number of TCP port to which local
    * {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport} binds. 0 means random port.
    */
