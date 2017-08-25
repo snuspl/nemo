@@ -360,6 +360,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      * @param fileRegion  the {@link FileRegion} to transfer
      */
     private void writeFileRegion(final boolean ending, final FileRegion fileRegion) {
+      if (fileRegion.count() > Integer.MAX_VALUE) {
+        throw new IllegalArgumentException(String.format("Too big count of the FileRegion to send: %d",
+            fileRegion.count()));
+      }
       flush();
       writeDataFrameHeader(ending, (int) fileRegion.count());
       channel.writeAndFlush(fileRegion);
