@@ -293,12 +293,12 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
      * Returns whether or not the end of this stream is reached.
      *
      * @return whether or not the end of this stream is reached
+     * @throws InterruptedException when interrupted while waiting for the queue to be not empty
      */
-    private boolean isEnded() {
-      if (byteBufDeque.peekFirst() == null) {
-        return false;
-      }
-      return byteBufDeque.peekFirst().readableBytes() == 0;
+    private boolean isEnded() throws InterruptedException {
+      final ByteBuf head = byteBufDeque.takeFirst();
+      byteBufDeque.putFirst(head);
+      return head.readableBytes() == 0;
     }
   }
 }
