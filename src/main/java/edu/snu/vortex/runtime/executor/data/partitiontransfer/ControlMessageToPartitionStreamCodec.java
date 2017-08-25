@@ -15,7 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -26,6 +28,7 @@ import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Responses to control message by emitting a new {@link PartitionStream},
@@ -139,8 +142,8 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
-        in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
+    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(), Optional.of(
+        convertPartitionStore(in.getPartitionStore())), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
@@ -159,7 +162,7 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
+    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(), Optional.empty(),
         in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
@@ -193,15 +196,22 @@ final class ControlMessageToPartitionStreamCodec
                                   final short transferId,
                                   final PartitionStream in,
                                   final List<Object> out) {
-    final ControlMessage.PartitionTransferControlMessage controlMessage
+    final ControlMessage.PartitionTransferControlMessage.Builder controlMessageBuilder
         = ControlMessage.PartitionTransferControlMessage.newBuilder()
         .setControlMessageSourceId(localExecutorId)
         .setType(transferType)
         .setTransferId(transferId)
         .setPartitionId(in.getPartitionId())
-        .setRuntimeEdgeId(in.getRuntimeEdgeId())
-        .build();
-    out.add(controlMessage);
+        .setRuntimeEdgeId(in.getRuntimeEdgeId());
+    if (in.getPartitionStore().isPresent()) {
+      controlMessageBuilder.setPartitionStore(convertPartitionStore(in.getPartitionStore().get()));
+    }
+    if (!in.getHashRange().isAll()) {
+      controlMessageBuilder
+          .setStartRangeInclusive(in.getHashRange().getRangeStartInclusive())
+          .setEndRangeExclusive(in.getHashRange().getRangeEndExclusive());
+    }
+    out.add(controlMessageBuilder.build());
   }
 
   /**
@@ -238,5 +248,31 @@ final class ControlMessageToPartitionStreamCodec
    */
   Map<Short, PartitionOutputStream> getPushTransferIdToOutputStream() {
     return pushTransferIdToOutputStream;
+  }
+
+  private static ControlMessage.PartitionStore convertPartitionStore(final Attribute partitionStore) {
+    switch (partitionStore) {
+      case Memory:
+        return ControlMessage.PartitionStore.MEMORY;
+      case LocalFile:
+        return ControlMessage.PartitionStore.LOCAL_FILE;
+      case RemoteFile:
+        return ControlMessage.PartitionStore.REMOTE_FILE;
+      default:
+        throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
+    }
+  }
+
+  private static Attribute convertPartitionStore(final ControlMessage.PartitionStore partitionStoreType) {
+    switch (partitionStoreType) {
+      case MEMORY:
+        return Attribute.Memory;
+      case LOCAL_FILE:
+        return Attribute.LocalFile;
+      case REMOTE_FILE:
+        return Attribute.RemoteFile;
+      default:
+        throw new UnsupportedPartitionStoreException(new Exception("This partition store is not yet supported"));
+    }
   }
 }

@@ -15,7 +15,10 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
+
+import java.util.Optional;
 
 /**
  * {@link PartitionInputStream} and {@link PartitionOutputStream}.
@@ -28,6 +31,14 @@ public interface PartitionStream {
    * @return the remote executor id
    */
   String getRemoteExecutorId();
+
+  /**
+   * Gets the partition store type.
+   *
+   * @return an {@link Optional} with partition store type if this stream belongs to a pull-based transfer,
+   *         an empty {@link Optional} otherwise.
+   */
+  Optional<Attribute> getPartitionStore();
 
   /**
    * Gets the partition id.

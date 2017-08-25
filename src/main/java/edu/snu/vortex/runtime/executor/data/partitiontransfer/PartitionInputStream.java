@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.EmptyByteBuf;
@@ -25,6 +26,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -39,12 +41,14 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private static final ByteBuf END_OF_STREAM_EVENT = new EmptyByteBuf(UnpooledByteBufAllocator.DEFAULT);
 
   private final String senderExecutorId;
+  private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
   private Coder<T, ?, ?> coder;
   private ExecutorService executorService;
 
+  private final CompletableFuture<PartitionInputStream<T>> completeFuture = new CompletableFuture<>();
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
   private final BlockingQueue<Element<T, ?, ?>> elementQueue = new LinkedBlockingQueue<>();
 
@@ -52,15 +56,18 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * Creates a partition input stream.
    *
    * @param senderExecutorId  the id of the remote executor
+   * @param partitionStore    the partition store
    * @param partitionId       the partition id
    * @param runtimeEdgeId     the runtime edge id
    * @param hashRange         the hash range
    */
   PartitionInputStream(final String senderExecutorId,
+                       final Optional<Attribute> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
+    this.partitionStore = partitionStore;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
     this.hashRange = hashRange;
@@ -106,9 +113,12 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   void start() {
     executorService.submit(() -> {
       try {
+        // TODO #299: Separate Serialization from Here
+        // At now, we do unneeded deserialization and serialization for already serialized data.
         while (!byteBufInputStream.isEnded()) {
           elementQueue.put(coder.decode(byteBufInputStream));
         }
+        completeFuture.complete(this);
       } catch (final InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -118,6 +128,11 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   @Override
   public String getRemoteExecutorId() {
     return senderExecutorId;
+  }
+
+  @Override
+  public Optional<Attribute> getPartitionStore() {
+    return partitionStore;
   }
 
   @Override
@@ -148,6 +163,15 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   @Override
   public Spliterator<Element<T, ?, ?>> spliterator() {
     return elementQueue.spliterator();
+  }
+
+  /**
+   * Gets a {@link CompletableFuture} that completes with the partition transfer being done.
+   *
+   * @return a {@link CompletableFuture} that completes with the partition transfer being done
+   */
+  public CompletableFuture<PartitionInputStream<T>> getCompleteFuture() {
+    return completeFuture;
   }
 
   /**

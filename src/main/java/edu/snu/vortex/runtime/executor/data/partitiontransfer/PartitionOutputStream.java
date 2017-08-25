@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
@@ -28,6 +29,7 @@ import io.netty.util.Recycler;
 
 import java.io.Closeable;
 import java.io.OutputStream;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,6 +42,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public final class PartitionOutputStream<T> implements Closeable, PartitionStream {
 
   private final String receiverExecutorId;
+  private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
@@ -60,15 +63,18 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * Creates a partition output stream.
    *
    * @param receiverExecutorId  the id of the remote executor
+   * @param partitionStore      the partition store
    * @param partitionId         the partition id
    * @param runtimeEdgeId       the runtime edge id
    * @param hashRange           the hash range
    */
   PartitionOutputStream(final String receiverExecutorId,
+                        final Optional<Attribute> partitionStore,
                         final String partitionId,
                         final String runtimeEdgeId,
                         final HashRange hashRange) {
     this.receiverExecutorId = receiverExecutorId;
+    this.partitionStore = partitionStore;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
     this.hashRange = hashRange;
@@ -111,6 +117,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   @Override
   public String getRemoteExecutorId() {
     return receiverExecutorId;
+  }
+
+  @Override
+  public Optional<Attribute> getPartitionStore() {
+    return partitionStore;
   }
 
   @Override

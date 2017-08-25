@@ -239,11 +239,11 @@ final class PartitionTransferPeer {
       if (hashRangeStartVal == 0 && hashRangeEndVal == Integer.MAX_VALUE) {
         // Retrieve whole data.
         partitionFuture = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-            convertPartitionStoreType(request.getPartitionStore()));
+            convertPartitionStoreType(request.getPartitionStore()), HashRange.all());
       } else {
         // Retrieve data in a specific hash value range.
         partitionFuture = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-            convertPartitionStoreType(request.getPartitionStore()), hashRangeStartVal, hashRangeEndVal);
+            convertPartitionStoreType(request.getPartitionStore()), HashRange.of(hashRangeStartVal, hashRangeEndVal));
       }
 
       partitionFuture.thenAcceptAsync(partition -> {

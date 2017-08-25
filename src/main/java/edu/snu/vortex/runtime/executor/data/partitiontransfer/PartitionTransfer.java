@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandler;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -93,18 +95,21 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   /**
    * Initiate a pull-based partition transfer.
    *
-   * @param executorId    the id of the source executor
-   * @param partitionId   the id of the partition to transfer
-   * @param runtimeEdgeId the runtime edge id
-   * @param hashRange     the hash range
+   * @param executorId      the id of the source executor
+   * @param partitionStore  the partition store
+   * @param partitionId     the id of the partition to transfer
+   * @param runtimeEdgeId   the runtime edge id
+   * @param hashRange       the hash range
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
   public PartitionInputStream initiatePull(final String executorId,
+                                           final Attribute partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
-    final PartitionInputStream stream = new PartitionInputStream(executorId, partitionId, runtimeEdgeId, hashRange);
+    final PartitionInputStream stream = new PartitionInputStream(executorId, Optional.of(partitionStore),
+        partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     partitionTransport.getChannelTo(lookup(executorId)).write(stream);
     return stream;
@@ -123,7 +128,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
                                             final String partitionId,
                                             final String runtimeEdgeId,
                                             final HashRange hashRange) {
-    final PartitionOutputStream stream = new PartitionOutputStream(executorId, partitionId, runtimeEdgeId, hashRange);
+    final PartitionOutputStream stream = new PartitionOutputStream(executorId, Optional.empty(), partitionId,
+        runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndSizes(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize, dataFrameSize);
     partitionTransport.getChannelTo(lookup(executorId)).write(stream);

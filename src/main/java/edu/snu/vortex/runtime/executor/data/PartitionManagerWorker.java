@@ -28,6 +28,7 @@ import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionInputStream;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionOutputStream;
+import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransfer;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -58,7 +59,7 @@ public final class PartitionManagerWorker {
 
   private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
 
-  private final PartitionTransferPeer partitionTransferPeer;
+  private final PartitionTransfer partitionTransfer;
 
   @Inject
   private PartitionManagerWorker(@Parameter(JobConf.ExecutorId.class) final String executorId,
@@ -66,14 +67,14 @@ public final class PartitionManagerWorker {
                                  final LocalFileStore localFileStore,
                                  final RemoteFileStore remoteFileStore,
                                  final PersistentConnectionToMaster persistentConnectionToMaster,
-                                 final PartitionTransferPeer partitionTransferPeer) {
+                                 final PartitionTransfer partitionTransfer) {
     this.executorId = executorId;
     this.memoryStore = memoryStore;
     this.localFileStore = localFileStore;
     this.remoteFileStore = remoteFileStore;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
-    this.partitionTransferPeer = partitionTransferPeer;
+    this.partitionTransfer = partitionTransfer;
   }
 
   /**
@@ -210,18 +211,20 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Retrieves whole data from the stored partition.
+   * Retrieves whole data from the stored partition. A specific hash value range can be designated.
    * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
    *
    * @param partitionId    of the partition.
    * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
    * @param partitionStore for the data storage.
+   * @param hashRange      the hash range descriptor
    * @return a {@link CompletableFuture} for the partition.
    */
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
                                                                         final String runtimeEdgeId,
-                                                                        final Attribute partitionStore) {
+                                                                        final Attribute partitionStore,
+                                                                        final HashRange hashRange) {
     LOG.info("retrieveDataFromPartition: {}", partitionId);
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
 
@@ -229,7 +232,13 @@ public final class PartitionManagerWorker {
 
     // First, try to fetch the partition from local PartitionStore.
     // If it doesn't have the partition, this future will be completed to Optional.empty()
-    final CompletableFuture<Optional<Partition>> localPartition = store.retrieveDataFromPartition(partitionId);
+    final CompletableFuture<Optional<Partition>> localPartition;
+    if (hashRange.isAll()) {
+      localPartition = store.retrieveDataFromPartition(partitionId);
+    } else {
+      localPartition = store.retrieveDataFromPartition(partitionId, hashRange.getRangeStartInclusive(),
+          hashRange.getRangeEndExclusive());
+    }
 
     localPartition.thenAccept(optionalPartition -> {
       if (optionalPartition.isPresent()) {
@@ -241,48 +250,7 @@ public final class PartitionManagerWorker {
         }
       } else {
         // We don't have the partition here...
-        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, 0, Integer.MAX_VALUE)
-            .thenAccept(partition -> future.complete(partition));
-      }
-    });
-
-    return future;
-  }
-
-  /**
-   * Retrieves data in a specific hash value range from the stored partition.
-   * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
-   * Here, we first check if we have the partition here, and then try to fetch the data from a remote worker.
-   *
-   * @param partitionId       of the partition.
-   * @param runtimeEdgeId     id of the runtime edge that corresponds to the partition.
-   * @param partitionStore    for the data storage.
-   * @param hashRangeStartVal of the hash range (included in the range).
-   * @param hashRangeEndVal   of the hash range (excluded from the range).
-   * @return a {@link CompletableFuture} for the partition.
-   */
-  public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
-                                                                        final String runtimeEdgeId,
-                                                                        final Attribute partitionStore,
-                                                                        final int hashRangeStartVal,
-                                                                        final int hashRangeEndVal) {
-    LOG.info("retrieveDataFromPartition: {}", partitionId);
-    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-
-    final PartitionStore store = getPartitionStore(partitionStore);
-    final CompletableFuture<Optional<Partition>> localPartition =
-        store.retrieveDataFromPartition(partitionId, hashRangeStartVal, hashRangeEndVal);
-    localPartition.thenAccept(optionalPartition -> {
-      if (optionalPartition.isPresent()) {
-        // Partition resides in this evaluator!
-        try {
-          future.complete(optionalPartition.get().asIterable());
-        } catch (final IOException e) {
-          future.completeExceptionally(new PartitionFetchException(e));
-        }
-      } else {
-        // We don't have the partition here...
-        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal)
+        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange)
             .thenAccept(partition -> future.complete(partition));
       }
     });
@@ -297,15 +265,13 @@ public final class PartitionManagerWorker {
    * @param partitionId       of the partition.
    * @param runtimeEdgeId     id of the runtime edge that corresponds to the partition.
    * @param partitionStore    for the data storage.
-   * @param hashRangeStartVal of the hash range (included in the range).
-   * @param hashRangeEndVal   of the hash range (excluded from the range).
+   * @param hashRange         the hash range descriptor
    * @return the {@link CompletableFuture} of the partition.
    */
   private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
                                                                               final String runtimeEdgeId,
                                                                               final Attribute partitionStore,
-                                                                              final int hashRangeStartVal,
-                                                                              final int hashRangeEndVal) {
+                                                                              final HashRange hashRange) {
     // We don't have the partition here...
     if (partitionStore == Attribute.RemoteFile) {
       LOG.warn("The target partition {} is not found in the remote storage. "
@@ -337,8 +303,8 @@ public final class PartitionManagerWorker {
       }
       // This is the executor id that we wanted to know
       final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
-      return partitionTransferPeer.fetch(
-          remoteWorkerId, partitionId, runtimeEdgeId, partitionStore, hashRangeStartVal, hashRangeEndVal);
+      return partitionTransfer.initiatePull(remoteWorkerId, partitionStore, partitionId, runtimeEdgeId, hashRange)
+          .getCompleteFuture();
     });
   }
 
@@ -364,7 +330,12 @@ public final class PartitionManagerWorker {
    * @param outputStream {@link PartitionOutputStream}
    */
   public void onPullRequest(final PartitionOutputStream outputStream) {
-
+    // We are getting the partition from local store!
+    final Optional<Attribute> partitionStoreOptional = outputStream.getPartitionStore();
+    final CompletableFuture<Iterable<Element>> partitionFuture =
+        retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
+        partitionStoreOptional.get(), outputStream.getHashRange());
+    partitionFuture.thenAcceptAsync(partition -> outputStream.write(partition).close());
   }
 
   /**
