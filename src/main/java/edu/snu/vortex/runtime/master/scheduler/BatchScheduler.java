@@ -26,7 +26,6 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.*;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
-import edu.snu.vortex.runtime.master.eventhandler.RuntimeEventHandler;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
@@ -67,8 +66,7 @@ public final class BatchScheduler implements Scheduler {
   public BatchScheduler(final PartitionManagerMaster partitionManagerMaster,
                         final SchedulingPolicy schedulingPolicy,
                         final PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue,
-                        final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
-                        final RuntimeEventHandler handler) {
+                        final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
     this.partitionManagerMaster = partitionManagerMaster;
     this.pendingTaskGroupPriorityQueue = pendingTaskGroupPriorityQueue;
     this.schedulingPolicy = schedulingPolicy;
@@ -104,7 +102,9 @@ public final class BatchScheduler implements Scheduler {
     // update the job in the scheduler.
     // NOTE: what's already been executed is not modified in the new physical plan.
     this.physicalPlan = newPhysicalPlan;
-    onTaskGroupExecutionComplete(taskInfo.left(), taskInfo.right(), true);
+    if (taskInfo != null) {
+      onTaskGroupExecutionComplete(taskInfo.left(), taskInfo.right(), true);
+    }
   }
 
   /**

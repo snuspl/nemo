@@ -57,8 +57,7 @@ import static org.mockito.Mockito.when;
  * Tests {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class,
-    PubSubEventHandlerWrapper.class, RuntimeEventHandler.class})
+@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, PubSubEventHandlerWrapper.class})
 public final class BatchSchedulerTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
@@ -66,9 +65,9 @@ public final class BatchSchedulerTest {
   private ContainerManager containerManager;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
-  private RuntimeEventHandler runtimeEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
+  private PhysicalPlanGenerator physicalPlanGenerator;
 
   private static final int TEST_TIMEOUT_MS = 1000;
 
@@ -76,16 +75,14 @@ public final class BatchSchedulerTest {
   private static final int MAGIC_SCHEDULE_ATTEMPT_INDEX = Integer.MAX_VALUE;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     irDAGBuilder = new DAGBuilder<>();
     containerManager = mock(ContainerManager.class);
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
-    runtimeEventHandler = mock(RuntimeEventHandler.class);
     scheduler =
-        new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue,
-            pubSubEventHandler, runtimeEventHandler);
+        new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue, pubSubEventHandler);
 
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
@@ -118,6 +115,8 @@ public final class BatchSchedulerTest {
     // Add storage nodes
     scheduler.onExecutorAdded(b1.getExecutorId());
     scheduler.onExecutorAdded(b2.getExecutorId());
+
+    physicalPlanGenerator = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
   }
 
   /**
@@ -126,7 +125,7 @@ public final class BatchSchedulerTest {
    */
   @Test
   public void testMultiInputOutputScheduling() throws Exception {
-
+    // Build DAG
     final Transform t = new EmptyComponents.EmptyTransform("empty");
     final IRVertex v1 = new OperatorVertex(t);
     v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
@@ -174,8 +173,6 @@ public final class BatchSchedulerTest {
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();
-    final PhysicalPlanGenerator physicalPlanGenerator =
-        Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
 
     final JobStateManager jobStateManager =
