@@ -33,6 +33,7 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.metric.PeriodicMetricSender;
 import edu.snu.vortex.runtime.master.DefaultMetricMessageHandler;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
@@ -145,8 +146,10 @@ public final class DataTransferTest {
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_LOCAL_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_REMOTE_FILE_DIRECTORY);
     final PartitionManagerWorker partitionManagerWorker;
+    final PeriodicMetricSender periodicMetricSender;
     try {
       partitionManagerWorker = injector.getInstance(PartitionManagerWorker.class);
+      periodicMetricSender =  injector.getInstance(PeriodicMetricSender.class);
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
@@ -158,7 +161,8 @@ public final class DataTransferTest {
         conToMaster,
         messageEnvironment,
         partitionManagerWorker,
-        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker));
+        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker),
+        periodicMetricSender);
     injector.bindVolatileInstance(Executor.class, executor);
 
     return partitionManagerWorker;

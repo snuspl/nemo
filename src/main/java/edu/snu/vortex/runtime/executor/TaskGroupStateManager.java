@@ -25,8 +25,12 @@ import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.common.StateMachine;
 
 import java.util.*;
+
+import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
+import edu.snu.vortex.runtime.executor.metric.PeriodicMetricSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Manages the states related to a task group.
@@ -39,6 +43,7 @@ public final class TaskGroupStateManager {
   private final String taskGroupId;
   private final int attemptIdx;
   private final String executorId;
+  private final PeriodicMetricSender periodicMetricSender;
 
   /**
    * Used to track all task states of this task group, by keeping a map of task ids to their states.
@@ -59,11 +64,13 @@ public final class TaskGroupStateManager {
   public TaskGroupStateManager(final TaskGroup taskGroup,
                                final int attemptIdx,
                                final String executorId,
-                               final PersistentConnectionToMaster persistentConnectionToMaster) {
+                               final PersistentConnectionToMaster persistentConnectionToMaster,
+                               final PeriodicMetricSender periodicMetricSender) {
     this.taskGroupId = taskGroup.getTaskGroupId();
     this.attemptIdx = attemptIdx;
     this.executorId = executorId;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
+    this.periodicMetricSender = periodicMetricSender;
     idToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
     initializeStates(taskGroup);
@@ -86,25 +93,35 @@ public final class TaskGroupStateManager {
    * @param newState of the task group.
    * @param tasksPutOnHold the IDs of the tasks put on hold, empty otherwise.
    * @param cause only provided as non-empty upon recoverable failures.
+   * @param metricDataBuilder to track task group state change.
    */
   public synchronized void onTaskGroupStateChanged(final TaskGroupState.State newState,
                                                    final Optional<List<String>> tasksPutOnHold,
-                                                   final Optional<TaskGroupState.RecoverableFailureCause> cause) {
+                                                   final Optional<TaskGroupState.RecoverableFailureCause> cause,
+                                                   final MetricDataBuilder metricDataBuilder) {
     switch (newState) {
     case EXECUTING:
       LOG.debug("Executing TaskGroup ID {}...", taskGroupId);
+      metricDataBuilder.beginMeasurement(attemptIdx, "EXECUTING", System.nanoTime());
       idToTaskStates.forEach((taskId, state) -> state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR));
       break;
     case COMPLETE:
       LOG.debug("TaskGroup ID {} complete!", taskGroupId);
+      metricDataBuilder.endMeasurement("COMPLETE", System.nanoTime());
+      periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_RECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (recoverable).", taskGroupId);
+      // This metric data is effective on recoverable failures EXCEPT container failure.
+      metricDataBuilder.endMeasurement("FAILED_RECOVERABLE", System.nanoTime());
+      periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_UNRECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (unrecoverable).", taskGroupId);
+      metricDataBuilder.endMeasurement("FAILED_UNRECOVERABLE", System.nanoTime());
+      periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case ON_HOLD:
@@ -122,9 +139,11 @@ public final class TaskGroupStateManager {
    * @param taskId of the task.
    * @param newState of the task.
    * @param cause only provided as non-empty upon recoverable failures.
+   * @param metricDataBuilder to track task and task group state change.
    */
   public synchronized void onTaskStateChanged(final String taskId, final TaskState.State newState,
-                                              final Optional<TaskGroupState.RecoverableFailureCause> cause) {
+                                              final Optional<TaskGroupState.RecoverableFailureCause> cause,
+                                              final MetricDataBuilder metricDataBuilder) {
     final StateMachine taskStateChanged = idToTaskStates.get(taskId).getStateMachine();
     LOG.debug("Task State Transition: id {} from {} to {}",
         new Object[]{taskGroupId, taskStateChanged.getCurrentState(), newState});
@@ -136,19 +155,20 @@ public final class TaskGroupStateManager {
     case COMPLETE:
       currentTaskGroupTaskIds.remove(taskId);
       if (currentTaskGroupTaskIds.isEmpty()) {
-        onTaskGroupStateChanged(TaskGroupState.State.COMPLETE, Optional.empty(), cause);
+        onTaskGroupStateChanged(TaskGroupState.State.COMPLETE, Optional.empty(), cause, metricDataBuilder);
       }
       break;
     case FAILED_RECOVERABLE:
-      onTaskGroupStateChanged(TaskGroupState.State.FAILED_RECOVERABLE, Optional.empty(), cause);
+      onTaskGroupStateChanged(TaskGroupState.State.FAILED_RECOVERABLE, Optional.empty(), cause, metricDataBuilder);
       break;
     case FAILED_UNRECOVERABLE:
-      onTaskGroupStateChanged(TaskGroupState.State.FAILED_UNRECOVERABLE, Optional.empty(), cause);
+      onTaskGroupStateChanged(TaskGroupState.State.FAILED_UNRECOVERABLE, Optional.empty(), cause, metricDataBuilder);
       break;
     case ON_HOLD:
       currentTaskGroupTaskIds.remove(taskId);
       if (currentTaskGroupTaskIds.isEmpty()) {
-        onTaskGroupStateChanged(TaskGroupState.State.ON_HOLD, Optional.of(Arrays.asList(taskId)), cause);
+        onTaskGroupStateChanged(TaskGroupState.State.ON_HOLD, Optional.of(Arrays.asList(taskId)), cause,
+            metricDataBuilder);
       }
       break;
     default:
