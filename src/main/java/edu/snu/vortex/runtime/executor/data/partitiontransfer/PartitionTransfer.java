@@ -20,7 +20,6 @@ import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.Recycler;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -74,9 +73,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads);
 
     try {
-      final PartitionTransferIdentifier identifier = PartitionTransferIdentifier.newInstance(executorId);
+      final PartitionTransferIdentifier identifier = new PartitionTransferIdentifier(executorId);
       nameResolver.register(identifier, partitionTransport.getServerListeningAddress());
-      identifier.recycle();
     } catch (final Exception e) {
       LOG.error("Cannot register PartitionTransport listening address to the naming registry", e);
       throw new RuntimeException(e);
@@ -92,7 +90,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
-  public PartitionInputStream pull(final String executorId, final String partitionId, final String runtimeEdgeId) {
+  public PartitionInputStream initiatePull(final String executorId,
+                                           final String partitionId,
+                                           final String runtimeEdgeId) {
     final PartitionInputStream stream = new PartitionInputStream(executorId, partitionId, runtimeEdgeId);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     partitionTransport.getChannelTo(lookup(executorId)).write(stream);
@@ -107,7 +107,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param runtimeEdgeId the runtime edge id
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
-  public PartitionOutputStream push(final String executorId, final String partitionId, final String runtimeEdgeId) {
+  public PartitionOutputStream initiatePush(final String executorId,
+                                            final String partitionId,
+                                            final String runtimeEdgeId) {
     final PartitionOutputStream stream = new PartitionOutputStream(executorId, partitionId, runtimeEdgeId);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), outboundExecutorService);
     partitionTransport.getChannelTo(lookup(executorId)).write(stream);
@@ -122,9 +124,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    */
   private InetSocketAddress lookup(final String executorId) {
     try {
-      final PartitionTransferIdentifier identifier = PartitionTransferIdentifier.newInstance(executorId);
+      final PartitionTransferIdentifier identifier = new PartitionTransferIdentifier(executorId);
       final InetSocketAddress address = nameResolver.lookup(identifier);
-      identifier.recycle();
       return address;
     } catch (final Exception e) {
       LOG.error(String.format("Cannot lookup PartitionTransport listening address of executor %s", executorId), e);
@@ -168,50 +169,38 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    */
   private static final class PartitionTransferIdentifier implements Identifier {
 
-    private static final Recycler<PartitionTransferIdentifier> RECYCLER = new Recycler<PartitionTransferIdentifier>() {
-      @Override
-      protected PartitionTransferIdentifier newObject(final Recycler.Handle handle) {
-        return new PartitionTransferIdentifier(handle);
-      }
-    };
-
-    private final Recycler.Handle handle;
+    private final String executorId;
 
     /**
      * Creates a {@link PartitionTransferIdentifier}.
      *
-     * @param handle  the recycler handle
-     */
-    private PartitionTransferIdentifier(final Recycler.Handle handle) {
-      this.handle = handle;
-    }
-
-    private String executorId;
-
-    /**
-     * Returns a {@link PartitionTransferIdentifier}.
-     *
      * @param executorId id of the {@link edu.snu.vortex.runtime.executor.Executor}
      *                   which this {@link PartitionTransfer} belongs to
-     * @return a {@link PartitionTransferIdentifier}
      */
-    private static PartitionTransferIdentifier newInstance(final String executorId) {
-      final PartitionTransferIdentifier identifier = RECYCLER.get();
-      identifier.executorId = executorId;
-      return identifier;
-    }
-
-    /**
-     * Recycles this object.
-     */
-    public void recycle() {
-      executorId = null;
-      RECYCLER.recycle(this, handle);
+    private PartitionTransferIdentifier(final String executorId) {
+      this.executorId = executorId;
     }
 
     @Override
     public String toString() {
       return "partition://" + executorId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final PartitionTransferIdentifier that = (PartitionTransferIdentifier) o;
+      return executorId.equals(that.executorId);
+    }
+
+    @Override
+    public int hashCode() {
+      return executorId.hashCode();
     }
   }
 }
