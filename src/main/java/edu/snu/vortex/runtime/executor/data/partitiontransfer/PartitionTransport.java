@@ -113,6 +113,7 @@ final class PartitionTransport implements AutoCloseable {
         try {
           listeningChannel = serverBootstrap.bind(host, candidatePort).sync().channel();
           channelGroup.add(listeningChannel);
+          break;
         } catch (final InterruptedException e) {
           LOG.debug(String.format("Cannot bind to %s:%d", host, candidatePort), e);
         }
