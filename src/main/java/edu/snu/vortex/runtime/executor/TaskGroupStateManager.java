@@ -102,25 +102,25 @@ public final class TaskGroupStateManager {
     switch (newState) {
     case EXECUTING:
       LOG.debug("Executing TaskGroup ID {}...", taskGroupId);
-      metricDataBuilder.beginMeasurement(attemptIdx, "EXECUTING", System.nanoTime());
+      metricDataBuilder.beginMeasurement(attemptIdx, newState, System.nanoTime());
       idToTaskStates.forEach((taskId, state) -> state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR));
       break;
     case COMPLETE:
       LOG.debug("TaskGroup ID {} complete!", taskGroupId);
-      metricDataBuilder.endMeasurement("COMPLETE", System.nanoTime());
+      metricDataBuilder.endMeasurement(newState, System.nanoTime());
       periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_RECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (recoverable).", taskGroupId);
       // This metric data is effective on recoverable failures EXCEPT container failure.
-      metricDataBuilder.endMeasurement("FAILED_RECOVERABLE", System.nanoTime());
+      metricDataBuilder.endMeasurement(newState, System.nanoTime());
       periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_UNRECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (unrecoverable).", taskGroupId);
-      metricDataBuilder.endMeasurement("FAILED_UNRECOVERABLE", System.nanoTime());
+      metricDataBuilder.endMeasurement(newState, System.nanoTime());
       periodicMetricSender.send(metricDataBuilder.build().toJson());
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;

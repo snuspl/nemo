@@ -43,14 +43,14 @@ public final class MetricDataBuilder {
     this.endAt = 0;
   }
 
-  public void beginMeasurement(final int attemptIdx, final String startState, final long beginTimestamp) {
+  public void beginMeasurement(final int attemptIdx, final Enum startState, final long beginTimestamp) {
     this.scheduleAttemptIdx = attemptIdx;
-    this.fromState = startState;
+    this.fromState = startState.toString();
     this.startAt = beginTimestamp;
   }
 
-  public void endMeasurement(final String endState, final long endTimestamp) {
-    this.toState = endState;
+  public void endMeasurement(final Enum endState, final long endTimestamp) {
+    this.toState = endState.toString();
     this.endAt = endTimestamp;
   }
 
