@@ -136,7 +136,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     while (true) {
       final boolean toContinue;
       if (controlBodyBytesToRead > 0) {
@@ -160,7 +160,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param out the {@link List} to which decoded messages are added
    * @return {@code true} if a header was decoded, {@code false} otherwise
    */
-  private boolean onFrameBegins(final ByteBuf in, final List<Object> out) {
+  private boolean onFrameBegins(final ByteBuf in, final List<Object> out) throws InterruptedException {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);
@@ -229,15 +229,16 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * Supply byte stream to an existing {@link PartitionInputStream}.
    *
    * @param in  the {@link ByteBuf} from which to read data
+   * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  private void onDataBodyAdded(final ByteBuf in) {
+  private void onDataBodyAdded(final ByteBuf in) throws InterruptedException {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead > 0);
     assert (inputStream != null);
 
     final int length = Math.min(dataBodyBytesToRead, in.readableBytes());
     final ByteBuf body = in.readSlice(length).retain();
-    inputStream.addByteBuf(body);
+    inputStream.append(body);
 
     dataBodyBytesToRead -= length;
     if (dataBodyBytesToRead == 0) {
@@ -247,10 +248,12 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   /**
    * Closes {@link PartitionInputStream} if necessary and resets the internal states of the decoder.
+   *
+   * @throws InterruptedException when interrupted while marking the end of stream
    */
-  private void onDataFrameEnd() {
+  private void onDataFrameEnd() throws InterruptedException {
     if (isEndingFrame) {
-      inputStream.close();
+      inputStream.end();
       (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);
     }
     inputStream = null;

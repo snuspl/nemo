@@ -18,15 +18,14 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.channel.Channel;
+import io.netty.buffer.EmptyByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Spliterator;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 /**
@@ -34,11 +33,9 @@ import java.util.function.Consumer;
  *
  * @param <T> the type of element
  */
-public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionStream {
-  // internally store ByteBufInputStream and decoder for DecodingThread to decode data
-  // internally store requestId
+public final class PartitionInputStream<T> extends InputStream implements Iterable<Element<T, ?, ?>>, PartitionStream {
 
-  // some methods are package scope
+  private static final ByteBuf END_OF_STREAM_EVENT = new EmptyByteBuf(UnpooledByteBufAllocator.DEFAULT);
 
   private final String senderExecutorId;
   private final String partitionId;
@@ -47,8 +44,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private ExecutorService executorService;
 
   private final BlockingQueue<Element<T, ?, ?>> elementQueue = new LinkedBlockingQueue<>();
-  private CompositeByteBuf compositeByteBuf;
-  private InputStream inputStream;
+  private final BlockingDeque<ByteBuf> byteBufDeque = new LinkedBlockingDeque<>();
 
   /**
    * Creates a partition input stream.
@@ -77,28 +73,127 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   /**
-   * Starts this stream.
-   *
-   * @param channel the corresponding {@link Channel} to this stream
-   */
-  void start(final Channel channel) {
-    // make sure decoder thread calls compositeByteBuf.release on completion
-    compositeByteBuf = channel.alloc().compositeBuffer();
-  }
-
-  /**
    * Supply {@link ByteBuf} to this stream.
    *
    * @param byteBuf the {@link ByteBuf} to supply
+   * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  void addByteBuf(final ByteBuf byteBuf) {
-    // Make sure to call release after using this byteBuf
+  void append(final ByteBuf byteBuf) throws InterruptedException {
+    if (byteBuf.readableBytes() > 0) {
+      byteBufDeque.putLast(byteBuf);
+    } else {
+      byteBuf.release();
+    }
   }
 
   /**
-   * Mark as {@link #addByteBuf(ByteBuf)} event is no longer expected.
+   * Mark as {@link #append(ByteBuf)} event is no longer expected.
+   *
+   * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  void close() {
+  void end() throws InterruptedException {
+    byteBufDeque.putLast(END_OF_STREAM_EVENT);
+  }
+
+  @Override
+  public int read() throws IOException {
+    try {
+      final ByteBuf head = byteBufDeque.takeFirst();
+      if (head.readableBytes() == 0) {
+        // end of stream event
+        return -1;
+      }
+      final byte b = head.readByte();
+      if (head.readableBytes() == 0) {
+        // release header if no longer required
+        head.release();
+      } else {
+        // if not, add to deque
+        byteBufDeque.putFirst(head);
+      }
+      return b;
+    } catch (final InterruptedException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public int read(final byte[] bytes, final int baseOffset, final int maxLength) throws IOException {
+    if (bytes == null) {
+      throw new NullPointerException();
+    }
+    if (baseOffset < 0 || maxLength < 0 || maxLength > bytes.length - baseOffset) {
+      throw new IndexOutOfBoundsException();
+    }
+    try {
+      // the number of bytes that has been read so far
+      int readBytes = 0;
+      // the number of bytes to read
+      int capacity = maxLength;
+      while (capacity > 0) {
+        final ByteBuf head = byteBufDeque.takeFirst();
+        if (head.readableBytes() == 0) {
+          // end of stream event
+          return readBytes == 0 ? -1 : readBytes;
+        }
+        final int toRead = Math.min(head.readableBytes(), capacity);
+        head.readBytes(bytes, baseOffset + readBytes, toRead);
+        if (head.readableBytes() == 0) {
+          head.release();
+        } else {
+          byteBufDeque.putFirst(head);
+        }
+        readBytes += toRead;
+        capacity -= toRead;
+      }
+      return readBytes;
+    } catch (final InterruptedException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public long skip(final long n) throws IOException {
+    if (n <= 0) {
+      return 0;
+    }
+    try {
+      // the number of bytes that has been skipped so far
+      long skippedBytes = 0;
+      // the number of bytes to skip
+      long toSkip = n;
+      while (toSkip > 0) {
+        final ByteBuf head = byteBufDeque.takeFirst();
+        if (head.readableBytes() == 0) {
+          // end of stream event
+          return skippedBytes;
+        }
+        if (head.readableBytes() > toSkip) {
+          head.skipBytes((int) toSkip);
+          skippedBytes += toSkip;
+          byteBufDeque.putFirst(head);
+          return skippedBytes;
+        } else {
+          // discard the whole ByteBuf
+          skippedBytes += head.readableBytes();
+          toSkip -= head.readableBytes();
+          head.release();
+        }
+      }
+      return skippedBytes;
+    } catch (final InterruptedException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public int available() {
+    final ByteBuf head = byteBufDeque.peekFirst();
+    if (head == null) {
+      return 0;
+    } else {
+      return head.readableBytes();
+    }
   }
 
   @Override
