@@ -79,15 +79,15 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
    * Creates a netty channel initializer.
    *
    * @param channelGroup      the {@link ChannelGroup} to which active channels are added
-   * @param channelMap        the map to which active channels are added
+   * @param channelFutureMap  the map to which promises for connections are added
    * @param partitionTransfer provides handler for inbound control messages
    * @param localExecutorId   the id of this executor
    */
   ChannelInitializer(final ChannelGroup channelGroup,
-                     final ConcurrentMap<SocketAddress, Channel> channelMap,
+                     final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap,
                      final InjectionFuture<PartitionTransfer> partitionTransfer,
                      final String localExecutorId) {
-    this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelMap);
+    this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelFutureMap);
     this.partitionTransfer = partitionTransfer;
     this.localExecutorId = localExecutorId;
   }
@@ -117,18 +117,18 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
     private static final Logger LOG = LoggerFactory.getLogger(ChannelLifecycleTracker.class);
 
     private final ChannelGroup channelGroup;
-    private final ConcurrentMap<SocketAddress, Channel> channelMap;
+    private final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap;
 
     /**
      * Creates a channel lifecycle handler.
      *
-     * @param channelGroup the {@link ChannelGroup} to which active channels are added
-     * @param channelMap    the map to which active channels are added
+     * @param channelGroup      the {@link ChannelGroup} to which active channels are added
+     * @param channelFutureMap  the map to which promises for connections are added
      */
     private ChannelLifecycleTracker(final ChannelGroup channelGroup,
-                            final ConcurrentMap<SocketAddress, Channel> channelMap) {
+                            final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap) {
       this.channelGroup = channelGroup;
-      this.channelMap = channelMap;
+      this.channelFutureMap = channelFutureMap;
     }
 
     @Override
@@ -139,7 +139,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) {
       final SocketAddress address = ctx.channel().remoteAddress();
-      channelMap.remove(address);
+      channelFutureMap.remove(address);
       LOG.warn("A channel with remote address {} is now inactive", address);
     }
 

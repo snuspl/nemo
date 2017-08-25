@@ -20,6 +20,7 @@ import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
@@ -52,7 +53,7 @@ final class PartitionTransport implements AutoCloseable {
   private final EventLoopGroup clientGroup;
   private final Bootstrap clientBootstrap;
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-  private final ConcurrentMap<SocketAddress, Channel> channelMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap = new ConcurrentHashMap<>();
 
   /**
    * Constructs a partition transport and starts listening.
@@ -90,7 +91,7 @@ final class PartitionTransport implements AutoCloseable {
     clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
 
     final ChannelInitializer channelInitializer
-        = new ChannelInitializer(channelGroup, channelMap, partitionTransfer, localExecutorId);
+        = new ChannelInitializer(channelGroup, channelFutureMap, partitionTransfer, localExecutorId);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap
@@ -168,12 +169,18 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Asynchronously connects to a remote transport, or returns a cached channel.
+   * Writes to the specified remote address. Creates a connection to the remote transport if needed.
    *
-   * @param remoteAddress the socket address to connect to
-   * @return a {@link Channel} to {@code remoteAddress}
+   * @param remoteAddress the socket address to write to
+   * @param thing         the object to write
    */
-  Channel getChannelTo(final SocketAddress remoteAddress) {
-    return channelMap.computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address).channel());
+  void writeTo(final SocketAddress remoteAddress, final Object thing) {
+    final ChannelFuture channelFuture = channelFutureMap
+        .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
+    if (channelFuture.isDone()) {
+      channelFuture.channel().writeAndFlush(thing);
+    } else {
+      channelFuture.addListener(x -> channelFuture.channel().writeAndFlush(thing));
+    }
   }
 }
