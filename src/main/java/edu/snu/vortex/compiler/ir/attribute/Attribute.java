@@ -115,6 +115,7 @@ public enum Attribute {
   public enum IntegerKey {
     // IRVertex
     Parallelism,
+    StageNum,
   }
 
   private final Key key;

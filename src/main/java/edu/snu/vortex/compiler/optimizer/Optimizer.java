@@ -37,6 +37,10 @@ import java.util.*;
  * Optimizer class.
  */
 public final class Optimizer {
+  // Private constructor
+  private Optimizer() {
+  }
+
   /**
    * Optimize function.
    * @param dag input DAG.
@@ -45,7 +49,7 @@ public final class Optimizer {
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
    */
-  public DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
+  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
                                         final String dagDirectory) throws Exception {
     if (policyType == null) {
       throw new RuntimeException("Policy has not been provided for the policyType");
@@ -78,6 +82,7 @@ public final class Optimizer {
    */
   public enum PolicyType {
     Default,
+    StagePartition,
     Pado,
     Disaggregation,
     DataSkew,
@@ -91,7 +96,12 @@ public final class Optimizer {
   static {
     POLICIES.put(PolicyType.Default,
         Arrays.asList(
-            new ParallelismPass() // Provides parallelism information.
+            new ParallelismPass(), // Provides parallelism information.
+            new StagePartitioningPass()
+        ));
+    POLICIES.put(PolicyType.StagePartition, // Simply build stages for tests
+        Arrays.asList(
+            new StagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Pado,
         Arrays.asList(
@@ -100,7 +110,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new PadoVertexPass(), new PadoEdgePass() // Processes vertices and edges with Pado algorithm.
+            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
+            new StagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(
@@ -109,7 +120,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DisaggregationPass() // Processes vertices and edges with Disaggregation algorithm.
+            new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
+            new StagePartitioningPass()
         ));
     POLICIES.put(PolicyType.DataSkew,
         Arrays.asList(
@@ -118,7 +130,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DataSkewPass()
+            new DataSkewPass(),
+            new StagePartitioningPass()
         ));
   }
 
