@@ -54,7 +54,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private int bufferSize;
   private int dataFrameSize;
 
-  private final ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream();
+  private ByteBufOutputStream byteBufOutputStream;
   private final BlockingQueue<Object> elementQueue = new LinkedBlockingQueue<>();
   private ByteBuf nonEndingFrameHeader;
   private volatile boolean closed = false;
@@ -153,6 +153,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * Starts the encoding and writing to the channel.
    */
   void start() {
+    assert (channel != null);
+    assert (coder != null);
+    byteBufOutputStream = new ByteBufOutputStream();
     executorService.submit(() -> {
       try {
         while (true) {
