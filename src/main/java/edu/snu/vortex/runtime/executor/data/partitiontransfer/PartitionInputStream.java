@@ -22,6 +22,8 @@ import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +41,7 @@ import java.util.function.Consumer;
 public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionStream {
 
   private static final ByteBuf END_OF_STREAM_EVENT = new EmptyByteBuf(UnpooledByteBufAllocator.DEFAULT);
+  private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String senderExecutorId;
   private final Optional<Attribute> partitionStore;
@@ -119,7 +122,8 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
           elementQueue.put(coder.decode(byteBufInputStream));
         }
         completeFuture.complete(this);
-      } catch (final InterruptedException e) {
+      } catch (final Exception e) {
+        LOG.error("An exception in PartitionInputStream thread", e);
         throw new RuntimeException(e);
       }
     });

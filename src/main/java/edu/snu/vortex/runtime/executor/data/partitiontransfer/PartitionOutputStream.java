@@ -26,6 +26,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.FileRegion;
 import io.netty.util.Recycler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.OutputStream;
@@ -40,6 +42,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @param <T> the type of element
  */
 public final class PartitionOutputStream<T> implements Closeable, PartitionStream {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String receiverExecutorId;
   private final Optional<Attribute> partitionStore;
@@ -175,7 +179,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
             coder.encode((Element) thing, byteBufOutputStream);
           }
         }
-      } catch (final InterruptedException e) {
+      } catch (final Exception e) {
+        LOG.error("An exception in PartitionOutputStream thread", e);
         throw new RuntimeException(e);
       }
     });
