@@ -177,7 +177,7 @@ final class ControlMessageToPartitionStreamCodec
         in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
-    LOG.debug("Received push notification %d from %s for the partition %s (runtime edge id: %s, hash range: %s)",
+    LOG.debug("Received push notification {} from {} for the partition {} (runtime edge id: {}, hash range: {})",
         new Object[]{transferId, in.getControlMessageSourceId(), in.getPartitionId(), in.getRuntimeEdgeId(),
         inputStream.getHashRange().toString()});
   }
