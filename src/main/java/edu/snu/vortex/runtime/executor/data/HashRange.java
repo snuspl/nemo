@@ -67,4 +67,39 @@ public final class HashRange {
   public int getRangeEndExclusive() {
     return rangeEndExclusive;
   }
+
+  @Override
+  public String toString() {
+    if (all) {
+      return "ALL";
+    } else {
+      return String.format("[%d, %d)", rangeStartInclusive, rangeEndExclusive);
+    }
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final HashRange hashRange = (HashRange) o;
+    if (all != hashRange.all) {
+      return false;
+    }
+    if (rangeStartInclusive != hashRange.rangeStartInclusive) {
+      return false;
+    }
+    return rangeEndExclusive == hashRange.rangeEndExclusive;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = (all ? 1 : 0);
+    result = 31 * result + rangeStartInclusive;
+    result = 31 * result + rangeEndExclusive;
+    return result;
+  }
 }
