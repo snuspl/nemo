@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -40,6 +41,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final String senderExecutorId;
   private final String partitionId;
   private final String runtimeEdgeId;
+  private final HashRange hashRange;
   private Coder<T, ?, ?> coder;
   private ExecutorService executorService;
 
@@ -52,13 +54,16 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * @param senderExecutorId  the id of the remote executor
    * @param partitionId       the partition id
    * @param runtimeEdgeId     the runtime edge id
+   * @param hashRange         the hash range
    */
   PartitionInputStream(final String senderExecutorId,
                        final String partitionId,
-                       final String runtimeEdgeId) {
+                       final String runtimeEdgeId,
+                       final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
+    this.hashRange = hashRange;
   }
 
   /**
@@ -123,6 +128,11 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   @Override
   public String getRuntimeEdgeId() {
     return runtimeEdgeId;
+  }
+
+  @Override
+  public HashRange getHashRange() {
+    return hashRange;
   }
 
   @Override

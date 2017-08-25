@@ -15,6 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.runtime.executor.data.HashRange;
+
 /**
  * {@link PartitionInputStream} and {@link PartitionOutputStream}.
  */
@@ -40,4 +42,11 @@ public interface PartitionStream {
    * @return the runtime edge id
    */
   String getRuntimeEdgeId();
+
+  /**
+   * Gets the hash range.
+   *
+   * @return the {@link HashRange}
+   */
+  HashRange getHashRange();
 }

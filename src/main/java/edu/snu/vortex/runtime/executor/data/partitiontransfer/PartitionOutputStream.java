@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -41,6 +42,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private final String receiverExecutorId;
   private final String partitionId;
   private final String runtimeEdgeId;
+  private final HashRange hashRange;
   private ControlMessage.PartitionTransferType transferType;
   private short transferId;
   private Channel channel;
@@ -60,13 +62,16 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @param receiverExecutorId  the id of the remote executor
    * @param partitionId         the partition id
    * @param runtimeEdgeId       the runtime edge id
+   * @param hashRange           the hash range
    */
   PartitionOutputStream(final String receiverExecutorId,
                         final String partitionId,
-                        final String runtimeEdgeId) {
+                        final String runtimeEdgeId,
+                        final HashRange hashRange) {
     this.receiverExecutorId = receiverExecutorId;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
+    this.hashRange = hashRange;
   }
 
   /**
@@ -116,6 +121,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   @Override
   public String getRuntimeEdgeId() {
     return runtimeEdgeId;
+  }
+
+  @Override
+  public HashRange getHashRange() {
+    return hashRange;
   }
 
   @Override

@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -136,8 +137,10 @@ final class ControlMessageToPartitionStreamCodec
                                     final ControlMessage.PartitionTransferControlMessage in,
                                     final List<Object> out) {
     final short transferId = (short) in.getTransferId();
+    final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
+        ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
-        in.getPartitionId(), in.getRuntimeEdgeId());
+        in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
@@ -154,8 +157,10 @@ final class ControlMessageToPartitionStreamCodec
                                          final ControlMessage.PartitionTransferControlMessage in,
                                          final List<Object> out) {
     final short transferId = (short) in.getTransferId();
+    final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
+        ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
-        in.getPartitionId(), in.getRuntimeEdgeId());
+        in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
   }

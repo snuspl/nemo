@@ -100,6 +100,8 @@ message PartitionTransferControlMessage {
     required int32 transferId = 3;
     required string partitionId = 4;
     required string runtimeEdgeId = 5;
+    optional int32 startRangeInclusive = 6;
+    optional int32 endRangeExclusive = 7;
 }
 
 message RequestPartitionMsg {
