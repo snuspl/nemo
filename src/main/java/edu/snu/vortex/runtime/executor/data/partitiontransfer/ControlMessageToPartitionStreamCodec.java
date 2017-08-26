@@ -228,6 +228,23 @@ final class ControlMessageToPartitionStreamCodec
     out.add(controlMessageBuilder.build());
   }
 
+  @Override
+  public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+    for (final PartitionInputStream stream : pullTransferIdToInputStream.values()) {
+      stream.onExceptionCaught(cause);
+    }
+    for (final PartitionInputStream stream : pushTransferIdToInputStream.values()) {
+      stream.onExceptionCaught(cause);
+    }
+    for (final PartitionOutputStream stream : pullTransferIdToOutputStream.values()) {
+      stream.onExceptionCaught(cause);
+    }
+    for (final PartitionOutputStream stream : pushTransferIdToOutputStream.values()) {
+      stream.onExceptionCaught(cause);
+    }
+    ctx.fireExceptionCaught(cause);
+  }
+
   /**
    * Gets {@code pullTransferIdToInputStream}.
    *

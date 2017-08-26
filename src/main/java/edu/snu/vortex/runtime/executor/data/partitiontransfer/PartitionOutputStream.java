@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -62,6 +63,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private final BlockingQueue<Object> elementQueue = new LinkedBlockingQueue<>();
   private ByteBuf nonEndingFrameHeader;
   private volatile boolean closed = false;
+  private volatile Throwable streamException = null;
 
   /**
    * Creates a partition output stream.
@@ -143,16 +145,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     return hashRange;
   }
 
-  @Override
-  public void close() {
-    closed = true;
-    try {
-      elementQueue.put(EndOfPartitionEvent.END_OF_PARTITION);
-    } catch (final InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   /**
    * Starts the encoding and writing to the channel.
    */
@@ -191,8 +183,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    *
    * @param element the {@link Element} to write
    * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
    */
-  public PartitionOutputStream write(final Element<T, ?, ?> element) {
+  public PartitionOutputStream write(final Element<T, ?, ?> element) throws IOException {
+    throwStreamExceptionIfNeeded();
     assert (!closed);
     try {
       elementQueue.put(element);
@@ -207,8 +201,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    *
    * @param iterable  the {@link Iterable} to write
    * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
    */
-  public PartitionOutputStream write(final Iterable<Element<T, ?, ?>> iterable) {
+  public PartitionOutputStream write(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
+    throwStreamExceptionIfNeeded();
     assert (!closed);
     try {
       elementQueue.put(iterable);
@@ -224,8 +220,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    *
    * @param fileRegion  provides the descriptor of the file to write
    * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
    */
-  public PartitionOutputStream write(final FileRegion fileRegion) {
+  public PartitionOutputStream write(final FileRegion fileRegion) throws IOException {
+    throwStreamExceptionIfNeeded();
     assert (!closed);
     try {
       elementQueue.put(fileRegion);
@@ -233,6 +231,37 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     } catch (final InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    throwStreamExceptionIfNeeded();
+    closed = true;
+    try {
+      elementQueue.put(EndOfPartitionEvent.END_OF_PARTITION);
+    } catch (final InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Throws an {@link IOException} if needed.
+   *
+   * @throws IOException if an exception was set
+   */
+  private void throwStreamExceptionIfNeeded() throws IOException {
+    if (streamException != null) {
+      throw new IOException(streamException);
+    }
+  }
+
+  /**
+   * Sets an stream exception.
+   *
+   * @param cause the cause of exception handling
+   */
+  void onExceptionCaught(final Throwable cause) {
+    this.streamException = cause;
   }
 
   /**

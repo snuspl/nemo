@@ -335,7 +335,13 @@ public final class PartitionManagerWorker {
     final CompletableFuture<Iterable<Element>> partitionFuture =
         retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
         partitionStoreOptional.get(), outputStream.getHashRange());
-    partitionFuture.thenAcceptAsync(partition -> outputStream.write(partition).close());
+    partitionFuture.thenAcceptAsync(partition -> {
+      try {
+        outputStream.write(partition).close();
+      } catch (final IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   /**

@@ -129,6 +129,20 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
     });
   }
 
+  /**
+   * Reports exception and closes this stream.
+   *
+   * @param cause the cause of exception handling
+   */
+  void onExceptionCaught(final Throwable cause) {
+    try {
+      end();
+    } catch (final InterruptedException e) {
+      LOG.error(String.format("An exception thrown while handling channel exception %s", cause.toString()), e);
+    }
+    completeFuture.completeExceptionally(cause);
+  }
+
   @Override
   public String getRemoteExecutorId() {
     return senderExecutorId;

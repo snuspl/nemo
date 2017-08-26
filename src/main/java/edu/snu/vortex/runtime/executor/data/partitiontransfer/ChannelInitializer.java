@@ -145,7 +145,8 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-      LOG.error(String.format("Exception caught in the channel to %s", ctx.channel().remoteAddress()), cause);
+      LOG.error(String.format("Exception caught in the channel from %s to %s", ctx.channel().localAddress(),
+          ctx.channel().remoteAddress()), cause);
       ctx.close();
     }
   }
