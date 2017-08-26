@@ -55,21 +55,19 @@ import java.util.concurrent.ConcurrentMap;
  *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
  *      +---------------------+                   +--------------------------------------+
  *
- *      +--------------------------+
- *   <= | (DataFrameHeaderEncoder) | <= DataFrame header =+
- *      +--------------------------+                      |== PartitionOutputStream buffer flush
- *   <=== ByteBuf ========================================+
- *
- *      +--------------------------+
- *   <= | (DataFrameHeaderEncoder) | <= DataFrame header =+
- *      +--------------------------+                      |== A FileRegion added to PartitionOutputStream
- *   <= FileRegion =======================================+
+ *      +------------------+
+ *   <= | DataFrameEncoder | <=== ByteBuf === PartitionOutputStream buffer flush
+ *      +------------------+
+ *      +------------------+
+ *   <= | DataFrameEncoder | <= FileRegion == A FileRegion added to PartitionOutputStream
+ *      +------------------+
  * }
  * </pre>
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
 
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
+  private static final DataFrameEncoder DATA_FRAME_ENCODER = new DataFrameEncoder();
 
   private final ChannelLifecycleTracker channelLifecycleTracker;
   private final InjectionFuture<PartitionTransfer> partitionTransfer;
@@ -100,6 +98,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         .addLast(new FrameDecoder())
         // outbound
         .addLast(CONTROL_FRAME_ENCODER)
+        .addLast(DATA_FRAME_ENCODER)
         // duplex
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // inbound

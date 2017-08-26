@@ -257,7 +257,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    */
   private final class ByteBufOutputStream extends OutputStream {
 
-    private final ByteBuf nonEndingFrameHeader;
     private ByteBuf byteBuf;
     private CompositeByteBuf compositeByteBuf;
 
@@ -267,9 +266,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     private ByteBufOutputStream() {
       createByteBuf();
       createCompositeByteBuf();
-      this.nonEndingFrameHeader = channel.alloc().directBuffer(DataFrameEncoder.TYPE_AND_TRANSFERID_LENGTH,
-          DataFrameEncoder.TYPE_AND_TRANSFERID_LENGTH);
-      DataFrameEncoder.encodeTypeAndTransferId(transferType, transferId, nonEndingFrameHeader);
     }
 
     @Override
@@ -299,7 +295,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
 
     @Override
     public void close() {
-      nonEndingFrameHeader.release();
       boolean sentEndingFrame = false;
       if (byteBuf.readableBytes() > 0) {
         writeByteBuf(true);
@@ -315,7 +310,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       }
       if (!sentEndingFrame) {
         // should send an ending frame to indicate the end of the partition stream
-        writeDataFrameHeader(true, 0);
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, true, transferId,
+            0, null));
       }
     }
 
@@ -335,8 +331,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      * @param ending  whether or not the frame is an ending frame
      */
     private void writeByteBuf(final boolean ending) {
-      writeDataFrameHeader(ending, byteBuf.readableBytes());
-      channel.writeAndFlush(byteBuf);
+      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+          byteBuf.readableBytes(), byteBuf));
     }
 
     /**
@@ -362,8 +358,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      * @param ending  whether or not the frame is an ending frame
      */
     private void writeCompositeByteBuf(final boolean ending) {
-      writeDataFrameHeader(ending, compositeByteBuf.readableBytes());
-      channel.writeAndFlush(compositeByteBuf);
+      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+          compositeByteBuf.readableBytes(), compositeByteBuf));
     }
 
     /**
@@ -371,25 +367,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      */
     private void createCompositeByteBuf() {
       compositeByteBuf = channel.alloc().compositeDirectBuffer();
-    }
-
-    /**
-     * Writes the header of a data frame.
-     *
-     * @param ending  whether or not the frame is an ending frame
-     * @param length  the length of the data frame body
-     */
-    private void writeDataFrameHeader(final boolean ending, final int length) {
-      if (ending) {
-        final ByteBuf endingFrameHeader = channel.alloc().ioBuffer(DataFrameEncoder.HEADER_LENGTH,
-            DataFrameEncoder.HEADER_LENGTH);
-        DataFrameEncoder.encodeLastFrame(transferType, transferId, length, endingFrameHeader);
-        channel.write(endingFrameHeader);
-      } else {
-        channel.write(nonEndingFrameHeader.retain());
-        channel.write(channel.alloc().ioBuffer(DataFrameEncoder.LENGTH_LENGTH,
-            DataFrameEncoder.LENGTH_LENGTH).writeInt(length));
-      }
     }
 
     /**
@@ -405,8 +382,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
             fileRegion.count()));
       }
       flush();
-      writeDataFrameHeader(ending, (int) fileRegion.count());
-      channel.writeAndFlush(fileRegion);
+      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+          (int) fileRegion.count(), fileRegion));
     }
   }
 

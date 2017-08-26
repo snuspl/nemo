@@ -17,54 +17,117 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.util.Recycler;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Encodes a data frame into bytes.
  *
  * @see FrameDecoder
  */
-final class DataFrameEncoder {
+@ChannelHandler.Sharable
+final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.DataFrame> {
 
   static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
   static final int LENGTH_LENGTH = Integer.BYTES;
   static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
 
-  /**
-   * Private constructor.
-   */
-  private DataFrameEncoder() {
+  @Override
+  protected void encode(final ChannelHandlerContext ctx, final DataFrame in, final List<Object> out) {
+    // encode header
+    final ByteBuf header = ctx.alloc().ioBuffer(HEADER_LENGTH, HEADER_LENGTH);
+    final short type;
+    if (in.type == ControlMessage.PartitionTransferType.PULL) {
+      if (in.ending) {
+        type = FrameDecoder.PULL_ENDING;
+      } else {
+        type = FrameDecoder.PULL_NONENDING;
+      }
+    } else {
+      if (in.ending) {
+        type = FrameDecoder.PUSH_ENDING;
+      } else {
+        type = FrameDecoder.PUSH_NONENDING;
+      }
+    }
+    header.writeShort(type);
+    header.writeShort(in.transferId);
+    header.writeInt(in.length);
+    out.add(header);
+
+    // encode body
+    if (in.body != null) {
+      out.add(in.body);
+    }
+
+    // recycle DataFrame object
+    in.recycle();
   }
 
   /**
-   * Encode type and transferId for headers of data frames which are not a last frame of transfer.
-   *
-   * @param partitionTransferType the transfer type
-   * @param transferId            the id of transfer
-   * @param out                   the {@link ByteBuf} into which the encoded numbers will be written
+   * Data frame representation.
    */
-  static void encodeTypeAndTransferId(final ControlMessage.PartitionTransferType partitionTransferType,
-                                      final short transferId,
-                                      final ByteBuf out) {
-    out.writeShort(partitionTransferType == ControlMessage.PartitionTransferType.PULL ? FrameDecoder.PULL_NONENDING
-        : FrameDecoder.PUSH_NONENDING);
-    out.writeShort(transferId);
-  }
+  static final class DataFrame {
 
-  /**
-   * Encode header for a data frame header which is a last frame of transfer.
-   *
-   * @param partitionTransferType the transfer type
-   * @param transferId            the id of transfer
-   * @param length                the length of frame body
-   * @param out                   the {@link ByteBuf} into which the encoded numbers will be written
-   */
-  static void encodeLastFrame(final ControlMessage.PartitionTransferType partitionTransferType,
-                              final short transferId,
-                              final int length,
-                              final ByteBuf out) {
-    out.writeShort(partitionTransferType == ControlMessage.PartitionTransferType.PULL ? FrameDecoder.PULL_ENDING
-        : FrameDecoder.PUSH_ENDING);
-    out.writeShort(transferId);
-    out.writeInt(length);
+    private static final Recycler<DataFrame> RECYCLER = new Recycler<DataFrame>() {
+      @Override
+      protected DataFrame newObject(final Recycler.Handle handle) {
+        return new DataFrame(handle);
+      }
+    };
+
+    private final Recycler.Handle handle;
+
+    /**
+     * Creates a {@link DataFrame}.
+     *
+     * @param handle the recycler handle
+     */
+    private DataFrame(final Recycler.Handle handle) {
+      this.handle = handle;
+    }
+
+    private ControlMessage.PartitionTransferType type;
+    private boolean ending;
+    private short transferId;
+    private int length;
+    @Nullable
+    private Object body;
+
+    /**
+     * Creates a {@link DataFrame}.
+     *
+     * @param type        the transfer type, namely pull or push
+     * @param ending      whether or not this frame is an ending frame
+     * @param transferId  the transfer id
+     * @param length      the length of the body, in bytes
+     * @param body        the body
+     * @return the {@link DataFrame} object
+     */
+    static DataFrame newInstance(final ControlMessage.PartitionTransferType type,
+                                 final boolean ending,
+                                 final short transferId,
+                                 final int length,
+                                 @Nullable final Object body) {
+      final DataFrame dataFrame = RECYCLER.get();
+      dataFrame.type = type;
+      dataFrame.transferId = transferId;
+      dataFrame.length = length;
+      dataFrame.body = body;
+      return dataFrame;
+    }
+
+    /**
+     * Recycles this object.
+     */
+    void recycle() {
+      body = null;
+      RECYCLER.recycle(this, handle);
+    }
   }
 }
