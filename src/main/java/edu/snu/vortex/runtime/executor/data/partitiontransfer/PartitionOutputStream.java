@@ -267,9 +267,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     private ByteBufOutputStream() {
       createByteBuf();
       createCompositeByteBuf();
-      this.nonEndingFrameHeader = channel.alloc().directBuffer(DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH,
-          DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH);
-      DataFrameHeaderEncoder.encodeTypeAndTransferId(transferType, transferId, nonEndingFrameHeader);
+      this.nonEndingFrameHeader = channel.alloc().directBuffer(DataFrameEncoder.TYPE_AND_TRANSFERID_LENGTH,
+          DataFrameEncoder.TYPE_AND_TRANSFERID_LENGTH);
+      DataFrameEncoder.encodeTypeAndTransferId(transferType, transferId, nonEndingFrameHeader);
     }
 
     @Override
@@ -381,14 +381,14 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      */
     private void writeDataFrameHeader(final boolean ending, final int length) {
       if (ending) {
-        final ByteBuf endingFrameHeader = channel.alloc().ioBuffer(DataFrameHeaderEncoder.HEADER_LENGTH,
-            DataFrameHeaderEncoder.HEADER_LENGTH);
-        DataFrameHeaderEncoder.encodeLastFrame(transferType, transferId, length, endingFrameHeader);
+        final ByteBuf endingFrameHeader = channel.alloc().ioBuffer(DataFrameEncoder.HEADER_LENGTH,
+            DataFrameEncoder.HEADER_LENGTH);
+        DataFrameEncoder.encodeLastFrame(transferType, transferId, length, endingFrameHeader);
         channel.write(endingFrameHeader);
       } else {
         channel.write(nonEndingFrameHeader.retain());
-        channel.write(channel.alloc().ioBuffer(DataFrameHeaderEncoder.LENGTH_LENGTH,
-            DataFrameHeaderEncoder.LENGTH_LENGTH).writeInt(length));
+        channel.write(channel.alloc().ioBuffer(DataFrameEncoder.LENGTH_LENGTH,
+            DataFrameEncoder.LENGTH_LENGTH).writeInt(length));
       }
     }
 

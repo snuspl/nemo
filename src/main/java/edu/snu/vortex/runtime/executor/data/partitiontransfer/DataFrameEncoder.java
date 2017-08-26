@@ -23,7 +23,7 @@ import io.netty.buffer.ByteBuf;
  *
  * @see FrameDecoder
  */
-final class DataFrameHeaderEncoder {
+final class DataFrameEncoder {
 
   static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
   static final int LENGTH_LENGTH = Integer.BYTES;
@@ -32,7 +32,7 @@ final class DataFrameHeaderEncoder {
   /**
    * Private constructor.
    */
-  private DataFrameHeaderEncoder() {
+  private DataFrameEncoder() {
   }
 
   /**

@@ -123,7 +123,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * Creates a frame decoder.
    */
   FrameDecoder() {
-    assert (ControlFrameEncoder.HEADER_LENGTH == DataFrameHeaderEncoder.HEADER_LENGTH);
+    assert (ControlFrameEncoder.HEADER_LENGTH == DataFrameEncoder.HEADER_LENGTH);
   }
 
   @Override
