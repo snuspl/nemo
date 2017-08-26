@@ -121,7 +121,9 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         while (!byteBufInputStream.isEnded()) {
           elementQueue.put(coder.decode(byteBufInputStream));
         }
-        completeFuture.complete(this);
+        if (!completeFuture.isCompletedExceptionally()) {
+          completeFuture.complete(this);
+        }
       } catch (final Exception e) {
         LOG.error("An exception in PartitionInputStream thread", e);
         throw new RuntimeException(e);
