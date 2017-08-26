@@ -138,7 +138,7 @@ final class PartitionTransport implements AutoCloseable {
     }
 
     serverListeningAddress = (InetSocketAddress) listeningChannel.localAddress();
-    LOG.info("Server listening at {}", serverListeningAddress);
+    LOG.info("PartitionTransport server in {} is listening at {}", localExecutorId, serverListeningAddress);
   }
 
   /**
