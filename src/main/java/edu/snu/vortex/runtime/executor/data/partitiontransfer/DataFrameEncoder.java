@@ -116,6 +116,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
                                  @Nullable final Object body) {
       final DataFrame dataFrame = RECYCLER.get();
       dataFrame.type = type;
+      dataFrame.ending = ending;
       dataFrame.transferId = transferId;
       dataFrame.length = length;
       dataFrame.body = body;
