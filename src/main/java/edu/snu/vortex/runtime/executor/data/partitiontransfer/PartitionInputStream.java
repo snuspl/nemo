@@ -50,7 +50,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   private final CompletableFuture<PartitionInputStream<T>> completeFuture = new CompletableFuture<>();
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
-  private final BlockingQueue<Element<T, ?, ?>> elementQueue = new LinkedBlockingQueue<>();
+  private final ClosableBlockingIterable<Element<T, ?, ?>> elementQueue = new ClosableBlockingIterable<>();
 
   /**
    * Creates a partition input stream.
@@ -114,8 +114,9 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         // TODO #299: Separate Serialization from Here
         // At now, we do unneeded deserialization and serialization for already serialized data.
         while (!byteBufInputStream.isEnded()) {
-          elementQueue.put(coder.decode(byteBufInputStream));
+          elementQueue.add(coder.decode(byteBufInputStream));
         }
+        elementQueue.close();
         if (!completeFuture.isCompletedExceptionally()) {
           completeFuture.complete(this);
         }
