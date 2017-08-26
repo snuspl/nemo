@@ -201,7 +201,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
           // end of stream event
           return -1;
         }
-        final byte b = head.readByte();
+        final int b = head.readUnsignedByte();
         if (head.readableBytes() == 0) {
           // remove and release header if no longer required
           byteBufQueue.take();
