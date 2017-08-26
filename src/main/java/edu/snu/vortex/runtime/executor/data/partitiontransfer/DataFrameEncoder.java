@@ -143,7 +143,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
      */
     void recycle() {
       body = null;
-      RECYCLER.recycle(this, handle);
+      handle.recycle(this);
     }
   }
 }

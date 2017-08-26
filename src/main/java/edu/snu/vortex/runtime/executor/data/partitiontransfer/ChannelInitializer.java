@@ -122,7 +122,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
      * @param channelFutureMap  the map to which promises for connections are added
      */
     private ChannelLifecycleTracker(final ChannelGroup channelGroup,
-                            final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap) {
+                                    final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap) {
       this.channelGroup = channelGroup;
       this.channelFutureMap = channelFutureMap;
     }
@@ -130,13 +130,29 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
       channelGroup.add(ctx.channel());
+      channelFutureMap.compute(ctx.channel().remoteAddress(), (address, future) -> {
+        if (future == null) {
+          // probably a channel which this executor has not initiated (i.e. a remote executor connected to this server)
+          return ctx.channel().newSucceededFuture();
+        } else if (future.channel() == ctx.channel()) {
+          // leave unchanged
+          return future;
+        } else {
+          LOG.warn("A channel to {} is active while another channel to the same remote address is in the cache",
+              address);
+          return ctx.channel().newSucceededFuture();
+        }
+      });
+      LOG.debug("A channel with local address {} and remote address {} is now active",
+          ctx.channel().localAddress(), ctx.channel().remoteAddress());
     }
 
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) {
       final SocketAddress address = ctx.channel().remoteAddress();
       channelFutureMap.remove(address);
-      LOG.warn("A channel with remote address {} is now inactive", address);
+      LOG.warn("A channel with local address {} and remote address {} is now inactive",
+          ctx.channel().localAddress(), address);
     }
 
     @Override

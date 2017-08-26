@@ -177,7 +177,7 @@ final class PartitionTransport implements AutoCloseable {
   void writeTo(final SocketAddress remoteAddress, final Object thing) {
     final ChannelFuture channelFuture = channelFutureMap
         .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
-    if (channelFuture.isDone()) {
+    if (channelFuture.isSuccess()) {
       channelFuture.channel().writeAndFlush(thing);
     } else {
       channelFuture.addListener(x -> channelFuture.channel().writeAndFlush(thing));
