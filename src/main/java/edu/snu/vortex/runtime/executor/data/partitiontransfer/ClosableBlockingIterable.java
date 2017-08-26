@@ -103,9 +103,9 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
       try {
         synchronized (iterable) {
           while (iterable.list.size() <= index && !iterable.closed) {
-            wait();
+            iterable.wait();
           }
-          notify();
+          iterable.notify();
           return iterable.list.size() > index;
         }
       } catch (final InterruptedException e) {
@@ -123,11 +123,11 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
       try {
         synchronized (iterable) {
           while (iterable.list.size() <= index && !iterable.closed) {
-            wait();
+            iterable.wait();
           }
           final T element = iterable.list.get(index);
           index++;
-          notify();
+          iterable.notify();
           if (element == null) {
             throw new NoSuchElementException();
           } else {
