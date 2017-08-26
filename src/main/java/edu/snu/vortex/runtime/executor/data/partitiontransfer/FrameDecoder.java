@@ -137,7 +137,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   @Override
   protected void decode(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
-      throws InvalidProtocolBufferException, InterruptedException {
+      throws InvalidProtocolBufferException {
     while (true) {
       final boolean toContinue;
       if (controlBodyBytesToRead > 0) {
@@ -160,15 +160,14 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param in  the {@link ByteBuf} from which to read data
    * @param out the {@link List} to which decoded messages are added
    * @return {@code true} if a header was decoded, {@code false} otherwise
-   * @throws InterruptedException when interrupted while marking the end of stream
    */
-  private boolean onFrameBegins(final ByteBuf in, final List<Object> out) throws InterruptedException {
+  private boolean onFrameBegins(final ByteBuf in, final List<Object> out) {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);
 
     if (in.readableBytes() < HEADER_LENGTH) {
-      // cannot read frame now
+      // cannot read a frame header frame now
       return false;
     }
     final short type = in.readShort();
@@ -233,7 +232,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param in  the {@link ByteBuf} from which to read data
    * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  private void onDataBodyAdded(final ByteBuf in) throws InterruptedException {
+  private void onDataBodyAdded(final ByteBuf in) {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead > 0);
     assert (inputStream != null);
@@ -253,9 +252,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
    *
    * @throws InterruptedException when interrupted while marking the end of stream
    */
-  private void onDataFrameEnd() throws InterruptedException {
+  private void onDataFrameEnd() {
     if (isEndingFrame) {
-      inputStream.end();
+      inputStream.markAsEnded();
       (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);
     }
     inputStream = null;

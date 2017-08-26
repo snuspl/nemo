@@ -61,7 +61,7 @@ final class ControlMessageToPartitionStreamCodec
   /**
    * Creates a {@link ControlMessageToPartitionStreamCodec}.
    *
-   * @param localExecutorId         the id of this executor
+   * @param localExecutorId the id of this executor
    */
   ControlMessageToPartitionStreamCodec(final String localExecutorId) {
     this.localExecutorId = localExecutorId;
@@ -98,7 +98,7 @@ final class ControlMessageToPartitionStreamCodec
     checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
-    in.start();
+    in.startDecodingThread();
     LOG.debug("Sending pull request {} to {} for the partition {} (runtime edge id: {}, partition store: {}, "
         + "hash range: {})", new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(),
         in.getRuntimeEdgeId(), in.getPartitionStore().get().toString(), in.getHashRange().toString()});
@@ -119,7 +119,7 @@ final class ControlMessageToPartitionStreamCodec
     pushTransferIdToOutputStream.put(transferId, in);
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
-    in.start();
+    in.startEncodingThread();
     LOG.debug("Sending push notification {} to {} for the partition {} (runtime edge id: {}, hash range: {})",
         new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(), in.getRuntimeEdgeId(),
         in.getHashRange().toString()});

@@ -33,9 +33,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Output stream for partition transfer. {@link #close()} must be called after finishing write.
@@ -59,9 +57,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private int bufferSize;
   private int dataFrameSize;
 
-  private ByteBufOutputStream byteBufOutputStream;
-  private final BlockingQueue<Object> elementQueue = new LinkedBlockingQueue<>();
-  private ByteBuf nonEndingFrameHeader;
+  private final ClosableBlockingQueue<Object> elementQueue = new ClosableBlockingQueue<>();
   private volatile boolean closed = false;
   private volatile Throwable streamException = null;
 
@@ -97,9 +93,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     this.transferType = type;
     this.transferId = id;
     this.channel = ch;
-    this.nonEndingFrameHeader = ch.alloc().directBuffer(DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH,
-        DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH);
-    DataFrameHeaderEncoder.encodeTypeAndTransferId(type, id, nonEndingFrameHeader);
   }
 
   /**
@@ -148,15 +141,16 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   /**
    * Starts the encoding and writing to the channel.
    */
-  void start() {
+  void startEncodingThread() {
     assert (channel != null);
     assert (coder != null);
-    byteBufOutputStream = new ByteBufOutputStream();
+    final ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream();
     executorService.submit(() -> {
       try {
         while (true) {
           final Object thing = elementQueue.take();
-          if (thing == EndOfPartitionEvent.END_OF_PARTITION) {
+          if (thing == null) {
+            // end of output stream
             channel.pipeline().fireUserEventTriggered(EndOfOutputStreamEvent.newInstance(transferType, transferId));
             byteBufOutputStream.close();
             break;
@@ -179,83 +173,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
-   * Writes an {@link Element}.
-   *
-   * @param element the {@link Element} to write
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
-   */
-  public PartitionOutputStream write(final Element<T, ?, ?> element) throws IOException {
-    throwStreamExceptionIfNeeded();
-    assert (!closed);
-    try {
-      elementQueue.put(element);
-      return this;
-    } catch (final InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Writes a {@link Iterable} of {@link Element}s.
-   *
-   * @param iterable  the {@link Iterable} to write
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
-   */
-  public PartitionOutputStream write(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
-    throwStreamExceptionIfNeeded();
-    assert (!closed);
-    try {
-      elementQueue.put(iterable);
-      return this;
-    } catch (final InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Writes a {@link FileRegion}. Zero-copy transfer is used if possible.
-   * The number of bytes should be within the range of {@link Integer}.
-   *
-   * @param fileRegion  provides the descriptor of the file to write
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
-   */
-  public PartitionOutputStream write(final FileRegion fileRegion) throws IOException {
-    throwStreamExceptionIfNeeded();
-    assert (!closed);
-    try {
-      elementQueue.put(fileRegion);
-      return this;
-    } catch (final InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public void close() throws IOException {
-    throwStreamExceptionIfNeeded();
-    closed = true;
-    try {
-      elementQueue.put(EndOfPartitionEvent.END_OF_PARTITION);
-    } catch (final InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Throws an {@link IOException} if needed.
-   *
-   * @throws IOException if an exception was set
-   */
-  private void throwStreamExceptionIfNeeded() throws IOException {
-    if (streamException != null) {
-      throw new IOException(streamException);
-    }
-  }
-
-  /**
    * Sets an stream exception.
    *
    * @param cause the cause of exception handling
@@ -265,10 +182,82 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
+   * Writes an {@link Element}.
+   *
+   * @param element the {@link Element} to write
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream write(final Element<T, ?, ?> element) throws IOException {
+    checkWritableCondition();
+    elementQueue.put(element);
+    return this;
+  }
+
+  /**
+   * Writes a {@link Iterable} of {@link Element}s.
+   *
+   * @param iterable  the {@link Iterable} to write
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream write(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
+    checkWritableCondition();
+    elementQueue.put(iterable);
+    return this;
+  }
+
+  /**
+   * Writes a {@link FileRegion}. Zero-copy transfer is used if possible.
+   * The number of bytes should be within the range of {@link Integer}.
+   *
+   * @param fileRegion  provides the descriptor of the file to write
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream write(final FileRegion fileRegion) throws IOException {
+    checkWritableCondition();
+    elementQueue.put(fileRegion);
+    return this;
+  }
+
+  /**
+   * Closes this stream.
+   *
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  @Override
+  public void close() throws IOException {
+    checkWritableCondition();
+    closed = true;
+    elementQueue.close();
+  }
+
+  /**
+   * Throws an {@link IOException} if needed.
+   *
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  private void checkWritableCondition() throws IOException {
+    if (streamException != null) {
+      throw new IOException(streamException);
+    }
+    if (closed) {
+      throw new IllegalStateException("This PartitionOutputStream is closed");
+    }
+  }
+
+  /**
    * An {@link OutputStream} implementation which buffers data to {@link ByteBuf}s.
    */
   private final class ByteBufOutputStream extends OutputStream {
 
+    private final ByteBuf nonEndingFrameHeader;
     private ByteBuf byteBuf;
     private CompositeByteBuf compositeByteBuf;
 
@@ -278,6 +267,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     private ByteBufOutputStream() {
       createByteBuf();
       createCompositeByteBuf();
+      this.nonEndingFrameHeader = channel.alloc().directBuffer(DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH,
+          DataFrameHeaderEncoder.TYPE_AND_TRANSFERID_LENGTH);
+      DataFrameHeaderEncoder.encodeTypeAndTransferId(transferType, transferId, nonEndingFrameHeader);
     }
 
     @Override
@@ -415,19 +407,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       flush();
       writeDataFrameHeader(ending, (int) fileRegion.count());
       channel.writeAndFlush(fileRegion);
-    }
-  }
-
-  /**
-   * An event meaning the end of outbound {@link edu.snu.vortex.compiler.ir.Element}s.
-   */
-  private static final class EndOfPartitionEvent {
-    static final EndOfPartitionEvent END_OF_PARTITION = new EndOfPartitionEvent();
-
-    /**
-     * Private constructor.
-     */
-    private EndOfPartitionEvent() {
     }
   }
 

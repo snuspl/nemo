@@ -20,8 +20,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.EmptyByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +38,6 @@ import java.util.function.Consumer;
  */
 public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionStream {
 
-  private static final ByteBuf END_OF_STREAM_EVENT = new EmptyByteBuf(UnpooledByteBufAllocator.DEFAULT);
   private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String senderExecutorId;
@@ -91,29 +88,27 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * Supply {@link ByteBuf} to this stream.
    *
    * @param byteBuf the {@link ByteBuf} to supply
-   * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  void append(final ByteBuf byteBuf) throws InterruptedException {
+  void append(final ByteBuf byteBuf) {
     if (byteBuf.readableBytes() > 0) {
-      byteBufInputStream.byteBufDeque.putLast(byteBuf);
+      byteBufInputStream.byteBufQueue.put(byteBuf);
     } else {
+      // ignore empty data frames
       byteBuf.release();
     }
   }
 
   /**
    * Mark as {@link #append(ByteBuf)} event is no longer expected.
-   *
-   * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  void end() throws InterruptedException {
-    byteBufInputStream.byteBufDeque.putLast(END_OF_STREAM_EVENT);
+  void markAsEnded() {
+    byteBufInputStream.byteBufQueue.close();
   }
 
   /**
    * Start decoding {@link ByteBuf}s into {@link Element}s.
    */
-  void start() {
+  void startDecodingThread() {
     executorService.submit(() -> {
       try {
         // TODO #299: Separate Serialization from Here
@@ -137,11 +132,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * @param cause the cause of exception handling
    */
   void onExceptionCaught(final Throwable cause) {
-    try {
-      end();
-    } catch (final InterruptedException e) {
-      LOG.error(String.format("An exception thrown while handling channel exception %s", cause.toString()), e);
-    }
+    markAsEnded();
     completeFuture.completeExceptionally(cause);
   }
 
@@ -199,24 +190,21 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    */
   private static final class ByteBufInputStream extends InputStream {
 
-    private final BlockingDeque<ByteBuf> byteBufDeque = new LinkedBlockingDeque<>();
+    private final ClosableBlockingQueue<ByteBuf> byteBufQueue = new ClosableBlockingQueue<>();
 
     @Override
     public int read() throws IOException {
       try {
-        final ByteBuf head = byteBufDeque.takeFirst();
-        if (head.readableBytes() == 0) {
+        final ByteBuf head = byteBufQueue.peek();
+        if (head == null) {
           // end of stream event
-          byteBufDeque.putFirst(head);
           return -1;
         }
         final byte b = head.readByte();
         if (head.readableBytes() == 0) {
-          // release header if no longer required
+          // remove and release header if no longer required
+          byteBufQueue.take();
           head.release();
-        } else {
-          // if not, add to deque
-          byteBufDeque.putFirst(head);
         }
         return b;
       } catch (final InterruptedException e) {
@@ -238,18 +226,16 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         // the number of bytes to read
         int capacity = maxLength;
         while (capacity > 0) {
-          final ByteBuf head = byteBufDeque.takeFirst();
-          if (head.readableBytes() == 0) {
+          final ByteBuf head = byteBufQueue.peek();
+          if (head == null) {
             // end of stream event
-            byteBufDeque.putFirst(head);
             return readBytes == 0 ? -1 : readBytes;
           }
           final int toRead = Math.min(head.readableBytes(), capacity);
           head.readBytes(bytes, baseOffset + readBytes, toRead);
           if (head.readableBytes() == 0) {
+            byteBufQueue.take();
             head.release();
-          } else {
-            byteBufDeque.putFirst(head);
           }
           readBytes += toRead;
           capacity -= toRead;
@@ -271,21 +257,20 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         // the number of bytes to skip
         long toSkip = n;
         while (toSkip > 0) {
-          final ByteBuf head = byteBufDeque.takeFirst();
-          if (head.readableBytes() == 0) {
+          final ByteBuf head = byteBufQueue.peek();
+          if (head == null) {
             // end of stream event
-            byteBufDeque.putFirst(head);
             return skippedBytes;
           }
           if (head.readableBytes() > toSkip) {
             head.skipBytes((int) toSkip);
             skippedBytes += toSkip;
-            byteBufDeque.putFirst(head);
             return skippedBytes;
           } else {
             // discard the whole ByteBuf
             skippedBytes += head.readableBytes();
             toSkip -= head.readableBytes();
+            byteBufQueue.take();
             head.release();
           }
         }
@@ -296,12 +281,16 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
     }
 
     @Override
-    public int available() {
-      final ByteBuf head = byteBufDeque.peekFirst();
-      if (head == null) {
-        return 0;
-      } else {
-        return head.readableBytes();
+    public int available() throws IOException {
+      try {
+        final ByteBuf head = byteBufQueue.peek();
+        if (head == null) {
+          return 0;
+        } else {
+          return head.readableBytes();
+        }
+      } catch (final InterruptedException e) {
+        throw new IOException(e);
       }
     }
 
@@ -312,9 +301,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
      * @throws InterruptedException when interrupted while waiting for the queue to be not empty
      */
     private boolean isEnded() throws InterruptedException {
-      final ByteBuf head = byteBufDeque.takeFirst();
-      byteBufDeque.putFirst(head);
-      return head.readableBytes() == 0;
+      return byteBufQueue.peek() == null;
     }
   }
 }
