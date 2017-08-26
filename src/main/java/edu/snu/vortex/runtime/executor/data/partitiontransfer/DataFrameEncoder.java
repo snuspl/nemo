@@ -21,6 +21,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.util.Recycler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -33,6 +35,8 @@ import java.util.List;
 @ChannelHandler.Sharable
 final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.DataFrame> {
 
+  private static final Logger LOG = LoggerFactory.getLogger(DataFrameEncoder.class);
+
   static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
   static final int LENGTH_LENGTH = Integer.BYTES;
   static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
@@ -42,7 +46,8 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     // encode header
     final ByteBuf header = ctx.alloc().ioBuffer(HEADER_LENGTH, HEADER_LENGTH);
     final short type;
-    if (in.type == ControlMessage.PartitionTransferType.PULL) {
+    final boolean isPull = in.type == ControlMessage.PartitionTransferType.PULL;
+    if (isPull) {
       if (in.ending) {
         type = FrameDecoder.PULL_ENDING;
       } else {
@@ -72,8 +77,10 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     if (in.ending) {
       final ControlMessageToPartitionStreamCodec duplexHandler
           = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
-      (in.type == ControlMessage.PartitionTransferType.PULL ? duplexHandler.getPullTransferIdToOutputStream()
-          : duplexHandler.getPushTransferIdToOutputStream()).remove(in.transferId);
+      (isPull ? duplexHandler.getPullTransferIdToOutputStream() : duplexHandler.getPushTransferIdToOutputStream())
+          .remove(in.transferId);
+      LOG.debug("Transport %s:%d, where the partition sender is {} and the receiver is {}, was closed", new Object[]{
+          isPull ? "pull" : "push", in.transferId, ctx.channel().localAddress(), ctx.channel().remoteAddress()});
     }
   }
 

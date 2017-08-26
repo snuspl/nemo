@@ -53,6 +53,7 @@ final class ControlMessageToPartitionStreamCodec
   private final Map<Short, PartitionOutputStream> pushTransferIdToOutputStream = new HashMap<>();
 
   private final String localExecutorId;
+  private SocketAddress localAddress;
   private SocketAddress remoteAddress;
 
   private short nextOutboundPullTransferId = 0;
@@ -69,6 +70,7 @@ final class ControlMessageToPartitionStreamCodec
 
   @Override
   public void channelActive(final ChannelHandlerContext ctx) {
+    this.localAddress = ctx.channel().localAddress();
     this.remoteAddress = ctx.channel().remoteAddress();
     ctx.fireChannelActive();
   }
@@ -99,9 +101,11 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
     in.startDecodingThread();
-    LOG.debug("Sending pull request {} to {} for the partition {} (runtime edge id: {}, partition store: {}, "
-        + "hash range: {})", new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(),
-        in.getRuntimeEdgeId(), in.getPartitionStore().get().toString(), in.getHashRange().toString()});
+    LOG.debug("Sending pull request {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
+        + "partition store: {}, hash range: {})",
+        new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
+        in.getPartitionId(), in.getRuntimeEdgeId(), in.getPartitionStore().get().toString(),
+        in.getHashRange().toString()});
   }
 
   /**
@@ -120,9 +124,10 @@ final class ControlMessageToPartitionStreamCodec
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
     in.startEncodingThread();
-    LOG.debug("Sending push notification {} to {} for the partition {} (runtime edge id: {}, hash range: {})",
-        new Object[]{transferId, in.getRemoteExecutorId(), in.getPartitionId(), in.getRuntimeEdgeId(),
-        in.getHashRange().toString()});
+    LOG.debug("Sending push notification {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
+        + "hash range: {})",
+        new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
+        in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
   }
 
   @Override
@@ -154,9 +159,10 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
-    LOG.debug("Received pull request {} from {} for the partition {} (runtime edge id: {}, partition store: {}, "
-        + "hash range: {})", new Object[]{transferId, in.getControlMessageSourceId(), in.getPartitionId(),
-        in.getRuntimeEdgeId(), outputStream.getPartitionStore().get().toString(),
+    LOG.debug("Received pull request {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
+        + "partition store: {}, hash range: {})",
+        new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
+        in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getPartitionStore().get().toString(),
         outputStream.getHashRange().toString()});
   }
 
@@ -177,9 +183,10 @@ final class ControlMessageToPartitionStreamCodec
         in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
-    LOG.debug("Received push notification {} from {} for the partition {} (runtime edge id: {}, hash range: {})",
-        new Object[]{transferId, in.getControlMessageSourceId(), in.getPartitionId(), in.getRuntimeEdgeId(),
-        inputStream.getHashRange().toString()});
+    LOG.debug("Received push notification {} from {}({}) to {}({}) for the partition {} (runtime edge id: {},"
+        + "hash range: {})",
+        new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
+        in.getPartitionId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
   }
 
   /**
