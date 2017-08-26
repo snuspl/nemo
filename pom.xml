@@ -24,15 +24,9 @@
         <commons.lang.version>3.5</commons.lang.version>
         <hadoop.version>2.7.2</hadoop.version>
         <log4j.configuration>file://config/log4j.properties</log4j.configuration>
-        <netty.version>4.1.15.Final</netty.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>${netty.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
