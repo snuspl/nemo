@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -24,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
-import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -94,7 +92,6 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
         // inbound
-        .addLast(new EndOfOutputStreamEventHandler())
         .addLast(new FrameDecoder())
         // outbound
         .addLast(CONTROL_FRAME_ENCODER)
@@ -147,31 +144,6 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
       LOG.error(String.format("Exception caught in the channel from %s to %s", ctx.channel().localAddress(),
           ctx.channel().remoteAddress()), cause);
       ctx.close();
-    }
-  }
-
-  /**
-   * Handles {@link PartitionOutputStream.EndOfOutputStreamEvent}.
-   */
-  private static final class EndOfOutputStreamEventHandler extends ChannelInboundHandlerAdapter {
-    private Map<Short, PartitionOutputStream> pullTransferIdToOutputStream;
-    private Map<Short, PartitionOutputStream> pushTransferIdToOutputStream;
-
-    @Override
-    public void channelActive(final ChannelHandlerContext ctx) {
-      final ControlMessageToPartitionStreamCodec duplexHandler
-          = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
-      pullTransferIdToOutputStream = duplexHandler.getPullTransferIdToOutputStream();
-      pushTransferIdToOutputStream = duplexHandler.getPushTransferIdToOutputStream();
-      ctx.fireChannelActive();
-    }
-
-    @Override
-    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-      final PartitionOutputStream.EndOfOutputStreamEvent event = (PartitionOutputStream.EndOfOutputStreamEvent) evt;
-      (event.getTransferType() == ControlMessage.PartitionTransferType.PULL ? pullTransferIdToOutputStream
-          : pushTransferIdToOutputStream).remove(event.getTransferId());
-      event.recycle();
     }
   }
 }

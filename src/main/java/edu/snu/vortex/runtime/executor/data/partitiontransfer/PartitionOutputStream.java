@@ -25,7 +25,6 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.FileRegion;
-import io.netty.util.Recycler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,7 +150,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
           final Object thing = elementQueue.take();
           if (thing == null) {
             // end of output stream
-            channel.pipeline().fireUserEventTriggered(EndOfOutputStreamEvent.newInstance(transferType, transferId));
             byteBufOutputStream.close();
             break;
           } else if (thing instanceof Iterable) {
@@ -384,73 +382,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       flush();
       channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
           (int) fileRegion.count(), fileRegion));
-    }
-  }
-
-  /**
-   * An event meaning the end of a {@link PartitionOutputStream}.
-   */
-  static final class EndOfOutputStreamEvent {
-
-    private static final Recycler<EndOfOutputStreamEvent> RECYCLER = new Recycler<EndOfOutputStreamEvent>() {
-      @Override
-      protected EndOfOutputStreamEvent newObject(final Recycler.Handle handle) {
-        return new EndOfOutputStreamEvent(handle);
-      }
-    };
-
-    private final Recycler.Handle handle;
-
-    /**
-     * Creates a {@link EndOfOutputStreamEvent}.
-     *
-     * @param handle  the recycler handle
-     */
-    private EndOfOutputStreamEvent(final Recycler.Handle handle) {
-      this.handle = handle;
-    }
-
-    private ControlMessage.PartitionTransferType transferType;
-    private short transferId;
-
-    /**
-     * Creates an {@link EndOfOutputStreamEvent}.
-     *
-     * @param transferType  the transfer type
-     * @param transferId    the transfer id
-     * @return an {@link EndOfOutputStreamEvent}
-     */
-    private static EndOfOutputStreamEvent newInstance(final ControlMessage.PartitionTransferType transferType,
-                                                      final short transferId) {
-      final EndOfOutputStreamEvent event = RECYCLER.get();
-      event.transferType = transferType;
-      event.transferId = transferId;
-      return event;
-    }
-
-    /**
-     * Recycles this object.
-     */
-    void recycle() {
-      RECYCLER.recycle(this, handle);
-    }
-
-    /**
-     * Gets the transfer type.
-     *
-     * @return the transfer type
-     */
-    ControlMessage.PartitionTransferType getTransferType() {
-      return transferType;
-    }
-
-    /**
-     * Gets the transfer id.
-     *
-     * @return the transfer id
-     */
-    short getTransferId() {
-      return transferId;
     }
   }
 }

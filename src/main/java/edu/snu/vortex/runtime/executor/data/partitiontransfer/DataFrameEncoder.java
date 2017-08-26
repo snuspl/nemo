@@ -67,6 +67,14 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
 
     // recycle DataFrame object
     in.recycle();
+
+    // a transport context is closed. remove from map.
+    if (in.ending) {
+      final ControlMessageToPartitionStreamCodec duplexHandler
+          = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
+      (in.type == ControlMessage.PartitionTransferType.PULL ? duplexHandler.getPullTransferIdToOutputStream()
+          : duplexHandler.getPushTransferIdToOutputStream()).remove(in.transferId);
+    }
   }
 
   /**
