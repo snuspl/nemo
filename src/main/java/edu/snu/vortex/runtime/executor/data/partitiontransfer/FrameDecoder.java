@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 
@@ -88,6 +89,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   private Map<Short, PartitionInputStream> pullTransferIdToInputStream;
   private Map<Short, PartitionInputStream> pushTransferIdToInputStream;
+  private SocketAddress localAddress;
+  private SocketAddress remoteAddress;
 
   /**
    * The number of bytes consisting body of a control frame to be read next.
@@ -132,6 +135,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
         = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
     pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
     pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
+    localAddress = ctx.channel().localAddress();
+    remoteAddress = ctx.channel().remoteAddress();
     ctx.fireChannelActive();
   }
 
@@ -173,6 +178,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
     final short type = in.readShort();
     transferId = in.readShort();
     final int length = in.readInt();
+    if (length < 0) {
+      throw new IllegalStateException(String.format("Frame length is negative: %d", length));
+    }
     if (type == CONTROL_TYPE) {
       // setup context for reading control frame body
       controlBodyBytesToRead = length;
@@ -180,8 +188,17 @@ final class FrameDecoder extends ByteToMessageDecoder {
       // setup context for reading data frame body
       dataBodyBytesToRead = length;
       isPullTransfer = type == PULL_NONENDING || type == PULL_ENDING;
+      final boolean isPushTransfer = type == PUSH_NONENDING || type == PUSH_ENDING;
+      if (!isPullTransfer && !isPushTransfer) {
+        throw new IllegalStateException(String.format("Illegal frame type: %d", type));
+      }
       isEndingFrame = type == PULL_ENDING || type == PUSH_ENDING;
       inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
+      if (inputStream == null) {
+        throw new IllegalStateException(String.format("Transport context for %s:%d was not found between the local"
+            + "endpoint %s and the remote endpoint %s", isPullTransfer ? "pull" : "push", transferId, localAddress,
+            remoteAddress));
+      }
       if (dataBodyBytesToRead == 0) {
         onDataFrameEnd();
       }
