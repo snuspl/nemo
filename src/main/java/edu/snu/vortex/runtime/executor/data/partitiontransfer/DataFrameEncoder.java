@@ -79,7 +79,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
           = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
       (isPull ? duplexHandler.getPullTransferIdToOutputStream() : duplexHandler.getPushTransferIdToOutputStream())
           .remove(in.transferId);
-      LOG.debug("Transport %s:%d, where the partition sender is {} and the receiver is {}, was closed", new Object[]{
+      LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, was closed", new Object[]{
           isPull ? "pull" : "push", in.transferId, ctx.channel().localAddress(), ctx.channel().remoteAddress()});
     }
   }
