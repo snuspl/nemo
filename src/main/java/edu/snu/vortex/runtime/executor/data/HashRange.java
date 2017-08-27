@@ -73,7 +73,7 @@ public final class HashRange {
    * @return {@code true} if this hash range includes the specified value, {@code false} otherwise
    */
   public boolean includes(final int i) {
-    return i >= rangeStartInclusive && i < rangeEndExclusive;
+    return all || (i >= rangeStartInclusive && i < rangeEndExclusive);
   }
 
   @Override
