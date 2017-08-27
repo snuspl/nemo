@@ -26,6 +26,7 @@ import io.netty.channel.FileRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -249,21 +250,14 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    */
   private final class ByteBufOutputStream extends OutputStream {
 
-    private ByteBuf byteBuf;
-
-    /**
-     * Creates a {@link ByteBufOutputStream}.
-     */
-    private ByteBufOutputStream() {
-      createByteBuf();
-    }
+    @Nullable
+    private ByteBuf byteBuf = null;
 
     @Override
     public void write(final int i) {
+      createByteBufIfNeeded();
       byteBuf.writeByte(i);
-      if (byteBuf.writableBytes() == 0) {
-        flush();
-      }
+      flushIfFull();
     }
 
     @Override
@@ -271,13 +265,12 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       int cursor = offset;
       int bytesToWrite = length;
       while (bytesToWrite > 0) {
+        createByteBufIfNeeded();
         final int toWrite = Math.min(bytesToWrite, byteBuf.writableBytes());
         byteBuf.writeBytes(bytes, cursor, toWrite);
-        if (byteBuf.writableBytes() == 0) {
-          flush();
-        }
         cursor += toWrite;
         bytesToWrite -= toWrite;
+        flushIfFull();
       }
     }
 
@@ -286,21 +279,27 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      */
     @Override
     public void flush() {
-      if (byteBuf.readableBytes() > 0) {
-        writeByteBuf(false);
-        createByteBuf();
+      if (byteBuf != null && byteBuf.readableBytes() > 0) {
+        writeDataFrame(false);
       }
     }
 
     @Override
     public void close() {
-      if (byteBuf.readableBytes() > 0) {
-        writeByteBuf(true);
-      } else {
+      // should send an ending frame to indicate the end of the partition stream
+      writeDataFrame(true);
+      if (byteBuf != null) {
         byteBuf.release();
-        // should send an ending frame to indicate the end of the partition stream
-        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, true, transferId,
-            0, null));
+        byteBuf = null;
+      }
+    }
+
+    /**
+     * Flushes the buffer if the buffer is full.
+     */
+    private void flushIfFull() {
+      if (byteBuf != null && byteBuf.writableBytes() == 0) {
+        writeDataFrame(false);
       }
     }
 
@@ -309,16 +308,24 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      *
      * @param ending  whether or not the frame is an ending frame
      */
-    private void writeByteBuf(final boolean ending) {
-      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-          byteBuf.readableBytes(), byteBuf));
+    private void writeDataFrame(final boolean ending) {
+      if (byteBuf != null && byteBuf.readableBytes() > 0) {
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+            byteBuf.readableBytes(), byteBuf));
+        byteBuf = null;
+      } else {
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+            0, null));
+      }
     }
 
     /**
-     * Creates {@link ByteBuf}.
+     * Creates {@link ByteBuf} if needed.
      */
-    private void createByteBuf() {
-      byteBuf = channel.alloc().ioBuffer(bufferSize, bufferSize);
+    private void createByteBufIfNeeded() {
+      if (byteBuf == null) {
+        byteBuf = channel.alloc().ioBuffer(bufferSize, bufferSize);
+      }
     }
 
     /**
