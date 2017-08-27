@@ -32,7 +32,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -101,7 +100,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), Optional.empty());
+        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all());
   }
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
@@ -112,7 +111,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), Optional.empty()));
+          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all()));
     }
 
     return futures;
@@ -126,7 +125,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), Optional.empty()));
+          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all()));
     }
 
     return futures;
@@ -154,7 +153,7 @@ public final class InputReader extends DataTransfer {
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
               partitionId, getId(), runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement),
-              Optional.of(hashRangeToRead)));
+              hashRangeToRead));
     }
 
     return futures;

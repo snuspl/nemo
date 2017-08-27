@@ -44,7 +44,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
-  private final Optional<HashRange> hashRange;
+  private final HashRange hashRange;
   private Coder<T, ?, ?> coder;
   private ExecutorService executorService;
 
@@ -59,13 +59,13 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * @param partitionStore    the partition store
    * @param partitionId       the partition id
    * @param runtimeEdgeId     the runtime edge id
-   * @param hashRange         the hash range (optional)
+   * @param hashRange         the hash range
    */
   PartitionInputStream(final String senderExecutorId,
                        final Optional<Attribute> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
-                       final Optional<HashRange> hashRange) {
+                       final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
     this.partitionStore = partitionStore;
     this.partitionId = partitionId;
@@ -164,7 +164,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   @Override
-  public Optional<HashRange> getHashRange() {
+  public HashRange getHashRange() {
     return hashRange;
   }
 

@@ -19,13 +19,23 @@ package edu.snu.vortex.runtime.executor.data;
  * Descriptor for hash range.
  */
 public final class HashRange {
+  private static final HashRange ALL = new HashRange(true, 0, Integer.MAX_VALUE);
 
+  private final boolean all;
   private final int rangeStartInclusive;
   private final int rangeEndExclusive;
 
-  private HashRange(final int rangeStartInclusive, final int rangeEndExclusive) {
+  private HashRange(final boolean all, final int rangeStartInclusive, final int rangeEndExclusive) {
+    this.all = all;
     this.rangeStartInclusive = rangeStartInclusive;
     this.rangeEndExclusive = rangeEndExclusive;
+  }
+
+  /**
+   * @return Gets a hash range descriptor representing the whole data from a partition.
+   */
+  public static HashRange all() {
+    return ALL;
   }
 
   /**
@@ -34,7 +44,14 @@ public final class HashRange {
    * @return A hash range descriptor representing [{@code rangeStartInclusive}, {@code rangeEndExclusive})
    */
   public static HashRange of(final int rangeStartInclusive, final int rangeEndExclusive) {
-    return new HashRange(rangeStartInclusive, rangeEndExclusive);
+    return new HashRange(false, rangeStartInclusive, rangeEndExclusive);
+  }
+
+  /**
+   * @return whether this hash range descriptor represents the whole data or not
+   */
+  public boolean isAll() {
+    return all;
   }
 
   /**
@@ -63,12 +80,16 @@ public final class HashRange {
    * @return {@code true} if this hash range includes the specified value, {@code false} otherwise
    */
   public boolean includes(final int i) {
-    return i >= rangeStartInclusive && i < rangeEndExclusive;
+    return all || (i >= rangeStartInclusive && i < rangeEndExclusive);
   }
 
   @Override
   public String toString() {
-    return String.format("[%d, %d)", rangeStartInclusive, rangeEndExclusive);
+    if (all) {
+      return "ALL";
+    } else {
+      return String.format("[%d, %d)", rangeStartInclusive, rangeEndExclusive);
+    }
   }
 
   @Override
@@ -80,6 +101,9 @@ public final class HashRange {
       return false;
     }
     final HashRange hashRange = (HashRange) o;
+    if (all != hashRange.all) {
+      return false;
+    }
     if (rangeStartInclusive != hashRange.rangeStartInclusive) {
       return false;
     }
@@ -88,6 +112,9 @@ public final class HashRange {
 
   @Override
   public int hashCode() {
-    return 31 * rangeStartInclusive + rangeEndExclusive;
+    int result = (all ? 1 : 0);
+    result = 31 * result + rangeStartInclusive;
+    result = 31 * result + rangeEndExclusive;
+    return result;
   }
 }
