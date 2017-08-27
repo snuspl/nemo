@@ -19,7 +19,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
-import io.netty.channel.FileRegion;
+import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.ByteArrayOutputStream;
@@ -45,13 +45,13 @@ abstract class FileStore implements PartitionStore {
   }
 
   /**
-   * Gets the list of {@link FileRegion}s for the specified partition.
+   * Gets the list of {@link FileArea}s for the specified partition.
    *
    * @param partitionId the partition id
    * @param hashRange   the hash range
-   * @return the list of file regions
+   * @return the list of file areas
    */
-  public abstract List<FileRegion> getFileRegions(final String partitionId, final HashRange hashRange);
+  public abstract List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange);
 
   /**
    * Makes the given stream to a block and write it to the given file partition.

@@ -41,6 +41,9 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
   static final int LENGTH_LENGTH = Integer.BYTES;
   static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
 
+  // the maximum length of a frame body. 2**32 - 1
+  static final long LENGTH_MAX = 4294967295L;
+
   @Override
   protected void encode(final ChannelHandlerContext ctx, final DataFrame in, final List<Object> out) {
     // encode header
@@ -62,7 +65,11 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     }
     header.writeShort(type);
     header.writeShort(in.transferId);
-    header.writeInt(in.length);
+
+    // in.length should not exceed the range of unsigned int
+    assert (in.length <= LENGTH_MAX);
+    header.writeInt((int) in.length);
+
     out.add(header);
 
     // encode body
@@ -110,7 +117,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     private ControlMessage.PartitionTransferType type;
     private boolean ending;
     private short transferId;
-    private int length;
+    private long length;
     @Nullable
     private Object body;
 
@@ -127,7 +134,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     static DataFrame newInstance(final ControlMessage.PartitionTransferType type,
                                  final boolean ending,
                                  final short transferId,
-                                 final int length,
+                                 final long length,
                                  @Nullable final Object body) {
       final DataFrame dataFrame = RECYCLER.get();
       dataFrame.type = type;

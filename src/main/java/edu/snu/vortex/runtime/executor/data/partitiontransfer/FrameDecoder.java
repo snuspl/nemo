@@ -95,12 +95,12 @@ final class FrameDecoder extends ByteToMessageDecoder {
   /**
    * The number of bytes consisting body of a control frame to be read next.
    */
-  private int controlBodyBytesToRead = 0;
+  private long controlBodyBytesToRead = 0;
 
   /**
    * The number of bytes consisting body of a data frame to be read next.
    */
-  private int dataBodyBytesToRead = 0;
+  private long dataBodyBytesToRead = 0;
 
   /**
    * The {@link PartitionInputStream} to which received bytes are added.
@@ -177,7 +177,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
     }
     final short type = in.readShort();
     transferId = in.readShort();
-    final int length = in.readInt();
+    final long length = in.readUnsignedInt();
     if (length < 0) {
       throw new IllegalStateException(String.format("Frame length is negative: %d", length));
     }
@@ -219,6 +219,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);
 
+    assert (controlBodyBytesToRead <= Integer.MAX_VALUE);
+
     if (in.readableBytes() < controlBodyBytesToRead) {
       // cannot read body now
       return false;
@@ -230,15 +232,15 @@ final class FrameDecoder extends ByteToMessageDecoder {
       bytes = in.array();
       offset = in.arrayOffset() + in.readerIndex();
     } else {
-      bytes = new byte[controlBodyBytesToRead];
-      in.getBytes(in.readerIndex(), bytes, 0, controlBodyBytesToRead);
+      bytes = new byte[(int) controlBodyBytesToRead];
+      in.getBytes(in.readerIndex(), bytes, 0, (int) controlBodyBytesToRead);
       offset = 0;
     }
     final ControlMessage.PartitionTransferControlMessage controlMessage
-        = ControlMessage.PartitionTransferControlMessage.PARSER.parseFrom(bytes, offset, controlBodyBytesToRead);
+        = ControlMessage.PartitionTransferControlMessage.PARSER.parseFrom(bytes, offset, (int) controlBodyBytesToRead);
 
     out.add(controlMessage);
-    in.skipBytes(controlBodyBytesToRead);
+    in.skipBytes((int) controlBodyBytesToRead);
     controlBodyBytesToRead = 0;
     return true;
   }
@@ -254,8 +256,10 @@ final class FrameDecoder extends ByteToMessageDecoder {
     assert (dataBodyBytesToRead > 0);
     assert (inputStream != null);
 
-    final int length = Math.min(dataBodyBytesToRead, in.readableBytes());
-    final ByteBuf body = in.readSlice(length).retain();
+    // length should not exceed Integer.MAX_VALUE (since in.readableBytes() returns an int)
+    final long length = Math.min(dataBodyBytesToRead, in.readableBytes());
+    assert (length <= Integer.MAX_VALUE);
+    final ByteBuf body = in.readSlice((int) length).retain();
     inputStream.append(body);
 
     dataBodyBytesToRead -= length;

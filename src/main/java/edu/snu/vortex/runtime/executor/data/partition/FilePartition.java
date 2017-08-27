@@ -20,8 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -185,23 +184,22 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   }
 
   /**
-   * Retrieves the list of {@link FileRegion}s for the specified {@link HashRange}.
+   * Retrieves the list of {@link FileArea}s for the specified {@link HashRange}.
    *
    * @param hashRange     the hash range
-   * @return list of the file regions
+   * @return list of the file areas
    * @throws IOException if failed to open a file channel
    */
-  public final List<FileRegion> asFileRegions(final HashRange hashRange) throws IOException {
-    final List<FileRegion> fileRegions = new ArrayList<>();
+  public final List<FileArea> asFileAreas(final HashRange hashRange) throws IOException {
+    final List<FileArea> fileAreas = new ArrayList<>();
     long position = 0;
     for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
       if (hashRange.includes(blockMetadata.getHashValue())) {
-        fileRegions.add(new DefaultFileRegion(FileChannel.open(Paths.get(filePath)), position,
-        blockMetadata.getBlockSize()));
+        fileAreas.add(FileArea.of(filePath, position, blockMetadata.getBlockSize()));
       }
       position += blockMetadata.getBlockSize();
     }
-    return fileRegions;
+    return fileAreas;
   }
 
   /**

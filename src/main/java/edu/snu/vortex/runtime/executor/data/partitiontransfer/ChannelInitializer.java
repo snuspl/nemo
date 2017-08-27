@@ -57,7 +57,7 @@ import java.util.concurrent.ConcurrentMap;
  *   <= | DataFrameEncoder | <=== ByteBuf === PartitionOutputStream buffer flush
  *      +------------------+
  *      +------------------+
- *   <= | DataFrameEncoder | <= FileRegion == A FileRegion added to PartitionOutputStream
+ *   <= | DataFrameEncoder | <== FileArea === A FileArea added to PartitionOutputStream
  *      +------------------+
  * }
  * </pre>

@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,9 @@ import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
@@ -153,8 +157,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
             for (final Element element : iterable) {
               coder.encode(element, byteBufOutputStream);
             }
-          } else if (thing instanceof FileRegion) {
-            byteBufOutputStream.writeFileRegion(false, (FileRegion) thing);
+          } else if (thing instanceof FileArea) {
+            byteBufOutputStream.writeFileArea(false, (FileArea) thing);
           } else {
             coder.encode((Element) thing, byteBufOutputStream);
           }
@@ -210,33 +214,31 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
-   * Writes a {@link FileRegion}. Zero-copy transfer is used if possible.
-   * The number of bytes should be within the range of {@link Integer}.
+   * Writes a {@link FileArea}. Zero-copy transfer is used if possible.
    *
-   * @param fileRegion  provides the descriptor of the file to write
+   * @param fileArea  provides the descriptor of the file to write
    * @return {@link PartitionOutputStream} (i.e. {@code this})
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeFileRegion(final FileRegion fileRegion) throws IOException {
+  public PartitionOutputStream writeFileArea(final FileArea fileArea) throws IOException {
     checkWritableCondition();
-    elementQueue.put(fileRegion);
+    elementQueue.put(fileArea);
     return this;
   }
 
   /**
-   * Writes a {@link Iterable} of {@link FileRegion}s. Zero-copy transfer is used if possible.
-   * The number of bytes of each {@link FileRegion} should be within the range of {@link Integer}.
+   * Writes a {@link Iterable} of {@link FileArea}s. Zero-copy transfer is used if possible.
    *
-   * @param fileRegions the list of file regions
+   * @param fileAreas the list of the file areas
    * @return {@link PartitionOutputStream} (i.e. {@code this})
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeFileRegions(final Iterable<FileRegion> fileRegions) throws IOException {
+  public PartitionOutputStream writeFileAreas(final Iterable<FileArea> fileAreas) throws IOException {
     checkWritableCondition();
-    for (final FileRegion fileRegion : fileRegions) {
-      elementQueue.put(fileRegion);
+    for (final FileArea fileArea : fileAreas) {
+      elementQueue.put(fileArea);
     }
     return this;
   }
@@ -357,21 +359,26 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     }
 
     /**
-     * Writes a data frame from {@link FileRegion}.
-     * The number of bytes should be within the range of {@link Integer}.
+     * Writes a data frame from {@link FileArea}.
      *
-     * @param ending      whether or not the frame is an ending frame
-     * @param fileRegion  the {@link FileRegion} to transfer
+     * @param ending    whether or not the frame is an ending frame
+     * @param fileArea  the {@link FileArea} to transfer
+     * @throws IOException when failed to open the file
      */
-    private void writeFileRegion(final boolean ending, final FileRegion fileRegion) {
-      if (fileRegion.count() > Integer.MAX_VALUE) {
-        throw new IllegalArgumentException(String.format("Too big count of the FileRegion to send: %d",
-            fileRegion.count()));
-      }
+    private void writeFileArea(final boolean ending, final FileArea fileArea) throws IOException {
       flush();
-      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-          (int) fileRegion.count(), fileRegion));
-      streamLength += fileRegion.count();
+      final Path path = Paths.get(fileArea.getPath());
+      long cursor = fileArea.getPosition();
+      long bytesToSend = fileArea.getCount();
+      while (bytesToSend > 0) {
+        final long size = Math.min(bytesToSend, DataFrameEncoder.LENGTH_MAX);
+        final FileRegion fileRegion = new DefaultFileRegion(FileChannel.open(path), cursor, size);
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+            size, fileRegion));
+        cursor += size;
+        bytesToSend -= size;
+      }
+      streamLength += fileArea.getCount();
     }
   }
 }

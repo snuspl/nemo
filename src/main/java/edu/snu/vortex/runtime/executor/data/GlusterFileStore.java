@@ -25,7 +25,7 @@ import edu.snu.vortex.runtime.executor.data.metadata.RemoteFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.GlusterFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
-import io.netty.channel.FileRegion;
+import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -212,7 +212,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   @Override
-  public List<FileRegion> getFileRegions(final String partitionId, final HashRange hashRange) {
+  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
     try {
@@ -221,7 +221,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Optional<GlusterFilePartition> partition =
           GlusterFilePartition.open(coder, filePath, metadata);
       if (partition.isPresent()) {
-        return partition.get().asFileRegions(hashRange);
+        return partition.get().asFileAreas(hashRange);
       } else {
         return Collections.emptyList();
       }

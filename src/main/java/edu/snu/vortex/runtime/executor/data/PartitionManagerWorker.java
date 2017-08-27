@@ -336,7 +336,7 @@ public final class PartitionManagerWorker {
     if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
-        outputStream.writeFileRegions(fileStore.getFileRegions(outputStream.getPartitionId(),
+        outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
             outputStream.getHashRange())).close();
       } catch (final IOException e) {
         throw new RuntimeException(e);
