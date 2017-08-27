@@ -32,6 +32,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -95,12 +96,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   /**
-   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
+   * @see PartitionStore#retrieveDataFromPartition(String, HashRange).
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int hashRangeStartVal,
-                                                                          final int hashRangeEndVal) {
+                                                                          final HashRange hashRange) {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
@@ -112,7 +112,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
           return Optional.of(new MemoryPartition(
-              partition.get().retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
+              partition.get().retrieveInHashRange(hashRange)));
         } else {
           return Optional.empty();
         }
@@ -207,5 +207,24 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
+  }
+
+  @Override
+  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = partitionIdToFilePath(partitionId);
+    try {
+      final RemoteFileMetadata metadata =
+          RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
+      final Optional<GlusterFilePartition> partition =
+          GlusterFilePartition.open(coder, filePath, metadata);
+      if (partition.isPresent()) {
+        return partition.get().asFileAreas(hashRange);
+      } else {
+        return Collections.emptyList();
+      }
+    } catch (final IOException | InterruptedException | ExecutionException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 }
