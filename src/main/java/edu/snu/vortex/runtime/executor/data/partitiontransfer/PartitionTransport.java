@@ -60,6 +60,7 @@ final class PartitionTransport implements AutoCloseable {
    *
    * @param partitionTransfer     provides handler for inbound control messages
    * @param localExecutorId       the id of this executor
+   * @param channelImplSelector   provides implementation for netty channel
    * @param tcpPortProvider       provides an iterator of random tcp ports
    * @param localAddressProvider  provides the local address of the node to bind to
    * @param port                  the listening port; 0 means random assign using {@code tcpPortProvider}
@@ -72,6 +73,7 @@ final class PartitionTransport implements AutoCloseable {
   private PartitionTransport(
       final InjectionFuture<PartitionTransfer> partitionTransfer,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
+      final NettyChannelImplementationSelector channelImplSelector,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,
@@ -86,9 +88,9 @@ final class PartitionTransport implements AutoCloseable {
 
     final String host = localAddressProvider.getLocalAddress();
 
-    serverListeningGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numListeningThreads);
-    serverWorkingGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numWorkingThreads);
-    clientGroup = NettyChannelImplementationSelector.EVENT_LOOP_GROUP_FUNCTION.apply(numClientThreads);
+    serverListeningGroup = channelImplSelector.newEventLoopGroup(numListeningThreads);
+    serverWorkingGroup = channelImplSelector.newEventLoopGroup(numWorkingThreads);
+    clientGroup = channelImplSelector.newEventLoopGroup(numClientThreads);
 
     final ChannelInitializer channelInitializer
         = new ChannelInitializer(channelGroup, channelFutureMap, partitionTransfer, localExecutorId);
@@ -96,14 +98,14 @@ final class PartitionTransport implements AutoCloseable {
     clientBootstrap = new Bootstrap();
     clientBootstrap
         .group(clientGroup)
-        .channel(NettyChannelImplementationSelector.CHANNEL_CLASS)
+        .channel(channelImplSelector.getChannelClass())
         .handler(channelInitializer)
         .option(ChannelOption.SO_REUSEADDR, true);
 
     final ServerBootstrap serverBootstrap = new ServerBootstrap();
     serverBootstrap
         .group(serverListeningGroup, serverWorkingGroup)
-        .channel(NettyChannelImplementationSelector.SERVER_CHANNEL_CLASS)
+        .channel(channelImplSelector.getServerChannelClass())
         .childHandler(channelInitializer)
         .option(ChannelOption.SO_BACKLOG, serverBacklog)
         .option(ChannelOption.SO_REUSEADDR, true);
