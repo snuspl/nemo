@@ -168,6 +168,13 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
     return hashRange;
   }
 
+  /**
+   * Returns an {@link Iterator} for this {@link Iterable}.
+   * The end of this {@link Iterable} can possibly mean an error during the partition transfer.
+   * Consider using {@link #completeFuture} and {@link CompletableFuture#isCompletedExceptionally()} to check it.
+   *
+   * @return an {@link Iterator} for this {@link Iterable}
+   */
   @Override
   public Iterator<Element<T, ?, ?>> iterator() {
     return elementQueue.iterator();
@@ -185,6 +192,8 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   /**
    * Gets a {@link CompletableFuture} that completes with the partition transfer being done.
+   * This future is completed by one of the decoding thread. Consider using separate {@link ExecutorService} when
+   * chaining a task to this future.
    *
    * @return a {@link CompletableFuture} that completes with the partition transfer being done
    */
