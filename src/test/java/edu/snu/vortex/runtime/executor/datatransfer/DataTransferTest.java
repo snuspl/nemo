@@ -74,6 +74,9 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
+ *
+ * Execute like {@code mvn test -Dtest=DataTransferTest -Dio.netty.leakDetectionLevel=paranoid}
+ * if you're going to investigate leakages of netty {@link io.netty.util.ReferenceCounted} objects.
  */
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";

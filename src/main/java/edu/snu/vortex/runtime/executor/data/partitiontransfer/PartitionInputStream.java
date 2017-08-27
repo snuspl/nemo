@@ -121,7 +121,9 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         elementQueue.close();
         if (!completeFuture.isCompletedExceptionally()) {
           completeFuture.complete(this);
-          LOG.debug("Partition {} (runtime edge id {}, hash range {}) decoded in {} ms",
+          // The elapsed time is bounded by the speed of decoder *and* the rate of the byte stream through network.
+          // Before investigating on low rate of decoding, check the rate of the byte stream.
+          LOG.debug("Decoded: {} ({}, {}). Took {} ms from the opening of this stream to decoding the last element",
               new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), endTime - startTime});
         }
       } catch (final Exception e) {

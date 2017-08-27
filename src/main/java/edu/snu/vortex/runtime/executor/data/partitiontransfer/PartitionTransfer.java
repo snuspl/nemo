@@ -144,7 +144,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
       final InetSocketAddress address = nameResolver.lookup(identifier);
       return address;
     } catch (final Exception e) {
-      LOG.error(String.format("Cannot lookup PartitionTransport listening address of executor %s", executorId), e);
+      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", executorId), e);
       throw new RuntimeException(e);
     }
   }

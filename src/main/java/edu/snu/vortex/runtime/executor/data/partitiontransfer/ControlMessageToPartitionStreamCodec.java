@@ -101,11 +101,10 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
     in.startDecodingThread();
-    LOG.debug("Sending pull request {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
-        + "partition store: {}, hash range: {})",
+    LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), in.getPartitionStore().get().toString(),
-        in.getHashRange().toString()});
+        in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
+        in.getPartitionStore().get().toString()});
   }
 
   /**
@@ -124,8 +123,7 @@ final class ControlMessageToPartitionStreamCodec
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
     in.startEncodingThread();
-    LOG.debug("Sending push notification {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
-        + "hash range: {})",
+    LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
         in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
   }
@@ -159,11 +157,10 @@ final class ControlMessageToPartitionStreamCodec
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
-    LOG.debug("Received pull request {} from {}({}) to {}({}) for the partition {} (runtime edge id: {}, "
-        + "partition store: {}, hash range: {})",
+    LOG.debug("Received pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getPartitionStore().get().toString(),
-        outputStream.getHashRange().toString()});
+        in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
+        outputStream.getPartitionStore().get().toString()});
   }
 
   /**
@@ -183,8 +180,7 @@ final class ControlMessageToPartitionStreamCodec
         in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
-    LOG.debug("Received push notification {} from {}({}) to {}({}) for the partition {} (runtime edge id: {},"
-        + "hash range: {})",
+    LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
         in.getPartitionId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
   }
@@ -200,7 +196,7 @@ final class ControlMessageToPartitionStreamCodec
                                            final ControlMessage.PartitionTransferType transferType,
                                            final short transferId) {
     if (map.get(transferId) != null) {
-      LOG.error("Transfer id {}-{} to {} is still being used, ignoring",
+      LOG.error("Transfer id {}:{} to {} is still being used, ignoring",
           new Object[]{transferType, transferId, remoteAddress});
     }
   }
