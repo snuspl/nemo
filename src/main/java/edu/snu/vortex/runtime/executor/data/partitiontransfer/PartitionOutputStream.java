@@ -61,7 +61,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
 
   private final ClosableBlockingQueue<Object> elementQueue = new ClosableBlockingQueue<>();
   private volatile boolean closed = false;
-  private volatile Throwable streamException = null;
+  private volatile Throwable channelException = null;
 
   /**
    * Creates a partition output stream.
@@ -178,12 +178,12 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
-   * Sets an stream exception.
+   * Sets a channel exception.
    *
    * @param cause the cause of exception handling
    */
   void onExceptionCaught(final Throwable cause) {
-    this.streamException = cause;
+    this.channelException = cause;
   }
 
   /**
@@ -264,8 +264,8 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @throws IllegalStateException if this stream is closed already
    */
   private void checkWritableCondition() throws IOException {
-    if (streamException != null) {
-      throw new IOException(streamException);
+    if (channelException != null) {
+      throw new IOException(channelException);
     }
     if (closed) {
       throw new IllegalStateException("This PartitionOutputStream is closed");
