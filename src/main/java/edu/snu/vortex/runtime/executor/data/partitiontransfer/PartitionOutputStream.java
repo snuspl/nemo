@@ -160,7 +160,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
           }
         }
         final long endTime = System.currentTimeMillis();
-        // The elapsed time is bounded by the speed of encoder *and* the rate the user writes objects to this stream.
+        // The elapsed time is determined by the speed of encoder *and* the rate the user writes objects to this stream.
         // Before investigating on low rate of encoding, check how often the write operations on this stream is called.
         LOG.debug("Encoded: {} ({}, {}), {} bytes. Took {} ms for the all objects being written and encoded.",
             new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), byteBufOutputStream.streamLength,
