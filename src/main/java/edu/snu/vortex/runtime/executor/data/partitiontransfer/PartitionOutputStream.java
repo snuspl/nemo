@@ -141,6 +141,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     final ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream();
     executorService.submit(() -> {
       try {
+        final long startTime = System.currentTimeMillis();
         while (true) {
           final Object thing = elementQueue.take();
           if (thing == null) {
@@ -158,6 +159,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
             coder.encode((Element) thing, byteBufOutputStream);
           }
         }
+        final long endTime = System.currentTimeMillis();
+        LOG.debug("Partition {} (runtime edge id {}, hash range {}) encoded {} bytes in {} ms",
+            new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), byteBufOutputStream.streamLength,
+            endTime - startTime});
       } catch (final Exception e) {
         LOG.error("An exception in PartitionOutputStream thread", e);
         throw new RuntimeException(e);
@@ -253,11 +258,14 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     @Nullable
     private ByteBuf byteBuf = null;
 
+    private long streamLength = 0;
+
     @Override
     public void write(final int i) {
       createByteBufIfNeeded();
       byteBuf.writeByte(i);
       flushIfFull();
+      streamLength++;
     }
 
     @Override
@@ -272,6 +280,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
         bytesToWrite -= toWrite;
         flushIfFull();
       }
+      streamLength += length;
     }
 
     /**
@@ -343,6 +352,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       flush();
       channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
           (int) fileRegion.count(), fileRegion));
+      streamLength += fileRegion.count();
     }
   }
 }
