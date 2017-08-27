@@ -54,7 +54,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private Coder<T, ?, ?> coder;
   private ExecutorService executorService;
   private int bufferSize;
-  private int dataFrameSize;
 
   private final ClosableBlockingQueue<Object> elementQueue = new ClosableBlockingQueue<>();
   private volatile boolean closed = false;
@@ -100,16 +99,13 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @param cdr     the coder
    * @param service the executor service
    * @param bSize   the outbound buffer size
-   * @param dfSize  the data frame size
    */
-  void setCoderAndExecutorServiceAndSizes(final Coder<T, ?, ?> cdr,
-                                          final ExecutorService service,
-                                          final int bSize,
-                                          final int dfSize) {
+  void setCoderAndExecutorServiceAndBufferSize(final Coder<T, ?, ?> cdr,
+                                               final ExecutorService service,
+                                               final int bSize) {
     this.coder = cdr;
     this.executorService = service;
     this.bufferSize = bSize;
-    this.dataFrameSize = dfSize;
   }
 
   @Override
@@ -256,70 +252,57 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private final class ByteBufOutputStream extends OutputStream {
 
     private ByteBuf byteBuf;
-    private CompositeByteBuf compositeByteBuf;
 
     /**
      * Creates a {@link ByteBufOutputStream}.
      */
     private ByteBufOutputStream() {
       createByteBuf();
-      createCompositeByteBuf();
     }
 
     @Override
     public void write(final int i) {
-      flushCompositeByteBuf();
       byteBuf.writeByte(i);
       if (byteBuf.writableBytes() == 0) {
-        flushByteBuf();
+        flush();
       }
     }
 
     @Override
     public void write(final byte[] bytes, final int offset, final int length) {
-      flushByteBuf();
-      compositeByteBuf.addComponent(Unpooled.wrappedBuffer(bytes, offset, length));
-      compositeByteBuf.writerIndex(compositeByteBuf.writerIndex() + length);
-      if (compositeByteBuf.readableBytes() >= dataFrameSize) {
-        flushCompositeByteBuf();
-      }
-    }
-
-    @Override
-    public void flush() {
-      flushByteBuf();
-      flushCompositeByteBuf();
-    }
-
-    @Override
-    public void close() {
-      boolean sentEndingFrame = false;
-      if (byteBuf.readableBytes() > 0) {
-        writeByteBuf(true);
-        sentEndingFrame = true;
-      } else {
-        byteBuf.release();
-      }
-      if (compositeByteBuf.readableBytes() > 0) {
-        writeCompositeByteBuf(true);
-        sentEndingFrame = true;
-      } else {
-        compositeByteBuf.release();
-      }
-      if (!sentEndingFrame) {
-        // should send an ending frame to indicate the end of the partition stream
-        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, true, transferId,
-            0, null));
+      int cursor = offset;
+      int bytesToWrite = length;
+      while (bytesToWrite > 0) {
+        final int toWrite = Math.min(bytesToWrite, byteBuf.writableBytes());
+        byteBuf.writeBytes(bytes, cursor, toWrite);
+        if (byteBuf.writableBytes() == 0) {
+          flush();
+        }
+        cursor += toWrite;
+        bytesToWrite -= toWrite;
       }
     }
 
     /**
      * Writes a data frame from {@link ByteBuf} and creates a new one.
      */
-    private void flushByteBuf() {
+    @Override
+    public void flush() {
       if (byteBuf.readableBytes() > 0) {
         writeByteBuf(false);
         createByteBuf();
+      }
+    }
+
+    @Override
+    public void close() {
+      if (byteBuf.readableBytes() > 0) {
+        writeByteBuf(true);
+      } else {
+        byteBuf.release();
+        // should send an ending frame to indicate the end of the partition stream
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, true, transferId,
+            0, null));
       }
     }
 
@@ -338,33 +321,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
      */
     private void createByteBuf() {
       byteBuf = channel.alloc().ioBuffer(bufferSize, bufferSize);
-    }
-
-    /**
-     * Writes a data frame from {@link CompositeByteBuf} and creates a new one.
-     */
-    private void flushCompositeByteBuf() {
-      if (compositeByteBuf.readableBytes() > 0) {
-        writeCompositeByteBuf(false);
-        createCompositeByteBuf();
-      }
-    }
-
-    /**
-     * Writes a data frame from {@link CompositeByteBuf}.
-     *
-     * @param ending  whether or not the frame is an ending frame
-     */
-    private void writeCompositeByteBuf(final boolean ending) {
-      channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-          compositeByteBuf.readableBytes(), compositeByteBuf));
-    }
-
-    /**
-     * Creates {@link CompositeByteBuf}.
-     */
-    private void createCompositeByteBuf() {
-      compositeByteBuf = channel.alloc().compositeDirectBuffer();
     }
 
     /**
