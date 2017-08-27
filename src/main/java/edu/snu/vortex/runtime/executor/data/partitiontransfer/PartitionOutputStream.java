@@ -187,7 +187,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream write(final Element<T, ?, ?> element) throws IOException {
+  public PartitionOutputStream writeElement(final Element<T, ?, ?> element) throws IOException {
     checkWritableCondition();
     elementQueue.put(element);
     return this;
@@ -201,7 +201,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream write(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
+  public PartitionOutputStream writeElements(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
     checkWritableCondition();
     elementQueue.put(iterable);
     return this;
@@ -216,9 +216,26 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream write(final FileRegion fileRegion) throws IOException {
+  public PartitionOutputStream writeFileRegion(final FileRegion fileRegion) throws IOException {
     checkWritableCondition();
     elementQueue.put(fileRegion);
+    return this;
+  }
+
+  /**
+   * Writes a {@link Iterable} of {@link FileRegion}s. Zero-copy transfer is used if possible.
+   * The number of bytes of each {@link FileRegion} should be within the range of {@link Integer}.
+   *
+   * @param fileRegions the list of file regions
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream writeFileRegions(final Iterable<FileRegion> fileRegions) throws IOException {
+    checkWritableCondition();
+    for (final FileRegion fileRegion : fileRegions) {
+      elementQueue.put(fileRegion);
+    }
     return this;
   }
 

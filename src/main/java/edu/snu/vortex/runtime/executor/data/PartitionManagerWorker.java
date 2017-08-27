@@ -332,16 +332,27 @@ public final class PartitionManagerWorker {
   public void onPullRequest(final PartitionOutputStream outputStream) {
     // We are getting the partition from local store!
     final Optional<Attribute> partitionStoreOptional = outputStream.getPartitionStore();
-    final CompletableFuture<Iterable<Element>> partitionFuture =
-        retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
-        partitionStoreOptional.get(), outputStream.getHashRange());
-    partitionFuture.thenAcceptAsync(partition -> {
+    final Attribute partitionStore = partitionStoreOptional.get();
+    if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
+      final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
-        outputStream.write(partition).close();
+        outputStream.writeFileRegions(fileStore.getFileRegions(outputStream.getPartitionId(),
+            outputStream.getHashRange())).close();
       } catch (final IOException e) {
         throw new RuntimeException(e);
       }
-    });
+    } else {
+      final CompletableFuture<Iterable<Element>> partitionFuture =
+          retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
+              partitionStore, outputStream.getHashRange());
+      partitionFuture.thenAcceptAsync(partition -> {
+        try {
+          outputStream.writeElements(partition).close();
+        } catch (final IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
+    }
   }
 
   /**

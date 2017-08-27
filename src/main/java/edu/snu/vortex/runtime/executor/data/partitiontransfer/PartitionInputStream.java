@@ -51,7 +51,6 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final CompletableFuture<PartitionInputStream<T>> completeFuture = new CompletableFuture<>();
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
   private final ClosableBlockingIterable<Element<T, ?, ?>> elementQueue = new ClosableBlockingIterable<>();
-  private long streamLength = 0;
 
   /**
    * Creates a partition input stream.
@@ -93,7 +92,6 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   void append(final ByteBuf byteBuf) {
     if (byteBuf.readableBytes() > 0) {
       byteBufInputStream.byteBufQueue.put(byteBuf);
-      streamLength += byteBuf.readableBytes();
     } else {
       // ignore empty data frames
       byteBuf.release();
@@ -123,8 +121,8 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         elementQueue.close();
         if (!completeFuture.isCompletedExceptionally()) {
           completeFuture.complete(this);
-          LOG.debug("Partition {} (runtime edge id {}, hash range {}) decoded {} bytes in {} ms",
-              new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), streamLength, endTime - startTime});
+          LOG.debug("Partition {} (runtime edge id {}, hash range {}) decoded in {} ms",
+              new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), endTime - startTime});
         }
       } catch (final Exception e) {
         LOG.error("An exception in PartitionInputStream thread", e);

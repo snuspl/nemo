@@ -68,6 +68,14 @@ public final class HashRange {
     return rangeEndExclusive;
   }
 
+  /**
+   * @param i the value to test
+   * @return {@code true} if this hash range includes the specified value, {@code false} otherwise
+   */
+  public boolean includes(final int i) {
+    return i >= rangeStartInclusive && i < rangeEndExclusive;
+  }
+
   @Override
   public String toString() {
     if (all) {

@@ -25,6 +25,7 @@ import edu.snu.vortex.runtime.executor.data.metadata.RemoteFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.GlusterFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
+import io.netty.channel.FileRegion;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -32,6 +33,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -207,5 +209,24 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
+  }
+
+  @Override
+  public List<FileRegion> getFileRegions(final String partitionId, final HashRange hashRange) {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = partitionIdToFilePath(partitionId);
+    try {
+      final RemoteFileMetadata metadata =
+          RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
+      final Optional<GlusterFilePartition> partition =
+          GlusterFilePartition.open(coder, filePath, metadata);
+      if (partition.isPresent()) {
+        return partition.get().asFileRegions(hashRange);
+      } else {
+        return Collections.emptyList();
+      }
+    } catch (final IOException | InterruptedException | ExecutionException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 }

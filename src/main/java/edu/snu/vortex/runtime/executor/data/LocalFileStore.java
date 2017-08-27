@@ -24,6 +24,7 @@ import edu.snu.vortex.runtime.executor.data.metadata.LocalFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
+import io.netty.channel.FileRegion;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -190,5 +191,14 @@ final class LocalFileStore extends FileStore {
       return true;
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
+  }
+
+  @Override
+  public List<FileRegion> getFileRegions(final String partitionId, final HashRange hashRange) {
+    try {
+      return partitionIdToData.get(partitionId).asFileRegions(hashRange);
+    } catch (final IOException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 }
