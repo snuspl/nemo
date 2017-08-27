@@ -15,10 +15,12 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import java.io.Serializable;
+
 /**
  * Descriptor for hash range.
  */
-public final class HashRange {
+public final class HashRange implements Serializable {
   private static final HashRange ALL = new HashRange(true, 0, Integer.MAX_VALUE);
 
   private final boolean all;

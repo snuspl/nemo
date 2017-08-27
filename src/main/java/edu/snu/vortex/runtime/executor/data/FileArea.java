@@ -15,10 +15,12 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import java.io.Serializable;
+
 /**
  * A file area descriptor. Used to send file contents without copying or encoding/decoding.
  */
-public final class FileArea {
+public final class FileArea implements Serializable {
   private final String path;
   private final long position;
   private final long count;
