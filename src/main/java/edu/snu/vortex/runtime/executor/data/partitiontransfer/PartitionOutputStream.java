@@ -51,7 +51,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
-  private final HashRange hashRange;
+  private final Optional<HashRange> hashRange;
   private ControlMessage.PartitionTransferType transferType;
   private short transferId;
   private Channel channel;
@@ -70,13 +70,13 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @param partitionStore      the partition store
    * @param partitionId         the partition id
    * @param runtimeEdgeId       the runtime edge id
-   * @param hashRange           the hash range
+   * @param hashRange           the hash range (optional)
    */
   PartitionOutputStream(final String receiverExecutorId,
                         final Optional<Attribute> partitionStore,
                         final String partitionId,
                         final String runtimeEdgeId,
-                        final HashRange hashRange) {
+                        final Optional<HashRange> hashRange) {
     this.receiverExecutorId = receiverExecutorId;
     this.partitionStore = partitionStore;
     this.partitionId = partitionId;
@@ -133,7 +133,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   @Override
-  public HashRange getHashRange() {
+  public Optional<HashRange> getHashRange() {
     return hashRange;
   }
 

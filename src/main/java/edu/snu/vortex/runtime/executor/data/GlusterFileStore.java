@@ -210,6 +210,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   @Override
+  public List<FileArea> getFileAreas(final String partitionId) {
+    return getFileAreas(partitionId, null);
+  }
+
+  @Override
   public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
@@ -219,7 +224,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Optional<GlusterFilePartition> partition =
           GlusterFilePartition.open(coder, filePath, metadata);
       if (partition.isPresent()) {
-        return partition.get().asFileAreas(hashRange);
+        return hashRange == null ? partition.get().asFileAreas() : partition.get().asFileAreas(hashRange);
       } else {
         return Collections.emptyList();
       }

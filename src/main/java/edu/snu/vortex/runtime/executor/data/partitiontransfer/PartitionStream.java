@@ -59,5 +59,5 @@ public interface PartitionStream {
    *
    * @return the {@link HashRange}
    */
-  HashRange getHashRange();
+  Optional<HashRange> getHashRange();
 }

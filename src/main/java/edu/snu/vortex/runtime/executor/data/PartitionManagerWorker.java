@@ -218,13 +218,13 @@ public final class PartitionManagerWorker {
    * @param partitionId    of the partition.
    * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
    * @param partitionStore for the data storage.
-   * @param hashRange      the hash range descriptor
+   * @param hashRange      the hash range descriptor (optional)
    * @return a {@link CompletableFuture} for the partition.
    */
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore,
-                                                                        final HashRange hashRange) {
+                                                                        final Optional<HashRange> hashRange) {
     LOG.info("retrieveDataFromPartition: {}", partitionId);
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
 
@@ -233,10 +233,10 @@ public final class PartitionManagerWorker {
     // First, try to fetch the partition from local PartitionStore.
     // If it doesn't have the partition, this future will be completed to Optional.empty()
     final CompletableFuture<Optional<Partition>> localPartition;
-    if (hashRange.isAll()) {
+    if (hashRange.isPresent()) {
       localPartition = store.retrieveDataFromPartition(partitionId);
     } else {
-      localPartition = store.retrieveDataFromPartition(partitionId, hashRange);
+      localPartition = store.retrieveDataFromPartition(partitionId, hashRange.get());
     }
 
     localPartition.thenAccept(optionalPartition -> {
@@ -264,13 +264,13 @@ public final class PartitionManagerWorker {
    * @param partitionId       of the partition.
    * @param runtimeEdgeId     id of the runtime edge that corresponds to the partition.
    * @param partitionStore    for the data storage.
-   * @param hashRange         the hash range descriptor
+   * @param hashRange         the hash range descriptor (optional)
    * @return the {@link CompletableFuture} of the partition.
    */
   private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
                                                                               final String runtimeEdgeId,
                                                                               final Attribute partitionStore,
-                                                                              final HashRange hashRange) {
+                                                                              final Optional<HashRange> hashRange) {
     // We don't have the partition here...
     if (partitionStore == Attribute.RemoteFile) {
       LOG.warn("The target partition {} is not found in the remote storage. "
@@ -335,8 +335,13 @@ public final class PartitionManagerWorker {
     if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
-        outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
-            outputStream.getHashRange())).close();
+        final Optional<HashRange> hashRangeOptional = outputStream.getHashRange();
+        if (outputStream.getHashRange().isPresent()) {
+          outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(), hashRangeOptional.get()))
+              .close();
+        } else {
+          outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId())).close();
+        }
       } catch (final IOException e) {
         throw new RuntimeException(e);
       }

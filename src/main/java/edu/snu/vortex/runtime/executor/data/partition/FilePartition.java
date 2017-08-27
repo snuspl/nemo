@@ -182,6 +182,22 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   }
 
   /**
+   * Retrieves the list of {@link FileArea}s.
+   *
+   * @return list of the file areas
+   * @throws IOException if failed to open a file channel
+   */
+  public final List<FileArea> asFileAreas() throws IOException {
+    final List<FileArea> fileAreas = new ArrayList<>();
+    long position = 0;
+    for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
+      fileAreas.add(FileArea.of(filePath, position, blockMetadata.getBlockSize()));
+      position += blockMetadata.getBlockSize();
+    }
+    return fileAreas;
+  }
+
+  /**
    * Retrieves the list of {@link FileArea}s for the specified {@link HashRange}.
    *
    * @param hashRange     the hash range

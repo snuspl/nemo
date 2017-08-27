@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -239,11 +240,12 @@ final class PartitionTransferPeer {
       if (hashRangeStartVal == 0 && hashRangeEndVal == Integer.MAX_VALUE) {
         // Retrieve whole data.
         partitionFuture = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-            convertPartitionStoreType(request.getPartitionStore()), HashRange.all());
+            convertPartitionStoreType(request.getPartitionStore()), Optional.empty());
       } else {
         // Retrieve data in a specific hash value range.
         partitionFuture = worker.retrieveDataFromPartition(request.getPartitionId(), request.getRuntimeEdgeId(),
-            convertPartitionStoreType(request.getPartitionStore()), HashRange.of(hashRangeStartVal, hashRangeEndVal));
+            convertPartitionStoreType(request.getPartitionStore()),
+            Optional.of(HashRange.of(hashRangeStartVal, hashRangeEndVal)));
       }
 
       partitionFuture.thenAcceptAsync(partition -> {

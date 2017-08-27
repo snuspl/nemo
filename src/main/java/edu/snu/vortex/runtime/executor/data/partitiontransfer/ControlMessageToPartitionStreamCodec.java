@@ -150,8 +150,8 @@ final class ControlMessageToPartitionStreamCodec
                                     final ControlMessage.PartitionTransferControlMessage in,
                                     final List<Object> out) {
     final short transferId = (short) in.getTransferId();
-    final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
-        ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
+    final Optional<HashRange> hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
+        ? Optional.of(HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive())) : Optional.empty();
     final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(), Optional.of(
         convertPartitionStore(in.getPartitionStore())), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
@@ -174,8 +174,8 @@ final class ControlMessageToPartitionStreamCodec
                                          final ControlMessage.PartitionTransferControlMessage in,
                                          final List<Object> out) {
     final short transferId = (short) in.getTransferId();
-    final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
-        ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
+    final Optional<HashRange> hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
+        ? Optional.of(HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive())) : Optional.empty();
     final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(), Optional.empty(),
         in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
@@ -223,10 +223,10 @@ final class ControlMessageToPartitionStreamCodec
     if (in.getPartitionStore().isPresent()) {
       controlMessageBuilder.setPartitionStore(convertPartitionStore(in.getPartitionStore().get()));
     }
-    if (!in.getHashRange().isAll()) {
+    if (!in.getHashRange().isPresent()) {
       controlMessageBuilder
-          .setStartRangeInclusive(in.getHashRange().rangeStartInclusive())
-          .setEndRangeExclusive(in.getHashRange().rangeEndExclusive());
+          .setStartRangeInclusive(in.getHashRange().get().rangeStartInclusive())
+          .setEndRangeExclusive(in.getHashRange().get().rangeEndExclusive());
     }
     out.add(controlMessageBuilder.build());
   }

@@ -95,7 +95,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param partitionStore  the partition store
    * @param partitionId     the id of the partition to transfer
    * @param runtimeEdgeId   the runtime edge id
-   * @param hashRange       the hash range
+   * @param hashRange       the hash range (optional)
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
@@ -103,7 +103,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
                                            final Attribute partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
-                                           final HashRange hashRange) {
+                                           final Optional<HashRange> hashRange) {
     final PartitionInputStream stream = new PartitionInputStream(executorId, Optional.of(partitionStore),
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
@@ -117,13 +117,13 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param executorId    the id of the destination executor
    * @param partitionId   the id of the partition to transfer
    * @param runtimeEdgeId the runtime edge id
-   * @param hashRange     the hash range
+   * @param hashRange     the hash range (optional)
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
   public PartitionOutputStream initiatePush(final String executorId,
                                             final String partitionId,
                                             final String runtimeEdgeId,
-                                            final HashRange hashRange) {
+                                            final Optional<HashRange> hashRange) {
     final PartitionOutputStream stream = new PartitionOutputStream(executorId, Optional.empty(), partitionId,
         runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
