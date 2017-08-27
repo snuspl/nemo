@@ -75,6 +75,14 @@ final class ControlMessageToPartitionStreamCodec
     ctx.fireChannelActive();
   }
 
+  /**
+   * For an outbound {@link PartitionStream}, which means {@link PartitionTransfer} initiated a new transport context,
+   * responds to it by emitting a new control message and registering the transport context to the internal map.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the {@link PartitionStream}
+   * @param out the {@link List} into which the created control message is added
+   */
   @Override
   protected void encode(final ChannelHandlerContext ctx,
                         final PartitionStream in,
@@ -128,6 +136,15 @@ final class ControlMessageToPartitionStreamCodec
         in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
   }
 
+  /**
+   * For an inbound control message (pull request or push notification), which initiates a transport context, responds
+   * to it by registering the transport context to the internal mapping, and emitting a new {@link PartitionStream},
+   * which will be handled by {@link PartitionTransfer}.
+   *
+   * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
+   * @param in  the inbound control message
+   * @param out the {@link List} into which the created {@link PartitionStream} is added
+   */
   @Override
   protected void decode(final ChannelHandlerContext ctx,
                         final ControlMessage.PartitionTransferControlMessage in,
