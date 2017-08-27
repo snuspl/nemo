@@ -234,9 +234,9 @@ public final class PartitionManagerWorker {
     // If it doesn't have the partition, this future will be completed to Optional.empty()
     final CompletableFuture<Optional<Partition>> localPartition;
     if (hashRange.isPresent()) {
-      localPartition = store.retrieveDataFromPartition(partitionId, hashRange.get());
-    } else {
       localPartition = store.retrieveDataFromPartition(partitionId);
+    } else {
+      localPartition = store.retrieveDataFromPartition(partitionId, hashRange.get());
     }
 
     localPartition.thenAccept(optionalPartition -> {
