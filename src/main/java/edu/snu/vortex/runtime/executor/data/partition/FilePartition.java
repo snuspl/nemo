@@ -147,13 +147,11 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   /**
    * Retrieves the data of this partition from the file in a specific hash range and deserializes it.
    *
-   * @param hashRangeStartVal of the hash range (included in the range).
-   * @param hashRangeEndVal   of the hash range (excluded from the range).
+   * @param hashRange the hash range
    * @return an iterable of deserialized data.
    * @throws IOException if failed to deserialize.
    */
-  public final Iterable<Element> retrieveInHashRange(final int hashRangeStartVal,
-                                                     final int hashRangeEndVal) throws IOException {
+  public final Iterable<Element> retrieveInHashRange(final HashRange hashRange) throws IOException {
     // Check whether this partition is fully written and sorted by the hash value.
     if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
@@ -166,7 +164,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
         final int hashVal = blockMetadata.getHashValue();
-        if (hashVal >= hashRangeStartVal && hashVal < hashRangeEndVal) {
+        if (hashRange.includes(hashVal)) {
           // The hash value of this block is in the range.
           deserializeBlock(blockMetadata, fileStream, deserializedData);
         } else {

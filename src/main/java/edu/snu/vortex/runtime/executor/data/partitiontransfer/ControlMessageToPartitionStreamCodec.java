@@ -225,8 +225,8 @@ final class ControlMessageToPartitionStreamCodec
     }
     if (!in.getHashRange().isAll()) {
       controlMessageBuilder
-          .setStartRangeInclusive(in.getHashRange().getRangeStartInclusive())
-          .setEndRangeExclusive(in.getHashRange().getRangeEndExclusive());
+          .setStartRangeInclusive(in.getHashRange().rangeStartInclusive())
+          .setEndRangeExclusive(in.getHashRange().rangeEndExclusive());
     }
     out.add(controlMessageBuilder.build());
   }

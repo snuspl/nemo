@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.executor.datatransfer;
 
-import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
@@ -141,13 +140,11 @@ public final class InputReader extends DataTransfer {
    */
   private List<CompletableFuture<Iterable<Element>>> readDataInRange() {
     assert (runtimeEdge instanceof PhysicalStageEdge);
-    final Pair<Integer, Integer> hashRangeToRead =
+    final HashRange hashRangeToRead =
         ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdToHashRangeMap().get(taskGroupId);
     if (hashRangeToRead == null) {
       throw new PartitionFetchException(new Throwable("The hash range to read is not assigned to " + taskGroupId));
     }
-    final int hashRangeStartVal = hashRangeToRead.left();
-    final int hashRangeEndVal = hashRangeToRead.right();
 
     final int numSrcTasks = this.getSourceParallelism();
     final List<CompletableFuture<Iterable<Element>>> futures = new ArrayList<>();
@@ -156,7 +153,7 @@ public final class InputReader extends DataTransfer {
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
               partitionId, getId(), runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement),
-              HashRange.of(hashRangeStartVal, hashRangeEndVal)));
+              hashRangeToRead));
     }
 
     return futures;

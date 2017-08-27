@@ -96,12 +96,11 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   /**
-   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
+   * @see PartitionStore#retrieveDataFromPartition(String, HashRange).
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int hashRangeStartVal,
-                                                                          final int hashRangeEndVal) {
+                                                                          final HashRange hashRange) {
     final Supplier<Optional<Partition>> supplier = () -> {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
@@ -113,7 +112,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
             GlusterFilePartition.open(coder, filePath, metadata);
         if (partition.isPresent()) {
           return Optional.of(new MemoryPartition(
-              partition.get().retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
+              partition.get().retrieveInHashRange(hashRange)));
         } else {
           return Optional.empty();
         }

@@ -57,15 +57,22 @@ public final class HashRange {
   /**
    * @return the start of the range (inclusive)
    */
-  public int getRangeStartInclusive() {
+  public int rangeStartInclusive() {
     return rangeStartInclusive;
   }
 
   /**
    * @return the end of the range (exclusive)
    */
-  public int getRangeEndExclusive() {
+  public int rangeEndExclusive() {
     return rangeEndExclusive;
+  }
+
+  /**
+   * @return the length of this range
+   */
+  public int length() {
+    return rangeEndExclusive - rangeStartInclusive;
   }
 
   /**

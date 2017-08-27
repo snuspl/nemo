@@ -236,8 +236,7 @@ public final class PartitionManagerWorker {
     if (hashRange.isAll()) {
       localPartition = store.retrieveDataFromPartition(partitionId);
     } else {
-      localPartition = store.retrieveDataFromPartition(partitionId, hashRange.getRangeStartInclusive(),
-          hashRange.getRangeEndExclusive());
+      localPartition = store.retrieveDataFromPartition(partitionId, hashRange);
     }
 
     localPartition.thenAccept(optionalPartition -> {
