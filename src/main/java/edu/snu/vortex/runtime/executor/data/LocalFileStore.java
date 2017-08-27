@@ -24,7 +24,6 @@ import edu.snu.vortex.runtime.executor.data.metadata.LocalFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.LocalFilePartition;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
-import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 

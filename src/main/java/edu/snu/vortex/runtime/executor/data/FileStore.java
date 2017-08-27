@@ -19,7 +19,6 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
-import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.ByteArrayOutputStream;

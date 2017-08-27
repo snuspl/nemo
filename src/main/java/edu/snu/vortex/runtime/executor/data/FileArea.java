@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.data.partitiontransfer;
+package edu.snu.vortex.runtime.executor.data;
 
 /**
  * A file area descriptor. Used to send file contents without copying or encoding/decoding.

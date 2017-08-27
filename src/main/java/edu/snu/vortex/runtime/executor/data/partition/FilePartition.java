@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
-import edu.snu.vortex.runtime.executor.data.partitiontransfer.FileArea;
+import edu.snu.vortex.runtime.executor.data.FileArea;
 
 import java.io.*;
 import java.nio.ByteBuffer;

@@ -19,6 +19,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.executor.data.FileArea;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
