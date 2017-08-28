@@ -82,10 +82,10 @@ public final class Optimizer {
    */
   public enum PolicyType {
     Default,
-    StagePartition,
     Pado,
     Disaggregation,
     DataSkew,
+    TestingPolicy,
   }
 
   /**
@@ -97,11 +97,7 @@ public final class Optimizer {
     POLICIES.put(PolicyType.Default,
         Arrays.asList(
             new ParallelismPass(), // Provides parallelism information.
-            new StagePartitioningPass()
-        ));
-    POLICIES.put(PolicyType.StagePartition, // Simply build stages for tests
-        Arrays.asList(
-            new StagePartitioningPass()
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Pado,
         Arrays.asList(
@@ -111,7 +107,7 @@ public final class Optimizer {
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
-            new StagePartitioningPass()
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(
@@ -121,7 +117,7 @@ public final class Optimizer {
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
-            new StagePartitioningPass()
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.DataSkew,
         Arrays.asList(
@@ -131,8 +127,12 @@ public final class Optimizer {
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new DataSkewPass(),
-            new StagePartitioningPass()
+            new DefaultStagePartitioningPass()
         ));
+    POLICIES.put(PolicyType.TestingPolicy, // Simply build stages for tests
+            Arrays.asList(
+                    new DefaultStagePartitioningPass()
+            ));
   }
 
   /**

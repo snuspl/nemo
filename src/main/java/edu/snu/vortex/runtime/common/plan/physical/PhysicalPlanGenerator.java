@@ -72,7 +72,7 @@ public final class PhysicalPlanGenerator
 
     final SortedMap<Integer, List<IRVertex>> vertexListForEachStage = new TreeMap<>();
     irDAG.topologicalDo(irVertex -> {
-      final Integer stageNum = irVertex.getAttr(Attribute.IntegerKey.StageNum);
+      final Integer stageNum = irVertex.getAttr(Attribute.IntegerKey.StageId);
       if (!vertexListForEachStage.containsKey(stageNum)) {
         vertexListForEachStage.put(stageNum, new ArrayList<>());
       }
@@ -88,7 +88,7 @@ public final class PhysicalPlanGenerator
       // Create a new stage builder.
       final StageBuilder stageBuilder = new StageBuilder(stageVertices.stream().findAny()
               .orElseThrow(() -> new RuntimeException("Error: List " + stageVertices.getClass() + " is Empty"))
-              .getAttr(Attribute.IntegerKey.StageNum));
+              .getAttr(Attribute.IntegerKey.StageId));
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {

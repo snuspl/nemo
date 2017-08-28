@@ -30,18 +30,18 @@ import java.util.stream.Collectors;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.Memory;
 
 /**
- * Partitions an IR DAG into stages.
+ * Default method of partitioning an IR DAG into stages.
  * We traverse the DAG topologically to observe each vertex if it can be added to a stage or if it should be assigned
  * to a new stage. We filter out the candidate incoming edges to connect to an existing stage, and if it exists, we
  * connect it to the stage, and otherwise we don't.
  */
-public final class StagePartitioningPass implements Pass {
+public final class DefaultStagePartitioningPass implements Pass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> irDAG) {
     final AtomicInteger stageNum = new AtomicInteger(0);
     final List<List<IRVertex>> vertexListForEachStage = groupVerticesByStage(irDAG);
     vertexListForEachStage.forEach(stageVertices -> {
-      stageVertices.forEach(irVertex -> irVertex.setAttr(Attribute.IntegerKey.StageNum, stageNum.get()));
+      stageVertices.forEach(irVertex -> irVertex.setAttr(Attribute.IntegerKey.StageId, stageNum.get()));
       stageNum.getAndIncrement();
     });
     return irDAG;
