@@ -234,6 +234,7 @@ final class ControlMessageToPartitionStreamCodec
         .setControlMessageSourceId(localExecutorId)
         .setType(transferType)
         .setTransferId(transferId)
+        .setIncremental(in.isIncremental())
         .setPartitionId(in.getPartitionId())
         .setRuntimeEdgeId(in.getRuntimeEdgeId());
     if (in.getPartitionStore().isPresent()) {
