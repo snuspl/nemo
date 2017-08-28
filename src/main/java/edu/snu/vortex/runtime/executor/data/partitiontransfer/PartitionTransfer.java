@@ -107,7 +107,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     final PartitionInputStream stream = new PartitionInputStream(executorId, Optional.of(partitionStore),
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
-    partitionTransport.writeTo(lookup(executorId), stream);
+    partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
     return stream;
   }
 
@@ -128,7 +128,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
-    partitionTransport.writeTo(lookup(executorId), stream);
+    partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
     return stream;
   }
 

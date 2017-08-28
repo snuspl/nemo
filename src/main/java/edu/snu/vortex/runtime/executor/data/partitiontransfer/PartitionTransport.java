@@ -40,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  * Transport implementation for peer-to-peer {@link edu.snu.vortex.runtime.executor.data.partition.Partition} transfer.
@@ -175,14 +176,23 @@ final class PartitionTransport implements AutoCloseable {
    *
    * @param remoteAddress the socket address to write to
    * @param thing         the object to write
+   * @param onError       the {@link Consumer} to be invoked on an error during setting up the channel
    */
-  void writeTo(final SocketAddress remoteAddress, final Object thing) {
+  void writeTo(final SocketAddress remoteAddress, final Object thing, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = channelFutureMap
         .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
     if (channelFuture.isSuccess()) {
       channelFuture.channel().writeAndFlush(thing);
     } else {
-      channelFuture.addListener(x -> channelFuture.channel().writeAndFlush(thing));
+      channelFuture.addListener(future -> {
+        if (future.isSuccess()) {
+          channelFuture.channel().writeAndFlush(thing);
+        } else if (future.cause() == null) {
+          LOG.error("Failed to set up a channel for no reason.");
+        } else {
+          onError.accept(future.cause());
+        }
+      });
     }
   }
 }

@@ -51,6 +51,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final CompletableFuture<PartitionInputStream<T>> completeFuture = new CompletableFuture<>();
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
   private final ClosableBlockingIterable<Element<T, ?, ?>> elementQueue = new ClosableBlockingIterable<>();
+  private volatile boolean started = false;
 
   /**
    * Creates a partition input stream.
@@ -109,6 +110,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * Start decoding {@link ByteBuf}s into {@link Element}s.
    */
   void startDecodingThread() {
+    started = true;
     executorService.submit(() -> {
       try {
         // TODO #299: Separate Serialization from Here
@@ -140,6 +142,10 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    */
   void onExceptionCaught(final Throwable cause) {
     markAsEnded();
+    if (!started) {
+      // There's no decoding thread to close the element queue.
+      elementQueue.close();
+    }
     completeFuture.completeExceptionally(cause);
   }
 
