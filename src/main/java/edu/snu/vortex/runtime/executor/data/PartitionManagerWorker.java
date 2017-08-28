@@ -335,28 +335,23 @@ public final class PartitionManagerWorker {
     if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
-        final Optional<List<FileArea>> areas = fileStore.getFileAreas(outputStream.getPartitionId(),
-            outputStream.getHashRange());
-        if (areas.isPresent()) {
-          outputStream.writeFileAreas(areas.get()).close();
-          return;
+        outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
+            outputStream.getHashRange())).close();
+      } catch (final IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      final CompletableFuture<Iterable<Element>> partitionFuture =
+          retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
+              partitionStore, outputStream.getHashRange());
+      partitionFuture.thenAcceptAsync(partition -> {
+        try {
+          outputStream.writeElements(partition).close();
+        } catch (final IOException e) {
+          throw new RuntimeException(e);
         }
-      } catch (final IOException e) {
-        throw new RuntimeException(e);
-      }
+      });
     }
-
-    // If the partition store is not a FileStore, or failed to retrieve FileAreas
-    final CompletableFuture<Iterable<Element>> partitionFuture =
-        retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
-            partitionStore, outputStream.getHashRange());
-    partitionFuture.thenAcceptAsync(partition -> {
-      try {
-        outputStream.writeElements(partition).close();
-      } catch (final IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
   }
 
   /**
