@@ -49,7 +49,7 @@ public final class GlusterFilePartition extends FilePartition {
    *
    * @throws IOException if fail to open this partition for writing.
    */
-  private void beforeWrite() throws IOException {
+  private void initializeWrite() throws IOException {
     openFileStream();
 
     if (!((RemoteFileMetadata) getMetadata()).needToSyncPerWrite()) {
@@ -113,7 +113,7 @@ public final class GlusterFilePartition extends FilePartition {
                                                  final String filePath,
                                                  final RemoteFileMetadata metadata) throws IOException {
     final GlusterFilePartition partition = new GlusterFilePartition(coder, filePath, metadata);
-    partition.beforeWrite();
+    partition.initializeWrite();
     return partition;
   }
 

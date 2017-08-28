@@ -244,9 +244,9 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final String filePath = partitionIdToFilePath(partitionId);
     try {
       final RemoteFileMetadata metadata =
-          RemoteFileMetadata.get(partitionId, executorId, persistentConnectionToMaster);
+          RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
       final Optional<GlusterFilePartition> partition =
-          GlusterFilePartition.open(coder, filePath, metadata);
+          GlusterFilePartition.openToRead(coder, filePath, metadata);
       if (partition.isPresent()) {
         return partition.get().asFileAreas(hashRange);
       } else {

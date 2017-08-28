@@ -172,7 +172,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readIFile() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all());
   }
 
   public RuntimeEdge getRuntimeEdge() {

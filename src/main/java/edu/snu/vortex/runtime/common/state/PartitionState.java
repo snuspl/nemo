@@ -79,6 +79,7 @@ public final class PartitionState {
     READY,
     SCHEDULED,
     COMMITTED,
+    // TODO #444: Introduce BlockState -> remove PARTIAL_COMMITTED and manage the block state in PartitionStores.
     PARTIAL_COMMITTED,
     LOST_BEFORE_COMMIT,
     LOST,
