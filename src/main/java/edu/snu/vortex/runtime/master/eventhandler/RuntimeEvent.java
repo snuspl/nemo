@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.eventhandler;
 
 /**
- * An empty interface to indicate events that are to be handled at Runtime.
+ * An empty interface to indicate events that are to be handled at Compiler.
  */
-public interface RuntimeEvent {
+interface RuntimeEvent {
 }

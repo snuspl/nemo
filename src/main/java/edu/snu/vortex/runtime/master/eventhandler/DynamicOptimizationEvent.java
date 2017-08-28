@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.vortex.compiler.eventhandler;
+package edu.snu.vortex.runtime.master.eventhandler;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
@@ -25,26 +25,19 @@ import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 
 /**
- * An event related to the compiler optimizer.
+ * An event for triggering dynamic optimization.
  */
-public final class DynamicOptimizationEvent implements CompilerEvent {
-  private final Scheduler scheduler;
+public final class DynamicOptimizationEvent implements RuntimeEvent {
   private final PhysicalPlan physicalPlan;
   private final MetricCollectionBarrierVertex metricCollectionBarrierVertex;
   private final Pair<String, TaskGroup> taskInfo;
 
-  public DynamicOptimizationEvent(final Scheduler scheduler,
-                                  final PhysicalPlan physicalPlan,
+  public DynamicOptimizationEvent(final PhysicalPlan physicalPlan,
                                   final MetricCollectionBarrierVertex metricCollectionBarrierVertex,
                                   final Pair<String, TaskGroup> taskInfo) {
-    this.scheduler = scheduler;
     this.physicalPlan = physicalPlan;
     this.metricCollectionBarrierVertex = metricCollectionBarrierVertex;
     this.taskInfo = taskInfo;
-  }
-
-  Scheduler getScheduler() {
-    return this.scheduler;
   }
 
   PhysicalPlan getPhysicalPlan() {

@@ -16,7 +16,7 @@
 package edu.snu.vortex.compiler.eventhandler;
 
 /**
- * An empty interface to indicate events that are to be handled at Compiler.
+ * An empty interface to indicate events that are to be handled at Runtime.
  */
-public interface CompilerEvent {
+interface CompilerEvent {
 }

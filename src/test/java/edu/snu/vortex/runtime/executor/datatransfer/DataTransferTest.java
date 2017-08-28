@@ -36,7 +36,7 @@ import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.master.DefaultMetricMessageHandler;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
-import edu.snu.vortex.runtime.master.eventhandler.RuntimeEventHandler;
+import edu.snu.vortex.compiler.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
@@ -78,7 +78,7 @@ import static org.mockito.Mockito.mock;
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({PubSubEventHandlerWrapper.class, RuntimeEventHandler.class})
+@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
@@ -108,7 +108,7 @@ public final class DataTransferTest {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
-    final RuntimeEventHandler runtimeEventHandler = mock(RuntimeEventHandler.class);
+    final UpdatePhysicalPlanEventHandler runtimeEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
         new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
             new PendingTaskGroupPriorityQueue(), pubSubEventHandler);
