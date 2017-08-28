@@ -20,6 +20,8 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.List;
@@ -78,6 +80,8 @@ import java.util.Map;
  * @see ChannelInitializer
  */
 final class FrameDecoder extends ByteToMessageDecoder {
+
+  private static final Logger LOG = LoggerFactory.getLogger(FrameDecoder.class);
 
   static final short CONTROL_TYPE = 0;
   static final short PULL_NONENDING = 2;
@@ -146,12 +150,12 @@ final class FrameDecoder extends ByteToMessageDecoder {
     while (true) {
       final boolean toContinue;
       if (controlBodyBytesToRead > 0) {
-        toContinue = onControlBodyAdded(in, out);
+        toContinue = onControlBodyAdded(ctx, in, out);
       } else if (dataBodyBytesToRead > 0) {
-        onDataBodyAdded(in);
+        onDataBodyAdded(ctx, in);
         toContinue = in.readableBytes() > 0;
       } else {
-        toContinue = onFrameBegins(in, out);
+        toContinue = onFrameBegins(ctx, in);
       }
       if (!toContinue) {
         break;
@@ -162,11 +166,11 @@ final class FrameDecoder extends ByteToMessageDecoder {
   /**
    * Try to decode a frame header.
    *
+   * @param ctx the channel handler context
    * @param in  the {@link ByteBuf} from which to read data
-   * @param out the {@link List} to which decoded messages are added
    * @return {@code true} if a header was decoded, {@code false} otherwise
    */
-  private boolean onFrameBegins(final ByteBuf in, final List<Object> out) {
+  private boolean onFrameBegins(final ChannelHandlerContext ctx, final ByteBuf in) {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);
@@ -200,7 +204,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
             remoteAddress));
       }
       if (dataBodyBytesToRead == 0) {
-        onDataFrameEnd();
+        onDataFrameEnd(ctx);
       }
     }
     return true;
@@ -209,12 +213,14 @@ final class FrameDecoder extends ByteToMessageDecoder {
   /**
    * Try to emit the body of the control frame.
    *
+   * @param ctx the channel handler context
    * @param in  the {@link ByteBuf} from which to read data
    * @param out the list to which the body of the control frame is added
    * @return {@code true} if the control frame body was emitted, {@code false} otherwise
    * @throws InvalidProtocolBufferException when failed to parse
    */
-  private boolean onControlBodyAdded(final ByteBuf in, final List<Object> out) throws InvalidProtocolBufferException {
+  private boolean onControlBodyAdded(final ChannelHandlerContext ctx, final ByteBuf in, final List<Object> out)
+      throws InvalidProtocolBufferException {
     assert (controlBodyBytesToRead > 0);
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);
@@ -248,10 +254,11 @@ final class FrameDecoder extends ByteToMessageDecoder {
   /**
    * Supply byte stream to an existing {@link PartitionInputStream}.
    *
+   * @param ctx the channel handler context
    * @param in  the {@link ByteBuf} from which to read data
    * @throws InterruptedException when interrupted while adding to {@link ByteBuf} queue
    */
-  private void onDataBodyAdded(final ByteBuf in) {
+  private void onDataBodyAdded(final ChannelHandlerContext ctx, final ByteBuf in) {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead > 0);
     assert (inputStream != null);
@@ -265,18 +272,22 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
     dataBodyBytesToRead -= length;
     if (dataBodyBytesToRead == 0) {
-      onDataFrameEnd();
+      onDataFrameEnd(ctx);
     }
   }
 
   /**
    * Closes {@link PartitionInputStream} if necessary and resets the internal states of the decoder.
    *
+   * @param ctx the channel handler context
    * @throws InterruptedException when interrupted while marking the end of stream
    */
-  private void onDataFrameEnd() {
+  private void onDataFrameEnd(final ChannelHandlerContext ctx) {
     inputStream.startDecodingThreadIfNeeded();
     if (isEndingFrame) {
+      LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, is now closed",
+          new Object[]{isPullTransfer ? "pull" : "push", transferId, ctx.channel().remoteAddress(),
+          ctx.channel().localAddress()});
       inputStream.markAsEnded();
       (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);
     }
