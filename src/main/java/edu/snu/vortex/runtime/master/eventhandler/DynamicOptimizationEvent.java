@@ -22,7 +22,6 @@ import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 
 /**
  * An event for triggering dynamic optimization.

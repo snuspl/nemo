@@ -236,8 +236,7 @@ public final class BatchScheduler implements Scheduler {
       // and we will use this vertex to perform metric collection and dynamic optimization.
 
       pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
-          new DynamicOptimizationEvent(this, physicalPlan, metricCollectionBarrierVertex,
-              Pair.of(executorId, taskGroup)));
+          new DynamicOptimizationEvent(physicalPlan, metricCollectionBarrierVertex, Pair.of(executorId, taskGroup)));
     } else {
       onTaskGroupExecutionComplete(executorId, taskGroup, true);
     }

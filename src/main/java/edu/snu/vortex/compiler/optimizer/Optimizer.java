@@ -58,7 +58,8 @@ public final class Optimizer {
    * @return the processed DAG.
    * @throws Exception Exceptionso n the way.
    */
-  private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag, final List<Pass> passes,
+  private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag,
+                                               final List<StaticOptimizationPass> passes,
                                                final String dagDirectory) throws Exception {
     if (passes.isEmpty()) {
       return dag;
@@ -84,7 +85,7 @@ public final class Optimizer {
    * A HashMap to match each of instantiation policies with a combination of instantiation passes.
    * Each policies are run in the order with which they are defined.
    */
-  private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
+  private static final Map<PolicyType, List<StaticOptimizationPass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.Default,
         Arrays.asList(
@@ -136,7 +137,7 @@ public final class Optimizer {
    * @param metricCollectionBarrierVertex the vertex that collects metrics and chooses which optimization to perform.
    * @return the newly updated optimized physical plan.
    */
-  public synchronized static PhysicalPlan dynamicOptimization(
+  public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     // TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
