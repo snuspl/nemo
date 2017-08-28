@@ -27,6 +27,7 @@ import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.master.scheduler.Scheduler;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEvent;
 import org.apache.reef.wake.EventHandler;
+import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
 
@@ -34,11 +35,11 @@ import javax.inject.Inject;
  * Class for handling events related to the compiler optimizer.
  */
 public final class CompilerEventHandler implements EventHandler<CompilerEvent> {
-  private PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
+  private PubSubEventHandler pubSubEventHandler;
 
   @Inject
   private CompilerEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
-    this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
+    this.pubSubEventHandler = pubSubEventHandlerWrapper.getPubSubEventHandler();
     // You can see the list of events that are handled by this handler.
     pubSubEventHandlerWrapper.getPubSubEventHandler().subscribe(DynamicOptimizationEvent.class, this);
   }
@@ -57,8 +58,7 @@ public final class CompilerEventHandler implements EventHandler<CompilerEvent> {
 
       final PhysicalPlan newPlan = Optimizer.dynamicOptimization(physicalPlan, metricCollectionBarrierVertex);
 
-      pubSubEventHandlerWrapper.getPubSubEventHandler().onNext(
-              new UpdatePhysicalPlanEvent(scheduler, newPlan, taskInfo));
+      pubSubEventHandler.onNext(new UpdatePhysicalPlanEvent(scheduler, newPlan, taskInfo));
     }
   }
 }

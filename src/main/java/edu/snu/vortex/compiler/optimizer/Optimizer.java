@@ -43,7 +43,7 @@ public final class Optimizer {
    * @throws Exception throws an exception if there is an exception.
    */
   public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
-                                        final String dagDirectory) throws Exception {
+                                               final String dagDirectory) throws Exception {
     if (policyType == null) {
       throw new RuntimeException("Policy has not been provided for the policyType");
     }
@@ -138,7 +138,7 @@ public final class Optimizer {
    */
   public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
                                                  final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    // TODO#??: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
+    // TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
     // Map between a partition ID to corresponding metric data (e.g., the size of each block).
     final Map<String, List> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
