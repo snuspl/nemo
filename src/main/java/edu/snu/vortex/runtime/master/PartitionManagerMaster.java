@@ -41,7 +41,7 @@ import static edu.snu.vortex.runtime.common.state.PartitionState.State.SCHEDULED
  * For now, all its operations are synchronized to guarantee thread safety.
  * TODO #430: Handle Concurrency at Partition Level.
  * TODO #431: Include Partition Metadata in a Partition.
- * TODO 433: Reconsider fault tolerance for partitions in remote storage.
+ * TODO #433: Reconsider fault tolerance for partitions in remote storage.
  */
 @ThreadSafe
 public final class PartitionManagerMaster {
@@ -130,6 +130,7 @@ public final class PartitionManagerMaster {
     switch (state) {
       case SCHEDULED:
       case PARTIAL_COMMITTED:
+        // TODO #444: Introduce BlockState -> remove PARTIAL_COMMITTED and manage the block state in PartitionStores.
         return partitionIdToLocationFuture.computeIfAbsent(partitionId, pId -> new CompletableFuture<>());
       case COMMITTED:
         return CompletableFuture.completedFuture(getPartitionLocation(partitionId).get());

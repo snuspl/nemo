@@ -34,6 +34,7 @@ public final class PartitionState {
     stateMachineBuilder.addState(State.READY, "The partition is ready to be created.");
     stateMachineBuilder.addState(State.SCHEDULED, "The partition is scheduled for creation.");
     stateMachineBuilder.addState(State.COMMITTED, "The partition has been committed.");
+    // TODO #444: Introduce BlockState -> remove PARTIAL_COMMITTED and manage the block state in PartitionStores.
     stateMachineBuilder.addState(State.PARTIAL_COMMITTED, "The partition has been partially committed.");
     stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The task group that produces the partition is scheduled, "
         + "but failed before committing");

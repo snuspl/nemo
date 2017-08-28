@@ -24,6 +24,7 @@ import java.util.List;
 
 /**
  * Pass which enables I-File style write optimization.
+ * It sets IFileWrite attribute on ScatterGather edges with RemoteFile partition store.
  */
 public final class IFilePass implements Pass {
   @Override
