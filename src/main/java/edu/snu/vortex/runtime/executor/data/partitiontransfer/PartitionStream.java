@@ -33,11 +33,11 @@ public interface PartitionStream {
   String getRemoteExecutorId();
 
   /**
-   * Gets whether the sender sends data incrementally or not.
+   * Gets whether the sender should start encoding even though the whole partition has not been written yet.
    *
-   * @return whether the sender sends data incrementally or not
+   * @return whether the sender should start encoding even though the whole partition has not been written yet
    */
-  boolean isIncremental();
+  boolean isEncodePartialPartitionEnabled();
 
   /**
    * Gets the partition store type.

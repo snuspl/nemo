@@ -41,7 +41,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String senderExecutorId;
-  private final boolean incremental;
+  private final boolean encodePartialPartition;
   private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
@@ -58,27 +58,28 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   public String toString() {
     return String.format("PartitionInputStream(%s of %s%s from %s, %s, encodePartial: %b)",
         hashRange.toString(), partitionId, partitionStore.isPresent() ? " in " + partitionStore.get() : "",
-        senderExecutorId, runtimeEdgeId, incremental);
+        senderExecutorId, runtimeEdgeId, encodePartialPartition);
   }
 
   /**
    * Creates a partition input stream.
    *
-   * @param senderExecutorId  the id of the remote executor
-   * @param incremental       whether the sender sends data incrementally or not
-   * @param partitionStore    the partition store
-   * @param partitionId       the partition id
-   * @param runtimeEdgeId     the runtime edge id
-   * @param hashRange         the hash range
+   * @param senderExecutorId        the id of the remote executor
+   * @param encodePartialPartition  whether the sender should start encoding even when the whole partition has not
+   *                                been written yet
+   * @param partitionStore          the partition store
+   * @param partitionId             the partition id
+   * @param runtimeEdgeId           the runtime edge id
+   * @param hashRange               the hash range
    */
   PartitionInputStream(final String senderExecutorId,
-                       final boolean incremental,
+                       final boolean encodePartialPartition,
                        final Optional<Attribute> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
-    this.incremental = incremental;
+    this.encodePartialPartition = encodePartialPartition;
     this.partitionStore = partitionStore;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
@@ -170,8 +171,8 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   @Override
-  public boolean isIncremental() {
-    return incremental;
+  public boolean isEncodePartialPartitionEnabled() {
+    return encodePartialPartition;
   }
 
   @Override

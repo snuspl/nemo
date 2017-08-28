@@ -73,8 +73,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     this.partitionManagerWorker = partitionManagerWorker;
     this.partitionTransport = partitionTransport;
     this.nameResolver = nameResolver;
-    // Inbound thread pool can be easily saturated with multiple incremental data transfers.
-    // We may consider other solutions than using fixed thread pool.
+    // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialPartition option
+    // enabled. We may consider other solutions than using fixed thread pool.
     this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads);
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads);
     this.bufferSize = bufferSize;
@@ -91,23 +91,24 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   /**
    * Initiate a pull-based partition transfer.
    *
-   * @param executorId      the id of the source executor
-   * @param incremental     whether the sender should send data incrementally or not
-   * @param partitionStore  the partition store
-   * @param partitionId     the id of the partition to transfer
-   * @param runtimeEdgeId   the runtime edge id
-   * @param hashRange       the hash range
+   * @param executorId              the id of the source executor
+   * @param encodePartialPartition  whether the sender should start encoding even though the whole partition
+   *                                has not been written yet
+   * @param partitionStore          the partition store
+   * @param partitionId             the id of the partition to transfer
+   * @param runtimeEdgeId           the runtime edge id
+   * @param hashRange               the hash range
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
   public PartitionInputStream initiatePull(final String executorId,
-                                           final boolean incremental,
+                                           final boolean encodePartialPartition,
                                            final Attribute partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
-    final PartitionInputStream stream = new PartitionInputStream(executorId, incremental, Optional.of(partitionStore),
-        partitionId, runtimeEdgeId, hashRange);
+    final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
+        Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
     return stream;
@@ -116,19 +117,19 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   /**
    * Initiate a push-based partition transfer.
    *
-   * @param executorId    the id of the destination executor
-   * @param incremental   whether to send data incrementally or not
-   * @param partitionId   the id of the partition to transfer
-   * @param runtimeEdgeId the runtime edge id
-   * @param hashRange     the hash range
+   * @param executorId              the id of the destination executor
+   * @param encodePartialPartition  whether to start encoding even though the whole partition has not been written yet
+   * @param partitionId             the id of the partition to transfer
+   * @param runtimeEdgeId           the runtime edge id
+   * @param hashRange               the hash range
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
   public PartitionOutputStream initiatePush(final String executorId,
-                                            final boolean incremental,
+                                            final boolean encodePartialPartition,
                                             final String partitionId,
                                             final String runtimeEdgeId,
                                             final HashRange hashRange) {
-    final PartitionOutputStream stream = new PartitionOutputStream(executorId, incremental, Optional.empty(),
+    final PartitionOutputStream stream = new PartitionOutputStream(executorId, encodePartialPartition, Optional.empty(),
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
