@@ -32,6 +32,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -209,7 +210,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   @Override
-  public Optional<List<FileArea>> getFileAreas(final String partitionId, final HashRange hashRange) {
+  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
     try {
@@ -218,9 +219,9 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       final Optional<GlusterFilePartition> partition =
           GlusterFilePartition.open(coder, filePath, metadata);
       if (partition.isPresent()) {
-        return Optional.of(partition.get().asFileAreas(hashRange));
+        return partition.get().asFileAreas(hashRange);
       } else {
-        return Optional.empty();
+        return Collections.emptyList();
       }
     } catch (final IOException | InterruptedException | ExecutionException e) {
       throw new PartitionFetchException(e);

@@ -190,10 +190,12 @@ public abstract class FilePartition implements Partition, AutoCloseable {
    */
   public final List<FileArea> asFileAreas(final HashRange hashRange) throws IOException {
     final List<FileArea> fileAreas = new ArrayList<>();
+    long position = 0;
     for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
       if (hashRange.includes(blockMetadata.getHashValue())) {
-        fileAreas.add(new FileArea(filePath, blockMetadata.getOffset(), blockMetadata.getBlockSize()));
+        fileAreas.add(FileArea.of(filePath, position, blockMetadata.getBlockSize()));
       }
+      position += blockMetadata.getBlockSize();
     }
     return fileAreas;
   }

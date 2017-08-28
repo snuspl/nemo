@@ -192,14 +192,9 @@ final class LocalFileStore extends FileStore {
   }
 
   @Override
-  public Optional<List<FileArea>> getFileAreas(final String partitionId, final HashRange hashRange) {
+  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     try {
-      final LocalFilePartition partition = partitionIdToData.get(partitionId);
-      if (partition == null) {
-        return Optional.empty();
-      } else {
-        return Optional.of(partition.asFileAreas(hashRange));
-      }
+      return partitionIdToData.get(partitionId).asFileAreas(hashRange);
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }
