@@ -194,7 +194,12 @@ final class LocalFileStore extends FileStore {
   @Override
   public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     try {
-      return partitionIdToData.get(partitionId).asFileAreas(hashRange);
+      final LocalFilePartition partition = partitionIdToData.get(partitionId);
+      if (partition == null) {
+        throw new PartitionFetchException(new Exception(String.format("%s does not exists", partitionId)));
+      } else {
+        return partition.asFileAreas(hashRange);
+      }
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }

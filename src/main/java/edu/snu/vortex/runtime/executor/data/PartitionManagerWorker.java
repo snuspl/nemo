@@ -337,8 +337,9 @@ public final class PartitionManagerWorker {
       try {
         outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
             outputStream.getHashRange())).close();
-      } catch (final IOException e) {
-        throw new RuntimeException(e);
+      } catch (final IOException | PartitionFetchException e) {
+        LOG.error("Closing a pull request exceptionally", e);
+        outputStream.closeExceptionally(e);
       }
     } else {
       final CompletableFuture<Iterable<Element>> partitionFuture =
@@ -348,7 +349,8 @@ public final class PartitionManagerWorker {
         try {
           outputStream.writeElements(partition).close();
         } catch (final IOException e) {
-          throw new RuntimeException(e);
+          LOG.error("Closing a pull request exceptionally", e);
+          outputStream.closeExceptionally(e);
         }
       });
     }

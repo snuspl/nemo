@@ -286,6 +286,21 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
+   * Closes this stream, exceptionally.
+   *
+   * @param cause the cause of the exceptional control flow
+   */
+  public void closeExceptionally(final Throwable cause) {
+    if (closed) {
+      throw new IllegalStateException("This PartitionOutputStream is closed already");
+    }
+    closed = true;
+    elementQueue.close();
+    channelException = cause;
+    channel.closeFuture();
+  }
+
+  /**
    * Throws an {@link IOException} if needed.
    *
    * @throws IOException if an exception was set

@@ -32,7 +32,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -221,7 +220,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       if (partition.isPresent()) {
         return partition.get().asFileAreas(hashRange);
       } else {
-        return Collections.emptyList();
+        throw new PartitionFetchException(new Exception(String.format("%s does not exists", partitionId)));
       }
     } catch (final IOException | InterruptedException | ExecutionException e) {
       throw new PartitionFetchException(e);
