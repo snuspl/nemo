@@ -16,6 +16,8 @@
 
 package edu.snu.vortex.runtime.executor.metric;
 
+import java.util.*;
+
 /**
  * MetricData Builder.
  */
@@ -30,6 +32,8 @@ public final class MetricDataBuilder {
   private long startAt;
   private long endAt;
 
+  private Map<String, MetricDataBuilder> metricDataBuilderQueue;
+
   public MetricDataBuilder(final Enum computationUnit,
                     final String computationUnitId,
                     final String executorId) {
@@ -41,16 +45,17 @@ public final class MetricDataBuilder {
     this.toState = null;
     this.startAt = 0;
     this.endAt = 0;
+    this.metricDataBuilderQueue = new HashMap<>();
   }
 
   public void beginMeasurement(final int attemptIdx, final Enum startState, final long beginTimestamp) {
     this.scheduleAttemptIdx = attemptIdx;
-    this.fromState = startState.toString();
+    this.fromState = startState.name();
     this.startAt = beginTimestamp;
   }
 
   public void endMeasurement(final Enum endState, final long endTimestamp) {
-    this.toState = endState.toString();
+    this.toState = endState.name();
     this.endAt = endTimestamp;
   }
 
@@ -84,5 +89,4 @@ public final class MetricDataBuilder {
     return new MetricData(getComputationUnit(), getComputationUnitId(), getExecutorId(),
         getScheduleAttemptIdx(), getFromState(), getToState(), getElapsedTime());
   }
-
 }

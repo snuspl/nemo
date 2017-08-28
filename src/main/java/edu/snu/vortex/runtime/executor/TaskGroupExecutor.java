@@ -29,8 +29,6 @@ import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.executor.datatransfer.InputReader;
 import edu.snu.vortex.runtime.executor.datatransfer.OutputWriter;
-import edu.snu.vortex.runtime.executor.metric.MetricData;
-import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
 import edu.snu.vortex.runtime.master.irimpl.ContextImpl;
 import edu.snu.vortex.runtime.master.irimpl.OutputCollectorImpl;
 import edu.snu.vortex.common.dag.DAG;
@@ -157,9 +155,8 @@ public final class TaskGroupExecutor {
 
   /**
    * Executes the task group.
-   * @param executorId on which this task group is executed
    */
-  public void execute(final String executorId) {
+  public void execute() {
     LOG.info("{} Execution Started!", taskGroup.getTaskGroupId());
     if (isExecutionRequested) {
       throw new RuntimeException("TaskGroup {" + taskGroup.getTaskGroupId() + "} execution called again!");
@@ -167,48 +164,40 @@ public final class TaskGroupExecutor {
       isExecutionRequested = true;
     }
 
-    MetricDataBuilder metricDataBuilder = new MetricDataBuilder(MetricData.ComputationUnit.TASKGROUP,
-        taskGroup.getTaskGroupId(), executorId);
-    taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty(), Optional.empty(),
-        metricDataBuilder);
+    taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty(), Optional.empty());
 
     taskGroup.getTaskDAG().topologicalDo(task -> {
-      taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING, Optional.empty(),
-          metricDataBuilder);
+      taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING, Optional.empty());
       try {
         if (task instanceof BoundedSourceTask) {
           launchBoundedSourceTask((BoundedSourceTask) task);
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty(),
-              metricDataBuilder);
+          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof OperatorTask) {
           launchOperatorTask((OperatorTask) task);
           garbageCollectLocalIntermediateData(task);
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty(),
-              metricDataBuilder);
+          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof MetricCollectionBarrierTask) {
           launchMetricCollectionBarrierTask((MetricCollectionBarrierTask) task);
           garbageCollectLocalIntermediateData(task);
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.ON_HOLD, Optional.empty(),
-              metricDataBuilder);
+          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.ON_HOLD, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
       } catch (final PartitionFetchException ex) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
-            Optional.of(TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE), metricDataBuilder);
+            Optional.of(TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
             new Object[] {taskGroup.getTaskGroupId(), ex.toString()});
       } catch (final PartitionWriteException ex2) {
         taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
-            Optional.of(TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE), metricDataBuilder);
+            Optional.of(TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
             new Object[] {taskGroup.getTaskGroupId(), ex2.toString()});
       } catch (final Exception e) {
-        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE, Optional.empty(),
-            metricDataBuilder);
+        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE, Optional.empty());
         throw new RuntimeException(e);
       }
     });
