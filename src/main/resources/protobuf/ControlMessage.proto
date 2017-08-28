@@ -99,10 +99,11 @@ message PartitionTransferControlMessage {
     optional PartitionStore partitionStore = 2;
     required PartitionTransferType type = 3;
     required int32 transferId = 4;
-    required string partitionId = 5;
-    required string runtimeEdgeId = 6;
-    optional int32 startRangeInclusive = 7;
-    optional int32 endRangeExclusive = 8;
+    required bool incremental = 5;
+    required string partitionId = 6;
+    required string runtimeEdgeId = 7;
+    optional int32 startRangeInclusive = 8;
+    optional int32 endRangeExclusive = 9;
 }
 
 message RequestPartitionMsg {

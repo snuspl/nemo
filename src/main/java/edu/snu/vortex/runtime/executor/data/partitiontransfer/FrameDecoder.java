@@ -261,6 +261,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
     assert (length <= Integer.MAX_VALUE);
     final ByteBuf body = in.readSlice((int) length).retain();
     inputStream.append(body);
+    inputStream.startDecodingThreadIfNeeded();
 
     dataBodyBytesToRead -= length;
     if (dataBodyBytesToRead == 0) {
@@ -274,6 +275,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @throws InterruptedException when interrupted while marking the end of stream
    */
   private void onDataFrameEnd() {
+    inputStream.startDecodingThreadIfNeeded();
     if (isEndingFrame) {
       inputStream.markAsEnded();
       (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);

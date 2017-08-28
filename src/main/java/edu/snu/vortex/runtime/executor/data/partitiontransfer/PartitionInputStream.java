@@ -29,6 +29,12 @@ final class PartitionInputStream {
   }
 
   /**
+   * Starts the decoding thread, if this has not started already.
+   */
+  void startDecodingThreadIfNeeded() {
+  }
+
+  /**
    * Called when all the inbound {@link ByteBuf}s are received.
    */
   void markAsEnded() {
