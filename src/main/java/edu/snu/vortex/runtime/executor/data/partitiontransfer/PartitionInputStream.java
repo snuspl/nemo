@@ -54,6 +54,13 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private final ClosableBlockingIterable<Element<T, ?, ?>> elementQueue = new ClosableBlockingIterable<>();
   private volatile boolean started = false;
 
+  @Override
+  public String toString() {
+    return String.format("PartitionInputStream(%s of %s%s from %s, %s, encodePartial: %b)",
+        hashRange.toString(), partitionId, partitionStore.isPresent() ? " in " + partitionStore.get() : "",
+        senderExecutorId, runtimeEdgeId, incremental);
+  }
+
   /**
    * Creates a partition input stream.
    *
@@ -130,13 +137,13 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
         elementQueue.close();
         if (!completeFuture.isCompletedExceptionally()) {
           completeFuture.complete(this);
-          // The elapsed time is determined by the speed of decoder *and* the rate of the byte stream through network.
+          // If encodePartialPartition option is on, the elapsed time is not only determined by the speed of decoder
+          // but also by the rate of byte stream through the network.
           // Before investigating on low rate of decoding, check the rate of the byte stream.
-          LOG.debug("Decoded: {} ({}, {}). Took {} ms from the opening of this stream to decoding the last element",
-              new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), endTime - startTime});
+          LOG.debug("Decoding task took {} ms to complete for {}", endTime - startTime, toString());
         }
       } catch (final Exception e) {
-        LOG.error("An exception in PartitionInputStream thread", e);
+        LOG.error(String.format("An exception in decoding thread for %s", toString()), e);
         throw new RuntimeException(e);
       }
     });
@@ -148,6 +155,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * @param cause the cause of exception handling
    */
   void onExceptionCaught(final Throwable cause) {
+    LOG.error(String.format("A channel exception closes %s", toString()), cause);
     markAsEnded();
     if (!started) {
       // There's no decoding thread to close the element queue.

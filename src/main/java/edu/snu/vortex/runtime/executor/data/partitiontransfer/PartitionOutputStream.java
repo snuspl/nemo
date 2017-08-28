@@ -65,6 +65,13 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private volatile Throwable channelException = null;
   private volatile boolean started = false;
 
+  @Override
+  public String toString() {
+    return String.format("PartitionOutputStream(%s of %s%s to %s, %s, encodePartial: %b)",
+        hashRange.toString(), partitionId, partitionStore.isPresent() ? " in " + partitionStore.get() : "",
+        receiverExecutorId, runtimeEdgeId, incremental);
+  }
+
   /**
    * Creates a partition output stream.
    *
@@ -179,13 +186,13 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
           }
         }
         final long endTime = System.currentTimeMillis();
-        // The elapsed time is determined by the speed of encoder *and* the rate the user writes objects to this stream.
-        // Before investigating on low rate of encoding, check how often the write operations on this stream is called.
-        LOG.debug("Encoded: {} ({}, {}), {} bytes. Took {} ms for the all objects being written and encoded.",
-            new Object[]{partitionId, runtimeEdgeId, hashRange.toString(), byteBufOutputStream.streamLength,
-            endTime - startTime});
+        // If encodePartialPartition option is on, the elapsed time is not only determined by the speed of encoder
+        // but also by the rate the user writes objects to this stream.
+        // Before investigating on low rate of decoding, check the rate of the byte stream.
+        LOG.debug("Encoding task took {} ms to complete for {} ({} bytes, buffer size: {})",
+            new Object[]{endTime - startTime, toString(), byteBufOutputStream.streamLength, bufferSize});
       } catch (final Exception e) {
-        LOG.error("An exception in PartitionOutputStream thread", e);
+        LOG.error(String.format("An exception in encoding thread for %s", toString()), e);
         throw new RuntimeException(e);
       }
     });
@@ -206,6 +213,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @param cause the cause of exception handling
    */
   void onExceptionCaught(final Throwable cause) {
+    LOG.error(String.format("A channel exception was set on %s", toString()), cause);
     this.channelException = cause;
   }
 
@@ -291,8 +299,10 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    * @param cause the cause of the exceptional control flow
    */
   public void closeExceptionally(final Throwable cause) {
+    LOG.error(String.format("Setting a user exception and closing %s and its channel", toString()), cause);
     if (closed) {
-      throw new IllegalStateException("This PartitionOutputStream is closed already");
+      LOG.error("Cannot close {} exceptionally because it's already closed", toString());
+      throw new IllegalStateException(String.format("%s is closed already", toString()));
     }
     closed = true;
     elementQueue.close();
@@ -311,7 +321,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       throw new IOException(channelException);
     }
     if (closed) {
-      throw new IllegalStateException("This PartitionOutputStream is closed");
+      throw new IllegalStateException(String.format("%s is closed", toString()));
     }
   }
 
