@@ -48,6 +48,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String receiverExecutorId;
+  private final boolean incremental;
   private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
@@ -62,22 +63,26 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private final ClosableBlockingQueue<Object> elementQueue = new ClosableBlockingQueue<>();
   private volatile boolean closed = false;
   private volatile Throwable channelException = null;
+  private volatile boolean started = false;
 
   /**
    * Creates a partition output stream.
    *
    * @param receiverExecutorId  the id of the remote executor
+   * @param incremental         whether to send data incrementally or not
    * @param partitionStore      the partition store
    * @param partitionId         the partition id
    * @param runtimeEdgeId       the runtime edge id
    * @param hashRange           the hash range
    */
   PartitionOutputStream(final String receiverExecutorId,
+                        final boolean incremental,
                         final Optional<Attribute> partitionStore,
                         final String partitionId,
                         final String runtimeEdgeId,
                         final HashRange hashRange) {
     this.receiverExecutorId = receiverExecutorId;
+    this.incremental = incremental;
     this.partitionStore = partitionStore;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
@@ -118,6 +123,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   @Override
+  public boolean isIncremental() {
+    return incremental;
+  }
+
+  @Override
   public Optional<Attribute> getPartitionStore() {
     return partitionStore;
   }
@@ -140,7 +150,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   /**
    * Starts the encoding and writing to the channel.
    */
-  void startEncodingThread() {
+  private void startEncodingThreadIfNeeded() {
+    if (started) {
+      return;
+    }
+    started = true;
     assert (channel != null);
     assert (coder != null);
     final ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream();
@@ -178,6 +192,15 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
+   * Start the encoding thread, if this is an incremental transfer and the encoding thread has not been started.
+   */
+  private void startEncodingThreadIfIncremental() {
+    if (incremental) {
+      startEncodingThreadIfNeeded();
+    }
+  }
+
+  /**
    * Sets a channel exception.
    *
    * @param cause the cause of exception handling
@@ -197,6 +220,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeElement(final Element<T, ?, ?> element) throws IOException {
     checkWritableCondition();
     elementQueue.put(element);
+    startEncodingThreadIfIncremental();
     return this;
   }
 
@@ -211,6 +235,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeElements(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
     checkWritableCondition();
     elementQueue.put(iterable);
+    startEncodingThreadIfIncremental();
     return this;
   }
 
@@ -225,6 +250,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeFileArea(final FileArea fileArea) throws IOException {
     checkWritableCondition();
     elementQueue.put(fileArea);
+    startEncodingThreadIfIncremental();
     return this;
   }
 
@@ -241,6 +267,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     for (final FileArea fileArea : fileAreas) {
       elementQueue.put(fileArea);
     }
+    startEncodingThreadIfIncremental();
     return this;
   }
 
@@ -254,6 +281,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public void close() throws IOException {
     checkWritableCondition();
     closed = true;
+    startEncodingThreadIfNeeded();
     elementQueue.close();
   }
 

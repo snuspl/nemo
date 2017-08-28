@@ -108,7 +108,6 @@ final class ControlMessageToPartitionStreamCodec
     checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
     pullTransferIdToInputStream.put(transferId, in);
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
-    in.startDecodingThread();
     LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
         in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
@@ -130,7 +129,6 @@ final class ControlMessageToPartitionStreamCodec
     pushTransferIdToOutputStream.put(transferId, in);
     in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
-    in.startEncodingThread();
     LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
         in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
@@ -169,8 +167,9 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(), Optional.of(
-        convertPartitionStore(in.getPartitionStore())), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
+    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
+        in.getIncremental(), Optional.of(convertPartitionStore(in.getPartitionStore())), in.getPartitionId(),
+        in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
@@ -193,8 +192,8 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(), Optional.empty(),
-        in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
+    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
+        in.getIncremental(), Optional.empty(), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
     LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",

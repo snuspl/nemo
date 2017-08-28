@@ -92,6 +92,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * Initiate a pull-based partition transfer.
    *
    * @param executorId      the id of the source executor
+   * @param incremental     whether the sender should send data incrementally or not
    * @param partitionStore  the partition store
    * @param partitionId     the id of the partition to transfer
    * @param runtimeEdgeId   the runtime edge id
@@ -100,11 +101,12 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
   public PartitionInputStream initiatePull(final String executorId,
+                                           final boolean incremental,
                                            final Attribute partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
-    final PartitionInputStream stream = new PartitionInputStream(executorId, Optional.of(partitionStore),
+    final PartitionInputStream stream = new PartitionInputStream(executorId, incremental, Optional.of(partitionStore),
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
@@ -115,17 +117,19 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * Initiate a push-based partition transfer.
    *
    * @param executorId    the id of the destination executor
+   * @param incremental   whether to send data incrementally or not
    * @param partitionId   the id of the partition to transfer
    * @param runtimeEdgeId the runtime edge id
    * @param hashRange     the hash range
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
   public PartitionOutputStream initiatePush(final String executorId,
+                                            final boolean incremental,
                                             final String partitionId,
                                             final String runtimeEdgeId,
                                             final HashRange hashRange) {
-    final PartitionOutputStream stream = new PartitionOutputStream(executorId, Optional.empty(), partitionId,
-        runtimeEdgeId, hashRange);
+    final PartitionOutputStream stream = new PartitionOutputStream(executorId, incremental, Optional.empty(),
+        partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
     partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
@@ -167,7 +171,6 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         outboundExecutorService, bufferSize);
     partitionManagerWorker.get().onPullRequest(stream);
-    stream.startEncodingThread();
   }
 
   /**
@@ -179,7 +182,6 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
     partitionManagerWorker.get().onPushNotification(stream);
-    stream.startDecodingThread();
   }
 
   /**

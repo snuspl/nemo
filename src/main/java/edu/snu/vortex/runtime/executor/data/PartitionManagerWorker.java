@@ -302,8 +302,8 @@ public final class PartitionManagerWorker {
       }
       // This is the executor id that we wanted to know
       final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
-      return partitionTransfer.initiatePull(remoteWorkerId, partitionStore, partitionId, runtimeEdgeId, hashRange)
-          .getCompleteFuture();
+      return partitionTransfer.initiatePull(remoteWorkerId, false, partitionStore, partitionId, runtimeEdgeId,
+          hashRange).getCompleteFuture();
     });
   }
 

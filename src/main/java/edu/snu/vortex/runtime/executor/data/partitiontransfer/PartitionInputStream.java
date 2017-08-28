@@ -41,6 +41,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
 
   private final String senderExecutorId;
+  private final boolean incremental;
   private final Optional<Attribute> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
@@ -57,17 +58,20 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    * Creates a partition input stream.
    *
    * @param senderExecutorId  the id of the remote executor
+   * @param incremental       whether the sender sends data incrementally or not
    * @param partitionStore    the partition store
    * @param partitionId       the partition id
    * @param runtimeEdgeId     the runtime edge id
    * @param hashRange         the hash range
    */
   PartitionInputStream(final String senderExecutorId,
+                       final boolean incremental,
                        final Optional<Attribute> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
+    this.incremental = incremental;
     this.partitionStore = partitionStore;
     this.partitionId = partitionId;
     this.runtimeEdgeId = runtimeEdgeId;
@@ -107,9 +111,12 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   /**
-   * Start decoding {@link ByteBuf}s into {@link Element}s.
+   * Start decoding {@link ByteBuf}s into {@link Element}s, if it has not been started.
    */
-  void startDecodingThread() {
+  void startDecodingThreadIfNeeded() {
+    if (started) {
+      return;
+    }
     started = true;
     executorService.submit(() -> {
       try {
@@ -152,6 +159,11 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   @Override
   public String getRemoteExecutorId() {
     return senderExecutorId;
+  }
+
+  @Override
+  public boolean isIncremental() {
+    return incremental;
   }
 
   @Override

@@ -33,6 +33,13 @@ public interface PartitionStream {
   String getRemoteExecutorId();
 
   /**
+   * Gets whether the sender sends data incrementally or not.
+   *
+   * @return whether the sender sends data incrementally or not
+   */
+  boolean isIncremental();
+
+  /**
    * Gets the partition store type.
    *
    * @return an {@link Optional} with partition store type if this stream belongs to a pull-based transfer,
