@@ -64,6 +64,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
 
+  private static final OutboundExceptionHandler OUTBOUND_EXCEPTION_HANDLER = new OutboundExceptionHandler();
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
   private static final DataFrameEncoder DATA_FRAME_ENCODER = new DataFrameEncoder();
 
@@ -91,6 +92,8 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   @Override
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
+        // channel management
+        .addLast(OUTBOUND_EXCEPTION_HANDLER)
         // inbound
         .addLast(new FrameDecoder())
         // outbound
@@ -105,7 +108,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   }
 
   /**
-   * Manages {@link Channel} registration to the channel group and the channel map, and handles exception.
+   * Manages {@link Channel} registration to the channel group and the channel map, and handles inbound exception.
    */
   @ChannelHandler.Sharable
   private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
@@ -157,8 +160,24 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-      LOG.error(String.format("Exception caught in the channel with local address %s and remote address %s",
-          ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
+      LOG.error(String.format("An inbound exception caught in the channel with local address %s and"
+          + "remote address %s", ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
+      ctx.close();
+    }
+  }
+
+  /**
+   * Handles outbound exception.
+   */
+  @ChannelHandler.Sharable
+  private static final class OutboundExceptionHandler extends ChannelOutboundHandlerAdapter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OutboundExceptionHandler.class);
+
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+      LOG.error(String.format("An outbound exception caught in the channel with local address %s and"
+          + "remote address %s", ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
       ctx.close();
     }
   }
