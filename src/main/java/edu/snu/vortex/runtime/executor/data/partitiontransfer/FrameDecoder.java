@@ -236,8 +236,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
       in.getBytes(in.readerIndex(), bytes, 0, (int) controlBodyBytesToRead);
       offset = 0;
     }
-    final ControlMessage.PartitionTransferControlMessage controlMessage
-        = ControlMessage.PartitionTransferControlMessage.PARSER.parseFrom(bytes, offset, (int) controlBodyBytesToRead);
+    final ControlMessage.DataTransferControlMessage controlMessage
+        = ControlMessage.DataTransferControlMessage.PARSER.parseFrom(bytes, offset, (int) controlBodyBytesToRead);
 
     out.add(controlMessage);
     in.skipBytes((int) controlBodyBytesToRead);

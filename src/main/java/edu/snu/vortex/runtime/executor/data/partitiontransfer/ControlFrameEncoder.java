@@ -30,7 +30,7 @@ import java.util.List;
  * @see FrameDecoder
  */
 @ChannelHandler.Sharable
-final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.PartitionTransferControlMessage> {
+final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.DataTransferControlMessage> {
 
   static final int TYPE_LENGTH = Short.BYTES;
   static final int UNUSED_LENGTH = Short.BYTES;
@@ -43,7 +43,7 @@ final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.P
 
   @Override
   protected void encode(final ChannelHandlerContext ctx,
-                        final ControlMessage.PartitionTransferControlMessage in,
+                        final ControlMessage.DataTransferControlMessage in,
                         final List<Object> out) {
     final byte[] frameBody = in.toByteArray();
     out.add(TYPE_AND_UNUSED.retain());

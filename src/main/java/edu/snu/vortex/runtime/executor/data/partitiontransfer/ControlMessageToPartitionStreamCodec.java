@@ -43,7 +43,7 @@ import java.util.Optional;
  * @see ChannelInitializer
  */
 final class ControlMessageToPartitionStreamCodec
-    extends MessageToMessageCodec<ControlMessage.PartitionTransferControlMessage, PartitionStream> {
+    extends MessageToMessageCodec<ControlMessage.DataTransferControlMessage, PartitionStream> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ControlMessageToPartitionStreamCodec.class);
 
@@ -145,7 +145,7 @@ final class ControlMessageToPartitionStreamCodec
    */
   @Override
   protected void decode(final ChannelHandlerContext ctx,
-                        final ControlMessage.PartitionTransferControlMessage in,
+                        final ControlMessage.DataTransferControlMessage in,
                         final List<Object> out) {
     if (in.getType() == ControlMessage.PartitionTransferType.PULL) {
       onInboundPullRequest(ctx, in, out);
@@ -162,13 +162,13 @@ final class ControlMessageToPartitionStreamCodec
    * @param out the {@link List} into which the created {@link PartitionOutputStream} is added
    */
   private void onInboundPullRequest(final ChannelHandlerContext ctx,
-                                    final ControlMessage.PartitionTransferControlMessage in,
+                                    final ControlMessage.DataTransferControlMessage in,
                                     final List<Object> out) {
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
-        in.getIncremental(), Optional.of(convertPartitionStore(in.getPartitionStore())), in.getPartitionId(),
+        in.getEncodePartialPartition(), Optional.of(convertPartitionStore(in.getPartitionStore())), in.getPartitionId(),
         in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
@@ -187,13 +187,13 @@ final class ControlMessageToPartitionStreamCodec
    * @param out the {@link List} into which the created {@link PartitionInputStream} is added
    */
   private void onInboundPushNotification(final ChannelHandlerContext ctx,
-                                         final ControlMessage.PartitionTransferControlMessage in,
+                                         final ControlMessage.DataTransferControlMessage in,
                                          final List<Object> out) {
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
-        in.getIncremental(), Optional.empty(), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
+        in.getEncodePartialPartition(), Optional.empty(), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
     LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",
@@ -229,12 +229,12 @@ final class ControlMessageToPartitionStreamCodec
                                   final short transferId,
                                   final PartitionStream in,
                                   final List<Object> out) {
-    final ControlMessage.PartitionTransferControlMessage.Builder controlMessageBuilder
-        = ControlMessage.PartitionTransferControlMessage.newBuilder()
+    final ControlMessage.DataTransferControlMessage.Builder controlMessageBuilder
+        = ControlMessage.DataTransferControlMessage.newBuilder()
         .setControlMessageSourceId(localExecutorId)
         .setType(transferType)
         .setTransferId(transferId)
-        .setIncremental(in.isIncremental())
+        .setEncodePartialPartition(in.isIncremental())
         .setPartitionId(in.getPartitionId())
         .setRuntimeEdgeId(in.getRuntimeEdgeId());
     if (in.getPartitionStore().isPresent()) {
