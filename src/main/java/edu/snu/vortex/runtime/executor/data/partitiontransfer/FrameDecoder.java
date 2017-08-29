@@ -155,7 +155,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
         onDataBodyAdded(ctx, in);
         toContinue = in.readableBytes() > 0;
       } else {
-        toContinue = onFrameBegins(ctx, in);
+        toContinue = onFrameStarted(ctx, in);
       }
       if (!toContinue) {
         break;
@@ -170,7 +170,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    * @param in  the {@link ByteBuf} from which to read data
    * @return {@code true} if a header was decoded, {@code false} otherwise
    */
-  private boolean onFrameBegins(final ChannelHandlerContext ctx, final ByteBuf in) {
+  private boolean onFrameStarted(final ChannelHandlerContext ctx, final ByteBuf in) {
     assert (controlBodyBytesToRead == 0);
     assert (dataBodyBytesToRead == 0);
     assert (inputStream == null);

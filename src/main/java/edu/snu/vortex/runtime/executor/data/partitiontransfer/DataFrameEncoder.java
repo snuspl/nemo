@@ -38,8 +38,9 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
   private static final Logger LOG = LoggerFactory.getLogger(DataFrameEncoder.class);
 
   static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
-  static final int LENGTH_LENGTH = Integer.BYTES;
-  static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
+  // the length of a frame body (not the entire frame) is stored in 4 bytes
+  static final int BODYLENGTH_LENGTH = Integer.BYTES;
+  static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + BODYLENGTH_LENGTH;
 
   // the maximum length of a frame body. 2**32 - 1
   static final long LENGTH_MAX = 4294967295L;
