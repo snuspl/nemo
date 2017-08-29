@@ -84,9 +84,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private static final Logger LOG = LoggerFactory.getLogger(FrameDecoder.class);
 
   static final short CONTROL_TYPE = 0;
-  static final short PULL_NOTLAST = 2;
+  static final short PULL_INTERMEDIATE_FRAME = 2;
   static final short PULL_LASTFRAME = 3;
-  static final short PUSH_NOTLAST = 4;
+  static final short PUSH_INTERMEDIATE_FRAME = 4;
   static final short PUSH_LASTFRAME = 5;
 
   static final int HEADER_LENGTH = ControlFrameEncoder.HEADER_LENGTH;
@@ -191,8 +191,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
     } else {
       // setup context for reading data frame body
       dataBodyBytesToRead = length;
-      isPullTransfer = type == PULL_NOTLAST || type == PULL_LASTFRAME;
-      final boolean isPushTransfer = type == PUSH_NOTLAST || type == PUSH_LASTFRAME;
+      isPullTransfer = type == PULL_INTERMEDIATE_FRAME || type == PULL_LASTFRAME;
+      final boolean isPushTransfer = type == PUSH_INTERMEDIATE_FRAME || type == PUSH_LASTFRAME;
       if (!isPullTransfer && !isPushTransfer) {
         throw new IllegalStateException(String.format("Illegal frame type: %d", type));
       }
