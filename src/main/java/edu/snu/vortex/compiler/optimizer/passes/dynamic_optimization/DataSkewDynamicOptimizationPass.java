@@ -36,11 +36,11 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
   public PhysicalPlan process(final PhysicalPlan originalPlan, final Map<String, List> metricData) {
     // Builder to create new stages.
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
-            new DAGBuilder<>(originalPlan.getStageDAG());
+        new DAGBuilder<>(originalPlan.getStageDAG());
 
     // Count the hash range.
     final int hashRange = metricData.values().stream().findFirst().orElseThrow(() ->
-            new DynamicOptimizationException("no valid metric data.")).size();
+        new DynamicOptimizationException("no valid metric data.")).size();
 
     // Do the optimization using the information derived above.
     metricData.forEach((partitionId, partitionSizes) -> {
@@ -48,10 +48,10 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
       final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
       // Edge of the partition.
       final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
-              .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
-              .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
-              .findFirst().orElseThrow(() ->
-                      new DynamicOptimizationException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
+          .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
+          .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
+          .findFirst().orElseThrow(() ->
+              new DynamicOptimizationException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
       // The following stage to receive the data.
       final PhysicalStage optimizationStage = optimizationEdge.getDst();
 
