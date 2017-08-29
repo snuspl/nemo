@@ -307,7 +307,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     closed = true;
     elementQueue.close();
     channelException = cause;
-    channel.closeFuture();
+    channel.close();
   }
 
   /**
@@ -446,6 +446,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       if (future.isSuccess()) {
         return;
       }
+      channel.close();
       if (future.cause() == null) {
         LOG.error("Failed to write a data frame");
       } else {
