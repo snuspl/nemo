@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
-import io.netty.buffer.ByteBuf;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -28,64 +27,47 @@ import java.util.concurrent.ExecutorService;
  *
  * @param <T> the type of element
  */
-public final class PartitionInputStream<T> implements PartitionStream {
+public final class PartitionOutputStream<T> implements PartitionStream {
   /**
-   * Creates a partition input stream.
+   * Creates a partition output stream.
    *
-   * @param senderExecutorId        the id of the remote executor
-   * @param encodePartialPartition  whether the sender should start encoding even when the whole partition has not
-   *                                been written yet
+   * @param receiverExecutorId      the id of the remote executor
+   * @param encodePartialPartition  whether to start encoding even when the whole partition has not been written
    * @param partitionStore          the partition store
    * @param partitionId             the partition id
    * @param runtimeEdgeId           the runtime edge id
    * @param hashRange               the hash range
    */
-  PartitionInputStream(final String senderExecutorId,
-                       final boolean encodePartialPartition,
-                       final Optional<Attribute> partitionStore,
-                       final String partitionId,
-                       final String runtimeEdgeId,
-                       final HashRange hashRange) {
+  PartitionOutputStream(final String receiverExecutorId,
+                        final boolean encodePartialPartition,
+                        final Optional<Attribute> partitionStore,
+                        final String partitionId,
+                        final String runtimeEdgeId,
+                        final HashRange hashRange) {
   }
 
   /**
-   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
+   * Sets {@link Coder}, {@link ExecutorService} and sizes to serialize bytes into partition.
    *
    * @param cdr     the coder
    * @param service the executor service
+   * @param bSize   the outbound buffer size
    */
-  void setCoderAndExecutorService(final Coder<T, ?, ?> cdr, final ExecutorService service) {
-  }
-
-  /**
-   * Accepts inbound {@link ByteBuf}.
-   * @param byteBuf the byte buffer
-   */
-  void append(final ByteBuf byteBuf) {
-  }
-
-  /**
-   * Called when all the inbound {@link ByteBuf}s are received.
-   */
-  void markAsEnded() {
-  }
-
-  /**
-   * Starts the decoding thread, if this has not started already.
-   */
-  void startDecodingThreadIfNeeded() {
-  }
-
-  /**
-   * Reports exception and closes this stream.
-   *
-   * @param cause the cause of exception handling
-   */
-  void onExceptionCaught(final Throwable cause) {
+  void setCoderAndExecutorServiceAndBufferSize(final Coder<T, ?, ?> cdr,
+                                               final ExecutorService service,
+                                               final int bSize) {
   }
 
   @Override
   public String getRuntimeEdgeId() {
     return "";
+  }
+
+  /**
+   * Sets a channel exception.
+   *
+   * @param cause the cause of exception handling
+   */
+  void onExceptionCaught(final Throwable cause) {
   }
 }

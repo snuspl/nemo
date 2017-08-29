@@ -27,6 +27,13 @@ import java.util.Map;
  */
 final class ControlMessageToPartitionStreamCodec extends MessageToMessageCodec<ControlMessage, Object> {
   /**
+   * Creates a {@link ControlMessageToPartitionStreamCodec}.
+   * @param localExecutorId the id of this executor
+   */
+  ControlMessageToPartitionStreamCodec(final String localExecutorId) {
+  }
+
+  /**
    * For an outbound {@link PartitionInputStream} or "partition output stream" (not implemented yet), which indicates
    * "partition transfer" (not implemented yet) decided to initiate a new transport context, responds to it by emitting
    * a new control message.
