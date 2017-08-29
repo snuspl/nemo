@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
@@ -82,12 +83,11 @@ final class LocalFileStore extends FileStore {
   }
 
   /**
-   * @see PartitionStore#retrieveDataFromPartition(String, int, int).
+   * @see PartitionStore#retrieveDataFromPartition(String, HashRange).
    */
   @Override
   public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final int hashRangeStartVal,
-                                                                          final int hashRangeEndVal) {
+                                                                          final HashRange hashRange) {
     // Deserialize the target data in the corresponding file and pass it as a local data.
     final LocalFilePartition partition = partitionIdToData.get(partitionId);
     if (partition == null) {
@@ -96,7 +96,7 @@ final class LocalFileStore extends FileStore {
     final Supplier<Optional<Partition>> supplier = () -> {
       try {
         return Optional.of(
-            new MemoryPartition(partition.retrieveInHashRange(hashRangeStartVal, hashRangeEndVal)));
+            new MemoryPartition(partition.retrieveInHashRange(hashRange)));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -139,13 +139,14 @@ final class LocalFileStore extends FileStore {
    * Saves an iterable of data blocks as a partition.
    * Each block has a specific hash value, and the block becomes a unit of read & write.
    *
-   * @param partitionId  of the partition.
-   * @param hashedData to save as a partition.
+   * @param partitionId of the partition.
+   * @param hashedData  to save as a partition. Each pair consists of the hash value and the block data.
    * @return the size of data per hash value.
    */
   @Override
   public CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
-      final String partitionId, final Iterable<Iterable<Element>> hashedData) {
+      final String partitionId,
+      final Iterable<Pair<Integer, Iterable<Element>>> hashedData) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
@@ -190,5 +191,19 @@ final class LocalFileStore extends FileStore {
       return true;
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
+  }
+
+  @Override
+  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
+    try {
+      final LocalFilePartition partition = partitionIdToData.get(partitionId);
+      if (partition == null) {
+        throw new PartitionFetchException(new Exception(String.format("%s does not exists", partitionId)));
+      } else {
+        return partition.asFileAreas(hashRange);
+      }
+    } catch (final IOException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 }
