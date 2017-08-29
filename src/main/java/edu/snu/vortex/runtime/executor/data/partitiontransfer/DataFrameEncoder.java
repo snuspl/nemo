@@ -38,8 +38,9 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
   private static final Logger LOG = LoggerFactory.getLogger(DataFrameEncoder.class);
 
   static final int TYPE_AND_TRANSFERID_LENGTH = Short.BYTES + Short.BYTES;
-  static final int LENGTH_LENGTH = Integer.BYTES;
-  static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + LENGTH_LENGTH;
+  // the length of a frame body (not the entire frame) is stored in 4 bytes
+  static final int BODYLENGTH_LENGTH = Integer.BYTES;
+  static final int HEADER_LENGTH = TYPE_AND_TRANSFERID_LENGTH + BODYLENGTH_LENGTH;
 
   // the maximum length of a frame body. 2**32 - 1
   static final long LENGTH_MAX = 4294967295L;
@@ -51,16 +52,16 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     final short type;
     final boolean isPull = in.type == ControlMessage.PartitionTransferType.PULL;
     if (isPull) {
-      if (in.ending) {
-        type = FrameDecoder.PULL_ENDING;
+      if (in.isLastFrame) {
+        type = FrameDecoder.PULL_LASTFRAME;
       } else {
-        type = FrameDecoder.PULL_NONENDING;
+        type = FrameDecoder.PULL_NOTLAST;
       }
     } else {
-      if (in.ending) {
-        type = FrameDecoder.PUSH_ENDING;
+      if (in.isLastFrame) {
+        type = FrameDecoder.PUSH_LASTFRAME;
       } else {
-        type = FrameDecoder.PUSH_NONENDING;
+        type = FrameDecoder.PUSH_NOTLAST;
       }
     }
     header.writeShort(type);
@@ -81,12 +82,12 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     in.recycle();
 
     // a transport context is closed. remove from map.
-    if (in.ending) {
+    if (in.isLastFrame) {
       final ControlMessageToPartitionStreamCodec duplexHandler
           = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
       (isPull ? duplexHandler.getPullTransferIdToOutputStream() : duplexHandler.getPushTransferIdToOutputStream())
           .remove(in.transferId);
-      LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, was closed", new Object[]{
+      LOG.debug("Closing transport {}:{}, where the partition sender is {} and the receiver is {}", new Object[]{
           isPull ? "pull" : "push", in.transferId, ctx.channel().localAddress(), ctx.channel().remoteAddress()});
     }
   }
@@ -115,7 +116,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     }
 
     private ControlMessage.PartitionTransferType type;
-    private boolean ending;
+    private boolean isLastFrame;
     private short transferId;
     private long length;
     @Nullable
@@ -125,20 +126,20 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
      * Creates a {@link DataFrame}.
      *
      * @param type        the transfer type, namely pull or push
-     * @param ending      whether or not this frame is an ending frame
+     * @param isLastFrame whether or not this frame is the last frame of a data message
      * @param transferId  the transfer id
      * @param length      the length of the body, in bytes
      * @param body        the body
      * @return the {@link DataFrame} object
      */
     static DataFrame newInstance(final ControlMessage.PartitionTransferType type,
-                                 final boolean ending,
+                                 final boolean isLastFrame,
                                  final short transferId,
                                  final long length,
                                  @Nullable final Object body) {
       final DataFrame dataFrame = RECYCLER.get();
       dataFrame.type = type;
-      dataFrame.ending = ending;
+      dataFrame.isLastFrame = isLastFrame;
       dataFrame.transferId = transferId;
       dataFrame.length = length;
       dataFrame.body = body;

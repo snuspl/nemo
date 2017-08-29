@@ -30,24 +30,25 @@ import java.util.List;
  * @see FrameDecoder
  */
 @ChannelHandler.Sharable
-final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.PartitionTransferControlMessage> {
+final class ControlFrameEncoder extends MessageToMessageEncoder<ControlMessage.DataTransferControlMessage> {
 
   static final int TYPE_LENGTH = Short.BYTES;
   static final int UNUSED_LENGTH = Short.BYTES;
   static final int TYPE_AND_UNUSED_LENGTH = TYPE_LENGTH + UNUSED_LENGTH;
-  static final int LENGTH_LENGTH = Integer.BYTES;
-  static final int HEADER_LENGTH = TYPE_AND_UNUSED_LENGTH + LENGTH_LENGTH;
+  // the length of a frame body (not the entire frame) is stored in 4 bytes
+  static final int BODYLENGTH_LENGTH = Integer.BYTES;
+  static final int HEADER_LENGTH = TYPE_AND_UNUSED_LENGTH + BODYLENGTH_LENGTH;
 
   static final ByteBuf TYPE_AND_UNUSED = Unpooled.directBuffer(TYPE_AND_UNUSED_LENGTH, TYPE_AND_UNUSED_LENGTH)
       .writeShort(FrameDecoder.CONTROL_TYPE).writeZero(UNUSED_LENGTH);
 
   @Override
   protected void encode(final ChannelHandlerContext ctx,
-                        final ControlMessage.PartitionTransferControlMessage in,
+                        final ControlMessage.DataTransferControlMessage in,
                         final List<Object> out) {
     final byte[] frameBody = in.toByteArray();
     out.add(TYPE_AND_UNUSED.retain());
-    out.add(ctx.alloc().ioBuffer(LENGTH_LENGTH, LENGTH_LENGTH).writeInt(frameBody.length));
+    out.add(ctx.alloc().ioBuffer(BODYLENGTH_LENGTH, BODYLENGTH_LENGTH).writeInt(frameBody.length));
     out.add(Unpooled.wrappedBuffer(frameBody));
   }
 }

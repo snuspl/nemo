@@ -99,12 +99,12 @@ enum PartitionTransferType {
     PUSH = 1;
 }
 
-message PartitionTransferControlMessage {
+message DataTransferControlMessage {
     required string controlMessageSourceId = 1;
     optional PartitionStore partitionStore = 2;
     required PartitionTransferType type = 3;
     required int32 transferId = 4;
-    required bool incremental = 5;
+    required bool encodePartialPartition = 5;
     required string partitionId = 6;
     required string runtimeEdgeId = 7;
     optional int32 startRangeInclusive = 8;
