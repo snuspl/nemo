@@ -173,17 +173,19 @@ final class PartitionTransport implements AutoCloseable {
    *
    * @param remoteAddress the socket address to write to
    * @param thing         the object to write
-   * @param onError       the {@link Consumer} to be invoked on an error during setting up the channel
+   * @param onError       the {@link Consumer} to be invoked on an error during setting up a channel
+   *                      or writing to the channel
    */
   void writeTo(final SocketAddress remoteAddress, final Object thing, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = channelFutureMap
         .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
+    final Channel channel = channelFuture.channel();
     if (channelFuture.isSuccess()) {
-      channelFuture.channel().writeAndFlush(thing).addListener(new WriteFutureListener(channelFuture.channel()));
+      channel.writeAndFlush(thing).addListener(new WriteFutureListener(channel, onError));
     } else {
       channelFuture.addListener(future -> {
         if (future.isSuccess()) {
-          channelFuture.channel().writeAndFlush(thing).addListener(new WriteFutureListener(channelFuture.channel()));
+          channel.writeAndFlush(thing).addListener(new WriteFutureListener(channel, onError));
         } else if (future.cause() == null) {
           LOG.error("Failed to set up a channel");
         } else {
@@ -200,14 +202,17 @@ final class PartitionTransport implements AutoCloseable {
   public static final class WriteFutureListener implements ChannelFutureListener {
 
     private final Channel channel;
+    private final Consumer<Throwable> onError;
 
     /**
      * Creates a {@link ChannelFutureListener}.
      *
      * @param channel the channel
+     * @param onError the {@link Consumer} to be invoked on an error during writing to the channel
      */
-    private WriteFutureListener(final Channel channel) {
+    private WriteFutureListener(final Channel channel, final Consumer<Throwable> onError) {
       this.channel = channel;
+      this.onError = onError;
     }
 
     @Override
@@ -219,6 +224,7 @@ final class PartitionTransport implements AutoCloseable {
       if (future.cause() == null) {
         LOG.error("Failed to write to the channel");
       } else {
+        onError.accept(future.cause());
         LOG.error("Failed to write to the channel", future.cause());
       }
     }
