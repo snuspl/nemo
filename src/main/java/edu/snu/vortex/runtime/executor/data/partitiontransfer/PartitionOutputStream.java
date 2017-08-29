@@ -370,7 +370,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
 
     @Override
     public void close() {
-      // should send an ending frame to indicate the end of the partition stream
+      // should send a frame with "isLastFrame" on to indicate the end of the partition stream
       writeDataFrame(true);
       if (byteBuf != null) {
         byteBuf.release();
@@ -390,15 +390,15 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     /**
      * Writes a data frame from {@link ByteBuf}.
      *
-     * @param ending  whether or not the frame is an ending frame
+     * @param isLastFrame whether or not the frame is the last frame
      */
-    private void writeDataFrame(final boolean ending) {
+    private void writeDataFrame(final boolean isLastFrame) {
       if (byteBuf != null && byteBuf.readableBytes() > 0) {
-        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, isLastFrame, transferId,
             byteBuf.readableBytes(), byteBuf)).addListener(writeFutureListener);
         byteBuf = null;
       } else {
-        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, isLastFrame, transferId,
             0, null)).addListener(writeFutureListener);
       }
     }
@@ -415,11 +415,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     /**
      * Writes a data frame from {@link FileArea}.
      *
-     * @param ending    whether or not the frame is an ending frame
-     * @param fileArea  the {@link FileArea} to transfer
+     * @param isLastFrame whether or not the frame is the last frame
+     * @param fileArea    the {@link FileArea} to transfer
      * @throws IOException when failed to open the file
      */
-    private void writeFileArea(final boolean ending, final FileArea fileArea) throws IOException {
+    private void writeFileArea(final boolean isLastFrame, final FileArea fileArea) throws IOException {
       flush();
       final Path path = Paths.get(fileArea.getPath());
       long cursor = fileArea.getPosition();
@@ -427,7 +427,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
       while (bytesToSend > 0) {
         final long size = Math.min(bytesToSend, DataFrameEncoder.LENGTH_MAX);
         final FileRegion fileRegion = new DefaultFileRegion(FileChannel.open(path), cursor, size);
-        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
+        channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, isLastFrame, transferId,
             size, fileRegion)).addListener(writeFutureListener);
         cursor += size;
         bytesToSend -= size;

@@ -84,10 +84,10 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private static final Logger LOG = LoggerFactory.getLogger(FrameDecoder.class);
 
   static final short CONTROL_TYPE = 0;
-  static final short PULL_NONENDING = 2;
-  static final short PULL_ENDING = 3;
-  static final short PUSH_NONENDING = 4;
-  static final short PUSH_ENDING = 5;
+  static final short PULL_NOTLAST = 2;
+  static final short PULL_LASTFRAME = 3;
+  static final short PUSH_NOTLAST = 4;
+  static final short PUSH_LASTFRAME = 5;
 
   static final int HEADER_LENGTH = ControlFrameEncoder.HEADER_LENGTH;
 
@@ -112,9 +112,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private PartitionInputStream inputStream;
 
   /**
-   * Whether or not the data frame currently being read is an ending frame.
+   * Whether or not the data frame currently being read is the last frame of a data message.
    */
-  private boolean isEndingFrame;
+  private boolean isLastFrame;
 
   /**
    * Whether or not the data frame currently being read consists a pull-based transfer.
@@ -191,12 +191,12 @@ final class FrameDecoder extends ByteToMessageDecoder {
     } else {
       // setup context for reading data frame body
       dataBodyBytesToRead = length;
-      isPullTransfer = type == PULL_NONENDING || type == PULL_ENDING;
-      final boolean isPushTransfer = type == PUSH_NONENDING || type == PUSH_ENDING;
+      isPullTransfer = type == PULL_NOTLAST || type == PULL_LASTFRAME;
+      final boolean isPushTransfer = type == PUSH_NOTLAST || type == PUSH_LASTFRAME;
       if (!isPullTransfer && !isPushTransfer) {
         throw new IllegalStateException(String.format("Illegal frame type: %d", type));
       }
-      isEndingFrame = type == PULL_ENDING || type == PUSH_ENDING;
+      isLastFrame = type == PULL_LASTFRAME || type == PUSH_LASTFRAME;
       inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
       if (inputStream == null) {
         throw new IllegalStateException(String.format("Transport context for %s:%d was not found between the local"
@@ -284,7 +284,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
    */
   private void onDataFrameEnd(final ChannelHandlerContext ctx) {
     inputStream.startDecodingThreadIfNeeded();
-    if (isEndingFrame) {
+    if (isLastFrame) {
       LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, is now closed",
           new Object[]{isPullTransfer ? "pull" : "push", transferId, ctx.channel().remoteAddress(),
           ctx.channel().localAddress()});
