@@ -55,13 +55,13 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
       if (in.isLastFrame) {
         type = FrameDecoder.PULL_LASTFRAME;
       } else {
-        type = FrameDecoder.PULL_NOTLAST;
+        type = FrameDecoder.PULL_INTERMEDIATE_FRAME;
       }
     } else {
       if (in.isLastFrame) {
         type = FrameDecoder.PUSH_LASTFRAME;
       } else {
-        type = FrameDecoder.PUSH_NOTLAST;
+        type = FrameDecoder.PUSH_INTERMEDIATE_FRAME;
       }
     }
     header.writeShort(type);
