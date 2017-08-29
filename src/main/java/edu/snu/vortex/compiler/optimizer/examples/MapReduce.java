@@ -62,13 +62,12 @@ public final class MapReduce {
     final IREdge edge2 = new IREdge(IREdge.Type.ScatterGather, map, reduce, Coder.DUMMY_CODER);
     builder.connectVertices(edge2);
 
-    final DAG dag = builder.build();
+    final DAG<IRVertex, IREdge> dag = builder.build();
     LOG.info("Before Optimization");
     LOG.info(dag.toString());
 
     // Optimize
-    final Optimizer optimizer = new Optimizer();
-    final DAG optimizedDAG = optimizer.optimize(dag, Optimizer.PolicyType.Disaggregation, EMPTY_DAG_DIRECTORY);
+    final DAG optimizedDAG = Optimizer.optimize(dag, Optimizer.PolicyType.Disaggregation, EMPTY_DAG_DIRECTORY);
 
     // After
     LOG.info("After Optimization");

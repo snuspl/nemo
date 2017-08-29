@@ -15,21 +15,15 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
-import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.exception.DynamicOptimizationException;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.passes.*;
+import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
-import edu.snu.vortex.runtime.executor.data.HashRange;
 
 import java.util.*;
 
@@ -37,6 +31,10 @@ import java.util.*;
  * Optimizer class.
  */
 public final class Optimizer {
+  // Private constructor
+  private Optimizer() {
+  }
+
   /**
    * Optimize function.
    * @param dag input DAG.
@@ -45,8 +43,8 @@ public final class Optimizer {
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
    */
-  public DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
-                                        final String dagDirectory) throws Exception {
+  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
+                                               final String dagDirectory) throws Exception {
     if (policyType == null) {
       throw new RuntimeException("Policy has not been provided for the policyType");
     }
@@ -61,7 +59,8 @@ public final class Optimizer {
    * @return the processed DAG.
    * @throws Exception Exceptionso n the way.
    */
-  private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag, final List<Pass> passes,
+  private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag,
+                                               final List<StaticOptimizationPass> passes,
                                                final String dagDirectory) throws Exception {
     if (passes.isEmpty()) {
       return dag;
@@ -81,17 +80,19 @@ public final class Optimizer {
     Pado,
     Disaggregation,
     DataSkew,
+    TestingPolicy,
   }
 
   /**
    * A HashMap to match each of instantiation policies with a combination of instantiation passes.
    * Each policies are run in the order with which they are defined.
    */
-  private static final Map<PolicyType, List<Pass>> POLICIES = new HashMap<>();
+  private static final Map<PolicyType, List<StaticOptimizationPass>> POLICIES = new HashMap<>();
   static {
     POLICIES.put(PolicyType.Default,
         Arrays.asList(
-            new ParallelismPass() // Provides parallelism information.
+            new ParallelismPass(), // Provides parallelism information.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Pado,
         Arrays.asList(
@@ -100,7 +101,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new PadoVertexPass(), new PadoEdgePass() // Processes vertices and edges with Pado algorithm.
+            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(
@@ -110,7 +112,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
-            new IFilePass() // Enables I-File style write optimization.
+            new IFilePass(), // Enables I-File style write optimization.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.DataSkew,
         Arrays.asList(
@@ -119,8 +122,13 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DataSkewPass()
+            new DataSkewPass(),
+            new DefaultStagePartitioningPass()
         ));
+    POLICIES.put(PolicyType.TestingPolicy, // Simply build stages for tests
+            Arrays.asList(
+                    new DefaultStagePartitioningPass()
+            ));
   }
 
   /**
@@ -138,10 +146,12 @@ public final class Optimizer {
    * Dynamic optimization method to process the dag with an appropriate pass, decided by the stats.
    * @param originalPlan original physical execution plan.
    * @param metricCollectionBarrierVertex the vertex that collects metrics and chooses which optimization to perform.
-   * @return processed DAG.
+   * @return the newly updated optimized physical plan.
    */
-  public static PhysicalPlan dynamicOptimization(final PhysicalPlan originalPlan,
-                                                 final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
+  public static synchronized PhysicalPlan dynamicOptimization(
+          final PhysicalPlan originalPlan,
+          final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
+    // TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
     // Map between a partition ID to corresponding metric data (e.g., the size of each block).
     final Map<String, List> metricData = metricCollectionBarrierVertex.getMetricData();
     final Attribute dynamicOptimizationType =
@@ -149,51 +159,7 @@ public final class Optimizer {
 
     switch (dynamicOptimizationType) {
       case DataSkew:
-
-        // Builder to create new stages.
-        final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
-            new DAGBuilder<>(originalPlan.getStageDAG());
-
-        // Count the hash range.
-        final int hashRange = metricData.values().stream().findFirst().orElseThrow(() ->
-            new DynamicOptimizationException("no valid metric data.")).size();
-
-        // Do the optimization using the information derived above.
-        metricData.forEach((partitionId, partitionSizes) -> {
-          final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
-          final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
-          // Edge of the partition.
-          final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
-              .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
-              .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
-              .findFirst().orElseThrow(() ->
-                  new DynamicOptimizationException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
-          // The following stage to receive the data.
-          final PhysicalStage optimizationStage = optimizationEdge.getDst();
-
-          // Assign the hash value range to each receiving task group.
-          // TODO #390: DynOpt-Update data skew handling policy
-          final List<TaskGroup> taskGroups = optimizationEdge.getDst().getTaskGroupList();
-          final Map<String, HashRange> taskGroupIdToHashRangeMap =
-              optimizationEdge.getTaskGroupIdToHashRangeMap();
-          final int quotient = hashRange / taskGroups.size();
-          final int remainder = hashRange % taskGroups.size();
-          int assignedHashValue = 0;
-          for (int i = 0; i < taskGroups.size(); i++) {
-            final TaskGroup taskGroup = taskGroups.get(i);
-            final HashRange hashRangeToAssign;
-            if (i == taskGroups.size() - 1) {
-              // last one.
-              hashRangeToAssign = HashRange.of(assignedHashValue, assignedHashValue + quotient + remainder);
-            } else {
-              hashRangeToAssign = HashRange.of(assignedHashValue, assignedHashValue + quotient);
-            }
-            assignedHashValue += quotient;
-            taskGroupIdToHashRangeMap.put(taskGroup.getTaskGroupId(), hashRangeToAssign);
-          }
-        });
-
-        return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
+        return new DataSkewDynamicOptimizationPass().process(originalPlan, metricData);
       default:
         return originalPlan;
     }
