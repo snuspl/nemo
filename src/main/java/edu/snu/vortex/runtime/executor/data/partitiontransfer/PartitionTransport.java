@@ -19,10 +19,7 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -182,17 +179,48 @@ final class PartitionTransport implements AutoCloseable {
     final ChannelFuture channelFuture = channelFutureMap
         .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
     if (channelFuture.isSuccess()) {
-      channelFuture.channel().writeAndFlush(thing);
+      channelFuture.channel().writeAndFlush(thing).addListener(new WriteFutureListener(channelFuture.channel()));
     } else {
       channelFuture.addListener(future -> {
         if (future.isSuccess()) {
-          channelFuture.channel().writeAndFlush(thing);
+          channelFuture.channel().writeAndFlush(thing).addListener(new WriteFutureListener(channelFuture.channel()));
         } else if (future.cause() == null) {
-          LOG.error("Failed to set up a channel for no reason.");
+          LOG.error("Failed to set up a channel");
         } else {
+          LOG.error("Failed to set up a channel", future.cause());
           onError.accept(future.cause());
         }
       });
+    }
+  }
+
+  /**
+   * {@link ChannelFutureListener} for handling outbound exceptions.
+   */
+  public static final class WriteFutureListener implements ChannelFutureListener {
+
+    private final Channel channel;
+
+    /**
+     * Creates a {@link ChannelFutureListener}.
+     *
+     * @param channel the channel
+     */
+    private WriteFutureListener(final Channel channel) {
+      this.channel = channel;
+    }
+
+    @Override
+    public void operationComplete(final ChannelFuture future) {
+      if (future.isSuccess()) {
+        return;
+      }
+      channel.close();
+      if (future.cause() == null) {
+        LOG.error("Failed to write to the channel");
+      } else {
+        LOG.error("Failed to write to the channel", future.cause());
+      }
     }
   }
 }

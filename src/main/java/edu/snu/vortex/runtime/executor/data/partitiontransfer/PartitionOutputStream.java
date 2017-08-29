@@ -437,7 +437,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
-   * {@link ChannelFutureListener} for handling outbound exception on writing data frames.
+   * {@link ChannelFutureListener} for handling outbound exceptions on writing data frames.
    */
   private final class DataFrameWriteFutureListener implements ChannelFutureListener {
 
