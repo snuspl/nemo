@@ -23,6 +23,7 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.reef.tang.InjectionFuture;
@@ -44,6 +45,9 @@ import java.util.function.Consumer;
  */
 final class PartitionTransport implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
+  private static final String SERVER_LISTENING = "partition:server:listening";
+  private static final String SERVER_WORKING = "partition:server:working";
+  private static final String CLIENT = "partition:client";
 
   private final InetSocketAddress serverListeningAddress;
   private final EventLoopGroup serverListeningGroup;
@@ -86,9 +90,11 @@ final class PartitionTransport implements AutoCloseable {
 
     final String host = localAddressProvider.getLocalAddress();
 
-    serverListeningGroup = channelImplSelector.newEventLoopGroup(numListeningThreads);
-    serverWorkingGroup = channelImplSelector.newEventLoopGroup(numWorkingThreads);
-    clientGroup = channelImplSelector.newEventLoopGroup(numClientThreads);
+    serverListeningGroup = channelImplSelector.newEventLoopGroup(numListeningThreads,
+        new DefaultThreadFactory(SERVER_LISTENING));
+    serverWorkingGroup = channelImplSelector.newEventLoopGroup(numWorkingThreads,
+        new DefaultThreadFactory(SERVER_WORKING));
+    clientGroup = channelImplSelector.newEventLoopGroup(numClientThreads, new DefaultThreadFactory(CLIENT));
 
     final ChannelInitializer channelInitializer
         = new ChannelInitializer(channelGroup, channelFutureMap, partitionTransfer, localExecutorId);

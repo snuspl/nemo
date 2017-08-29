@@ -28,7 +28,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import javax.inject.Inject;
-import java.util.function.Function;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.BiFunction;
 
 /**
  * Selects appropriate {@link io.netty.channel.Channel} implementation, depending on implementation availabilities.
@@ -39,10 +40,11 @@ public interface NettyChannelImplementationSelector {
 
   /**
    * Creates a new {@link EventLoopGroup}.
-   * @param numThreads the number of threads
+   * @param numThreads    the number of threads
+   * @param threadFactory the {@link ThreadFactory}
    * @return a new {@link EventLoopGroup}
    */
-  EventLoopGroup newEventLoopGroup(int numThreads);
+  EventLoopGroup newEventLoopGroup(int numThreads, final ThreadFactory threadFactory);
 
   /**
    * @return class for server channel
@@ -69,17 +71,17 @@ public interface NettyChannelImplementationSelector {
 
     // We may want to add selection of KQueue (for BSD). This requires higher version of netty.
 
-    private static final Function<Integer, EventLoopGroup> EVENT_LOOP_GROUP_FUNCTION =
-        Epoll.isAvailable() ? numThreads -> new EpollEventLoopGroup(numThreads)
-        : numThreads -> new NioEventLoopGroup(numThreads);
+    private static final BiFunction<Integer, ThreadFactory, EventLoopGroup> EVENT_LOOP_GROUP_FUNCTION =
+        Epoll.isAvailable() ? (numThreads, threadFactory) -> new EpollEventLoopGroup(numThreads, threadFactory)
+        : (numThreads, threadFactory) -> new NioEventLoopGroup(numThreads, threadFactory);
     private static final Class<? extends ServerChannel> SERVER_CHANNEL_CLASS =
         Epoll.isAvailable() ? EpollServerSocketChannel.class : NioServerSocketChannel.class;
     private static final Class<? extends Channel> CHANNEL_CLASS =
         Epoll.isAvailable() ? EpollSocketChannel.class : NioSocketChannel.class;
 
     @Override
-    public EventLoopGroup newEventLoopGroup(final int numThreads) {
-      return EVENT_LOOP_GROUP_FUNCTION.apply(numThreads);
+    public EventLoopGroup newEventLoopGroup(final int numThreads, final ThreadFactory threadFactory) {
+      return EVENT_LOOP_GROUP_FUNCTION.apply(numThreads, threadFactory);
     }
 
     @Override
@@ -106,8 +108,8 @@ public interface NettyChannelImplementationSelector {
     }
 
     @Override
-    public EventLoopGroup newEventLoopGroup(final int numThreads) {
-      return new NioEventLoopGroup(numThreads);
+    public EventLoopGroup newEventLoopGroup(final int numThreads, final ThreadFactory threadFactory) {
+      return new NioEventLoopGroup(numThreads, threadFactory);
     }
 
     @Override

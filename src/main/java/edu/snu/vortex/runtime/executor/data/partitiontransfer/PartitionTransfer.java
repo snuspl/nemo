@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -42,6 +43,8 @@ import java.util.concurrent.Executors;
 public final class PartitionTransfer extends SimpleChannelInboundHandler<PartitionStream> {
 
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransfer.class);
+  private static final String INBOUND = "partition:inbound";
+  private static final String OUTBOUND = "partition:outbound";
 
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
   private final PartitionTransport partitionTransport;
@@ -75,8 +78,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     this.nameResolver = nameResolver;
     // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialPartition option
     // enabled. We may consider other solutions than using fixed thread pool.
-    this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads);
-    this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads);
+    this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads, new DefaultThreadFactory(INBOUND));
+    this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads, new DefaultThreadFactory(OUTBOUND));
     this.bufferSize = bufferSize;
 
     try {
