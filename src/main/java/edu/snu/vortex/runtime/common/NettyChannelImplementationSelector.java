@@ -32,10 +32,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.BiFunction;
 
 /**
- * Selects appropriate {@link io.netty.channel.Channel} implementation, depending on implementation availabilities.
- * Uses {@link Epoll} if possible (on Linux).
+ * Selects appropriate {@link io.netty.channel.Channel} implementation.
  */
-@DefaultImplementation(NettyChannelImplementationSelector.NativeChannelImplementationSelector.class)
+// TODO #448 Upgrade Netty version to use Epoll-based transfer
+@DefaultImplementation(NettyChannelImplementationSelector.NioChannelImplementationSelector.class)
 public interface NettyChannelImplementationSelector {
 
   /**
