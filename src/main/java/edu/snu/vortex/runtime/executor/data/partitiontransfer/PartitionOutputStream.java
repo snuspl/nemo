@@ -22,9 +22,7 @@ import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.FileArea;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +43,7 @@ import java.util.concurrent.ExecutorService;
  */
 public final class PartitionOutputStream<T> implements Closeable, PartitionStream {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PartitionOutputStream.class);
 
   private final String receiverExecutorId;
   private final boolean encodePartialPartition;
@@ -60,6 +58,7 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   private ExecutorService executorService;
   private int bufferSize;
 
+  private final DataFrameWriteFutureListener writeFutureListener = new DataFrameWriteFutureListener();
   private final ClosableBlockingQueue<Object> elementQueue = new ClosableBlockingQueue<>();
   private volatile boolean closed = false;
   private volatile Throwable channelException = null;
@@ -396,11 +395,11 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     private void writeDataFrame(final boolean ending) {
       if (byteBuf != null && byteBuf.readableBytes() > 0) {
         channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-            byteBuf.readableBytes(), byteBuf));
+            byteBuf.readableBytes(), byteBuf)).addListener(writeFutureListener);
         byteBuf = null;
       } else {
         channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-            0, null));
+            0, null)).addListener(writeFutureListener);
       }
     }
 
@@ -429,11 +428,30 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
         final long size = Math.min(bytesToSend, DataFrameEncoder.LENGTH_MAX);
         final FileRegion fileRegion = new DefaultFileRegion(FileChannel.open(path), cursor, size);
         channel.writeAndFlush(DataFrameEncoder.DataFrame.newInstance(transferType, ending, transferId,
-            size, fileRegion));
+            size, fileRegion)).addListener(writeFutureListener);
         cursor += size;
         bytesToSend -= size;
       }
       streamLength += fileArea.getCount();
+    }
+  }
+
+  /**
+   * {@link ChannelFutureListener} for handling outbound exception on writing data frames.
+   */
+  private final class DataFrameWriteFutureListener implements ChannelFutureListener {
+
+    @Override
+    public void operationComplete(final ChannelFuture future) {
+      if (future.isSuccess()) {
+        return;
+      }
+      if (future.cause() == null) {
+        LOG.error("Failed to write a data frame");
+      } else {
+        onExceptionCaught(future.cause());
+        LOG.error("Failed to write a data frame", future.cause());
+      }
     }
   }
 }

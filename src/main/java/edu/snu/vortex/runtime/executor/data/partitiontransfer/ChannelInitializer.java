@@ -105,7 +105,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   }
 
   /**
-   * Manages {@link Channel} registration to the channel group and the channel map, and handles exception.
+   * Manages {@link Channel} registration to the channel group and the channel map, and handles inbound exception.
    */
   @ChannelHandler.Sharable
   private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
