@@ -31,6 +31,7 @@ import java.util.*;
  * Optimizer class.
  */
 public final class Optimizer {
+  // Private constructor
   private Optimizer() {
   }
 
@@ -79,6 +80,7 @@ public final class Optimizer {
     Pado,
     Disaggregation,
     DataSkew,
+    TestingPolicy,
   }
 
   /**
@@ -89,7 +91,8 @@ public final class Optimizer {
   static {
     POLICIES.put(PolicyType.Default,
         Arrays.asList(
-            new ParallelismPass() // Provides parallelism information.
+            new ParallelismPass(), // Provides parallelism information.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Pado,
         Arrays.asList(
@@ -98,7 +101,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new PadoVertexPass(), new PadoEdgePass() // Processes vertices and edges with Pado algorithm.
+            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.Disaggregation,
         Arrays.asList(
@@ -108,7 +112,8 @@ public final class Optimizer {
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
             new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
-            new IFilePass() // Enables I-File style write optimization.
+            new IFilePass(), // Enables I-File style write optimization.
+            new DefaultStagePartitioningPass()
         ));
     POLICIES.put(PolicyType.DataSkew,
         Arrays.asList(
@@ -117,8 +122,13 @@ public final class Optimizer {
             LoopOptimizations.getLoopFusionPass(),
             LoopOptimizations.getLoopInvariantCodeMotionPass(),
             new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DataSkewPass()
+            new DataSkewPass(),
+            new DefaultStagePartitioningPass()
         ));
+    POLICIES.put(PolicyType.TestingPolicy, // Simply build stages for tests
+            Arrays.asList(
+                    new DefaultStagePartitioningPass()
+            ));
   }
 
   /**
