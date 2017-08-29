@@ -182,7 +182,17 @@ final class PartitionTransport implements AutoCloseable {
     final ChannelFuture channelFuture = channelFutureMap
         .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
     if (channelFuture.isSuccess()) {
-      channelFuture.channel().writeAndFlush(thing);
+      channelFuture.channel().writeAndFlush(thing).addListener(future -> {
+        if (future.isSuccess()) {
+          return;
+        }
+        channelFuture.channel().close();
+        if (future.cause() == null) {
+          LOG.error("Failed to write to the channel");
+        } else {
+          LOG.error("Failed to write to the channel", future.cause());
+        }
+      });
     } else {
       channelFuture.addListener(future -> {
         if (future.isSuccess()) {
