@@ -52,7 +52,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private final String localExecutorId;
   private final int bufferSize;
 
-  private final ConcurrentMap<String, Channel> channelMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ChannelFuture> channelMap = new ConcurrentHashMap<>();
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
@@ -145,25 +145,25 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *                          or writing to the channel
    */
   private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
-    final Channel cachedChannel = channelMap.get(remoteExecutorId);
-    if (cachedChannel == null) {
-      final ChannelFuture channelFuture = partitionTransport.connectTo(remoteExecutorId);
-      final Channel channel = channelFuture.channel();
-      channel.pipeline().fireUserEventTriggered(new ChannelInitializer.SetExecutorIdEvent(localExecutorId,
-          remoteExecutorId));
-      channelFuture.addListener(connectionFuture -> {
-        if (connectionFuture.isSuccess()) {
-          channel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(channel, onError));
-        } else if (connectionFuture.cause() == null) {
+    final ChannelFuture channelFuture = channelMap.computeIfAbsent(remoteExecutorId, executorId -> {
+      final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
+      connectFuture.addListener(future -> {
+        if (future.isSuccess()) {
+          connectFuture.channel().pipeline().fireUserEventTriggered(
+              new ChannelInitializer.SetExecutorIdEvent(localExecutorId, remoteExecutorId));
+          return;
+        }
+        if (future.cause() == null) {
           LOG.error("Failed to connect to {}", remoteExecutorId);
         } else {
-          onError.accept(connectionFuture.cause());
-          LOG.error(String.format("Failed to connect to %s", remoteExecutorId), connectionFuture.cause());
+          onError.accept(future.cause());
+          LOG.error(String.format("Failed to connect to %s", remoteExecutorId), future.cause());
         }
       });
-    } else {
-      cachedChannel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(cachedChannel, onError));
-    }
+      return connectFuture;
+    });
+    channelFuture.addListener(future -> channelFuture.channel().writeAndFlush(thing).addListener(
+        new ControlMessageWriteFutureListener(channelFuture.channel(), onError)));
   }
 
   @Override
