@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.List;
 
 /**
@@ -44,6 +45,10 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
 
   // the maximum length of a frame body. 2**32 - 1
   static final long LENGTH_MAX = 4294967295L;
+
+  @Inject
+  private DataFrameEncoder() {
+  }
 
   @Override
   protected void encode(final ChannelHandlerContext ctx, final DataFrame in, final List<Object> out) {

@@ -61,6 +61,7 @@ final class PartitionTransport implements AutoCloseable {
    * @param nameResolver          provides naming registry
    * @param localExecutorId       the id of this executor
    * @param channelImplSelector   provides implementation for netty channel
+   * @param channelInitializer    initializes channel pipeline
    * @param tcpPortProvider       provides an iterator of random tcp ports
    * @param localAddressProvider  provides the local address of the node to bind to
    * @param port                  the listening port; 0 means random assign using {@code tcpPortProvider}
@@ -75,6 +76,7 @@ final class PartitionTransport implements AutoCloseable {
       final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final NettyChannelImplementationSelector channelImplSelector,
+      final ChannelInitializer channelInitializer,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,
@@ -97,9 +99,6 @@ final class PartitionTransport implements AutoCloseable {
     serverWorkingGroup = channelImplSelector.newEventLoopGroup(numWorkingThreads,
         new DefaultThreadFactory(SERVER_WORKING));
     clientGroup = channelImplSelector.newEventLoopGroup(numClientThreads, new DefaultThreadFactory(CLIENT));
-
-    final ChannelInitializer channelInitializer
-        = new ChannelInitializer(partitionTransfer, localExecutorId);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap

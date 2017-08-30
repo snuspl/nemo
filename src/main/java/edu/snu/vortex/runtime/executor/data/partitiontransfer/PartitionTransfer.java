@@ -38,7 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
- * Interface for interplay with {@link PartitionManagerWorker}.
+ * Manages channels and exposes an interface for {@link PartitionManagerWorker}.
  */
 @ChannelHandler.Sharable
 public final class PartitionTransfer extends SimpleChannelInboundHandler<PartitionStream> {

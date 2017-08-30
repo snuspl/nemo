@@ -15,8 +15,12 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import edu.snu.vortex.client.JobConf;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;
+import org.apache.reef.tang.annotations.Parameter;
+
+import javax.inject.Inject;
 
 /**
  * Sets up {@link io.netty.channel.ChannelPipeline} for {@link PartitionTransport}.
@@ -57,21 +61,27 @@ import org.apache.reef.tang.InjectionFuture;
  */
 final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
 
-  private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
-  private static final DataFrameEncoder DATA_FRAME_ENCODER = new DataFrameEncoder();
-
   private final InjectionFuture<PartitionTransfer> partitionTransfer;
+  private final ControlFrameEncoder controlFrameEncoder;
+  private final DataFrameEncoder dataFrameEncoder;
   private final String localExecutorId;
 
   /**
    * Creates a netty channel initializer.
    *
-   * @param partitionTransfer provides handler for inbound control messages
-   * @param localExecutorId   the id of this executor
+   * @param partitionTransfer   provides handler for inbound control messages
+   * @param controlFrameEncoder encodes control frames
+   * @param dataFrameEncoder    encodes data frames
+   * @param localExecutorId     the id of this executor
    */
-  ChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
-                     final String localExecutorId) {
+  @Inject
+  private ChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
+                             final ControlFrameEncoder controlFrameEncoder,
+                             final DataFrameEncoder dataFrameEncoder,
+                             @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {
     this.partitionTransfer = partitionTransfer;
+    this.controlFrameEncoder = controlFrameEncoder;
+    this.dataFrameEncoder = dataFrameEncoder;
     this.localExecutorId = localExecutorId;
   }
 
@@ -81,9 +91,9 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         // inbound
         .addLast(new FrameDecoder())
         // outbound
-        .addLast(CONTROL_FRAME_ENCODER)
-        .addLast(DATA_FRAME_ENCODER)
-        // duplex
+        .addLast(controlFrameEncoder)
+        .addLast(dataFrameEncoder)
+        // both
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // inbound
         .addLast(partitionTransfer.get());
