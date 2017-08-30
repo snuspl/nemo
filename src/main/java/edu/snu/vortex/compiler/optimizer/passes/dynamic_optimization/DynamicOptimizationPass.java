@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Interface for dynamic optimization passes.
  */
-public interface DynamicOptimizationPass {
+public interface DynamicOptimizationPass<T> {
   /**
    * A pass for dynamically optimizing a physical plan.
    * @param originalPlan original physical plan.
@@ -31,5 +31,5 @@ public interface DynamicOptimizationPass {
    * @return the new physical plan after the dynamic optimization.
    * TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
    */
-  PhysicalPlan process(PhysicalPlan originalPlan, Map<String, List> metricData);
+  PhysicalPlan process(PhysicalPlan originalPlan, Map<String, List<T>> metricData);
 }

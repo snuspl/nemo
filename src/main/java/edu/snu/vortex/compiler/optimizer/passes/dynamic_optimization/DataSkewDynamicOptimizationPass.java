@@ -25,57 +25,89 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.TaskGroup;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  * Dynamic optimization pass for handling data skew.
  */
-public final class DataSkewDynamicOptimizationPass implements DynamicOptimizationPass {
+public final class DataSkewDynamicOptimizationPass implements DynamicOptimizationPass<Long> {
   @Override
-  public PhysicalPlan process(final PhysicalPlan originalPlan, final Map<String, List> metricData) {
+  public PhysicalPlan process(final PhysicalPlan originalPlan, final Map<String, List<Long>> metricData) {
     // Builder to create new stages.
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
         new DAGBuilder<>(originalPlan.getStageDAG());
 
+    // NOTE: metricData is made up of a map of partitionId to blockSizes.
     // Count the hash range.
-    final int hashRange = metricData.values().stream().findFirst().orElseThrow(() ->
+    final int hashRangeCount = metricData.values().stream().findFirst().orElseThrow(() ->
         new DynamicOptimizationException("no valid metric data.")).size();
 
-    // Do the optimization using the information derived above.
-    metricData.forEach((partitionId, partitionSizes) -> {
-      final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
-      final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
-      // Edge of the partition.
-      final PhysicalStageEdge optimizationEdge = stageDAG.getVertices().stream()
-          .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
-          .filter(physicalStageEdge -> physicalStageEdge.getId().equals(runtimeEdgeId))
-          .findFirst().orElseThrow(() ->
-              new DynamicOptimizationException("physical stage DAG doesn't contain this edge: " + runtimeEdgeId));
-      // The following stage to receive the data.
-      final PhysicalStage optimizationStage = optimizationEdge.getDst();
+    // Aggregate metric data. TODO #???: aggregate metric data beforehand.
+    final List<Long> aggregatedMetricData = new ArrayList<>(hashRangeCount);
+    IntStream.range(0, hashRangeCount).forEach(i ->
+        aggregatedMetricData.add(i, metricData.values().stream().mapToLong(lst -> lst.get(i)).sum()));
 
-      // Assign the hash value range to each receiving task group.
-      // TODO #390: DynOpt-Update data skew handling policy
+    // get edges to optimize
+    final Stream<String> optimizationEdgeIds = metricData.keySet().stream().map(partitionId ->
+        RuntimeIdGenerator.parsePartitionId(partitionId)[0]);
+    final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
+    final Stream<PhysicalStageEdge> optimizationEdges = stageDAG.getVertices().stream()
+        .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
+        .filter(physicalStageEdge -> optimizationEdgeIds.anyMatch(optimizationEdgeId ->
+            optimizationEdgeId.equals(physicalStageEdge.getId())));
+
+    // Get number of evaluators of the next stage
+    final Integer taskGroupListSize = optimizationEdges.findFirst().orElseThrow(() ->
+        new RuntimeException("optimization edges is empty")).getDst().getTaskGroupList().size();
+
+    // Do the optimization using the information derived above.
+    final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum();
+    final Long idealSizePerTaskGroup = totalSize / taskGroupListSize;
+
+    // find HashRanges to apply
+    final List<HashRange> hashRanges = new ArrayList<>(taskGroupListSize);
+    int startingHashValue = 0;
+    int finishingHashValue = 1;
+    for (int i = 1; i <= taskGroupListSize; i++) {
+      if (i != taskGroupListSize) {
+        final Long endPoint = idealSizePerTaskGroup * i;
+        // find the point
+        while (sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue) < endPoint) {
+          finishingHashValue++;
+        }
+        // assign appropriately
+        if (sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue) - endPoint
+            < endPoint - sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue - 1)) {
+          hashRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
+          startingHashValue = finishingHashValue;
+        } else {
+          hashRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue - 1));
+          startingHashValue = finishingHashValue - 1;
+        }
+      } else { // last one
+        hashRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
+      }
+    }
+
+    // Assign the hash value range to each receiving task group.
+    optimizationEdges.forEach(optimizationEdge -> {
       final List<TaskGroup> taskGroups = optimizationEdge.getDst().getTaskGroupList();
       final Map<String, HashRange> taskGroupIdToHashRangeMap = optimizationEdge.getTaskGroupIdToHashRangeMap();
-      final int quotient = hashRange / taskGroups.size();
-      final int remainder = hashRange % taskGroups.size();
-      int assignedHashValue = 0;
-      for (int i = 0; i < taskGroups.size(); i++) {
-        final TaskGroup taskGroup = taskGroups.get(i);
-        final HashRange hashRangeToAssign;
-        if (i == taskGroups.size() - 1) {
-          // last one.
-          hashRangeToAssign = HashRange.of(assignedHashValue, assignedHashValue + quotient + remainder);
-        } else {
-          hashRangeToAssign = HashRange.of(assignedHashValue, assignedHashValue + quotient);
-        }
-        assignedHashValue += quotient;
-        taskGroupIdToHashRangeMap.put(taskGroup.getTaskGroupId(), hashRangeToAssign);
-      }
+      IntStream.range(0, taskGroupListSize).forEach(i ->
+          // Update the information.
+          taskGroupIdToHashRangeMap.put(taskGroups.get(i).getTaskGroupId(), hashRanges.get(i)));
     });
 
     return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
+  }
+
+  private Long sumBetween(final List<Long> listOfLong, final int startInclusive, final int endExclusive) {
+    return listOfLong.subList(startInclusive, endExclusive).stream().mapToLong(n -> n).sum();
   }
 }
