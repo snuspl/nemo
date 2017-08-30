@@ -114,7 +114,7 @@ public final class DataTransferTest {
     final MetadataManager metadataManager = injector1.getInstance(MetadataManager.class);
     // Unused, but necessary for wiring up the message environments
     final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, containerManager, messageEnvironment,
-        master, new DefaultMetricMessageHandler(), EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
+        master, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
     final Injector injector2 = createNameClientInjector();
     injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");

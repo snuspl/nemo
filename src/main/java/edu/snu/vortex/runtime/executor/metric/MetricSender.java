@@ -15,10 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.metric;
 
-import edu.snu.vortex.runtime.exception.JsonParseException;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-
-import java.util.Map;
 
 /**
  * Interface for metric sender.
@@ -26,10 +23,5 @@ import java.util.Map;
 @DefaultImplementation(PeriodicMetricSender.class)
 public interface MetricSender extends AutoCloseable {
 
-  /**
-   * Send the json metric data to driver.
-   * @param jsonMetricData json metric data
-   * @throws JsonParseException throws when the json data format is not correct
-   */
-  void send(Map<String, Object> jsonMetricData) throws JsonParseException;
+  void send(String metricData);
 }

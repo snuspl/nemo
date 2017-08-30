@@ -67,14 +67,13 @@ public final class TaskGroupStateManager {
                                final int attemptIdx,
                                final String executorId,
                                final PersistentConnectionToMaster persistentConnectionToMaster,
-                               final PeriodicMetricSender periodicMetricSender,
-                               final Map<String, MetricDataBuilder> metricDataBuilderMap) {
+                               final PeriodicMetricSender periodicMetricSender) {
     this.taskGroupId = taskGroup.getTaskGroupId();
     this.attemptIdx = attemptIdx;
     this.executorId = executorId;
     this.persistentConnectionToMaster = persistentConnectionToMaster;
     this.periodicMetricSender = periodicMetricSender;
-    this.metricDataBuilderMap = metricDataBuilderMap;
+    metricDataBuilderMap = new HashMap<>();
     idToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
     initializeStates(taskGroup);
@@ -115,7 +114,7 @@ public final class TaskGroupStateManager {
       LOG.debug("TaskGroup ID {} complete!", taskGroupId);
       metricDataBuilder = metricDataBuilderMap.get(taskGroupKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskGroupKey);
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
@@ -124,7 +123,7 @@ public final class TaskGroupStateManager {
       // This metric data is effective on recoverable failures EXCEPT container failure.
       metricDataBuilder = metricDataBuilderMap.get(taskGroupKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskGroupKey);
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
@@ -132,7 +131,7 @@ public final class TaskGroupStateManager {
       LOG.debug("TaskGroup ID {} failed (unrecoverable).", taskGroupId);
       metricDataBuilder = metricDataBuilderMap.get(taskGroupKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskGroupKey);
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
@@ -176,21 +175,21 @@ public final class TaskGroupStateManager {
       }
       metricDataBuilder = metricDataBuilderMap.get(taskKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskKey);
       break;
     case FAILED_RECOVERABLE:
       onTaskGroupStateChanged(TaskGroupState.State.FAILED_RECOVERABLE, Optional.empty(), cause);
       metricDataBuilder = metricDataBuilderMap.get(taskKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskKey);
       break;
     case FAILED_UNRECOVERABLE:
       onTaskGroupStateChanged(TaskGroupState.State.FAILED_UNRECOVERABLE, Optional.empty(), cause);
       metricDataBuilder = metricDataBuilderMap.get(taskKey);
       metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      periodicMetricSender.send(metricDataBuilder.build().toString());
       metricDataBuilderMap.remove(taskKey);
       break;
     case ON_HOLD:

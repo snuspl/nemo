@@ -36,6 +36,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import edu.snu.vortex.runtime.executor.metric.MetricData;
+import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
@@ -95,6 +98,9 @@ public final class JobStateManager {
   private final Lock finishLock;
   private final Condition jobFinishedCondition;
 
+  private final DefaultMetricMessageHandler metricMessageHandler;
+  private final Map<String, MetricDataBuilder> metricDataBuilderMap;
+
   public JobStateManager(final PhysicalPlan physicalPlan,
                          final PartitionManagerMaster partitionManagerMaster,
                          final int maxScheduleAttempt) {
@@ -110,6 +116,8 @@ public final class JobStateManager {
     this.currentJobStageIds = new HashSet<>();
     this.finishLock = new ReentrantLock();
     this.jobFinishedCondition = finishLock.newCondition();
+    metricMessageHandler = new DefaultMetricMessageHandler();
+    this.metricDataBuilderMap = new HashMap<>();
     initializeComputationStates();
     initializePartitionStates(partitionManagerMaster);
   }
@@ -178,15 +186,26 @@ public final class JobStateManager {
    * @param newState of the job.
    */
   public synchronized void onJobStateChanged(final JobState.State newState) {
+
+    String jobKey = MetricData.ComputationUnit.JOB.name() + jobId;
+    final MetricDataBuilder metricDataBuilder;
+
     if (newState == JobState.State.EXECUTING) {
       LOG.debug("Executing Job ID {}...", jobId);
       jobState.getStateMachine().setState(newState);
+      metricDataBuilder = new MetricDataBuilder(MetricData.ComputationUnit.JOB, jobId, null);
+      metricDataBuilder.beginMeasurement(-1, newState, System.nanoTime());
+      metricDataBuilderMap.put(jobKey, metricDataBuilder);
     } else if (newState == JobState.State.COMPLETE) {
       LOG.debug("Job ID {} complete!", jobId);
       // Awake all threads waiting the finish of this job.
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
+        metricDataBuilder = metricDataBuilderMap.get(jobKey);
+        metricDataBuilder.endMeasurement(newState, System.nanoTime());
+        metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
+        metricDataBuilderMap.remove(jobKey);
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -197,6 +216,10 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
+        metricDataBuilder = metricDataBuilderMap.get(jobKey);
+        metricDataBuilder.endMeasurement(newState, System.nanoTime());
+        metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
+        metricDataBuilderMap.remove(jobKey);
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -217,6 +240,10 @@ public final class JobStateManager {
     LOG.debug("Stage State Transition: id {} from {} to {}",
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
+
+    String stageKey = MetricData.ComputationUnit.STAGE.name() + stageId;
+    final MetricDataBuilder metricDataBuilder;
+
     if (newState == StageState.State.EXECUTING) {
       if (scheduleAttemptIdxByStage.containsKey(stageId)) {
         final int numAttempts = scheduleAttemptIdxByStage.get(stageId);
@@ -230,6 +257,10 @@ public final class JobStateManager {
       } else {
         scheduleAttemptIdxByStage.put(stageId, 1);
       }
+
+      metricDataBuilder = new MetricDataBuilder(MetricData.ComputationUnit.STAGE, stageId, null);
+      metricDataBuilder.beginMeasurement(scheduleAttemptIdxByStage.get(stageId), newState, System.nanoTime());
+      metricDataBuilderMap.put(stageKey, metricDataBuilder);
 
       // if there exists a mapping, this state change is from a failed_recoverable stage,
       // and there may be task groups that do not need to be re-executed.
@@ -248,11 +279,23 @@ public final class JobStateManager {
         }
       }
     } else if (newState == StageState.State.COMPLETE) {
+
+      metricDataBuilder = metricDataBuilderMap.get(stageKey);
+      metricDataBuilder.endMeasurement(newState, System.nanoTime());
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
+      metricDataBuilderMap.remove(stageKey);
+
       currentJobStageIds.remove(stageId);
       if (currentJobStageIds.isEmpty()) {
         onJobStateChanged(JobState.State.COMPLETE);
       }
     } else if (newState == StageState.State.FAILED_RECOVERABLE) {
+
+      metricDataBuilder = metricDataBuilderMap.get(stageKey);
+      metricDataBuilder.endMeasurement(newState, System.nanoTime());
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
+      metricDataBuilderMap.remove(stageKey);
+
       currentJobStageIds.add(stageId);
     }
   }
@@ -411,6 +454,10 @@ public final class JobStateManager {
 
   public synchronized Map<String, TaskState> getIdToTaskStates() {
     return idToTaskStates;
+  }
+
+  public MetricMessageHandler getMetricMessageHandler() {
+    return metricMessageHandler;
   }
 
   /**

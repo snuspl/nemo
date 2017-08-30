@@ -84,8 +84,7 @@ message ExecutorFailedMsg {
 }
 
 message MetricMsg {
-    required string executorId = 1;
-    repeated string messages = 2;
+    required string metricMessage = 1;
 }
 
 // Messages between Executors

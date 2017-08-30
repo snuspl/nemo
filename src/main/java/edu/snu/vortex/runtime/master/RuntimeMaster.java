@@ -67,7 +67,6 @@ public final class RuntimeMaster {
   private final MessageEnvironment masterMessageEnvironment;
   private final PartitionManagerMaster partitionManagerMaster;
   private JobStateManager jobStateManager;
-  private final MetricMessageHandler metricMessageHandler;
   // For converting json data. This is a thread safe.
   // [Vortex-420] Create a Singleton ObjectMapper
   private final ObjectMapper objectMapper;
@@ -81,7 +80,6 @@ public final class RuntimeMaster {
                        final ContainerManager containerManager,
                        final MessageEnvironment masterMessageEnvironment,
                        final PartitionManagerMaster partitionManagerMaster,
-                       final MetricMessageHandler metricMessageHandler,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                        @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
     this.scheduler = scheduler;
@@ -92,7 +90,6 @@ public final class RuntimeMaster {
         .setupListener(MessageEnvironment.MASTER_MESSAGE_RECEIVER, new MasterControlMessageReceiver());
     this.partitionManagerMaster = partitionManagerMaster;
     this.dagDirectory = dagDirectory;
-    this.metricMessageHandler = metricMessageHandler;
     this.irVertices = new HashSet<>();
     this.objectMapper = new ObjectMapper();
   }
@@ -176,10 +173,7 @@ public final class RuntimeMaster {
         throw new RuntimeException(exception);
       case MetricMessageReceived:
         final ControlMessage.MetricMsg metricMsg = message.getMetricMsg();
-        final String executorId = metricMsg.getExecutorId();
-        metricMsg.getMessagesList().stream()
-            .map(new JsonStringToMapFunction())
-            .forEach((msg) -> metricMessageHandler.onMetricMessageReceived(executorId, msg));
+        jobStateManager.getMetricMessageHandler().onMetricMessageReceived(metricMsg.getMetricMessage());
         break;
       case StoreMetadata:
         partitionManagerMaster.getMetadataManager().onStoreMetadata(message);

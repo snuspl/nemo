@@ -26,13 +26,11 @@ import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
-import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
 import edu.snu.vortex.runtime.executor.metric.PeriodicMetricSender;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -66,7 +64,6 @@ public final class Executor {
   private final PersistentConnectionToMaster persistentConnectionToMaster;
 
   private final PeriodicMetricSender periodicMetricSender;
-  private final Map<String, MetricDataBuilder> metricDataBuilderMap;
 
   @Inject
   public Executor(@Parameter(JobConf.ExecutorId.class) final String executorId,
@@ -82,7 +79,6 @@ public final class Executor {
     this.partitionManagerWorker = partitionManagerWorker;
     this.dataTransferFactory = dataTransferFactory;
     this.periodicMetricSender = periodicMetricSender;
-    metricDataBuilderMap = new HashMap<>();
     messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_RECEIVER, new ExecutorMessageReceiver());
   }
 
@@ -105,8 +101,7 @@ public final class Executor {
       taskGroupStateManager =
           new TaskGroupStateManager(scheduledTaskGroup.getTaskGroup(), scheduledTaskGroup.getAttemptIdx(), executorId,
               persistentConnectionToMaster,
-              periodicMetricSender,
-              metricDataBuilderMap);
+              periodicMetricSender);
 
       scheduledTaskGroup.getTaskGroupIncomingEdges()
           .forEach(e -> partitionManagerWorker.registerCoder(e.getId(), e.getCoder()));

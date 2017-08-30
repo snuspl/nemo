@@ -79,7 +79,7 @@ public class MetricData {
 
   public final Map<String, Object> toJson() {
     final Map<String, Object> jsonMetricData = new HashMap<>();
-    jsonMetricData.put(getComputationUnit().toString(), getComputationUnitId());
+    jsonMetricData.put(getComputationUnit().name(), getComputationUnitId());
     jsonMetricData.put("Executor", getExecutorId());
     jsonMetricData.put("StageScheduleAttemptIdx", getStageScheduleAttemptIdx());
     jsonMetricData.put("StartState", getStartState());
@@ -87,5 +87,22 @@ public class MetricData {
     jsonMetricData.put("ElapsedTime", getElapsedTime());
 
     return jsonMetricData;
+  }
+
+  @Override
+  public final String toString() {
+    final StringBuilder sb = new StringBuilder();
+    sb.append(getComputationUnit().name()).append(": ").append(getComputationUnitId());
+    if (getExecutorId() != null) {
+      sb.append(" Executor: ").append(getExecutorId());
+    }
+    if (getStageScheduleAttemptIdx() != -1) {
+      sb.append(" Attempted to schedule ").append(getStageScheduleAttemptIdx()).append(" times");
+    }
+    sb.append(" ").append(getStartState()).append(" ~ ").append(getEndState());
+    sb.append(" ").append(getElapsedTime() / 1000).append("us")
+        .append("(").append(getElapsedTime() / 1000000000).append("s)");
+
+    return sb.toString();
   }
 }
