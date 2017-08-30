@@ -91,7 +91,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
         // management
-        .addLast(new ChannelLifecycleTracker())
+        .addLast(new ChannelActivationReporter())
         // inbound
         .addLast(new FrameDecoder())
         // outbound
@@ -104,9 +104,14 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   }
 
   /**
-   * Tracks channel lifecycle.
+   * Reports channel activation event to {@link PartitionTransfer}.
+   *
+   * Channels should be cached by {@link PartitionTransfer} for better performance.
+   * {@link PartitionTransfer} watches inbound control messages and caches the corresponding channel automatically.
+   * However, channels with no inbound control messages (i.e. this executor only has served as a client), channels are
+   * not going to be cached. This handler emits a user event that forces channel caching.
    */
-  private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
+  private static final class ChannelActivationReporter extends ChannelInboundHandlerAdapter {
     private String localExecutorId = null;
     private String remoteExecutorId = null;
 
