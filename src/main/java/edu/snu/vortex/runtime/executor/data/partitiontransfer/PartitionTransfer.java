@@ -207,13 +207,13 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         if (cachedChannel == null) {
           LOG.info("Channel established between local {}({}) and remote {}({})",
               new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
-          return channel;
+          return channel.newSucceededFuture();
         } else if (channel == cachedChannel) {
           return cachedChannel;
         } else {
           LOG.warn("Multiple channel established between local {}({}) and remote {}({})",
               new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
-          return channel;
+          return channel.newSucceededFuture();
         }
       });
     } else if (evt instanceof ChannelInitializer.ChannelInactiveEvent) {
