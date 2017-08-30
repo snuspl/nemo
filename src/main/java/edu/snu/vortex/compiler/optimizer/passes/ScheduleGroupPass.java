@@ -48,8 +48,8 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     dag.topologicalDo(irVertex -> {
       final Integer currentStageId = irVertex.getAttr(StageId);
       dependentStagesMap.putIfAbsent(currentStageId, new HashSet<>());
-      dag.getIncomingEdgesOf(irVertex).stream().map(IREdge::getSrc).map(vertex -> vertex.getAttr(StageId)).forEach(n ->
-          dependentStagesMap.get(currentStageId).add(n));
+      dag.getIncomingEdgesOf(irVertex).stream().map(IREdge::getSrc).map(vertex -> vertex.getAttr(StageId))
+          .filter(n -> !n.equals(currentStageId)).forEach(n -> dependentStagesMap.get(currentStageId).add(n));
     });
 
     // Map to put our results in.
@@ -67,6 +67,8 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
                   new RuntimeException("No max value was found for dependent stages"));
           stageIdToScheduleGroupNumberMap.put(stageId, maxDependentSchedulerGroup + 1);
           dependentStagesMap.remove(stageId);
+        } else {
+          throw new RuntimeException("Nothing to be done here: " + stageId + ", " + dependentStages);
         }
       });
     }
