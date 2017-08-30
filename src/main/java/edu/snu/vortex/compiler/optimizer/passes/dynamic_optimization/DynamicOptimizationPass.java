@@ -22,6 +22,7 @@ import java.util.Map;
 
 /**
  * Interface for dynamic optimization passes.
+ * @param <T> type of the metric data used for dynamic optimization.
  */
 public interface DynamicOptimizationPass<T> {
   /**

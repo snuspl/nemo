@@ -23,6 +23,7 @@ import java.util.*;
 /**
  * IRVertex that collects statistics to send them to the optimizer for dynamic optimization.
  * This class is generated in the DAG through {@link edu.snu.vortex.compiler.optimizer.passes.DataSkewPass}.
+ * @param <T> type of the metric data.
  */
 public final class MetricCollectionBarrierVertex<T> extends IRVertex {
   // Partition ID to Size data
