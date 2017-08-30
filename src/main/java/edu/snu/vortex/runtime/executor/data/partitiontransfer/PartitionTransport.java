@@ -119,7 +119,6 @@ final class PartitionTransport implements AutoCloseable {
       for (final int candidatePort : tcpPortProvider) {
         try {
           listeningChannel = serverBootstrap.bind(host, candidatePort).sync().channel();
-          channelGroup.add(listeningChannel);
           break;
         } catch (final InterruptedException e) {
           LOG.debug(String.format("Cannot bind to %s:%d", host, candidatePort), e);
@@ -134,7 +133,6 @@ final class PartitionTransport implements AutoCloseable {
     } else {
       try {
         listeningChannel = serverBootstrap.bind(host, port).sync().channel();
-        channelGroup.add(listeningChannel);
       } catch (final InterruptedException e) {
         serverListeningGroup.shutdownGracefully();
         serverWorkingGroup.shutdownGracefully();
@@ -154,11 +152,13 @@ final class PartitionTransport implements AutoCloseable {
   public void close() {
     LOG.info("Stopping listening at {} and closing", serverListeningChannel.localAddress());
 
+    final ChannelFuture closeListeningChannelFuture = serverListeningChannel.close();
     final ChannelGroupFuture channelGroupCloseFuture = channelGroup.close();
     final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
     final Future serverWorkingGroupCloseFuture = serverWorkingGroup.shutdownGracefully();
     final Future clientGroupCloseFuture = clientGroup.shutdownGracefully();
 
+    closeListeningChannelFuture.awaitUninterruptibly();
     channelGroupCloseFuture.awaitUninterruptibly();
     serverListeningGroupCloseFuture.awaitUninterruptibly();
     serverWorkingGroupCloseFuture.awaitUninterruptibly();
