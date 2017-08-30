@@ -85,6 +85,11 @@ public final class PartitionInputStream<T> implements PartitionStream {
   }
 
   @Override
+  public String getRemoteExecutorId() {
+    return "";
+  }
+
+  @Override
   public String getRuntimeEdgeId() {
     return "";
   }
