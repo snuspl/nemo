@@ -28,6 +28,7 @@ import edu.snu.vortex.runtime.executor.data.HashRange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -52,16 +53,16 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
         aggregatedMetricData.add(i, metricData.values().stream().mapToLong(lst -> lst.get(i)).sum()));
 
     // get edges to optimize
-    final Stream<String> optimizationEdgeIds = metricData.keySet().stream().map(partitionId ->
-        RuntimeIdGenerator.parsePartitionId(partitionId)[0]);
+    final List<String> optimizationEdgeIds = metricData.keySet().stream().map(partitionId ->
+        RuntimeIdGenerator.parsePartitionId(partitionId)[0]).collect(Collectors.toList());
     final DAG<PhysicalStage, PhysicalStageEdge> stageDAG = originalPlan.getStageDAG();
-    final Stream<PhysicalStageEdge> optimizationEdges = stageDAG.getVertices().stream()
+    final List<PhysicalStageEdge> optimizationEdges = stageDAG.getVertices().stream()
         .flatMap(physicalStage -> stageDAG.getIncomingEdgesOf(physicalStage).stream())
-        .filter(physicalStageEdge -> optimizationEdgeIds.anyMatch(optimizationEdgeId ->
-            optimizationEdgeId.equals(physicalStageEdge.getId())));
+        .filter(physicalStageEdge -> optimizationEdgeIds.contains(physicalStageEdge.getId()))
+        .collect(Collectors.toList());
 
     // Get number of evaluators of the next stage
-    final Integer taskGroupListSize = optimizationEdges.findFirst().orElseThrow(() ->
+    final Integer taskGroupListSize = optimizationEdges.stream().findFirst().orElseThrow(() ->
         new RuntimeException("optimization edges is empty")).getDst().getTaskGroupList().size();
 
     // Do the optimization using the information derived above.
