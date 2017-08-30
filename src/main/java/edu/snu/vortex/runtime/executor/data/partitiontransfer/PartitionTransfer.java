@@ -219,6 +219,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     } else if (evt instanceof ChannelInitializer.ChannelInactiveEvent) {
       final ChannelInitializer.ChannelInactiveEvent event = (ChannelInitializer.ChannelInactiveEvent) evt;
       channelMap.remove(event.getRemoteExecutorId());
+      LOG.warn("Channel inactive between local {}({}) and remote {}({})", new Object[]{event.getLocalExecutorId(),
+          channel.localAddress(), event.getRemoteExecutorId(), channel.remoteAddress()});
     }
   }
 

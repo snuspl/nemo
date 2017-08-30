@@ -58,6 +58,7 @@ final class ControlMessageToPartitionStreamCodec
 
   private short nextOutboundPullTransferId = 0;
   private short nextOutboundPushTransferId = 0;
+  private boolean toFireSetExecutorIdEvent = true;
 
   /**
    * Creates a {@link ControlMessageToPartitionStreamCodec}.
@@ -87,6 +88,8 @@ final class ControlMessageToPartitionStreamCodec
   protected void encode(final ChannelHandlerContext ctx,
                         final PartitionStream in,
                         final List<Object> out) {
+    // Outbound message: our PartitionTransfer already fired a SetExecutorIdEvent
+    toFireSetExecutorIdEvent = false;
     if (in instanceof PartitionInputStream) {
       onOutboundPullRequest(ctx, (PartitionInputStream) in, out);
     } else {
@@ -147,6 +150,11 @@ final class ControlMessageToPartitionStreamCodec
   protected void decode(final ChannelHandlerContext ctx,
                         final ControlMessage.DataTransferControlMessage in,
                         final List<Object> out) {
+    if (toFireSetExecutorIdEvent) {
+      ctx.channel().pipeline().fireUserEventTriggered(new ChannelInitializer.SetExecutorIdEvent(localExecutorId,
+          in.getControlMessageSourceId()));
+      toFireSetExecutorIdEvent = false;
+    }
     if (in.getType() == ControlMessage.PartitionTransferType.PULL) {
       onInboundPullRequest(ctx, in, out);
     } else {
