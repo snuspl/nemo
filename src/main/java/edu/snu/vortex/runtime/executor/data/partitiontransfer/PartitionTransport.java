@@ -40,7 +40,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 
 /**
  * Bootstraps the server and connects to other servers on demand.
@@ -182,82 +181,20 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Writes to the specified remote address. Creates a connection to the remote transport if needed.
-   *
-   * @param executorId    the id of the remote executor
-   * @param thing         the object to write
-   * @param onError       the {@link Consumer} to be invoked on an error during setting up a channel
-   *                      or writing to the channel
+   * Connect to the {@link PartitionTransport} server of the specified executor.
+   * @param remoteExecutorId the id of the executor
+   * @return a {@link ChannelFuture} for connecting
    */
-  void writeTo(final String executorId, final Object thing, final Consumer<Throwable> onError) {
-    final ChannelFuture channelFuture = channelFutureMap
-        .computeIfAbsent(lookup(executorId), address -> clientBootstrap.connect(address));
-    final Channel channel = channelFuture.channel();
-    if (channelFuture.isSuccess()) {
-      channel.writeAndFlush(thing).addListener(new WriteFutureListener(channel, onError));
-    } else {
-      channelFuture.addListener(future -> {
-        if (future.isSuccess()) {
-          channel.writeAndFlush(thing).addListener(new WriteFutureListener(channel, onError));
-        } else if (future.cause() == null) {
-          LOG.error("Failed to set up a channel");
-        } else {
-          LOG.error("Failed to set up a channel", future.cause());
-          onError.accept(future.cause());
-        }
-      });
-    }
-  }
-
-  /**
-   * Lookup {@link PartitionTransport} listening address.
-   *
-   * @param executorId  the executor id
-   * @return            the listening address of the {@link PartitionTransport} of the specified executor
-   */
-  private InetSocketAddress lookup(final String executorId) {
+  ChannelFuture connectTo(final String remoteExecutorId) {
+    final InetSocketAddress address;
     try {
-      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(executorId);
-      final InetSocketAddress address = nameResolver.lookup(identifier);
-      return address;
+      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(remoteExecutorId);
+      address = nameResolver.lookup(identifier);
     } catch (final Exception e) {
-      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", executorId), e);
+      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", remoteExecutorId), e);
       throw new RuntimeException(e);
     }
-  }
-
-  /**
-   * {@link ChannelFutureListener} for handling outbound exceptions.
-   */
-  public static final class WriteFutureListener implements ChannelFutureListener {
-
-    private final Channel channel;
-    private final Consumer<Throwable> onError;
-
-    /**
-     * Creates a {@link ChannelFutureListener}.
-     *
-     * @param channel the channel
-     * @param onError the {@link Consumer} to be invoked on an error during writing to the channel
-     */
-    private WriteFutureListener(final Channel channel, final Consumer<Throwable> onError) {
-      this.channel = channel;
-      this.onError = onError;
-    }
-
-    @Override
-    public void operationComplete(final ChannelFuture future) {
-      if (future.isSuccess()) {
-        return;
-      }
-      channel.close();
-      if (future.cause() == null) {
-        LOG.error("Failed to write to the channel");
-      } else {
-        onError.accept(future.cause());
-        LOG.error("Failed to write to the channel", future.cause());
-      }
-    }
+    return clientBootstrap.connect(address);
   }
 
   /**

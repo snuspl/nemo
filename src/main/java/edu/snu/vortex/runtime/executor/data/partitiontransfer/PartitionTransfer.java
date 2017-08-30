@@ -19,9 +19,7 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -30,8 +28,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * Interface for interplay with {@link PartitionManagerWorker}.
@@ -45,16 +46,20 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
   private final PartitionTransport partitionTransport;
+  private final String localExecutorId;
+  private final int bufferSize;
+
+  private final ConcurrentMap<String, ChannelFuture> executorIdToChannelMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Channel, String> channelToExecutorIdMap = new ConcurrentHashMap<>();
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
-  private final int bufferSize;
 
   /**
    * Creates a partition transfer and registers this transfer to the name server.
    *
    * @param partitionManagerWorker  provides {@link edu.snu.vortex.common.coder.Coder}s
    * @param partitionTransport      provides {@link io.netty.channel.Channel}
-   * @param executorId              the id of this executor
+   * @param localExecutorId         the id of this executor
    * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
    * @param outboundThreads         the number of threads in thread pool for outbound partition transfer
    * @param bufferSize              the size of outbound buffers
@@ -63,13 +68,14 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private PartitionTransfer(
       final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
       final PartitionTransport partitionTransport,
-      @Parameter(JobConf.ExecutorId.class) final String executorId,
+      @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       @Parameter(JobConf.PartitionTransferInboundNumThreads.class) final int inboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundBufferSize.class) final int bufferSize) {
 
     this.partitionManagerWorker = partitionManagerWorker;
     this.partitionTransport = partitionTransport;
+    this.localExecutorId = localExecutorId;
     this.bufferSize = bufferSize;
 
     // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialPartition option
@@ -100,7 +106,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
         Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
-    partitionTransport.writeTo(executorId, stream, cause -> stream.onExceptionCaught(cause));
+    write(executorId, stream, cause -> stream.onExceptionCaught(cause));
     return stream;
   }
 
@@ -123,12 +129,65 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
-    partitionTransport.writeTo(executorId, stream, cause -> stream.onExceptionCaught(cause));
+    write(executorId, stream, cause -> stream.onExceptionCaught(cause));
     return stream;
+  }
+
+  /**
+   * Gets a {@link ChannelFuture} for connecting to the {@link PartitionTransport} server of the specified executor.
+   *
+   * @param remoteExecutorId  the id of the remote executor
+   * @param thing             the object to write
+   * @param onError           the {@link Consumer} to be invoked on an error during setting up a channel
+   *                          or writing to the channel
+   */
+  private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
+    // Sending an outbound control message. We can "memorize" the channel and the corresponding executor id to reuse it.
+    final ChannelFuture future;
+    final Channel channel;
+    synchronized (this) {
+      future = executorIdToChannelMap.computeIfAbsent(remoteExecutorId,
+          executorId -> partitionTransport.connectTo(remoteExecutorId));
+      channel = future.channel();
+      channelToExecutorIdMap.put(channel, remoteExecutorId);
+    }
+    future.addListener(connectionFuture -> {
+      if (connectionFuture.isSuccess()) {
+        channel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(channel, onError));
+      } else if (connectionFuture.cause() == null) {
+        executorIdToChannelMap.remove(remoteExecutorId);
+        channelToExecutorIdMap.remove(channel);
+        LOG.error("Failed to connect to {}", remoteExecutorId);
+      } else {
+        executorIdToChannelMap.remove(remoteExecutorId);
+        channelToExecutorIdMap.remove(channel);
+        onError.accept(connectionFuture.cause());
+        LOG.error(String.format("Failed to connect to %s", remoteExecutorId), connectionFuture.cause());
+      }
+    });
   }
 
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final PartitionStream stream) {
+    // Got an inbound control message. We can "memorize" the channel and the corresponding executor id to reuse it.
+    final Channel channel = ctx.channel();
+    channelToExecutorIdMap.put(channel, stream.getRemoteExecutorId());
+    executorIdToChannelMap.compute(stream.getRemoteExecutorId(), (remoteExecutorId, channelFuture) -> {
+      if (channelFuture == null) {
+        LOG.debug("Channel established between local executor {}({}) and remote executor {}({})", new Object[]{
+            localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+        return channel.newSucceededFuture();
+      } else if (channelFuture.channel() == channel) {
+        // leave it unchanged
+        return channelFuture;
+      } else {
+        LOG.warn("Multiple channel established between local executor {}({}) and remote executor {}({})", new Object[]{
+            localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+        return channel.newSucceededFuture();
+      }
+    });
+
+    // process the inbound control message
     if (stream instanceof PartitionInputStream) {
       onPushNotification((PartitionInputStream) stream);
     } else {
@@ -156,5 +215,51 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
     partitionManagerWorker.get().onPushNotification(stream);
+  }
+
+  @Override
+  public void channelInactive(final ChannelHandlerContext ctx) {
+    final String remoteExecutorId;
+    synchronized (this) {
+      remoteExecutorId = channelToExecutorIdMap.remove(ctx.channel());
+      executorIdToChannelMap.remove(remoteExecutorId);
+    }
+    final Channel channel = ctx.channel();
+    LOG.warn("Channel closed between local executor {}({}) and remote executor {}({})", new Object[]{
+        localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+  }
+
+  /**
+   * {@link ChannelFutureListener} for handling outbound exceptions on writing control messages.
+   */
+  public static final class ControlMessageWriteFutureListener implements ChannelFutureListener {
+
+    private final Channel channel;
+    private final Consumer<Throwable> onError;
+
+    /**
+     * Creates a {@link ControlMessageWriteFutureListener}.
+     *
+     * @param channel the channel
+     * @param onError the {@link Consumer} to be invoked on an error during writing to the channel
+     */
+    private ControlMessageWriteFutureListener(final Channel channel, final Consumer<Throwable> onError) {
+      this.channel = channel;
+      this.onError = onError;
+    }
+
+    @Override
+    public void operationComplete(final ChannelFuture future) {
+      if (future.isSuccess()) {
+        return;
+      }
+      channel.close();
+      if (future.cause() == null) {
+        LOG.error("Failed to write a control message");
+      } else {
+        onError.accept(future.cause());
+        LOG.error("Failed to write a control message", future.cause());
+      }
+    }
   }
 }
