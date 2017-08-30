@@ -54,7 +54,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
    * If the volume is not mounted to this directory, the remote file store will act like local file store
    * (but maybe inefficiently).
    */
-  @NamedParameter(doc = "Directory points the GlusterFS volume", short_name = "gfs_dir", default_value = "./tmp_gfs")
+  @NamedParameter(doc = "Directory points the GlusterFS volume", short_name = "gfs_dir", default_value = "../tmp_gfs")
   public final class GlusterVolumeDirectory implements Name<String> {
   }
 
@@ -90,6 +90,14 @@ public final class JobConf extends ConfigurationModuleBuilder {
   @NamedParameter(doc = "Path to the JSON file that specifies resources for executors", short_name = "executor_json",
   default_value = "config/default.json")
   public final class ExecutorJsonPath implements Name<String> {
+  }
+
+  /**
+   * The fraction of container memory not to use fo the JVM heap.
+   */
+  @NamedParameter(doc = "The fraction of the container memory not to use for the JVM heap", short_name = "heap_slack",
+      default_value = "0.3")
+  public final class JVMHeapSlack implements Name<Double> {
   }
 
   /**

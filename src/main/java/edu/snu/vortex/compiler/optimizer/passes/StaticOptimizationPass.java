@@ -22,7 +22,7 @@ import edu.snu.vortex.common.dag.DAG;
 /**
  * Interface for optimization passes.
  */
-public interface Pass {
+public interface StaticOptimizationPass {
   /**
    * A pass processes the DAG.
    * @param dag the DAG to process.

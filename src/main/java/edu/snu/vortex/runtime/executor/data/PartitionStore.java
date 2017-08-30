@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
@@ -39,15 +40,13 @@ public interface PartitionStore {
    * Retrieves data in a specific hash range from a partition.
    * The result data will be treated as another partition.
    * @param partitionId of the target partition.
-   * @param hashRangeStartVal of the hash range (included in the range).
-   * @param hashRangeEndVal of the hash range (excluded from the range).
+   * @param hashRange   the hash range
    * @return the result data as a new partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
    */
   CompletableFuture<Optional<Partition>> retrieveDataFromPartition(String partitionId,
-                                                                   int hashRangeStartVal,
-                                                                   int hashRangeEndVal);
+                                                                   HashRange hashRange);
 
   /**
    * Saves data as a partition.
@@ -64,13 +63,14 @@ public interface PartitionStore {
    * Saves an iterable of data blocks as a partition.
    * Each block has a specific hash value, and the block becomes a unit of read & write.
    * @param partitionId of the partition.
-   * @param hashedData to save as a partition.
+   * @param hashedData to save as a partition. Each pair consists of the hash value and the block data.
    * @return the size of data per hash value (only when the data is serialized).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
    *          for any error occurred while trying to write a partition.)
    */
-  CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(String partitionId,
-                                                                   Iterable<Iterable<Element>> hashedData);
+  CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
+      String partitionId,
+      Iterable<Pair<Integer, Iterable<Element>>> hashedData);
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;

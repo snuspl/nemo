@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
@@ -42,6 +43,15 @@ abstract class FileStore implements PartitionStore {
     this.fileDirectory = fileDirectory;
     this.partitionManagerWorker = partitionManagerWorker;
   }
+
+  /**
+   * Gets the list of {@link FileArea}s for the specified partition.
+   *
+   * @param partitionId the partition id
+   * @param hashRange   the hash range
+   * @return the list of file areas
+   */
+  public abstract List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange);
 
   /**
    * Makes the given stream to a block and write it to the given file partition.
@@ -148,19 +158,20 @@ abstract class FileStore implements PartitionStore {
    */
   protected List<Long> putHashedData(final Coder coder,
                                      final FilePartition partition,
-                                     final Iterable<Iterable<Element>> hashedData) throws IOException {
+                                     final Iterable<Pair<Integer, Iterable<Element>>> hashedData)
+      throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    int hashIdx = 0;
-    for (final Iterable<Element> block : hashedData) {
+    for (final Pair<Integer, Iterable<Element>> blockInfo : hashedData) {
+      final int hashValue = blockInfo.left();
       long elementsInBlock = 0;
-      for (final Element element : block) {
+      for (final Element element : blockInfo.right()) {
         coder.encode(element, outputStream);
         elementsInBlock++;
       }
       // Synchronously append the serialized block to the file and reset the buffer
-      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition, hashIdx++));
+      blockSizeList.add(writeBlock(elementsInBlock, outputStream, partition, hashValue));
 
       outputStream.reset();
     }

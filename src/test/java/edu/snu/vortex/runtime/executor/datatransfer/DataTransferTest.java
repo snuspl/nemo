@@ -16,8 +16,8 @@
 package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.common.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
@@ -36,17 +37,13 @@ import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.metric.PeriodicMetricSender;
 import edu.snu.vortex.runtime.master.DefaultMetricMessageHandler;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
+import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
-import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
-import edu.snu.vortex.runtime.master.scheduler.BatchScheduler;
-import edu.snu.vortex.runtime.master.scheduler.PendingTaskGroupPriorityQueue;
-import edu.snu.vortex.runtime.master.scheduler.RoundRobinSchedulingPolicy;
-import edu.snu.vortex.runtime.master.scheduler.Scheduler;
+import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
-import org.apache.beam.sdk.values.KV;
 import org.apache.commons.io.FileUtils;
 import org.apache.reef.io.network.naming.NameResolverConfiguration;
 import org.apache.reef.io.network.naming.NameServer;
@@ -60,15 +57,19 @@ import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.vortex.runtime.RuntimeTestUtil.flatten;
+import static edu.snu.vortex.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -76,6 +77,8 @@ import static org.mockito.Mockito.mock;
 /**
  * Tests {@link InputReader} and {@link OutputWriter}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class})
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
@@ -93,6 +96,7 @@ public final class DataTransferTest {
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   private static final Tang TANG = Tang.Factory.getTang();
   private static final int HASH_RANGE_MULTIPLIER = 10;
+  private static final int I_FILE_DATA_SIZE = 1000;
 
   private PartitionManagerMaster master;
   private PartitionManagerWorker worker1;
@@ -104,18 +108,19 @@ public final class DataTransferTest {
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
+    final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
+    final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
-        new BatchScheduler(master,
-            new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT), new PendingTaskGroupPriorityQueue());
+        new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
+            new PendingTaskGroupPriorityQueue(), pubSubEventHandler);
     final AtomicInteger executorCount = new AtomicInteger(0);
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
-    final MetadataManager metadataManager = injector1.getInstance(MetadataManager.class);
     // Unused, but necessary for wiring up the message environments
-    final RuntimeMaster runtimeMaster = new RuntimeMaster(scheduler, containerManager, messageEnvironment,
-        master, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
-
+    final RuntimeMaster runtimeMaster =
+        new RuntimeMaster(scheduler, containerManager, messageEnvironment, master,
+            updatePhysicalPlanEventHandler, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
     final Injector injector2 = createNameClientInjector();
     injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");
 
@@ -219,6 +224,15 @@ public final class DataTransferTest {
     writeAndRead(worker1, worker2, Attribute.ScatterGather, REMOTE_FILE_STORE);
   }
 
+  @Test
+  public void testIFileWriteAndRead() throws Exception {
+    // test ManyToMany same worker (remote file)
+    iFileWriteAndRead(worker1, worker1, REMOTE_FILE_STORE);
+
+    // test ManyToMany different worker (remote file)
+    iFileWriteAndRead(worker1, worker2, REMOTE_FILE_STORE);
+  }
+
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
                             final Attribute commPattern,
@@ -226,19 +240,9 @@ public final class DataTransferTest {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
     final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);
-    sender.registerCoder(edgeId, CODER);
-    receiver.registerCoder(edgeId, CODER);
-
-    // Src setup
-    final BoundedSource s = mock(BoundedSource.class);
-    final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap srcVertexAttributes = srcVertex.getAttributes();
-    srcVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
-
-    // Dst setup
-    final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap dstVertexAttributes = dstVertex.getAttributes();
-    dstVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    final Pair<IRVertex, IRVertex> verticesPair = setupVertices(edgeId, sender, receiver);
+    final IRVertex srcVertex = verticesPair.left();
+    final IRVertex dstVertex = verticesPair.right();
 
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.OneToOne, srcVertex, dstVertex, CODER);
@@ -264,7 +268,7 @@ public final class DataTransferTest {
     // Write
     final List<List<Element>> dataWrittenList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-      final List<Element> dataWritten = getListOfZeroToNine();
+      final List<Element> dataWritten = getRangedNumList(0, PARALLELISM_TEN);
       final OutputWriter writer = new OutputWriter(HASH_RANGE_MULTIPLIER, srcTaskIndex, srcVertex.getId(), dstVertex,
           dummyEdge, sender);
       writer.write(dataWritten);
@@ -299,13 +303,85 @@ public final class DataTransferTest {
     }
   }
 
-  private List<Element> getListOfZeroToNine() {
-    final List<Element> dummy = new ArrayList<>();
-    IntStream.range(0, PARALLELISM_TEN).forEach(number -> dummy.add(new BeamElement<>(KV.of(number, number))));
-    return dummy;
+  /**
+   * Tests I-File write and read between 10 writers - 10 readers.
+   * 10 I-Files will be constructed by 10 writers concurrently.
+   */
+  private void iFileWriteAndRead(final PartitionManagerWorker sender,
+                                 final PartitionManagerWorker receiver,
+                                 final Attribute store) throws RuntimeException {
+    final int testIndex = TEST_INDEX.getAndIncrement();
+    final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
+    final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);
+    final Pair<IRVertex, IRVertex> verticesPair = setupVertices(edgeId, sender, receiver);
+    final IRVertex srcVertex = verticesPair.left();
+    final IRVertex dstVertex = verticesPair.right();
+
+    // Edge setup
+    final IREdge dummyIREdge = new IREdge(IREdge.Type.ScatterGather, srcVertex, dstVertex, CODER);
+    final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
+    edgeAttributes.put(Attribute.Key.Partitioning, Attribute.Hash);
+    edgeAttributes.put(Attribute.Key.ChannelDataPlacement, store);
+    edgeAttributes.put(Attribute.Key.WriteOptimization, Attribute.IFileWrite);
+    final RuntimeEdge<IRVertex> dummyEdge
+        = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
+
+    // Initialize the states of the I-File partitions in Master.
+    final Set<String> taskGroupIds = new HashSet<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> taskGroupIds.add(taskGroupPrefix + srcTaskIndex));
+    IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex ->
+        master.initializeState(edgeId, dstTaskIndex, taskGroupIds));
+    taskGroupIds.forEach(master::onProducerTaskGroupScheduled);
+
+    // Write
+    final List<List<Element>> dataWrittenList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      final List<Element> dataWritten = getRangedNumList(0, I_FILE_DATA_SIZE);
+      final OutputWriter writer = new OutputWriter(HASH_RANGE_MULTIPLIER, srcTaskIndex, srcVertex.getId(), dstVertex,
+          dummyEdge, sender);
+      writer.write(dataWritten);
+      dataWrittenList.add(dataWritten);
+    });
+
+    // Read
+    final List<List<Element>> dataReadList = new ArrayList<>();
+    IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
+      final InputReader reader =
+          new InputReader(dstTaskIndex, taskGroupPrefix + dstTaskIndex, srcVertex, dummyEdge, receiver);
+      final List<Element> dataRead = new ArrayList<>();
+      try {
+        InputReader.combineFutures(reader.read()).forEach(dataRead::add);
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
+      dataReadList.add(dataRead);
+    });
+
+    // Compare (should be the same)
+    final List<Element> flattenedWrittenData = flatten(dataWrittenList);
+    final List<Element> flattenedReadData = flatten(dataReadList);
+    System.out.println(flattenedWrittenData + "\n" + flattenedReadData);
+    assertEquals(flattenedWrittenData.size(), flattenedReadData.size());
+    flattenedReadData.forEach(rData -> assertTrue(flattenedWrittenData.remove(rData)));
   }
 
-  private List<Element> flatten(final List<List<Element>> listOfList) {
-    return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
+  private Pair<IRVertex, IRVertex> setupVertices(final String edgeId,
+                                                 final PartitionManagerWorker sender,
+                                                 final PartitionManagerWorker receiver) {
+    sender.registerCoder(edgeId, CODER);
+    receiver.registerCoder(edgeId, CODER);
+
+    // Src setup
+    final BoundedSource s = mock(BoundedSource.class);
+    final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
+    final AttributeMap srcVertexAttributes = srcVertex.getAttributes();
+    srcVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+
+    // Dst setup
+    final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
+    final AttributeMap dstVertexAttributes = dstVertex.getAttributes();
+    dstVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+
+    return Pair.of(srcVertex, dstVertex);
   }
 }

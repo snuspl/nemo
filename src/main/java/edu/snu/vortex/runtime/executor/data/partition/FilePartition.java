@@ -17,13 +17,12 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
+import edu.snu.vortex.runtime.executor.data.FileArea;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -54,6 +53,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
 
   /**
    * Opens file stream to write the data.
+   * Corresponding {@link FilePartition#finishWrite()} is required.
    *
    * @throws IOException if fail to open the file stream.
    */
@@ -65,6 +65,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
 
   /**
    * Writes the serialized data of this partition as a block to the file where this partition resides.
+   * It does not do any reservation for writing.
    *
    * @param serializedData the serialized data which will become a block.
    * @param numElement     the number of elements in the serialized data.
@@ -78,24 +79,20 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   /**
    * Writes the serialized data of this partition having a specific hash value as a block to the file
    * where this partition resides.
+   * It does not do any reservation for writing.
    *
    * @param serializedData the serialized data which will become a block.
    * @param numElement     the number of elements in the serialized data.
    * @param hashVal        the hash value of this block.
    * @throws IOException if fail to write.
    */
-  public final synchronized void writeBlock(final byte[] serializedData,
-                                            final long numElement,
-                                            final int hashVal) throws IOException {
-    if (!writable) {
-      throw new IOException("This partition is non-writable.");
-    }
-    metadata.appendBlockMetadata(hashVal, serializedData.length, numElement);
+  public abstract void writeBlock(final byte[] serializedData,
+                                  final long numElement,
+                                  final int hashVal) throws IOException;
 
-    // Wrap the given serialized data (but not copy it)
+  protected final void writeBytes(final byte[] serializedData) throws IOException {
+    // Wrap the given serialized data (but not copy it) and write.
     final ByteBuffer buf = ByteBuffer.wrap(serializedData);
-
-    // Write synchronously
     fileChannel.write(buf);
   }
 
@@ -109,10 +106,10 @@ public abstract class FilePartition implements Partition, AutoCloseable {
       throw new IOException("This partition is non-writable.");
     }
     writable = false;
+    this.close();
     if (metadata.getAndSetWritten()) {
       throw new IOException("The writing for this partition is already finished.");
     }
-    this.close();
   }
 
   /**
@@ -148,13 +145,11 @@ public abstract class FilePartition implements Partition, AutoCloseable {
   /**
    * Retrieves the data of this partition from the file in a specific hash range and deserializes it.
    *
-   * @param hashRangeStartVal of the hash range (included in the range).
-   * @param hashRangeEndVal   of the hash range (excluded from the range).
+   * @param hashRange the hash range
    * @return an iterable of deserialized data.
    * @throws IOException if failed to deserialize.
    */
-  public final Iterable<Element> retrieveInHashRange(final int hashRangeStartVal,
-                                                     final int hashRangeEndVal) throws IOException {
+  public final Iterable<Element> retrieveInHashRange(final HashRange hashRange) throws IOException {
     // Check whether this partition is fully written and sorted by the hash value.
     if (!metadata.isWritten()) {
       throw new IOException("This partition is not written yet.");
@@ -167,7 +162,7 @@ public abstract class FilePartition implements Partition, AutoCloseable {
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
         final int hashVal = blockMetadata.getHashValue();
-        if (hashVal >= hashRangeStartVal && hashVal < hashRangeEndVal) {
+        if (hashRange.includes(hashVal)) {
           // The hash value of this block is in the range.
           deserializeBlock(blockMetadata, fileStream, deserializedData);
         } else {
@@ -182,6 +177,23 @@ public abstract class FilePartition implements Partition, AutoCloseable {
     }
 
     return deserializedData;
+  }
+
+  /**
+   * Retrieves the list of {@link FileArea}s for the specified {@link HashRange}.
+   *
+   * @param hashRange     the hash range
+   * @return list of the file areas
+   * @throws IOException if failed to open a file channel
+   */
+  public final List<FileArea> asFileAreas(final HashRange hashRange) throws IOException {
+    final List<FileArea> fileAreas = new ArrayList<>();
+    for (final BlockMetadata blockMetadata : metadata.getBlockMetadataList()) {
+      if (hashRange.includes(blockMetadata.getHashValue())) {
+        fileAreas.add(new FileArea(filePath, blockMetadata.getOffset(), blockMetadata.getBlockSize()));
+      }
+    }
+    return fileAreas;
   }
 
   /**
@@ -227,7 +239,15 @@ public abstract class FilePartition implements Partition, AutoCloseable {
     }
   }
 
+  protected final FileMetadata getMetadata() {
+    return metadata;
+  }
+
   protected final FileChannel getFileChannel() {
     return fileChannel;
+  }
+
+  protected final boolean isWritable() {
+    return writable;
   }
 }
