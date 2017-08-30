@@ -52,8 +52,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private final String localExecutorId;
   private final int bufferSize;
 
-  private final ConcurrentMap<String, ChannelFuture> executorIdToChannelMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<Channel, String> channelToExecutorIdMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Channel> channelMap = new ConcurrentHashMap<>();
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
@@ -146,53 +145,29 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *                          or writing to the channel
    */
   private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
-    // Sending an outbound control message. We can "memorize" the channel and the corresponding executor id to reuse it.
-    final ChannelFuture future;
-    final Channel channel;
-    synchronized (this) {
-      future = executorIdToChannelMap.computeIfAbsent(remoteExecutorId,
-          executorId -> partitionTransport.connectTo(remoteExecutorId));
-      channel = future.channel();
-      channelToExecutorIdMap.put(channel, remoteExecutorId);
+    final Channel cachedChannel = channelMap.get(remoteExecutorId);
+    if (cachedChannel == null) {
+      final ChannelFuture channelFuture = partitionTransport.connectTo(remoteExecutorId);
+      final Channel channel = channelFuture.channel();
+      channel.pipeline().fireUserEventTriggered(new ChannelInitializer.SetExecutorIdEvent(localExecutorId,
+          remoteExecutorId));
+      channelFuture.addListener(connectionFuture -> {
+        if (connectionFuture.isSuccess()) {
+          channel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(channel, onError));
+        } else if (connectionFuture.cause() == null) {
+          LOG.error("Failed to connect to {}", remoteExecutorId);
+        } else {
+          onError.accept(connectionFuture.cause());
+          LOG.error(String.format("Failed to connect to %s", remoteExecutorId), connectionFuture.cause());
+        }
+      });
+    } else {
+      cachedChannel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(cachedChannel, onError));
     }
-    future.addListener(connectionFuture -> {
-      if (connectionFuture.isSuccess()) {
-        channel.writeAndFlush(thing).addListener(new ControlMessageWriteFutureListener(channel, onError));
-      } else if (connectionFuture.cause() == null) {
-        executorIdToChannelMap.remove(remoteExecutorId);
-        channelToExecutorIdMap.remove(channel);
-        LOG.error("Failed to connect to {}", remoteExecutorId);
-      } else {
-        executorIdToChannelMap.remove(remoteExecutorId);
-        channelToExecutorIdMap.remove(channel);
-        onError.accept(connectionFuture.cause());
-        LOG.error(String.format("Failed to connect to %s", remoteExecutorId), connectionFuture.cause());
-      }
-    });
   }
 
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final PartitionStream stream) {
-    // Got an inbound control message. We can "memorize" the channel and the corresponding executor id to reuse it.
-    final Channel channel = ctx.channel();
-    channelToExecutorIdMap.put(channel, stream.getRemoteExecutorId());
-    executorIdToChannelMap.compute(stream.getRemoteExecutorId(), (remoteExecutorId, channelFuture) -> {
-      if (channelFuture == null) {
-        LOG.debug("Channel established between local executor {}({}) and remote executor {}({})", new Object[]{
-            localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
-        return channel.newSucceededFuture();
-      } else if (channelFuture.channel() == channel) {
-        // leave it unchanged
-        return channelFuture;
-      } else {
-        final Channel oldChannel = channelFuture.channel();
-        LOG.warn("Multiple channel established between local executor {}({}, {}) and remote executor {}({}, {})",
-            new Object[]{localExecutorId, oldChannel.localAddress(), channel.localAddress(), remoteExecutorId,
-            oldChannel.remoteAddress(), channel.remoteAddress()});
-        return channel.newSucceededFuture();
-      }
-    });
-
     // process the inbound control message
     if (stream instanceof PartitionInputStream) {
       onPushNotification((PartitionInputStream) stream);
@@ -224,23 +199,37 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   }
 
   @Override
+  public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+    final Channel channel = ctx.channel();
+    if (evt instanceof ChannelInitializer.ChannelActiveEvent) {
+      final ChannelInitializer.ChannelActiveEvent event = (ChannelInitializer.ChannelActiveEvent) evt;
+      channelMap.compute(event.getRemoteExecutorId(), (remoteAddress, cachedChannel) -> {
+        if (cachedChannel == null) {
+          LOG.info("Channel established between local {}({}) and remote {}({})",
+              new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
+          return channel;
+        } else if (channel == cachedChannel) {
+          return cachedChannel;
+        } else {
+          LOG.warn("Multiple channel established between local {}({}) and remote {}({})",
+              new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
+          return channel;
+        }
+      });
+    } else if (evt instanceof ChannelInitializer.ChannelInactiveEvent) {
+      final ChannelInitializer.ChannelInactiveEvent event = (ChannelInitializer.ChannelInactiveEvent) evt;
+      channelMap.remove(event.getRemoteExecutorId());
+    }
+  }
+
+  @Override
   public void channelActive(final ChannelHandlerContext ctx) {
     channelGroup.add(ctx.channel());
   }
 
   @Override
   public void channelInactive(final ChannelHandlerContext ctx) {
-    final String remoteExecutorId;
-    synchronized (this) {
-      remoteExecutorId = channelToExecutorIdMap.remove(ctx.channel());
-      if (remoteExecutorId != null) {
-        executorIdToChannelMap.remove(remoteExecutorId);
-      }
-    }
-    final Channel channel = ctx.channel();
     channelGroup.remove(ctx.channel());
-    LOG.warn("Channel closed between local executor {}({}) and remote executor {}({})", new Object[]{
-        localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
   }
 
   @Override

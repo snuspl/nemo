@@ -23,7 +23,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 
@@ -93,8 +92,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   private Map<Short, PartitionInputStream> pullTransferIdToInputStream;
   private Map<Short, PartitionInputStream> pushTransferIdToInputStream;
-  private SocketAddress localAddress;
-  private SocketAddress remoteAddress;
+  private String localExecutorId;
+  private String remoteExecutorId;
 
   /**
    * The number of bytes consisting body of a control frame to be read next.
@@ -139,9 +138,17 @@ final class FrameDecoder extends ByteToMessageDecoder {
         = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
     pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
     pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
-    localAddress = ctx.channel().localAddress();
-    remoteAddress = ctx.channel().remoteAddress();
     ctx.fireChannelActive();
+  }
+
+  @Override
+  public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+    if (evt instanceof ChannelInitializer.ChannelActiveEvent) {
+      final ChannelInitializer.ChannelActiveEvent event = (ChannelInitializer.ChannelActiveEvent) evt;
+      localExecutorId = event.getLocalExecutorId();
+      remoteExecutorId = event.getRemoteExecutorId();
+    }
+    ctx.fireUserEventTriggered(evt);
   }
 
   @Override
@@ -200,8 +207,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
       inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
       if (inputStream == null) {
         throw new IllegalStateException(String.format("Transport context for %s:%d was not found between the local"
-            + "endpoint %s and the remote endpoint %s", isPullTransfer ? "pull" : "push", transferId, localAddress,
-            remoteAddress));
+            + "%s (%s) and the remote %s(%s)", isPullTransfer ? "pull" : "push", transferId, localExecutorId,
+            ctx.channel().localAddress(), remoteExecutorId, ctx.channel().remoteAddress()));
       }
       if (dataBodyBytesToRead == 0) {
         onDataFrameEnd(ctx);
@@ -285,9 +292,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private void onDataFrameEnd(final ChannelHandlerContext ctx) {
     inputStream.startDecodingThreadIfNeeded();
     if (isLastFrame) {
-      LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, is now closed",
-          new Object[]{isPullTransfer ? "pull" : "push", transferId, ctx.channel().remoteAddress(),
-          ctx.channel().localAddress()});
+      LOG.debug("Transport {}:{}, where the partition sender is {}({}) and the receiver is {}({}), is now closed",
+          new Object[]{isPullTransfer ? "pull" : "push", transferId, remoteExecutorId, ctx.channel().remoteAddress(),
+          localExecutorId, ctx.channel().localAddress()});
       inputStream.markAsEnded();
       (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).remove(transferId);
     }

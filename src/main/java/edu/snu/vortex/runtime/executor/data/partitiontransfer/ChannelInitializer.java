@@ -16,6 +16,8 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -88,6 +90,8 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   @Override
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
+        // management
+        .addLast(new ChannelLifecycleTracker())
         // inbound
         .addLast(new FrameDecoder())
         // outbound
@@ -97,5 +101,107 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // inbound
         .addLast(partitionTransfer.get());
+  }
+
+  /**
+   * Tracks channel lifecycle.
+   */
+  private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
+    private String localExecutorId = null;
+    private String remoteExecutorId = null;
+
+    @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+      if (evt instanceof SetExecutorIdEvent) {
+        final SetExecutorIdEvent event = (SetExecutorIdEvent) evt;
+        localExecutorId = event.getLocalExecutorId();
+        remoteExecutorId = event.getRemoteExecutorId();
+        if (ctx.channel().isActive()) {
+          ctx.fireUserEventTriggered(new ChannelActiveEvent(localExecutorId, remoteExecutorId));
+        }
+      } else {
+        ctx.fireUserEventTriggered(evt);
+      }
+    }
+
+    @Override
+    public void channelActive(final ChannelHandlerContext ctx) {
+      if (remoteExecutorId != null) {
+        ctx.fireUserEventTriggered(new ChannelActiveEvent(localExecutorId, remoteExecutorId));
+      }
+      ctx.fireChannelActive();
+    }
+
+    @Override
+    public void channelInactive(final ChannelHandlerContext ctx) {
+      if (remoteExecutorId != null) {
+        ctx.fireUserEventTriggered(new ChannelInactiveEvent(localExecutorId, remoteExecutorId));
+      }
+      ctx.fireChannelInactive();
+    }
+  }
+
+  /**
+   * Event for setting executor id.
+   */
+  static final class SetExecutorIdEvent {
+    private final String localExecutorId;
+    private final String remoteExecutorId;
+
+    SetExecutorIdEvent(final String localExecutorId, final String remoteExecutorId) {
+      this.localExecutorId = localExecutorId;
+      this.remoteExecutorId = remoteExecutorId;
+    }
+
+    String getLocalExecutorId() {
+      return localExecutorId;
+    }
+
+    String getRemoteExecutorId() {
+      return remoteExecutorId;
+    }
+  }
+
+  /**
+   * Event for channel activation.
+   */
+  static final class ChannelActiveEvent {
+    private final String localExecutorId;
+    private final String remoteExecutorId;
+
+    ChannelActiveEvent(final String localExecutorId, final String remoteExecutorId) {
+      this.localExecutorId = localExecutorId;
+      this.remoteExecutorId = remoteExecutorId;
+    }
+
+    String getLocalExecutorId() {
+      return localExecutorId;
+    }
+
+    String getRemoteExecutorId() {
+      return remoteExecutorId;
+    }
+  }
+
+
+  /**
+   * Event for channel deactivation.
+   */
+  static final class ChannelInactiveEvent {
+    private final String localExecutorId;
+    private final String remoteExecutorId;
+
+    ChannelInactiveEvent(final String localExecutorId, final String remoteExecutorId) {
+      this.localExecutorId = localExecutorId;
+      this.remoteExecutorId = remoteExecutorId;
+    }
+
+    String getLocalExecutorId() {
+      return localExecutorId;
+    }
+
+    String getRemoteExecutorId() {
+      return remoteExecutorId;
+    }
   }
 }
