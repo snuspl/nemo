@@ -15,15 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import io.netty.channel.*;
-import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.SocketAddress;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Sets up {@link io.netty.channel.ChannelPipeline} for {@link PartitionTransport}.
@@ -67,23 +60,17 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   private static final ControlFrameEncoder CONTROL_FRAME_ENCODER = new ControlFrameEncoder();
   private static final DataFrameEncoder DATA_FRAME_ENCODER = new DataFrameEncoder();
 
-  private final ChannelLifecycleTracker channelLifecycleTracker;
   private final InjectionFuture<PartitionTransfer> partitionTransfer;
   private final String localExecutorId;
 
   /**
    * Creates a netty channel initializer.
    *
-   * @param channelGroup      the {@link ChannelGroup} to which active channels are added
-   * @param channelFutureMap  the map to which promises for connections are added
    * @param partitionTransfer provides handler for inbound control messages
    * @param localExecutorId   the id of this executor
    */
-  ChannelInitializer(final ChannelGroup channelGroup,
-                     final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap,
-                     final InjectionFuture<PartitionTransfer> partitionTransfer,
+  ChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
                      final String localExecutorId) {
-    this.channelLifecycleTracker = new ChannelLifecycleTracker(channelGroup, channelFutureMap);
     this.partitionTransfer = partitionTransfer;
     this.localExecutorId = localExecutorId;
   }
@@ -99,67 +86,6 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         // duplex
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // inbound
-        .addLast(partitionTransfer.get())
-        // channel management
-        .addLast(channelLifecycleTracker);
-  }
-
-  /**
-   * Manages {@link Channel} registration to the channel group and the channel map, and handles inbound exception.
-   */
-  @ChannelHandler.Sharable
-  private static final class ChannelLifecycleTracker extends ChannelInboundHandlerAdapter {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ChannelLifecycleTracker.class);
-
-    private final ChannelGroup channelGroup;
-    private final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap;
-
-    /**
-     * Creates a channel lifecycle handler.
-     *
-     * @param channelGroup      the {@link ChannelGroup} to which active channels are added
-     * @param channelFutureMap  the map to which promises for connections are added
-     */
-    private ChannelLifecycleTracker(final ChannelGroup channelGroup,
-                                    final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap) {
-      this.channelGroup = channelGroup;
-      this.channelFutureMap = channelFutureMap;
-    }
-
-    @Override
-    public void channelActive(final ChannelHandlerContext ctx) {
-      channelGroup.add(ctx.channel());
-      channelFutureMap.compute(ctx.channel().remoteAddress(), (address, future) -> {
-        if (future == null) {
-          // probably a channel which this executor has not initiated (i.e. a remote executor connected to this server)
-          return ctx.channel().newSucceededFuture();
-        } else if (future.channel() == ctx.channel()) {
-          // leave unchanged
-          return future;
-        } else {
-          LOG.warn("A channel to {} is active while another channel to the same remote address is in the cache",
-              address);
-          return ctx.channel().newSucceededFuture();
-        }
-      });
-      LOG.debug("A channel with local address {} and remote address {} is now active",
-          ctx.channel().localAddress(), ctx.channel().remoteAddress());
-    }
-
-    @Override
-    public void channelInactive(final ChannelHandlerContext ctx) {
-      final SocketAddress address = ctx.channel().remoteAddress();
-      channelFutureMap.remove(address);
-      LOG.warn("A channel with local address {} and remote address {} is now inactive",
-          ctx.channel().localAddress(), address);
-    }
-
-    @Override
-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-      LOG.error(String.format("Exception caught in the channel with local address %s and remote address %s",
-          ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
-      ctx.close();
-    }
+        .addLast(partitionTransfer.get());
   }
 }

@@ -20,12 +20,9 @@ import edu.snu.vortex.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -37,27 +34,25 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Bootstraps the server and connects to other servers on demand.
  */
 final class PartitionTransport implements AutoCloseable {
+
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
   private static final String SERVER_LISTENING = "partition:server:listening";
   private static final String SERVER_WORKING = "partition:server:working";
   private static final String CLIENT = "partition:client";
 
+  private final InjectionFuture<PartitionTransfer> partitionTransfer;
   private final NameResolver nameResolver;
+
   private final EventLoopGroup serverListeningGroup;
   private final EventLoopGroup serverWorkingGroup;
   private final EventLoopGroup clientGroup;
   private final Bootstrap clientBootstrap;
   private final Channel serverListeningChannel;
-  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-  private final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap = new ConcurrentHashMap<>();
 
   /**
    * Constructs a partition transport and starts listening.
@@ -88,6 +83,7 @@ final class PartitionTransport implements AutoCloseable {
       @Parameter(JobConf.PartitionTransportServerNumWorkingThreads.class) final int numWorkingThreads,
       @Parameter(JobConf.PartitionTransportClientNumThreads.class) final int numClientThreads) {
 
+    this.partitionTransfer = partitionTransfer;
     this.nameResolver = nameResolver;
 
     if (port < 0) {
@@ -103,7 +99,7 @@ final class PartitionTransport implements AutoCloseable {
     clientGroup = channelImplSelector.newEventLoopGroup(numClientThreads, new DefaultThreadFactory(CLIENT));
 
     final ChannelInitializer channelInitializer
-        = new ChannelInitializer(channelGroup, channelFutureMap, partitionTransfer, localExecutorId);
+        = new ChannelInitializer(partitionTransfer, localExecutorId);
 
     clientBootstrap = new Bootstrap();
     clientBootstrap
@@ -168,7 +164,7 @@ final class PartitionTransport implements AutoCloseable {
     LOG.info("Stopping listening at {} and closing", serverListeningChannel.localAddress());
 
     final ChannelFuture closeListeningChannelFuture = serverListeningChannel.close();
-    final ChannelGroupFuture channelGroupCloseFuture = channelGroup.close();
+    final ChannelGroupFuture channelGroupCloseFuture = partitionTransfer.get().getChannelGroup().close();
     final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
     final Future serverWorkingGroupCloseFuture = serverWorkingGroup.shutdownGracefully();
     final Future clientGroupCloseFuture = clientGroup.shutdownGracefully();

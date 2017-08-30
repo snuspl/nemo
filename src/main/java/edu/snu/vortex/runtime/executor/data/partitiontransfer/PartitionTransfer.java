@@ -20,7 +20,10 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.*;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
@@ -51,6 +54,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
   private final ConcurrentMap<String, ChannelFuture> executorIdToChannelMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<Channel, String> channelToExecutorIdMap = new ConcurrentHashMap<>();
+  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
 
@@ -218,15 +222,39 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   }
 
   @Override
+  public void channelActive(final ChannelHandlerContext ctx) {
+    channelGroup.add(ctx.channel());
+  }
+
+  @Override
   public void channelInactive(final ChannelHandlerContext ctx) {
     final String remoteExecutorId;
     synchronized (this) {
       remoteExecutorId = channelToExecutorIdMap.remove(ctx.channel());
-      executorIdToChannelMap.remove(remoteExecutorId);
+      if (remoteExecutorId != null) {
+        executorIdToChannelMap.remove(remoteExecutorId);
+      }
     }
     final Channel channel = ctx.channel();
+    channelGroup.remove(ctx.channel());
     LOG.warn("Channel closed between local executor {}({}) and remote executor {}({})", new Object[]{
         localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+  }
+
+  @Override
+  public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+    LOG.error(String.format("Exception caught in the channel with local address %s and remote address %s",
+        ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
+    ctx.close();
+  }
+
+  /**
+   * Gets the channel group.
+   *
+   * @return the channel group
+   */
+  ChannelGroup getChannelGroup() {
+    return channelGroup;
   }
 
   /**
