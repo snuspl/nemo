@@ -26,8 +26,10 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
+import org.apache.reef.wake.Identifier;
 import org.apache.reef.wake.remote.address.LocalAddressProvider;
 import org.apache.reef.wake.remote.ports.TcpPortProvider;
 import org.slf4j.Logger;
@@ -49,6 +51,7 @@ final class PartitionTransport implements AutoCloseable {
   private static final String SERVER_WORKING = "partition:server:working";
   private static final String CLIENT = "partition:client";
 
+  private final NameResolver nameResolver;
   private final EventLoopGroup serverListeningGroup;
   private final EventLoopGroup serverWorkingGroup;
   private final EventLoopGroup clientGroup;
@@ -61,6 +64,7 @@ final class PartitionTransport implements AutoCloseable {
    * Constructs a partition transport and starts listening.
    *
    * @param partitionTransfer     provides handler for inbound control messages
+   * @param nameResolver          provides naming registry
    * @param localExecutorId       the id of this executor
    * @param channelImplSelector   provides implementation for netty channel
    * @param tcpPortProvider       provides an iterator of random tcp ports
@@ -74,6 +78,7 @@ final class PartitionTransport implements AutoCloseable {
   @Inject
   private PartitionTransport(
       final InjectionFuture<PartitionTransfer> partitionTransfer,
+      final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final NettyChannelImplementationSelector channelImplSelector,
       final TcpPortProvider tcpPortProvider,
@@ -83,6 +88,8 @@ final class PartitionTransport implements AutoCloseable {
       @Parameter(JobConf.PartitionTransportServerNumListeningThreads.class) final int numListeningThreads,
       @Parameter(JobConf.PartitionTransportServerNumWorkingThreads.class) final int numWorkingThreads,
       @Parameter(JobConf.PartitionTransportClientNumThreads.class) final int numClientThreads) {
+
+    this.nameResolver = nameResolver;
 
     if (port < 0) {
       throw new IllegalArgumentException(String.format("Invalid PartitionTransportPort: %d", port));
@@ -142,6 +149,15 @@ final class PartitionTransport implements AutoCloseable {
     }
 
     serverListeningChannel = listeningChannel;
+
+    try {
+      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(localExecutorId);
+      nameResolver.register(identifier, (InetSocketAddress) listeningChannel.localAddress());
+    } catch (final Exception e) {
+      LOG.error("Cannot register PartitionTransport listening address to the naming registry", e);
+      throw new RuntimeException(e);
+    }
+
     LOG.info("PartitionTransport server in {} is listening at {}", localExecutorId, listeningChannel.localAddress());
   }
 
@@ -166,25 +182,16 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Gets server listening address.
-   *
-   * @return server listening address
-   */
-  InetSocketAddress getServerListeningAddress() {
-    return (InetSocketAddress) serverListeningChannel.localAddress();
-  }
-
-  /**
    * Writes to the specified remote address. Creates a connection to the remote transport if needed.
    *
-   * @param remoteAddress the socket address to write to
+   * @param executorId    the id of the remote executor
    * @param thing         the object to write
    * @param onError       the {@link Consumer} to be invoked on an error during setting up a channel
    *                      or writing to the channel
    */
-  void writeTo(final SocketAddress remoteAddress, final Object thing, final Consumer<Throwable> onError) {
+  void writeTo(final String executorId, final Object thing, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = channelFutureMap
-        .computeIfAbsent(remoteAddress, address -> clientBootstrap.connect(address));
+        .computeIfAbsent(lookup(executorId), address -> clientBootstrap.connect(address));
     final Channel channel = channelFuture.channel();
     if (channelFuture.isSuccess()) {
       channel.writeAndFlush(thing).addListener(new WriteFutureListener(channel, onError));
@@ -199,6 +206,23 @@ final class PartitionTransport implements AutoCloseable {
           onError.accept(future.cause());
         }
       });
+    }
+  }
+
+  /**
+   * Lookup {@link PartitionTransport} listening address.
+   *
+   * @param executorId  the executor id
+   * @return            the listening address of the {@link PartitionTransport} of the specified executor
+   */
+  private InetSocketAddress lookup(final String executorId) {
+    try {
+      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(executorId);
+      final InetSocketAddress address = nameResolver.lookup(identifier);
+      return address;
+    } catch (final Exception e) {
+      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", executorId), e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -233,6 +257,45 @@ final class PartitionTransport implements AutoCloseable {
         onError.accept(future.cause());
         LOG.error("Failed to write to the channel", future.cause());
       }
+    }
+  }
+
+  /**
+   * {@link Identifier} for {@link PartitionTransfer}.
+   */
+  private static final class PartitionTransportIdentifier implements Identifier {
+
+    private final String executorId;
+
+    /**
+     * Creates a {@link PartitionTransportIdentifier}.
+     *
+     * @param executorId id of the {@link edu.snu.vortex.runtime.executor.Executor}
+     */
+    private PartitionTransportIdentifier(final String executorId) {
+      this.executorId = executorId;
+    }
+
+    @Override
+    public String toString() {
+      return "partition://" + executorId;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final PartitionTransportIdentifier that = (PartitionTransportIdentifier) o;
+      return executorId.equals(that.executorId);
+    }
+
+    @Override
+    public int hashCode() {
+      return executorId.hashCode();
     }
   }
 }

@@ -23,15 +23,12 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,7 +45,6 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
   private final PartitionTransport partitionTransport;
-  private final NameResolver nameResolver;
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
   private final int bufferSize;
@@ -58,7 +54,6 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *
    * @param partitionManagerWorker  provides {@link edu.snu.vortex.common.coder.Coder}s
    * @param partitionTransport      provides {@link io.netty.channel.Channel}
-   * @param nameResolver            provides naming registry
    * @param executorId              the id of this executor
    * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
    * @param outboundThreads         the number of threads in thread pool for outbound partition transfer
@@ -68,27 +63,19 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private PartitionTransfer(
       final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
       final PartitionTransport partitionTransport,
-      final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String executorId,
       @Parameter(JobConf.PartitionTransferInboundNumThreads.class) final int inboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundBufferSize.class) final int bufferSize) {
+
     this.partitionManagerWorker = partitionManagerWorker;
     this.partitionTransport = partitionTransport;
-    this.nameResolver = nameResolver;
+    this.bufferSize = bufferSize;
+
     // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialPartition option
     // enabled. We may consider other solutions than using fixed thread pool.
     this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads, new DefaultThreadFactory(INBOUND));
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads, new DefaultThreadFactory(OUTBOUND));
-    this.bufferSize = bufferSize;
-
-    try {
-      final PartitionTransferIdentifier identifier = new PartitionTransferIdentifier(executorId);
-      nameResolver.register(identifier, partitionTransport.getServerListeningAddress());
-    } catch (final Exception e) {
-      LOG.error("Cannot register PartitionTransport listening address to the naming registry", e);
-      throw new RuntimeException(e);
-    }
   }
 
   /**
@@ -113,7 +100,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
         Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
-    partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
+    partitionTransport.writeTo(executorId, stream, cause -> stream.onExceptionCaught(cause));
     return stream;
   }
 
@@ -136,25 +123,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
-    partitionTransport.writeTo(lookup(executorId), stream, cause -> stream.onExceptionCaught(cause));
+    partitionTransport.writeTo(executorId, stream, cause -> stream.onExceptionCaught(cause));
     return stream;
-  }
-
-  /**
-   * Lookup {@link PartitionTransport} listening address.
-   *
-   * @param executorId  the executor id
-   * @return            the listening address of the {@link PartitionTransport} of the specified executor
-   */
-  private InetSocketAddress lookup(final String executorId) {
-    try {
-      final PartitionTransferIdentifier identifier = new PartitionTransferIdentifier(executorId);
-      final InetSocketAddress address = nameResolver.lookup(identifier);
-      return address;
-    } catch (final Exception e) {
-      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", executorId), e);
-      throw new RuntimeException(e);
-    }
   }
 
   @Override
@@ -186,45 +156,5 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
     partitionManagerWorker.get().onPushNotification(stream);
-  }
-
-  /**
-   * {@link Identifier} for {@link PartitionTransfer}.
-   */
-  private static final class PartitionTransferIdentifier implements Identifier {
-
-    private final String executorId;
-
-    /**
-     * Creates a {@link PartitionTransferIdentifier}.
-     *
-     * @param executorId id of the {@link edu.snu.vortex.runtime.executor.Executor}
-     *                   which this {@link PartitionTransfer} belongs to
-     */
-    private PartitionTransferIdentifier(final String executorId) {
-      this.executorId = executorId;
-    }
-
-    @Override
-    public String toString() {
-      return "partition://" + executorId;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final PartitionTransferIdentifier that = (PartitionTransferIdentifier) o;
-      return executorId.equals(that.executorId);
-    }
-
-    @Override
-    public int hashCode() {
-      return executorId.hashCode();
-    }
   }
 }
