@@ -185,8 +185,10 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         // leave it unchanged
         return channelFuture;
       } else {
-        LOG.warn("Multiple channel established between local executor {}({}) and remote executor {}({})", new Object[]{
-            localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+        final Channel oldChannel = channelFuture.channel();
+        LOG.warn("Multiple channel established between local executor {}({}, {}) and remote executor {}({}, {})",
+            new Object[]{localExecutorId, oldChannel.localAddress(), channel.localAddress(), remoteExecutorId,
+            oldChannel.remoteAddress(), channel.remoteAddress()});
         return channel.newSucceededFuture();
       }
     });
