@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 /**
- * Transport implementation for peer-to-peer {@link edu.snu.vortex.runtime.executor.data.partition.Partition} transfer.
+ * Bootstraps the server and connects to other servers on demand.
  */
 final class PartitionTransport implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
@@ -49,11 +49,11 @@ final class PartitionTransport implements AutoCloseable {
   private static final String SERVER_WORKING = "partition:server:working";
   private static final String CLIENT = "partition:client";
 
-  private final InetSocketAddress serverListeningAddress;
   private final EventLoopGroup serverListeningGroup;
   private final EventLoopGroup serverWorkingGroup;
   private final EventLoopGroup clientGroup;
   private final Bootstrap clientBootstrap;
+  private final Channel serverListeningChannel;
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final ConcurrentMap<SocketAddress, ChannelFuture> channelFutureMap = new ConcurrentHashMap<>();
 
@@ -143,8 +143,8 @@ final class PartitionTransport implements AutoCloseable {
       }
     }
 
-    serverListeningAddress = (InetSocketAddress) listeningChannel.localAddress();
-    LOG.info("PartitionTransport server in {} is listening at {}", localExecutorId, serverListeningAddress);
+    serverListeningChannel = listeningChannel;
+    LOG.info("PartitionTransport server in {} is listening at {}", localExecutorId, listeningChannel.localAddress());
   }
 
   /**
@@ -152,7 +152,7 @@ final class PartitionTransport implements AutoCloseable {
    */
   @Override
   public void close() {
-    LOG.info("Stopping listening at {} and closing", serverListeningAddress);
+    LOG.info("Stopping listening at {} and closing", serverListeningChannel.localAddress());
 
     final ChannelGroupFuture channelGroupCloseFuture = channelGroup.close();
     final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
@@ -171,7 +171,7 @@ final class PartitionTransport implements AutoCloseable {
    * @return server listening address
    */
   InetSocketAddress getServerListeningAddress() {
-    return serverListeningAddress;
+    return (InetSocketAddress) serverListeningChannel.localAddress();
   }
 
   /**
