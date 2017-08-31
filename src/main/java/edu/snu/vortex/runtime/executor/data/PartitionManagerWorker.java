@@ -362,21 +362,21 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Respond to a pull request by another executor.
+   * Respond to a fetch request by another executor.
    *
    * This method is executed by {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport}
    * thread. Never execute a blocking call in this method!
    *
    * @param outputStream {@link PartitionOutputStream}
    */
-  public void onPullRequest(final PartitionOutputStream outputStream) {
+  public void onFetchRequest(final PartitionOutputStream outputStream) {
   }
 
   /**
-   * Respond to a push notification by another executor.
+   * Respond to a send notification by another executor.
    *
-   * A push notification is generated when a remote executor invokes {@link edu.snu.vortex.runtime.executor.data
-   * .partitiontransfer.PartitionTransfer#initiatePush(String, boolean, String, String, HashRange)} to transfer
+   * A send notification is generated when a remote executor invokes {@link edu.snu.vortex.runtime.executor.data
+   * .partitiontransfer.PartitionTransfer#initiateSend(String, boolean, String, String, HashRange)} to transfer
    * a partition to another executor.
    *
    * This method is executed by {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport}
@@ -384,6 +384,6 @@ public final class PartitionManagerWorker {
    *
    * @param inputStream {@link PartitionInputStream}
    */
-  public void onPushNotification(final PartitionInputStream inputStream) {
+  public void onSendNotification(final PartitionInputStream inputStream) {
   }
 }
