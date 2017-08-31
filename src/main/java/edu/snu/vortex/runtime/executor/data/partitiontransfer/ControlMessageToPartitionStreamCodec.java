@@ -102,8 +102,8 @@ final class ControlMessageToPartitionStreamCodec
    * @param out the {@link List} into which the created control message is added
    */
   private void onOutboundFetchRequest(final ChannelHandlerContext ctx,
-                                     final PartitionInputStream in,
-                                     final List<Object> out) {
+                                      final PartitionInputStream in,
+                                      final List<Object> out) {
     final short transferId = nextOutboundFetchTransferId++;
     checkTransferIdAvailability(fetchTransferIdToInputStream, ControlMessage.PartitionTransferType.FETCH, transferId);
     fetchTransferIdToInputStream.put(transferId, in);
@@ -162,8 +162,8 @@ final class ControlMessageToPartitionStreamCodec
    * @param out the {@link List} into which the created {@link PartitionOutputStream} is added
    */
   private void onInboundFetchRequest(final ChannelHandlerContext ctx,
-                                    final ControlMessage.DataTransferControlMessage in,
-                                    final List<Object> out) {
+                                     final ControlMessage.DataTransferControlMessage in,
+                                     final List<Object> out) {
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();

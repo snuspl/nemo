@@ -102,11 +102,11 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
   public PartitionInputStream initiateFetch(final String executorId,
-                                           final boolean encodePartialPartition,
-                                           final Attribute partitionStore,
-                                           final String partitionId,
-                                           final String runtimeEdgeId,
-                                           final HashRange hashRange) {
+                                            final boolean encodePartialPartition,
+                                            final Attribute partitionStore,
+                                            final String partitionId,
+                                            final String runtimeEdgeId,
+                                            final HashRange hashRange) {
     final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
         Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
