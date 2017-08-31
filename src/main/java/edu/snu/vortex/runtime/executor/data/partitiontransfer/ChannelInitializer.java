@@ -16,8 +16,6 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -90,8 +88,6 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   @Override
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
-        // management
-        .addLast(new ClientChannelActivationReporter())
         // inbound
         .addLast(new FrameDecoder())
         // outbound
@@ -101,88 +97,5 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
         .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
         // inbound
         .addLast(partitionTransfer.get());
-  }
-
-  /**
-   * Reports channel activation event to {@link PartitionTransfer}.
-   *
-   * Channels should be cached by {@link PartitionTransfer} for better performance.
-   * {@link PartitionTransfer} watches inbound control messages and caches the corresponding channel automatically.
-   * However, channels with no inbound control messages (i.e. this executor only has served as a client), channels are
-   * not going to be cached. This handler emits a user event that forces channel caching.
-   */
-  private static final class ClientChannelActivationReporter extends ChannelInboundHandlerAdapter {
-    private String remoteExecutorId = null;
-
-    @Override
-    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-      if (evt instanceof SetExecutorIdToClientChannel) {
-        final SetExecutorIdToClientChannel event = (SetExecutorIdToClientChannel) evt;
-        remoteExecutorId = event.getRemoteExecutorId();
-        if (ctx.channel().isActive()) {
-          ctx.fireUserEventTriggered(new ClientChannelActiveEvent(remoteExecutorId));
-        }
-      } else {
-        ctx.fireUserEventTriggered(evt);
-      }
-    }
-
-    @Override
-    public void channelActive(final ChannelHandlerContext ctx) {
-      if (remoteExecutorId != null) {
-        ctx.fireUserEventTriggered(new ClientChannelActiveEvent(remoteExecutorId));
-      }
-      ctx.fireChannelActive();
-    }
-  }
-
-  /**
-   * An event to which {@link ClientChannelActivationReporter} responds by setting the remote executor id.
-   */
-  static final class SetExecutorIdToClientChannel {
-    private final String remoteExecutorId;
-
-    /**
-     * Creates a {@link SetExecutorIdToClientChannel}.
-     *
-     * @param remoteExecutorId the remote executor id
-     */
-    SetExecutorIdToClientChannel(final String remoteExecutorId) {
-      this.remoteExecutorId = remoteExecutorId;
-    }
-
-    /**
-     * Gets the remote executor id.
-     *
-     * @return the remote executor id
-     */
-    String getRemoteExecutorId() {
-      return remoteExecutorId;
-    }
-  }
-
-  /**
-   * An event that {@link ClientChannelActivationReporter} fires to make {@link PartitionTransfer} caches the channel.
-   */
-  static final class ClientChannelActiveEvent {
-    private final String remoteExecutorId;
-
-    /**
-     * Creates a {@link ClientChannelActiveEvent}.
-     *
-     * @param remoteExecutorId the remote executor id
-     */
-    ClientChannelActiveEvent(final String remoteExecutorId) {
-      this.remoteExecutorId = remoteExecutorId;
-    }
-
-    /**
-     * Gets the remote executor id.
-     *
-     * @return the remote executor id
-     */
-    String getRemoteExecutorId() {
-      return remoteExecutorId;
-    }
   }
 }
