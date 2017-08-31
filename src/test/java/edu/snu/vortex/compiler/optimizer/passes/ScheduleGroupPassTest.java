@@ -49,6 +49,7 @@ public final class ScheduleGroupPassTest {
 
     Integer previousScheduleGroupNum = 0;
     for (final IRVertex irVertex : processedDAG.getTopologicalSort()) {
+      assertTrue(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupNum) != null);
       final Integer currentScheduleGroupNum = irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupNum);
       assertTrue(currentScheduleGroupNum >= previousScheduleGroupNum);
       if (currentScheduleGroupNum > previousScheduleGroupNum) {
