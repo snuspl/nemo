@@ -26,9 +26,9 @@ import edu.snu.vortex.common.StateMachine;
 
 import java.util.*;
 
-import edu.snu.vortex.runtime.executor.metric.MetricData;
-import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
-import edu.snu.vortex.runtime.executor.metric.PeriodicMetricSender;
+import edu.snu.vortex.runtime.common.metric.MetricData;
+import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
+import edu.snu.vortex.runtime.common.metric.PeriodicMetricSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

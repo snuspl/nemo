@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.vortex.runtime.executor.metric;
+package edu.snu.vortex.runtime.common.metric;
 
 /**
  * MetricData Builder.

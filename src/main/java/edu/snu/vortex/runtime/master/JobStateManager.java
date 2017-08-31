@@ -37,8 +37,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import edu.snu.vortex.runtime.executor.metric.MetricData;
-import edu.snu.vortex.runtime.executor.metric.MetricDataBuilder;
+import edu.snu.vortex.runtime.common.metric.MetricData;
+import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.metric;
+package edu.snu.vortex.runtime.common.metric;
 
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
-import edu.snu.vortex.runtime.executor.metric.parameter.MetricFlushPeriod;
+import edu.snu.vortex.runtime.common.metric.parameter.MetricFlushPeriod;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.metric;
+package edu.snu.vortex.runtime.common.metric.parameter;
 
-import org.apache.reef.tang.annotations.DefaultImplementation;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * Interface for metric sender.
+ * Metric flushing period.
  */
-@DefaultImplementation(PeriodicMetricSender.class)
-public interface MetricSender extends AutoCloseable {
-
-  void send(String metricData);
+@NamedParameter(doc = "Metric flushing period (ms)", short_name = "mf_period", default_value = "500")
+public final class MetricFlushPeriod implements Name<Long> {
 }
