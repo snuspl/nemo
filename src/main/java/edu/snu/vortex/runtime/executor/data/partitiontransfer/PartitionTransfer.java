@@ -185,7 +185,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     channelToExecutorIdMap.put(channel, remoteExecutorId);
     executorIdToChannelFutureMap.compute(remoteExecutorId, (executorId, cachedChannelFuture) -> {
       if (cachedChannelFuture == null) {
-        LOG.info("Remote {}({}) connected to {}({})",
+        LOG.debug("Remote {}({}) connected to {}({})",
             new Object[]{executorId, channel.remoteAddress(), localExecutorId, channel.localAddress()});
         return channel.newSucceededFuture();
       } else if (channel == cachedChannelFuture.channel()) {
