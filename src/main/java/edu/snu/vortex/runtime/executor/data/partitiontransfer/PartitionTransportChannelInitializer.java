@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
@@ -28,12 +29,12 @@ import javax.inject.Inject;
  * <h3>Inbound pipeline:</h3>
  * <pre>
  * {@literal
- *                                         Pull       +--------------------------------------+    A new
+ *                                         Fetch       +--------------------------------------+    A new
  *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
  *                                    |               +--------------------------------------+
  *                        += Control =|
  *      +--------------+  |           |               +--------------------------------------+
- *   => | FrameDecoder | =|           += Push      => | ControlMessageToPartitionStreamCodec | => A new
+ *   => | FrameDecoder | =|           += Send      => | ControlMessageToPartitionStreamCodec | => A new
  *      +--------------+  |             notification  +--------------------------------------+    PartitionInputStream
  *                        |
  *                        += Data ====================> Add data to an existing PartitionInputStream
@@ -43,12 +44,12 @@ import javax.inject.Inject;
  * <h3>Outbound pipeline:</h3>
  * <pre>
  * {@literal
- *      +---------------------+                   +--------------------------------------+    Pull request with a
- *   <= | ControlFrameEncoder | <= Pull request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
- *      +---------------------+                   +--------------------------------------+
- *      +---------------------+    Push           +--------------------------------------+    Push notification with a
- *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
- *      +---------------------+                   +--------------------------------------+
+ *      +---------------------+                    +--------------------------------------+    Fetch request with a
+ *   <= | ControlFrameEncoder | <= Fetch request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
+ *      +---------------------+                    +--------------------------------------+
+ *      +---------------------+     Send           +--------------------------------------+    Send notification with a
+ *   <= | ControlFrameEncoder | <= notification == | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
+ *      +---------------------+                    +--------------------------------------+
  *
  *      +------------------+
  *   <= | DataFrameEncoder | <=== ByteBuf === PartitionOutputStream buffer flush
@@ -59,7 +60,7 @@ import javax.inject.Inject;
  * }
  * </pre>
  */
-final class ChannelInitializer extends io.netty.channel.ChannelInitializer<SocketChannel> {
+final class PartitionTransportChannelInitializer extends ChannelInitializer<SocketChannel> {
 
   private final InjectionFuture<PartitionTransfer> partitionTransfer;
   private final ControlFrameEncoder controlFrameEncoder;
@@ -75,10 +76,10 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
    * @param localExecutorId     the id of this executor
    */
   @Inject
-  private ChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
-                             final ControlFrameEncoder controlFrameEncoder,
-                             final DataFrameEncoder dataFrameEncoder,
-                             @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {
+  private PartitionTransportChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
+                                               final ControlFrameEncoder controlFrameEncoder,
+                                               final DataFrameEncoder dataFrameEncoder,
+                                               @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {
     this.partitionTransfer = partitionTransfer;
     this.controlFrameEncoder = controlFrameEncoder;
     this.dataFrameEncoder = dataFrameEncoder;

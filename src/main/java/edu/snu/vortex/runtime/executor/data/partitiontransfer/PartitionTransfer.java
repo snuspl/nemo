@@ -89,7 +89,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   }
 
   /**
-   * Initiate a pull-based partition transfer.
+   * Initiate a fetch-based partition transfer.
    *
    * @param executorId              the id of the source executor
    * @param encodePartialPartition  whether the sender should start encoding even though the whole partition
@@ -101,7 +101,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @return a {@link PartitionInputStream} from which the received
    *         {@link edu.snu.vortex.compiler.ir.Element}s can be read
    */
-  public PartitionInputStream initiatePull(final String executorId,
+  public PartitionInputStream initiateFetch(final String executorId,
                                            final boolean encodePartialPartition,
                                            final Attribute partitionStore,
                                            final String partitionId,
@@ -115,7 +115,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   }
 
   /**
-   * Initiate a push-based partition transfer.
+   * Initiate a send-based partition transfer.
    *
    * @param executorId              the id of the destination executor
    * @param encodePartialPartition  whether to start encoding even though the whole partition has not been written yet
@@ -124,7 +124,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param hashRange               the hash range
    * @return a {@link PartitionOutputStream} to which {@link edu.snu.vortex.compiler.ir.Element}s can be written
    */
-  public PartitionOutputStream initiatePush(final String executorId,
+  public PartitionOutputStream initiateSend(final String executorId,
                                             final boolean encodePartialPartition,
                                             final String partitionId,
                                             final String runtimeEdgeId,
@@ -141,11 +141,11 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * Gets a {@link ChannelFuture} for connecting to the {@link PartitionTransport} server of the specified executor.
    *
    * @param remoteExecutorId  the id of the remote executor
-   * @param thing             the object to write
+   * @param stream            the partition stream object to write
    * @param onError           the {@link Consumer} to be invoked on an error during setting up a channel
    *                          or writing to the channel
    */
-  private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
+  private void write(final String remoteExecutorId, final PartitionStream stream, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
       // No cached channel found
       final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
@@ -167,7 +167,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     channelFuture.addListener(future -> {
       if (future.isSuccess()) {
         channelToExecutorIdMap.put(channelFuture.channel(), remoteExecutorId);
-        channelFuture.channel().writeAndFlush(thing)
+        channelFuture.channel().writeAndFlush(stream)
             .addListener(new ControlMessageWriteFutureListener(channelFuture, remoteExecutorId, onError));
         return;
       }
@@ -199,32 +199,32 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
     // process the inbound control message
     if (stream instanceof PartitionInputStream) {
-      onPushNotification((PartitionInputStream) stream);
+      onSendNotification((PartitionInputStream) stream);
     } else {
-      onPullRequest((PartitionOutputStream) stream);
+      onFetchRequest((PartitionOutputStream) stream);
     }
   }
 
   /**
-   * Respond to a new pull request.
+   * Respond to a new fetch request.
    *
    * @param stream  {@link PartitionOutputStream}
    */
-  private void onPullRequest(final PartitionOutputStream stream) {
+  private void onFetchRequest(final PartitionOutputStream stream) {
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         outboundExecutorService, bufferSize);
-    partitionManagerWorker.get().onPullRequest(stream);
+    partitionManagerWorker.get().onFetchRequest(stream);
   }
 
   /**
-   * Respond to a new push notification.
+   * Respond to a new send notification.
    *
    * @param stream  {@link PartitionInputStream}
    */
-  private void onPushNotification(final PartitionInputStream stream) {
+  private void onSendNotification(final PartitionInputStream stream) {
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
-    partitionManagerWorker.get().onPushNotification(stream);
+    partitionManagerWorker.get().onSendNotification(stream);
   }
 
   @Override
