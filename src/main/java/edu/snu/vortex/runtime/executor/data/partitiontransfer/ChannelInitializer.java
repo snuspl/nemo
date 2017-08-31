@@ -91,7 +91,7 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
   protected void initChannel(final SocketChannel ch) {
     ch.pipeline()
         // management
-        .addLast(new ChannelActivationReporter())
+        .addLast(new ClientChannelActivationReporter())
         // inbound
         .addLast(new FrameDecoder())
         // outbound
@@ -111,18 +111,16 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
    * However, channels with no inbound control messages (i.e. this executor only has served as a client), channels are
    * not going to be cached. This handler emits a user event that forces channel caching.
    */
-  private static final class ChannelActivationReporter extends ChannelInboundHandlerAdapter {
-    private String localExecutorId = null;
+  private static final class ClientChannelActivationReporter extends ChannelInboundHandlerAdapter {
     private String remoteExecutorId = null;
 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-      if (evt instanceof SetExecutorIdEvent) {
-        final SetExecutorIdEvent event = (SetExecutorIdEvent) evt;
-        localExecutorId = event.getLocalExecutorId();
+      if (evt instanceof SetExecutorIdToClientChannel) {
+        final SetExecutorIdToClientChannel event = (SetExecutorIdToClientChannel) evt;
         remoteExecutorId = event.getRemoteExecutorId();
         if (ctx.channel().isActive()) {
-          ctx.fireUserEventTriggered(new ChannelActiveEvent(localExecutorId, remoteExecutorId));
+          ctx.fireUserEventTriggered(new ClientChannelActiveEvent(remoteExecutorId));
         }
       } else {
         ctx.fireUserEventTriggered(evt);
@@ -132,79 +130,57 @@ final class ChannelInitializer extends io.netty.channel.ChannelInitializer<Socke
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
       if (remoteExecutorId != null) {
-        ctx.fireUserEventTriggered(new ChannelActiveEvent(localExecutorId, remoteExecutorId));
+        ctx.fireUserEventTriggered(new ClientChannelActiveEvent(remoteExecutorId));
       }
       ctx.fireChannelActive();
     }
-
-    @Override
-    public void channelInactive(final ChannelHandlerContext ctx) {
-      if (remoteExecutorId != null) {
-        ctx.fireUserEventTriggered(new ChannelInactiveEvent(localExecutorId, remoteExecutorId));
-      }
-      ctx.fireChannelInactive();
-    }
   }
 
   /**
-   * Event for setting executor id.
+   * An event to which {@link ClientChannelActivationReporter} responds by setting the remote executor id.
    */
-  static final class SetExecutorIdEvent {
-    private final String localExecutorId;
+  static final class SetExecutorIdToClientChannel {
     private final String remoteExecutorId;
 
-    SetExecutorIdEvent(final String localExecutorId, final String remoteExecutorId) {
-      this.localExecutorId = localExecutorId;
+    /**
+     * Creates a {@link SetExecutorIdToClientChannel}.
+     *
+     * @param remoteExecutorId the remote executor id
+     */
+    SetExecutorIdToClientChannel(final String remoteExecutorId) {
       this.remoteExecutorId = remoteExecutorId;
     }
 
-    String getLocalExecutorId() {
-      return localExecutorId;
-    }
-
+    /**
+     * Gets the remote executor id.
+     *
+     * @return the remote executor id
+     */
     String getRemoteExecutorId() {
       return remoteExecutorId;
     }
   }
 
   /**
-   * Event for channel activation.
+   * An event that {@link ClientChannelActivationReporter} fires to make {@link PartitionTransfer} caches the channel.
    */
-  static final class ChannelActiveEvent {
-    private final String localExecutorId;
+  static final class ClientChannelActiveEvent {
     private final String remoteExecutorId;
 
-    ChannelActiveEvent(final String localExecutorId, final String remoteExecutorId) {
-      this.localExecutorId = localExecutorId;
+    /**
+     * Creates a {@link ClientChannelActiveEvent}.
+     *
+     * @param remoteExecutorId the remote executor id
+     */
+    ClientChannelActiveEvent(final String remoteExecutorId) {
       this.remoteExecutorId = remoteExecutorId;
     }
 
-    String getLocalExecutorId() {
-      return localExecutorId;
-    }
-
-    String getRemoteExecutorId() {
-      return remoteExecutorId;
-    }
-  }
-
-
-  /**
-   * Event for channel deactivation.
-   */
-  static final class ChannelInactiveEvent {
-    private final String localExecutorId;
-    private final String remoteExecutorId;
-
-    ChannelInactiveEvent(final String localExecutorId, final String remoteExecutorId) {
-      this.localExecutorId = localExecutorId;
-      this.remoteExecutorId = remoteExecutorId;
-    }
-
-    String getLocalExecutorId() {
-      return localExecutorId;
-    }
-
+    /**
+     * Gets the remote executor id.
+     *
+     * @return the remote executor id
+     */
     String getRemoteExecutorId() {
       return remoteExecutorId;
     }

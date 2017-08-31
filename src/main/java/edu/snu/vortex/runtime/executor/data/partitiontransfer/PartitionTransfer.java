@@ -52,7 +52,8 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private final String localExecutorId;
   private final int bufferSize;
 
-  private final ConcurrentMap<String, ChannelFuture> channelMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ChannelFuture> executorIdToChannelFutureMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Channel, String> channelToExecutorIdMap = new ConcurrentHashMap<>();
   private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final ExecutorService inboundExecutorService;
   private final ExecutorService outboundExecutorService;
@@ -145,12 +146,12 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    *                          or writing to the channel
    */
   private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
-    final ChannelFuture channelFuture = channelMap.computeIfAbsent(remoteExecutorId, executorId -> {
+    final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
       final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
       connectFuture.addListener(future -> {
         if (future.isSuccess()) {
           connectFuture.channel().pipeline().fireUserEventTriggered(
-              new ChannelInitializer.SetExecutorIdEvent(localExecutorId, remoteExecutorId));
+              new ChannelInitializer.SetExecutorIdToClientChannel(remoteExecutorId));
           return;
         }
         if (future.cause() == null) {
@@ -168,6 +169,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final PartitionStream stream) {
+    addToChannelMap(ctx.channel(), stream.getRemoteExecutorId());
     // process the inbound control message
     if (stream instanceof PartitionInputStream) {
       onPushNotification((PartitionInputStream) stream);
@@ -200,27 +202,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
 
   @Override
   public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-    final Channel channel = ctx.channel();
-    if (evt instanceof ChannelInitializer.ChannelActiveEvent) {
-      final ChannelInitializer.ChannelActiveEvent event = (ChannelInitializer.ChannelActiveEvent) evt;
-      channelMap.compute(event.getRemoteExecutorId(), (remoteAddress, cachedChannel) -> {
-        if (cachedChannel == null) {
-          LOG.info("Channel established between local {}({}) and remote {}({})",
-              new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
-          return channel.newSucceededFuture();
-        } else if (channel == cachedChannel) {
-          return cachedChannel;
-        } else {
-          LOG.warn("Multiple channel established between local {}({}) and remote {}({})",
-              new Object[]{event.getLocalExecutorId(), channel.localAddress(), remoteAddress, channel.remoteAddress()});
-          return channel.newSucceededFuture();
-        }
-      });
-    } else if (evt instanceof ChannelInitializer.ChannelInactiveEvent) {
-      final ChannelInitializer.ChannelInactiveEvent event = (ChannelInitializer.ChannelInactiveEvent) evt;
-      channelMap.remove(event.getRemoteExecutorId());
-      LOG.warn("Channel inactive between local {}({}) and remote {}({})", new Object[]{event.getLocalExecutorId(),
-          channel.localAddress(), event.getRemoteExecutorId(), channel.remoteAddress()});
+    if (evt instanceof ChannelInitializer.ClientChannelActiveEvent) {
+      final ChannelInitializer.ClientChannelActiveEvent event = (ChannelInitializer.ClientChannelActiveEvent) evt;
+      addToChannelMap(ctx.channel(), event.getRemoteExecutorId());
     }
   }
 
@@ -232,6 +216,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   @Override
   public void channelInactive(final ChannelHandlerContext ctx) {
     channelGroup.remove(ctx.channel());
+    removeFromChannelMap(ctx.channel());
   }
 
   @Override
@@ -239,6 +224,56 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     LOG.error(String.format("Exception caught in the channel with local address %s and remote address %s",
         ctx.channel().localAddress(), ctx.channel().remoteAddress()), cause);
     ctx.close();
+  }
+
+  /**
+   * Adds a channel to the channel map.
+   *
+   * @param channel           the channel to remove
+   * @param remoteExecutorId  the remote executor id
+   */
+  private void addToChannelMap(final Channel channel, final String remoteExecutorId) {
+    channelToExecutorIdMap.put(channel, remoteExecutorId);
+    executorIdToChannelFutureMap.compute(remoteExecutorId, (executorId, cachedChannelFuture) -> {
+      if (cachedChannelFuture == null) {
+        LOG.info("Channel established between local {}({}) and remote {}({})",
+            new Object[]{localExecutorId, channel.localAddress(), executorId, channel.remoteAddress()});
+        return channel.newSucceededFuture();
+      } else if (channel == cachedChannelFuture.channel()) {
+        return cachedChannelFuture;
+      } else {
+        final Channel cachedChannel = cachedChannelFuture.channel();
+        LOG.info("Multiple channel established between local {}({}, {}) and remote {}({}, {})",
+            new Object[]{localExecutorId, cachedChannel.localAddress(), channel.localAddress(), executorId,
+            cachedChannel.remoteAddress(), channel.remoteAddress()});
+        return channel.newSucceededFuture();
+      }
+    });
+  }
+
+  /**
+   * Removes a channel from the channel map.
+   *
+   * @param channel the channel to remove
+   */
+  private void removeFromChannelMap(final Channel channel) {
+    final String remoteExecutorId = channelToExecutorIdMap.remove(channel);
+    if (remoteExecutorId == null) {
+      LOG.warn("An unidentified channel is now inactive (local: {}, remote: {})", channel.localAddress(),
+          channel.remoteAddress());
+    } else {
+      LOG.warn("A channel between local {}({}) and remote {}({}) is now inactive",
+          new Object[]{localExecutorId, channel.localAddress(), remoteExecutorId, channel.remoteAddress()});
+      executorIdToChannelFutureMap.computeIfPresent(remoteExecutorId, (executorId, cachedChannelFuture) -> {
+        if (channel == cachedChannelFuture.channel()) {
+          // remove it
+          return null;
+        } else {
+          // leave unchanged
+          return cachedChannelFuture;
+        }
+      });
+    }
   }
 
   /**
