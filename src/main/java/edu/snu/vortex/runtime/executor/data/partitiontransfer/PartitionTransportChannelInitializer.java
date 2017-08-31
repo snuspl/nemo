@@ -29,12 +29,12 @@ import javax.inject.Inject;
  * <h3>Inbound pipeline:</h3>
  * <pre>
  * {@literal
- *                                         Pull       +--------------------------------------+    A new
+ *                                         Fetch       +--------------------------------------+    A new
  *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
  *                                    |               +--------------------------------------+
  *                        += Control =|
  *      +--------------+  |           |               +--------------------------------------+
- *   => | FrameDecoder | =|           += Push      => | ControlMessageToPartitionStreamCodec | => A new
+ *   => | FrameDecoder | =|           += Send      => | ControlMessageToPartitionStreamCodec | => A new
  *      +--------------+  |             notification  +--------------------------------------+    PartitionInputStream
  *                        |
  *                        += Data ====================> Add data to an existing PartitionInputStream
@@ -44,12 +44,12 @@ import javax.inject.Inject;
  * <h3>Outbound pipeline:</h3>
  * <pre>
  * {@literal
- *      +---------------------+                   +--------------------------------------+    Pull request with a
- *   <= | ControlFrameEncoder | <= Pull request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
- *      +---------------------+                   +--------------------------------------+
- *      +---------------------+    Push           +--------------------------------------+    Push notification with a
- *   <= | ControlFrameEncoder | <= notification = | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
- *      +---------------------+                   +--------------------------------------+
+ *      +---------------------+                    +--------------------------------------+    Fetch request with a
+ *   <= | ControlFrameEncoder | <= Fetch request = | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
+ *      +---------------------+                    +--------------------------------------+
+ *      +---------------------+     Send           +--------------------------------------+    Send notification with a
+ *   <= | ControlFrameEncoder | <= notification == | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
+ *      +---------------------+                    +--------------------------------------+
  *
  *      +------------------+
  *   <= | DataFrameEncoder | <=== ByteBuf === PartitionOutputStream buffer flush
