@@ -41,16 +41,6 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder =
         new DAGBuilder<>(originalPlan.getStageDAG());
 
-    // NOTE: metricData is made up of a map of partitionId to blockSizes.
-    // Count the hash range.
-    final int hashRangeCount = metricData.values().stream().findFirst().orElseThrow(() ->
-        new DynamicOptimizationException("no valid metric data.")).size();
-
-    // Aggregate metric data. TODO #???: aggregate metric data beforehand.
-    final List<Long> aggregatedMetricData = new ArrayList<>(hashRangeCount);
-    IntStream.range(0, hashRangeCount).forEach(i ->
-        aggregatedMetricData.add(i, metricData.values().stream().mapToLong(lst -> lst.get(i)).sum()));
-
     // get edges to optimize
     final List<String> optimizationEdgeIds = metricData.keySet().stream().map(partitionId ->
         RuntimeIdGenerator.parsePartitionId(partitionId)[0]).collect(Collectors.toList());
@@ -60,38 +50,12 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
         .filter(physicalStageEdge -> optimizationEdgeIds.contains(physicalStageEdge.getId()))
         .collect(Collectors.toList());
 
-    // Get number of evaluators of the next stage
+    // Get number of evaluators of the next stage (number of partitions).
     final Integer taskGroupListSize = optimizationEdges.stream().findFirst().orElseThrow(() ->
         new RuntimeException("optimization edges is empty")).getDst().getTaskGroupList().size();
 
-    // Do the optimization using the information derived above.
-    final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum();
-    final Long idealSizePerTaskGroup = totalSize / taskGroupListSize;
-
-    // find HashRanges to apply
-    final List<HashRange> hashRanges = new ArrayList<>(taskGroupListSize);
-    int startingHashValue = 0;
-    int finishingHashValue = 1;
-    for (int i = 1; i <= taskGroupListSize; i++) {
-      if (i != taskGroupListSize) {
-        final Long endPoint = idealSizePerTaskGroup * i;
-        // find the point
-        while (sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue) < endPoint) {
-          finishingHashValue++;
-        }
-        // assign appropriately
-        if (sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue) - endPoint
-            < endPoint - sumBetween(aggregatedMetricData, startingHashValue, finishingHashValue - 1)) {
-          hashRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
-          startingHashValue = finishingHashValue;
-        } else {
-          hashRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue - 1));
-          startingHashValue = finishingHashValue - 1;
-        }
-      } else { // last one
-        hashRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
-      }
-    }
+    // Calculate hashRanges.
+    final List<HashRange> hashRanges = calculateHashRanges(metricData, taskGroupListSize);
 
     // Assign the hash value range to each receiving task group.
     optimizationEdges.forEach(optimizationEdge -> {
@@ -105,7 +69,47 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
     return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
   }
 
-  private Long sumBetween(final List<Long> listOfLong, final int startInclusive, final int endExclusive) {
-    return listOfLong.subList(startInclusive, endExclusive).stream().mapToLong(n -> n).sum();
+  List<HashRange> calculateHashRanges(final Map<String, List<Long>> metricData, final Integer taskGroupListSize) {
+    // NOTE: metricData is made up of a map of partitionId to blockSizes.
+    // Count the hash range (number of blocks for each partition).
+    final int hashRangeCount = metricData.values().stream().findFirst().orElseThrow(() ->
+        new DynamicOptimizationException("no valid metric data.")).size();
+
+    // Aggregate metric data. TODO #458: aggregate metric data beforehand.
+    final List<Long> aggregatedMetricData = new ArrayList<>(hashRangeCount);
+    IntStream.range(0, hashRangeCount).forEach(i ->
+        aggregatedMetricData.add(i, metricData.values().stream().mapToLong(lst -> lst.get(i)).sum()));
+
+    // Do the optimization using the information derived above.
+    final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum();
+    final Long idealSizePerTaskGroup = totalSize / taskGroupListSize;
+
+    // find HashRanges to apply (for each blocks of each partition).
+    final List<HashRange> hashRanges = new ArrayList<>(taskGroupListSize);
+    int startingHashValue = 0;
+    int finishingHashValue = 1;
+    Long currentAccumulatedSize = aggregatedMetricData.get(0);
+    for (int i = 1; i <= taskGroupListSize; i++) {
+      if (i != taskGroupListSize) {
+        final Long idealAccumulatedSize = idealSizePerTaskGroup * i;
+        // find the point
+        while (currentAccumulatedSize < idealAccumulatedSize) {
+          currentAccumulatedSize += aggregatedMetricData.get(finishingHashValue);
+          finishingHashValue++;
+        }
+        // Go back once if we came too far.
+        if (currentAccumulatedSize - idealAccumulatedSize
+            > idealAccumulatedSize - (currentAccumulatedSize - aggregatedMetricData.get(finishingHashValue - 1))) {
+          finishingHashValue--;
+          currentAccumulatedSize -= aggregatedMetricData.get(finishingHashValue);
+        }
+        // assign appropriately
+        hashRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
+        startingHashValue = finishingHashValue;
+      } else { // last one: we put the range of the rest.
+        hashRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
+      }
+    }
+    return hashRanges;
   }
 }
