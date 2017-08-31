@@ -76,7 +76,7 @@ import java.util.Map;
  *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
  *
- * @see ChannelInitializer
+ * @see PartitionTransportChannelInitializer
  */
 final class FrameDecoder extends ByteToMessageDecoder {
 

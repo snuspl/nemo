@@ -76,7 +76,7 @@ final class PartitionTransport implements AutoCloseable {
       final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final NettyChannelImplementationSelector channelImplSelector,
-      final ChannelInitializer channelInitializer,
+      final PartitionTransportChannelInitializer channelInitializer,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,

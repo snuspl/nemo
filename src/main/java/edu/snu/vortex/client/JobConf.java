@@ -225,7 +225,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * The number of TCP port to which local
+   * The TCP port to which local
    * {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport} binds. 0 means random port.
    */
   @NamedParameter(doc = "Port to which PartitionTransport binds (0 means random port)",

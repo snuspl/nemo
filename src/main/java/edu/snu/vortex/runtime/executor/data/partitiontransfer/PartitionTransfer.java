@@ -141,11 +141,11 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * Gets a {@link ChannelFuture} for connecting to the {@link PartitionTransport} server of the specified executor.
    *
    * @param remoteExecutorId  the id of the remote executor
-   * @param thing             the object to write
+   * @param stream            the partition stream object to write
    * @param onError           the {@link Consumer} to be invoked on an error during setting up a channel
    *                          or writing to the channel
    */
-  private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
+  private void write(final String remoteExecutorId, final PartitionStream stream, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
       // No cached channel found
       final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
@@ -167,7 +167,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
     channelFuture.addListener(future -> {
       if (future.isSuccess()) {
         channelToExecutorIdMap.put(channelFuture.channel(), remoteExecutorId);
-        channelFuture.channel().writeAndFlush(thing)
+        channelFuture.channel().writeAndFlush(stream)
             .addListener(new ControlMessageWriteFutureListener(channelFuture, remoteExecutorId, onError));
         return;
       }

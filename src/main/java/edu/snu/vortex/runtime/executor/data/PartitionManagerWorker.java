@@ -375,6 +375,10 @@ public final class PartitionManagerWorker {
   /**
    * Respond to a push notification by another executor.
    *
+   * A push notification is generated when a remote executor invokes {@link edu.snu.vortex.runtime.executor.data
+   * .partitiontransfer.PartitionTransfer#initiatePush(String, boolean, String, String, HashRange)} to transfer
+   * a partition to another executor.
+   *
    * This method is executed by {@link edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransport}
    * thread. Never execute a blocking call in this method!
    *
