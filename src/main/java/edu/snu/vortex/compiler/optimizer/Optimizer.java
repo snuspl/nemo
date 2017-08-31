@@ -151,7 +151,6 @@ public final class Optimizer {
   public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    // TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
 

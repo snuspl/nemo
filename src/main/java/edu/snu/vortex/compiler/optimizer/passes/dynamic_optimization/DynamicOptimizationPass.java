@@ -30,7 +30,6 @@ public interface DynamicOptimizationPass<T> {
    * @param originalPlan original physical plan.
    * @param metricData metric data to dynamically optimize the physical plan upon.
    * @return the new physical plan after the dynamic optimization.
-   * TODO #437: change this to IR DAG by using stage/scheduler domain info instead of the info in physical dag.
    */
   PhysicalPlan process(PhysicalPlan originalPlan, Map<String, List<T>> metricData);
 }
