@@ -19,10 +19,7 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupId;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
@@ -43,8 +40,6 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
 
     // Map of stage id to the stage ids that it depends on.
     final Map<Integer, Set<Integer>> dependentStagesMap = new HashMap<>();
-
-    // See the dependency information for each stages.
     dag.topologicalDo(irVertex -> {
       final Integer currentStageId = irVertex.getAttr(StageId);
       dependentStagesMap.putIfAbsent(currentStageId, new HashSet<>());
@@ -56,21 +51,23 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     final Map<Integer, Integer> stageIdToScheduleGroupNumberMap = new HashMap<>();
 
     // Calculate schedule group number of each stages step by step
-    while (!dependentStagesMap.isEmpty()) {
+    while (stageIdToScheduleGroupNumberMap.size() < dependentStagesMap.size()) {
+      final Integer previousSize = stageIdToScheduleGroupNumberMap.size();
       dependentStagesMap.forEach((stageId, dependentStages) -> {
-        if (dependentStages.size() == 0) { // initial source stages
+        if (!stageIdToScheduleGroupNumberMap.keySet().contains(stageId)
+            && dependentStages.size() == 0) { // initial source stages
           stageIdToScheduleGroupNumberMap.put(stageId, 0);
-          dependentStagesMap.remove(stageId);
-        } else if (dependentStages.stream().allMatch(stageIdToScheduleGroupNumberMap::containsKey)) { // next stages
+        } else if (!stageIdToScheduleGroupNumberMap.keySet().contains(stageId)
+            && dependentStages.stream().allMatch(stageIdToScheduleGroupNumberMap::containsKey)) { // next stages
           final Integer maxDependentSchedulerGroup =
               dependentStages.stream().mapToInt(stageIdToScheduleGroupNumberMap::get).max().orElseThrow(() ->
                   new RuntimeException("No max value was found for dependent stages"));
           stageIdToScheduleGroupNumberMap.put(stageId, maxDependentSchedulerGroup + 1);
-          dependentStagesMap.remove(stageId);
-        } else {
-          throw new RuntimeException("Nothing to be done here: " + stageId + ", " + dependentStages);
         }
       });
+      if (previousSize == stageIdToScheduleGroupNumberMap.size()) {
+        throw new RuntimeException("Stage dependency is bizarre");
+      }
     }
 
     // do the tagging
