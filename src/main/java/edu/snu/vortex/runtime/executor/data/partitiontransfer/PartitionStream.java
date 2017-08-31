@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 /**
- * A placeholder implementation.
+ * {@link PartitionInputStream} and {@link PartitionOutputStream}.
  */
 public interface PartitionStream {
 

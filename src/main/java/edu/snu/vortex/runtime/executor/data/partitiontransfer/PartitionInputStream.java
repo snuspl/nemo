@@ -24,7 +24,17 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
- * A placeholder implementation.
+ * Decodes and stores inbound data elements from other executors.
+ *
+ * Three threads are involved in this class.
+ * <ul>
+ *   <li>Netty {@link io.netty.channel.EventLoopGroup} receives data from other executors and adds them
+ *   by {@link #append(ByteBuf)}</li>
+ *   <li>{@link PartitionTransfer#inboundExecutorService} decodes {@link ByteBuf}s into
+ *   {@link edu.snu.vortex.compiler.ir.Element}s (not implemented yet)</li>
+ *   <li>User thread iterates over this object and uses {@link java.util.Iterator} for its own work
+ *   (not implemented yet)</li>
+ * </ul>
  *
  * @param <T> the type of element
  */

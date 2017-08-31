@@ -23,7 +23,18 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
- * A placeholder implementation.
+ * Encodes and flushes outbound data elements to other executors.
+ *
+ * Three threads are involved in this class.
+ * <ul>
+ *   <li>User thread writes {@link edu.snu.vortex.compiler.ir.Element}s or
+ *   {@link edu.snu.vortex.runtime.executor.data.FileArea}s to this object (not implemented yet)</li>
+ *   <li>{@link PartitionTransfer#outboundExecutorService} encodes {@link edu.snu.vortex.compiler.ir.Element}s into
+ *   {@link io.netty.buffer.ByteBuf}s (not implemented yet)</li>
+ *   <li>Netty {@link io.netty.channel.EventLoopGroup} responds to
+ *   {@link io.netty.channel.Channel#writeAndFlush(Object)} by sending {@link io.netty.buffer.ByteBuf}s
+ *   or {@link edu.snu.vortex.runtime.executor.data.FileArea}s to the remote executor.</li>
+ * </ul>
  *
  * @param <T> the type of element
  */
