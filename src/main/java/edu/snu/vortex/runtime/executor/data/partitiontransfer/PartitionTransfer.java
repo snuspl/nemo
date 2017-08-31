@@ -148,7 +148,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   private void write(final String remoteExecutorId, final PartitionStream stream, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
       // No cached channel found
-      final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
+      final ChannelFuture connectFuture = partitionTransport.connectTo(executorId, onError);
       connectFuture.addListener(future -> {
         if (future.isSuccess()) {
           // Succeed to connect
