@@ -23,7 +23,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 
@@ -93,8 +92,6 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   private Map<Short, PartitionInputStream> pullTransferIdToInputStream;
   private Map<Short, PartitionInputStream> pushTransferIdToInputStream;
-  private SocketAddress localAddress;
-  private SocketAddress remoteAddress;
 
   /**
    * The number of bytes consisting body of a control frame to be read next.
@@ -139,8 +136,6 @@ final class FrameDecoder extends ByteToMessageDecoder {
         = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
     pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
     pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
-    localAddress = ctx.channel().localAddress();
-    remoteAddress = ctx.channel().remoteAddress();
     ctx.fireChannelActive();
   }
 
@@ -200,8 +195,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
       inputStream = (isPullTransfer ? pullTransferIdToInputStream : pushTransferIdToInputStream).get(transferId);
       if (inputStream == null) {
         throw new IllegalStateException(String.format("Transport context for %s:%d was not found between the local"
-            + "endpoint %s and the remote endpoint %s", isPullTransfer ? "pull" : "push", transferId, localAddress,
-            remoteAddress));
+            + "address %s and the remote address %s", isPullTransfer ? "pull" : "push", transferId,
+            ctx.channel().localAddress(), ctx.channel().remoteAddress()));
       }
       if (dataBodyBytesToRead == 0) {
         onDataFrameEnd(ctx);
