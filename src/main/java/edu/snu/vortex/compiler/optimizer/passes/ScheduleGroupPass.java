@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 
 import java.util.*;
 
-import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupId;
+import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupNum;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
 
 /**
@@ -72,7 +72,7 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
 
     // do the tagging
     dag.topologicalDo(irVertex ->
-        irVertex.setAttr(ScheduleGroupId, stageIdToScheduleGroupNumberMap.get(irVertex.getAttr(StageId))));
+        irVertex.setAttr(ScheduleGroupNum, stageIdToScheduleGroupNumberMap.get(irVertex.getAttr(StageId))));
 
     return dag;
   }
