@@ -147,24 +147,34 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    */
   private void write(final String remoteExecutorId, final Object thing, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
+      // No cached channel found
       final ChannelFuture connectFuture = partitionTransport.connectTo(executorId);
       connectFuture.addListener(future -> {
         if (future.isSuccess()) {
-          connectFuture.channel().pipeline().fireUserEventTriggered(
-              new ChannelInitializer.SetExecutorIdToClientChannel(remoteExecutorId));
+          // Succeed to connect
           return;
         }
+        // Failed to connect
         if (future.cause() == null) {
           LOG.error("Failed to connect to {}", remoteExecutorId);
         } else {
-          onError.accept(future.cause());
           LOG.error(String.format("Failed to connect to %s", remoteExecutorId), future.cause());
         }
       });
       return connectFuture;
     });
-    channelFuture.addListener(future -> channelFuture.channel().writeAndFlush(thing).addListener(
-        new ControlMessageWriteFutureListener(channelFuture.channel(), onError)));
+    channelFuture.addListener(future -> {
+      if (future.isSuccess()) {
+        channelToExecutorIdMap.put(channelFuture.channel(), remoteExecutorId);
+        channelFuture.channel().writeAndFlush(thing)
+            .addListener(new ControlMessageWriteFutureListener(channelFuture, remoteExecutorId, onError));
+        return;
+      }
+      executorIdToChannelFutureMap.remove(remoteExecutorId, channelFuture);
+      if (future.cause() != null) {
+        onError.accept(future.cause());
+      }
+    });
   }
 
   @Override
@@ -288,19 +298,24 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   /**
    * {@link ChannelFutureListener} for handling outbound exceptions on writing control messages.
    */
-  public static final class ControlMessageWriteFutureListener implements ChannelFutureListener {
+  private final class ControlMessageWriteFutureListener implements ChannelFutureListener {
 
-    private final Channel channel;
+    private final ChannelFuture channelFuture;
+    private final String remoteExecutorId;
     private final Consumer<Throwable> onError;
 
     /**
      * Creates a {@link ControlMessageWriteFutureListener}.
      *
-     * @param channel the channel
-     * @param onError the {@link Consumer} to be invoked on an error during writing to the channel
+     * @param channelFuture     the channel future
+     * @param remoteExecutorId  the id of the remote executor
+     * @param onError           the {@link Consumer} to be invoked on an error during writing to the channel
      */
-    private ControlMessageWriteFutureListener(final Channel channel, final Consumer<Throwable> onError) {
-      this.channel = channel;
+    private ControlMessageWriteFutureListener(final ChannelFuture channelFuture,
+                                              final String remoteExecutorId,
+                                              final Consumer<Throwable> onError) {
+      this.channelFuture = channelFuture;
+      this.remoteExecutorId = remoteExecutorId;
       this.onError = onError;
     }
 
@@ -309,13 +324,16 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
       if (future.isSuccess()) {
         return;
       }
-      channel.close();
+      // Remove the channel from channel cache if needed
+      executorIdToChannelFutureMap.remove(remoteExecutorId, channelFuture);
+      channelToExecutorIdMap.remove(channelFuture.channel());
       if (future.cause() == null) {
         LOG.error("Failed to write a control message");
       } else {
         onError.accept(future.cause());
         LOG.error("Failed to write a control message", future.cause());
       }
+      channelFuture.channel().close();
     }
   }
 }
