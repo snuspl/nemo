@@ -39,6 +39,16 @@ import java.util.concurrent.ExecutorService;
 /**
  * Output stream for partition transfer. {@link #close()} must be called after finishing write.
  *
+ * Encodes and flushes outbound data elements to other executors.
+ *
+ * Three threads are involved in this class.
+ * <ul>
+ *   <li>User thread writes {@link Element}s or {@link FileArea}s to this object</li>
+ *   <li>{@link PartitionTransfer#outboundExecutorService} encodes {@link Element}s into {@link ByteBuf}s</li>
+ *   <li>Netty {@link io.netty.channel.EventLoopGroup} responds to {@link Channel#writeAndFlush(Object)}
+ *   by sending {@link ByteBuf}s or {@link FileRegion}s to the remote executor.</li>
+ * </ul>
+ *
  * @param <T> the type of element
  */
 public final class PartitionOutputStream<T> implements Closeable, PartitionStream {

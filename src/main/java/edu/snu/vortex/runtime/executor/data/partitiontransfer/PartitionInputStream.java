@@ -34,6 +34,16 @@ import java.util.function.Consumer;
 /**
  * Input stream for partition transfer.
  *
+ * Decodes and stores inbound data elements from other executors.
+ *
+ * Three threads are involved in this class.
+ * <ul>
+ *   <li>Netty {@link io.netty.channel.EventLoopGroup} receives data from other executors and adds them
+ *   by {@link #append(ByteBuf)}</li>
+ *   <li>{@link PartitionTransfer#inboundExecutorService} decodes {@link ByteBuf}s into {@link Element}s</li>
+ *   <li>User thread iterates over this object for its own work</li>
+ * </ul>
+ *
  * @param <T> the type of element
  */
 public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>, PartitionStream {
