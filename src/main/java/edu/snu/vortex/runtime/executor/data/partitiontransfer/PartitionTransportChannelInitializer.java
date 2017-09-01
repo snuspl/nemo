@@ -29,7 +29,7 @@ import javax.inject.Inject;
  * <h3>Inbound pipeline:</h3>
  * <pre>
  * {@literal
- *                                         Fetch       +--------------------------------------+    A new
+ *                                         Fetch      +--------------------------------------+    A new
  *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
  *                                    |               +--------------------------------------+
  *                        += Control =|
