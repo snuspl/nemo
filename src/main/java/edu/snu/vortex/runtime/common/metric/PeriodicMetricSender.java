@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.common.metric;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.common.metric.parameter.MetricFlushPeriod;
 import org.apache.reef.tang.annotations.Parameter;
@@ -59,16 +60,16 @@ public final class PeriodicMetricSender implements MetricSender {
             .setMetricMsg(metricMsgBuilder.build())
             .build());
       }
-    }, flushingPeriod, flushingPeriod, TimeUnit.MILLISECONDS);
+    }, 0, flushingPeriod, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public void send(final String metricData) {
-    metricMessageQueue.offer(metricData);
+    metricMessageQueue.add(metricData);
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() throws UnknownFailureCauseException {
     closed.set(true);
     scheduledExecutorService.shutdown();
   }

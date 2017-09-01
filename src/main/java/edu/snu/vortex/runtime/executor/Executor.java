@@ -24,6 +24,7 @@ import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.vortex.runtime.common.metric.PeriodicMetricSender;
@@ -131,7 +132,12 @@ public final class Executor {
   }
 
   public void terminate() {
-
+    try {
+      periodicMetricSender.close();
+    } catch (final UnknownFailureCauseException e) {
+      throw new UnknownFailureCauseException(
+          new Exception("Closing PeriodicMetricSender failed in executor " + executorId));
+    }
   }
 
   /**
