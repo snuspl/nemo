@@ -174,7 +174,13 @@ public final class RuntimeMaster {
         LOG.error(failedExecutorId + " failed, Stack Trace: ", exception);
         containerManager.onExecutorRemoved(failedExecutorId);
         throw new RuntimeException(exception);
-      case MetricMessageReceived:
+        case ContainerFailed:
+          final ControlMessage.ContainerFailedMsg containerFailedMsg = message.getContainerFailedMsg();
+          final String failedContainerExecutorId = containerFailedMsg.getExecutorId();
+          jobStateManager.getMetricMessageHandler().onMetricMessageReceived(
+              "Executor " + failedContainerExecutorId + " FAILED_RECOVERABLE:CONTAINER_FAILURE");
+          break;
+        case MetricMessageReceived:
         final ControlMessage.MetricMsg metricMsg = message.getMetricMsg();
         jobStateManager.getMetricMessageHandler().onMetricMessageReceived(metricMsg.getMetricMessage());
         break;
