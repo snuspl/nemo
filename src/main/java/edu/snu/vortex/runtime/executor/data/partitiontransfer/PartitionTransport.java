@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
@@ -135,7 +136,7 @@ final class PartitionTransport implements AutoCloseable {
     } else {
       try {
         listeningChannel = serverBootstrap.bind(host, port).sync().channel();
-      } catch (final InterruptedException e) {
+      } catch (final Exception e) {
         serverListeningGroup.shutdownGracefully();
         serverWorkingGroup.shutdownGracefully();
         clientGroup.shutdownGracefully();
