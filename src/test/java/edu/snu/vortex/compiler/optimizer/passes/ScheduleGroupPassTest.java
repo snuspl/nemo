@@ -44,16 +44,19 @@ public final class ScheduleGroupPassTest {
   }
 
   @Test
+  /**
+   * This test ensures that a topologically sorted DAG has an increasing sequence of schedule group indexes.
+   */
   public void testScheduleGroupPass() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG = Optimizer.optimize(compiledDAG, Optimizer.PolicyType.TestingPolicy, "");
 
-    Integer previousScheduleGroupNum = 0;
+    Integer previousScheduleGroupIndex = 0;
     for (final IRVertex irVertex : processedDAG.getTopologicalSort()) {
-      assertTrue(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupNum) != null);
-      final Integer currentScheduleGroupNum = irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupNum);
-      assertTrue(currentScheduleGroupNum >= previousScheduleGroupNum);
-      if (currentScheduleGroupNum > previousScheduleGroupNum) {
-        previousScheduleGroupNum = currentScheduleGroupNum;
+      assertTrue(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex) != null);
+      final Integer currentScheduleGroupIndex = irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex);
+      assertTrue(currentScheduleGroupIndex >= previousScheduleGroupIndex);
+      if (currentScheduleGroupIndex > previousScheduleGroupIndex) {
+        previousScheduleGroupIndex = currentScheduleGroupIndex;
       }
     }
   }

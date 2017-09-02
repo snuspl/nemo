@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 
 import java.util.*;
 
-import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupNum;
+import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupIndex;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
 
 /**
@@ -43,36 +43,45 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     dag.topologicalDo(irVertex -> {
       final Integer currentStageId = irVertex.getAttr(StageId);
       dependentStagesMap.putIfAbsent(currentStageId, new HashSet<>());
-      dag.getIncomingEdgesOf(irVertex).stream().map(IREdge::getSrc).map(vertex -> vertex.getAttr(StageId))
-          .filter(n -> !n.equals(currentStageId)).forEach(n -> dependentStagesMap.get(currentStageId).add(n));
+      // while traversing, we find the stages that point to the current stage and add them to the list.
+      dag.getIncomingEdgesOf(irVertex).stream()
+          .map(IREdge::getSrc)
+          .map(vertex -> vertex.getAttr(StageId))
+          .filter(n -> !n.equals(currentStageId))
+          .forEach(n -> dependentStagesMap.get(currentStageId).add(n));
     });
 
     // Map to put our results in.
-    final Map<Integer, Integer> stageIdToScheduleGroupNumberMap = new HashMap<>();
+    final Map<Integer, Integer> stageIdToScheduleGroupIndexMap = new HashMap<>();
 
     // Calculate schedule group number of each stages step by step
-    while (stageIdToScheduleGroupNumberMap.size() < dependentStagesMap.size()) {
-      final Integer previousSize = stageIdToScheduleGroupNumberMap.size();
+    while (stageIdToScheduleGroupIndexMap.size() < dependentStagesMap.size()) {
+      // This is to ensure that each iteration is making progress.
+      final Integer previousSize = stageIdToScheduleGroupIndexMap.size();
       dependentStagesMap.forEach((stageId, dependentStages) -> {
-        if (!stageIdToScheduleGroupNumberMap.keySet().contains(stageId)
+        if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
             && dependentStages.size() == 0) { // initial source stages
-          stageIdToScheduleGroupNumberMap.put(stageId, 0);
-        } else if (!stageIdToScheduleGroupNumberMap.keySet().contains(stageId)
-            && dependentStages.stream().allMatch(stageIdToScheduleGroupNumberMap::containsKey)) { // next stages
+          stageIdToScheduleGroupIndexMap.put(stageId, 0); // initial source stages are indexed with schedule group 0.
+        } else if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
+            && dependentStages.stream().allMatch(stageIdToScheduleGroupIndexMap::containsKey)) { // next stages
+          // We find the maximum schedule group index from previous stages, and index current stage with that number +1.
           final Integer maxDependentSchedulerGroup =
-              dependentStages.stream().mapToInt(stageIdToScheduleGroupNumberMap::get).max().orElseThrow(() ->
-                  new RuntimeException("No max value was found for dependent stages"));
-          stageIdToScheduleGroupNumberMap.put(stageId, maxDependentSchedulerGroup + 1);
+              dependentStages.stream()
+                  .mapToInt(stageIdToScheduleGroupIndexMap::get)
+                  .max().orElseThrow(() ->
+                    new RuntimeException("A stage that is not a source stage much have dependent stages"));
+          stageIdToScheduleGroupIndexMap.put(stageId, maxDependentSchedulerGroup + 1);
         }
       });
-      if (previousSize == stageIdToScheduleGroupNumberMap.size()) {
-        throw new RuntimeException("Stage dependency is bizarre");
+      if (previousSize == stageIdToScheduleGroupIndexMap.size()) {
+        throw new RuntimeException("Iteration for indexing schedule groups in "
+            + ScheduleGroupPass.class.getSimpleName() + " is not making progress");
       }
     }
 
     // do the tagging
     dag.topologicalDo(irVertex ->
-        irVertex.setAttr(ScheduleGroupNum, stageIdToScheduleGroupNumberMap.get(irVertex.getAttr(StageId))));
+        irVertex.setAttr(ScheduleGroupIndex, stageIdToScheduleGroupIndexMap.get(irVertex.getAttr(StageId))));
 
     return dag;
   }
