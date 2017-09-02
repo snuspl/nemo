@@ -26,6 +26,13 @@
         <log4j.configuration>file://config/log4j.properties</log4j.configuration>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>Bundled Maven Repository</id>
+            <url>file://${basedir}/src/main/resources/repository</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.google.protobuf</groupId>
