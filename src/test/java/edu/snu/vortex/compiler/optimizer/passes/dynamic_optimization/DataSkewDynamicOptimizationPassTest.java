@@ -40,6 +40,9 @@ public class DataSkewDynamicOptimizationPassTest {
     testMetricData.put("3", Arrays.asList(2L, 3L, 5L, 5L, 5L, 6L, 6L, 8L, 4L, 15L));
   }
 
+  /**
+   * Test if the test case suggested above works correctly.
+   */
   @Test
   public void testDataSkewDynamicOptimizationPass() {
     final Integer taskGroupListSize = 5;

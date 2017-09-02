@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.exception.DynamicOptimizationException;
@@ -69,6 +70,7 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
     return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());
   }
 
+  @VisibleForTesting
   List<HashRange> calculateHashRanges(final Map<String, List<Long>> metricData, final Integer taskGroupListSize) {
     // NOTE: metricData is made up of a map of partitionId to blockSizes.
     // Count the hash range (number of blocks for each partition).
@@ -77,22 +79,23 @@ public final class DataSkewDynamicOptimizationPass implements DynamicOptimizatio
 
     // Aggregate metric data. TODO #458: aggregate metric data beforehand.
     final List<Long> aggregatedMetricData = new ArrayList<>(hashRangeCount);
+    // for each hash range index, we aggregate the metric data.
     IntStream.range(0, hashRangeCount).forEach(i ->
         aggregatedMetricData.add(i, metricData.values().stream().mapToLong(lst -> lst.get(i)).sum()));
 
     // Do the optimization using the information derived above.
-    final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum();
-    final Long idealSizePerTaskGroup = totalSize / taskGroupListSize;
+    final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum(); // get total size
+    final Long idealSizePerTaskGroup = totalSize / taskGroupListSize; // and derive the ideal size per task group
 
     // find HashRanges to apply (for each blocks of each partition).
     final List<HashRange> hashRanges = new ArrayList<>(taskGroupListSize);
     int startingHashValue = 0;
-    int finishingHashValue = 1;
-    Long currentAccumulatedSize = aggregatedMetricData.get(0);
+    int finishingHashValue = 1; // initial values
+    Long currentAccumulatedSize = aggregatedMetricData.get(0); // what we have up to now
     for (int i = 1; i <= taskGroupListSize; i++) {
       if (i != taskGroupListSize) {
-        final Long idealAccumulatedSize = idealSizePerTaskGroup * i;
-        // find the point
+        final Long idealAccumulatedSize = idealSizePerTaskGroup * i; // where we should end
+        // find the point while adding up one by one.
         while (currentAccumulatedSize < idealAccumulatedSize) {
           currentAccumulatedSize += aggregatedMetricData.get(finishingHashValue);
           finishingHashValue++;
