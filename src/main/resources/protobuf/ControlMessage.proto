@@ -17,12 +17,11 @@ enum MessageType {
     MetricMessageReceived = 8;
     // Messages for metadata passing
     CommitBlock = 9;
-    RemoveBlockMetadata = 10;
-    RequestBlockMetadata = 11;
-    MetadataResponse = 12;
-    ReserveBlock = 13;
-    ReserveBlockResponse = 14;
-    CommittedBlockMetadata = 15;
+    RequestBlockMetadata = 10;
+    MetadataResponse = 11;
+    ReserveBlock = 12;
+    ReserveBlockResponse = 13;
+    CommittedBlockMetadata = 14;
 }
 
 message Message {
@@ -41,11 +40,10 @@ message Message {
     // Messages for metadata passing
     optional MetadataResponseMsg metadataResponseMsg = 13;
     optional CommitBlockMsg commitBlockMsg = 14;
-    optional RemoveBlockMetadataMsg removeBlockMetadataMsg = 15;
-    optional RequestBlockMetadataMsg requestBlockMetadataMsg = 16;
-    optional ReserveBlockMsg reserveBlockMsg = 17;
-    optional ReserveBlockResponseMsg reserveBlockResponseMsg = 18;
-    optional CommittedBlockMetadataMsg committedBlockMetadataMsg = 19;
+    optional RequestBlockMetadataMsg requestBlockMetadataMsg = 15;
+    optional ReserveBlockMsg reserveBlockMsg = 16;
+    optional ReserveBlockResponseMsg reserveBlockResponseMsg = 17;
+    optional CommittedBlockMetadataMsg committedBlockMetadataMsg = 18;
 }
 
 // Messages from Master to Executors
@@ -189,10 +187,6 @@ message ReserveBlockMsg {
     required string executorId = 1;
     required string partitionId = 2;
     required BlockMetadataMsg blockMetadata = 3;
-}
-
-message RemoveBlockMetadataMsg {
-    required string partitionId = 1;
 }
 
 message RequestBlockMetadataMsg {

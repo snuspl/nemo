@@ -192,7 +192,6 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case PartitionStateChanged:
       case ExecutorFailed:
       case CommitBlock:
-      case RemoveBlockMetadata:
       case DataSizeMetric:
       case MetricMessageReceived:
       case ContainerFailed:

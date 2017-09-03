@@ -450,27 +450,6 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Removes the block metadata for a remote partition.
-   *
-   * @param message the message pointing the metadata to remove.
-   */
-  @VisibleForTesting
-  public void onRemoveBlockMetadata(final ControlMessage.Message message) {
-    assert (message.getType() == ControlMessage.MessageType.RemoveBlockMetadata);
-    final ControlMessage.RemoveBlockMetadataMsg removeMsg = message.getRemoveBlockMetadataMsg();
-    final String partitionId = removeMsg.getPartitionId();
-
-    final Lock readLock = lock.readLock();
-    readLock.lock();
-    try {
-      final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
-      metadata.removeBlockMetadata();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  /**
    * Handler for control messages received.
    */
   public final class PartitionManagerMasterControlMessageReceiver implements MessageListener<ControlMessage.Message> {
@@ -487,9 +466,6 @@ public final class PartitionManagerMaster {
           break;
         case CommitBlock:
           onCommitBlocks(message);
-          break;
-        case RemoveBlockMetadata:
-          onRemoveBlockMetadata(message);
           break;
         default:
           throw new IllegalMessageException(
