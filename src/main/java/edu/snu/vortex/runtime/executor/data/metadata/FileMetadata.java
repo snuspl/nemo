@@ -54,8 +54,9 @@ public abstract class FileMetadata implements Closeable {
    * It returns a "blocking iterable" to which metadata for blocks that become available will be published.
    *
    * @return the "blocking iterable" containing the block metadata.
+   * @throws IOException if fail to get the iterable.
    */
-  public abstract Iterable<BlockMetadata> getBlockMetadataIterable();
+  public abstract Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException;
 
   /**
    * Deletes the metadata.
@@ -65,7 +66,7 @@ public abstract class FileMetadata implements Closeable {
   public abstract void deleteMetadata() throws IOException;
 
   /**
-   * @return whether need to commit block per every block write.
+   * @return whether commit every block write or not.
    */
   public boolean isBlockCommitPerWrite() {
     return blockCommitPerWrite;

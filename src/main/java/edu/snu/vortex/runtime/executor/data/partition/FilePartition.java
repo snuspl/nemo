@@ -22,6 +22,7 @@ import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
 import edu.snu.vortex.runtime.executor.data.FileArea;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -33,6 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * This class represents a partition which is stored in (local or remote) file.
  */
+@ThreadSafe
 public final class FilePartition implements Closeable {
 
   private final Coder coder;
@@ -161,6 +163,7 @@ public final class FilePartition implements Closeable {
    */
   @Override
   public void close() throws IOException {
+    flushMetadata();
     metadata.close();
   }
 

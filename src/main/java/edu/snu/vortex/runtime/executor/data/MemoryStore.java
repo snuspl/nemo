@@ -68,11 +68,12 @@ final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#putBlocks(String, Iterable).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
   public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
-                                                           final Iterable<Block> blocks) {
+                                                           final Iterable<Block> blocks,
+                                                           final boolean commitPerBlock) {
     partitionIdToBlocks.putIfAbsent(partitionId, new MemoryPartition());
     partitionIdToBlocks.get(partitionId).appendBlocks(blocks);
 

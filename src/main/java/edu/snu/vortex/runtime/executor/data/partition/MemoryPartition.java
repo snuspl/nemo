@@ -17,18 +17,22 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.runtime.executor.data.Block;
 
-import java.util.LinkedList;
+import javax.annotation.concurrent.ThreadSafe;
+import java.io.Closeable;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class represents a partition which is stored in local memory and not serialized.
+ * TODO #463: Support incremental read.
  */
-public final class MemoryPartition {
+@ThreadSafe
+public final class MemoryPartition implements Closeable {
 
   private final List<Block> blocks;
 
   public MemoryPartition() {
-    blocks = new LinkedList<>();
+    blocks = new CopyOnWriteArrayList<>();
   }
 
   /**
@@ -36,7 +40,7 @@ public final class MemoryPartition {
    *
    * @param blocksToAppend the blocks to append.
    */
-  public synchronized void appendBlocks(final Iterable<Block> blocksToAppend) {
+  public void appendBlocks(final Iterable<Block> blocksToAppend) {
     blocksToAppend.forEach(blocks::add);
   }
 
@@ -45,5 +49,13 @@ public final class MemoryPartition {
    */
   public List<Block> getBlocks() {
     return blocks;
+  }
+
+  /**
+   * Close to prevent further write for this partition.
+   * If someone "subscribing" the data in this partition, it will be finished.
+   */
+  @Override
+  public void close() {
   }
 }

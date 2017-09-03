@@ -716,7 +716,7 @@ public final class PartitionStoreTest {
     public void onMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
         case StoreMetadata:
-          metadataManager.onStoreMetadata(message);
+          metadataManager.onCommitBlocks(message);
           break;
         case RemoveMetadata:
           metadataManager.onRemoveMetadata(message);

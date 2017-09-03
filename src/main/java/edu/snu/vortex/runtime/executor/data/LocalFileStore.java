@@ -70,8 +70,9 @@ final class LocalFileStore extends FileStore {
       }
       try {
         return Optional.of(partition.retrieveInHashRange(hashRange));
-      } catch (final IOException e) {
-        throw new PartitionFetchException(e);
+      } catch (final IOException retrievalException) {
+        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, retrievalException);
+        throw new PartitionFetchException(combinedThrowable);
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
@@ -79,24 +80,27 @@ final class LocalFileStore extends FileStore {
 
   /**
    * Saves an iterable of data blocks to a partition.
-   * @see PartitionStore#putBlocks(String, Iterable).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
   public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
-                                                           final Iterable<Block> blocks) {
+                                                           final Iterable<Block> blocks,
+                                                           final boolean commitPerBlock) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
-      final LocalFileMetadata metadata = new LocalFileMetadata();
+      final LocalFileMetadata metadata = new LocalFileMetadata(commitPerBlock);
 
-      try (final FilePartition partition =
-               new FilePartition(coder, partitionIdToFilePath(partitionId), metadata)) {
+      try {
+        final FilePartition partition =
+            new FilePartition(coder, partitionIdToFilePath(partitionId), metadata);
         partitionIdToData.putIfAbsent(partitionId, partition);
 
         // Serialize and write the given blocks.
         blockSizeList = putBlocks(coder, partition, blocks);
-      } catch (final IOException e) {
-        throw new PartitionWriteException(e);
+      } catch (final IOException writeException) {
+        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, writeException);
+        throw new PartitionWriteException(combinedThrowable);
       }
 
       return Optional.of(blockSizeList);
@@ -120,7 +124,8 @@ final class LocalFileStore extends FileStore {
       try {
         serializedPartition.deleteFile();
       } catch (final IOException e) {
-        throw new PartitionFetchException(e);
+        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, e);
+        throw new PartitionFetchException(combinedThrowable);
       }
       return true;
     };
@@ -132,12 +137,33 @@ final class LocalFileStore extends FileStore {
     try {
       final FilePartition partition = partitionIdToData.get(partitionId);
       if (partition == null) {
-        throw new PartitionFetchException(new Exception(String.format("%s does not exists", partitionId)));
-      } else {
-        return partition.asFileAreas(hashRange);
+        throw new IOException(String.format("%s does not exists", partitionId));
       }
-    } catch (final IOException e) {
-      throw new PartitionFetchException(e);
+      return partition.asFileAreas(hashRange);
+    } catch (final IOException retrievalException) {
+      final Throwable combinedThrowable = closePartitionExceptionally(partitionId, retrievalException);
+      throw new PartitionFetchException(combinedThrowable);
     }
+  }
+
+  /**
+   * Closes a partition exceptionally.
+   * If failed to close, it combines the cause and newly thrown exception.
+   *
+   * @param partitionId of the partition to close.
+   * @param cause       of this exception.
+   * @return original cause of this exception if success to close, combined {@link Throwable} if else.
+   */
+  private Throwable closePartitionExceptionally(final String partitionId,
+                                                final Throwable cause) {
+    try {
+      final FilePartition partitionToClose = partitionIdToData.get(partitionId);
+      if (partitionToClose != null) {
+        partitionToClose.close();
+      }
+    } catch (final IOException closeException) {
+      return new Throwable(closeException.getMessage(), cause);
+    }
+    return cause;
   }
 }

@@ -26,6 +26,7 @@ import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
@@ -78,17 +79,19 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       // Deserialize the target data in the corresponding file and pass it as a local data.
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      FilePartition partition = null;
       try {
         if (new File(filePath).isFile()) {
           final RemoteFileMetadata metadata =
               RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
-          final FilePartition partition = new FilePartition(coder, filePath, metadata);
+          partition = new FilePartition(coder, filePath, metadata);
           return Optional.of(partition.retrieveInHashRange(hashRange));
         } else {
           return Optional.empty();
         }
-      } catch (final IOException | InterruptedException | ExecutionException e) {
-        throw new PartitionFetchException(e);
+      } catch (final IOException | InterruptedException | ExecutionException cause) {
+        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        throw new PartitionFetchException(combinedThrowable);
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
@@ -96,24 +99,27 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
   /**
    * Saves an iterable of data blocks to a partition.
-   * @see PartitionStore#putBlocks(String, Iterable).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
   public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
-                                                           final Iterable<Block> blocks) {
+                                                           final Iterable<Block> blocks,
+                                                           final boolean commitPerBlock) {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      FilePartition partition = null;
 
       try {
         final RemoteFileMetadata metadata =
-            RemoteFileMetadata.openToWrite(false, false, partitionId, executorId, persistentConnectionToMaster);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata);
+            new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMaster);
+        partition = new FilePartition(coder, filePath, metadata);
         // Serialize and write the given blocks.
         final List<Long> blockSizeList = putBlocks(coder, partition, blocks);
         return Optional.of(blockSizeList);
-      } catch (final IOException e) {
-        throw new PartitionWriteException(e);
+      } catch (final IOException cause) {
+        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        throw new PartitionWriteException(combinedThrowable);
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
@@ -130,19 +136,21 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Supplier<Boolean> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
+      FilePartition partition = null;
 
       try {
         if (new File(filePath).isFile()) {
           final RemoteFileMetadata metadata =
               RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
-          final FilePartition partition = new FilePartition(coder, filePath, metadata);
+          partition = new FilePartition(coder, filePath, metadata);
           partition.deleteFile();
           return true;
         } else {
           return false;
         }
-      } catch (final IOException | InterruptedException | ExecutionException e) {
-        throw new PartitionFetchException(e);
+      } catch (final IOException | InterruptedException | ExecutionException cause) {
+        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        throw new PartitionFetchException(combinedThrowable);
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
@@ -152,17 +160,40 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
+    FilePartition partition = null;
+
     try {
       if (new File(filePath).isFile()) {
         final RemoteFileMetadata metadata =
             RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata);
+        partition = new FilePartition(coder, filePath, metadata);
         return partition.asFileAreas(hashRange);
       } else {
-        throw new PartitionFetchException(new Exception(String.format("%s does not exists", partitionId)));
+        throw new IOException(String.format("%s does not exists", partitionId));
       }
-    } catch (final IOException | InterruptedException | ExecutionException e) {
-      throw new PartitionFetchException(e);
+    } catch (final IOException | InterruptedException | ExecutionException cause) {
+      final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+      throw new PartitionFetchException(combinedThrowable);
     }
+  }
+
+  /**
+   * Closes a partition exceptionally.
+   * If failed to close, it combines the cause and newly thrown exception.
+   *
+   * @param partition to close.
+   * @param cause     of this exception.
+   * @return original cause of this exception if success to close, combined {@link Throwable} if else.
+   */
+  private Throwable closePartitionExceptionally(@Nullable final FilePartition partition,
+                                                final Throwable cause) {
+    try {
+      if (partition != null) {
+        partition.close();
+      }
+    } catch (final IOException closeException) {
+      return new Throwable(closeException.getMessage(), cause);
+    }
+    return cause;
   }
 }

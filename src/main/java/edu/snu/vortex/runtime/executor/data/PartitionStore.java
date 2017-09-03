@@ -30,12 +30,13 @@ public interface PartitionStore {
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range
+   * TODO #463: Support incremental read. Consider returning Iterable<Block>.
    * @return the result data as a new partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
    */
-  CompletableFuture<Optional<Iterable<Element>>> retrieveData(String partitionId, // TODO: Iterable<Block> ?
-                                                              HashRange hashRange); // TODO: Incremental?
+  CompletableFuture<Optional<Iterable<Element>>> retrieveData(String partitionId,
+                                                              HashRange hashRange);
 
   /**
    * Saves an iterable of data blocks to a partition.
@@ -43,14 +44,16 @@ public interface PartitionStore {
    * Each block can be split into multiple blocks according to it's size.
    * This method supports concurrent write, but these blocks may not be saved consecutively.
    *
-   * @param partitionId of the partition.
-   * @param blocks      to save as a partition.
+   * @param partitionId    of the partition.
+   * @param blocks         to save as a partition.
+   * @param commitPerBlock whether commit every block write or not.
    * @return the size of the data per block (only when the data is serialized).
    *         (the future completes with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
    *          for any error occurred while trying to write a partition.)
    */
   CompletableFuture<Optional<List<Long>>> putBlocks(String partitionId,
-                                                    Iterable<Block> blocks); // TODO: Incremental?
+                                                    Iterable<Block> blocks,
+                                                    boolean commitPerBlock);
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;

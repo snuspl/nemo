@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.metadata;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
@@ -28,18 +29,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @ThreadSafe
 public final class LocalFileMetadata extends FileMetadata {
 
-  private final Queue<BlockMetadata> reserveBlockMetadataQue;
+  private final Queue<BlockMetadata> reserveBlockMetadataQue; // The queue of reserved block metadata.
   // TODO #463: Support incremental read. Change this iterable to "ClosableBlockingIterable".
-  private final List<BlockMetadata> commitBlockMetadataIterable;
+  private final List<BlockMetadata> commitBlockMetadataIterable; // The queue of committed block metadata.
   private volatile long position; // How many bytes are (at least, logically) written in the file.
   private volatile int blockCount;
+  private volatile boolean closed;
 
-  public LocalFileMetadata(final boolean blockCommitPerWrite) {
-    super(blockCommitPerWrite);
+  public LocalFileMetadata(final boolean commitPerBlock) {
+    super(commitPerBlock);
     this.reserveBlockMetadataQue = new ArrayDeque<>();
     this.commitBlockMetadataIterable = new CopyOnWriteArrayList<>();
     this.blockCount = 0;
     this.position = 0;
+    this.closed = false;
   }
 
   /**
@@ -49,7 +52,11 @@ public final class LocalFileMetadata extends FileMetadata {
   @Override
   public synchronized BlockMetadata reserveBlock(final int hashValue,
                                                  final int blockSize,
-                                                 final long elementsTotal) {
+                                                 final long elementsTotal) throws IOException {
+    if (closed) {
+      throw new IOException("Cannot write a new block to a closed partition.");
+    }
+
     final BlockMetadata blockMetadata =
         new BlockMetadata(blockCount, hashValue, blockSize, position, elementsTotal);
     reserveBlockMetadataQue.add(blockMetadata);
@@ -76,6 +83,7 @@ public final class LocalFileMetadata extends FileMetadata {
    * Gets a iterable containing the block metadata of corresponding partition.
    * @see FileMetadata#getBlockMetadataIterable().
    */
+  @Override
   public Iterable<BlockMetadata> getBlockMetadataIterable() {
     return commitBlockMetadataIterable;
   }
@@ -88,8 +96,13 @@ public final class LocalFileMetadata extends FileMetadata {
     // Do nothing because this metadata is only in the local memory.
   }
 
+  /**
+   * Close to prevent further write for this partition.
+   * If someone "subscribing" the data in this partition, it will be finished.
+   */
   @Override
-  public void close() {
+  public synchronized void close() {
+    this.closed = true;
     // TODO #463: Support incremental read. Close the "ClosableBlockingIterable".
   }
 }
