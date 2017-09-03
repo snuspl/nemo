@@ -29,7 +29,6 @@ import edu.snu.vortex.runtime.common.message.MessageListener;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
-import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.metadata.MetadataManager;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -302,7 +301,7 @@ public final class PartitionStoreTest {
               IntStream.range(writeTaskNumber * NUM_READ_TASKS, (writeTaskNumber + 1) * NUM_READ_TASKS).forEach(
                   partitionNumber -> {
                     try {
-                      writerSideStore.putDataAsPartition(
+                      writerSideStore.putBlocks(
                           partitionIdList.get(partitionNumber), dataInPartitionList.get(partitionNumber)).get();
                     } catch (final InterruptedException | ExecutionException e) {
                       throw new RuntimeException(e);
@@ -337,9 +336,9 @@ public final class PartitionStoreTest {
                     try {
                       final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskNumber;
                       final Optional<Partition> partition =
-                          readerSideStore.retrieveDataFromPartition(partitionIdList.get(partitionNumber)).get();
+                          readerSideStore.retrieveData(partitionIdList.get(partitionNumber), HashRange.all()).get();
                       if (!partition.isPresent()) {
-                        throw new RuntimeException("The result of retrieveDataFromPartition(" +
+                        throw new RuntimeException("The result of retrieveData(" +
                             partitionIdList.get(partitionNumber) + ") is empty");
                       }
                       final Iterable<Element> getData;
@@ -408,7 +407,7 @@ public final class PartitionStoreTest {
       @Override
       public Boolean call() {
         try {
-          writerSideStore.putDataAsPartition(concPartitionId, dataInConcPartition).get();
+          writerSideStore.putBlocks(concPartitionId, dataInConcPartition).get();
           return true;
         } catch (final Exception e) {
           e.printStackTrace();
@@ -431,9 +430,10 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Partition> partition = readerSideStore.retrieveDataFromPartition(concPartitionId).get();
+              final Optional<Partition> partition =
+                  readerSideStore.retrieveData(concPartitionId, HashRange.all()).get();
               if (!partition.isPresent()) {
-                throw new RuntimeException("The result of retrieveDataFromPartition(" +
+                throw new RuntimeException("The result of retrieveData(" +
                     concPartitionId + ") is empty");
               }
               final Iterable<Element> getData = partition.get().asIterable();
@@ -498,7 +498,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              writerSideStore.putHashedDataAsPartition(
+              writerSideStore.putHashedData(
                   hashedPartitionIdList.get(writeTaskNumber), hashedDataInPartitionList.get(writeTaskNumber)).get();
               return true;
             } catch (final Exception e) {
@@ -528,7 +528,7 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     try {
                       final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
-                      final Optional<Partition> partition = readerSideStore.retrieveDataFromPartition(
+                      final Optional<Partition> partition = readerSideStore.retrieveData(
                           hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve).get();
                       if (!partition.isPresent()) {
                         throw new RuntimeException("The result of get partition" +
@@ -644,9 +644,9 @@ public final class PartitionStoreTest {
         try {
           try {
             final Optional<Partition> partition =
-                readerSideStore.retrieveDataFromPartition(partitionId).get();
+                readerSideStore.retrieveData(partitionId).get();
             if (!partition.isPresent()) {
-              throw new RuntimeException("The result of retrieveDataFromPartition(" + partitionId + ") is empty");
+              throw new RuntimeException("The result of retrieveData(" + partitionId + ") is empty");
             }
             final Iterable<Element> getData;
             try {

@@ -15,21 +15,35 @@
  */
 package edu.snu.vortex.runtime.executor.data.partition;
 
-import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.executor.data.Block;
+
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * This class represents a {@link Partition} which is stored in local memory and not serialized.
+ * This class represents a partition which is stored in local memory and not serialized.
  */
-public final class MemoryPartition implements Partition {
+public final class MemoryPartition {
 
-  private final Iterable<Element> data;
+  private final List<Block> blocks;
 
-  public MemoryPartition(final Iterable<Element> data) {
-    this.data = data;
+  public MemoryPartition() {
+    blocks = new LinkedList<>();
   }
 
-  @Override
-  public Iterable<Element> asIterable() {
-    return data;
+  /**
+   * Appends all data in the block to this partition.
+   *
+   * @param blocksToAppend the blocks to append.
+   */
+  public synchronized void appendBlocks(final Iterable<Block> blocksToAppend) {
+    blocksToAppend.forEach(blocks::add);
+  }
+
+  /**
+   * @return the list of the blocks in this partition.
+   */
+  public List<Block> getBlocks() {
+    return blocks;
   }
 }

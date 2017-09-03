@@ -22,6 +22,9 @@ import java.io.Serializable;
  */
 public final class HashRange implements Serializable {
   private static final HashRange ALL = new HashRange(true, 0, Integer.MAX_VALUE);
+  // A hash value which represents that a block does not have single hash value.
+  // This hash value will be thought to be included in a hash range only when the it is "ALL".
+  public static final int NOT_HASHED = -1;
 
   private final boolean all;
   private final int rangeStartInclusive;

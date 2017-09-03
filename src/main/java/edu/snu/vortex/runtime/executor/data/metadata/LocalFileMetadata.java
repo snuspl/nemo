@@ -15,60 +15,69 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.concurrent.ThreadSafe;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class represents a metadata for a local file partition.
- * It resides in local only, and does not needed to be synchronized.
+ * It resides in local only, and does not synchronize with master.
  */
+@ThreadSafe
 public final class LocalFileMetadata extends FileMetadata {
 
-  private final AtomicBoolean written; // The whole data for this partition is written or not yet.
+  private final Queue<BlockMetadata> reserveBlockMetadataQue;
+  // TODO #463: Support incremental read. Change this iterable to "ClosableBlockingIterable".
+  private final List<BlockMetadata> commitBlockMetadataIterable;
+  private volatile long position; // How many bytes are (at least, logically) written in the file.
+  private volatile int blockCount;
 
-  public LocalFileMetadata(final boolean hashed) {
-    super(hashed);
-    written = new AtomicBoolean(false);
+  public LocalFileMetadata(final boolean blockCommitPerWrite) {
+    super(blockCommitPerWrite);
+    this.reserveBlockMetadataQue = new ArrayDeque<>();
+    this.commitBlockMetadataIterable = new CopyOnWriteArrayList<>();
+    this.blockCount = 0;
+    this.position = 0;
   }
 
   /**
-   * Appends a metadata for a block.
-   * This method is not designed for concurrent write.
-   * Therefore, it does not do any synchronization and this change will valid in local only.
-   * Further synchronization will be done in {@link FileMetadata#getAndSetWritten()} if needed.
-   *
-   * @param hashValue   of the block.
-   * @param blockSize   of the block.
-   * @param numElements of the block.
+   * Reserves the region for a block and get the metadata for the block.
+   * @see FileMetadata#reserveBlock(int, int, long).
    */
   @Override
-  public long appendBlockMetadata(final int hashValue,
-                                  final int blockSize,
-                                  final long numElements) {
-    final long currentPosition = getPosition();
-    getBlockMetadataList().add(new BlockMetadata(hashValue, blockSize, currentPosition, numElements));
-    setPosition(currentPosition + blockSize);
-    return currentPosition;
+  public synchronized BlockMetadata reserveBlock(final int hashValue,
+                                                 final int blockSize,
+                                                 final long elementsTotal) {
+    final BlockMetadata blockMetadata =
+        new BlockMetadata(blockCount, hashValue, blockSize, position, elementsTotal);
+    reserveBlockMetadataQue.add(blockMetadata);
+    blockCount++;
+    position += blockSize;
+    return blockMetadata;
   }
 
   /**
-   * Gets whether the whole data for this partition is written or not yet.
-   *
-   * @return whether the whole data for this partition is written or not yet.
+   * Notifies that some blocks are written.
+   * @see FileMetadata#commitBlocks(Iterable).
    */
   @Override
-  public boolean isWritten() {
-   return written.get();
+  public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
+    blockMetadataToCommit.forEach(BlockMetadata::setCommitted);
+
+    while (reserveBlockMetadataQue.peek().isCommitted()) {
+      // If the metadata in the top of the reserved queue is committed, move it to the committed metadata iterable.
+      commitBlockMetadataIterable.add(reserveBlockMetadataQue.poll());
+    }
   }
 
   /**
-   * Marks that the whole data for this partition is written.
-   * It does not do any synchronization, because this metadata is for a local file.
-   *
-   * @return {@code true} if already set, or {@code false} if not.
+   * Gets a iterable containing the block metadata of corresponding partition.
+   * @see FileMetadata#getBlockMetadataIterable().
    */
-  @Override
-  public boolean getAndSetWritten() {
-    return written.getAndSet(true);
+  public Iterable<BlockMetadata> getBlockMetadataIterable() {
+    return commitBlockMetadataIterable;
   }
 
   /**
@@ -77,5 +86,10 @@ public final class LocalFileMetadata extends FileMetadata {
   @Override
   public void deleteMetadata() {
     // Do nothing because this metadata is only in the local memory.
+  }
+
+  @Override
+  public void close() {
+    // TODO #463: Support incremental read. Close the "ClosableBlockingIterable".
   }
 }

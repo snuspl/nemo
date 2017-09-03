@@ -26,7 +26,6 @@ import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
-import edu.snu.vortex.runtime.executor.data.partition.Partition;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionInputStream;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionOutputStream;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransfer;
@@ -35,7 +34,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -152,7 +150,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
-      store.putDataAsPartition(partitionId, data).get();
+      store.putBlocks(partitionId, data).get();
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -189,7 +187,7 @@ public final class PartitionManagerWorker {
     final Iterable<Long> blockSizeInfo;
 
     try {
-      blockSizeInfo = store.putHashedDataAsPartition(partitionId, hashedData).get().orElse(Collections.emptyList());
+      blockSizeInfo = store.putHashedData(partitionId, hashedData).get().orElse(Collections.emptyList());
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -267,33 +265,23 @@ public final class PartitionManagerWorker {
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore,
                                                                         final HashRange hashRange) {
-    LOG.info("retrieveDataFromPartition: {}", partitionId);
+    LOG.info("retrieveData: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    // If it doesn't have the partition, this future will be completed to Optional.empty()
-    final CompletableFuture<Optional<Partition>> localPartition;
-    if (hashRange.isAll()) {
-      localPartition = store.retrieveDataFromPartition(partitionId);
-    } else {
-      localPartition = store.retrieveDataFromPartition(partitionId, hashRange);
-    }
+    final CompletableFuture<Optional<Iterable<Element>>> resultData = store.retrieveData(partitionId, hashRange);
 
     final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-    localPartition.thenAccept(optionalPartition -> {
-      if (optionalPartition.isPresent()) {
+    resultData.thenAccept(optionalData -> {
+      if (optionalData.isPresent()) {
         // Partition resides in this evaluator!
-        try {
-          future.complete(optionalPartition.get().asIterable());
-        } catch (final IOException e) {
-          future.completeExceptionally(new PartitionFetchException(e));
-        }
+        future.complete(optionalData.get());
       } else if (partitionStore.equals(Attribute.RemoteFile)) {
         throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
       } else {
         // We don't have the partition here...
         requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange)
-            .thenAccept(partition -> future.complete(partition));
+            .thenAccept(dataFromRemoteWorker -> future.complete(dataFromRemoteWorker));
       }
     });
 

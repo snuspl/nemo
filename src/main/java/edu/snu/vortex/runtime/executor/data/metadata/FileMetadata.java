@@ -15,88 +15,59 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * This class represents a metadata for a (local / remote) file partition.
  */
-public abstract class FileMetadata {
+public abstract class FileMetadata implements Closeable {
 
-  private final boolean hashed; // Each block in the corresponding partition has a single hash value or not.
-  private final List<BlockMetadata> blockMetadataList;
-  private long position; // How many bytes are (at least, logically) written in the file.
+  private final boolean blockCommitPerWrite; // Whether need to commit block per every block write or not.
 
-  protected FileMetadata(final boolean hashed) {
-    this(hashed, new LinkedList<>());
-  }
-
-  protected FileMetadata(final boolean hashed,
-                         final List<BlockMetadata> blockMetadataList) {
-    this.hashed = hashed;
-    this.blockMetadataList = blockMetadataList;
-    this.position = 0;
+  protected FileMetadata(final boolean blockCommitPerWrite) {
+    this.blockCommitPerWrite = blockCommitPerWrite;
   }
 
   /**
-   * Appends a metadata for a block.
+   * Reserves the region for a block and get the metadata for the block.
    *
-   * @param hashValue   of the block.
-   * @param blockSize   of the block.
-   * @param numElements of the block.
-   * @return the position in the file to write the block.
+   * @param hashValue     the hash range of the block.
+   * @param blockSize     the size of the block.
+   * @param elementsTotal the number of elements in the block.
+   * @return the {@link BlockMetadata} having all given information, the block offset, and the index.
    * @throws IOException if fail to append the block metadata.
    */
-  public abstract long appendBlockMetadata(final int hashValue,
-                                           final int blockSize,
-                                           final long numElements) throws IOException;
+  public abstract BlockMetadata reserveBlock(final int hashValue,
+                                             final int blockSize,
+                                             final long elementsTotal) throws IOException;
 
   /**
-   * Gets the list of block metadata.
+   * Notifies that some blocks are written.
    *
-   * @return the list of block metadata.
+   * @param blockMetadataToCommit the block metadata of the blocks to commit.
    */
-  public final List<BlockMetadata> getBlockMetadataList() {
-    return blockMetadataList;
-  }
+  public abstract void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit);
 
   /**
-   * Gets whether the whole data for this partition is written or not yet.
+   * Gets a iterable containing the block metadata of corresponding partition.
+   * It returns a "blocking iterable" to which metadata for blocks that become available will be published.
    *
-   * @return whether the whole data for this partition is written or not yet.
+   * @return the "blocking iterable" containing the block metadata.
    */
-  public abstract boolean isWritten();
-
-  /**
-   * Gets the current written flag and marks true if not set yet.
-   * This method synchronizes all changes if needed.
-   *
-   * @return {@code true} if already set, or {@code false} if not.
-   * @throws IOException if fail to finish the write.
-   */
-  public abstract boolean getAndSetWritten() throws IOException;
-
-  /**
-   * Gets whether each block in the corresponding partition has a single hash value or not.
-   *
-   * @return whether each block in the corresponding partition has a single hash value or not.
-   */
-  public final boolean isHashed() {
-    return hashed;
-  }
+  public abstract Iterable<BlockMetadata> getBlockMetadataIterable();
 
   /**
    * Deletes the metadata.
+   *
    * @throws IOException if fail to delete.
    */
   public abstract void deleteMetadata() throws IOException;
 
-  protected final long getPosition() {
-    return position;
-  }
-
-  protected final void setPosition(final long position) {
-    this.position = position;
+  /**
+   * @return whether need to commit block per every block write.
+   */
+  public boolean isBlockCommitPerWrite() {
+    return blockCommitPerWrite;
   }
 }

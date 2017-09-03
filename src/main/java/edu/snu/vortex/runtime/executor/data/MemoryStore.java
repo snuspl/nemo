@@ -15,10 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
-import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
-import edu.snu.vortex.runtime.executor.data.partition.Partition;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -34,61 +32,34 @@ import java.util.stream.StreamSupport;
  */
 @ThreadSafe
 final class MemoryStore implements PartitionStore {
-  // A map between partition id and data.
-  private final ConcurrentHashMap<String, Iterable<Element>> partitionIdToData;
-  // A map between partition id and pair hash value and data block.
-  private final ConcurrentHashMap<String, Iterable<Pair<Integer, Iterable<Element>>>> partitionDataInBlocks;
+  // A map between partition id and data blocks.
+  private final ConcurrentHashMap<String, MemoryPartition> partitionIdToBlocks;
 
   @Inject
   private MemoryStore() {
-    this.partitionIdToData = new ConcurrentHashMap<>();
-    this.partitionDataInBlocks = new ConcurrentHashMap<>();
+    this.partitionIdToBlocks = new ConcurrentHashMap<>();
   }
 
   /**
-   * @see PartitionStore#retrieveDataFromPartition(String).
+   * @see PartitionStore#retrieveData(String, HashRange).
    */
   @Override
-  public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId) {
-    final Iterable<Element> partitionData = partitionIdToData.get(partitionId);
-    final Iterable<Pair<Integer, Iterable<Element>>> blockInfo = partitionDataInBlocks.get(partitionId);
+  public CompletableFuture<Optional<Iterable<Element>>> retrieveData(final String partitionId,
+                                                                     final HashRange hashRange) {
+    final CompletableFuture<Optional<Iterable<Element>>> future = new CompletableFuture<>();
+    final Iterable<Block> blocks = partitionIdToBlocks.get(partitionId).getBlocks();
 
-    final Optional<Partition> partitionOptional;
-    if (partitionData != null) {
-      partitionOptional = Optional.of(new MemoryPartition(partitionData));
-    } else if (blockInfo != null) {
-      final List<Iterable<Element>> blocks = new LinkedList<>();
-      blockInfo.forEach(pair -> blocks.add(pair.right()));
-      partitionOptional = Optional.of(new MemoryPartition(concatBlocks(blocks)));
-    } else {
-      partitionOptional = Optional.empty();
-    }
-    return CompletableFuture.completedFuture(partitionOptional);
-  }
-
-  /**
-   * @see PartitionStore#retrieveDataFromPartition(String, HashRange).
-   */
-  @Override
-  public CompletableFuture<Optional<Partition>> retrieveDataFromPartition(final String partitionId,
-                                                                          final HashRange hashRange) {
-    final CompletableFuture<Optional<Partition>> future = new CompletableFuture<>();
-    final Iterable<Pair<Integer, Iterable<Element>>> blockInfo = partitionDataInBlocks.get(partitionId);
-
-    if (blockInfo != null) {
+    if (blocks != null) {
       // Retrieves data in the hash range from the target partition
       final List<Iterable<Element>> retrievedData = new ArrayList<>(hashRange.length());
-      final Iterator<Pair<Integer, Iterable<Element>>> iterator = blockInfo.iterator();
-      iterator.forEachRemaining(pair -> {
-        if (hashRange.includes(pair.left())) {
-          retrievedData.add(pair.right());
-        } else {
-          iterator.next();
+      blocks.forEach(block -> {
+        if (hashRange.includes(block.getHashValue())) {
+          retrievedData.add(block.getData());
         }
       });
 
       if (!future.isCompletedExceptionally()) {
-        future.complete(Optional.of(new MemoryPartition(concatBlocks(retrievedData))));
+        future.complete(Optional.of(concatBlocks(retrievedData)));
       }
     } else {
       future.complete(Optional.empty());
@@ -97,36 +68,13 @@ final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#putDataAsPartition(String, Iterable).
+   * @see PartitionStore#putBlocks(String, Iterable).
    */
   @Override
-  public CompletableFuture<Optional<Long>> putDataAsPartition(final String partitionId,
-                                                              final Iterable<Element> data) {
-    final Iterable<Element> previousData = partitionIdToData.putIfAbsent(partitionId, data);
-    if (previousData != null) {
-      throw new RuntimeException("Trying to overwrite an existing partition");
-    }
-
-    partitionIdToData.put(partitionId, data);
-
-    // The partition is not serialized.
-    return CompletableFuture.completedFuture(Optional.empty());
-  }
-
-  /**
-   * @see PartitionStore#putHashedDataAsPartition(String, Iterable).
-   */
-  @Override
-  public CompletableFuture<Optional<List<Long>>> putHashedDataAsPartition(
-      final String partitionId,
-      final Iterable<Pair<Integer, Iterable<Element>>> hashedData) {
-    final Iterable<Pair<Integer, Iterable<Element>>> previousBlockedData =
-        partitionDataInBlocks.putIfAbsent(partitionId, hashedData);
-    if (previousBlockedData != null) {
-      throw new RuntimeException("Trying to overwrite an existing partition");
-    }
-
-    partitionDataInBlocks.put(partitionId, hashedData);
+  public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
+                                                           final Iterable<Block> blocks) {
+    partitionIdToBlocks.putIfAbsent(partitionId, new MemoryPartition());
+    partitionIdToBlocks.get(partitionId).appendBlocks(blocks);
 
     // The partition is not serialized.
     return CompletableFuture.completedFuture(Optional.empty());
@@ -137,8 +85,7 @@ final class MemoryStore implements PartitionStore {
    */
   @Override
   public CompletableFuture<Boolean> removePartition(final String partitionId) {
-    return CompletableFuture.completedFuture(partitionIdToData.remove(partitionId) != null
-        || partitionDataInBlocks.remove(partitionId) != null);
+    return CompletableFuture.completedFuture(partitionIdToBlocks.remove(partitionId) != null);
   }
 
   /**
