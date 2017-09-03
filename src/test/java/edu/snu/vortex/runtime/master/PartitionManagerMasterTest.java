@@ -83,7 +83,7 @@ public final class PartitionManagerMasterTest {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
 
     // Initially the partition state is READY.
-    partitionManagerMaster.initializeState(edgeId, srcTaskIndex, taskGroupId);
+    partitionManagerMaster.initializeState(partitionId, srcTaskIndex, taskGroupId);
     checkPartitionAbsentException(partitionManagerMaster.getPartitionLocationFuture(partitionId), partitionId,
         PartitionState.State.READY);
 
@@ -93,7 +93,7 @@ public final class PartitionManagerMasterTest {
     checkPendingFuture(future);
 
     // The partition is COMMITTED
-    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, null);
+    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
     checkPartitionLocation(future, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
     checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
 
@@ -116,7 +116,7 @@ public final class PartitionManagerMasterTest {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
 
     // The partition is being scheduled.
-    partitionManagerMaster.initializeState(edgeId, srcTaskIndex, taskGroupId);
+    partitionManagerMaster.initializeState(partitionId, srcTaskIndex, taskGroupId);
     partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
     final CompletableFuture<String> future0 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
     checkPendingFuture(future0);
@@ -135,7 +135,7 @@ public final class PartitionManagerMasterTest {
     checkPendingFuture(future1);
 
     // Committed.
-    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, null);
+    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
     checkPartitionLocation(future1, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
     checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
 

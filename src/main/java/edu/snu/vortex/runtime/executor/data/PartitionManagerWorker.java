@@ -33,7 +33,6 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -45,6 +44,7 @@ import org.slf4j.LoggerFactory;
 @ThreadSafe
 public final class PartitionManagerWorker {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerWorker.class.getName());
+  private static final String REMOTE_FILE_LOCATION = "REMOTE_FILE_STORE";
 
   private final String executorId;
 
@@ -115,21 +115,27 @@ public final class PartitionManagerWorker {
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore,
                                                                         final HashRange hashRange) {
-    LOG.info("getBlocks: {}", partitionId);
+    LOG.info("RetrieveDataFromPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final Optional<CompletableFuture<Iterable<Element>>> optionalResultData = store.getBlocks(partitionId, hashRange);
+    final CompletableFuture<Optional<Iterable<Element>>> resultData = store.getBlocks(partitionId, hashRange);
 
-    if (optionalResultData.isPresent()) {
-      // Partition resides in this evaluator!
-      return optionalResultData.get();
-    } else if (partitionStore.equals(Attribute.RemoteFile)) {
-      throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
-    } else {
-      // We don't have the partition here...
-      return requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange);
-    }
+    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
+    resultData.thenAccept(optionalData -> {
+      if (optionalData.isPresent()) {
+        // Partition resides in this evaluator!
+        future.complete(optionalData.get());
+      } else if (partitionStore.equals(Attribute.RemoteFile)) {
+        throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
+      } else {
+        // We don't have the partition here...
+        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange)
+            .thenAccept(dataFromRemoteWorker -> future.complete(dataFromRemoteWorker));
+      }
+    });
+
+    return future;
   }
 
   /**
@@ -209,52 +215,41 @@ public final class PartitionManagerWorker {
    * @param partitionStore to store the partition.
    * @param blockSizeInfo  the size metric of blocks.
    * @param srcIRVertexId  of the source task.
-   * @param srcTaskIdx     of the source task. TODO #431: Partition Metadata Cleanup. rethink this.
-   * @param partial        whether this commit is partial or not. TODO #431: Partition Metadata Cleanup. rethink this.
+   * @param srcTaskIdx     of the source task.
    */
   public void commitPartition(final String partitionId,
                               final Attribute partitionStore,
                               final List<Long> blockSizeInfo,
                               final String srcIRVertexId,
-                              final int srcTaskIdx,
-                              final boolean partial) {
+                              final int srcTaskIdx) {
     LOG.info("CommitPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     store.commitPartition(partitionId);
+    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+        ControlMessage.PartitionStateChangedMsg.newBuilder()
+            .setExecutorId(executorId)
+            .setPartitionId(partitionId)
+            .setSrcTaskIdx(srcTaskIdx)
+            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
-    if (partial) {
-      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-          ControlMessage.PartitionStateChangedMsg.newBuilder()
-              .setExecutorId(executorId)
-              .setPartitionId(partitionId)
-              .setSrcTaskIdx(srcTaskIdx)
-              .setState(ControlMessage.PartitionStateFromExecutor.PARTIAL_COMMITTED);
-
-      persistentConnectionToMaster.getMessageSender().send(
-          ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-              .build());
+    if (partitionStore == Attribute.RemoteFile) {
+      partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_LOCATION);
     } else {
-      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-          ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
-              .setPartitionId(partitionId)
-              .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
-
-      if (!blockSizeInfo.isEmpty()) {
-        // TODO 428: DynOpt-clean up the metric collection flow
-        partitionStateChangedMsgBuilder.addAllBlockSizeInfo(blockSizeInfo);
-        partitionStateChangedMsgBuilder.setSrcIRVertexId(srcIRVertexId);
-      }
-
-      persistentConnectionToMaster.getMessageSender().send(
-          ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-              .build());
+      partitionStateChangedMsgBuilder.setLocation(executorId);
     }
+
+    if (!blockSizeInfo.isEmpty()) {
+      // TODO 428: DynOpt-clean up the metric collection flow
+      partitionStateChangedMsgBuilder.addAllBlockSizeInfo(blockSizeInfo);
+      partitionStateChangedMsgBuilder.setSrcIRVertexId(srcIRVertexId);
+    }
+
+    persistentConnectionToMaster.getMessageSender().send(
+        ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setType(ControlMessage.MessageType.PartitionStateChanged)
+            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
+            .build());
   }
 
   /**
@@ -275,16 +270,23 @@ public final class PartitionManagerWorker {
     }
 
     if (exist) {
+      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+          ControlMessage.PartitionStateChangedMsg.newBuilder()
+              .setExecutorId(executorId)
+              .setPartitionId(partitionId)
+              .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
+
+      if (partitionStore == Attribute.RemoteFile) {
+        partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_LOCATION);
+      } else {
+        partitionStateChangedMsgBuilder.setLocation(executorId);
+      }
+
       persistentConnectionToMaster.getMessageSender().send(
           ControlMessage.Message.newBuilder()
               .setId(RuntimeIdGenerator.generateMessageId())
               .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(
-                  ControlMessage.PartitionStateChangedMsg.newBuilder()
-                      .setExecutorId(executorId)
-                      .setPartitionId(partitionId)
-                      .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
-                      .build())
+              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder)
               .build());
     } else {
       throw new PartitionFetchException(new Throwable("Cannot find corresponding partition " + partitionId));
