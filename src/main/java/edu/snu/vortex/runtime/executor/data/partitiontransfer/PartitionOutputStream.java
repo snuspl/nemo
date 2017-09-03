@@ -190,8 +190,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
         // Before investigating on low rate of decoding, check the rate of the byte stream.
         LOG.debug("Encoding task took {} ms to complete for {} ({} bytes, buffer size: {})",
             new Object[]{endTime - startTime, toString(), byteBufOutputStream.streamLength, bufferSize});
-        System.out.println(String.format("SEND,%s,%d,%s", receiverExecutorId, byteBufOutputStream.streamLength,
-            toString()));
       } catch (final Exception e) {
         LOG.error(String.format("An exception in encoding thread for %s", toString()), e);
         throw new RuntimeException(e);
