@@ -50,13 +50,13 @@ public final class ScheduleGroupPassTest {
   public void testScheduleGroupPass() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG = Optimizer.optimize(compiledDAG, Optimizer.PolicyType.TestingPolicy, "");
 
-    Integer previousScheduleGroupIndex = 0;
+    Integer previousScheduleGroupId = 0;
     for (final IRVertex irVertex : processedDAG.getTopologicalSort()) {
-      assertTrue(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex) != null);
-      final Integer currentScheduleGroupIndex = irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex);
-      assertTrue(currentScheduleGroupIndex >= previousScheduleGroupIndex);
-      if (currentScheduleGroupIndex > previousScheduleGroupIndex) {
-        previousScheduleGroupIndex = currentScheduleGroupIndex;
+      assertTrue(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupId) != null);
+      final Integer currentScheduleGroupId = irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupId);
+      assertTrue(currentScheduleGroupId >= previousScheduleGroupId);
+      if (currentScheduleGroupId > previousScheduleGroupId) {
+        previousScheduleGroupId = currentScheduleGroupId;
       }
     }
   }
