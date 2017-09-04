@@ -95,7 +95,7 @@ message ContainerFailedMsg {
 }
 
 message MetricMsg {
-    required string metricMessage = 1;
+    repeated string metricMessages = 1;
 }
 
 // Messages between Executors

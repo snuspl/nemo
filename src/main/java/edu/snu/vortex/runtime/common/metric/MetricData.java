@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.runtime.common.metric;
 
-import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.snu.vortex.runtime.exception.JsonParseException;
 
 /**
  * MetricData that holds executor side metrics.
@@ -29,6 +30,7 @@ public class MetricData {
   private final String startState;
   private final String endState;
   private final long elapsedTime;
+  private final ObjectMapper objectMapper;
 
   public MetricData(final Enum computationUnit,
                     final String computationUnitId,
@@ -44,6 +46,7 @@ public class MetricData {
     this.startState = startState;
     this.endState = endState;
     this.elapsedTime = elapsedTime;
+    objectMapper = new ObjectMapper();
   }
 
   public final Enum getComputationUnit() {
@@ -77,32 +80,12 @@ public class MetricData {
     TASK
   }
 
-  public final Map<String, Object> toJson() {
-    final Map<String, Object> jsonMetricData = new HashMap<>();
-    jsonMetricData.put(getComputationUnit().name(), getComputationUnitId());
-    jsonMetricData.put("Executor", getExecutorId());
-    jsonMetricData.put("StageScheduleAttemptIdx", getStageScheduleAttemptIdx());
-    jsonMetricData.put("StartState", getStartState());
-    jsonMetricData.put("EndState", getEndState());
-    jsonMetricData.put("ElapsedTime", getElapsedTime());
-
-    return jsonMetricData;
-  }
-
-  @Override
-  public final String toString() {
-    final StringBuilder sb = new StringBuilder();
-    sb.append(getComputationUnit().name()).append(": ").append(getComputationUnitId());
-    if (getExecutorId() != null) {
-      sb.append(" Executor: ").append(getExecutorId());
+  public final String toJson() {
+    try {
+      final String jsonStr = objectMapper.writeValueAsString(this);
+      return jsonStr;
+    } catch (final Exception e) {
+      throw new JsonParseException(e);
     }
-    if (getStageScheduleAttemptIdx() != -1) {
-      sb.append(" Attempted to schedule ").append(getStageScheduleAttemptIdx()).append(" times");
-    }
-    sb.append(" ").append(getStartState()).append(" ~ ").append(getEndState());
-    sb.append(" ").append(getElapsedTime() / 1000).append("us")
-        .append("(").append(getElapsedTime() / 1000000000).append("s)");
-
-    return sb.toString();
   }
 }

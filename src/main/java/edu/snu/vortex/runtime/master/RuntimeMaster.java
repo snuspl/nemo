@@ -31,6 +31,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.exception.JsonParseException;
 import edu.snu.vortex.runtime.exception.UnknownExecutionStateException;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
@@ -175,14 +176,21 @@ public final class RuntimeMaster {
         containerManager.onExecutorRemoved(failedExecutorId);
         throw new RuntimeException(exception);
         case ContainerFailed:
+          final Map<String, Object> jsonMetricData = new HashMap<>();
           final ControlMessage.ContainerFailedMsg containerFailedMsg = message.getContainerFailedMsg();
-          final String failedContainerExecutorId = containerFailedMsg.getExecutorId();
-          jobStateManager.getMetricMessageHandler().onMetricMessageReceived(
-              "Executor " + failedContainerExecutorId + " FAILED_RECOVERABLE:CONTAINER_FAILURE");
+          jsonMetricData.put("ExecutorId", containerFailedMsg.getExecutorId());
+          jsonMetricData.put("ContainerFailure", true);
+          try {
+            final String jsonStr = objectMapper.writeValueAsString(jsonMetricData);
+            jobStateManager.getMetricMessageHandler().onMetricMessageReceived(jsonStr);
+          } catch (final Exception e) {
+            throw new JsonParseException(e);
+          }
           break;
         case MetricMessageReceived:
         final ControlMessage.MetricMsg metricMsg = message.getMetricMsg();
-        jobStateManager.getMetricMessageHandler().onMetricMessageReceived(metricMsg.getMetricMessage());
+        metricMsg.getMetricMessagesList().stream()
+            .forEach((msg) -> jobStateManager.getMetricMessageHandler().onMetricMessageReceived(msg));
         break;
       case StoreMetadata:
         partitionManagerMaster.getMetadataManager().onStoreMetadata(message);

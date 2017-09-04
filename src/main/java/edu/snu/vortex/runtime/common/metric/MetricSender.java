@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.common.metric;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
+import java.util.*;
 
 /**
  * Interface for metric sender.
@@ -23,5 +24,5 @@ import org.apache.reef.tang.annotations.DefaultImplementation;
 @DefaultImplementation(PeriodicMetricSender.class)
 public interface MetricSender extends AutoCloseable {
 
-  void send(String metricData);
+  void send(final String jsonStr);
 }

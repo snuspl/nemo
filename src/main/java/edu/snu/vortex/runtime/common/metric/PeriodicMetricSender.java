@@ -15,7 +15,6 @@
  */
 package edu.snu.vortex.runtime.common.metric;
 
-import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.UnknownFailureCauseException;
@@ -24,8 +23,10 @@ import edu.snu.vortex.runtime.common.metric.parameter.MetricFlushPeriod;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,30 +43,63 @@ public final class PeriodicMetricSender implements MetricSender {
 
   @Inject
   private PeriodicMetricSender(@Parameter(MetricFlushPeriod.class) final long flushingPeriod,
-                               @Parameter(JobConf.ExecutorId.class) final String executorId,
                                final PersistentConnectionToMaster persistentConnectionToMaster) {
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.metricMessageQueue = new LinkedBlockingQueue<>();
     this.closed = new AtomicBoolean(false);
-    this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-      while (!closed.get() || !metricMessageQueue.isEmpty()) {
-        final String metricMsg = metricMessageQueue.poll();
-        final ControlMessage.MetricMsg.Builder metricMsgBuilder = ControlMessage.MetricMsg.newBuilder()
-            .setMetricMessage(metricMsg);
+    Runnable batchMetricMessages = new Runnable() {
+      @Override
+      public void run() {
+        while (!closed.get() && !metricMessageQueue.isEmpty()) {
 
-        persistentConnectionToMaster.getMessageSender().send(
-            ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.MetricMessageReceived)
-            .setMetricMsg(metricMsgBuilder.build())
-            .build());
+          // Build batched metric messages
+          int size = metricMessageQueue.size();
+
+          final ControlMessage.MetricMsg.Builder metricMsgBuilder = ControlMessage.MetricMsg.newBuilder();
+
+          for (int i = 0; i < size; i++) {
+            final String metricMsg = metricMessageQueue.poll();
+            metricMsgBuilder.setMetricMessages(i, metricMsg);
+          }
+
+          persistentConnectionToMaster.getMessageSender().send(
+              ControlMessage.Message.newBuilder()
+                  .setId(RuntimeIdGenerator.generateMessageId())
+                  .setType(ControlMessage.MessageType.MetricMessageReceived)
+                  .setMetricMsg(metricMsgBuilder.build())
+                  .build());
+        }
       }
-    }, 0, flushingPeriod, TimeUnit.MILLISECONDS);
+    };
+    this.scheduledExecutorService.scheduleAtFixedRate(batchMetricMessages,
+        0, flushingPeriod, TimeUnit.MILLISECONDS);
+  }
+
+  public void startPoint(final Enum computationUnitEnum,
+                         final String computationUnitId,
+                         final String computationUnitKey,
+                         final String executorId,
+                         final int attemptIdx,
+                         final Enum state,
+                         final Map<String, MetricDataBuilder> metricDataBuilderMap) {
+    final MetricDataBuilder metricDataBuilder = new MetricDataBuilder(computationUnitEnum,
+                                                                      computationUnitId, executorId);
+    metricDataBuilder.beginMeasurement(attemptIdx, state, System.nanoTime());
+    metricDataBuilderMap.put(computationUnitKey, metricDataBuilder);
+  }
+
+  public void endPoint(final String computationUnitKey,
+                       final Enum state,
+                       final Map<String, MetricDataBuilder> metricDataBuilderMap) {
+    final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(computationUnitKey);
+    metricDataBuilder.endMeasurement(state, System.nanoTime());
+    send(metricDataBuilder.build().toJson());
+    metricDataBuilderMap.remove(computationUnitKey);
   }
 
   @Override
-  public void send(final String metricData) {
-    metricMessageQueue.add(metricData);
+  public void send(final String jsonStr) {
+    metricMessageQueue.add(jsonStr);
   }
 
   @Override

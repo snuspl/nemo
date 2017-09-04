@@ -205,19 +205,16 @@ public final class JobStateManager {
     if (newState == JobState.State.EXECUTING) {
       LOG.debug("Executing Job ID {}...", jobId);
       jobState.getStateMachine().setState(newState);
-      metricDataBuilder = new MetricDataBuilder(MetricData.ComputationUnit.JOB, jobId, null);
-      metricDataBuilder.beginMeasurement(-1, newState, System.nanoTime());
-      metricDataBuilderMap.put(jobKey, metricDataBuilder);
+      metricMessageHandler.startPoint(MetricData.ComputationUnit.JOB, jobId, jobKey,
+                                      null, -1, newState,
+                                      metricDataBuilderMap);
     } else if (newState == JobState.State.COMPLETE) {
       LOG.debug("Job ID {} complete!", jobId);
       // Awake all threads waiting the finish of this job.
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        metricDataBuilder = metricDataBuilderMap.get(jobKey);
-        metricDataBuilder.endMeasurement(newState, System.nanoTime());
-        metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
-        metricDataBuilderMap.remove(jobKey);
+        metricMessageHandler.endPoint(jobKey, newState, metricDataBuilderMap);
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -228,10 +225,7 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        metricDataBuilder = metricDataBuilderMap.get(jobKey);
-        metricDataBuilder.endMeasurement(newState, System.nanoTime());
-        metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
-        metricDataBuilderMap.remove(jobKey);
+        metricMessageHandler.endPoint(jobKey, newState, metricDataBuilderMap);
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -254,7 +248,6 @@ public final class JobStateManager {
     stageStateMachine.setState(newState);
 
     String stageKey = MetricData.ComputationUnit.STAGE.name() + stageId;
-    final MetricDataBuilder metricDataBuilder;
 
     if (newState == StageState.State.EXECUTING) {
       if (scheduleAttemptIdxByStage.containsKey(stageId)) {
@@ -270,9 +263,9 @@ public final class JobStateManager {
         scheduleAttemptIdxByStage.put(stageId, 1);
       }
 
-      metricDataBuilder = new MetricDataBuilder(MetricData.ComputationUnit.STAGE, stageId, null);
-      metricDataBuilder.beginMeasurement(scheduleAttemptIdxByStage.get(stageId), newState, System.nanoTime());
-      metricDataBuilderMap.put(stageKey, metricDataBuilder);
+      metricMessageHandler.startPoint(MetricData.ComputationUnit.STAGE, stageId, stageKey,
+                                      null, scheduleAttemptIdxByStage.get(stageId), newState,
+                                      metricDataBuilderMap);
 
       // if there exists a mapping, this state change is from a failed_recoverable stage,
       // and there may be task groups that do not need to be re-executed.
@@ -291,23 +284,13 @@ public final class JobStateManager {
         }
       }
     } else if (newState == StageState.State.COMPLETE) {
-
-      metricDataBuilder = metricDataBuilderMap.get(stageKey);
-      metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
-      metricDataBuilderMap.remove(stageKey);
-
+      metricMessageHandler.endPoint(stageKey, newState, metricDataBuilderMap);
       currentJobStageIds.remove(stageId);
       if (currentJobStageIds.isEmpty()) {
         onJobStateChanged(JobState.State.COMPLETE);
       }
     } else if (newState == StageState.State.FAILED_RECOVERABLE) {
-
-      metricDataBuilder = metricDataBuilderMap.get(stageKey);
-      metricDataBuilder.endMeasurement(newState, System.nanoTime());
-      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toString());
-      metricDataBuilderMap.remove(stageKey);
-
+      metricMessageHandler.endPoint(stageKey, newState, metricDataBuilderMap);
       currentJobStageIds.add(stageId);
     }
   }
