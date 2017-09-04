@@ -92,9 +92,10 @@ final class LocalFileStore extends FileStore {
       final LocalFileMetadata metadata = new LocalFileMetadata(commitPerBlock);
 
       try {
-        final FilePartition partition =
+        FilePartition partition =
             new FilePartition(coder, partitionIdToFilePath(partitionId), metadata);
         partitionIdToData.putIfAbsent(partitionId, partition);
+        partition = partitionIdToData.get(partitionId);
 
         // Serialize and write the given blocks.
         blockSizeList = putBlocks(coder, partition, blocks);
@@ -106,6 +107,21 @@ final class LocalFileStore extends FileStore {
       return Optional.of(blockSizeList);
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
+  }
+
+  /**
+   * @see PartitionStore#commitPartition(String).
+   */
+  @Override
+  public void commitPartition(final String partitionId) throws PartitionWriteException {
+    final FilePartition partition = partitionIdToData.get(partitionId);
+    if (partition != null) {
+      try {
+        partition.close();
+      } catch (final IOException e) {
+        throw new PartitionWriteException(e);
+      }
+    }
   }
 
   /**

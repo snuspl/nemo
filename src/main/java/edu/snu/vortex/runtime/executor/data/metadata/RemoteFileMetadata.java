@@ -169,7 +169,7 @@ public final class RemoteFileMetadata extends FileMetadata {
    */
   @Override
   public synchronized void close() {
-    // TODO #463: Support incremental read. Close the "ClosableBlockingIterable".
+    // TODO #463: Support incremental write. Close the "ClosableBlockingIterable".
   }
 
   /**
@@ -204,7 +204,7 @@ public final class RemoteFileMetadata extends FileMetadata {
 
     assert (responseFromMaster.getType() == ControlMessage.MessageType.MetadataResponse);
     final ControlMessage.MetadataResponseMsg metadataResponseMsg = responseFromMaster.getMetadataResponseMsg();
-    if (!metadataResponseMsg.hasState()) {
+    if (metadataResponseMsg.hasState()) {
       // Response has an exception state.
       throw new IOException(new Throwable(
           "Cannot get the metadata of partition " + partitionId + " from the metadata server: "
@@ -213,7 +213,7 @@ public final class RemoteFileMetadata extends FileMetadata {
 
     // Construct the metadata from the response.
     final List<ControlMessage.BlockMetadataMsg> blockMetadataMsgList = metadataResponseMsg.getBlockMetadataList();
-    for (int blockIdx = 0; blockIdx < blockMetadataList.size(); blockIdx++) {
+    for (int blockIdx = 0; blockIdx < blockMetadataMsgList.size(); blockIdx++) {
       final ControlMessage.BlockMetadataMsg blockMetadataMsg = blockMetadataMsgList.get(blockIdx);
       if (!blockMetadataMsg.hasOffset()) {
         throw new IOException(new Throwable(

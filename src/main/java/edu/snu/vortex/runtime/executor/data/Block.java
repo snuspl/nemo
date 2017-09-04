@@ -19,21 +19,21 @@ import edu.snu.vortex.compiler.ir.Element;
 
 /**
  * A collection of data {@link Element}.
- * TODO: read and write?
  * This is a unit of write towards {@link PartitionStore}s,
  * but it can be split into multiple blocks inside the store according to it's size.
+ * TODO #463: Support incremental write. Consider to make the {@link Block} as a unit of read also.
  */
 public final class Block {
 
   private final int hashValue;
   private final Iterable<Element> data;
 
-  Block(final Iterable<Element> data) {
+  public Block(final Iterable<Element> data) {
     this(HashRange.NOT_HASHED, data);
   }
 
-  Block(final int hashValue,
-        final Iterable<Element> data) {
+  public Block(final int hashValue,
+               final Iterable<Element> data) {
     this.hashValue = hashValue;
     this.data = data;
   }

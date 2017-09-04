@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public interface PartitionStore {
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range
-   * TODO #463: Support incremental read. Consider returning Iterable<Block>.
+   * TODO #463: Support incremental write. Consider returning Iterable<Block>.
    * @return the result data as a new partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
@@ -45,7 +46,7 @@ public interface PartitionStore {
    * This method supports concurrent write, but these blocks may not be saved consecutively.
    *
    * @param partitionId    of the partition.
-   * @param blocks         to save as a partition.
+   * @param blocks         to save to a partition.
    * @param commitPerBlock whether commit every block write or not.
    * @return the size of the data per block (only when the data is serialized).
    *         (the future completes with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
@@ -54,6 +55,14 @@ public interface PartitionStore {
   CompletableFuture<Optional<List<Long>>> putBlocks(String partitionId,
                                                     Iterable<Block> blocks,
                                                     boolean commitPerBlock);
+
+  /**
+   * Notifies that all writes for a partition is end.
+   *
+   * @param partitionId of the partition.
+   * @throws PartitionWriteException if fail to commit.
+   */
+  void commitPartition(String partitionId) throws PartitionWriteException;
 
   /**
    * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;

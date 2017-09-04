@@ -77,7 +77,7 @@ final class MetadataInServer {
     // Mark the blocks committed.
     blockIndicesToCommit.forEach(idx -> blockMetadataList.get(idx).setCommitted());
 
-    while (blockMetadataList.get(publishCursor).isCommitted()) {
+    while (publishCursor < blockMetadataList.size() && blockMetadataList.get(publishCursor).isCommitted()) {
       // If the first block in the un-published section is committed, publish it.
       // TODO #463: Support incremental read. Send the newly committed blocks to subscribers.
       publishCursor++;
@@ -98,8 +98,8 @@ final class MetadataInServer {
    * The block metadata in server side.
    */
   final class BlockMetadataInServer {
-    final ControlMessage.BlockMetadataMsg blockMetadataMsg;
-    volatile boolean committed;
+    private final ControlMessage.BlockMetadataMsg blockMetadataMsg;
+    private volatile boolean committed;
 
     BlockMetadataInServer(final ControlMessage.BlockMetadataMsg blockMetadataMsg) {
       this.blockMetadataMsg = blockMetadataMsg;

@@ -21,18 +21,20 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class represents a partition which is stored in local memory and not serialized.
- * TODO #463: Support incremental read.
  */
 @ThreadSafe
 public final class MemoryPartition implements Closeable {
 
   private final List<Block> blocks;
+  private volatile AtomicBoolean closed;
 
   public MemoryPartition() {
     blocks = new CopyOnWriteArrayList<>();
+    closed = new AtomicBoolean(false);
   }
 
   /**
@@ -41,7 +43,10 @@ public final class MemoryPartition implements Closeable {
    * @param blocksToAppend the blocks to append.
    */
   public void appendBlocks(final Iterable<Block> blocksToAppend) {
-    blocksToAppend.forEach(blocks::add);
+    if (!closed.get()) {
+      // TODO #463: Support incremental write.
+      blocksToAppend.forEach(blocks::add);
+    }
   }
 
   /**
@@ -57,5 +62,6 @@ public final class MemoryPartition implements Closeable {
    */
   @Override
   public void close() {
+    closed.set(true);
   }
 }

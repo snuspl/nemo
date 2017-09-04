@@ -73,7 +73,7 @@ public final class LocalFileMetadata extends FileMetadata {
   public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
     blockMetadataToCommit.forEach(BlockMetadata::setCommitted);
 
-    while (reserveBlockMetadataQue.peek().isCommitted()) {
+    while (!reserveBlockMetadataQue.isEmpty() && reserveBlockMetadataQue.peek().isCommitted()) {
       // If the metadata in the top of the reserved queue is committed, move it to the committed metadata iterable.
       commitBlockMetadataIterable.add(reserveBlockMetadataQue.poll());
     }

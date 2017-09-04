@@ -33,11 +33,11 @@ import java.util.stream.StreamSupport;
 @ThreadSafe
 final class MemoryStore implements PartitionStore {
   // A map between partition id and data blocks.
-  private final ConcurrentHashMap<String, MemoryPartition> partitionIdToBlocks;
+  private final ConcurrentHashMap<String, MemoryPartition> partitionMap;
 
   @Inject
   private MemoryStore() {
-    this.partitionIdToBlocks = new ConcurrentHashMap<>();
+    this.partitionMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -47,11 +47,12 @@ final class MemoryStore implements PartitionStore {
   public CompletableFuture<Optional<Iterable<Element>>> retrieveData(final String partitionId,
                                                                      final HashRange hashRange) {
     final CompletableFuture<Optional<Iterable<Element>>> future = new CompletableFuture<>();
-    final Iterable<Block> blocks = partitionIdToBlocks.get(partitionId).getBlocks();
+    final MemoryPartition partition = partitionMap.get(partitionId);
 
-    if (blocks != null) {
+    if (partition != null) {
+      final Iterable<Block> blocks = partition.getBlocks();
       // Retrieves data in the hash range from the target partition
-      final List<Iterable<Element>> retrievedData = new ArrayList<>(hashRange.length());
+      final List<Iterable<Element>> retrievedData = new ArrayList<>();
       blocks.forEach(block -> {
         if (hashRange.includes(block.getHashValue())) {
           retrievedData.add(block.getData());
@@ -74,11 +75,22 @@ final class MemoryStore implements PartitionStore {
   public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
                                                            final Iterable<Block> blocks,
                                                            final boolean commitPerBlock) {
-    partitionIdToBlocks.putIfAbsent(partitionId, new MemoryPartition());
-    partitionIdToBlocks.get(partitionId).appendBlocks(blocks);
+    partitionMap.putIfAbsent(partitionId, new MemoryPartition());
+    partitionMap.get(partitionId).appendBlocks(blocks);
 
     // The partition is not serialized.
     return CompletableFuture.completedFuture(Optional.empty());
+  }
+
+  /**
+   * @see PartitionStore#commitPartition(String).
+   */
+  @Override
+  public void commitPartition(final String partitionId) {
+    final MemoryPartition partition = partitionMap.get(partitionId);
+    if (partition != null) {
+      partition.close();
+    }
   }
 
   /**
@@ -86,7 +98,7 @@ final class MemoryStore implements PartitionStore {
    */
   @Override
   public CompletableFuture<Boolean> removePartition(final String partitionId) {
-    return CompletableFuture.completedFuture(partitionIdToBlocks.remove(partitionId) != null);
+    return CompletableFuture.completedFuture(partitionMap.remove(partitionId) != null);
   }
 
   /**

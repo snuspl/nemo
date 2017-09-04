@@ -68,7 +68,7 @@ public abstract class FileMetadata implements Closeable {
   /**
    * @return whether commit every block write or not.
    */
-  public boolean isBlockCommitPerWrite() {
+  public final boolean isBlockCommitPerWrite() {
     return blockCommitPerWrite;
   }
 }

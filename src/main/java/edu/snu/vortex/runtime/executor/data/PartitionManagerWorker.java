@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
@@ -101,158 +100,8 @@ public final class PartitionManagerWorker {
   }
 
   /**
-   * Remove the partition from store.
-   *
-   * @param partitionId    of the partition to remove.
-   * @param partitionStore tha the partition is stored.
-   * @return whether the partition is removed or not.
-   */
-  public boolean removePartition(final String partitionId,
-                                 final Attribute partitionStore) {
-    LOG.info("RemovePartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-    final boolean exist;
-    try {
-      exist = store.removePartition(partitionId).get();
-    } catch (final InterruptedException | ExecutionException e) {
-      throw new PartitionFetchException(e);
-    }
-
-    if (exist) {
-      persistentConnectionToMaster.getMessageSender().send(
-          ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(
-                  ControlMessage.PartitionStateChangedMsg.newBuilder()
-                      .setExecutorId(executorId)
-                      .setPartitionId(partitionId)
-                      .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
-                      .build())
-              .build());
-    }
-
-    return exist;
-  }
-
-  /**
-   * Store partition to the target {@code PartitionStore}.
-   * Invariant: This should be invoked only once per partitionId.
-   *
-   * @param partitionId    of the partition.
-   * @param data           of the partition.
-   * @param partitionStore to store the partition.
-   */
-  public void putPartition(final String partitionId,
-                           final Iterable<Element> data,
-                           final Attribute partitionStore) {
-    LOG.info("PutPartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-
-    try {
-      store.putBlocks(partitionId, data).get();
-    } catch (final Exception e) {
-      throw new PartitionWriteException(e);
-    }
-
-    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-        ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
-            .setPartitionId(partitionId)
-            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
-
-    persistentConnectionToMaster.getMessageSender().send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-            .build());
-  }
-
-  /**
-   * Store a hashed partition to the target {@code PartitionStore}.
-   * Each block (an {@link Iterable} of elements} has a single hash value.
-   * Invariant: This should be invoked only once per partitionId.
-   *
-   * @param partitionId    of the partition.
-   * @param srcIRVertexId  of the source task.
-   * @param hashedData     of the partition. Each pair consists of the hash value and the block data.
-   * @param partitionStore to store the partition.
-   */
-  public void putHashedPartition(final String partitionId,
-                                 final String srcIRVertexId,
-                                 final Iterable<Pair<Integer, Iterable<Element>>> hashedData,
-                                 final Attribute partitionStore) {
-    LOG.info("PutHashedPartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-    final Iterable<Long> blockSizeInfo;
-
-    try {
-      blockSizeInfo = store.putHashedData(partitionId, hashedData).get().orElse(Collections.emptyList());
-    } catch (final Exception e) {
-      throw new PartitionWriteException(e);
-    }
-
-    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-        ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
-            .setPartitionId(partitionId)
-            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
-
-    // TODO 428: DynOpt-clean up the metric collection flow
-    partitionStateChangedMsgBuilder.addAllBlockSizeInfo(blockSizeInfo);
-    partitionStateChangedMsgBuilder.setSrcIRVertexId(srcIRVertexId);
-
-    persistentConnectionToMaster.getMessageSender().send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-            .build());
-  }
-
-  /**
-   * Appends a hashed data blocks to a partition in the target {@code PartitionStore}.
-   * Each block (an {@link Iterable} of elements} has a single hash value, and the block becomes a unit of read & write.
-   * Because this method is designed to support concurrent write, this can be invoked multiple times per partitionId,
-   * and the blocks may not be saved consecutively.
-   *
-   * @param partitionId    of the partition.
-   * @param srcTaskIdx     of the source task.
-   * @param hashedData     of the partition. Each pair consists of the hash value and the block data.
-   * @param partitionStore to store the partition.
-   */
-  public void appendHashedDataToPartition(final String partitionId,
-                                          final int srcTaskIdx,
-                                          final Iterable<Pair<Integer, Iterable<Element>>> hashedData,
-                                          final Attribute partitionStore) {
-    LOG.info("AppendHashedDataToPartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-
-    try {
-      // At now, appending blocks to an existing partition is supported for remote file only.
-      assert store instanceof RemoteFileStore;
-      ((RemoteFileStore) store).appendHashedData(partitionId, hashedData).get();
-    } catch (final Exception e) {
-      throw new PartitionWriteException(e);
-    }
-
-    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-        ControlMessage.PartitionStateChangedMsg.newBuilder()
-            .setExecutorId(executorId)
-            .setPartitionId(partitionId)
-            .setSrcTaskIdx(srcTaskIdx)
-            .setState(ControlMessage.PartitionStateFromExecutor.PARTIAL_COMMITTED);
-
-    persistentConnectionToMaster.getMessageSender().send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-            .build());
-  }
-
-  /**
    * Retrieves data from the stored partition. A specific hash value range can be designated.
-   * Unlike putPartition, this can be invoked multiple times per partitionId (maybe due to failures).
+   * This can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
    *
    * @param partitionId    of the partition.
@@ -335,6 +184,120 @@ public final class PartitionManagerWorker {
       return partitionTransfer.initiatePull(remoteWorkerId, false, partitionStore, partitionId, runtimeEdgeId,
           hashRange).getCompleteFuture();
     });
+  }
+
+  /**
+   * Store an iterable of data blocks to a partition in the target {@code PartitionStore}.
+   * Invariant: This should be invoked after a partition is committed.
+   *
+   * @param partitionId    of the partition.
+   * @param blocks         to save to a partition.
+   * @param partitionStore to store the partition.
+   * @param commitPerBlock whether commit every block write or not.
+   * @return a {@link CompletableFuture} of the size of each written block.
+   */
+  public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
+                                                           final Iterable<Block> blocks,
+                                                           final Attribute partitionStore,
+                                                           final boolean commitPerBlock) {
+    LOG.info("PutBlocks: {}", partitionId);
+    final PartitionStore store = getPartitionStore(partitionStore);
+
+    try {
+      return store.putBlocks(partitionId, blocks, commitPerBlock);
+    } catch (final Exception e) {
+      throw new PartitionWriteException(e);
+    }
+  }
+
+  /**
+   * Notifies that all writes for a partition is end.
+   *
+   * @param partitionId    of the partition.
+   * @param partitionStore to store the partition.
+   * @param blockSizeInfo  the size metric of blocks.
+   * @param srcIRVertexId  of the source task.
+   * @param srcTaskIdx     of the source task. TODO #431: Partition Metadata Cleanup. rethink this.
+   * @param partial        whether this commit is partial or not. TODO #431: Partition Metadata Cleanup. rethink this.
+   */
+  public void commitPartition(final String partitionId,
+                              final Attribute partitionStore,
+                              final List<Long> blockSizeInfo,
+                              final String srcIRVertexId,
+                              final int srcTaskIdx,
+                              final boolean partial) {
+    LOG.info("CommitPartition: {}", partitionId);
+    final PartitionStore store = getPartitionStore(partitionStore);
+    store.commitPartition(partitionId);
+
+    if (partial) {
+      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+          ControlMessage.PartitionStateChangedMsg.newBuilder()
+              .setExecutorId(executorId)
+              .setPartitionId(partitionId)
+              .setSrcTaskIdx(srcTaskIdx)
+              .setState(ControlMessage.PartitionStateFromExecutor.PARTIAL_COMMITTED);
+
+      persistentConnectionToMaster.getMessageSender().send(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.PartitionStateChanged)
+              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
+              .build());
+    } else {
+      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+          ControlMessage.PartitionStateChangedMsg.newBuilder().setExecutorId(executorId)
+              .setPartitionId(partitionId)
+              .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
+
+      if (!blockSizeInfo.isEmpty()) {
+        // TODO 428: DynOpt-clean up the metric collection flow
+        partitionStateChangedMsgBuilder.addAllBlockSizeInfo(blockSizeInfo);
+        partitionStateChangedMsgBuilder.setSrcIRVertexId(srcIRVertexId);
+      }
+
+      persistentConnectionToMaster.getMessageSender().send(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.PartitionStateChanged)
+              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
+              .build());
+    }
+  }
+
+  /**
+   * Remove the partition from store.
+   *
+   * @param partitionId    of the partition to remove.
+   * @param partitionStore tha the partition is stored.
+   * @return whether the partition is removed or not.
+   */
+  public boolean removePartition(final String partitionId,
+                                 final Attribute partitionStore) {
+    LOG.info("RemovePartition: {}", partitionId);
+    final PartitionStore store = getPartitionStore(partitionStore);
+    final boolean exist;
+    try {
+      exist = store.removePartition(partitionId).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new PartitionFetchException(e);
+    }
+
+    if (exist) {
+      persistentConnectionToMaster.getMessageSender().send(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setType(ControlMessage.MessageType.PartitionStateChanged)
+              .setPartitionStateChangedMsg(
+                  ControlMessage.PartitionStateChangedMsg.newBuilder()
+                      .setExecutorId(executorId)
+                      .setPartitionId(partitionId)
+                      .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
+                      .build())
+              .build());
+    }
+
+    return exist;
   }
 
   private PartitionStore getPartitionStore(final Attribute partitionStore) {

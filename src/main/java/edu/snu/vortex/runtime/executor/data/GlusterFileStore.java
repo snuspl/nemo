@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -83,13 +82,13 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       try {
         if (new File(filePath).isFile()) {
           final RemoteFileMetadata metadata =
-              RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
+              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
           partition = new FilePartition(coder, filePath, metadata);
           return Optional.of(partition.retrieveInHashRange(hashRange));
         } else {
           return Optional.empty();
         }
-      } catch (final IOException | InterruptedException | ExecutionException cause) {
+      } catch (final IOException cause) {
         final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
         throw new PartitionFetchException(combinedThrowable);
       }
@@ -126,6 +125,25 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
   }
 
   /**
+   * @see PartitionStore#commitPartition(String).
+   */
+  @Override
+  public void commitPartition(final String partitionId) throws PartitionWriteException {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = partitionIdToFilePath(partitionId);
+
+    try (
+        final RemoteFileMetadata metadata =
+            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
+        final FilePartition partition = new FilePartition(coder, filePath, metadata)
+    ) {
+        partition.close();
+    } catch (final IOException e) {
+      throw new PartitionFetchException(e);
+    }
+  }
+
+  /**
    * Removes the file that the target partition is stored.
    *
    * @param partitionId of the partition.
@@ -141,14 +159,14 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       try {
         if (new File(filePath).isFile()) {
           final RemoteFileMetadata metadata =
-              RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
+              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
           partition = new FilePartition(coder, filePath, metadata);
           partition.deleteFile();
           return true;
         } else {
           return false;
         }
-      } catch (final IOException | InterruptedException | ExecutionException cause) {
+      } catch (final IOException cause) {
         final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
         throw new PartitionFetchException(combinedThrowable);
       }
@@ -165,13 +183,13 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     try {
       if (new File(filePath).isFile()) {
         final RemoteFileMetadata metadata =
-            RemoteFileMetadata.openToRead(partitionId, executorId, persistentConnectionToMaster);
+            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
         partition = new FilePartition(coder, filePath, metadata);
         return partition.asFileAreas(hashRange);
       } else {
-        throw new IOException(String.format("%s does not exists", partitionId));
+        throw new PartitionFetchException(new Throwable(String.format("%s does not exists", partitionId)));
       }
-    } catch (final IOException | InterruptedException | ExecutionException cause) {
+    } catch (final IOException cause) {
       final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
       throw new PartitionFetchException(combinedThrowable);
     }
