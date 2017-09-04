@@ -32,7 +32,7 @@ import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
 public final class ScheduleGroupPass implements StaticOptimizationPass {
   @Override
   public DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag) {
-    final int INITIAL_SCHEDULE_GROUP = 0;
+    final int initialScheduleGroup = 0;
 
     // We assume that the input dag is tagged with stage ids.
     if (dag.getVertices().stream().anyMatch(irVertex -> irVertex.getAttr(StageId) == null)) {
@@ -63,9 +63,9 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
       final Integer previousSize = stageIdToScheduleGroupIdMap.size();
       dependentStagesMap.forEach((stageId, dependentStages) -> {
         if (!stageIdToScheduleGroupIdMap.keySet().contains(stageId)
-            && dependentStages.size() == INITIAL_SCHEDULE_GROUP) { // initial source stages
+            && dependentStages.size() == initialScheduleGroup) { // initial source stages
           // initial source stages are indexed with schedule group 0.
-          stageIdToScheduleGroupIdMap.put(stageId, INITIAL_SCHEDULE_GROUP);
+          stageIdToScheduleGroupIdMap.put(stageId, initialScheduleGroup);
         } else if (!stageIdToScheduleGroupIdMap.keySet().contains(stageId)
             && dependentStages.stream().allMatch(stageIdToScheduleGroupIdMap::containsKey)) { // next stages
           // We find the maximum schedule group index from previous stages, and index current stage with that number +1.
