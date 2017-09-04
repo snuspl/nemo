@@ -15,11 +15,14 @@
  */
 package edu.snu.vortex.compiler.optimizer.passes;
 
+import com.google.common.collect.Lists;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.attribute.Attribute;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupId;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
@@ -82,6 +85,23 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
             + ScheduleGroupPass.class.getSimpleName() + " is not making progress");
       }
     }
+
+    // Reverse topologically traverse and match schedule group ids for those that have push edges in between
+    Lists.reverse(dag.getTopologicalSort()).forEach(v -> {
+      // get the destination vertices of the edges that are marked as push
+      final List<IRVertex> pushConnectedVertices = dag.getOutgoingEdgesOf(v).stream()
+          .filter(e -> e.getAttr(Attribute.Key.ChannelTransferPolicy) == Attribute.Push)
+          .map(IREdge::getDst)
+          .collect(Collectors.toList());
+      if (!pushConnectedVertices.isEmpty()) { // if we need to do something,
+        // we find the min value of the destination schedule groups.
+        final Integer newSchedulerGroupId = pushConnectedVertices.stream()
+            .mapToInt(irVertex -> stageIdToScheduleGroupIdMap.get(irVertex.getAttr(StageId)))
+            .min().orElseThrow(() -> new RuntimeException("a list was not empty, but produced an empty result"));
+        // overwrite
+        stageIdToScheduleGroupIdMap.replace(v.getAttr(StageId), newSchedulerGroupId);
+      }
+    });
 
     // do the tagging
     dag.topologicalDo(irVertex ->
