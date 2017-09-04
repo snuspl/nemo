@@ -24,7 +24,7 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupId;
+import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.ScheduleGroupIndex;
 import static edu.snu.vortex.compiler.ir.attribute.Attribute.IntegerKey.StageId;
 
 /**
@@ -57,30 +57,30 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     });
 
     // Map to put our results in.
-    final Map<Integer, Integer> stageIdToScheduleGroupIdMap = new HashMap<>();
+    final Map<Integer, Integer> stageIdToScheduleGroupIndexMap = new HashMap<>();
 
     // Calculate schedule group number of each stages step by step
-    while (stageIdToScheduleGroupIdMap.size() < dependentStagesMap.size()) {
+    while (stageIdToScheduleGroupIndexMap.size() < dependentStagesMap.size()) {
       // This is to ensure that each iteration is making progress.
       // We ensure that the stageIdToScheduleGroupIdMap is increasing in size in each iteration.
-      final Integer previousSize = stageIdToScheduleGroupIdMap.size();
+      final Integer previousSize = stageIdToScheduleGroupIndexMap.size();
       dependentStagesMap.forEach((stageId, dependentStages) -> {
-        if (!stageIdToScheduleGroupIdMap.keySet().contains(stageId)
+        if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
             && dependentStages.size() == initialScheduleGroup) { // initial source stages
           // initial source stages are indexed with schedule group 0.
-          stageIdToScheduleGroupIdMap.put(stageId, initialScheduleGroup);
-        } else if (!stageIdToScheduleGroupIdMap.keySet().contains(stageId)
-            && dependentStages.stream().allMatch(stageIdToScheduleGroupIdMap::containsKey)) { // next stages
+          stageIdToScheduleGroupIndexMap.put(stageId, initialScheduleGroup);
+        } else if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
+            && dependentStages.stream().allMatch(stageIdToScheduleGroupIndexMap::containsKey)) { // next stages
           // We find the maximum schedule group index from previous stages, and index current stage with that number +1.
-          final Integer maxDependentSchedulerGroup =
+          final Integer maxDependentSchedulerGroupIndex =
               dependentStages.stream()
-                  .mapToInt(stageIdToScheduleGroupIdMap::get)
+                  .mapToInt(stageIdToScheduleGroupIndexMap::get)
                   .max().orElseThrow(() ->
                     new RuntimeException("A stage that is not a source stage much have dependent stages"));
-          stageIdToScheduleGroupIdMap.put(stageId, maxDependentSchedulerGroup + 1);
+          stageIdToScheduleGroupIndexMap.put(stageId, maxDependentSchedulerGroupIndex + 1);
         }
       });
-      if (previousSize == stageIdToScheduleGroupIdMap.size()) {
+      if (previousSize == stageIdToScheduleGroupIndexMap.size()) {
         throw new RuntimeException("Iteration for indexing schedule groups in "
             + ScheduleGroupPass.class.getSimpleName() + " is not making progress");
       }
@@ -95,17 +95,30 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
           .collect(Collectors.toList());
       if (!pushConnectedVertices.isEmpty()) { // if we need to do something,
         // we find the min value of the destination schedule groups.
-        final Integer newSchedulerGroupId = pushConnectedVertices.stream()
-            .mapToInt(irVertex -> stageIdToScheduleGroupIdMap.get(irVertex.getAttr(StageId)))
+        final Integer newSchedulerGroupIndex = pushConnectedVertices.stream()
+            .mapToInt(irVertex -> stageIdToScheduleGroupIndexMap.get(irVertex.getAttr(StageId)))
             .min().orElseThrow(() -> new RuntimeException("a list was not empty, but produced an empty result"));
         // overwrite
-        stageIdToScheduleGroupIdMap.replace(v.getAttr(StageId), newSchedulerGroupId);
+        final Integer originalScheduleGroupIndex = stageIdToScheduleGroupIndexMap.get(v.getAttr(StageId));
+        stageIdToScheduleGroupIndexMap.replace(v.getAttr(StageId), newSchedulerGroupIndex);
+        // shift those if it came too far
+        if (stageIdToScheduleGroupIndexMap.values().stream()
+            .filter(stageIndex -> stageIndex.equals(originalScheduleGroupIndex))
+            .count() == 0) { // if it doesn't exist
+          stageIdToScheduleGroupIndexMap.replaceAll((stageId, scheduleGroupIndex) -> {
+            if (scheduleGroupIndex > originalScheduleGroupIndex) {
+              return scheduleGroupIndex - 1; // we shift schedule group indexes by one.
+            } else {
+              return scheduleGroupIndex;
+            }
+          });
+        }
       }
     });
 
     // do the tagging
     dag.topologicalDo(irVertex ->
-        irVertex.setAttr(ScheduleGroupId, stageIdToScheduleGroupIdMap.get(irVertex.getAttr(StageId))));
+        irVertex.setAttr(ScheduleGroupIndex, stageIdToScheduleGroupIndexMap.get(irVertex.getAttr(StageId))));
 
     return dag;
   }
