@@ -54,7 +54,7 @@ public final class Optimizer {
     if (POLICY_NAME.get(optimizationPolicy) != null) {
       return optimize(dag, POLICY_NAME.get(optimizationPolicy), dagDirectory);
     } else {
-      final List<StaticOptimizationPass> passes = Arrays.stream(optimizationPolicy.split(","))
+      final List<StaticOptimizationPass> passes = Arrays.stream(optimizationPolicy.replaceAll("\\s+", "").split(","))
           .map(PASS_NAME::get).collect(Collectors.toList());
       return optimize(dag, passes, dagDirectory);
     }
