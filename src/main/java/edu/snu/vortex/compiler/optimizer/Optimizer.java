@@ -21,11 +21,13 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.passes.optimization.CommonSubexpressionEliminationPass;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Optimizer class.
@@ -33,6 +35,29 @@ import java.util.*;
 public final class Optimizer {
   // Private constructor
   private Optimizer() {
+  }
+
+  /**
+   * Optimize function.
+   * @param dag input DAG.
+   * @param optimizationPolicy name of the instantiation policy that we want to use to optimize the DAG,
+   *                           or a string of pass names, each separated by commas.
+   * @param dagDirectory directory to save the DAG information.
+   * @return optimized DAG, tagged with attributes.
+   * @throws Exception throws an exception if there is an exception.
+   */
+  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final String optimizationPolicy,
+                                               final String dagDirectory) throws Exception {
+    if (optimizationPolicy == null || optimizationPolicy.isEmpty()) {
+      throw new RuntimeException("Policy has not been provided for the policyType");
+    }
+    if (POLICY_NAME.get(optimizationPolicy) != null) {
+      return optimize(dag, POLICY_NAME.get(optimizationPolicy), dagDirectory);
+    } else {
+      final List<StaticOptimizationPass> passes = Arrays.stream(optimizationPolicy.split(","))
+          .map(PASS_NAME::get).collect(Collectors.toList());
+      return optimize(dag, passes, dagDirectory);
+    }
   }
 
   /**
@@ -48,7 +73,24 @@ public final class Optimizer {
     if (policyType == null) {
       throw new RuntimeException("Policy has not been provided for the policyType");
     }
-    return process(dag, POLICIES.get(policyType), dagDirectory);
+    return optimize(dag, POLICIES.get(policyType), dagDirectory);
+  }
+
+  /**
+   * Optimize function.
+   * @param dag input DAG.
+   * @param passes an instantiation policy of passes that we want to use to optimize the DAG.
+   * @param dagDirectory directory to save the DAG information.
+   * @return optimized DAG, tagged with attributes.
+   * @throws Exception throws an exception if there is an exception.
+   */
+  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag,
+                                               final List<StaticOptimizationPass> passes,
+                                               final String dagDirectory) throws Exception {
+    if (passes == null || passes.isEmpty()) {
+      throw new RuntimeException("Policy has not been provided for the policyType");
+    }
+    return process(dag, passes, dagDirectory);
   }
 
   /**
@@ -139,12 +181,31 @@ public final class Optimizer {
   /**
    * A HashMap to convert string names for each policy type to receive as arguments.
    */
-  public static final Map<String, PolicyType> POLICY_NAME = new HashMap<>();
+  private static final Map<String, PolicyType> POLICY_NAME = new HashMap<>();
   static {
     POLICY_NAME.put("default", PolicyType.Default);
     POLICY_NAME.put("pado", PolicyType.Pado);
     POLICY_NAME.put("disaggregation", PolicyType.Disaggregation);
     POLICY_NAME.put("dataskew", PolicyType.DataSkew);
+  }
+
+  private static final Map<String, StaticOptimizationPass> PASS_NAME = new HashMap<>();
+  static {
+    // Optimization
+    PASS_NAME.put("cse", new CommonSubexpressionEliminationPass());
+    PASS_NAME.put("loop_fusion", new LoopOptimizations.LoopFusionPass());
+    PASS_NAME.put("licm", new LoopOptimizations.LoopInvariantCodeMotionPass());
+
+    PASS_NAME.put("parallelism", new ParallelismPass());
+    PASS_NAME.put("pado_vertex", new PadoVertexPass());
+    PASS_NAME.put("pado_edge", new PadoEdgePass());
+    PASS_NAME.put("disaggregation", new DisaggregationPass());
+    PASS_NAME.put("ifile", new IFilePass());
+    PASS_NAME.put("data_skew", new DataSkewPass());
+    PASS_NAME.put("loop_grouping", new LoopGroupingPass());
+    PASS_NAME.put("loop_unrolling", new LoopUnrollingPass());
+    PASS_NAME.put("default_stage_partitioning", new DefaultStagePartitioningPass());
+    PASS_NAME.put("schedule_group", new ScheduleGroupPass());
   }
 
   /**

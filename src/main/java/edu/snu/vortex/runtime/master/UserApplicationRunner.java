@@ -32,8 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
-import static edu.snu.vortex.compiler.optimizer.Optimizer.POLICY_NAME;
-
 /**
  * Compiles and runs User application.
  */
@@ -43,7 +41,7 @@ public final class UserApplicationRunner implements Runnable {
   private final String dagDirectory;
   private final String className;
   private final String[] arguments;
-  private final String policyName;
+  private final String optimizationPolicy;
 
   private final RuntimeMaster runtimeMaster;
   private final Frontend frontend;
@@ -53,13 +51,13 @@ public final class UserApplicationRunner implements Runnable {
   private UserApplicationRunner(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                                 @Parameter(JobConf.UserMainClass.class) final String className,
                                 @Parameter(JobConf.UserMainArguments.class) final String arguments,
-                                @Parameter(JobConf.OptimizationPolicy.class) final String policyName,
+                                @Parameter(JobConf.OptimizationPolicy.class) final String optimizationPolicy,
                                 final DynamicOptimizationEventHandler handler,
                                 final RuntimeMaster runtimeMaster) {
     this.dagDirectory = dagDirectory;
     this.className = className;
     this.arguments = arguments.split(" ");
-    this.policyName = policyName;
+    this.optimizationPolicy = optimizationPolicy;
     this.runtimeMaster = runtimeMaster;
     this.frontend = new BeamFrontend();
     this.backend = new VortexBackend();
@@ -72,7 +70,6 @@ public final class UserApplicationRunner implements Runnable {
       final DAG<IRVertex, IREdge> dag = frontend.compile(className, arguments);
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
-      final Optimizer.PolicyType optimizationPolicy = POLICY_NAME.get(policyName);
       final DAG<IRVertex, IREdge> optimizedDAG = Optimizer.optimize(dag, optimizationPolicy, dagDirectory);
       optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy, "IR optimized for " + optimizationPolicy);
 
