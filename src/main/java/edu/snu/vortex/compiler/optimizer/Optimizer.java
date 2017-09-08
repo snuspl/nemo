@@ -54,8 +54,14 @@ public final class Optimizer {
     if (POLICY_NAME.get(optimizationPolicy) != null) {
       return optimize(dag, POLICY_NAME.get(optimizationPolicy), dagDirectory);
     } else {
-      final List<StaticOptimizationPass> passes = Arrays.stream(optimizationPolicy.replaceAll("\\s+", "").split(","))
-          .map(PASS_NAME::get).collect(Collectors.toList());
+      final List<String> passNames = Arrays.asList(optimizationPolicy.replaceAll("\\s+", "").split(","));
+      passNames.forEach(name -> { // Throw exception if the pass name is not yet registered to the optimizer.
+        if (!PASS_NAME.containsKey(name)) {
+          throw new RuntimeException("Pass called \"" + name + "\" is not yet registered to the optimizer");
+        }
+      });
+      final List<StaticOptimizationPass> passes = passNames.stream().map(PASS_NAME::get)
+          .collect(Collectors.toList());
       return optimize(dag, passes, dagDirectory);
     }
   }
