@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,7 +26,8 @@ import java.util.NoSuchElementException;
  *
  * @param <T> the type of elements
  */
-public final class ClosableBlockingIterable<T> implements Iterable<T> {
+@ThreadSafe
+public final class ClosableBlockingIterable<T> implements Iterable<T>, AutoCloseable {
 
   private final List<T> list;
   private volatile boolean closed = false;
@@ -57,7 +59,7 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
       throw new IllegalStateException("This iterable has been closed");
     }
     list.add(element);
-    notify();
+    notifyAll();
   }
 
   /**
@@ -65,7 +67,7 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
    */
   public synchronized void close() {
     closed = true;
-    notify();
+    notifyAll();
   }
 
   @Override
@@ -105,7 +107,6 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
           while (iterable.list.size() <= index && !iterable.closed) {
             iterable.wait();
           }
-          iterable.notify();
           return iterable.list.size() > index;
         }
       } catch (final InterruptedException e) {
@@ -127,7 +128,6 @@ public final class ClosableBlockingIterable<T> implements Iterable<T> {
           }
           final T element = iterable.list.get(index);
           index++;
-          iterable.notify();
           if (element == null) {
             throw new NoSuchElementException();
           } else {

@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
@@ -37,11 +36,22 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Output stream for partition transfer. {@link #close()} must be called after finishing write.
+ * Encodes and flushes outbound data elements to other executors.
+ *
+ * Three threads are involved in this class.
+ * <ul>
+ *   <li>User thread writes {@link edu.snu.vortex.compiler.ir.Element}s or
+ *   {@link edu.snu.vortex.runtime.executor.data.FileArea}s to this object</li>
+ *   <li>{@link PartitionTransfer#outboundExecutorService} encodes {@link edu.snu.vortex.compiler.ir.Element}s into
+ *   {@link io.netty.buffer.ByteBuf}s</li>
+ *   <li>Netty {@link io.netty.channel.EventLoopGroup} responds to
+ *   {@link io.netty.channel.Channel#writeAndFlush(Object)} by sending {@link io.netty.buffer.ByteBuf}s
+ *   or {@link edu.snu.vortex.runtime.executor.data.FileArea}s to the remote executor.</li>
+ * </ul>
  *
  * @param <T> the type of element
  */
-public final class PartitionOutputStream<T> implements Closeable, PartitionStream {
+public final class PartitionOutputStream<T> implements AutoCloseable, PartitionStream {
 
   private static final Logger LOG = LoggerFactory.getLogger(PartitionOutputStream.class);
 
@@ -198,16 +208,6 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   }
 
   /**
-   * Start the encoding thread, if the encodePartialPartition option is enabled
-   * and the encoding thread has not been started.
-   */
-  private void startEncodingThreadIfEncodePartialEnabled() {
-    if (encodePartialPartition) {
-      startEncodingThreadIfNeeded();
-    }
-  }
-
-  /**
    * Sets a channel exception.
    *
    * @param cause the cause of exception handling
@@ -228,7 +228,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeElement(final Element<T, ?, ?> element) throws IOException {
     checkWritableCondition();
     elementQueue.put(element);
-    startEncodingThreadIfEncodePartialEnabled();
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
     return this;
   }
 
@@ -243,7 +245,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeElements(final Iterable<Element<T, ?, ?>> iterable) throws IOException {
     checkWritableCondition();
     elementQueue.put(iterable);
-    startEncodingThreadIfEncodePartialEnabled();
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
     return this;
   }
 
@@ -258,7 +262,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
   public PartitionOutputStream writeFileArea(final FileArea fileArea) throws IOException {
     checkWritableCondition();
     elementQueue.put(fileArea);
-    startEncodingThreadIfEncodePartialEnabled();
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
     return this;
   }
 
@@ -275,7 +281,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
     for (final FileArea fileArea : fileAreas) {
       elementQueue.put(fileArea);
     }
-    startEncodingThreadIfEncodePartialEnabled();
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
     return this;
   }
 
@@ -287,7 +295,9 @@ public final class PartitionOutputStream<T> implements Closeable, PartitionStrea
    */
   @Override
   public void close() throws IOException {
-    checkWritableCondition();
+    if (channelException != null) {
+      throw new IOException(channelException);
+    }
     closed = true;
     startEncodingThreadIfNeeded();
     elementQueue.close();
