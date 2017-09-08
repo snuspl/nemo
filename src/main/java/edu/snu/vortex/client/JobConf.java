@@ -61,9 +61,9 @@ public final class JobConf extends ConfigurationModuleBuilder {
   //////////////////////////////// Compiler Configurations
 
   /**
-   * The name of the optimization policy, OR names of static optimization passes, separated by ','s.
+   * The name or a list of passes (separated by ','s) of the optimization policy.
    */
-  @NamedParameter(doc = "Name of the optimization policy", short_name = "optimization_policy",
+  @NamedParameter(doc = "Name or passes of the optimization policy", short_name = "optimization_policy",
       default_value = "default")
   public final class OptimizationPolicy implements Name<String> {
   }

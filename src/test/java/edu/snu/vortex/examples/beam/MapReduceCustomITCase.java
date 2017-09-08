@@ -25,32 +25,32 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class CustomDefaultMRITCase {
+public class MapReduceCustomITCase {
   private static final int TIMEOUT = 60000;
-  private static final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
+  private static final String mapReduceCustom = "edu.snu.vortex.examples.beam.MapReduceCustom";
   private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private static final String output = CompilerTestUtil.rootDir + "/src/main/resources/sample_output";
   private static final String dagDirectory = "./dag";
 
   public static ArgBuilder builder = new ArgBuilder()
-      .addJobId(MapReduceITCase.class.getSimpleName())
-      .addUserMain(mapReduce)
+      .addJobId(MapReduceCustomITCase.class.getSimpleName())
+      .addUserMain(mapReduceCustom)
       .addUserArgs(input, output)
       .addDAGDirectory(dagDirectory);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addUserMain(mapReduce)
+        .addUserMain(mapReduceCustom)
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
   }
 
   @Test(timeout = TIMEOUT)
-  public void testCustomMR() throws Exception {
+  public void test() throws Exception {
     JobLauncher.main(builder
-        .addJobId(MapReduceITCase.class.getSimpleName())
-        .addOptimizationPolicy("parallelism, default_stage_partitioning, schedule_group")
+        .addJobId(MapReduceCustomITCase.class.getSimpleName())
+        .addOptimizationPolicy("parallelism, custom")
         .build());
   }
 }

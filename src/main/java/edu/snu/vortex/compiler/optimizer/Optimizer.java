@@ -189,6 +189,10 @@ public final class Optimizer {
     POLICY_NAME.put("dataskew", PolicyType.DataSkew);
   }
 
+  /**
+   * A HashMap to convert string names to passes. String names are received as arguments.
+   * You should be able to see the full list of passes here.
+   */
   private static final Map<String, StaticOptimizationPass> PASS_NAME = new HashMap<>();
   static {
     // Optimization
@@ -206,6 +210,15 @@ public final class Optimizer {
     PASS_NAME.put("loop_unrolling", new LoopUnrollingPass());
     PASS_NAME.put("default_stage_partitioning", new DefaultStagePartitioningPass());
     PASS_NAME.put("schedule_group", new ScheduleGroupPass());
+  }
+
+  /**
+   * A public method for registering new passes to the list.
+   * @param passName the name of the pass to be newly added.
+   * @param pass the pass to be newly added.
+   */
+  public static void registerPass(final String passName, final StaticOptimizationPass pass) {
+    PASS_NAME.put(passName, pass);
   }
 
   /**
