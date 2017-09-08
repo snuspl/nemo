@@ -16,12 +16,20 @@
 package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.frontend.beam.Runner;
+import edu.snu.vortex.compiler.frontend.beam.VortexPipelineOptions;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.passes.DefaultStagePartitioningPass;
 import edu.snu.vortex.compiler.optimizer.passes.ScheduleGroupPass;
 import edu.snu.vortex.compiler.optimizer.passes.StaticOptimizationPass;
+import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.options.PipelineOptions;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.values.KV;
+import org.apache.beam.sdk.values.PCollection;
 
 /**
  * Sample MapReduce application, running a custom pass.
@@ -38,10 +46,38 @@ public final class MapReduceCustom {
    * @param args arguments.
    */
   public static void main(final String[] args) {
+    // same as the original application
+    final String inputFilePath = args[0];
+    final String outputFilePath = args[1];
+    final PipelineOptions options = PipelineOptionsFactory.create().as(VortexPipelineOptions.class);
+    options.setRunner(Runner.class);
+    options.setJobName("MapReduce");
+
     // register a new pass to the Optimizer before running the application.
     Optimizer.registerPass("custom", new CustomDefaultPass());
-    // Run the same original program
-    MapReduce.main(args);
+
+    // run the application.
+    final Pipeline p = Pipeline.create(options);
+    final PCollection<String> result = GenericSourceSink.read(p, inputFilePath)
+        .apply(MapElements.<String, KV<String, Long>>via(new SimpleFunction<String, KV<String, Long>>() {
+          @Override
+          public KV<String, Long> apply(final String line) {
+            final String[] words = line.split(" +");
+            final String documentId = words[0];
+            final Long count = Long.parseLong(words[2]);
+            return KV.of(documentId, count);
+          }
+        }))
+        .apply(GroupByKey.<String, Long>create())
+        .apply(Combine.<String, Long, Long>groupedValues(Sum.ofLongs()))
+        .apply(MapElements.<KV<String, Long>, String>via(new SimpleFunction<KV<String, Long>, String>() {
+          @Override
+          public String apply(final KV<String, Long> kv) {
+            return kv.getKey() + ": " + kv.getValue();
+          }
+        }));
+    GenericSourceSink.write(result, outputFilePath);
+    p.run();
   }
 
   /**
