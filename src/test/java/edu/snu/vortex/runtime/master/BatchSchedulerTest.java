@@ -167,7 +167,7 @@ public final class BatchSchedulerTest {
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-        OptimizationPolicy.TEST., "");
+        OptimizationPolicy.TEST, "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);

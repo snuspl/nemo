@@ -16,11 +16,8 @@
 ## MapReduce Application
 ./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy default -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## MapReduce Application using custom combination of passes
-./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy parallelism,default_stage_partitioning,schedule_group -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
-
 ## MapReduce Application using a newly defined pass (see MapReduceCustomPass class)
-./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduceCustomPass -optimization_policy parallelism,custom -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduceCustomPass -optimization_policy custom -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
 ## MapReduce Application with 'pado' optimization policy
 ./bin/run.sh -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy pado -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"

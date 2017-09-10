@@ -25,7 +25,6 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Optimizer class.
@@ -38,8 +37,7 @@ public final class Optimizer {
   /**
    * Optimize function.
    * @param dag input DAG.
-   * @param optimizationPolicy name of the instantiation policy that we want to use to optimize the DAG,
-   *                           or a string of pass names, each separated by commas.
+   * @param optimizationPolicy name of the instantiation policy that we want to use to optimize the DAG.
    * @param dagDirectory directory to save the DAG information.
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
@@ -49,19 +47,10 @@ public final class Optimizer {
     if (optimizationPolicy == null || optimizationPolicy.isEmpty()) {
       throw new RuntimeException("A policy name should be specified.");
     }
-    if (OptimizationPolicy.getPolicyNames().contains(optimizationPolicy)) { // If it is a policy
-      return process(dag, OptimizationPolicy.getPolicyCalled(optimizationPolicy), dagDirectory);
-    } else {
-      final List<String> passNames = Arrays.asList(optimizationPolicy.replaceAll("\\s+", "").split(","));
-      passNames.forEach(name -> { // Throw exception if the pass name is not yet registered to the optimizer.
-        if (!OptimizationPass.getPassNames().contains(name)) {
-          throw new RuntimeException("Pass called \"" + name + "\" is not yet registered to the optimizer");
-        }
-      });
-      final List<StaticOptimizationPass> passes = passNames.stream().map(OptimizationPass::getPassCalled)
-          .collect(Collectors.toList());
-      return process(dag, passes, dagDirectory);
+    if (!OptimizationPolicy.getPolicyNames().contains(optimizationPolicy)) {
+      throw new RuntimeException("A policy called " + optimizationPolicy + "is not registered.");
     }
+    return process(dag, OptimizationPolicy.getPolicyCalled(optimizationPolicy), dagDirectory);
   }
 
   /**
@@ -93,6 +82,7 @@ public final class Optimizer {
    */
   public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
+
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
