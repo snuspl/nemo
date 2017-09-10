@@ -23,6 +23,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
@@ -166,7 +167,7 @@ public final class BatchSchedulerTest {
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        OptimizationPolicy.TEST., "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);

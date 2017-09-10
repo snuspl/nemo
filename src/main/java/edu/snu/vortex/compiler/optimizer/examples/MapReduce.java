@@ -19,6 +19,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
@@ -67,7 +68,7 @@ public final class MapReduce {
     LOG.info(dag.toString());
 
     // Optimize
-    final DAG optimizedDAG = Optimizer.optimize(dag, Optimizer.PolicyType.Disaggregation, EMPTY_DAG_DIRECTORY);
+    final DAG optimizedDAG = Optimizer.optimize(dag, OptimizationPolicy.DISAGGREGATION, EMPTY_DAG_DIRECTORY);
 
     // After
     LOG.info("After Optimization");

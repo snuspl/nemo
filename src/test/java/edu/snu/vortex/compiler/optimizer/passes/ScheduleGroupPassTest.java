@@ -21,6 +21,7 @@ import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public final class ScheduleGroupPassTest {
    * This test ensures that a topologically sorted DAG has an increasing sequence of schedule group indexes.
    */
   public void testScheduleGroupPass() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG = Optimizer.optimize(compiledDAG, Optimizer.PolicyType.TestingPolicy, "");
+    final DAG<IRVertex, IREdge> processedDAG = Optimizer.optimize(compiledDAG, OptimizationPolicy.TEST, "");
 
     Integer previousScheduleGroupIndex = 0;
     for (final IRVertex irVertex : processedDAG.getTopologicalSort()) {

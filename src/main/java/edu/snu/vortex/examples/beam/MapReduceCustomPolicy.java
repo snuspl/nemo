@@ -20,7 +20,8 @@ import edu.snu.vortex.compiler.frontend.beam.Runner;
 import edu.snu.vortex.compiler.frontend.beam.VortexPipelineOptions;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.compiler.optimizer.OptimizationPass;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.passes.DefaultStagePartitioningPass;
 import edu.snu.vortex.compiler.optimizer.passes.ScheduleGroupPass;
 import edu.snu.vortex.compiler.optimizer.passes.StaticOptimizationPass;
@@ -31,15 +32,20 @@ import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 
+import java.util.Arrays;
+
 /**
  * Sample MapReduce application, running a custom pass.
  */
-public final class MapReduceCustom {
+public final class MapReduceCustomPolicy {
   /**
    * Private Constructor.
    */
-  private MapReduceCustom() {
+  private MapReduceCustomPolicy() {
   }
+
+  private static final String CUSTOM_PASS_NAME = "custom_pass";
+  static final String CUSTOM_POLICY_NAME = "custom_policy";
 
   /**
    * Main function for the MR BEAM program running a custom pass.
@@ -54,7 +60,11 @@ public final class MapReduceCustom {
     options.setJobName("MapReduce");
 
     // register a new pass to the Optimizer before running the application.
-    Optimizer.registerPass("custom", new CustomDefaultPass());
+    OptimizationPass.registerPass(CUSTOM_PASS_NAME, new CustomDefaultPass());
+    OptimizationPolicy.registerPolicy(CUSTOM_POLICY_NAME, Arrays.asList(
+        OptimizationPass.getPassCalled(OptimizationPass.PARALLELISM),
+        OptimizationPass.getPassCalled(CUSTOM_PASS_NAME)
+    ));
 
     // run the application.
     final Pipeline p = Pipeline.create(options);

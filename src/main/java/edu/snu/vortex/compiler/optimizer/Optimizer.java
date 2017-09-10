@@ -21,8 +21,6 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDynamicOptimizationPass;
-import edu.snu.vortex.compiler.optimizer.passes.optimization.CommonSubexpressionEliminationPass;
-import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
@@ -49,54 +47,21 @@ public final class Optimizer {
   public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final String optimizationPolicy,
                                                final String dagDirectory) throws Exception {
     if (optimizationPolicy == null || optimizationPolicy.isEmpty()) {
-      throw new RuntimeException("Policy has not been provided for the policyType");
+      throw new RuntimeException("A policy name should be specified.");
     }
-    if (POLICY_NAME.get(optimizationPolicy) != null) {
-      return optimize(dag, POLICY_NAME.get(optimizationPolicy), dagDirectory);
+    if (OptimizationPolicy.getPolicyNames().contains(optimizationPolicy)) { // If it is a policy
+      return process(dag, OptimizationPolicy.getPolicyCalled(optimizationPolicy), dagDirectory);
     } else {
       final List<String> passNames = Arrays.asList(optimizationPolicy.replaceAll("\\s+", "").split(","));
       passNames.forEach(name -> { // Throw exception if the pass name is not yet registered to the optimizer.
-        if (!PASS_NAME.containsKey(name)) {
+        if (!OptimizationPass.getPassNames().contains(name)) {
           throw new RuntimeException("Pass called \"" + name + "\" is not yet registered to the optimizer");
         }
       });
-      final List<StaticOptimizationPass> passes = passNames.stream().map(PASS_NAME::get)
+      final List<StaticOptimizationPass> passes = passNames.stream().map(OptimizationPass::getPassCalled)
           .collect(Collectors.toList());
-      return optimize(dag, passes, dagDirectory);
+      return process(dag, passes, dagDirectory);
     }
-  }
-
-  /**
-   * Optimize function.
-   * @param dag input DAG.
-   * @param policyType type of the instantiation policy that we want to use to optimize the DAG.
-   * @param dagDirectory directory to save the DAG information.
-   * @return optimized DAG, tagged with attributes.
-   * @throws Exception throws an exception if there is an exception.
-   */
-  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final PolicyType policyType,
-                                               final String dagDirectory) throws Exception {
-    if (policyType == null) {
-      throw new RuntimeException("Policy has not been provided for the policyType");
-    }
-    return optimize(dag, POLICIES.get(policyType), dagDirectory);
-  }
-
-  /**
-   * Optimize function.
-   * @param dag input DAG.
-   * @param passes an instantiation policy of passes that we want to use to optimize the DAG.
-   * @param dagDirectory directory to save the DAG information.
-   * @return optimized DAG, tagged with attributes.
-   * @throws Exception throws an exception if there is an exception.
-   */
-  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag,
-                                               final List<StaticOptimizationPass> passes,
-                                               final String dagDirectory) throws Exception {
-    if (passes == null || passes.isEmpty()) {
-      throw new RuntimeException("Policy has not been provided for the policyType");
-    }
-    return process(dag, passes, dagDirectory);
   }
 
   /**
@@ -110,121 +75,14 @@ public final class Optimizer {
   private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag,
                                                final List<StaticOptimizationPass> passes,
                                                final String dagDirectory) throws Exception {
-    if (passes.isEmpty()) {
-      return dag;
+    if (passes == null || passes.isEmpty()) {
+      throw new RuntimeException("The given list of passes is empty. Optimization cannot be done.");
     } else {
       final DAG<IRVertex, IREdge> processedDAG = passes.get(0).process(dag);
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passes.get(0).getClass().getSimpleName(),
           "DAG after optimization");
       return process(processedDAG, passes.subList(1, passes.size()), dagDirectory);
     }
-  }
-
-  /**
-   * Enum for different types of instantiation policies.
-   */
-  public enum PolicyType {
-    Default,
-    Pado,
-    Disaggregation,
-    DataSkew,
-    TestingPolicy,
-  }
-
-  /**
-   * A HashMap to match each of instantiation policies with a combination of instantiation passes.
-   * Each policies are run in the order with which they are defined.
-   */
-  private static final Map<PolicyType, List<StaticOptimizationPass>> POLICIES = new HashMap<>();
-  static {
-    POLICIES.put(PolicyType.Default,
-        Arrays.asList(
-            new ParallelismPass(), // Provides parallelism information.
-            new DefaultStagePartitioningPass(),
-            new ScheduleGroupPass()
-        ));
-    POLICIES.put(PolicyType.Pado,
-        Arrays.asList(
-            new ParallelismPass(), // Provides parallelism information.
-            new LoopGroupingPass(),
-            LoopOptimizations.getLoopFusionPass(),
-            LoopOptimizations.getLoopInvariantCodeMotionPass(),
-            new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new PadoVertexPass(), new PadoEdgePass(), // Processes vertices and edges with Pado algorithm.
-            new DefaultStagePartitioningPass(),
-            new ScheduleGroupPass()
-       ));
-    POLICIES.put(PolicyType.Disaggregation,
-        Arrays.asList(
-            new ParallelismPass(), // Provides parallelism information.
-            new LoopGroupingPass(),
-            LoopOptimizations.getLoopFusionPass(),
-            LoopOptimizations.getLoopInvariantCodeMotionPass(),
-            new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DisaggregationPass(), // Processes vertices and edges with Disaggregation algorithm.
-            new IFilePass(), // Enables I-File style write optimization.
-            new DefaultStagePartitioningPass(),
-            new ScheduleGroupPass()
-        ));
-    POLICIES.put(PolicyType.DataSkew,
-        Arrays.asList(
-            new ParallelismPass(), // Provides parallelism information.
-            new LoopGroupingPass(),
-            LoopOptimizations.getLoopFusionPass(),
-            LoopOptimizations.getLoopInvariantCodeMotionPass(),
-            new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-            new DataSkewPass(),
-            new DefaultStagePartitioningPass(),
-            new ScheduleGroupPass()
-        ));
-    POLICIES.put(PolicyType.TestingPolicy, // Simply build stages for tests
-        Arrays.asList(
-            new DefaultStagePartitioningPass(),
-            new ScheduleGroupPass()
-        ));
-  }
-
-  /**
-   * A HashMap to convert string names for each policy type to receive as arguments.
-   */
-  private static final Map<String, PolicyType> POLICY_NAME = new HashMap<>();
-  static {
-    POLICY_NAME.put("default", PolicyType.Default);
-    POLICY_NAME.put("pado", PolicyType.Pado);
-    POLICY_NAME.put("disaggregation", PolicyType.Disaggregation);
-    POLICY_NAME.put("dataskew", PolicyType.DataSkew);
-  }
-
-  /**
-   * A HashMap to convert string names to passes. String names are received as arguments.
-   * You should be able to see the full list of passes here.
-   */
-  private static final Map<String, StaticOptimizationPass> PASS_NAME = new HashMap<>();
-  static {
-    // Optimization
-    PASS_NAME.put("cse", new CommonSubexpressionEliminationPass());
-    PASS_NAME.put("loop_fusion", new LoopOptimizations.LoopFusionPass());
-    PASS_NAME.put("licm", new LoopOptimizations.LoopInvariantCodeMotionPass());
-
-    PASS_NAME.put("parallelism", new ParallelismPass());
-    PASS_NAME.put("pado_vertex", new PadoVertexPass());
-    PASS_NAME.put("pado_edge", new PadoEdgePass());
-    PASS_NAME.put("disaggregation", new DisaggregationPass());
-    PASS_NAME.put("ifile", new IFilePass());
-    PASS_NAME.put("data_skew", new DataSkewPass());
-    PASS_NAME.put("loop_grouping", new LoopGroupingPass());
-    PASS_NAME.put("loop_unrolling", new LoopUnrollingPass());
-    PASS_NAME.put("default_stage_partitioning", new DefaultStagePartitioningPass());
-    PASS_NAME.put("schedule_group", new ScheduleGroupPass());
-  }
-
-  /**
-   * A public method for registering new passes to the list.
-   * @param passName the name of the pass to be newly added.
-   * @param pass the pass to be newly added.
-   */
-  public static void registerPass(final String passName, final StaticOptimizationPass pass) {
-    PASS_NAME.put(passName, pass);
   }
 
   /**

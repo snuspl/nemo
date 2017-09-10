@@ -21,6 +21,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
@@ -54,7 +55,7 @@ public final class VortexBackendTest<I, O> {
         .connectVertices(new IREdge(IREdge.Type.OneToOne, combine, map2, Coder.DUMMY_CODER))
         .build();
 
-    this.dag = Optimizer.optimize(dag, Optimizer.PolicyType.Pado, EMPTY_DAG_DIRECTORY);
+    this.dag = Optimizer.optimize(dag, OptimizationPolicy.PADO, EMPTY_DAG_DIRECTORY);
   }
 
   /**

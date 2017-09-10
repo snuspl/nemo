@@ -25,7 +25,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class MapReduceCustomITCase {
+public class MapReduceCustomPolicyITCase {
   private static final int TIMEOUT = 60000;
   private static final String mapReduceCustom = "edu.snu.vortex.examples.beam.MapReduceCustom";
   private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_mr";
@@ -33,7 +33,7 @@ public class MapReduceCustomITCase {
   private static final String dagDirectory = "./dag";
 
   public static ArgBuilder builder = new ArgBuilder()
-      .addJobId(MapReduceCustomITCase.class.getSimpleName())
+      .addJobId(MapReduceCustomPolicyITCase.class.getSimpleName())
       .addUserMain(mapReduceCustom)
       .addUserArgs(input, output)
       .addDAGDirectory(dagDirectory);
@@ -49,8 +49,8 @@ public class MapReduceCustomITCase {
   @Test(timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
-        .addJobId(MapReduceCustomITCase.class.getSimpleName())
-        .addOptimizationPolicy("parallelism, custom")
+        .addJobId(MapReduceCustomPolicyITCase.class.getSimpleName())
+        .addOptimizationPolicy(MapReduceCustomPolicy.CUSTOM_POLICY_NAME)
         .build());
   }
 }

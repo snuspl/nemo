@@ -24,6 +24,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.*;
@@ -78,7 +79,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        OptimizationPolicy.TEST, "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -154,7 +155,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        OptimizationPolicy.TEST, "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -236,7 +237,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+          OptimizationPolicy.TEST, "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
