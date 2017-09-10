@@ -29,9 +29,7 @@ public final class OptimizationPolicy {
    */
   private static final Map<String, List<StaticOptimizationPass>> POLICIES = new HashMap<>();
 
-  /**
-   * A list of pre-defined policies.
-   */
+  // A list of pre-defined policies.
   static {
     registerPolicy(DEFAULT,
         Arrays.asList(
@@ -90,6 +88,12 @@ public final class OptimizationPolicy {
    * @return the policy with the given name.
    */
   public static List<StaticOptimizationPass> getPolicyCalled(final String name) {
+    if (!getPolicyNames().contains(name)) {
+      throw new RuntimeException("A policy called " + name + " is not yet registered.");
+    }
+    if (POLICIES.get(name).isEmpty()) {
+      throw new RuntimeException("The given policy " + name + " is empty. Optimization cannot be done.");
+    }
     return POLICIES.get(name);
   }
 

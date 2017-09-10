@@ -27,21 +27,21 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public class MapReduceCustomPolicyITCase {
   private static final int TIMEOUT = 60000;
-  private static final String mapReduceCustom = "edu.snu.vortex.examples.beam.MapReduceCustom";
+  private static final String mapReduceCustomPolicy = "edu.snu.vortex.examples.beam.MapReduceCustomPolicy";
   private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private static final String output = CompilerTestUtil.rootDir + "/src/main/resources/sample_output";
   private static final String dagDirectory = "./dag";
 
   public static ArgBuilder builder = new ArgBuilder()
       .addJobId(MapReduceCustomPolicyITCase.class.getSimpleName())
-      .addUserMain(mapReduceCustom)
+      .addUserMain(mapReduceCustomPolicy)
       .addUserArgs(input, output)
       .addDAGDirectory(dagDirectory);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addUserMain(mapReduceCustom)
+        .addUserMain(mapReduceCustomPolicy)
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
   }

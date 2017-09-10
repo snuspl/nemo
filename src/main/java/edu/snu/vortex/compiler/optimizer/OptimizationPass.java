@@ -41,9 +41,7 @@ public final class OptimizationPass {
    */
   private static final Map<String, StaticOptimizationPass> PASSES = new HashMap<>();
 
-  /**
-   * A list of pre-defined passes.
-   */
+  // A list of pre-defined passes.
   static {
     // Optimization
     PASSES.put(COMMON_SUBEXPRESSION_ELIMINATION, new CommonSubexpressionEliminationPass());
@@ -67,6 +65,9 @@ public final class OptimizationPass {
    * @return the pass with the given name.
    */
   public static StaticOptimizationPass getPassCalled(final String name) {
+    if (!getPassNames().contains(name)) {
+      throw new RuntimeException("A pass called " + name + " is not yet registered.");
+    }
     return PASSES.get(name);
   }
 

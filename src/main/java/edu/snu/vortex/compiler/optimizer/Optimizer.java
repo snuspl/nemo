@@ -47,9 +47,6 @@ public final class Optimizer {
     if (optimizationPolicy == null || optimizationPolicy.isEmpty()) {
       throw new RuntimeException("A policy name should be specified.");
     }
-    if (!OptimizationPolicy.getPolicyNames().contains(optimizationPolicy)) {
-      throw new RuntimeException("A policy called " + optimizationPolicy + "is not registered.");
-    }
     return process(dag, OptimizationPolicy.getPolicyCalled(optimizationPolicy), dagDirectory);
   }
 
@@ -64,8 +61,8 @@ public final class Optimizer {
   private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag,
                                                final List<StaticOptimizationPass> passes,
                                                final String dagDirectory) throws Exception {
-    if (passes == null || passes.isEmpty()) {
-      throw new RuntimeException("The given list of passes is empty. Optimization cannot be done.");
+    if (passes.isEmpty()) {
+      return dag;
     } else {
       final DAG<IRVertex, IREdge> processedDAG = passes.get(0).process(dag);
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passes.get(0).getClass().getSimpleName(),
