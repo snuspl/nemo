@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A class for maintaining Optimization Passes.
+ */
 public final class OptimizationPass {
   /**
    * A private constructor.

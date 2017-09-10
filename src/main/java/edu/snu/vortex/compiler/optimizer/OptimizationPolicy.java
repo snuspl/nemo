@@ -4,9 +4,12 @@ import edu.snu.vortex.compiler.optimizer.passes.*;
 
 import java.util.*;
 
+/**
+ * A class for maintaining Optimization Policies, which are each composed of a list of Optimization Passes.
+ */
 public final class OptimizationPolicy {
   /**
-   * A private constructor,
+   * A private constructor.
    */
   private OptimizationPolicy() {
   }
