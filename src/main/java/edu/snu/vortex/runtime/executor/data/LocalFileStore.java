@@ -117,7 +117,7 @@ final class LocalFileStore extends FileStore {
     final FilePartition partition = partitionIdToData.get(partitionId);
     if (partition != null) {
       try {
-        partition.close();
+        partition.commit();
       } catch (final IOException e) {
         throw new PartitionWriteException(e);
       }
@@ -175,7 +175,7 @@ final class LocalFileStore extends FileStore {
     try {
       final FilePartition partitionToClose = partitionIdToData.get(partitionId);
       if (partitionToClose != null) {
-        partitionToClose.close();
+        partitionToClose.commit();
       }
     } catch (final IOException closeException) {
       return new Throwable(closeException.getMessage(), cause);

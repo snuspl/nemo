@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.ir.Element;
  * A collection of data {@link Element}.
  * This is a unit of write towards {@link PartitionStore}s,
  * but it can be split into multiple blocks inside the store according to it's size.
- * TODO #463: Support incremental write. Consider to make the {@link Block} as a unit of read also.
+ * TODO #463: Support incremental read. Consider to make the {@link Block} as a unit of read also.
  */
 public final class Block {
 

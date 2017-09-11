@@ -171,7 +171,7 @@ public final class OutputWriter extends DataTransfer {
    * This block will be the unit of retrieval and recombination of this partition.
    * Constraint: If a partition is written by this method, it have to be read by {@link InputReader#readDataInRange()}.
    * TODO #378: Elaborate block construction during data skew pass
-   * TODO 428: DynOpt-clean up the metric collection flow
+   * TODO #428: DynOpt-clean up the metric collection flow
    *
    * @param dataToWrite an iterable for the elements to be written.
    * @throws ExecutionException      when fail to get results from futures.

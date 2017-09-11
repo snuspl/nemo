@@ -132,12 +132,9 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
 
-    try (
-        final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata)
-    ) {
-        partition.close();
+    try (final RemoteFileMetadata metadata =
+             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster)) {
+      new FilePartition(coder, filePath, metadata).commit();
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }
@@ -207,7 +204,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
                                                 final Throwable cause) {
     try {
       if (partition != null) {
-        partition.close();
+        partition.commit();
       }
     } catch (final IOException closeException) {
       return new Throwable(closeException.getMessage(), cause);

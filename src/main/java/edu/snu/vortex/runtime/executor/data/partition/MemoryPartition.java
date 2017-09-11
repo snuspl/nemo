@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.executor.data.partition;
 import edu.snu.vortex.runtime.executor.data.Block;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class represents a partition which is stored in local memory and not serialized.
  */
 @ThreadSafe
-public final class MemoryPartition implements Closeable {
+public final class MemoryPartition {
 
   private final List<Block> blocks;
   private volatile AtomicBoolean closed;
@@ -57,11 +56,10 @@ public final class MemoryPartition implements Closeable {
   }
 
   /**
-   * Close to prevent further write for this partition.
+   * Commits this partition to prevent further write.
    * If someone "subscribing" the data in this partition, it will be finished.
    */
-  @Override
-  public void close() {
+  public void commit() {
     closed.set(true);
   }
 }

@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * This class represents a partition which is stored in (local or remote) file.
  */
 @ThreadSafe
-public final class FilePartition implements Closeable {
+public final class FilePartition {
 
   private final Coder coder;
   private final String filePath;
@@ -156,13 +156,12 @@ public final class FilePartition implements Closeable {
   }
 
   /**
-   * Close to prevent further write for this partition.
+   * Commits this partition to prevent further write.
    * If someone "subscribing" the data in this partition, it will be finished.
    *
    * @throws IOException if failed to close.
    */
-  @Override
-  public void close() throws IOException {
+  public void commit() throws IOException {
     flushMetadata();
     metadata.close();
   }

@@ -89,7 +89,7 @@ final class MemoryStore implements PartitionStore {
   public void commitPartition(final String partitionId) {
     final MemoryPartition partition = partitionMap.get(partitionId);
     if (partition != null) {
-      partition.close();
+      partition.commit();
     }
   }
 

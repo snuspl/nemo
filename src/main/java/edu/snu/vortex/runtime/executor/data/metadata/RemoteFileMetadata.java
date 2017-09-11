@@ -143,7 +143,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   @Override
   public synchronized Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException {
     if (blockMetadataIterable == null) {
-      blockMetadataIterable = getBlockMetadataFromMaster();
+      blockMetadataIterable = getBlockMetadataFromServer();
     }
     return blockMetadataIterable;
   }
@@ -179,7 +179,7 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @return the received file metadata.
    * @throws IOException if fail to get the metadata.
    */
-  private Iterable<BlockMetadata> getBlockMetadataFromMaster() throws IOException {
+  private Iterable<BlockMetadata> getBlockMetadataFromServer() throws IOException {
     final List<BlockMetadata> blockMetadataList = new ArrayList<>();
 
     // Ask the metadata server in the master for the metadata
