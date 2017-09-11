@@ -15,147 +15,94 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
-import edu.snu.vortex.compiler.ir.IREdge;
-import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.common.state.JobState;
-import edu.snu.vortex.runtime.common.state.StageState;
-import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.common.dag.DAGBuilder;
-import org.apache.reef.tang.Tang;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
+import org.apache.reef.driver.context.ActiveContext;
+import org.apache.reef.driver.evaluator.AllocatedEvaluator;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
- * Tests {@link JobStateManager}.
+ * Tests {@link edu.snu.vortex.runtime.master.resource.ContainerManager}.
  */
-public final class JobStateManagerTest {
-  private static final int MAX_SCHEDULE_ATTEMPT = 2;
-  private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
+public final class ContainerManagerTest {
+  private ContainerManager containerManager;
+  private int testIdNumber = 0;
+  private final ExecutorService containerAllocationPool = Executors.newFixedThreadPool(5);
+  private final BlockingDeque<ActiveContext> mockResourceAllocationQueue = new LinkedBlockingDeque<>();
+
+  private final int DEFAULT_CAPACITY = 4;
+  private final int DEFAULT_MEMORY = 10240;
 
   @Before
   public void setUp() {
-    irDAGBuilder = new DAGBuilder<>();
+
+    final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
+    when(mockMsgEnv.asyncConnect(anyString(), anyString())).thenReturn(mock(Future.class));
+    containerManager = new ContainerManager(mock(EvaluatorRequestor.class), mockMsgEnv);
   }
 
-  /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link JobStateManager}.
-   * State changes are explicitly called to check whether states are managed correctly or not.
-   */
-  @Test
-  public void testPhysicalPlanStateChanges() throws Exception {
-    final Transform t = mock(Transform.class);
-    final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    irDAGBuilder.addVertex(v1);
+  @Test(timeout=5000)
+  public void testAllocationAfterJobCompletion() {
+    // Create 3 resource specifications, {A, B, C}.
+    final ResourceSpecification a = new ResourceSpecification(Attribute.Compute, DEFAULT_CAPACITY, DEFAULT_MEMORY);
+    final ResourceSpecification b = new ResourceSpecification(Attribute.Transient, DEFAULT_CAPACITY, DEFAULT_MEMORY);
+    final ResourceSpecification c = new ResourceSpecification(Attribute.Reserved, DEFAULT_CAPACITY, DEFAULT_MEMORY);
 
-    final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    irDAGBuilder.addVertex(v2);
+    // Create 2 of A, 2 of B and 1 of C.
+    containerManager.requestContainer(2, a);
+    containerManager.requestContainer(2, b);
+    containerManager.requestContainer(1, c);
 
-    final IRVertex v3 = new OperatorVertex(t);
-    v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    irDAGBuilder.addVertex(v3);
+    // We allocate 4 containers and start 4 executors.
+    mockResourceAllocationQueue.add(createMockContext());
+    mockResourceAllocationQueue.add(createMockContext());
+    mockResourceAllocationQueue.add(createMockContext());
+    mockResourceAllocationQueue.add(createMockContext());
 
-    final IRVertex v4 = new OperatorVertex(t);
-    v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    irDAGBuilder.addVertex(v4);
+    startAllocationThreadPool();
 
-    final IRVertex v5 = new OperatorVertex(new DoTransform(null, null));
-    v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    irDAGBuilder.addVertex(v5);
+    // Say the job finishes,
+    // and we would like to shutdown the running executors and terminate ContainerManager.
+    containerManager.shutdownRunningExecutors();
+    containerManager.terminate();
 
-    final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
-    irDAGBuilder.connectVertices(e1);
+    // But say, the 5th container and executor was only allocated by this point.
+    mockResourceAllocationQueue.add(createMockContext());
+  }
 
-    final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v3, v2, Coder.DUMMY_CODER);
-    irDAGBuilder.connectVertices(e2);
+  private AllocatedEvaluator createMockEvaluator() {
+    return mock(AllocatedEvaluator.class);
+  }
 
-    final IREdge e4 = new IREdge(IREdge.Type.ScatterGather, v2, v4, Coder.DUMMY_CODER);
-    irDAGBuilder.connectVertices(e4);
+  private ActiveContext createMockContext() {
+    final ActiveContext mockedContext = mock(ActiveContext.class);
+    when(mockedContext.getId()).thenReturn("TestContext" + testIdNumber++);
 
-    final IREdge e5 = new IREdge(IREdge.Type.ScatterGather, v2, v5, Coder.DUMMY_CODER);
-    irDAGBuilder.connectVertices(e5);
+    return mockedContext;
+  }
 
-    final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
-    final PhysicalPlanGenerator physicalPlanGenerator =
-        Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
-    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
-    final PartitionManagerMaster pmm = Tang.Factory.getTang().newInjector().getInstance(PartitionManagerMaster.class);
-    final JobStateManager jobStateManager = new JobStateManager(
-        new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-        pmm, MAX_SCHEDULE_ATTEMPT);
-
-    assertEquals(jobStateManager.getJobId(), "TestPlan");
-
-    final List<PhysicalStage> stageList = physicalDAG.getTopologicalSort();
-
-    for (int stageIdx = 0; stageIdx < stageList.size(); stageIdx++) {
-      final PhysicalStage physicalStage = stageList.get(stageIdx);
-      jobStateManager.onStageStateChanged(physicalStage.getId(), StageState.State.EXECUTING);
-      final List<TaskGroup> taskGroupList = physicalStage.getTaskGroupList();
-      taskGroupList.forEach(taskGroup -> {
-        jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.EXECUTING);
-        jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.COMPLETE);
-        if (taskGroup.getTaskGroupIdx() == taskGroupList.size() - 1) {
-          assertTrue(jobStateManager.checkStageCompletion(taskGroup.getStageId()));
+  private void startAllocationThreadPool() {
+    containerAllocationPool.execute(() -> {
+      while (true) {
+        final ActiveContext mockContext;
+        try {
+          mockContext = mockResourceAllocationQueue.take();
+          containerManager.onContainerAllocated(mockContext.getId(), createMockEvaluator(), null);
+          containerManager.onExecutorLaunched(mockContext);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
         }
-      });
-      final Map<String, TaskGroupState> taskGroupStateMap = jobStateManager.getIdToTaskGroupStates();
-      taskGroupList.forEach(taskGroup -> {
-        assertEquals(taskGroupStateMap.get(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState(),
-            TaskGroupState.State.COMPLETE);
-      });
-
-      if (stageIdx == stageList.size() - 1) {
-        assertEquals(jobStateManager.getJobState().getStateMachine().getCurrentState(), JobState.State.COMPLETE);
       }
-    }
-  }
-
-  /**
-   * Test whether the methods waiting finish of job works properly.
-   */
-  @Test(timeout = 1000)
-  public void testWaitUntilFinish() throws Exception {
-    // Create a JobStateManager of an empty dag.
-    final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.build();
-    final PhysicalPlanGenerator physicalPlanGenerator =
-        Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
-    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
-    final PartitionManagerMaster pmm = Tang.Factory.getTang().newInjector().getInstance(PartitionManagerMaster.class);
-    final JobStateManager jobStateManager = new JobStateManager(
-        new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-        pmm, MAX_SCHEDULE_ATTEMPT);
-
-    assertFalse(jobStateManager.checkJobTermination());
-
-    // Wait for the job to finish and check the job state.
-    // It have to return EXECUTING state after timeout.
-    JobState state = jobStateManager.waitUntilFinish(100, TimeUnit.MILLISECONDS);
-    assertEquals(state.getStateMachine().getCurrentState(), JobState.State.EXECUTING);
-
-    // Complete the job and check the result again.
-    // It have to return COMPLETE.
-    jobStateManager.onJobStateChanged(JobState.State.COMPLETE);
-    state = jobStateManager.waitUntilFinish();
-    assertEquals(state.getStateMachine().getCurrentState(), JobState.State.COMPLETE);
+    });
   }
 }
