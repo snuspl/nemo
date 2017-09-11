@@ -126,6 +126,7 @@ public final class RuntimeMaster {
   }
 
   public void terminate() {
+    containerManager.shutdownRunningExecutors();
     containerManager.terminate();
   }
 

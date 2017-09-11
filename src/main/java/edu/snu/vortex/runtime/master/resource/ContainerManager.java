@@ -28,6 +28,9 @@ import org.apache.reef.tang.Configuration;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +47,11 @@ public final class ContainerManager {
 
   private final EvaluatorRequestor evaluatorRequestor;
   private final MessageEnvironment messageEnvironment;
+
+  /**
+   * A map containing a latch for the container requests for each resource spec ID.
+   */
+  private final Map<String, CountDownLatch> requestLatchByResourceSpecId;
 
   /**
    * A map containing a list of executor representations for each container type.
@@ -76,6 +84,7 @@ public final class ContainerManager {
     this.failedExecutorRepresenterMap = new HashMap<>();
     this.pendingContextIdToResourceSpec = new HashMap<>();
     this.pendingContainerRequestsByContainerType = new HashMap<>();
+    this.requestLatchByResourceSpecId = new HashMap<>();
   }
 
   /**
@@ -96,6 +105,9 @@ public final class ContainerManager {
     pendingContainerRequestsByContainerType.putIfAbsent(resourceSpecification.getContainerType(), new ArrayList<>());
     pendingContainerRequestsByContainerType.get(resourceSpecification.getContainerType())
         .addAll(resourceSpecificationList);
+
+    requestLatchByResourceSpecId.put(resourceSpecification.getResourceSpecId(),
+        new CountDownLatch(numToRequest));
 
     // Request the evaluators
     evaluatorRequestor.submit(EvaluatorRequest.newBuilder()
@@ -187,6 +199,8 @@ public final class ContainerManager {
     executorsByContainerType.putIfAbsent(resourceSpec.getContainerType(), new ArrayList<>());
     executorsByContainerType.get(resourceSpec.getContainerType()).add(executorRepresenter);
     executorRepresenterMap.put(executorId, executorRepresenter);
+
+    requestLatchByResourceSpecId.get(resourceSpec.getResourceSpecId()).countDown();
   }
 
   public synchronized void onExecutorRemoved(final String failedExecutorId) {
@@ -208,7 +222,32 @@ public final class ContainerManager {
     return failedExecutorRepresenterMap;
   }
 
-  public synchronized void terminate() {
+  /**
+   * Shuts down the running executors.
+   */
+  public synchronized void shutdownRunningExecutors() {
     executorRepresenterMap.entrySet().forEach(e -> e.getValue().shutDown());
+    executorRepresenterMap.clear();
+  }
+
+  /**
+   * Terminates ContainerManager.
+   * Before we terminate, we must wait for all the executors we requested
+   * and shutdown all of them if any of them is running.
+   */
+  public synchronized void terminate() {
+    Executors.newSingleThreadExecutor().execute(() -> waitForAllRequestedResources());
+  }
+
+  private void waitForAllRequestedResources() {
+    requestLatchByResourceSpecId.forEach((resourceSpecId, latchForRequest) -> {
+      try {
+        latchForRequest.await();
+      } catch (InterruptedException e) {
+        throw new ContainerException(e);
+      }
+    });
+    shutdownRunningExecutors();
+    requestLatchByResourceSpecId.clear();
   }
 }
