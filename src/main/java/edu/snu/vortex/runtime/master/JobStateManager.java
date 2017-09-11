@@ -198,23 +198,37 @@ public final class JobStateManager {
    * @param newState of the job.
    */
   public synchronized void onJobStateChanged(final JobState.State newState) {
-
     String jobKey = MetricData.ComputationUnit.JOB.name() + jobId;
-    final MetricDataBuilder metricDataBuilder;
+
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.JOB, jobId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(jobKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(jobKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(jobKey);
+    };
 
     if (newState == JobState.State.EXECUTING) {
       LOG.debug("Executing Job ID {}...", jobId);
       jobState.getStateMachine().setState(newState);
-      metricMessageHandler.startPoint(MetricData.ComputationUnit.JOB, jobId, jobKey,
-                                      null, -1, newState,
-                                      metricDataBuilderMap);
+      beginMeasure.run();
     } else if (newState == JobState.State.COMPLETE) {
       LOG.debug("Job ID {} complete!", jobId);
       // Awake all threads waiting the finish of this job.
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        metricMessageHandler.endPoint(jobKey, newState, metricDataBuilderMap);
+        endMeasure.run();
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -225,7 +239,7 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
-        metricMessageHandler.endPoint(jobKey, newState, metricDataBuilderMap);
+        endMeasure.run();
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -249,6 +263,25 @@ public final class JobStateManager {
 
     String stageKey = MetricData.ComputationUnit.STAGE.name() + stageId;
 
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.STAGE, stageId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ScheduleAttempt", scheduleAttemptIdxByStage.get(stageId));
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(stageKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(stageKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(stageKey);
+    };
+
     if (newState == StageState.State.EXECUTING) {
       if (scheduleAttemptIdxByStage.containsKey(stageId)) {
         final int numAttempts = scheduleAttemptIdxByStage.get(stageId);
@@ -263,9 +296,7 @@ public final class JobStateManager {
         scheduleAttemptIdxByStage.put(stageId, 1);
       }
 
-      metricMessageHandler.startPoint(MetricData.ComputationUnit.STAGE, stageId, stageKey,
-                                      null, scheduleAttemptIdxByStage.get(stageId), newState,
-                                      metricDataBuilderMap);
+      beginMeasure.run();
 
       // if there exists a mapping, this state change is from a failed_recoverable stage,
       // and there may be task groups that do not need to be re-executed.
@@ -284,13 +315,13 @@ public final class JobStateManager {
         }
       }
     } else if (newState == StageState.State.COMPLETE) {
-      metricMessageHandler.endPoint(stageKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       currentJobStageIds.remove(stageId);
       if (currentJobStageIds.isEmpty()) {
         onJobStateChanged(JobState.State.COMPLETE);
       }
     } else if (newState == StageState.State.FAILED_RECOVERABLE) {
-      metricMessageHandler.endPoint(stageKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       currentJobStageIds.add(stageId);
     }
   }

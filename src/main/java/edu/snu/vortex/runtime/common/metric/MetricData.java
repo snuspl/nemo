@@ -18,57 +18,16 @@ package edu.snu.vortex.runtime.common.metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.vortex.runtime.exception.JsonParseException;
 
+import java.util.Map;
+
 /**
  * MetricData that holds executor side metrics.
  */
 public class MetricData {
-
   private final Enum computationUnitEnum;
   private final String computationUnitId;
-  private final String executorId;
-  private final int stageScheduleAttemptIdx;
-  private final String startState;
-  private final String endState;
-  private final long elapsedTime;
   private final ObjectMapper objectMapper;
-
-  public MetricData(final Enum computationUnit,
-                    final String computationUnitId,
-                    final String executorId,
-                    final int stageScheduleAttemptIdx,
-                    final String startState,
-                    final String endState,
-                    final long elapsedTime) {
-    this.computationUnitEnum = computationUnit;
-    this.computationUnitId = computationUnitId;
-    this.executorId = executorId;
-    this.stageScheduleAttemptIdx = stageScheduleAttemptIdx;
-    this.startState = startState;
-    this.endState = endState;
-    this.elapsedTime = elapsedTime;
-    objectMapper = new ObjectMapper();
-  }
-
-  public final Enum getComputationUnit() {
-    return computationUnitEnum; }
-  public final String getComputationUnitId() {
-    return computationUnitId;
-  }
-  public final String getExecutorId() {
-    return executorId;
-  }
-  public final int getStageScheduleAttemptIdx() {
-    return stageScheduleAttemptIdx;
-  }
-  public final String getStartState() {
-    return startState;
-  }
-  public final String getEndState() {
-    return endState;
-  }
-  public final long getElapsedTime() {
-    return elapsedTime;
-  }
+  private final Map<String, Object> metrics;
 
   /**
    * Computation units to measure.
@@ -78,6 +37,25 @@ public class MetricData {
     STAGE,
     TASKGROUP,
     TASK
+  }
+
+  public MetricData(final Enum computationUnitEnum,
+             final String computationUnitId,
+             final Map<String, Object> metrics) {
+    this.computationUnitEnum = computationUnitEnum;
+    this.computationUnitId = computationUnitId;
+    this.objectMapper = new ObjectMapper();
+    this.metrics = metrics;
+  }
+
+  public final Enum getComputationUnitEnum() {
+    return computationUnitEnum;
+  }
+  public final String getComputationUnitId() {
+    return computationUnitId;
+  }
+  public final Map<String, Object> getMetrics() {
+    return metrics;
   }
 
   public final String toJson() {

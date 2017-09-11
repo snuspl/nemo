@@ -100,29 +100,46 @@ public final class TaskGroupStateManager {
                                                    final Optional<List<String>> tasksPutOnHold,
                                                    final Optional<TaskGroupState.RecoverableFailureCause> cause) {
     String taskGroupKey = MetricData.ComputationUnit.TASKGROUP.name() + taskGroupId;
-    final MetricDataBuilder metricDataBuilder;
+
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.TASKGROUP, taskGroupId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ExecutorId", executorId);
+      metrics.put("ScheduleAttempt", attemptIdx);
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(taskGroupKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(taskGroupKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(taskGroupKey);
+    };
 
     switch (newState) {
     case EXECUTING:
       LOG.debug("Executing TaskGroup ID {}...", taskGroupId);
-      periodicMetricSender.startPoint(MetricData.ComputationUnit.TASKGROUP, taskGroupId, taskGroupKey,
-                                      executorId, attemptIdx, newState, metricDataBuilderMap);
+      beginMeasure.run();
       idToTaskStates.forEach((taskId, state) -> state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR));
       break;
     case COMPLETE:
       LOG.debug("TaskGroup ID {} complete!", taskGroupId);
-      periodicMetricSender.endPoint(taskGroupKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_RECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (recoverable).", taskGroupId);
-      // This metric data is effective on recoverable failures EXCEPT container failure.
-      periodicMetricSender.endPoint(taskGroupKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case FAILED_UNRECOVERABLE:
       LOG.debug("TaskGroup ID {} failed (unrecoverable).", taskGroupId);
-      periodicMetricSender.endPoint(taskGroupKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       notifyTaskGroupStateToMaster(newState, Optional.empty(), cause);
       break;
     case ON_HOLD:
@@ -150,26 +167,45 @@ public final class TaskGroupStateManager {
 
     String taskKey = MetricData.ComputationUnit.TASK + taskId;
 
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.TASK, taskId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ExecutorId", executorId);
+      metrics.put("ScheduleAttempt", attemptIdx);
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(taskKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(taskKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      periodicMetricSender.send(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(taskKey);
+    };
+
     switch (newState) {
     case READY:
     case EXECUTING:
-      periodicMetricSender.startPoint(MetricData.ComputationUnit.TASK, taskId, taskKey,
-          executorId, attemptIdx, newState, metricDataBuilderMap);
+      beginMeasure.run();
       break;
     case COMPLETE:
       currentTaskGroupTaskIds.remove(taskId);
       if (currentTaskGroupTaskIds.isEmpty()) {
         onTaskGroupStateChanged(TaskGroupState.State.COMPLETE, Optional.empty(), cause);
       }
-      periodicMetricSender.endPoint(taskKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       break;
     case FAILED_RECOVERABLE:
       onTaskGroupStateChanged(TaskGroupState.State.FAILED_RECOVERABLE, Optional.empty(), cause);
-      periodicMetricSender.endPoint(taskKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       break;
     case FAILED_UNRECOVERABLE:
       onTaskGroupStateChanged(TaskGroupState.State.FAILED_UNRECOVERABLE, Optional.empty(), cause);
-      periodicMetricSender.endPoint(taskKey, newState, metricDataBuilderMap);
+      endMeasure.run();
       break;
     case ON_HOLD:
       currentTaskGroupTaskIds.remove(taskId);

@@ -16,9 +16,6 @@
 package edu.snu.vortex.runtime.master;
 
 import javax.inject.Inject;
-import java.util.Map;
-
-import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,28 +30,6 @@ public final class DefaultMetricMessageHandler implements MetricMessageHandler {
   @Inject
   public DefaultMetricMessageHandler() {
 
-  }
-
-  public void startPoint(final Enum computationUnitEnum,
-                         final String computationUnitId,
-                         final String computationUnitKey,
-                         final String executorId,
-                         final int attemptIdx,
-                         final Enum state,
-                         final Map<String, MetricDataBuilder> metricDataBuilderMap) {
-    final MetricDataBuilder metricDataBuilder = new MetricDataBuilder(computationUnitEnum,
-                                                                      computationUnitId, executorId);
-    metricDataBuilder.beginMeasurement(attemptIdx, state, System.nanoTime());
-    metricDataBuilderMap.put(computationUnitKey, metricDataBuilder);
-  }
-
-  public void endPoint(final String computationUnitKey,
-                       final Enum state,
-                       final Map<String, MetricDataBuilder> metricDataBuilderMap) {
-    final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(computationUnitKey);
-    metricDataBuilder.endMeasurement(state, System.nanoTime());
-    onMetricMessageReceived(metricDataBuilder.build().toJson());
-    metricDataBuilderMap.remove(computationUnitKey);
   }
 
   @Override

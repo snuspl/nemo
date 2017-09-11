@@ -16,64 +16,50 @@
 
 package edu.snu.vortex.runtime.common.metric;
 
+import java.util.Map;
+
 /**
  * MetricData Builder.
  */
 public final class MetricDataBuilder {
-
   private final Enum computationUnitEnum;
   private final String computationUnitId;
-  private final String executorId;
-  private int scheduleAttemptIdx;
-  private String fromState;
-  private String toState;
-  private long startAt;
-  private long endAt;
+  private long startTime;
+  private long endTime;
+  private Map<String, Object> metrics;
 
-  public MetricDataBuilder(final Enum computationUnit,
-                    final String computationUnitId,
-                    final String executorId) {
-    this.computationUnitEnum = computationUnit;
+  public MetricDataBuilder(final Enum computationUnitEnum,
+                          final String computationUnitId) {
+    this.computationUnitEnum = computationUnitEnum;
     this.computationUnitId = computationUnitId;
-    this.executorId = executorId;
-    this.scheduleAttemptIdx = 0;
-    this.fromState = null;
-    this.toState = null;
-    this.startAt = 0;
-    this.endAt = 0;
-  }
-
-  public void beginMeasurement(final int attemptIdx, final Enum startState, final long beginTimestamp) {
-    this.scheduleAttemptIdx = attemptIdx;
-    this.fromState = startState.name();
-    this.startAt = beginTimestamp;
-  }
-
-  public void endMeasurement(final Enum endState, final long endTimestamp) {
-    this.toState = endState.name();
-    this.endAt = endTimestamp;
+    startTime = 0;
+    endTime = 0;
+    metrics = null;
   }
 
   public Enum getComputationUnit() {
-    return computationUnitEnum;
-  }
+    return computationUnitEnum; }
   public String getComputationUnitId() {
     return computationUnitId;
   }
-  public String getExecutorId() {
-    return executorId;
+  public Map<String, Object> getMetrics() {
+    return metrics; }
+  public long getStartTime() {
+    return startTime; }
+  public long getEndTime() {
+    return endTime; }
+
+  public void beginMeasurement(final Map<String, Object> metricMap) {
+    startTime = System.nanoTime();
+    metricMap.put("StartTime", startTime);
+    this.metrics = metricMap;
   }
-  public int getScheduleAttemptIdx() {
-    return scheduleAttemptIdx;
-  }
-  public String getFromState() {
-    return fromState;
-  }
-  public String getToState() {
-    return toState;
-  }
-  public long getElapsedTime() {
-    return endAt - startAt;
+
+  public void endMeasurement(final Map<String, Object> metricMap) {
+    endTime = System.nanoTime();
+    metricMap.put("EndTime", endTime);
+    metricMap.put("ElapsedTime", endTime - startTime);
+    this.metrics.putAll(metricMap);
   }
 
   /**
@@ -81,7 +67,6 @@ public final class MetricDataBuilder {
    * @return the MetricData constructed by the builder.
    */
   public MetricData build() {
-    return new MetricData(getComputationUnit(), getComputationUnitId(), getExecutorId(),
-        getScheduleAttemptIdx(), getFromState(), getToState(), getElapsedTime());
+    return new MetricData(getComputationUnit(), getComputationUnitId(), getMetrics());
   }
 }
