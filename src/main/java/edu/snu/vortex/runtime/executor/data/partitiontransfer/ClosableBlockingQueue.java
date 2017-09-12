@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
@@ -24,7 +25,8 @@ import java.util.Queue;
  *
  * @param <T> the type of elements
  */
-public final class ClosableBlockingQueue<T> {
+@ThreadSafe
+public final class ClosableBlockingQueue<T> implements AutoCloseable {
 
   private final Queue<T> queue;
   private volatile boolean closed = false;
@@ -56,7 +58,7 @@ public final class ClosableBlockingQueue<T> {
       throw new IllegalStateException("The input end of this queue has been closed");
     }
     queue.add(element);
-    notify();
+    notifyAll();
   }
 
   /**
@@ -64,7 +66,7 @@ public final class ClosableBlockingQueue<T> {
    */
   public synchronized void close() {
     closed = true;
-    notify();
+    notifyAll();
   }
 
   /**
@@ -78,7 +80,6 @@ public final class ClosableBlockingQueue<T> {
     while (queue.isEmpty() && !closed) {
       wait();
     }
-    notify();
     // retrieves and removes the head of the underlying collection, or return null if the queue is empty
     return queue.poll();
   }
@@ -94,7 +95,6 @@ public final class ClosableBlockingQueue<T> {
     while (queue.isEmpty() && !closed) {
       wait();
     }
-    notify();
     // retrieves the head of the underlying collection, or return null if the queue is empty
     return queue.peek();
   }
