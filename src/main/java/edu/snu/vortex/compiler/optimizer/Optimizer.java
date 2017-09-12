@@ -38,7 +38,7 @@ public final class Optimizer {
   /**
    * Optimize function.
    * @param dag input DAG.
-   * @param optimizationPolicy name of the instantiation policy that we want to use to optimize the DAG.
+   * @param optimizationPolicy the optimization policy that we want to use to optimize the DAG.
    * @param dagDirectory directory to save the DAG information.
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
@@ -80,7 +80,6 @@ public final class Optimizer {
    */
   public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
-
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final Attribute dynamicOptimizationType =
         metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);

@@ -23,9 +23,11 @@ import java.util.List;
 
 /**
  * An interface for policies, which are composed of a list of optimization passes.
+ * The list of optimization passes are run in the order provided by the implementation.
  */
 @DefaultImplementation(DefaultPolicy.class)
 public interface Policy extends Serializable {
+  // TODO #479: Group, organize passes and update them accordingly to Policies.
   /**
    * @return the content of the policy: the list of optimization passes of the policy.
    */

@@ -40,7 +40,7 @@ public final class LoopGroupingPass implements StaticOptimizationPass {
    * @return The maximum stack depth of the DAG.
    * @throws Exception exceptions through the way.
    */
-  private Integer findMaxLoopVertexStackDepth(final DAG<IRVertex, IREdge> dag) throws Exception {
+  private Integer findMaxLoopVertexStackDepth(final DAG<IRVertex, IREdge> dag) {
     final OptionalInt maxDepth = dag.getVertices().stream().filter(dag::isCompositeVertex)
         .mapToInt(dag::getLoopStackDepthOf)
         .max();
