@@ -27,15 +27,22 @@ import edu.snu.vortex.common.dag.Vertex;
  */
 public final class Stage extends Vertex {
   private final DAG<IRVertex, IREdge> stageInternalDAG;
+  private final int scheduleGroupIndex;
 
   public Stage(final String stageId,
-               final DAG<IRVertex, IREdge> stageInternalDAG) {
+               final DAG<IRVertex, IREdge> stageInternalDAG,
+               final int scheduleGroupIndex) {
     super(stageId);
     this.stageInternalDAG = stageInternalDAG;
+    this.scheduleGroupIndex = scheduleGroupIndex;
   }
 
   public DAG<IRVertex, IREdge> getStageInternalDAG() {
     return stageInternalDAG;
+  }
+
+  public int getScheduleGroupIndex() {
+    return scheduleGroupIndex;
   }
 
   @Override
