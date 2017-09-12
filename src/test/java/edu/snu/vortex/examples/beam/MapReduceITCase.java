@@ -17,10 +17,7 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
-import edu.snu.vortex.compiler.optimizer.policy.CustomPassPolicy;
-import edu.snu.vortex.compiler.optimizer.policy.DataSkewPolicy;
-import edu.snu.vortex.compiler.optimizer.policy.DisaggregationPolicy;
-import edu.snu.vortex.compiler.optimizer.policy.PadoPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +53,7 @@ public final class MapReduceITCase {
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName())
+        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
         .build());
   }
 

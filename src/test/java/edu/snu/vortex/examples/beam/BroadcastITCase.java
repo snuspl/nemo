@@ -17,6 +17,7 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
+import edu.snu.vortex.compiler.optimizer.policy.DefaultPolicy;
 import edu.snu.vortex.compiler.optimizer.policy.PadoPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +55,7 @@ public final class BroadcastITCase {
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName())
+        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
         .build());
   }
 
