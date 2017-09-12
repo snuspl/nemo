@@ -186,7 +186,7 @@ public final class BatchScheduler implements Scheduler {
     if (stageComplete) {
       // if the stage this task group belongs to is complete,
       if (!jobStateManager.checkJobTermination()) { // and if the job is not yet complete or failed,
-        scheduleNextStage(stageIdForTaskGroupUponCompletion);
+        attemptNextScheduleGroup(stageIdForTaskGroupUponCompletion);
       }
     } else {
       // determine if at least one of the children stages must receive this task group's output as "push"
@@ -201,7 +201,7 @@ public final class BatchScheduler implements Scheduler {
       }
 
       if (pushOutput) {
-        scheduleNextStage(stageIdForTaskGroupUponCompletion);
+        attemptNextScheduleGroup(stageIdForTaskGroupUponCompletion);
       }
     }
   }
@@ -267,13 +267,13 @@ public final class BatchScheduler implements Scheduler {
       }
       // the stage this task group belongs to has become failed recoverable.
       // it is a good point to start searching for another stage to schedule.
-      scheduleNextStage(taskGroup.getStageId());
+      attemptNextScheduleGroup(taskGroup.getStageId());
       break;
     // The task group executed successfully but there is something wrong with the output store.
     case OUTPUT_WRITE_FAILURE:
       // the stage this task group belongs to has become failed recoverable.
       // it is a good point to start searching for another stage to schedule.
-      scheduleNextStage(taskGroup.getStageId());
+      attemptNextScheduleGroup(taskGroup.getStageId());
       break;
     case CONTAINER_FAILURE:
       LOG.info("Only the failed task group will be retried.");
@@ -306,7 +306,7 @@ public final class BatchScheduler implements Scheduler {
       // Schedule a stage after marking the necessary task groups to failed_recoverable.
       // The stage for one of the task groups that failed is a starting point to look
       // for the next stage to be scheduled.
-      scheduleNextStage(getTaskGroupById(taskGroupsToReExecute.iterator().next()).getStageId());
+      attemptNextScheduleGroup(getTaskGroupById(taskGroupsToReExecute.iterator().next()).getStageId());
     }
   }
 
@@ -319,7 +319,7 @@ public final class BatchScheduler implements Scheduler {
    * Schedules the next stage to execute after a stage completion.
    * @param completedStageId the ID of the stage that just completed and triggered this scheduling.
    */
-  private synchronized void scheduleNextStage(final String completedStageId) {
+  private synchronized void attemptNextScheduleGroup(final String completedStageId) {
     final List<PhysicalStage> childrenStages = physicalPlan.getStageDAG().getChildren(completedStageId);
 
     Optional<PhysicalStage> stageToSchedule;
@@ -346,6 +346,16 @@ public final class BatchScheduler implements Scheduler {
         }
       }
     }
+  }
+
+  private boolean isCurrentScheduleGroupCompleted(final PhysicalStage completedStage) {
+    boolean currentScheduleGroupCompleted = true;
+
+    for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
+      if (stage.get)
+    }
+
+    return currentScheduleGroupCompleted;
   }
 
   /**
