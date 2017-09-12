@@ -15,17 +15,16 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
-import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.vortex.compiler.optimizer.policy.PadoPolicy;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +54,7 @@ public final class VortexBackendTest<I, O> {
         .connectVertices(new IREdge(IREdge.Type.OneToOne, combine, map2, Coder.DUMMY_CODER))
         .build();
 
-    this.dag = Optimizer.optimize(dag, OptimizationPolicy.PADO, EMPTY_DAG_DIRECTORY);
+    this.dag = Optimizer.optimize(dag, new PadoPolicy(), EMPTY_DAG_DIRECTORY);
   }
 
   /**

@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.eventhandler.DynamicOptimizationEventHandler;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.compiler.optimizer.policy.Policy;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public final class UserApplicationRunner implements Runnable {
   private final String dagDirectory;
   private final String className;
   private final String[] arguments;
-  private final String optimizationPolicy;
+  private final String optimizationPolicyCanonicalName;
 
   private final RuntimeMaster runtimeMaster;
   private final Frontend frontend;
@@ -57,7 +58,7 @@ public final class UserApplicationRunner implements Runnable {
     this.dagDirectory = dagDirectory;
     this.className = className;
     this.arguments = arguments.split(" ");
-    this.optimizationPolicy = optimizationPolicy;
+    this.optimizationPolicyCanonicalName = optimizationPolicy;
     this.runtimeMaster = runtimeMaster;
     this.frontend = new BeamFrontend();
     this.backend = new VortexBackend();
@@ -70,8 +71,10 @@ public final class UserApplicationRunner implements Runnable {
       final DAG<IRVertex, IREdge> dag = frontend.compile(className, arguments);
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
+      final Policy optimizationPolicy = (Policy) Class.forName(optimizationPolicyCanonicalName).newInstance();
       final DAG<IRVertex, IREdge> optimizedDAG = Optimizer.optimize(dag, optimizationPolicy, dagDirectory);
-      optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy, "IR optimized for " + optimizationPolicy);
+      optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy.getClass().getSimpleName(),
+          "IR optimized for " + optimizationPolicy.getClass().getSimpleName());
 
       final PhysicalPlan physicalPlan = backend.compile(optimizedDAG);
 

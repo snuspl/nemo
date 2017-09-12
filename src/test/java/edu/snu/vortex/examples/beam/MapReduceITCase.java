@@ -17,7 +17,10 @@ package edu.snu.vortex.examples.beam;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
-import edu.snu.vortex.compiler.optimizer.OptimizationPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.CustomPassPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.DataSkewPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.DisaggregationPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.PadoPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,21 +34,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
   private static final int TIMEOUT = 60000;
-  private static final String mapReduce = "edu.snu.vortex.examples.beam.MapReduce";
   private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_mr";
   private static final String output = CompilerTestUtil.rootDir + "/src/main/resources/sample_output";
   private static final String dagDirectory = "./dag";
 
   public static ArgBuilder builder = new ArgBuilder()
       .addJobId(MapReduceITCase.class.getSimpleName())
-      .addUserMain(mapReduce)
+      .addUserMain(MapReduce.class.getCanonicalName())
       .addUserArgs(input, output)
       .addDAGDirectory(dagDirectory);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addUserMain(mapReduce)
+        .addUserMain(MapReduce.class.getCanonicalName())
         .addUserArgs(input, output)
         .addDAGDirectory(dagDirectory);
   }
@@ -61,7 +63,7 @@ public final class MapReduceITCase {
   public void testDisaggregation() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disaggregation")
-        .addOptimizationPolicy(OptimizationPolicy.DISAGGREGATION)
+        .addOptimizationPolicy(DisaggregationPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -69,7 +71,15 @@ public final class MapReduceITCase {
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
-        .addOptimizationPolicy(OptimizationPolicy.PADO)
+        .addOptimizationPolicy(PadoPolicy.class.getCanonicalName())
+        .build());
+  }
+
+  @Test (timeout = TIMEOUT)
+  public void testCustomPolicy() throws Exception {
+    JobLauncher.main(builder
+        .addJobId(MapReduceITCase.class.getSimpleName() + "_custom")
+        .addOptimizationPolicy(CustomPassPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -81,7 +91,7 @@ public final class MapReduceITCase {
   public void testDataSkew() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_dataskew")
-        .addOptimizationPolicy(OptimizationPolicy.DATASKEW)
+        .addOptimizationPolicy(DataSkewPolicy.class.getCanonicalName())
         .build());
   }
 }

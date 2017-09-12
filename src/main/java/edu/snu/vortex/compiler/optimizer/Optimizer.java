@@ -19,9 +19,10 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.optimizer.passes.*;
-import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.*;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.optimizer.policy.Policy;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
@@ -42,12 +43,12 @@ public final class Optimizer {
    * @return optimized DAG, tagged with attributes.
    * @throws Exception throws an exception if there is an exception.
    */
-  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final String optimizationPolicy,
+  public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final Policy optimizationPolicy,
                                                final String dagDirectory) throws Exception {
-    if (optimizationPolicy == null || optimizationPolicy.isEmpty()) {
+    if (optimizationPolicy == null || optimizationPolicy.getPolicyContent().isEmpty()) {
       throw new RuntimeException("A policy name should be specified.");
     }
-    return process(dag, OptimizationPolicy.getPolicyCalled(optimizationPolicy), dagDirectory);
+    return process(dag, optimizationPolicy.getPolicyContent(), dagDirectory);
   }
 
   /**
@@ -64,7 +65,7 @@ public final class Optimizer {
     if (passes.isEmpty()) {
       return dag;
     } else {
-      final DAG<IRVertex, IREdge> processedDAG = passes.get(0).process(dag);
+      final DAG<IRVertex, IREdge> processedDAG = passes.get(0).apply(dag);
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passes.get(0).getClass().getSimpleName(),
           "DAG after optimization");
       return process(processedDAG, passes.subList(1, passes.size()), dagDirectory);
@@ -88,7 +89,7 @@ public final class Optimizer {
       case DataSkew:
         // Map between a partition ID to corresponding metric data (e.g., the size of each block).
         final Map<String, List<Long>> metricData = metricCollectionBarrierVertex.getMetricData();
-        return new DataSkewDynamicOptimizationPass().process(originalPlan, metricData);
+        return new DataSkewDynamicOptimizationPass().apply(originalPlan, metricData);
       default:
         return originalPlan;
     }
