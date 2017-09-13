@@ -29,7 +29,9 @@ import org.apache.reef.tang.Configuration;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -235,11 +237,11 @@ public final class ContainerManager {
    * Before we terminate, we must wait for all the executors we requested
    * and shutdown all of them if any of them is running.
    */
-  public synchronized void terminate() {
-    Executors.newSingleThreadExecutor().execute(() -> waitForAllRequestedResources());
+  public synchronized Future<Boolean> terminate() {
+    return Executors.newSingleThreadExecutor().submit(() -> waitForAllRequestedResources());
   }
 
-  private void waitForAllRequestedResources() {
+  private boolean waitForAllRequestedResources() {
     requestLatchByResourceSpecId.forEach((resourceSpecId, latchForRequest) -> {
       try {
         latchForRequest.await();
@@ -249,5 +251,6 @@ public final class ContainerManager {
     });
     shutdownRunningExecutors();
     requestLatchByResourceSpecId.clear();
+    return executorRepresenterMap.isEmpty();
   }
 }
