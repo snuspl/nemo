@@ -29,7 +29,6 @@ import org.apache.reef.tang.Configuration;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -236,6 +235,7 @@ public final class ContainerManager {
    * Terminates ContainerManager.
    * Before we terminate, we must wait for all the executors we requested
    * and shutdown all of them if any of them is running.
+   * @return a future that returns a boolean on whether all requested resources were allocated and released.
    */
   public synchronized Future<Boolean> terminate() {
     shutdownRunningExecutors();
