@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.util.concurrent.*;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -72,10 +73,18 @@ public final class ContainerManagerTest {
     // Say the job finishes,
     // and we would like to shutdown the running executors and terminate ContainerManager.
     containerManager.shutdownRunningExecutors();
-    containerManager.terminate();
+    final Future<Boolean> terminationResult = containerManager.terminate();
 
     // But say, the 5th container and executor was only allocated by this point.
     allocateResource(createMockContext());
+
+    try {
+      assertTrue(terminationResult.get());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 
   private AllocatedEvaluator createMockEvaluator() {
