@@ -72,7 +72,6 @@ public final class ContainerManagerTest {
 
     // Say the job finishes,
     // and we would like to shutdown the running executors and terminate ContainerManager.
-    containerManager.shutdownRunningExecutors();
     final Future<Boolean> terminationResult = containerManager.terminate();
 
     // But say, the 5th container and executor was only allocated by this point.

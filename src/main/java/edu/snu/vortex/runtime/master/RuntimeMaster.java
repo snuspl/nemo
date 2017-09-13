@@ -125,7 +125,6 @@ public final class RuntimeMaster {
   }
 
   public void terminate() {
-    containerManager.shutdownRunningExecutors();
     final Future<Boolean> allExecutorsClosed = containerManager.terminate();
 
     try {

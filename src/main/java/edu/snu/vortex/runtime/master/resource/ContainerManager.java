@@ -227,7 +227,7 @@ public final class ContainerManager {
   /**
    * Shuts down the running executors.
    */
-  public synchronized void shutdownRunningExecutors() {
+  private void shutdownRunningExecutors() {
     executorRepresenterMap.entrySet().forEach(e -> e.getValue().shutDown());
     executorRepresenterMap.clear();
   }
@@ -238,6 +238,7 @@ public final class ContainerManager {
    * and shutdown all of them if any of them is running.
    */
   public synchronized Future<Boolean> terminate() {
+    shutdownRunningExecutors();
     return Executors.newSingleThreadExecutor().submit(() -> waitForAllRequestedResources());
   }
 
