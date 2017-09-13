@@ -20,6 +20,11 @@ import java.io.IOException;
 
 /**
  * This class represents a metadata for a (local / remote) file partition.
+ * The writer and reader determine the status of a file partition
+ * (such as accessibility, how many bytes are written, etc.) by using this metadata.
+ * When a writer reserves the region (or space) of a file for a data block,
+ * other writers will write their data after the region.
+ * Also, the readers will judge a data block available after the block is committed.
  */
 public abstract class FileMetadata implements Closeable {
 

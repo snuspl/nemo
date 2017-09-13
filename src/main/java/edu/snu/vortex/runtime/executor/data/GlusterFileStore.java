@@ -44,6 +44,8 @@ import java.util.function.Supplier;
  * each access (write, read, or deletion) for a file needs one instance of {@link FilePartition}.
  * It supports concurrent write for a single file, but each writer has to have separate instance.
  * These accesses are judiciously synchronized by the metadata server in master.
+ * TODO #485: Merge LocalFileStore and GlusterFileStore.
+ * TODO #410: Implement metadata caching for the RemoteFileMetadata.
  */
 @ThreadSafe
 final class GlusterFileStore extends FileStore implements RemoteFileStore {
@@ -89,7 +91,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
           return Optional.empty();
         }
       } catch (final IOException cause) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partition, cause);
         throw new PartitionFetchException(combinedThrowable);
       }
     };
@@ -117,7 +119,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         final List<Long> blockSizeList = putBlocks(coder, partition, blocks);
         return Optional.of(blockSizeList);
       } catch (final IOException cause) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partition, cause);
         throw new PartitionWriteException(combinedThrowable);
       }
     };
@@ -164,15 +166,19 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
           return false;
         }
       } catch (final IOException cause) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partition, cause);
         throw new PartitionFetchException(combinedThrowable);
       }
     };
     return CompletableFuture.supplyAsync(supplier, executorService);
   }
 
+  /**
+   * @see FileStore#getFileAreas(String, HashRange).
+   */
   @Override
-  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
+  public List<FileArea> getFileAreas(final String partitionId,
+                                     final HashRange hashRange) {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = partitionIdToFilePath(partitionId);
     FilePartition partition = null;
@@ -187,21 +193,23 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         throw new PartitionFetchException(new Throwable(String.format("%s does not exists", partitionId)));
       }
     } catch (final IOException cause) {
-      final Throwable combinedThrowable = closePartitionExceptionally(partition, cause);
+      final Throwable combinedThrowable = commitPartitionExceptionally(partition, cause);
       throw new PartitionFetchException(combinedThrowable);
     }
   }
 
   /**
-   * Closes a partition exceptionally.
-   * If failed to close, it combines the cause and newly thrown exception.
+   * Commits a partition exceptionally.
+   * If there are any subscribers who are waiting the data of the target partition,
+   * they will be notified that partition is committed (exceptionally).
+   * If failed to commit, it combines the cause and newly thrown exception.
    *
-   * @param partition to close.
+   * @param partition to commit.
    * @param cause     of this exception.
-   * @return original cause of this exception if success to close, combined {@link Throwable} if else.
+   * @return original cause of this exception if success to commit, combined {@link Throwable} if else.
    */
-  private Throwable closePartitionExceptionally(@Nullable final FilePartition partition,
-                                                final Throwable cause) {
+  private Throwable commitPartitionExceptionally(@Nullable final FilePartition partition,
+                                                 final Throwable cause) {
     try {
       if (partition != null) {
         partition.commit();

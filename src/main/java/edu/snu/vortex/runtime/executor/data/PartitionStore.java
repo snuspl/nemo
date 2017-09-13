@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface PartitionStore {
   /**
-   * Retrieves data in a specific hash range from a partition.
+   * Retrieves data in a specific {@link HashRange} from a partition.
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range
@@ -44,6 +44,8 @@ public interface PartitionStore {
    * If the partition exists already, appends the data to it.
    * Each block can be split into multiple blocks according to it's size.
    * This method supports concurrent write, but these blocks may not be saved consecutively.
+   * If the data is needed to be "incrementally" written (and read),
+   * each block can be committed right after being written by using {@param commitPerBlock}.
    *
    * @param partitionId    of the partition.
    * @param blocks         to save to a partition.
@@ -58,6 +60,9 @@ public interface PartitionStore {
 
   /**
    * Notifies that all writes for a partition is end.
+   * If there are any subscribers who are waiting the data of the target partition,
+   * they will be notified that partition is committed.
+   * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    *
    * @param partitionId of the partition.
    * @throws PartitionWriteException if fail to commit.
@@ -65,7 +70,6 @@ public interface PartitionStore {
   void commitPartition(String partitionId) throws PartitionWriteException;
 
   /**
-   * Optional<Partition> removePartition(String partitionId) throws PartitionFetchException;
    * Removes a partition of data.
    *
    * @param partitionId of the partition.

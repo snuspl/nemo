@@ -71,7 +71,7 @@ final class LocalFileStore extends FileStore {
       try {
         return Optional.of(partition.retrieveInHashRange(hashRange));
       } catch (final IOException retrievalException) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, retrievalException);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
         throw new PartitionFetchException(combinedThrowable);
       }
     };
@@ -100,7 +100,7 @@ final class LocalFileStore extends FileStore {
         // Serialize and write the given blocks.
         blockSizeList = putBlocks(coder, partition, blocks);
       } catch (final IOException writeException) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, writeException);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, writeException);
         throw new PartitionWriteException(combinedThrowable);
       }
 
@@ -140,7 +140,7 @@ final class LocalFileStore extends FileStore {
       try {
         serializedPartition.deleteFile();
       } catch (final IOException e) {
-        final Throwable combinedThrowable = closePartitionExceptionally(partitionId, e);
+        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, e);
         throw new PartitionFetchException(combinedThrowable);
       }
       return true;
@@ -148,8 +148,12 @@ final class LocalFileStore extends FileStore {
     return CompletableFuture.supplyAsync(supplier, executorService);
   }
 
+  /**
+   * @see FileStore#getFileAreas(String, HashRange).
+   */
   @Override
-  public List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange) {
+  public List<FileArea> getFileAreas(final String partitionId,
+                                     final HashRange hashRange) {
     try {
       final FilePartition partition = partitionIdToData.get(partitionId);
       if (partition == null) {
@@ -157,21 +161,23 @@ final class LocalFileStore extends FileStore {
       }
       return partition.asFileAreas(hashRange);
     } catch (final IOException retrievalException) {
-      final Throwable combinedThrowable = closePartitionExceptionally(partitionId, retrievalException);
+      final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
       throw new PartitionFetchException(combinedThrowable);
     }
   }
 
   /**
-   * Closes a partition exceptionally.
-   * If failed to close, it combines the cause and newly thrown exception.
+   * Commits a partition exceptionally.
+   * If there are any subscribers who are waiting the data of the target partition,
+   * they will be notified that partition is committed (exceptionally).
+   * If failed to commit, it combines the cause and newly thrown exception.
    *
-   * @param partitionId of the partition to close.
+   * @param partitionId of the partition to commit.
    * @param cause       of this exception.
-   * @return original cause of this exception if success to close, combined {@link Throwable} if else.
+   * @return original cause of this exception if success to commit, combined {@link Throwable} if else.
    */
-  private Throwable closePartitionExceptionally(final String partitionId,
-                                                final Throwable cause) {
+  private Throwable commitPartitionExceptionally(final String partitionId,
+                                                 final Throwable cause) {
     try {
       final FilePartition partitionToClose = partitionIdToData.get(partitionId);
       if (partitionToClose != null) {
