@@ -75,9 +75,9 @@ public final class SchedulerRunner implements Runnable {
       }
     }
     if (jobStateManager.getJobState().getStateMachine().getCurrentState() == JobState.State.COMPLETE) {
-      LOG.info("Job is complete, scheduler runner will shutdownRunningExecutors.");
+      LOG.info("Job is complete, scheduler runner will terminate.");
     } else {
-      LOG.info("Job is failed, scheduler runner will shutdownRunningExecutors.");
+      LOG.info("Job is failed, scheduler runner will terminate.");
     }
   }
 }

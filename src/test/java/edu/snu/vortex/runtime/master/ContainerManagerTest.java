@@ -64,12 +64,10 @@ public final class ContainerManagerTest {
     containerManager.requestContainer(1, c);
 
     // We allocate 4 containers and start 4 executors.
-    mockResourceAllocationQueue.add(createMockContext());
-    mockResourceAllocationQueue.add(createMockContext());
-    mockResourceAllocationQueue.add(createMockContext());
-    mockResourceAllocationQueue.add(createMockContext());
-
-    startAllocationThreadPool();
+    allocateResource(createMockContext());
+    allocateResource(createMockContext());
+    allocateResource(createMockContext());
+    allocateResource(createMockContext());
 
     // Say the job finishes,
     // and we would like to shutdown the running executors and terminate ContainerManager.
@@ -77,7 +75,7 @@ public final class ContainerManagerTest {
     containerManager.terminate();
 
     // But say, the 5th container and executor was only allocated by this point.
-    mockResourceAllocationQueue.add(createMockContext());
+    allocateResource(createMockContext());
   }
 
   private AllocatedEvaluator createMockEvaluator() {
@@ -91,18 +89,8 @@ public final class ContainerManagerTest {
     return mockedContext;
   }
 
-  private void startAllocationThreadPool() {
-    containerAllocationPool.execute(() -> {
-      while (true) {
-        final ActiveContext mockContext;
-        try {
-          mockContext = mockResourceAllocationQueue.take();
-          containerManager.onContainerAllocated(mockContext.getId(), createMockEvaluator(), null);
-          containerManager.onExecutorLaunched(mockContext);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
-    });
+  private void allocateResource(final ActiveContext mockContext) {
+    containerManager.onContainerAllocated(mockContext.getId(), createMockEvaluator(), null);
+    containerManager.onExecutorLaunched(mockContext);
   }
 }
