@@ -45,7 +45,7 @@ public final class PhysicalStage extends Vertex {
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("{\"scheduleGroupIdx\": ").append(scheduleGroupIndex);
+    sb.append("{\"scheduleGroupIndex\": ").append(scheduleGroupIndex);
     sb.append(", \"taskGroupList\": ").append(taskGroupList);
     sb.append('}');
     return sb.toString();

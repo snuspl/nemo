@@ -38,7 +38,7 @@ public final class PhysicalStageBuilder {
   public String toString() {
     final StringBuffer sb = new StringBuffer("PhysicalStage{");
     sb.append("id='").append(id).append('\'');
-    sb.append("scheduleGroupIdx='").append(scheduleGroupIndex).append('\'');
+    sb.append("scheduleGroupIndex='").append(scheduleGroupIndex).append('\'');
     sb.append(", taskGroupList=").append(taskGroupList);
     sb.append('}');
     return sb.toString();
