@@ -34,7 +34,7 @@ import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.vortex.runtime.master.DefaultMetricMessageHandler;
+import edu.snu.vortex.runtime.common.metric.PeriodicMetricSender;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
@@ -106,7 +106,8 @@ public final class DataTransferTest {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
+    final ContainerManager containerManager = new ContainerManager(null,
+                                                                    messageEnvironment);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
@@ -118,9 +119,8 @@ public final class DataTransferTest {
     final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
     // Unused, but necessary for wiring up the message environments
     final RuntimeMaster runtimeMaster =
-        new RuntimeMaster(scheduler, containerManager, messageEnvironment, master, new DefaultMetricMessageHandler(),
+        new RuntimeMaster(scheduler, containerManager, messageEnvironment, master,
             updatePhysicalPlanEventHandler, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
-
     final Injector injector2 = createNameClientInjector();
     injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");
 
@@ -151,8 +151,10 @@ public final class DataTransferTest {
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_LOCAL_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_REMOTE_FILE_DIRECTORY);
     final PartitionManagerWorker partitionManagerWorker;
+    final PeriodicMetricSender periodicMetricSender;
     try {
       partitionManagerWorker = injector.getInstance(PartitionManagerWorker.class);
+      periodicMetricSender =  injector.getInstance(PeriodicMetricSender.class);
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
@@ -164,7 +166,8 @@ public final class DataTransferTest {
         conToMaster,
         messageEnvironment,
         partitionManagerWorker,
-        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker));
+        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker),
+        periodicMetricSender);
     injector.bindVolatileInstance(Executor.class, executor);
 
     return partitionManagerWorker;
