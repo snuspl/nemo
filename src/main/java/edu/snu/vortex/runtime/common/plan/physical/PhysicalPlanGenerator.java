@@ -86,10 +86,10 @@ public final class PhysicalPlanGenerator
       final Set<StageEdgeBuilder> currentStageIncomingEdges = new HashSet<>();
 
       // Create a new stage builder.
-      final IRVertex anIRVertexFromStage = stageVertices.stream().findAny()
+      final IRVertex irVertexOfNewStage = stageVertices.stream().findAny()
           .orElseThrow(() -> new RuntimeException("Error: List " + stageVertices.getClass() + " is Empty"));
-      final StageBuilder stageBuilder = new StageBuilder(anIRVertexFromStage.getAttr(Attribute.IntegerKey.StageId),
-          anIRVertexFromStage.getAttr(Attribute.IntegerKey.ScheduleGroupIndex));
+      final StageBuilder stageBuilder = new StageBuilder(irVertexOfNewStage.getAttr(Attribute.IntegerKey.StageId),
+          irVertexOfNewStage.getAttr(Attribute.IntegerKey.ScheduleGroupIndex));
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {

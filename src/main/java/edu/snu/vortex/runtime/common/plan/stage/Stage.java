@@ -48,7 +48,8 @@ public final class Stage extends Vertex {
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("{\"stageInternalDAG\": ").append(stageInternalDAG.toString());
+    sb.append("{\"scheduleGroupIndex\": ").append(scheduleGroupIndex);
+    sb.append(", \"stageInternalDAG\": ").append(stageInternalDAG.toString());
     sb.append("}");
     return sb.toString();
   }
