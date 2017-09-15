@@ -21,6 +21,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import org.apache.reef.tang.InjectionFuture;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,14 +32,11 @@ import java.util.List;
  */
 abstract class FileStore implements PartitionStore {
 
-  private final int blockSizeInBytes;
   private final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
-  protected FileStore(final int blockSizeInKb,
-                      final String fileDirectory,
+  protected FileStore(final String fileDirectory,
                       final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    this.blockSizeInBytes = blockSizeInKb * 1000;
     this.fileDirectory = fileDirectory;
     this.partitionManagerWorker = partitionManagerWorker;
   }
@@ -66,8 +64,6 @@ abstract class FileStore implements PartitionStore {
                           final ByteArrayOutputStream outputStream,
                           final FilePartition partition,
                           final int hashVal) throws IOException {
-    outputStream.close();
-
     final byte[] serialized = outputStream.toByteArray();
     partition.writeBlock(serialized, elementsInBlock, hashVal);
 
@@ -88,11 +84,10 @@ abstract class FileStore implements PartitionStore {
 
   /**
    * Serializes and puts the data blocks to a file partition.
-   * It may divides each block into blocks according to it's size.
    *
-   * @param coder      the coder used to serialize the data of this partition.
-   * @param partition  to store this data.
-   * @param blocks     to be stored.
+   * @param coder     the coder used to serialize the data of this partition.
+   * @param partition to store this data.
+   * @param blocks    to be stored.
    * @return the size of the data.
    * @throws IOException if fail to write the data.
    */
@@ -101,33 +96,23 @@ abstract class FileStore implements PartitionStore {
                                  final Iterable<Block> blocks) throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
-    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream();
+    final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(bytesOutputStream);
     for (final Block block : blocks) {
       // Serialize the given data into blocks
-      long blockSize = 0;
       long elementsInBlock = 0;
       for (final Element element : block.getData()) {
-        coder.encode(element, outputStream);
+        coder.encode(element, bufferedOutputStream);
         elementsInBlock++;
-
-        if (outputStream.size() >= blockSizeInBytes) {
-          // If this block is large enough, synchronously append it to the file and reset the buffer
-          blockSize += writeBlock(elementsInBlock, outputStream, partition, block.getHashValue());
-
-          outputStream.reset();
-          elementsInBlock = 0;
-        }
       }
+      bufferedOutputStream.flush();
 
-      if (outputStream.size() > 0) {
-        // If there are any remaining data in stream, write it as another block.
-        blockSize += writeBlock(elementsInBlock, outputStream, partition, block.getHashValue());
-      }
-
+      // If there are any remaining data in stream, write it as another block.
+      final long blockSize = writeBlock(elementsInBlock, bytesOutputStream, partition, block.getKey());
       blockSizeList.add(blockSize);
-      outputStream.reset();
+      bytesOutputStream.reset();
     }
-    partition.flushMetadata();
+    partition.commitRemainderMetadata();
 
     return blockSizeList;
   }

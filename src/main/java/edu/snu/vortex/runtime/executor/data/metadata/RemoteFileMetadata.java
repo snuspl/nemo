@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
  * This class represents a metadata for a remote file partition.
  * Because the data is stored in a remote file and globally accessed by multiple nodes,
  * each access (create - write - close, read, or deletion) for a partition needs one instance of this metadata.
+ * Concurrent write for a single file is supported, but each writer in different executor
+ * has to have separate instance of this class.
  * It supports concurrent write for a single partition, but each writer has to have separate instance of this class.
  * These accesses are judiciously synchronized by the metadata server in master.
  */
@@ -103,6 +105,7 @@ public final class RemoteFileMetadata extends FileMetadata {
     final ControlMessage.ReserveBlockResponseMsg reserveBlockResponseMsg =
         responseFromMaster.getReserveBlockResponseMsg();
     if (!reserveBlockResponseMsg.hasPositionToWrite()) {
+      // TODO #463: Support incremental read. Check whether this partition is committed in the metadata server side.
       throw new IOException("Cannot append the block metadata.");
     }
     final int blockIndex = reserveBlockResponseMsg.getBlockIdx();
@@ -164,17 +167,18 @@ public final class RemoteFileMetadata extends FileMetadata {
   }
 
   /**
-   * Close to prevent further write for this partition.
-   * If someone "subscribing" the data in this partition, it will be finished.
+   * Notifies that all writes are finished for the partition corresponding to this metadata.
+   * Subscribers waiting for the data of the target partition are notified when the partition is committed.
+   * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    */
   @Override
-  public synchronized void close() {
+  public synchronized void commitPartition() {
     // TODO #463: Support incremental write. Close the "ClosableBlockingIterable".
   }
 
   /**
    * Gets the iterable of block metadata from the metadata server.
-   * If write for this partition is not ended, the metadata server will publish the committed blocks to this iterable.
+   * If write for this partition is not ended, the metadata Fserver will publish the committed blocks to this iterable.
    *
    * @return the received file metadata.
    * @throws IOException if fail to get the metadata.

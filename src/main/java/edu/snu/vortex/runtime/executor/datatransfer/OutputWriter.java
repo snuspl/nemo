@@ -23,6 +23,7 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
+import edu.snu.vortex.runtime.exception.UnsupportedMethodException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.vortex.runtime.executor.data.Block;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
@@ -79,6 +80,10 @@ public final class OutputWriter extends DataTransfer {
     final Attribute writeOptAtt = runtimeEdge.getAttributes().get(Attribute.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(Attribute.IFileWrite);
+    if (writeOptAtt != null && !writeOptAtt.equals(Attribute.IFileWrite)) {
+      throw new UnsupportedMethodException("Unsupported write optimization.");
+    }
+
     // TODO #463: Support incremental write.
     try {
       switch (runtimeEdge.getAttributes().get(Attribute.Key.CommunicationPattern)) {
@@ -217,6 +222,8 @@ public final class OutputWriter extends DataTransfer {
    * To prevent the extra sort process in the source task and deserialize - merge process in the destination task,
    * we hash the data into blocks and make the blocks as the unit of write and retrieval.
    * Constraint: If a partition is written by this method, it have to be read by {@link InputReader#readIFile()}.
+   * Constraint: If the store to write is not a {@link edu.snu.vortex.runtime.executor.data.RemoteFileStore},
+   *             all destination tasks for each I-File (partition) have to be scheduled in a single executor.
    * TODO #378: Elaborate block construction during data skew pass
    *
    * @param dataToWrite an iterable for the elements to be written.

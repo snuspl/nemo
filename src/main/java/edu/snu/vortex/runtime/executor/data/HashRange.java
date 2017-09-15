@@ -19,6 +19,7 @@ import java.io.Serializable;
 
 /**
  * Descriptor for hash range.
+ * TODO #494: Refactor HashRange to be general.
  */
 public final class HashRange implements Serializable {
   private static final HashRange ALL = new HashRange(true, 0, Integer.MAX_VALUE);
@@ -33,7 +34,9 @@ public final class HashRange implements Serializable {
   private final int rangeEndExclusive;
 
   private HashRange(final boolean all, final int rangeStartInclusive, final int rangeEndExclusive) {
-    assert (rangeEndExclusive >= 0 && rangeEndExclusive >= 0);
+    if (rangeStartInclusive < 0 || rangeEndExclusive < 0) {
+      throw new RuntimeException("Each boundary value of the range have to be non-negative.");
+    }
     this.all = all;
     this.rangeStartInclusive = rangeStartInclusive;
     this.rangeEndExclusive = rangeEndExclusive;

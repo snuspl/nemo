@@ -19,27 +19,27 @@ import edu.snu.vortex.compiler.ir.Element;
 
 /**
  * A collection of data {@link Element}.
- * This is a unit of write towards {@link PartitionStore}s,
- * but it can be split into multiple blocks inside the store according to it's size.
+ * This is a unit of write towards {@link PartitionStore}s.
  * TODO #463: Support incremental read. Consider to make the {@link Block} as a unit of read also.
+ * TODO #494: Refactor HashRange to be general. int -> generic Key, and so on...
  */
 public final class Block {
 
-  private final int hashValue;
+  private final int key;
   private final Iterable<Element> data;
 
   public Block(final Iterable<Element> data) {
     this(HashRange.NOT_HASHED, data);
   }
 
-  public Block(final int hashValue,
+  public Block(final int key,
                final Iterable<Element> data) {
-    this.hashValue = hashValue;
+    this.key = key;
     this.data = data;
   }
 
-  public int getHashValue() {
-    return hashValue;
+  public int getKey() {
+    return key;
   }
 
   public Iterable<Element> getData() {

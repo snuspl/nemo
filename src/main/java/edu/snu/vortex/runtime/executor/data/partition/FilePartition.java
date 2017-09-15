@@ -87,19 +87,24 @@ public final class FilePartition {
   }
 
   /**
-   * Flushes the un-committed block metadata.
+   * Commits the un-committed block metadata.
    */
-  public void flushMetadata() {
-    if (!commitPerBlock) {
-      metadata.commitBlocks(blockMetadataToCommit);
+  public void commitRemainderMetadata() {
+    final List<BlockMetadata> metadataToCommit = new ArrayList<>();
+    while (!blockMetadataToCommit.isEmpty()) {
+      final BlockMetadata blockMetadata = blockMetadataToCommit.poll();
+      if (blockMetadata != null) {
+        metadataToCommit.add(blockMetadata);
+      }
     }
+    metadata.commitBlocks(metadataToCommit);
   }
 
   /**
-   * Retrieves the data of this partition from the file in a specific hash range and deserializes it.
+   * Retrieves the elements of this partition from the file in a specific hash range and deserializes it.
    *
    * @param hashRange the hash range
-   * @return an iterable of deserialized data.
+   * @return an iterable of deserialized elements.
    * @throws IOException if failed to deserialize.
    */
   public Iterable<Element> retrieveInHashRange(final HashRange hashRange) throws IOException {
@@ -162,8 +167,8 @@ public final class FilePartition {
    * @throws IOException if failed to close.
    */
   public void commit() throws IOException {
-    flushMetadata();
-    metadata.close();
+    commitRemainderMetadata();
+    metadata.commitPartition();
   }
 
   /**

@@ -16,10 +16,12 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,31 +43,29 @@ final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#retrieveData(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange).
    */
   @Override
-  public CompletableFuture<Optional<Iterable<Element>>> retrieveData(final String partitionId,
-                                                                     final HashRange hashRange) {
-    final CompletableFuture<Optional<Iterable<Element>>> future = new CompletableFuture<>();
+  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
+                                                                  final HashRange hashRange) {
     final MemoryPartition partition = partitionMap.get(partitionId);
 
     if (partition != null) {
+      final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
       final Iterable<Block> blocks = partition.getBlocks();
       // Retrieves data in the hash range from the target partition
       final List<Iterable<Element>> retrievedData = new ArrayList<>();
       blocks.forEach(block -> {
-        if (hashRange.includes(block.getHashValue())) {
+        if (hashRange.includes(block.getKey())) {
           retrievedData.add(block.getData());
         }
       });
 
-      if (!future.isCompletedExceptionally()) {
-        future.complete(Optional.of(concatBlocks(retrievedData)));
-      }
+      future.complete(concatBlocks(retrievedData));
+      return Optional.of(future);
     } else {
-      future.complete(Optional.empty());
+      return Optional.empty();
     }
-    return future;
   }
 
   /**
@@ -76,10 +76,17 @@ final class MemoryStore implements PartitionStore {
                                                            final Iterable<Block> blocks,
                                                            final boolean commitPerBlock) {
     partitionMap.putIfAbsent(partitionId, new MemoryPartition());
-    partitionMap.get(partitionId).appendBlocks(blocks);
+    final CompletableFuture<Optional<List<Long>>> future = new CompletableFuture<>();
+    try {
+      partitionMap.get(partitionId).appendBlocks(blocks);
+      // The partition is not serialized.
+      future.complete(Optional.empty());
+    } catch (final IOException e) {
+      // The partition is committed already.
+      future.completeExceptionally(new PartitionWriteException(new Throwable("This partition is already committed.")));
+    }
 
-    // The partition is not serialized.
-    return CompletableFuture.completedFuture(Optional.empty());
+    return future;
   }
 
   /**

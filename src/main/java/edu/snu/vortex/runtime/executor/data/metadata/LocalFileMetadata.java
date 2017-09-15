@@ -29,12 +29,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @ThreadSafe
 public final class LocalFileMetadata extends FileMetadata {
 
-  private final Queue<BlockMetadata> reserveBlockMetadataQue; // The queue of reserved block metadata.
+  // When a writer reserves a file region for a block to write, the metadata of the block is stored in this queue.
+  // When a block in this queue is committed, the committed blocks are polled and go into the committed iterable.
+  private final Queue<BlockMetadata> reserveBlockMetadataQue;
   // TODO #463: Support incremental read. Change this iterable to "ClosableBlockingIterable".
   private final List<BlockMetadata> commitBlockMetadataIterable; // The queue of committed block metadata.
   private volatile long position; // How many bytes are (at least, logically) written in the file.
   private volatile int blockCount;
-  private volatile boolean closed;
+  private volatile boolean committed;
 
   public LocalFileMetadata(final boolean commitPerBlock) {
     super(commitPerBlock);
@@ -42,7 +44,7 @@ public final class LocalFileMetadata extends FileMetadata {
     this.commitBlockMetadataIterable = new CopyOnWriteArrayList<>();
     this.blockCount = 0;
     this.position = 0;
-    this.closed = false;
+    this.committed = false;
   }
 
   /**
@@ -53,7 +55,7 @@ public final class LocalFileMetadata extends FileMetadata {
   public synchronized BlockMetadata reserveBlock(final int hashValue,
                                                  final int blockSize,
                                                  final long elementsTotal) throws IOException {
-    if (closed) {
+    if (committed) {
       throw new IOException("Cannot write a new block to a closed partition.");
     }
 
@@ -97,12 +99,12 @@ public final class LocalFileMetadata extends FileMetadata {
   }
 
   /**
-   * Close to prevent further write for this partition.
-   * If someone "subscribing" the data in this partition, it will be finished.
+   * Notifies that all writes are finished for the partition corresponding to this metadata.
+   * Subscribers waiting for the data of the target partition are notified when the partition is committed.
+   * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    */
   @Override
-  public synchronized void close() {
-    this.closed = true;
-    // TODO #463: Support incremental read. Close the "ClosableBlockingIterable".
+  public synchronized void commitPartition() {
+    // TODO #463: Support incremental write. Close the "ClosableBlockingIterable".
   }
 }

@@ -28,22 +28,22 @@ import java.util.concurrent.CompletableFuture;
 public interface PartitionStore {
   /**
    * Retrieves data in a specific {@link HashRange} from a partition.
+   * If the target partition is not committed yet, the requester may "subscribe" the further data until it is committed.
    *
    * @param partitionId of the target partition.
-   * @param hashRange   the hash range
-   * TODO #463: Support incremental write. Consider returning Iterable<Block>.
-   * @return the result data as a new partition (if the target partition exists).
+   * @param hashRange   the hash range.
+   * TODO #463: Support incremental write. Consider returning Blocks in some "subscribable" data structure.
+   * @return the result data from the target partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.)
    */
-  CompletableFuture<Optional<Iterable<Element>>> retrieveData(String partitionId,
-                                                              HashRange hashRange);
+  Optional<CompletableFuture<Iterable<Element>>> getBlocks(String partitionId,
+                                                           HashRange hashRange);
 
   /**
    * Saves an iterable of data blocks to a partition.
    * If the partition exists already, appends the data to it.
-   * Each block can be split into multiple blocks according to it's size.
-   * This method supports concurrent write, but these blocks may not be saved consecutively.
+   * This method supports concurrent write.
    * If the data is needed to be "incrementally" written (and read),
    * each block can be committed right after being written by using {@param commitPerBlock}.
    *
@@ -60,8 +60,7 @@ public interface PartitionStore {
 
   /**
    * Notifies that all writes for a partition is end.
-   * If there are any subscribers who are waiting the data of the target partition,
-   * they will be notified that partition is committed.
+   * Subscribers waiting for the data of the target partition are notified when the partition is committed.
    * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    *
    * @param partitionId of the partition.

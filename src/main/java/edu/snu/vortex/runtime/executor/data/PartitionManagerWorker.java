@@ -114,27 +114,21 @@ public final class PartitionManagerWorker {
                                                                         final String runtimeEdgeId,
                                                                         final Attribute partitionStore,
                                                                         final HashRange hashRange) {
-    LOG.info("retrieveData: {}", partitionId);
+    LOG.info("getBlocks: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final CompletableFuture<Optional<Iterable<Element>>> resultData = store.retrieveData(partitionId, hashRange);
+    final Optional<CompletableFuture<Iterable<Element>>> optionalResultData = store.getBlocks(partitionId, hashRange);
 
-    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-    resultData.thenAccept(optionalData -> {
-      if (optionalData.isPresent()) {
-        // Partition resides in this evaluator!
-        future.complete(optionalData.get());
-      } else if (partitionStore.equals(Attribute.RemoteFile)) {
-        throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
-      } else {
-        // We don't have the partition here...
-        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange)
-            .thenAccept(dataFromRemoteWorker -> future.complete(dataFromRemoteWorker));
-      }
-    });
-
-    return future;
+    if (optionalResultData.isPresent()) {
+      // Partition resides in this evaluator!
+      return optionalResultData.get();
+    } else if (partitionStore.equals(Attribute.RemoteFile)) {
+      throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
+    } else {
+      // We don't have the partition here...
+      return requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange);
+    }
   }
 
   /**
@@ -151,7 +145,6 @@ public final class PartitionManagerWorker {
                                                                               final String runtimeEdgeId,
                                                                               final Attribute partitionStore,
                                                                               final HashRange hashRange) {
-    // We don't have the partition here...
     if (partitionStore == Attribute.RemoteFile) {
       LOG.warn("The target partition {} is not found in the remote storage. "
           + "Maybe the storage is not mounted or linked properly.", partitionId);
@@ -188,7 +181,7 @@ public final class PartitionManagerWorker {
 
   /**
    * Store an iterable of data blocks to a partition in the target {@code PartitionStore}.
-   * Invariant: This should be invoked after a partition is committed.
+   * Invariant: This should not be invoked after a partition is committed.
    *
    * @param partitionId    of the partition.
    * @param blocks         to save to a partition.
@@ -212,6 +205,8 @@ public final class PartitionManagerWorker {
 
   /**
    * Notifies that all writes for a partition is end.
+   * Subscribers waiting for the data of the target partition are notified when the partition is committed.
+   * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    *
    * @param partitionId    of the partition.
    * @param partitionStore to store the partition.
@@ -270,10 +265,9 @@ public final class PartitionManagerWorker {
    *
    * @param partitionId    of the partition to remove.
    * @param partitionStore tha the partition is stored.
-   * @return whether the partition is removed or not.
    */
-  public boolean removePartition(final String partitionId,
-                                 final Attribute partitionStore) {
+  public void removePartition(final String partitionId,
+                              final Attribute partitionStore) {
     LOG.info("RemovePartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final boolean exist;
@@ -295,9 +289,9 @@ public final class PartitionManagerWorker {
                       .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
                       .build())
               .build());
+    } else {
+      throw new PartitionFetchException(new Throwable("Cannot find corresponding partition " + partitionId));
     }
-
-    return exist;
   }
 
   private PartitionStore getPartitionStore(final Attribute partitionStore) {

@@ -44,7 +44,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +69,6 @@ import static org.mockito.Mockito.when;
 @PrepareForTest({PartitionManagerWorker.class, PartitionManagerMaster.class})
 public final class PartitionStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
-  private static final int BLOCK_SIZE = 1; // 1 KB
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   // Variables for scatter and gather test
   private static final int NUM_WRITE_TASKS = 3;
@@ -212,7 +210,6 @@ public final class PartitionStoreTest {
     when(worker.getCoder(any())).thenReturn(CODER);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_FILE_DIRECTORY);
-    injector.bindVolatileParameter(JobConf.BlockSize.class, BLOCK_SIZE);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
 
     final PartitionStore localFileStore = injector.getInstance(LocalFileStore.class);
@@ -267,7 +264,6 @@ public final class PartitionStoreTest {
         new LocalMessageEnvironment(executorId, localMessageDispatcher);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_FILE_DIRECTORY);
-    injector.bindVolatileParameter(JobConf.BlockSize.class, BLOCK_SIZE);
     injector.bindVolatileParameter(JobConf.JobId.class, "GFS test");
     injector.bindVolatileParameter(JobConf.ExecutorId.class, executorId);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
@@ -337,13 +333,14 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     try {
                       final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskNumber;
-                      final Optional<Iterable<Element>> optionalData =
-                          readerSideStore.retrieveData(partitionIdList.get(partitionNumber), HashRange.all()).get();
+                      final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                          readerSideStore.getBlocks(partitionIdList.get(partitionNumber), HashRange.all());
                       if (!optionalData.isPresent()) {
-                        throw new RuntimeException("The result of retrieveData(" +
+                        throw new RuntimeException("The result of getBlocks(" +
                             partitionIdList.get(partitionNumber) + ") is empty");
                       }
-                      assertEquals(partitionBlockList.get(partitionNumber).getData(), optionalData.get());
+                      final Iterable<Element> actualData = optionalData.get().get();
+                      assertEquals(partitionBlockList.get(partitionNumber).getData(), actualData);
 
                       final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber)).get();
                       if (!exist) {
@@ -427,13 +424,14 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Iterable<Element>> optionalData =
-                  readerSideStore.retrieveData(concPartitionId, HashRange.all()).get();
+              final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                  readerSideStore.getBlocks(concPartitionId, HashRange.all());
               if (!optionalData.isPresent()) {
-                throw new RuntimeException("The result of retrieveData(" +
+                throw new RuntimeException("The result of getBlocks(" +
                     concPartitionId + ") is empty");
               }
-              assertEquals(concPartitionBlock.getData(), optionalData.get());
+              final Iterable<Element> actualData = optionalData.get().get();
+              assertEquals(concPartitionBlock.getData(), actualData);
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -526,14 +524,15 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     try {
                       final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskNumber);
-                      final Optional<Iterable<Element>> optionalData = readerSideStore.retrieveData(
-                          hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve).get();
+                      final Optional<CompletableFuture<Iterable<Element>>> optionalData = readerSideStore.getBlocks(
+                          hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve);
                       if (!optionalData.isPresent()) {
                         throw new RuntimeException("The result of get partition" +
                             hashedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
                             " is empty");
                       }
-                      assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), optionalData.get());
+                      final Iterable<Element> actualData = optionalData.get().get();
+                      assertEquals(expectedDataInRange.get(readTaskNumber).get(writeTaskNumber), actualData);
                     } catch (final InterruptedException | ExecutionException e) {
                       throw new RuntimeException(e);
                     }
@@ -635,16 +634,17 @@ public final class PartitionStoreTest {
       public Boolean call() {
         try {
           try {
-            final Optional<Iterable<Element>> optionalData =
-                readerSideStore.retrieveData(partitionId, HashRange.all()).get();
+            final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                readerSideStore.getBlocks(partitionId, HashRange.all());
             if (!optionalData.isPresent()) {
-              throw new RuntimeException("The result of retrieveData(" + partitionId + ") is empty");
+              throw new RuntimeException("The result of getBlocks(" + partitionId + ") is empty");
             }
+            final Iterable<Element> actualData = optionalData.get().get();
             final List<List<Element>> expectedResults =
                 new ArrayList<>(CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS);
             IntStream.range(0, CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS).
                 forEach(blockIdx -> expectedResults.add(blockToWrite));
-            assertEquals(flatten(expectedResults), optionalData.get());
+            assertEquals(flatten(expectedResults), actualData);
 
             final boolean exist = readerSideStore.removePartition(partitionId).get();
             if (!exist) {

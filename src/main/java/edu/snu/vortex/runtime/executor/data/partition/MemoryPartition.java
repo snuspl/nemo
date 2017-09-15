@@ -18,8 +18,10 @@ package edu.snu.vortex.runtime.executor.data.partition;
 import edu.snu.vortex.runtime.executor.data.Block;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -29,20 +31,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class MemoryPartition {
 
   private final List<Block> blocks;
-  private volatile AtomicBoolean closed;
+  private volatile AtomicBoolean committed;
 
   public MemoryPartition() {
-    blocks = new CopyOnWriteArrayList<>();
-    closed = new AtomicBoolean(false);
+    blocks = Collections.synchronizedList(new ArrayList<>());
+    committed = new AtomicBoolean(false);
   }
 
   /**
    * Appends all data in the block to this partition.
    *
    * @param blocksToAppend the blocks to append.
+   * @throws IOException if this partition is committed already.
    */
-  public void appendBlocks(final Iterable<Block> blocksToAppend) {
-    if (!closed.get()) {
+  public void appendBlocks(final Iterable<Block> blocksToAppend) throws IOException {
+    if (!committed.get()) {
       // TODO #463: Support incremental write.
       blocksToAppend.forEach(blocks::add);
     }
@@ -60,6 +63,6 @@ public final class MemoryPartition {
    * If someone "subscribing" the data in this partition, it will be finished.
    */
   public void commit() {
-    closed.set(true);
+    committed.set(true);
   }
 }

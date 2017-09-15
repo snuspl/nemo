@@ -15,18 +15,14 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * This class represents a metadata for a (local / remote) file partition.
  * The writer and reader determine the status of a file partition
  * (such as accessibility, how many bytes are written, etc.) by using this metadata.
- * When a writer reserves the region (or space) of a file for a data block,
- * other writers will write their data after the region.
- * Also, the readers will judge a data block available after the block is committed.
  */
-public abstract class FileMetadata implements Closeable {
+public abstract class FileMetadata {
 
   private final boolean blockCommitPerWrite; // Whether need to commit block per every block write or not.
 
@@ -36,6 +32,9 @@ public abstract class FileMetadata implements Closeable {
 
   /**
    * Reserves the region for a block and get the metadata for the block.
+   * When a writer reserves the region (or space) of a file for a data block,
+   * other writers will write their data after the region.
+   * Also, the readers will judge a data block available after the block is committed.
    *
    * @param hashValue     the hash range of the block.
    * @param blockSize     the size of the block.
@@ -76,4 +75,11 @@ public abstract class FileMetadata implements Closeable {
   public final boolean isBlockCommitPerWrite() {
     return blockCommitPerWrite;
   }
+
+  /**
+   * Notifies that all writes are finished for the partition corresponding to this metadata.
+   * Subscribers waiting for the data of the target partition are notified when the partition is committed.
+   * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
+   */
+  public abstract void commitPartition();
 }

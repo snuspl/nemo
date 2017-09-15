@@ -36,7 +36,6 @@ import java.util.function.Supplier;
 
 /**
  * Stores partitions in local files.
- * It writes and reads synchronously.
  */
 @ThreadSafe
 final class LocalFileStore extends FileStore {
@@ -46,10 +45,9 @@ final class LocalFileStore extends FileStore {
 
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
-                         @Parameter(JobConf.BlockSize.class) final int blockSizeInKb,
                          @Parameter(JobConf.LocalFileStoreNumThreads.class) final int numThreads,
                          final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
-    super(blockSizeInKb, fileDirectory, partitionManagerWorker);
+    super(fileDirectory, partitionManagerWorker);
     this.partitionIdToData = new ConcurrentHashMap<>();
     new File(fileDirectory).mkdirs();
     executorService = Executors.newFixedThreadPool(numThreads);
@@ -57,25 +55,26 @@ final class LocalFileStore extends FileStore {
 
   /**
    * Retrieves data in a specific hash range from a partition.
-   * @see PartitionStore#retrieveData(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange).
    */
   @Override
-  public CompletableFuture<Optional<Iterable<Element>>> retrieveData(final String partitionId,
-                                                                     final HashRange hashRange) {
+  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
+                                                                  final HashRange hashRange) {
     // Deserialize the target data in the corresponding file and pass it as a local data.
     final FilePartition partition = partitionIdToData.get(partitionId);
-    final Supplier<Optional<Iterable<Element>>> supplier = () -> {
-      if (partition == null) {
-        return Optional.empty();
-      }
-      try {
-        return Optional.of(partition.retrieveInHashRange(hashRange));
-      } catch (final IOException retrievalException) {
-        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
-        throw new PartitionFetchException(combinedThrowable);
-      }
-    };
-    return CompletableFuture.supplyAsync(supplier, executorService);
+    if (partition == null) {
+      return Optional.empty();
+    } else {
+      final Supplier<Iterable<Element>> supplier = () -> {
+        try {
+          return partition.retrieveInHashRange(hashRange);
+        } catch (final IOException retrievalException) {
+          final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
+          throw new PartitionFetchException(combinedThrowable);
+        }
+      };
+      return Optional.of(CompletableFuture.supplyAsync(supplier, executorService));
+    }
   }
 
   /**
