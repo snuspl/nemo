@@ -145,10 +145,6 @@ public final class PartitionManagerWorker {
                                                                               final String runtimeEdgeId,
                                                                               final Attribute partitionStore,
                                                                               final HashRange hashRange) {
-    if (partitionStore == Attribute.RemoteFile) {
-      LOG.warn("The target partition {} is not found in the remote storage. "
-          + "Maybe the storage is not mounted or linked properly.", partitionId);
-    }
     // Let's see if a remote worker has it
     // Ask Master for the location
     final CompletableFuture<ControlMessage.Message> responseFromMasterFuture =
