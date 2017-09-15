@@ -21,7 +21,6 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import org.apache.reef.tang.InjectionFuture;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -97,18 +96,15 @@ abstract class FileStore implements PartitionStore {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
     final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream();
-    final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(bytesOutputStream);
     for (final Block block : blocks) {
-      // Serialize the given data into blocks
-      long elementsInBlock = 0;
+      long numOfElementsInBlock = 0;
       for (final Element element : block.getData()) {
-        coder.encode(element, bufferedOutputStream);
-        elementsInBlock++;
+        coder.encode(element, bytesOutputStream);
+        numOfElementsInBlock++;
       }
-      bufferedOutputStream.flush();
 
-      // If there are any remaining data in stream, write it as another block.
-      final long blockSize = writeBlock(elementsInBlock, bytesOutputStream, partition, block.getKey());
+      // Write the block.
+      final long blockSize = writeBlock(numOfElementsInBlock, bytesOutputStream, partition, block.getKey());
       blockSizeList.add(blockSize);
       bytesOutputStream.reset();
     }

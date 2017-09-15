@@ -97,6 +97,8 @@ final class MemoryStore implements PartitionStore {
     final MemoryPartition partition = partitionMap.get(partitionId);
     if (partition != null) {
       partition.commit();
+    } else {
+      throw new PartitionWriteException(new Throwable("There isn't any partition with id " + partitionId));
     }
   }
 

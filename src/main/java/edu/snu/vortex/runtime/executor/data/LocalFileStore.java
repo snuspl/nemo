@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 @ThreadSafe
 final class LocalFileStore extends FileStore {
 
-  private final Map<String, FilePartition> partitionIdToData;
+  private final Map<String, FilePartition> partitionIdToFilePartition;
   private final ExecutorService executorService;
 
   @Inject
@@ -48,7 +48,7 @@ final class LocalFileStore extends FileStore {
                          @Parameter(JobConf.LocalFileStoreNumThreads.class) final int numThreads,
                          final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
     super(fileDirectory, partitionManagerWorker);
-    this.partitionIdToData = new ConcurrentHashMap<>();
+    this.partitionIdToFilePartition = new ConcurrentHashMap<>();
     new File(fileDirectory).mkdirs();
     executorService = Executors.newFixedThreadPool(numThreads);
   }
@@ -60,8 +60,8 @@ final class LocalFileStore extends FileStore {
   @Override
   public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
                                                                   final HashRange hashRange) {
-    // Deserialize the target data in the corresponding file and pass it as a local data.
-    final FilePartition partition = partitionIdToData.get(partitionId);
+    // Deserialize the target data in the corresponding file.
+    final FilePartition partition = partitionIdToFilePartition.get(partitionId);
     if (partition == null) {
       return Optional.empty();
     } else {
@@ -69,7 +69,7 @@ final class LocalFileStore extends FileStore {
         try {
           return partition.retrieveInHashRange(hashRange);
         } catch (final IOException retrievalException) {
-          final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
+          final Throwable combinedThrowable = commitPartitionWithException(partitionId, retrievalException);
           throw new PartitionFetchException(combinedThrowable);
         }
       };
@@ -93,13 +93,13 @@ final class LocalFileStore extends FileStore {
       try {
         FilePartition partition =
             new FilePartition(coder, partitionIdToFilePath(partitionId), metadata);
-        partitionIdToData.putIfAbsent(partitionId, partition);
-        partition = partitionIdToData.get(partitionId);
+        partitionIdToFilePartition.putIfAbsent(partitionId, partition);
+        partition = partitionIdToFilePartition.get(partitionId);
 
         // Serialize and write the given blocks.
         blockSizeList = putBlocks(coder, partition, blocks);
       } catch (final IOException writeException) {
-        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, writeException);
+        final Throwable combinedThrowable = commitPartitionWithException(partitionId, writeException);
         throw new PartitionWriteException(combinedThrowable);
       }
 
@@ -113,13 +113,15 @@ final class LocalFileStore extends FileStore {
    */
   @Override
   public void commitPartition(final String partitionId) throws PartitionWriteException {
-    final FilePartition partition = partitionIdToData.get(partitionId);
+    final FilePartition partition = partitionIdToFilePartition.get(partitionId);
     if (partition != null) {
       try {
         partition.commit();
       } catch (final IOException e) {
         throw new PartitionWriteException(e);
       }
+    } else {
+      throw new PartitionWriteException(new Throwable("There isn't any partition with id " + partitionId));
     }
   }
 
@@ -131,7 +133,7 @@ final class LocalFileStore extends FileStore {
    */
   @Override
   public CompletableFuture<Boolean> removePartition(final String partitionId) {
-    final FilePartition serializedPartition = partitionIdToData.remove(partitionId);
+    final FilePartition serializedPartition = partitionIdToFilePartition.remove(partitionId);
     if (serializedPartition == null) {
       return CompletableFuture.completedFuture(false);
     }
@@ -139,7 +141,7 @@ final class LocalFileStore extends FileStore {
       try {
         serializedPartition.deleteFile();
       } catch (final IOException e) {
-        final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, e);
+        final Throwable combinedThrowable = commitPartitionWithException(partitionId, e);
         throw new PartitionFetchException(combinedThrowable);
       }
       return true;
@@ -154,13 +156,13 @@ final class LocalFileStore extends FileStore {
   public List<FileArea> getFileAreas(final String partitionId,
                                      final HashRange hashRange) {
     try {
-      final FilePartition partition = partitionIdToData.get(partitionId);
+      final FilePartition partition = partitionIdToFilePartition.get(partitionId);
       if (partition == null) {
         throw new IOException(String.format("%s does not exists", partitionId));
       }
       return partition.asFileAreas(hashRange);
     } catch (final IOException retrievalException) {
-      final Throwable combinedThrowable = commitPartitionExceptionally(partitionId, retrievalException);
+      final Throwable combinedThrowable = commitPartitionWithException(partitionId, retrievalException);
       throw new PartitionFetchException(combinedThrowable);
     }
   }
@@ -175,10 +177,10 @@ final class LocalFileStore extends FileStore {
    * @param cause       of this exception.
    * @return original cause of this exception if success to commit, combined {@link Throwable} if else.
    */
-  private Throwable commitPartitionExceptionally(final String partitionId,
+  private Throwable commitPartitionWithException(final String partitionId,
                                                  final Throwable cause) {
     try {
-      final FilePartition partitionToClose = partitionIdToData.get(partitionId);
+      final FilePartition partitionToClose = partitionIdToFilePartition.get(partitionId);
       if (partitionToClose != null) {
         partitionToClose.commit();
       }

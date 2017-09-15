@@ -81,7 +81,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       return Optional.empty();
     } else {
       final Supplier<Iterable<Element>> supplier = () -> {
-        // Deserialize the target data in the corresponding file and pass it as a local data.
+        // Deserialize the target data in the corresponding file.
         final Coder coder = getCoderFromWorker(partitionId);
         FilePartition partition = null;
         try {
