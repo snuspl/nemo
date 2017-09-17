@@ -23,7 +23,8 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 /**
- * Interface for optimization passes.
+ * Interface for optimization passes that processes the DAG.
+ * It is a function that takes an original DAG to produce a processed DAG, after an optimization.
  */
 public interface StaticOptimizationPass extends Function<DAG<IRVertex, IREdge>, DAG<IRVertex, IREdge>>, Serializable {
 }

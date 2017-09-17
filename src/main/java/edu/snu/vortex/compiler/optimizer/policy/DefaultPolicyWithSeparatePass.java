@@ -27,21 +27,22 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A policy to demonstrate a policy with a custom-made pass. It simply performs what is done with the default pass.
+ * A policy to demonstrate a policy with a separate, refactored pass.
+ * It simply performs what is done with the default pass.
  */
-public final class CustomPassPolicy implements Policy {
+public final class DefaultPolicyWithSeparatePass implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return Arrays.asList(
         new ParallelismPass(),
-        new CustomPass()
+        new RefactoredPass()
     );
   }
 
   /**
    * A simple custom pass consisted of the two passes at the end of the default pass.
    */
-  public final class CustomPass implements StaticOptimizationPass {
+  public final class RefactoredPass implements StaticOptimizationPass {
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       return new ScheduleGroupPass().apply(new DefaultStagePartitioningPass().apply(dag));

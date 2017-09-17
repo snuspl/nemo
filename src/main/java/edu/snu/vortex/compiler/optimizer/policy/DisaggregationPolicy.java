@@ -22,11 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A policy to perform disaggregation.
+ * A policy to demonstrate the disaggregation optimization, that performs the job in a Sailfish style.
  */
 public final class DisaggregationPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return  Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new LoopGroupingPass(),

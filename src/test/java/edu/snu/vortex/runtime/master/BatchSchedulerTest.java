@@ -25,7 +25,7 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
-import edu.snu.vortex.compiler.optimizer.policy.TestPolicy;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;

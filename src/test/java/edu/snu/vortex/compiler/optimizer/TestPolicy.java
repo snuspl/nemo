@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.policy;
+package edu.snu.vortex.compiler.optimizer;
 
 import edu.snu.vortex.compiler.optimizer.pass.*;
+import edu.snu.vortex.compiler.optimizer.policy.Policy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.List;
  */
 public final class TestPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return  Arrays.asList(
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()

@@ -26,7 +26,7 @@ import java.util.List;
  */
 public final class DataSkewPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new LoopGroupingPass(),

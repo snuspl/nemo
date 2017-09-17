@@ -31,5 +31,5 @@ public interface Policy extends Serializable {
   /**
    * @return the content of the policy: the list of optimization passes of the policy.
    */
-  List<StaticOptimizationPass> getPolicyContent();
+  List<StaticOptimizationPass> getOptimizationPasses();
 }

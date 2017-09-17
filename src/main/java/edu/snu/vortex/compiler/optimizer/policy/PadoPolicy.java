@@ -22,11 +22,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A policy to perform Pado optimization.
+ * A policy to perform Pado optimization that uses transient resources on data centers.
+ * link to paper: http://dl.acm.org/citation.cfm?id=3064181
  */
 public final class PadoPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return  Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new LoopGroupingPass(),

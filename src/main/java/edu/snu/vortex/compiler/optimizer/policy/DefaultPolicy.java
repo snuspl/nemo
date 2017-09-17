@@ -21,11 +21,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A default implementation of policy.
+ * A basic default policy, that performs the minimum amount of optimization to be done to a specific DAG.
  */
 public final class DefaultPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getPolicyContent() {
+  public List<StaticOptimizationPass> getOptimizationPasses() {
     return Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new DefaultStagePartitioningPass(),

@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.compiler.optimizer.policy.TestPolicy;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.common.plan.stage.Stage;
 import edu.snu.vortex.runtime.common.plan.stage.StageEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;

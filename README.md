@@ -17,7 +17,7 @@
 ./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.DefaultPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
 ## MapReduce Application using a newly defined pass (see MapReduceCustomPass class)
-./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduceCustomPass -optimization_policy edu.snu.vortex.compiler.optimizer.policy.CustomPassPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduceCustomPass -optimization_policy edu.snu.vortex.compiler.optimizer.policy.DefaultPolicyWithSeparatePass -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
 ## MapReduce Application with 'pado' optimization policy
 ./bin/run.sh -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
@@ -41,7 +41,7 @@
 ./bin/run.sh -job_id mlr_pado -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
 
 ## A simple toy example to demonstrate optimizer DAG transformation
-java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduce
+java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer.examples.MapReduceDisaggregationOptimization
 
 ## yarn cluster example
 ./bin/run.sh -deploy_mode yarn -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "hdfs://v-m:9000/sample_input_mr hdfs://v-m:9000/sample_output_mr"

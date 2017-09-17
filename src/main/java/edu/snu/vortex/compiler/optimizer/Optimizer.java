@@ -45,10 +45,10 @@ public final class Optimizer {
    */
   public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final Policy optimizationPolicy,
                                                final String dagDirectory) throws Exception {
-    if (optimizationPolicy == null || optimizationPolicy.getPolicyContent().isEmpty()) {
+    if (optimizationPolicy == null || optimizationPolicy.getOptimizationPasses().isEmpty()) {
       throw new RuntimeException("A policy name should be specified.");
     }
-    return process(dag, optimizationPolicy.getPolicyContent(), dagDirectory);
+    return process(dag, optimizationPolicy.getOptimizationPasses(), dagDirectory);
   }
 
   /**

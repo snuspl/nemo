@@ -30,15 +30,15 @@ import org.slf4j.LoggerFactory;
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
 /**
- * A sample MapReduce application.
+ * A sample MapReduceDisaggregationOptimization application.
  */
-public final class MapReduce {
-  private static final Logger LOG = LoggerFactory.getLogger(MapReduce.class.getName());
+public final class MapReduceDisaggregationOptimization {
+  private static final Logger LOG = LoggerFactory.getLogger(MapReduceDisaggregationOptimization.class.getName());
 
   /**
    * Private constructor.
    */
-  private MapReduce() {
+  private MapReduceDisaggregationOptimization() {
   }
 
   /**
@@ -74,5 +74,4 @@ public final class MapReduce {
     LOG.info("After Optimization");
     LOG.info(optimizedDAG.toString());
   }
-
 }

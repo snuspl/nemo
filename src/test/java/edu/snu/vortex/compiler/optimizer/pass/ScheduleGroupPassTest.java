@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.compiler.optimizer.policy.TestPolicy;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

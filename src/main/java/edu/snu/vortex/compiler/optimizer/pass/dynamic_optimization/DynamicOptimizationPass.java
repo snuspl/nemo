@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Interface for dynamic optimization passes.
+ * Interface for dynamic optimization passes, for dynamically optimizing a physical plan.
+ * It is a BiFunction that takes an original physical plan and metric data, to produce a new physical plan
+ * after dynamic optimization.
  * @param <T> type of the metric data used for dynamic optimization.
  */
 public interface DynamicOptimizationPass<T>

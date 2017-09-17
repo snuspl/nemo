@@ -25,7 +25,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.compiler.optimizer.policy.TestPolicy;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.reef.tang.Tang;

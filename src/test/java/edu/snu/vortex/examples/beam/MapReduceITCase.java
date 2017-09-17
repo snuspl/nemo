@@ -77,7 +77,7 @@ public final class MapReduceITCase {
   public void testCustomPolicy() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_custom")
-        .addOptimizationPolicy(CustomPassPolicy.class.getCanonicalName())
+        .addOptimizationPolicy(DefaultPolicyWithSeparatePass.class.getCanonicalName())
         .build());
   }
 
