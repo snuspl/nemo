@@ -375,6 +375,7 @@ public final class PartitionManagerWorker {
     final Optional<Attribute> partitionStoreOptional = outputStream.getPartitionStore();
     final Attribute partitionStore = partitionStoreOptional.get();
     if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
+      // TODO #492: Modularize the data communication pattern. Remove attribute value dependant code.
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
         outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
