@@ -156,7 +156,8 @@ public final class RuntimeMaster {
               convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
           break;
         case PartitionStateChanged:
-          final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg = message.getPartitionStateChangedMsg();
+          final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg =
+              message.getPartitionStateChangedMsg();
           // process message with partition size.
           final List<Long> blockSizeInfo = partitionStateChangedMsg.getBlockSizeInfoList();
           if (!blockSizeInfo.isEmpty()) {
@@ -295,7 +296,8 @@ public final class RuntimeMaster {
       case OutputWriteFailure:
         return TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE;
       default:
-        throw new UnknownFailureCauseException(new Throwable("The failure cause for the recoverable failure is unknown"));
+        throw new UnknownFailureCauseException(
+            new Throwable("The failure cause for the recoverable failure is unknown"));
     }
   }
 

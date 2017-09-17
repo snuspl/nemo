@@ -376,9 +376,9 @@ public final class PartitionManagerWorker {
    */
   public void onPullRequest(final PartitionOutputStream outputStream) {
     // We are getting the partition from local store!
-    final Optional<Attribute> partitionStoreOptional = outputStream.getPartitionStore();
-    final Attribute partitionStore = partitionStoreOptional.get();
-    if (partitionStore == Attribute.LocalFile || partitionStore == Attribute.RemoteFile) {
+    final Optional<String> partitionStoreOptional = outputStream.getPartitionStore();
+    final String partitionStore = partitionStoreOptional.get();
+    if (partitionStore.equals(DataStore.LOCAL_FILE) || partitionStore.equals(DataStore.REMOTE_FILE)) {
       // TODO #492: Modularize the data communication pattern. Remove attribute value dependant code.
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
