@@ -329,7 +329,7 @@ public final class DataTransferTest {
     final IREdge dummyIREdge = new IREdge(IREdge.Type.ScatterGather, srcVertex, dstVertex, CODER);
     final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
     edgeAttributes.put(Partitioning.of(Partitioning.HASH));
-    edgeAttributes.put(ExecutorPlacement.of(store));
+    edgeAttributes.put(DataStore.of(store));
     edgeAttributes.put(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
     final RuntimeEdge<IRVertex> dummyEdge
         = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
