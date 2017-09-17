@@ -59,5 +59,7 @@ public final class ScheduleGroupPassTest {
         previousScheduleGroupIndex = currentScheduleGroupIndex;
       }
     }
+
+    System.out.println(processedDAG.toString());
   }
 }
