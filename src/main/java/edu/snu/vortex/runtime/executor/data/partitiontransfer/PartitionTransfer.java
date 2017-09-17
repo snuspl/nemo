@@ -16,7 +16,6 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import io.netty.channel.*;
@@ -103,14 +102,14 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    */
   public PartitionInputStream initiatePull(final String executorId,
                                            final boolean encodePartialPartition,
-                                           final Attribute partitionStore,
+                                           final String partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
     final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
         Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
-    write(executorId, stream, cause -> stream.onExceptionCaught(cause));
+    write(executorId, stream, stream::onExceptionCaught);
     return stream;
   }
 
@@ -133,7 +132,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
         partitionId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
-    write(executorId, stream, cause -> stream.onExceptionCaught(cause));
+    write(executorId, stream, stream::onExceptionCaught);
     return stream;
   }
 

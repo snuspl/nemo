@@ -20,8 +20,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.stage.*;
@@ -72,7 +72,7 @@ public final class PhysicalPlanGenerator
 
     final SortedMap<Integer, List<IRVertex>> vertexListForEachStage = new TreeMap<>();
     irDAG.topologicalDo(irVertex -> {
-      final Integer stageNum = irVertex.getAttr(Attribute.IntegerKey.StageId);
+      final Integer stageNum = irVertex.getIntegerAttr(ExecutionFactor.Type.StageId);
       if (!vertexListForEachStage.containsKey(stageNum)) {
         vertexListForEachStage.put(stageNum, new ArrayList<>());
       }
@@ -88,8 +88,8 @@ public final class PhysicalPlanGenerator
       // Create a new stage builder.
       final IRVertex irVertexOfNewStage = stageVertices.stream().findAny()
           .orElseThrow(() -> new RuntimeException("Error: List " + stageVertices.getClass() + " is Empty"));
-      final StageBuilder stageBuilder = new StageBuilder(irVertexOfNewStage.getAttr(Attribute.IntegerKey.StageId),
-          irVertexOfNewStage.getAttr(Attribute.IntegerKey.ScheduleGroupIndex));
+      final StageBuilder stageBuilder = new StageBuilder(irVertexOfNewStage.getIntegerAttr(ExecutionFactor.Type.StageId),
+          irVertexOfNewStage.getIntegerAttr(ExecutionFactor.Type.ScheduleGroupIndex));
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {
@@ -178,8 +178,8 @@ public final class PhysicalPlanGenerator
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
       final AttributeMap firstVertexAttrs = stageVertices.iterator().next().getAttributes();
-      final Integer stageParallelism = firstVertexAttrs.get(Attribute.IntegerKey.Parallelism);
-      final Attribute containerType = firstVertexAttrs.get(Attribute.Key.Placement);
+      final Integer stageParallelism = firstVertexAttrs.getIntegerAttr(ExecutionFactor.Type.Parallelism);
+      final String containerType = firstVertexAttrs.getStringAttr(ExecutionFactor.Type.ExecutorPlacement);
 
       // Begin building a new stage in the physical plan.
       physicalStageBuilder = new PhysicalStageBuilder(stage.getId(), stageParallelism, stage.getScheduleGroupIndex());

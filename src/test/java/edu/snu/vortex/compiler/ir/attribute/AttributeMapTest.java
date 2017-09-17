@@ -15,12 +15,15 @@
  */
 package edu.snu.vortex.compiler.ir.attribute;
 
-import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,23 +50,23 @@ public class AttributeMapTest {
 
   @Test
   public void testDefaultValues() {
-    assertEquals(Attribute.Hash, edgeMap.get(Attribute.Key.Partitioning));
-    assertEquals(1, (long) vertexMap.get(Attribute.IntegerKey.Parallelism));
+    assertEquals(Partitioning.HASH, edgeMap.getStringAttr(ExecutionFactor.Type.Partitioning));
+    assertEquals(1, (long) vertexMap.getIntegerAttr(ExecutionFactor.Type.Parallelism));
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
   }
 
   @Test
   public void testPutGetAndRemove() {
-    edgeMap.put(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    assertEquals(Attribute.Memory, edgeMap.get(Attribute.Key.ChannelDataPlacement));
-    edgeMap.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    assertEquals(Attribute.Pull, edgeMap.get(Attribute.Key.ChannelTransferPolicy));
+    edgeMap.put(DataStore.of(DataStore.MEMORY));
+    assertEquals(DataStore.MEMORY, edgeMap.getStringAttr(ExecutionFactor.Type.DataStore));
+    edgeMap.put(DataFlowModel.of(DataFlowModel.PULL));
+    assertEquals(DataFlowModel.PULL, edgeMap.getStringAttr(ExecutionFactor.Type.DataFlowModel));
 
-    edgeMap.remove(Attribute.Key.ChannelTransferPolicy);
-    assertNull(edgeMap.get(Attribute.Key.ChannelTransferPolicy));
+    edgeMap.remove(ExecutionFactor.Type.DataFlowModel);
+    assertNull(edgeMap.get(ExecutionFactor.Type.DataFlowModel));
 
-    vertexMap.put(Attribute.IntegerKey.Parallelism, 100);
-    assertEquals(100, (long) vertexMap.get(Attribute.IntegerKey.Parallelism));
+    vertexMap.put(Parallelism.of(100));
+    assertEquals(100, (long) vertexMap.getIntegerAttr(ExecutionFactor.Type.Parallelism));
   }
 }

@@ -22,8 +22,11 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -95,7 +98,7 @@ public final class FaultToleranceTest {
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
-    final ResourceSpecification computeSpec = new ResourceSpecification(Attribute.Compute, 1, 0);
+    final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacement.COMPUTE, 1, 0);
     final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
@@ -131,28 +134,28 @@ public final class FaultToleranceTest {
     final JobStateManager jobStateManager;
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v1.setAttr(Parallelism.of(3));
+    v1.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v2.setAttr(Parallelism.of(2));
+    v2.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setAttr(Attribute.IntegerKey.Parallelism, 4);
-    v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v3.setAttr(Parallelism.of(4));
+    v3.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
-    e1.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e1.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+    e1.setAttr(DataStore.of(DataStore.MEMORY));
+    e1.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
     irDAGBuilder.connectVertices(e1);
 
     final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
-    e2.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
-    e2.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+    e2.setAttr(DataStore.of(DataStore.LOCAL_FILE));
+    e2.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();

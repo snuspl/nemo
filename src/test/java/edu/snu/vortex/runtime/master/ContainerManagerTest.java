@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -55,9 +55,12 @@ public final class ContainerManagerTest {
   @Test(timeout=5000)
   public void testAllocationAfterJobCompletion() {
     // Create 3 resource specifications, {A, B, C}.
-    final ResourceSpecification a = new ResourceSpecification(Attribute.Compute, DEFAULT_CAPACITY, DEFAULT_MEMORY);
-    final ResourceSpecification b = new ResourceSpecification(Attribute.Transient, DEFAULT_CAPACITY, DEFAULT_MEMORY);
-    final ResourceSpecification c = new ResourceSpecification(Attribute.Reserved, DEFAULT_CAPACITY, DEFAULT_MEMORY);
+    final ResourceSpecification a =
+        new ResourceSpecification(ExecutorPlacement.COMPUTE, DEFAULT_CAPACITY, DEFAULT_MEMORY);
+    final ResourceSpecification b =
+        new ResourceSpecification(ExecutorPlacement.TRANSIENT, DEFAULT_CAPACITY, DEFAULT_MEMORY);
+    final ResourceSpecification c =
+        new ResourceSpecification(ExecutorPlacement.RESERVED, DEFAULT_CAPACITY, DEFAULT_MEMORY);
 
     // Create 2 of A, 2 of B and 1 of C.
     containerManager.requestContainer(2, a);

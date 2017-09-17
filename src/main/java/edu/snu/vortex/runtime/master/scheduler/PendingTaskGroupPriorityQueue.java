@@ -16,7 +16,8 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -140,7 +141,7 @@ public final class PendingTaskGroupPriorityQueue {
     for (final PhysicalStage parentStage : jobDAG.getParents(candidateStageId)) {
       if (schedulableStages.contains(parentStage.getId())) {
         if ((jobDAG.getEdgeBetween(parentStage.getId(),
-            candidateStageId).getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Pull)) {
+            candidateStageId).getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PULL))) {
           readyToScheduleImmediately = false;
           break;
         }

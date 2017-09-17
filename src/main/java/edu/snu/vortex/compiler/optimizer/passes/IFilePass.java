@@ -18,7 +18,9 @@ package edu.snu.vortex.compiler.optimizer.passes;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 
 import java.util.List;
 
@@ -33,8 +35,8 @@ public final class IFilePass implements StaticOptimizationPass {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
         if (edge.getType().equals(IREdge.Type.ScatterGather)
-            && edge.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile)) {
-          edge.setAttr(Attribute.Key.WriteOptimization, Attribute.IFileWrite);
+            && edge.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE)) {
+          edge.setAttr(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
         }
       });
     });

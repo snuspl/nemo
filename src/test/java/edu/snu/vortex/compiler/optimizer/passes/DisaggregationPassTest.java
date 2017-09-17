@@ -19,8 +19,11 @@ import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,19 +50,19 @@ public class DisaggregationPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().process(compiledDAG);
 
     processedDAG.getTopologicalSort().forEach(irVertex -> {
-      assertEquals(Attribute.Compute, irVertex.getAttr(Attribute.Key.Placement));
+      assertEquals(ExecutorPlacement.COMPUTE, irVertex.getStringAttr(ExecutionFactor.Type.ExecutorPlacement));
       processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge ->
-          assertEquals(Attribute.Pull, irEdge.getAttr(Attribute.Key.ChannelTransferPolicy)));
+          assertEquals(DataFlowModel.PULL, irEdge.getStringAttr(ExecutionFactor.Type.DataFlowModel)));
     });
 
     final IRVertex vertex4 = processedDAG.getTopologicalSort().get(6);
     processedDAG.getIncomingEdgesOf(vertex4).forEach(irEdge ->
-      assertEquals(Attribute.Memory, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
+      assertEquals(DataStore.MEMORY, irEdge.getStringAttr(ExecutionFactor.Type.DataStore)));
     processedDAG.getOutgoingEdgesOf(vertex4).forEach(irEdge ->
-      assertEquals(Attribute.Memory, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
+      assertEquals(DataStore.MEMORY, irEdge.getStringAttr(ExecutionFactor.Type.DataStore)));
 
     final IRVertex vertex12 = processedDAG.getTopologicalSort().get(10);
     processedDAG.getIncomingEdgesOf(vertex12).forEach(irEdge ->
-      assertEquals(Attribute.RemoteFile, irEdge.getAttr(Attribute.Key.ChannelDataPlacement)));
+      assertEquals(DataStore.REMOTE_FILE, irEdge.getStringAttr(ExecutionFactor.Type.DataStore)));
   }
 }

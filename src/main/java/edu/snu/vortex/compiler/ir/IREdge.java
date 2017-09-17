@@ -16,8 +16,9 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
 import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
 import edu.snu.vortex.common.dag.Edge;
 
@@ -55,13 +56,13 @@ public final class IREdge extends Edge<IRVertex> {
     this.attributes = AttributeMap.of(this);
     switch (this.getType()) {
       case OneToOne:
-        setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
         break;
       case Broadcast:
-        setAttr(Attribute.Key.CommunicationPattern, Attribute.Broadcast);
+        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.BROADCAST));
         break;
       case ScatterGather:
-        setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
         break;
       default:
         throw new UnsupportedAttributeException("There is no such edge type as: " + this.getType());
@@ -70,22 +71,30 @@ public final class IREdge extends Edge<IRVertex> {
 
   /**
    * Set an attribute to the IREdge.
-   * @param key key of the attribute.
-   * @param val value of the attribute.
+   * @param executionFactor the execution factor.
    * @return the IREdge with the attribute applied.
    */
-  public IREdge setAttr(final Attribute.Key key, final Attribute val) {
-    attributes.put(key, val);
+  public IREdge setAttr(final ExecutionFactor<?> executionFactor) {
+    attributes.put(executionFactor);
     return this;
   }
 
   /**
    * Get the attribute of the IREdge.
-   * @param key key of the attribute.
+   * @param executionFactorType key of the attribute.
    * @return the attribute.
    */
-  public Attribute getAttr(final Attribute.Key key) {
-    return attributes.get(key);
+  public Object getAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.get(executionFactorType);
+  }
+  public String getStringAttr(final ExecutionFactor.Type executionFactorTYpe) {
+    return attributes.getStringAttr(executionFactorTYpe);
+  }
+  public Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getIntegerAttr(executionFactorType);
+  }
+  public Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getBooleanAttr(executionFactorType);
   }
 
   /**

@@ -15,9 +15,9 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.common.dag.Vertex;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
 
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
@@ -45,45 +45,34 @@ public abstract class IRVertex extends Vertex {
    */
   public static void copyAttributes(final IRVertex fromVertex, final IRVertex toVertex) {
     fromVertex.getAttributes().forEachAttr(toVertex::setAttr);
-    fromVertex.getAttributes().forEachIntAttr(toVertex::setAttr);
   }
 
   /**
    * Set an attribute to the IRVertex.
-   * @param key key of the attribute.
-   * @param val value of the attribute.
+   * @param executionFactor new execution factor.
    * @return the IRVertex with the attribute applied.
    */
-  public final IRVertex setAttr(final Attribute.Key key, final Attribute val) {
-    attributes.put(key, val);
-    return this;
-  }
-  /**
-   * Set an attribute to the IRVertex.
-   * @param key key of the attribute.
-   * @param val value of the attribute.
-   * @return the IRVertex with the attribute applied.
-   */
-  public final IRVertex setAttr(final Attribute.IntegerKey key, final Integer val) {
-    attributes.put(key, val);
+  public final IRVertex setAttr(final ExecutionFactor<?> executionFactor) {
+    attributes.put(executionFactor);
     return this;
   }
 
   /**
    * Get the attribute of the IRVertex.
-   * @param key key of the attribute.
+   * @param executionFactorType type of the execution factor.
    * @return the attribute.
    */
-  public final Attribute getAttr(final Attribute.Key key) {
-    return attributes.get(key);
+  public final Object getAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.get(executionFactorType);
   }
-  /**
-   * Get the attribute of the IRVertex.
-   * @param key key of the attribute.
-   * @return the integer attribute.
-   */
-  public final Integer getAttr(final Attribute.IntegerKey key) {
-    return attributes.get(key);
+  public final String getStringAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getStringAttr(executionFactorType);
+  }
+  public final Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getIntegerAttr(executionFactorType);
+  }
+  public final Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getBooleanAttr(executionFactorType);
   }
 
   /**

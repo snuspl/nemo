@@ -142,9 +142,9 @@ class NormalVertex:
     def dot(self):
         color = 'black'
         try:
-            if (self.properties['attributes']['Placement'] == 'Transient'):
+            if (self.properties['attributes']['ExecutorPlacement'] == 'Transient'):
                 color = 'orange'
-            if (self.properties['attributes']['Placement'] == 'Reserved'):
+            if (self.properties['attributes']['ExecutorPlacement'] == 'Reserved'):
                 color = 'green'
         except:
             pass

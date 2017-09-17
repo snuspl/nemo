@@ -23,9 +23,14 @@ import edu.snu.vortex.common.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
@@ -67,6 +72,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.BROADCAST;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.ONE_TO_ONE;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.SCATTER_GATHER;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.flatten;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
@@ -86,9 +94,9 @@ public final class DataTransferTest {
   private static final int EXECUTOR_CAPACITY = 1;
   private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private static final int SCHEDULE_TIMEOUT = 1000;
-  private static final Attribute STORE = Attribute.Memory;
-  private static final Attribute LOCAL_FILE_STORE = Attribute.LocalFile;
-  private static final Attribute REMOTE_FILE_STORE = Attribute.RemoteFile;
+  private static final String MEMORY_STORE = DataStore.MEMORY;
+  private static final String LOCAL_FILE_STORE = DataStore.LOCAL_FILE;
+  private static final String REMOTE_FILE_STORE = DataStore.REMOTE_FILE;
   private static final String TMP_LOCAL_FILE_DIRECTORY = "./tmpLocalFiles";
   private static final String TMP_REMOTE_FILE_DIRECTORY = "./tmpRemoteFiles";
   private static final int PARALLELISM_TEN = 10;
@@ -194,34 +202,34 @@ public final class DataTransferTest {
   @Test
   public void testWriteAndRead() throws Exception {
     // test OneToOne same worker
-    writeAndRead(worker1, worker1, Attribute.OneToOne, STORE);
+    writeAndRead(worker1, worker1, ONE_TO_ONE, MEMORY_STORE);
 
     // test OneToOne different worker
-    writeAndRead(worker1, worker2, Attribute.OneToOne, STORE);
+    writeAndRead(worker1, worker2, ONE_TO_ONE, MEMORY_STORE);
 
     // test OneToMany same worker
-    writeAndRead(worker1, worker1, Attribute.Broadcast, STORE);
+    writeAndRead(worker1, worker1, BROADCAST, MEMORY_STORE);
 
     // test OneToMany different worker
-    writeAndRead(worker1, worker2, Attribute.Broadcast, STORE);
+    writeAndRead(worker1, worker2, BROADCAST, MEMORY_STORE);
 
     // test ManyToMany same worker
-    writeAndRead(worker1, worker1, Attribute.ScatterGather, STORE);
+    writeAndRead(worker1, worker1, SCATTER_GATHER, MEMORY_STORE);
 
     // test ManyToMany different worker
-    writeAndRead(worker1, worker2, Attribute.ScatterGather, STORE);
+    writeAndRead(worker1, worker2, SCATTER_GATHER, MEMORY_STORE);
 
     // test ManyToMany same worker (local file)
-    writeAndRead(worker1, worker1, Attribute.ScatterGather, LOCAL_FILE_STORE);
+    writeAndRead(worker1, worker1, SCATTER_GATHER, LOCAL_FILE_STORE);
 
     // test ManyToMany different worker (local file)
-    writeAndRead(worker1, worker2, Attribute.ScatterGather, LOCAL_FILE_STORE);
+    writeAndRead(worker1, worker2, SCATTER_GATHER, LOCAL_FILE_STORE);
 
     // test ManyToMany same worker (remote file)
-    writeAndRead(worker1, worker1, Attribute.ScatterGather, REMOTE_FILE_STORE);
+    writeAndRead(worker1, worker1, SCATTER_GATHER, REMOTE_FILE_STORE);
 
     // test ManyToMany different worker (remote file)
-    writeAndRead(worker1, worker2, Attribute.ScatterGather, REMOTE_FILE_STORE);
+    writeAndRead(worker1, worker2, SCATTER_GATHER, REMOTE_FILE_STORE);
   }
 
   @Test
@@ -235,8 +243,8 @@ public final class DataTransferTest {
 
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
-                            final Attribute commPattern,
-                            final Attribute store) throws RuntimeException {
+                            final String commPattern,
+                            final String store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
     final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);
@@ -247,15 +255,15 @@ public final class DataTransferTest {
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.OneToOne, srcVertex, dstVertex, CODER);
     final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
-    edgeAttributes.put(Attribute.Key.CommunicationPattern, commPattern);
-    edgeAttributes.put(Attribute.Key.Partitioning, Attribute.Hash);
-    edgeAttributes.put(Attribute.Key.ChannelDataPlacement, store);
+    edgeAttributes.put(DataCommunicationPattern.of(commPattern));
+    edgeAttributes.put(Partitioning.of(Partitioning.HASH));
+    edgeAttributes.put(DataStore.of(store));
     final RuntimeEdge<IRVertex> dummyEdge
         = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-      if (commPattern == Attribute.ScatterGather) {
+      if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER)) {
         IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
           master.initializeState(edgeId, srcTaskIndex, dstTaskIndex, taskGroupPrefix + srcTaskIndex);
         });
@@ -292,7 +300,7 @@ public final class DataTransferTest {
     // Compare (should be the same)
     final List<Element> flattenedWrittenData = flatten(dataWrittenList);
     final List<Element> flattenedReadData = flatten(dataReadList);
-    if (commPattern == Attribute.Broadcast) {
+    if (commPattern.equals(DataCommunicationPattern.BROADCAST)) {
       final List<Element> broadcastedWrittenData = new ArrayList<>();
       IntStream.range(0, PARALLELISM_TEN).forEach(i -> broadcastedWrittenData.addAll(flattenedWrittenData));
       assertEquals(broadcastedWrittenData.size(), flattenedReadData.size());
@@ -309,7 +317,7 @@ public final class DataTransferTest {
    */
   private void iFileWriteAndRead(final PartitionManagerWorker sender,
                                  final PartitionManagerWorker receiver,
-                                 final Attribute store) throws RuntimeException {
+                                 final String store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
     final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);
@@ -320,9 +328,9 @@ public final class DataTransferTest {
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.ScatterGather, srcVertex, dstVertex, CODER);
     final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
-    edgeAttributes.put(Attribute.Key.Partitioning, Attribute.Hash);
-    edgeAttributes.put(Attribute.Key.ChannelDataPlacement, store);
-    edgeAttributes.put(Attribute.Key.WriteOptimization, Attribute.IFileWrite);
+    edgeAttributes.put(Partitioning.of(Partitioning.HASH));
+    edgeAttributes.put(ExecutorPlacement.of(store));
+    edgeAttributes.put(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
     final RuntimeEdge<IRVertex> dummyEdge
         = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
 
@@ -375,12 +383,12 @@ public final class DataTransferTest {
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
     final AttributeMap srcVertexAttributes = srcVertex.getAttributes();
-    srcVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    srcVertexAttributes.put(Parallelism.of(PARALLELISM_TEN));
 
     // Dst setup
     final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
     final AttributeMap dstVertexAttributes = dstVertex.getAttributes();
-    dstVertexAttributes.put(Attribute.IntegerKey.Parallelism, PARALLELISM_TEN);
+    dstVertexAttributes.put(Parallelism.of(PARALLELISM_TEN));
 
     return Pair.of(srcVertex, dstVertex);
   }

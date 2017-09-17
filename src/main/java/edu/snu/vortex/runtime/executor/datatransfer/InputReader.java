@@ -17,8 +17,9 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
-import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -75,17 +76,17 @@ public final class InputReader extends DataTransfer {
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge =
-        runtimeEdge.getAttributes().get(Attribute.Key.DataSizeMetricCollection) != null;
-    final Attribute writeOptAtt = runtimeEdge.getAttributes().get(Attribute.Key.WriteOptimization);
+        Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsDataSizeMetricCollection));
+    final String writeOptAtt = runtimeEdge.getStringAttr(ExecutionFactor.Type.WriteOptimization);
     final Boolean isIFileWriteEdge =
-        writeOptAtt != null && writeOptAtt.equals(Attribute.IFileWrite);
+        writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     try {
-      switch (runtimeEdge.getAttributes().get(Attribute.Key.CommunicationPattern)) {
-        case OneToOne:
+      switch (runtimeEdge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)) {
+        case DataCommunicationPattern.ONE_TO_ONE:
           return Collections.singletonList(readOneToOne());
-        case Broadcast:
+        case DataCommunicationPattern.BROADCAST:
           return readBroadcast();
-        case ScatterGather:
+        case DataCommunicationPattern.SCATTER_GATHER:
           // If the dynamic optimization which detects data skew is enabled, read the data in the assigned range.
           if (isDataSizeMetricCollectionEdge) {
             return readDataInRange();
@@ -105,7 +106,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all());
+        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all());
   }
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
@@ -116,7 +117,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all()));
+          runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -130,7 +131,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all()));
+          runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -157,7 +158,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
-              partitionId, getId(), runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement),
+              partitionId, getId(), runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore),
               hashRangeToRead));
     }
 
@@ -172,7 +173,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readIFile() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement), HashRange.all());
+        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all());
   }
 
   public RuntimeEdge getRuntimeEdge() {
@@ -189,9 +190,7 @@ public final class InputReader extends DataTransfer {
   }
 
   public boolean isSideInputReader() {
-    AttributeMap edgeAttributes = runtimeEdge.getAttributes();
-
-    return edgeAttributes.containsKey(Attribute.Key.SideInput);
+    return Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsSideInput));
   }
 
   public CompletableFuture<Object> getSideInput() {
@@ -209,7 +208,7 @@ public final class InputReader extends DataTransfer {
    */
   public int getSourceParallelism() {
     if (srcVertex != null) {
-      final Integer numSrcTasks = srcVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
+      final Integer numSrcTasks = srcVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
       return numSrcTasks == null ? 1 : numSrcTasks;
     } else {
       // Memory input reader

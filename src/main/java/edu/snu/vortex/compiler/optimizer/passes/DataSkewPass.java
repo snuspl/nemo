@@ -21,7 +21,10 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.IsDataSizeMetricCollection;
+import edu.snu.vortex.compiler.ir.attribute.vertex.DynamicOptimizationType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +48,7 @@ public final class DataSkewPass implements StaticOptimizationPass {
       if (v instanceof OperatorVertex && dag.getIncomingEdgesOf(v).stream().anyMatch(irEdge ->
           irEdge.getType().equals(IREdge.Type.ScatterGather))) {
         final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
-        metricCollectionBarrierVertex.setAttr(Attribute.Key.DynamicOptimizationType, Attribute.DataSkew);
+        metricCollectionBarrierVertex.setAttr(DynamicOptimizationType.of(DynamicOptimizationType.DATA_SKEW));
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -58,16 +61,16 @@ public final class DataSkewPass implements StaticOptimizationPass {
               new IREdge(IREdge.Type.OneToOne, edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
           // we tell the edge that it needs to collect the metrics when transferring data.
           // we want it to be in the same stage
-          newEdge.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+          newEdge.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
           if (edge.equals(edgeToUseMemory)) {
-            newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+            newEdge.setAttr(DataStore.of(DataStore.MEMORY));
           } else {
-            newEdge.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
+            newEdge.setAttr(DataStore.of(DataStore.LOCAL_FILE));
           }
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           IREdge.copyAttributes(edge, edgeToGbK);
-          edgeToGbK.setAttr(Attribute.Key.DataSizeMetricCollection, Attribute.MetricCollection);
+          edgeToGbK.setAttr(IsDataSizeMetricCollection.of(true));
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });

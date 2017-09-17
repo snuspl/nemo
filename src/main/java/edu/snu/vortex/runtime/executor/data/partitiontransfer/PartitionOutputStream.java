@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.executor.data.FileArea;
 import edu.snu.vortex.runtime.executor.data.HashRange;
@@ -54,7 +53,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
 
   private final String receiverExecutorId;
   private final boolean encodePartialPartition;
-  private final Optional<Attribute> partitionStore;
+  private final Optional<String> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
@@ -90,7 +89,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
    */
   PartitionOutputStream(final String receiverExecutorId,
                         final boolean encodePartialPartition,
-                        final Optional<Attribute> partitionStore,
+                        final Optional<String> partitionStore,
                         final String partitionId,
                         final String runtimeEdgeId,
                         final HashRange hashRange) {
@@ -141,7 +140,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   }
 
   @Override
-  public Optional<Attribute> getPartitionStore() {
+  public Optional<String> getPartitionStore() {
     return partitionStore;
   }
 

@@ -19,7 +19,11 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.runtime.common.plan.stage.Stage;
 import edu.snu.vortex.runtime.common.plan.stage.StageEdge;
@@ -53,11 +57,11 @@ public final class DAGConverterTest {
   public void testSimplePlan() throws Exception {
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    v1.setAttr(Parallelism.of(3));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(new DoTransform(null, null));
-    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v2.setAttr(Parallelism.of(2));
     irDAGBuilder.addVertex(v2);
 
     final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
@@ -111,39 +115,39 @@ public final class DAGConverterTest {
     when(s.split(3L, null)).thenReturn(dummyReaderList);
 
     final IRVertex v1 = new BoundedSourceVertex<>(s);
-    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v1.setAttr(Parallelism.of(3));
+    v1.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final Transform t = mock(Transform.class);
     final DoTransform dt = new DoTransform(null, null);
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    v2.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v2.setAttr(Parallelism.of(3));
+    v2.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v3.setAttr(Parallelism.of(3));
+    v3.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final IRVertex v4 = new OperatorVertex(t);
-    v4.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v4.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v4.setAttr(Parallelism.of(2));
+    v4.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final IRVertex v5 = new OperatorVertex(dt);
-    v5.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v5.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v5.setAttr(Parallelism.of(2));
+    v5.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final IRVertex v6 = new OperatorVertex(dt);
-    v6.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v6.setAttr(Attribute.Key.Placement, Attribute.Reserved);
+    v6.setAttr(Parallelism.of(2));
+    v6.setAttr(ExecutorPlacement.of(ExecutorPlacement.RESERVED));
 
     // TODO #13: Implement Join Node
 //    final IRVertex v7 = new OperatorVertex(t);
-//    v7.setAttr(Attribute.IntegerKey.Parallelism, 2);
-//    v7.setAttr(Attribute.Key.Placement, Attribute.Compute);
+//    v7.setAttr(Parallelism.of(2));
+//    v7.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     final IRVertex v8 = new OperatorVertex(dt);
-    v8.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v8.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v8.setAttr(Parallelism.of(2));
+    v8.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
 
     irDAGBuilder.addVertex(v1);
     irDAGBuilder.addVertex(v2);
@@ -157,45 +161,45 @@ public final class DAGConverterTest {
 //    irDAGBuilder.addVertex(v7);
 
     final IREdge e1 = new IREdge(IREdge.Type.OneToOne, v1, v2, Coder.DUMMY_CODER);
-    e1.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e1.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    e1.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+    e1.setAttr(DataStore.of(DataStore.MEMORY));
+    e1.setAttr(DataFlowModel.of(DataFlowModel.PULL));
+    e1.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 
     final IREdge e2 = new IREdge(IREdge.Type.OneToOne, v1, v3, Coder.DUMMY_CODER);
-    e2.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e2.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    e2.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+    e2.setAttr(DataStore.of(DataStore.MEMORY));
+    e2.setAttr(DataFlowModel.of(DataFlowModel.PULL));
+    e2.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 
     final IREdge e3 = new IREdge(IREdge.Type.ScatterGather, v2, v4, Coder.DUMMY_CODER);
-    e3.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e3.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
-    e3.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+    e3.setAttr(DataStore.of(DataStore.MEMORY));
+    e3.setAttr(DataFlowModel.of(DataFlowModel.PUSH));
+    e3.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
 
     final IREdge e4 = new IREdge(IREdge.Type.ScatterGather, v3, v5, Coder.DUMMY_CODER);
-    e4.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-    e4.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Push);
-    e4.setAttr(Attribute.Key.CommunicationPattern, Attribute.ScatterGather);
+    e4.setAttr(DataStore.of(DataStore.MEMORY));
+    e4.setAttr(DataFlowModel.of(DataFlowModel.PUSH));
+    e4.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
 
     final IREdge e5 = new IREdge(IREdge.Type.OneToOne, v4, v6, Coder.DUMMY_CODER);
-    e5.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
-    e5.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    e5.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+    e5.setAttr(DataStore.of(DataStore.LOCAL_FILE));
+    e5.setAttr(DataFlowModel.of(DataFlowModel.PULL));
+    e5.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 
     final IREdge e6 = new IREdge(IREdge.Type.OneToOne, v4, v8, Coder.DUMMY_CODER);
-    e6.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
-    e6.setAttr(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
-    e6.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+    e6.setAttr(DataStore.of(DataStore.LOCAL_FILE));
+    e6.setAttr(DataFlowModel.of(DataFlowModel.PULL));
+    e6.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 
     // TODO #13: Implement Join Node
-//    final IREdge e7 = new IREdge(IREdge.Type.OneToOne, v7, v5);
-//    e7.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-//    e7.setAttr(Attribute.Key.PullOrPush, Attribute.Push);
-//    e7.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+//    final IREdge e7 = new IREdge(IREdge.Type.ONE_TO_ONE, v7, v5);
+//    e7.setAttr(DataStore.of(DataStore.MEMORY));
+//    e7.setAttr(Attribute.Key.PullOrPush, DataFlowModel.PUSH));
+//    e7.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 //
-//    final IREdge e8 = new IREdge(IREdge.Type.OneToOne, v5, v8);
-//    e8.setAttr(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
-//    e8.setAttr(Attribute.Key.PullOrPush, Attribute.Pull);
-//    e8.setAttr(Attribute.Key.CommunicationPattern, Attribute.OneToOne);
+//    final IREdge e8 = new IREdge(IREdge.Type.ONE_TO_ONE, v5, v8);
+//    e8.setAttr(DataStore.of(DataStore.MEMORY));
+//    e8.setAttr(Attribute.Key.PullOrPush, DataFlowModel.PULL));
+//    e8.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
 
     // Stage 1 = {v1, v2, v3}
     irDAGBuilder.connectVertices(e1);

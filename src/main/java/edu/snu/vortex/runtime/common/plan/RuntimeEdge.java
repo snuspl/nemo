@@ -19,6 +19,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.common.dag.Edge;
 import edu.snu.vortex.common.dag.Vertex;
 import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
 
 /**
  * Represents the edge between vertices in a logical/physical plan in runtime.
@@ -46,6 +47,27 @@ public class RuntimeEdge<V extends Vertex> extends Edge<V> {
     this.coder = coder;
   }
 
+  /**
+   * Get the attribute of the Runtime Edge.
+   * @param executionFactorType key of the attribute.
+   * @return the attribute.
+   */
+  public final Object getAttr(final ExecutionFactor.Type executionFactorType) {
+    return edgeAttributes.get(executionFactorType);
+  }
+  public final String getStringAttr(final ExecutionFactor.Type executionFactorTYpe) {
+    return edgeAttributes.getStringAttr(executionFactorTYpe);
+  }
+  public final Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
+    return edgeAttributes.getIntegerAttr(executionFactorType);
+  }
+  public final Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
+    return edgeAttributes.getBooleanAttr(executionFactorType);
+  }
+
+  /**
+   * @return the AttributeMap of the Runtime Edge.
+   */
   public final AttributeMap getAttributes() {
     return edgeAttributes;
   }

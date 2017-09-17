@@ -19,7 +19,7 @@ import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
@@ -40,6 +40,10 @@ import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.LOCAL_FILE;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.MEMORY;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.REMOTE_FILE;
 
 /**
  * Executor-side partition manager.
@@ -110,7 +114,7 @@ public final class PartitionManagerWorker {
    * @return whether the partition is removed or not.
    */
   public boolean removePartition(final String partitionId,
-                                 final Attribute partitionStore) {
+                                 final String partitionStore) {
     LOG.info("RemovePartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final boolean exist;
@@ -147,7 +151,7 @@ public final class PartitionManagerWorker {
    */
   public void putPartition(final String partitionId,
                            final Iterable<Element> data,
-                           final Attribute partitionStore) {
+                           final String partitionStore) {
     LOG.info("PutPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
@@ -183,7 +187,7 @@ public final class PartitionManagerWorker {
   public void putHashedPartition(final String partitionId,
                                  final String srcIRVertexId,
                                  final Iterable<Pair<Integer, Iterable<Element>>> hashedData,
-                                 final Attribute partitionStore) {
+                                 final String partitionStore) {
     LOG.info("PutHashedPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final Iterable<Long> blockSizeInfo;
@@ -225,7 +229,7 @@ public final class PartitionManagerWorker {
   public void appendHashedDataToPartition(final String partitionId,
                                           final int srcTaskIdx,
                                           final Iterable<Pair<Integer, Iterable<Element>>> hashedData,
-                                          final Attribute partitionStore) {
+                                          final String partitionStore) {
     LOG.info("AppendHashedDataToPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
 
@@ -265,7 +269,7 @@ public final class PartitionManagerWorker {
    */
   public CompletableFuture<Iterable<Element>> retrieveDataFromPartition(final String partitionId,
                                                                         final String runtimeEdgeId,
-                                                                        final Attribute partitionStore,
+                                                                        final String partitionStore,
                                                                         final HashRange hashRange) {
     LOG.info("retrieveDataFromPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
@@ -288,7 +292,7 @@ public final class PartitionManagerWorker {
         } catch (final IOException e) {
           future.completeExceptionally(new PartitionFetchException(e));
         }
-      } else if (partitionStore.equals(Attribute.RemoteFile)) {
+      } else if (partitionStore.equals(DataStore.REMOTE_FILE)) {
         throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
       } else {
         // We don't have the partition here...
@@ -312,10 +316,10 @@ public final class PartitionManagerWorker {
    */
   private CompletableFuture<Iterable<Element>> requestPartitionInRemoteWorker(final String partitionId,
                                                                               final String runtimeEdgeId,
-                                                                              final Attribute partitionStore,
+                                                                              final String partitionStore,
                                                                               final HashRange hashRange) {
     // We don't have the partition here...
-    if (partitionStore == Attribute.RemoteFile) {
+    if (partitionStore.equals(REMOTE_FILE)) {
       LOG.warn("The target partition {} is not found in the remote storage. "
           + "Maybe the storage is not mounted or linked properly.", partitionId);
     }
@@ -349,13 +353,13 @@ public final class PartitionManagerWorker {
     });
   }
 
-  private PartitionStore getPartitionStore(final Attribute partitionStore) {
+  private PartitionStore getPartitionStore(final String partitionStore) {
     switch (partitionStore) {
-      case Memory:
+      case MEMORY:
         return memoryStore;
-      case LocalFile:
+      case LOCAL_FILE:
         return localFileStore;
-      case RemoteFile:
+      case REMOTE_FILE:
         return remoteFileStore;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));

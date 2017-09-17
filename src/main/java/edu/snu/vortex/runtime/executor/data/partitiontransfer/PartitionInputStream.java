@@ -17,7 +17,6 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
@@ -50,7 +49,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   private final String senderExecutorId;
   private final boolean encodePartialPartition;
-  private final Optional<Attribute> partitionStore;
+  private final Optional<String> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
@@ -82,7 +81,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    */
   PartitionInputStream(final String senderExecutorId,
                        final boolean encodePartialPartition,
-                       final Optional<Attribute> partitionStore,
+                       final Optional<String> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {
@@ -182,7 +181,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
   }
 
   @Override
-  public Optional<Attribute> getPartitionStore() {
+  public Optional<String> getPartitionStore() {
     return partitionStore;
   }
 

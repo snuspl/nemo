@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.data.HashRange;
@@ -29,6 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.LOCAL_FILE;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.MEMORY;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.REMOTE_FILE;
 
 /**
  * Responses to control message by emitting a new {@link PartitionStream},
@@ -301,27 +305,27 @@ final class ControlMessageToPartitionStreamCodec
     return pushTransferIdToOutputStream;
   }
 
-  private static ControlMessage.PartitionStore convertPartitionStore(final Attribute partitionStore) {
+  private static ControlMessage.PartitionStore convertPartitionStore(final String partitionStore) {
     switch (partitionStore) {
-      case Memory:
+      case MEMORY:
         return ControlMessage.PartitionStore.MEMORY;
-      case LocalFile:
+      case LOCAL_FILE:
         return ControlMessage.PartitionStore.LOCAL_FILE;
-      case RemoteFile:
+      case REMOTE_FILE:
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
     }
   }
 
-  private static Attribute convertPartitionStore(final ControlMessage.PartitionStore partitionStoreType) {
+  private static String convertPartitionStore(final ControlMessage.PartitionStore partitionStoreType) {
     switch (partitionStoreType) {
       case MEMORY:
-        return Attribute.Memory;
+        return MEMORY;
       case LOCAL_FILE:
-        return Attribute.LocalFile;
+        return LOCAL_FILE;
       case REMOTE_FILE:
-        return Attribute.RemoteFile;
+        return DataStore.REMOTE_FILE;
       default:
         throw new UnsupportedPartitionStoreException(new Exception("This partition store is not yet supported"));
     }

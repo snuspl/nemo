@@ -17,21 +17,27 @@ package edu.snu.vortex.compiler.ir.attribute;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * AttributeMap Class, which uses HashMap for keeping track of attributes for vertices and edges.
  */
 public final class AttributeMap implements Serializable {
   private final String id;
-  private final Map<Attribute.Key, Attribute> attributes;
-  private final Map<Attribute.IntegerKey, Integer> intAttributes;
+  private final Map<ExecutionFactor.Type, ExecutionFactor<String>> stringAttributes;
+  private final Map<ExecutionFactor.Type, ExecutionFactor<Integer>> intAttributes;
+  private final Map<ExecutionFactor.Type, ExecutionFactor<Boolean>> boolAttributes;
 
   /**
    * Constructor for AttributeMap class.
@@ -39,8 +45,9 @@ public final class AttributeMap implements Serializable {
    */
   private AttributeMap(final String id) {
     this.id = id;
-    attributes = new HashMap<>();
+    stringAttributes = new HashMap<>();
     intAttributes = new HashMap<>();
+    boolAttributes = new HashMap<>();
   }
 
   /**
@@ -69,22 +76,23 @@ public final class AttributeMap implements Serializable {
    * @param type type of the edge.
    */
   private void setDefaultEdgeValues(final IREdge.Type type) {
-    this.attributes.put(Attribute.Key.Partitioning, Attribute.Hash);
-    this.attributes.put(Attribute.Key.ChannelTransferPolicy, Attribute.Pull);
+    this.put(Partitioning.of(Partitioning.HASH));
+    this.put(DataFlowModel.of(DataFlowModel.PULL));
     switch (type) {
       case OneToOne:
-        this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.Memory);
+        this.put(DataStore.of(DataStore.MEMORY));
         break;
       default:
-        this.attributes.put(Attribute.Key.ChannelDataPlacement, Attribute.LocalFile);
+        this.put(DataStore.of(DataStore.LOCAL_FILE));
+        break;
     }
   }
   /**
    * Putting default attributes for vertices.
    */
   private void setDefaultVertexValues() {
-    this.attributes.put(Attribute.Key.Placement, Attribute.None);
-    this.intAttributes.put(Attribute.IntegerKey.Parallelism, 1);
+    this.put(ExecutorPlacement.of(ExecutorPlacement.NONE));
+    this.put(Parallelism.of(1));
   }
 
   /**
@@ -96,42 +104,64 @@ public final class AttributeMap implements Serializable {
   }
 
   /**
-   * Put a key and a value in this AttributeMap.
-   * @param key the key of the attribute.
-   * @param val the value of the attribute.
-   * @return the attribute.
+   * Put the given execution factor in the AttributeMap.
+   * @param executionFactor execution factor to insert.
+   * @return the inserted execution factor.
    */
-  public Attribute put(final Attribute.Key key, final Attribute val) {
-    if (!val.hasKey(key)) {
-      throw new RuntimeException("Attribute " + val + " is not a member of Key " + key);
+  public ExecutionFactor put(final ExecutionFactor<?> executionFactor) {
+    if (executionFactor.getAttributeType() == String.class) {
+      return stringAttributes.put(executionFactor.getType(), (ExecutionFactor<String>) executionFactor);
+    } else if (executionFactor.getAttributeType() == Integer.class) {
+      return intAttributes.put(executionFactor.getType(), (ExecutionFactor<Integer>) executionFactor);
+    } else if (executionFactor.getAttributeType() == Boolean.class) {
+      return boolAttributes.put(executionFactor.getType(), (ExecutionFactor<Boolean>) executionFactor);
+    } else {
+      throw new RuntimeException(AttributeMap.class.getSimpleName()
+          + " doesn't yet support object type " + executionFactor.getAttributeType());
     }
-    return attributes.put(key, val);
+  }
+
+  public Object get(final ExecutionFactor.Type executionFactorType) {
+    final ExecutionFactor<?> executionFactor;
+    if (stringAttributes.containsKey(executionFactorType)) {
+      executionFactor = stringAttributes.get(executionFactorType);
+    } else if (intAttributes.containsKey(executionFactorType)) {
+      executionFactor = intAttributes.get(executionFactorType);
+    } else if (boolAttributes.containsKey(executionFactorType)) {
+      executionFactor = boolAttributes.get(executionFactorType);
+    } else {
+      executionFactor = null;
+    }
+    return executionFactor == null ? null : executionFactor.getAttribute();
   }
   /**
-   * Put a key and a value in this AttributeMap.
-   * @param key the key of the attribute.
-   * @param integer the value of integer of the attribute.
-   * @return the attribute.
+   * Get the value of the given execution factor type.
+   * @param executionFactorType the execution factor type to find the value of.
+   * @return the value of the given execution factor.
    */
-  public Integer put(final Attribute.IntegerKey key, final Integer integer) {
-    return intAttributes.put(key, integer);
+  public String getStringAttr(final ExecutionFactor.Type executionFactorType) {
+    final ExecutionFactor<String> executionFactor = stringAttributes.get(executionFactorType);
+    return executionFactor == null ? null : executionFactor.getAttribute();
   }
 
   /**
-   * Get the value of the given key in this AttributeMap.
-   * @param key the key to look for.
-   * @return the attribute corresponding to the key.
+   * Get the value of the given execution factor type.
+   * @param executionFactorType the execution factor type to find the value of.
+   * @return the value of the given execution factor.
    */
-  public Attribute get(final Attribute.Key key) {
-    return attributes.get(key);
+  public Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
+    final ExecutionFactor<Integer> executionFactor = intAttributes.get(executionFactorType);
+    return executionFactor == null ? null : executionFactor.getAttribute();
   }
+
   /**
-   * Get the value of the given key in this AttributeMap.
-   * @param key the key to look for.
-   * @return the attribute corresponding to the key.
+   * Get the value of the given execution factor type.
+   * @param executionFactorType the execution factor type to find the value of.
+   * @return the value of the given execution factor.
    */
-  public Integer get(final Attribute.IntegerKey key) {
-    return intAttributes.get(key);
+  public Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
+    final ExecutionFactor<Boolean> executionFactor = boolAttributes.get(executionFactorType);
+    return executionFactor == null ? null : executionFactor.getAttribute();
   }
 
   /**
@@ -139,46 +169,34 @@ public final class AttributeMap implements Serializable {
    * @param key key of the attribute to remove.
    * @return the removed attribute.
    */
-  public Attribute remove(final Attribute.Key key) {
-    return attributes.remove(key);
-  }
-  /**
-   * remove the attribute.
-   * @param key key of the attribute to remove.
-   * @return the removed attribute.
-   */
-  public Integer remove(final Attribute.IntegerKey key) {
-    return intAttributes.remove(key);
+  public ExecutionFactor remove(final ExecutionFactor.Type key) {
+    if (stringAttributes.containsKey(key)) {
+      return stringAttributes.remove(key);
+    } else if (intAttributes.containsKey(key)) {
+      return intAttributes.remove(key);
+    } else if (boolAttributes.containsKey(key)) {
+      return boolAttributes.remove(key);
+    } else {
+      return null;
+    }
   }
 
   /**
    * @param key key to look for
    * @return whether or not the attribute map contains the key.
    */
-  public boolean containsKey(final Attribute.Key key) {
-    return attributes.containsKey(key);
-  }
-  /**
-   * @param key key to look for
-   * @return whether or not the attribute map contains the key.
-   */
-  public boolean containsKey(final Attribute.IntegerKey key) {
-    return attributes.containsKey(key);
+  public boolean containsKey(final ExecutionFactor.Type key) {
+    return stringAttributes.containsKey(key) || intAttributes.containsKey(key) || boolAttributes.containsKey(key);
   }
 
   /**
    * Same as forEach function in Java 8, but for attributes.
    * @param action action to apply to each attributes.
    */
-  public void forEachAttr(final BiConsumer<? super Attribute.Key, ? super Attribute> action) {
-    attributes.forEach(action);
-  }
-  /**
-   * Same as forEach function in Java 8, but for attributes.
-   * @param action action to apply to each attributes.
-   */
-  public void forEachIntAttr(final BiConsumer<? super Attribute.IntegerKey, ? super Integer> action) {
-    intAttributes.forEach(action);
+  public void forEachAttr(final Consumer<? super ExecutionFactor> action) {
+    stringAttributes.values().forEach(action);
+    intAttributes.values().forEach(action);
+    boolAttributes.values().forEach(action);
   }
 
   @Override
@@ -186,7 +204,7 @@ public final class AttributeMap implements Serializable {
     final StringBuilder sb = new StringBuilder();
     sb.append("{");
     boolean isFirstPair = true;
-    for (final Map.Entry<Attribute.Key, Attribute> pair : attributes.entrySet()) {
+    for (final Map.Entry<ExecutionFactor.Type, ExecutionFactor<String>> pair : stringAttributes.entrySet()) {
       if (!isFirstPair) {
         sb.append(", ");
       }
@@ -194,18 +212,30 @@ public final class AttributeMap implements Serializable {
       sb.append("\"");
       sb.append(pair.getKey());
       sb.append("\": \"");
-      sb.append(pair.getValue());
+      sb.append(pair.getValue().getAttribute());
       sb.append("\"");
     }
-    for (final Map.Entry<Attribute.IntegerKey, Integer> pair : intAttributes.entrySet()) {
+    for (final Map.Entry<ExecutionFactor.Type, ExecutionFactor<Integer>> pair : intAttributes.entrySet()) {
       if (!isFirstPair) {
         sb.append(", ");
       }
       isFirstPair = false;
       sb.append("\"");
       sb.append(pair.getKey());
-      sb.append("\": ");
-      sb.append(pair.getValue());
+      sb.append("\": \"");
+      sb.append(pair.getValue().getAttribute());
+      sb.append("\"");
+    }
+    for (final Map.Entry<ExecutionFactor.Type, ExecutionFactor<Boolean>> pair : boolAttributes.entrySet()) {
+      if (!isFirstPair) {
+        sb.append(", ");
+      }
+      isFirstPair = false;
+      sb.append("\"");
+      sb.append(pair.getKey());
+      sb.append("\": \"");
+      sb.append(pair.getValue().getAttribute());
+      sb.append("\"");
     }
     sb.append("}");
     return sb.toString();
@@ -225,16 +255,21 @@ public final class AttributeMap implements Serializable {
     AttributeMap that = (AttributeMap) obj;
 
     return new EqualsBuilder()
-        .append(attributes, that.attributes)
-        .append(intAttributes, that.intAttributes)
+        .append(stringAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()),
+            that.stringAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
+        .append(intAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()),
+            that.intAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
+        .append(boolAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()),
+            that.boolAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .append(attributes)
-        .append(intAttributes)
+        .append(stringAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
+        .append(intAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
+        .append(boolAttributes.values().stream().map(ExecutionFactor::getAttribute).collect(Collectors.toSet()))
         .toHashCode();
   }
 }

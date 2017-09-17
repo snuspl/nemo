@@ -18,7 +18,8 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
@@ -29,6 +30,12 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.BROADCAST;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.ONE_TO_ONE;
+import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.SCATTER_GATHER;
+import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.HASH;
+import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.RANGE;
 
 /**
  * Represents the output data transfer from a task.
@@ -66,18 +73,18 @@ public final class OutputWriter extends DataTransfer {
    */
   public void write(final Iterable<Element> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge =
-        runtimeEdge.getAttributes().get(Attribute.Key.DataSizeMetricCollection) != null;
-    final Attribute writeOptAtt = runtimeEdge.getAttributes().get(Attribute.Key.WriteOptimization);
+        Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsDataSizeMetricCollection));
+    final String writeOptAtt = runtimeEdge.getStringAttr(ExecutionFactor.Type.WriteOptimization);
     final Boolean isIFileWriteEdge =
-        writeOptAtt != null && writeOptAtt.equals(Attribute.IFileWrite);
-    switch (runtimeEdge.getAttributes().get(Attribute.Key.CommunicationPattern)) {
-      case OneToOne:
+        writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
+    switch (runtimeEdge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)) {
+      case ONE_TO_ONE:
         writeOneToOne(dataToWrite);
         break;
-      case Broadcast:
+      case BROADCAST:
         writeBroadcast(dataToWrite);
         break;
-      case ScatterGather:
+      case SCATTER_GATHER:
         // If the dynamic optimization which detects data skew is enabled, sort the data and write it.
         if (isDataSizeMetricCollectionEdge) {
           hashAndWrite(dataToWrite);
@@ -95,20 +102,20 @@ public final class OutputWriter extends DataTransfer {
   private void writeOneToOne(final Iterable<Element> dataToWrite) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
     partitionManagerWorker.putPartition(partitionId, dataToWrite,
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore));
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
     partitionManagerWorker.putPartition(partitionId, dataToWrite,
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore));
   }
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) {
-    final Attribute partition = runtimeEdge.getAttributes().get(Attribute.Key.Partitioning);
+    final String partition = runtimeEdge.getStringAttr(ExecutionFactor.Type.Partitioning);
     switch (partition) {
-    case Hash:
-      final int dstParallelism = dstVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
+    case HASH:
+      final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
 
       // First partition the data to write,
       final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
@@ -124,10 +131,10 @@ public final class OutputWriter extends DataTransfer {
         // Give each partition its own partition id
         final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, partitionIdx);
         partitionManagerWorker.putPartition(partitionId, partitionedOutputList.get(partitionIdx),
-            runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+            runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore));
       });
       break;
-    case Range:
+    case RANGE:
     default:
       throw new UnsupportedPartitionerException(new Exception(partition + " partitioning not yet supported"));
     }
@@ -149,7 +156,7 @@ public final class OutputWriter extends DataTransfer {
    */
   private void hashAndWrite(final Iterable<Element> dataToWrite) {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    final int dstParallelism = dstVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -163,7 +170,7 @@ public final class OutputWriter extends DataTransfer {
     });
 
     partitionManagerWorker.putHashedPartition(partitionId, srcVertexId, outputBlockList,
-        runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore));
   }
 
   /**
@@ -177,7 +184,7 @@ public final class OutputWriter extends DataTransfer {
    * @param dataToWrite an iterable for the elements to be written.
    */
   private void writeIFile(final Iterable<Element> dataToWrite) {
-    final int dstParallelism = dstVertex.getAttributes().get(Attribute.IntegerKey.Parallelism);
+    final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
     final List<List<Pair<Integer, Iterable<Element>>>> outputList = new ArrayList<>(dstParallelism);
@@ -203,7 +210,7 @@ public final class OutputWriter extends DataTransfer {
     IntStream.range(0, dstParallelism).forEach(dstIdx -> {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstIdx);
       partitionManagerWorker.appendHashedDataToPartition(partitionId, srcTaskIdx, outputList.get(dstIdx),
-          runtimeEdge.getAttributes().get(Attribute.Key.ChannelDataPlacement));
+          runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore));
     });
   }
 }

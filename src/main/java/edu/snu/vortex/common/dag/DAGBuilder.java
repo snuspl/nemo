@@ -17,7 +17,9 @@ package edu.snu.vortex.common.dag;
 
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
@@ -240,45 +242,45 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   private void attributeCheck() {
     // SideInput edge must be one-to-one
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getAttr(Attribute.Key.SideInput) != null)
+        .filter(e -> Boolean.TRUE.equals(e.getBooleanAttr(ExecutionFactor.Type.IsSideInput)))
         .filter(e -> !e.getType().equals(IREdge.Type.OneToOne))
         .forEach(e -> {
           throw new RuntimeException("DAG attribute check: SideInput edge must be one-to-one: " + e.getId());
         }));
     // SideInput is not compatible with Push
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getAttr(Attribute.Key.SideInput) != null)
-        .filter(e -> e.getAttr(Attribute.Key.ChannelTransferPolicy) == Attribute.Push)
+        .filter(e -> Boolean.TRUE.equals(e.getBooleanAttr(ExecutionFactor.Type.IsSideInput)))
+        .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PUSH))
         .forEach(e -> {
-          throw new RuntimeException("DAG attribute check: SideInput is not compatible with push" + e.getId());
+          throw new RuntimeException("DAG attribute check: SideInput edge is not compatible with push" + e.getId());
         }));
     // DataSizeMetricCollection is not compatible with Push (All data have to be stored before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getAttr(Attribute.Key.DataSizeMetricCollection) != null)
-        .filter(e -> e.getAttr(Attribute.Key.ChannelTransferPolicy) == Attribute.Push)
+        .filter(e -> Boolean.TRUE.equals(e.getBooleanAttr(ExecutionFactor.Type.IsDataSizeMetricCollection)))
+        .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PUSH))
         .forEach(e -> {
-          throw new RuntimeException("DAG attribute check: DataSizeMetricCollection is not compatible with push"
+          throw new RuntimeException("DAG attribute check: DataSizeMetricCollection edge is not compatible with push"
               + e.getId());
         }));
     // IFileWrite is not compatible with Push (All I-Files have to be constructed before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getAttr(Attribute.Key.WriteOptimization) != null
-            && e.getAttr(Attribute.Key.WriteOptimization).equals(Attribute.IFileWrite))
-        .filter(e -> e.getAttr(Attribute.Key.ChannelTransferPolicy) == Attribute.Push)
+        .filter(e -> e.getStringAttr(ExecutionFactor.Type.WriteOptimization) != null
+            && e.getStringAttr(ExecutionFactor.Type.WriteOptimization).equals(WriteOptimization.IFILE_WRITE))
+        .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PUSH))
         .forEach(e -> {
-          throw new RuntimeException("DAG attribute check: DataSizeMetricCollection is not compatible with push"
+          throw new RuntimeException("DAG attribute check: DataSizeMetricCollection edge is not compatible with push"
               + e.getId());
         }));
     // All vertices connected with OneToOne edge should have identical Parallelism attribute.
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> e.getType().equals(IREdge.Type.OneToOne))
-        .filter(e -> e.getAttr(Attribute.Key.SideInput) == null).forEach(e -> {
+        .filter(e -> !Boolean.TRUE.equals(e.getBooleanAttr(ExecutionFactor.Type.IsSideInput))).forEach(e -> {
           if (e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
               && !(e.getSrc() instanceof LoopVertex) && !(e.getDst() instanceof LoopVertex)
-              && (e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism) != null
-              && (e.getDst()).getAttr(Attribute.IntegerKey.Parallelism) != null
-              && !(e.getSrc()).getAttr(Attribute.IntegerKey.Parallelism)
-              .equals((e.getDst()).getAttr(Attribute.IntegerKey.Parallelism))) {
+              && (e.getSrc()).getIntegerAttr(ExecutionFactor.Type.Parallelism) != null
+              && (e.getDst()).getIntegerAttr(ExecutionFactor.Type.Parallelism) != null
+              && !(e.getSrc()).getIntegerAttr(ExecutionFactor.Type.Parallelism)
+              .equals((e.getDst()).getIntegerAttr(ExecutionFactor.Type.Parallelism))) {
             throw new RuntimeException("DAG attribute check: vertices are connected by OneToOne edge, "
                 + "but has different parallelism attributes: " + e.getId());
           }

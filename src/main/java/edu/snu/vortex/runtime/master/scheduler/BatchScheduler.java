@@ -17,8 +17,9 @@ package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
 import edu.snu.vortex.runtime.master.eventhandler.DynamicOptimizationEvent;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
@@ -194,7 +195,7 @@ public final class BatchScheduler implements Scheduler {
           physicalPlan.getStageDAG().getOutgoingEdgesOf(stageIdForTaskGroupUponCompletion);
       boolean pushOutput = false;
       for (PhysicalStageEdge outputEdge : outputsOfThisStage) {
-        if (outputEdge.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Push) {
+        if (outputEdge.getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PUSH)) {
           pushOutput = true;
           break;
         }
@@ -388,7 +389,7 @@ public final class BatchScheduler implements Scheduler {
         final PhysicalStageEdge edgeFromParent =
             physicalPlan.getStageDAG().getEdgeBetween(parentStage.getId(), stageTocheck.getId());
 
-        if (edgeFromParent.getAttributes().get(Attribute.Key.ChannelTransferPolicy) == Attribute.Pull) {
+        if (edgeFromParent.getStringAttr(ExecutionFactor.Type.DataFlowModel).equals(DataFlowModel.PULL)) {
           // we cannot do anything but wait.
           safeToScheduleThisStage = false;
         } // else if the output of the parent stage is being pushed, we may be able to schedule this stage.

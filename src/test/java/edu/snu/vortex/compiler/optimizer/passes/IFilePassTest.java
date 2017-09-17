@@ -20,7 +20,10 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,14 +51,16 @@ public class IFilePassTest {
     final DAG<IRVertex, IREdge> processedDAG = new IFilePass().process(disaggProcessedDAG);
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-            .filter(e -> e.getAttr(Attribute.Key.CommunicationPattern).equals(Attribute.ScatterGather))
-            .filter(e -> e.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile))
-            .forEach(e -> assertTrue(e.getAttr(Attribute.Key.WriteOptimization) != null
-                && e.getAttr(Attribute.Key.WriteOptimization).equals(Attribute.IFileWrite))));
+            .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)
+                .equals(DataCommunicationPattern.SCATTER_GATHER))
+            .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE))
+            .forEach(e -> assertTrue(e.getStringAttr(ExecutionFactor.Type.WriteOptimization) != null
+                && e.getStringAttr(ExecutionFactor.Type.WriteOptimization).equals(WriteOptimization.IFILE_WRITE))));
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> !e.getAttr(Attribute.Key.CommunicationPattern).equals(Attribute.ScatterGather))
-        .filter(e -> e.getAttr(Attribute.Key.ChannelDataPlacement).equals(Attribute.RemoteFile))
-        .forEach(e -> assertTrue(e.getAttr(Attribute.Key.WriteOptimization) == null)));
+        .filter(e -> !e.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)
+            .equals(DataCommunicationPattern.SCATTER_GATHER))
+        .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE))
+        .forEach(e -> assertTrue(e.getStringAttr(ExecutionFactor.Type.WriteOptimization) == null)));
   }
 }

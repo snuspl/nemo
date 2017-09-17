@@ -18,7 +18,8 @@ package edu.snu.vortex.compiler.optimizer;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.ir.attribute.Attribute;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.attribute.vertex.DynamicOptimizationType;
 import edu.snu.vortex.compiler.optimizer.passes.*;
 import edu.snu.vortex.compiler.optimizer.passes.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.compiler.optimizer.passes.optimization.LoopOptimizations;
@@ -156,11 +157,11 @@ public final class Optimizer {
   public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    final Attribute dynamicOptimizationType =
-        metricCollectionBarrierVertex.getAttr(Attribute.Key.DynamicOptimizationType);
+    final String dynamicOptimizationType =
+        metricCollectionBarrierVertex.getStringAttr(ExecutionFactor.Type.DynamicOptimizationType);
 
     switch (dynamicOptimizationType) {
-      case DataSkew:
+      case DynamicOptimizationType.DATA_SKEW:
         // Map between a partition ID to corresponding metric data (e.g., the size of each block).
         final Map<String, List<Long>> metricData = metricCollectionBarrierVertex.getMetricData();
         return new DataSkewDynamicOptimizationPass().process(originalPlan, metricData);
