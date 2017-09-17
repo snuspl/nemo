@@ -35,7 +35,10 @@ public interface PartitionStore {
    * TODO #463: Support incremental write. Consider returning Blocks in some "subscribable" data structure.
    * @return the result data from the target partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
-   *          for any error occurred while trying to fetch a partition.)
+   *          for any error occurred while trying to fetch a partition.
+   *          This exception will be thrown to the {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   *          through {@link edu.snu.vortex.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<CompletableFuture<Iterable<Element>>> getBlocks(String partitionId,
                                                            HashRange hashRange);
@@ -52,7 +55,10 @@ public interface PartitionStore {
    * @param commitPerBlock whether commit every block write or not.
    * @return the size of the data per block (only when the data is serialized).
    *         (the future completes with {@link edu.snu.vortex.runtime.exception.PartitionWriteException}
-   *          for any error occurred while trying to write a partition.)
+   *          for any error occurred while trying to write a partition.
+   *          This exception will be thrown to the {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   *          through {@link edu.snu.vortex.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   CompletableFuture<Optional<List<Long>>> putBlocks(String partitionId,
                                                     Iterable<Block> blocks,
@@ -65,6 +71,9 @@ public interface PartitionStore {
    *
    * @param partitionId of the partition.
    * @throws PartitionWriteException if fail to commit.
+   *         (This exception will be thrown to the {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   *          through {@link edu.snu.vortex.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   void commitPartition(String partitionId) throws PartitionWriteException;
 
@@ -74,7 +83,10 @@ public interface PartitionStore {
    * @param partitionId of the partition.
    * @return whether the partition exists or not.
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
-   *          for any error occurred while trying to remove a partition.)
+   *          for any error occurred while trying to remove a partition.
+   *          This exception will be thrown to the {@link edu.snu.vortex.runtime.master.scheduler.Scheduler}
+   *          through {@link edu.snu.vortex.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.))
    */
   CompletableFuture<Boolean> removePartition(String partitionId);
 }
