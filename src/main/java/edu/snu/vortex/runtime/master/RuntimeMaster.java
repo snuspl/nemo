@@ -200,8 +200,8 @@ public final class RuntimeMaster {
         metricMsg.getMetricMessagesList().stream()
             .forEach((msg) -> jobStateManager.getMetricMessageHandler().onMetricMessageReceived(msg));
         break;
-      case StoreMetadata:
-        partitionManagerMaster.getMetadataManager().onStoreMetadata(message);
+        case CommitMetadata:
+        partitionManagerMaster.getMetadataManager().onCommitBlocks(message);
         break;
       case RemoveMetadata:
         partitionManagerMaster.getMetadataManager().onRemoveMetadata(message);
