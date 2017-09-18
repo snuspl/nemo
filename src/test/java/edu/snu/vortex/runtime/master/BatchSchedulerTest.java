@@ -186,7 +186,8 @@ public final class BatchSchedulerTest {
           physicalStage.getScheduleGroupIndex() == scheduleGroupIdx);
 
       scheduleGroupStages.forEach(physicalStage -> {
-        while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState() != StageState.State.EXECUTING) {
+        while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
+            != StageState.State.EXECUTING) {
 
         }
       });
