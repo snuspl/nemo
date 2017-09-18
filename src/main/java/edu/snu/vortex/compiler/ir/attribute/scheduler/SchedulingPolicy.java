@@ -15,5 +15,5 @@ public final class SchedulingPolicy extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String ROUND_ROBIN = "ROUND_ROBIN";
+  public static final String ROUND_ROBIN = "RoundRobin";
 }

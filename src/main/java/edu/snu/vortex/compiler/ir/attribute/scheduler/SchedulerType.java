@@ -15,5 +15,5 @@ public final class SchedulerType extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String BATCH = "BATCH";
+  public static final String BATCH = "Batch";
 }

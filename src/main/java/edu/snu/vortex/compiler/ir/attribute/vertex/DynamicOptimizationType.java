@@ -15,5 +15,5 @@ public final class DynamicOptimizationType extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String DATA_SKEW = "DATA_SKEW";
+  public static final String DATA_SKEW = "DataSkew";
 }

@@ -30,6 +30,6 @@ public final class DataFlowModel extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String PULL = "PULL";
-  public static final String PUSH = "PUSH";
+  public static final String PULL = "Pull";
+  public static final String PUSH = "Push";
 }

@@ -30,7 +30,7 @@ public final class DataCommunicationPattern extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String ONE_TO_ONE = "ONE_TO_ONE";
-  public static final String BROADCAST = "BROADCAST";
-  public static final String SCATTER_GATHER = "SCATTER_GATHER";
+  public static final String ONE_TO_ONE = "OneToOne";
+  public static final String BROADCAST = "Broadcast";
+  public static final String SCATTER_GATHER = "ScatterGather";
 }

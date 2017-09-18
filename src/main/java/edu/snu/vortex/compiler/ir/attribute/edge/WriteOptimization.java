@@ -15,5 +15,5 @@ public final class WriteOptimization extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String IFILE_WRITE = "IFILE_WRITE";
+  public static final String IFILE_WRITE = "IFileWrite";
 }

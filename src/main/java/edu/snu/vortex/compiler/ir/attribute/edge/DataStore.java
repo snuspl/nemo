@@ -30,7 +30,7 @@ public final class DataStore extends ExecutionFactor<String> {
   }
 
   // List of default pre-configured attributes.
-  public static final String MEMORY = "MEMORY";
-  public static final String LOCAL_FILE = "LOCAL_FILE";
-  public static final String REMOTE_FILE = "REMOTE_FILE";
+  public static final String MEMORY = "Memory";
+  public static final String LOCAL_FILE = "LocalFile";
+  public static final String REMOTE_FILE = "RemoteFile";
 }
