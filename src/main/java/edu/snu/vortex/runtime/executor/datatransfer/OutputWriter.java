@@ -20,7 +20,6 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
 import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
 import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
@@ -40,9 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.BROADCAST;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.ONE_TO_ONE;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.SCATTER_GATHER;
 import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.HASH;
 import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.RANGE;
 
