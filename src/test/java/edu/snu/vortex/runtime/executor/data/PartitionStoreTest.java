@@ -352,13 +352,13 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     try {
                       final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskCount;
-                      final Optional<Iterable<Element>> optionalData =
-                          readerSideStore.retrieveData(partitionIdList.get(partitionNumber), HashRange.all()).get();
+                      final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                          readerSideStore.getBlocks(partitionIdList.get(partitionNumber), HashRange.all());
                       if (!optionalData.isPresent()) {
                         throw new RuntimeException("The result of retrieveData(" +
                             partitionIdList.get(partitionNumber) + ") is empty");
                       }
-                      assertEquals(partitionBlockList.get(partitionNumber).getData(), optionalData.get());
+                      assertEquals(partitionBlockList.get(partitionNumber).getData(), optionalData.get().get());
 
                       final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber)).get();
                       if (!exist) {
@@ -444,13 +444,13 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Iterable<Element>> optionalData =
-                  readerSideStore.retrieveData(concPartitionId, HashRange.all()).get();
+              final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                  readerSideStore.getBlocks(concPartitionId, HashRange.all());
               if (!optionalData.isPresent()) {
                 throw new RuntimeException("The result of retrieveData(" +
                     concPartitionId + ") is empty");
               }
-              assertEquals(concPartitionBlock.getData(), optionalData.get());
+              assertEquals(concPartitionBlock.getData(), optionalData.get().get());
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -545,14 +545,16 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     try {
                       final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskCount);
-                      final Optional<Iterable<Element>> optionalData = readerSideStore.retrieveData(
-                          hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve).get();
+                      final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                          readerSideStore.getBlocks(
+                              hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve);
                       if (!optionalData.isPresent()) {
                         throw new RuntimeException("The result of get partition" +
                             hashedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
                             " is empty");
                       }
-                      assertEquals(expectedDataInRange.get(readTaskCount).get(writeTaskNumber), optionalData.get());
+                      assertEquals(
+                          expectedDataInRange.get(readTaskCount).get(writeTaskNumber), optionalData.get().get());
                     } catch (final InterruptedException | ExecutionException e) {
                       throw new RuntimeException(e);
                     }
@@ -654,8 +656,8 @@ public final class PartitionStoreTest {
       public Boolean call() {
         try {
           try {
-            final Optional<Iterable<Element>> optionalData =
-                readerSideStore.retrieveData(concWritePartitionId, HashRange.all()).get();
+            final Optional<CompletableFuture<Iterable<Element>>> optionalData =
+                readerSideStore.getBlocks(concWritePartitionId, HashRange.all());
             if (!optionalData.isPresent()) {
               throw new RuntimeException("The result of retrieveData(" + concWritePartitionId + ") is empty");
             }
@@ -663,7 +665,7 @@ public final class PartitionStoreTest {
                 new ArrayList<>(CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS);
             IntStream.range(0, CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS).
                 forEach(blockIdx -> expectedResults.add(concWriteBlocks));
-            assertEquals(flatten(expectedResults), optionalData.get());
+            assertEquals(flatten(expectedResults), optionalData.get().get());
 
             final boolean exist = readerSideStore.removePartition(concWritePartitionId).get();
             if (!exist) {

@@ -33,6 +33,7 @@ import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -119,23 +120,17 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final CompletableFuture<Optional<Iterable<Element>>> resultData = store.getBlocks(partitionId, hashRange);
+    final Optional<CompletableFuture<Iterable<Element>>> optionalResultData = store.getBlocks(partitionId, hashRange);
 
-    final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-    resultData.thenAccept(optionalData -> {
-      if (optionalData.isPresent()) {
-        // Partition resides in this evaluator!
-        future.complete(optionalData.get());
-      } else if (partitionStore.equals(Attribute.RemoteFile)) {
-        throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
-      } else {
-        // We don't have the partition here...
-        requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange)
-            .thenAccept(dataFromRemoteWorker -> future.complete(dataFromRemoteWorker));
-      }
-    });
-
-    return future;
+    if (optionalResultData.isPresent()) {
+      // Partition resides in this evaluator!
+      return optionalResultData.get();
+    } else if (partitionStore.equals(Attribute.RemoteFile)) {
+      throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
+    } else {
+      // We don't have the partition here...
+      return requestPartitionInRemoteWorker(partitionId, runtimeEdgeId, partitionStore, hashRange);
+    }
   }
 
   /**
