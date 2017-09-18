@@ -8,10 +8,8 @@
 * Maven
 * Latest REEF snapshot
 * Protobuf 2.5.0
-
--- Downloadable at https://github.com/google/protobuf/releases/tag/v2.5.0
-
--- On Ubuntu:
+    * Downloadable at https://github.com/google/protobuf/releases/tag/v2.5.0
+    * On Ubuntu:
     1. Run `sudo apt-get install autoconf automake libtool curl make g++ unzip`
     2. Extract the downloaded tarball and run
         `sudo ./configure`
