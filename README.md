@@ -12,10 +12,10 @@
     * On Ubuntu:
     1. Run `sudo apt-get install autoconf automake libtool curl make g++ unzip`
     2. Extract the downloaded tarball and run
-        `sudo ./configure`
-        `sudo make`
-        `sudo make check`
-        `sudo make install`
+        * `sudo ./configure`
+        * `sudo make`
+        * `sudo make check`
+        * `sudo make install`
     3. To check for a successful installation of version 2.5.0, run `protoc --version`
 
 ### Installing Vortex
