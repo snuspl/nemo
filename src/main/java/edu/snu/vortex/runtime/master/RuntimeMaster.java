@@ -139,7 +139,6 @@ public final class RuntimeMaster {
    * Handler for control messages received by Master.
    */
   public final class MasterControlMessageReceiver implements MessageListener<ControlMessage.Message> {
-
     @Override
     public void onMessage(final ControlMessage.Message message) {
       switch (message.getType()) {
