@@ -25,7 +25,7 @@
 ## Running Apache Beam applications
 ### Configurable options
 * `-job_id`: ID of the Beam job
-* `_user_main`: Beam application as a java class
+* `-user_main`: Beam application as a java class
 * `-optimization_policy`: DAG optimizer applied in Vortex compiler. `default`, `pado`, `disaggregation`, `dataskew` are supported
 * `-user_args`: locations of input and output files
 * `-deploy_mode`:  `yarn` is supported
@@ -96,7 +96,7 @@ java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer
 
 ### Configurable options
 * `num` (optional): Number of containers. Default value is 1
-* `type`: `Transient`, `Reserved`, `Compute`
+* `type`: `Transient`, `Reserved`, `Compute` are available
 * `memory_mb`: Memory size in MB
 * `capacity`: Number of `TaskGroup`s that can be run in an executor. We define this value to be identical to the number of CPU cores of the container.
 
