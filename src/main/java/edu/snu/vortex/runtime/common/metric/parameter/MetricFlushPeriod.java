@@ -13,22 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.data.partition;
+package edu.snu.vortex.runtime.common.metric.parameter;
 
-import edu.snu.vortex.compiler.ir.Element;
-
-import java.io.IOException;
+import org.apache.reef.tang.annotations.Name;
+import org.apache.reef.tang.annotations.NamedParameter;
 
 /**
- * This interface represents an output data of each operation.
- * It might be divided in multiple blocks.
+ * Metric flushing period.
  */
-public interface Partition {
-
-  /**
-   * Gets the representation of this partition as an iterable.
-   * @return the iterable of the partition.
-   * @throws IOException if fail to get the iterable.
-   */
-  Iterable<Element> asIterable() throws IOException;
+@NamedParameter(doc = "Metric flushing period (ms)", short_name = "mf_period", default_value = "5000")
+public final class MetricFlushPeriod implements Name<Long> {
 }
