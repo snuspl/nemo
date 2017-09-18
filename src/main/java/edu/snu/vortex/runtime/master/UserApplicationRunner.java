@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
+import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
@@ -68,10 +69,12 @@ public final class UserApplicationRunner implements Runnable {
   public void run() {
     try {
       LOG.info("##### VORTEX Compiler #####");
-      final DAG<IRVertex, IREdge> dag = frontend.compile(className, arguments);
-      dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
-      final Policy optimizationPolicy = (Policy) Class.forName(optimizationPolicyCanonicalName).newInstance();
+      final Pair<DAG<IRVertex, IREdge>, Policy> dagPolicyPair =
+          clientSideCompilation(className, arguments, optimizationPolicyCanonicalName, dagDirectory);
+      final DAG<IRVertex, IREdge> dag = dagPolicyPair.left();
+      final Policy optimizationPolicy = dagPolicyPair.right();
+
       final DAG<IRVertex, IREdge> optimizedDAG = Optimizer.optimize(dag, optimizationPolicy, dagDirectory);
       optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy.getClass().getSimpleName(),
           "IR optimized for " + optimizationPolicy.getClass().getSimpleName());
@@ -84,5 +87,16 @@ public final class UserApplicationRunner implements Runnable {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static Pair<DAG<IRVertex, IREdge>, Policy> clientSideCompilation(final String className,
+                                                                           final String[] arguments,
+                                                                           final String optimizationPolicyCanonicalName,
+                                                                           final String dagDirectory) throws Exception {
+    final DAG<IRVertex, IREdge> dag = new BeamFrontend().compile(className, arguments);
+    dag.storeJSON(dagDirectory, "ir", "IR before optimization");
+
+    final Policy optimizationPolicy = (Policy) Class.forName(optimizationPolicyCanonicalName).newInstance();
+    return Pair.of(dag, optimizationPolicy);
   }
 }

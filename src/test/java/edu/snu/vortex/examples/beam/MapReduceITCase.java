@@ -73,14 +73,6 @@ public final class MapReduceITCase {
         .build());
   }
 
-  @Test (timeout = TIMEOUT)
-  public void testCustomPolicy() throws Exception {
-    JobLauncher.main(builder
-        .addJobId(MapReduceITCase.class.getSimpleName() + "_custom")
-        .addOptimizationPolicy(DefaultPolicyWithSeparatePass.class.getCanonicalName())
-        .build());
-  }
-
   /**
    * Testing data skew dynamic optimization.
    * @throws Exception exception on the way.

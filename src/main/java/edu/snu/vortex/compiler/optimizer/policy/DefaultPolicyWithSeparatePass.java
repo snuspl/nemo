@@ -27,8 +27,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A policy to demonstrate a policy with a separate, refactored pass.
+ * A simple example policy to demonstrate a policy with a separate, refactored pass.
  * It simply performs what is done with the default pass.
+ * This example simply shows that users can define their own pass in their policy.
  */
 public final class DefaultPolicyWithSeparatePass implements Policy {
   @Override
