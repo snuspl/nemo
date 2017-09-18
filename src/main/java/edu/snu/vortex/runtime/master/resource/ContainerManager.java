@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.master.resource;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.ContainerException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
@@ -74,11 +75,14 @@ public final class ContainerManager {
   private final Map<String, ResourceSpecification> pendingContextIdToResourceSpec;
   private final Map<String, List<ResourceSpecification>> pendingContainerRequestsByContainerType;
 
+  private final PersistentConnectionToMaster persistentConnectionToMaster;
+
   @Inject
   public ContainerManager(final EvaluatorRequestor evaluatorRequestor,
                           final MessageEnvironment messageEnvironment) {
     this.evaluatorRequestor = evaluatorRequestor;
     this.messageEnvironment = messageEnvironment;
+    this.persistentConnectionToMaster = new PersistentConnectionToMaster(messageEnvironment);
     this.executorsByContainerType = new HashMap<>();
     this.executorRepresenterMap = new HashMap<>();
     this.failedExecutorRepresenterMap = new HashMap<>();
@@ -212,6 +216,16 @@ public final class ContainerManager {
     executorsByContainerType.get(failedExecutor.getContainerType()).remove(failedExecutor);
 
     failedExecutorRepresenterMap.put(failedExecutorId, failedExecutor);
+
+    // Signal RuntimeMaster on CONTAINER_FAILURE type FAILED_RECOVERABLE state
+    persistentConnectionToMaster.getMessageSender().send(
+        ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setType(ControlMessage.MessageType.ContainerFailed)
+            .setExecutorFailedMsg(ControlMessage.ExecutorFailedMsg.newBuilder()
+                .setExecutorId(failedExecutorId)
+                .build())
+            .build());
   }
 
   public synchronized Map<String, ExecutorRepresenter> getExecutorRepresenterMap() {

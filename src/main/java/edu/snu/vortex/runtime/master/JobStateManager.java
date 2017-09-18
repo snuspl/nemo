@@ -38,6 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import edu.snu.vortex.runtime.common.metric.MetricData;
+import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
@@ -49,6 +52,7 @@ import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
  * Manages the states related to a job.
  * This class can be used to track a job's execution status to task level in the future.
  * The methods of this class are synchronized.
+ * TODO #493: Detach partitioning from writing.
  */
 public final class JobStateManager {
   private static final Logger LOG = LoggerFactory.getLogger(JobStateManager.class.getName());
@@ -97,6 +101,9 @@ public final class JobStateManager {
   private final Lock finishLock;
   private final Condition jobFinishedCondition;
 
+  private final DefaultMetricMessageHandler metricMessageHandler;
+  private final Map<String, MetricDataBuilder> metricDataBuilderMap;
+
   public JobStateManager(final PhysicalPlan physicalPlan,
                          final PartitionManagerMaster partitionManagerMaster,
                          final int maxScheduleAttempt) {
@@ -112,6 +119,8 @@ public final class JobStateManager {
     this.currentJobStageIds = new HashSet<>();
     this.finishLock = new ReentrantLock();
     this.jobFinishedCondition = finishLock.newCondition();
+    metricMessageHandler = new DefaultMetricMessageHandler();
+    this.metricDataBuilderMap = new HashMap<>();
     initializeComputationStates();
     initializePartitionStates(partitionManagerMaster);
   }
@@ -192,15 +201,37 @@ public final class JobStateManager {
    * @param newState of the job.
    */
   public synchronized void onJobStateChanged(final JobState.State newState) {
+    String jobKey = MetricData.ComputationUnit.JOB.name() + jobId;
+
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.JOB, jobId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(jobKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(jobKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(jobKey);
+    };
+
     if (newState == JobState.State.EXECUTING) {
       LOG.debug("Executing Job ID {}...", jobId);
       jobState.getStateMachine().setState(newState);
+      beginMeasure.run();
     } else if (newState == JobState.State.COMPLETE) {
       LOG.debug("Job ID {} complete!", jobId);
       // Awake all threads waiting the finish of this job.
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
+        endMeasure.run();
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -211,6 +242,7 @@ public final class JobStateManager {
       finishLock.lock();
       try {
         jobState.getStateMachine().setState(newState);
+        endMeasure.run();
         jobFinishedCondition.signalAll();
       } finally {
         finishLock.unlock();
@@ -231,6 +263,28 @@ public final class JobStateManager {
     LOG.debug("Stage State Transition: id {} from {} to {}",
         new Object[]{stageId, stageStateMachine.getCurrentState(), newState});
     stageStateMachine.setState(newState);
+
+    String stageKey = MetricData.ComputationUnit.STAGE.name() + stageId;
+
+    Runnable beginMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder =
+          new MetricDataBuilder(MetricData.ComputationUnit.STAGE, stageId);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ScheduleAttempt", scheduleAttemptIdxByStage.get(stageId));
+      metrics.put("FromState", newState);
+      metricDataBuilder.beginMeasurement(metrics);
+      metricDataBuilderMap.put(stageKey, metricDataBuilder);
+    };
+
+    Runnable endMeasure = () -> {
+      final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(stageKey);
+      final Map<String, Object> metrics = new HashMap<>();
+      metrics.put("ToState", newState);
+      metricDataBuilder.endMeasurement(metrics);
+      metricMessageHandler.onMetricMessageReceived(metricDataBuilder.build().toJson());
+      metricDataBuilderMap.remove(stageKey);
+    };
+
     if (newState == StageState.State.EXECUTING) {
       if (scheduleAttemptIdxByStage.containsKey(stageId)) {
         final int numAttempts = scheduleAttemptIdxByStage.get(stageId);
@@ -244,6 +298,8 @@ public final class JobStateManager {
       } else {
         scheduleAttemptIdxByStage.put(stageId, 1);
       }
+
+      beginMeasure.run();
 
       // if there exists a mapping, this state change is from a failed_recoverable stage,
       // and there may be task groups that do not need to be re-executed.
@@ -260,11 +316,13 @@ public final class JobStateManager {
         }
       }
     } else if (newState == StageState.State.COMPLETE) {
+      endMeasure.run();
       currentJobStageIds.remove(stageId);
       if (currentJobStageIds.isEmpty()) {
         onJobStateChanged(JobState.State.COMPLETE);
       }
     } else if (newState == StageState.State.FAILED_RECOVERABLE) {
+      endMeasure.run();
       currentJobStageIds.add(stageId);
     }
   }
@@ -424,6 +482,10 @@ public final class JobStateManager {
 
   public synchronized Map<String, TaskState> getIdToTaskStates() {
     return idToTaskStates;
+  }
+
+  public MetricMessageHandler getMetricMessageHandler() {
+    return metricMessageHandler;
   }
 
   /**
