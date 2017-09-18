@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
+import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
 import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
 import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
@@ -212,7 +213,7 @@ public final class BatchSchedulerTest {
   private int getNumScheduleGroups(final DAG<IRVertex, IREdge> irDAG) {
     final Set<Integer> scheduleGroupSet = new HashSet<>();
     irDAG.getTopologicalSort().forEach(irVertex ->
-        scheduleGroupSet.add(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex)));
+        scheduleGroupSet.add(irVertex.getIntegerAttr(ExecutionFactor.Type.ScheduleGroupIndex)));
     return scheduleGroupSet.size();
   }
 }
