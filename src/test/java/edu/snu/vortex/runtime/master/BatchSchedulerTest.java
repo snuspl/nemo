@@ -45,6 +45,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -59,6 +61,7 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, PubSubEventHandlerWrapper.class})
 public final class BatchSchedulerTest {
+  private static final Logger LOG = LoggerFactory.getLogger(BatchSchedulerTest.class.getName());
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
   private SchedulingPolicy schedulingPolicy;
@@ -124,7 +127,7 @@ public final class BatchSchedulerTest {
    * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchScheduler}.
    * TaskGroup state changes are explicitly submitted to scheduler instead of executor messages.
    */
-  @Test
+  @Test(timeout=10000)
   public void testMultiInputOutputScheduling() throws Exception {
     // Build DAG
     final Transform t = new EmptyComponents.EmptyTransform("empty");
@@ -185,6 +188,7 @@ public final class BatchSchedulerTest {
       final List<PhysicalStage> scheduleGroupStages = physicalDAG.filterVertices(physicalStage ->
           physicalStage.getScheduleGroupIndex() == scheduleGroupIdx);
 
+      LOG.debug("Checking that all stages of ScheduleGroup {} enter the executing state", scheduleGroupIdx);
       scheduleGroupStages.forEach(physicalStage -> {
         while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
             != StageState.State.EXECUTING) {
@@ -197,6 +201,7 @@ public final class BatchSchedulerTest {
             jobStateManager, scheduler, containerManager, physicalStage, MAGIC_SCHEDULE_ATTEMPT_INDEX));
     }
 
+    LOG.debug("Waiting for job termination after sending stage completion events");
     while (!jobStateManager.checkJobTermination()) {
 
     }

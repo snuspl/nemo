@@ -44,8 +44,8 @@ import static edu.snu.vortex.runtime.common.state.TaskGroupState.State.ON_HOLD;
  */
 public final class BatchScheduler implements Scheduler {
   private static final Logger LOG = LoggerFactory.getLogger(BatchScheduler.class.getName());
-  public static final int INITIAL_SCHEDULE_GROUP  = 0;
   private static final int SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE = Integer.MAX_VALUE;
+  private int initialScheduleGroup;
 
   private JobStateManager jobStateManager;
 
@@ -89,6 +89,10 @@ public final class BatchScheduler implements Scheduler {
     pendingTaskGroupPriorityQueue.onJobScheduled(physicalPlan);
 
     LOG.info("Job to schedule: {}", jobToSchedule.getId());
+
+    this.initialScheduleGroup = jobToSchedule.getStageDAG().getVertices().stream()
+        .mapToInt(physicalStage -> physicalStage.getScheduleGroupIndex())
+        .min().getAsInt();
 
     // Launch scheduler
     final ExecutorService pendingTaskSchedulerThread = Executors.newSingleThreadExecutor();
@@ -316,7 +320,7 @@ public final class BatchScheduler implements Scheduler {
 
   private synchronized void scheduleRootStages() {
     final List<PhysicalStage> rootStages = physicalPlan.getStageDAG().filterVertices(
-        physicalStage -> physicalStage.getScheduleGroupIndex() == INITIAL_SCHEDULE_GROUP);
+        physicalStage -> physicalStage.getScheduleGroupIndex() == initialScheduleGroup);
     rootStages.forEach(this::scheduleStage);
   }
 
@@ -351,7 +355,7 @@ public final class BatchScheduler implements Scheduler {
    * @return an optional of the (possibly empty) list of next schedulable stages.
    */
   private Optional<List<PhysicalStage>> selectNextStagesToSchedule(final int currentScheduleGroupIndex) {
-    if (currentScheduleGroupIndex > INITIAL_SCHEDULE_GROUP) {
+    if (currentScheduleGroupIndex > initialScheduleGroup) {
       final Optional<List<PhysicalStage>> ancestorStages = selectNextStagesToSchedule(currentScheduleGroupIndex - 1);
       if (ancestorStages.isPresent()) {
         return ancestorStages;
