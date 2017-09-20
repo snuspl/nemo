@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class DataFlowModel extends ExecutionFactor<String> {
   private DataFlowModel(final String attribute) {
-    super(Type.DataFlowModel, attribute, String.class);
+    super(Type.DataFlowModel, attribute);
   }
 
   public static  DataFlowModel of(final String dataFlowModel) {

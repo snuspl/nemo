@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class Partitioning extends ExecutionFactor<String> {
   private Partitioning(final String attribute) {
-    super(Type.Partitioning, attribute, String.class);
+    super(Type.Partitioning, attribute);
   }
 
   public static Partitioning of(final String writeOptimization) {

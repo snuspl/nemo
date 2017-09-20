@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class Parallelism extends ExecutionFactor<Integer> {
   private Parallelism(final Integer attribute) {
-    super(Type.Parallelism, attribute, Integer.class);
+    super(Type.Parallelism, attribute);
   }
 
   public static Parallelism of(final Integer parallelism) {

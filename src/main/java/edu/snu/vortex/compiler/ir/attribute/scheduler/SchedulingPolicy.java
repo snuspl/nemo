@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class SchedulingPolicy extends ExecutionFactor<String> {
   private SchedulingPolicy(final String attribute) {
-    super(Type.SchedulingPolicy, attribute, String.class);
+    super(Type.SchedulingPolicy, attribute);
   }
 
   public static SchedulingPolicy of(final String schedulingPolicy) {

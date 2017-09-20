@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class IsSideInput extends ExecutionFactor<Boolean> {
   private IsSideInput(final Boolean attribute) {
-    super(Type.IsSideInput, attribute, Boolean.class);
+    super(Type.IsSideInput, attribute);
   }
 
   public static IsSideInput of(final Boolean isSideInput) {

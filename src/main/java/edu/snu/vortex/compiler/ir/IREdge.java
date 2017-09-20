@@ -87,8 +87,8 @@ public final class IREdge extends Edge<IRVertex> {
   public Object getAttr(final ExecutionFactor.Type executionFactorType) {
     return attributes.get(executionFactorType);
   }
-  public String getStringAttr(final ExecutionFactor.Type executionFactorTYpe) {
-    return attributes.getStringAttr(executionFactorTYpe);
+  public String getStringAttr(final ExecutionFactor.Type executionFactorType) {
+    return attributes.getStringAttr(executionFactorType);
   }
   public Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
     return attributes.getIntegerAttr(executionFactorType);

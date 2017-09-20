@@ -109,15 +109,15 @@ public final class AttributeMap implements Serializable {
    * @return the inserted execution factor.
    */
   public ExecutionFactor put(final ExecutionFactor<?> executionFactor) {
-    if (executionFactor.getAttributeType() == String.class) {
+    if (executionFactor.getAttribute() instanceof String) {
       return stringAttributes.put(executionFactor.getType(), (ExecutionFactor<String>) executionFactor);
-    } else if (executionFactor.getAttributeType() == Integer.class) {
+    } else if (executionFactor.getAttribute() instanceof Integer) {
       return intAttributes.put(executionFactor.getType(), (ExecutionFactor<Integer>) executionFactor);
-    } else if (executionFactor.getAttributeType() == Boolean.class) {
+    } else if (executionFactor.getAttribute() instanceof Boolean) {
       return boolAttributes.put(executionFactor.getType(), (ExecutionFactor<Boolean>) executionFactor);
     } else {
       throw new RuntimeException(AttributeMap.class.getSimpleName()
-          + " doesn't yet support object type " + executionFactor.getAttributeType());
+          + " doesn't yet support the attribute with the given object type: " + executionFactor.getAttribute());
     }
   }
 

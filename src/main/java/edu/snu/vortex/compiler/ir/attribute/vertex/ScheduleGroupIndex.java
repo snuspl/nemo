@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class ScheduleGroupIndex extends ExecutionFactor<Integer> {
   private ScheduleGroupIndex(final Integer attribute) {
-    super(Type.ScheduleGroupIndex, attribute, Integer.class);
+    super(Type.ScheduleGroupIndex, attribute);
   }
 
   public static ScheduleGroupIndex of(final Integer scheduleGroupIndex) {

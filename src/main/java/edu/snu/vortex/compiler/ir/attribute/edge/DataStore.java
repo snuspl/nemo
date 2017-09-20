@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class DataStore extends ExecutionFactor<String> {
   private DataStore(final String attribute) {
-    super(Type.DataStore, attribute, String.class);
+    super(Type.DataStore, attribute);
   }
 
   public static DataStore of(final String dataStore) {

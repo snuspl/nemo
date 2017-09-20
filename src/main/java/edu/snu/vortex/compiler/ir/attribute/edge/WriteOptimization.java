@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class WriteOptimization extends ExecutionFactor<String> {
   private WriteOptimization(final String attribute) {
-    super(Type.WriteOptimization, attribute, String.class);
+    super(Type.WriteOptimization, attribute);
   }
 
   public static WriteOptimization of(final String writeOptimization) {

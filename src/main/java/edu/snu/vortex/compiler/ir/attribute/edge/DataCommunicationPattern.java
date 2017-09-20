@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class DataCommunicationPattern extends ExecutionFactor<String> {
   private DataCommunicationPattern(final String attribute) {
-    super(Type.DataCommunicationPattern, attribute, String.class);
+    super(Type.DataCommunicationPattern, attribute);
   }
 
   public static DataCommunicationPattern of(final String dataCommunicationPattern) {

@@ -24,18 +24,15 @@ import java.io.Serializable;
 public abstract class ExecutionFactor<T> implements Serializable {
   private Type type;
   private T attribute;
-  private Class<T> attributeType;
 
   /**
    * Default constructor.
    * @param type type of the ExecutionFactor, given by the enum in this class.
    * @param attribute attribute of the execution factor.
-   * @param attributeType attribute type.
    */
-  public ExecutionFactor(final Type type, final T attribute, final Class<T> attributeType) {
+  public ExecutionFactor(final Type type, final T attribute) {
     this.type = type;
     this.attribute = attribute;
-    this.attributeType = attributeType;
   }
 
   /**
@@ -50,13 +47,6 @@ public abstract class ExecutionFactor<T> implements Serializable {
    */
   public final Type getType() {
     return type;
-  }
-
-  /**
-   * @return the attribute type of the execution factor.
-   */
-  final Class<T> getAttributeType() {
-    return attributeType;
   }
 
   /**

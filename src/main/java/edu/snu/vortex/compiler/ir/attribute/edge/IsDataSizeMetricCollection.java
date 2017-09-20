@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class IsDataSizeMetricCollection extends ExecutionFactor<Boolean> {
   private IsDataSizeMetricCollection(final Boolean attribute) {
-    super(Type.IsDataSizeMetricCollection, attribute, Boolean.class);
+    super(Type.IsDataSizeMetricCollection, attribute);
   }
 
   public static IsDataSizeMetricCollection of(final Boolean isDataSizeMetricCollection) {

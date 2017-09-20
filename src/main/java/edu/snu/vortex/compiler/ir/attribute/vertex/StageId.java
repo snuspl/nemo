@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class StageId extends ExecutionFactor<Integer> {
   private StageId(final Integer attribute) {
-    super(Type.StageId, attribute, Integer.class);
+    super(Type.StageId, attribute);
   }
 
   public static StageId of(final Integer stageId) {

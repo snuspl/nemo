@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class DynamicOptimizationType extends ExecutionFactor<String> {
   private DynamicOptimizationType(final String attribute) {
-    super(Type.DynamicOptimizationType, attribute, String.class);
+    super(Type.DynamicOptimizationType, attribute);
   }
 
   public static DynamicOptimizationType of(final String dynamicOptimizationType) {

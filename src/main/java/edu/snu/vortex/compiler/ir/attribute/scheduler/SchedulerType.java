@@ -7,7 +7,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class SchedulerType extends ExecutionFactor<String> {
   private SchedulerType(final String attribute) {
-    super(Type.SchedulerType, attribute, String.class);
+    super(Type.SchedulerType, attribute);
   }
 
   public static SchedulerType of(final String schedulerType) {

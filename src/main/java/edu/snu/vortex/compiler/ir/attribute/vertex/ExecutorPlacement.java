@@ -22,7 +22,7 @@ import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
  */
 public final class ExecutorPlacement extends ExecutionFactor<String> {
   private ExecutorPlacement(final String attribute) {
-    super(Type.ExecutorPlacement, attribute, String.class);
+    super(Type.ExecutorPlacement, attribute);
   }
 
   public static ExecutorPlacement of(final String executorPlacement) {
