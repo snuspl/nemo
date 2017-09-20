@@ -77,7 +77,7 @@ final class GenericSourceSink {
           });
       return pipeline.apply(read).apply(MapElements.into(TypeDescriptor.of(String.class)).via(KV::getValue));
     } else {
-      return pipeline.apply(TextIO.read().from(path));¶
+      return pipeline.apply(TextIO.read().from(path));
     }
   }
 
@@ -98,11 +98,10 @@ final class GenericSourceSink {
       String dateFormatTimeStr = dateFormatTime.format(new Date(System.currentTimeMillis()));
 
       String data = c.toString();
+
       try (final BufferedWriter writer = new BufferedWriter(
           new FileWriter(path + dateFormatTimeStr))) {
-
         writer.write(data + "\n");
-
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -114,13 +113,11 @@ final class GenericSourceSink {
     if (path.startsWith("hdfs://")) {
       // TODO #268 Import beam-sdks-java-io-hadoop-file-system
       //throw new UnsupportedOperationException("Writing to HDFS is not yet supported");
-
       LOG.info("HDFS write start: " + System.nanoTime());
 
       dataToWrite.apply(ParDo.of(new HDFSWrite(path)));
 
       LOG.info("HDFS write end: " + System.nanoTime());
-
       return PDone.in(dataToWrite.getPipeline());
     } else {
       return dataToWrite.apply(TextIO.write().to(path));
