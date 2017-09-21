@@ -307,18 +307,18 @@ public final class PendingTaskGroupPriorityQueueTest {
   public void testContainerTypeAwareness() throws Exception {
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
-    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v1.setAttr(Parallelism.of(3));
+    v1.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
-    v2.setAttr(Attribute.Key.Placement, Attribute.Transient);
+    v2.setAttr(Parallelism.of(2));
+    v2.setAttr(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(new DoTransform(null, null));
-    v3.setAttr(Attribute.IntegerKey.Parallelism, 4);
-    v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    v3.setAttr(Parallelism.of(4));
+    v3.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
