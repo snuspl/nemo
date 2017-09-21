@@ -16,10 +16,10 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.runtime.exception.UnsupportedAttributeException;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.runtime.exception.UnsupportedExecutionPropertyException;
 import edu.snu.vortex.common.dag.Edge;
 
 /**
@@ -35,7 +35,7 @@ public final class IREdge extends Edge<IRVertex> {
     ScatterGather,
   }
 
-  private final AttributeMap attributes;
+  private final ExecutionPropertyMap executionProperties;
   private final Type type;
   private final Coder coder;
 
@@ -53,55 +53,55 @@ public final class IREdge extends Edge<IRVertex> {
     super(IdManager.newEdgeId(), src, dst);
     this.type = type;
     this.coder = coder;
-    this.attributes = AttributeMap.of(this);
+    this.executionProperties = ExecutionPropertyMap.of(this);
     switch (this.getType()) {
       case OneToOne:
-        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
         break;
       case Broadcast:
-        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.BROADCAST));
+        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.BROADCAST));
         break;
       case ScatterGather:
-        setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
         break;
       default:
-        throw new UnsupportedAttributeException("There is no such edge type as: " + this.getType());
+        throw new UnsupportedExecutionPropertyException("There is no such edge type as: " + this.getType());
     }
   }
 
   /**
-   * Set an attribute to the IREdge.
-   * @param executionFactor the execution factor.
-   * @return the IREdge with the attribute applied.
+   * Set an executionProperty to the IREdge.
+   * @param executionProperty the execution property.
+   * @return the IREdge with the execution property set.
    */
-  public IREdge setAttr(final ExecutionFactor<?> executionFactor) {
-    attributes.put(executionFactor);
+  public IREdge setProperty(final ExecutionProperty<?> executionProperty) {
+    executionProperties.put(executionProperty);
     return this;
   }
 
   /**
-   * Get the attribute of the IREdge.
-   * @param executionFactorType key of the attribute.
-   * @return the attribute.
+   * Get the executionProperty of the IREdge.
+   * @param executionFactorKey key of the execution property.
+   * @return the execution property.
    */
-  public Object getAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.get(executionFactorType);
+  public Object get(final ExecutionProperty.Key executionFactorKey) {
+    return executionProperties.get(executionFactorKey);
   }
-  public String getStringAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getStringAttr(executionFactorType);
+  public String getStringProperty(final ExecutionProperty.Key executionFactorKey) {
+    return executionProperties.getStringProperty(executionFactorKey);
   }
-  public Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getIntegerAttr(executionFactorType);
+  public Integer getIntegerProperty(final ExecutionProperty.Key executionFactorKey) {
+    return executionProperties.getIntegerProperty(executionFactorKey);
   }
-  public Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getBooleanAttr(executionFactorType);
+  public Boolean getBooleanProperty(final ExecutionProperty.Key executionFactorKey) {
+    return executionProperties.getBooleanProperty(executionFactorKey);
   }
 
   /**
-   * @return the AttributeMap of the IREdge.
+   * @return the ExecutionPropertyMap of the IREdge.
    */
-  public AttributeMap getAttributes() {
-    return attributes;
+  public ExecutionPropertyMap getExecutionProperties() {
+    return executionProperties;
   }
 
   /**
@@ -127,12 +127,11 @@ public final class IREdge extends Edge<IRVertex> {
   }
 
   /**
-   * Static function to copy attributes from an edge to the other.
-   * @param fromEdge the edge to copy attributes from.
-   * @param toEdge the edge to copy attributes to.
+   * Static function to copy executionProperties from an edge to the other.
+   * @param that the edge to copy executionProperties to.
    */
-  public static void copyAttributes(final IREdge fromEdge, final IREdge toEdge) {
-    fromEdge.getAttributes().forEachAttr(toEdge::setAttr);
+  public void copyExecutionProperties(final IREdge that) {
+    this.getExecutionProperties().forEachProperties(that::setProperty);
   }
 
   @Override
@@ -161,7 +160,7 @@ public final class IREdge extends Edge<IRVertex> {
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"id\": \"").append(getId());
-    sb.append("\", \"attributes\": ").append(attributes);
+    sb.append("\", \"executionProperties\": ").append(executionProperties);
     sb.append(", \"type\": \"").append(type);
     sb.append("\", \"coder\": \"").append(coder.toString());
     sb.append("\"}");

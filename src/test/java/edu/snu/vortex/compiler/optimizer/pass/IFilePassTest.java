@@ -20,10 +20,10 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
-import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,16 +51,16 @@ public class IFilePassTest {
     final DAG<IRVertex, IREdge> processedDAG = new IFilePass().apply(disaggProcessedDAG);
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-            .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)
+            .filter(e -> e.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)
                 .equals(DataCommunicationPattern.SCATTER_GATHER))
-            .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE))
-            .forEach(e -> assertTrue(e.getStringAttr(ExecutionFactor.Type.WriteOptimization) != null
-                && e.getStringAttr(ExecutionFactor.Type.WriteOptimization).equals(WriteOptimization.IFILE_WRITE))));
+            .filter(e -> e.getStringProperty(ExecutionProperty.Key.DataStore).equals(DataStore.REMOTE_FILE))
+            .forEach(e -> assertTrue(e.getStringProperty(ExecutionProperty.Key.WriteOptimization) != null
+                && e.getStringProperty(ExecutionProperty.Key.WriteOptimization).equals(WriteOptimization.IFILE_WRITE))));
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> !e.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)
+        .filter(e -> !e.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)
             .equals(DataCommunicationPattern.SCATTER_GATHER))
-        .filter(e -> e.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE))
-        .forEach(e -> assertTrue(e.getStringAttr(ExecutionFactor.Type.WriteOptimization) == null)));
+        .filter(e -> e.getStringProperty(ExecutionProperty.Key.DataStore).equals(DataStore.REMOTE_FILE))
+        .forEach(e -> assertTrue(e.getStringProperty(ExecutionProperty.Key.WriteOptimization) == null)));
   }
 }

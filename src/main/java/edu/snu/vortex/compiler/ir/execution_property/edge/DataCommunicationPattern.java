@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.edge;
+package edu.snu.vortex.compiler.ir.execution_property.edge;
 
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * DataCommunicationPattern ExecutionFactor.
+ * DataCommunicationPattern ExecutionProperty.
  */
-public final class DataCommunicationPattern extends ExecutionFactor<String> {
-  private DataCommunicationPattern(final String attribute) {
-    super(Type.DataCommunicationPattern, attribute);
+public final class DataCommunicationPattern extends ExecutionProperty<String> {
+  private DataCommunicationPattern(final String value) {
+    super(Key.DataCommunicationPattern, value);
   }
 
-  public static DataCommunicationPattern of(final String dataCommunicationPattern) {
-    return new DataCommunicationPattern(dataCommunicationPattern);
+  public static DataCommunicationPattern of(final String value) {
+    return new DataCommunicationPattern(value);
   }
 
-  // List of default pre-configured attributes.
+  // List of default pre-configured values. TODO #479: Remove static values.
   public static final String ONE_TO_ONE = "OneToOne";
   public static final String BROADCAST = "Broadcast";
   public static final String SCATTER_GATHER = "ScatterGather";

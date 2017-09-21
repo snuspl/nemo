@@ -23,10 +23,10 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
-import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -134,28 +134,28 @@ public final class FaultToleranceTest {
     final JobStateManager jobStateManager;
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Parallelism.of(3));
-    v1.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v1.setProperty(Parallelism.of(3));
+    v1.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Parallelism.of(2));
-    v2.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v2.setProperty(Parallelism.of(2));
+    v2.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setAttr(Parallelism.of(4));
-    v3.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v3.setProperty(Parallelism.of(4));
+    v3.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
-    e1.setAttr(DataStore.of(DataStore.MEMORY));
-    e1.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e1.setProperty(DataStore.of(DataStore.MEMORY));
+    e1.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
     irDAGBuilder.connectVertices(e1);
 
     final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
-    e2.setAttr(DataStore.of(DataStore.LOCAL_FILE));
-    e2.setAttr(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e2.setProperty(DataStore.of(DataStore.LOCAL_FILE));
+    e2.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();

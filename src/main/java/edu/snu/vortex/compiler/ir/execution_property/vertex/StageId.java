@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.edge;
+package edu.snu.vortex.compiler.ir.execution_property.vertex;
 
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * DataStore ExecutionFactor.
+ * StageId ExecutionProperty.
  */
-public final class DataStore extends ExecutionFactor<String> {
-  private DataStore(final String attribute) {
-    super(Type.DataStore, attribute);
+public final class StageId extends ExecutionProperty<Integer> {
+  private StageId(final Integer value) {
+    super(Key.StageId, value);
   }
 
-  public static DataStore of(final String dataStore) {
-    return new DataStore(dataStore);
+  public static StageId of(final Integer value) {
+    return new StageId(value);
   }
-
-  // List of default pre-configured attributes.
-  public static final String MEMORY = "Memory";
-  public static final String LOCAL_FILE = "LocalFile";
-  public static final String REMOTE_FILE = "RemoteFile";
 }

@@ -15,22 +15,22 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
 import edu.snu.vortex.common.dag.Vertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
  */
 public abstract class IRVertex extends Vertex {
-  private final AttributeMap attributes;
+  private final ExecutionPropertyMap executionProperties;
 
   /**
    * Constructor of IRVertex.
    */
   public IRVertex() {
     super(IdManager.newVertexId());
-    this.attributes = AttributeMap.of(this);
+    this.executionProperties = ExecutionPropertyMap.of(this);
   }
 
   /**
@@ -39,47 +39,46 @@ public abstract class IRVertex extends Vertex {
   public abstract IRVertex getClone();
 
   /**
-   * Static function to copy attributes from a vertex to the other.
-   * @param fromVertex the edge to copy attributes from.
-   * @param toVertex the edge to copy attributes to.
+   * Static function to copy executionProperties from a vertex to the other.
+   * @param that the edge to copy executionProperties to.
    */
-  public static void copyAttributes(final IRVertex fromVertex, final IRVertex toVertex) {
-    fromVertex.getAttributes().forEachAttr(toVertex::setAttr);
+  public final void copyExecutionPropertiesTo(final IRVertex that) {
+    this.getExecutionProperties().forEachProperties(that::setProperty);
   }
 
   /**
-   * Set an attribute to the IRVertex.
-   * @param executionFactor new execution factor.
-   * @return the IRVertex with the attribute applied.
+   * Set an executionProperty to the IRVertex.
+   * @param executionProperty new execution property.
+   * @return the IRVertex with the execution property set.
    */
-  public final IRVertex setAttr(final ExecutionFactor<?> executionFactor) {
-    attributes.put(executionFactor);
+  public final IRVertex setProperty(final ExecutionProperty<?> executionProperty) {
+    executionProperties.put(executionProperty);
     return this;
   }
 
   /**
-   * Get the attribute of the IRVertex.
-   * @param executionFactorType type of the execution factor.
-   * @return the attribute.
+   * Get the executionProperty of the IRVertex.
+   * @param executionPropertyKey key of the execution property.
+   * @return the execution property.
    */
-  public final Object getAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.get(executionFactorType);
+  public final Object get(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.get(executionPropertyKey);
   }
-  public final String getStringAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getStringAttr(executionFactorType);
+  public final String getStringProperty(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.getStringProperty(executionPropertyKey);
   }
-  public final Integer getIntegerAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getIntegerAttr(executionFactorType);
+  public final Integer getIntegerProperty(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.getIntegerProperty(executionPropertyKey);
   }
-  public final Boolean getBooleanAttr(final ExecutionFactor.Type executionFactorType) {
-    return attributes.getBooleanAttr(executionFactorType);
+  public final Boolean getBooleanProperty(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.getBooleanProperty(executionPropertyKey);
   }
 
   /**
-   * @return the AttributeMap of the IRVertex.
+   * @return the ExecutionPropertyMap of the IRVertex.
    */
-  public final AttributeMap getAttributes() {
-    return attributes;
+  public final ExecutionPropertyMap getExecutionProperties() {
+    return executionProperties;
   }
 
   /**
@@ -88,7 +87,7 @@ public abstract class IRVertex extends Vertex {
   protected final String irVertexPropertiesToString() {
     final StringBuilder sb = new StringBuilder();
     sb.append("\"class\": \"").append(this.getClass().getSimpleName());
-    sb.append("\", \"attributes\": ").append(attributes);
+    sb.append("\", \"executionProperties\": ").append(executionProperties);
     return sb.toString();
   }
 }

@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +47,6 @@ public class ParallelismPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new ParallelismPass().apply(compiledDAG);
 
     processedDAG.getTopologicalSort().forEach(irVertex ->
-        assertEquals(1, (long) irVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism)));
+        assertEquals(1, (long) irVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism)));
   }
 }

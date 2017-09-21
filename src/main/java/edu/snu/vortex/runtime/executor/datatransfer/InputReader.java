@@ -17,9 +17,9 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -78,12 +78,12 @@ public final class InputReader extends DataTransfer {
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge =
-        Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsDataSizeMetricCollection));
-    final String writeOptAtt = runtimeEdge.getStringAttr(ExecutionFactor.Type.WriteOptimization);
+        Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
+    final String writeOptAtt = runtimeEdge.getStringProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     try {
-      switch (runtimeEdge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)) {
+      switch (runtimeEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
         case DataCommunicationPattern.ONE_TO_ONE:
           return Collections.singletonList(readOneToOne());
         case DataCommunicationPattern.BROADCAST:
@@ -109,7 +109,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all());
+        runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
@@ -120,7 +120,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all()));
+          runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -134,7 +134,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all()));
+          runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -161,7 +161,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
-              partitionId, getId(), runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore),
+              partitionId, getId(), runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }
 
@@ -176,7 +176,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readIFile() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore), HashRange.all());
+        runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   public RuntimeEdge getRuntimeEdge() {
@@ -193,7 +193,7 @@ public final class InputReader extends DataTransfer {
   }
 
   public boolean isSideInputReader() {
-    return Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsSideInput));
+    return Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsSideInput));
   }
 
   public CompletableFuture<Object> getSideInput() {
@@ -211,7 +211,7 @@ public final class InputReader extends DataTransfer {
    */
   public int getSourceParallelism() {
     if (srcVertex != null) {
-      final Integer numSrcTasks = srcVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
+      final Integer numSrcTasks = srcVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
       return numSrcTasks == null ? 1 : numSrcTasks;
     } else {
       // Memory input reader

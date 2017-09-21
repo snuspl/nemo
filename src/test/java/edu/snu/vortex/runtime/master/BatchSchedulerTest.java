@@ -22,9 +22,9 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.compiler.optimizer.TestPolicy;
@@ -32,7 +32,6 @@ import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.plan.physical.*;
-import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
@@ -135,28 +134,28 @@ public final class BatchSchedulerTest {
     // Build DAG
     final Transform t = new EmptyComponents.EmptyTransform("empty");
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setAttr(Parallelism.of(3));
-    v1.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v1.setProperty(Parallelism.of(3));
+    v1.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setAttr(Parallelism.of(2));
-    v2.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v2.setProperty(Parallelism.of(2));
+    v2.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setAttr(Parallelism.of(3));
-    v3.setAttr(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v3.setProperty(Parallelism.of(3));
+    v3.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IRVertex v4 = new OperatorVertex(t);
-    v4.setAttr(Parallelism.of(2));
-    v4.setAttr(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+    v4.setProperty(Parallelism.of(2));
+    v4.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
     irDAGBuilder.addVertex(v4);
 
     final IRVertex v5 = new OperatorVertex(new DoTransform(null, null));
-    v5.setAttr(Parallelism.of(2));
-    v5.setAttr(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+    v5.setProperty(Parallelism.of(2));
+    v5.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
     irDAGBuilder.addVertex(v5);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
@@ -214,7 +213,7 @@ public final class BatchSchedulerTest {
   private int getNumScheduleGroups(final DAG<IRVertex, IREdge> irDAG) {
     final Set<Integer> scheduleGroupSet = new HashSet<>();
     irDAG.getVertices().forEach(irVertex ->
-        scheduleGroupSet.add(irVertex.getIntegerAttr(ExecutionFactor.Type.ScheduleGroupIndex)));
+        scheduleGroupSet.add(irVertex.getIntegerProperty(ExecutionProperty.Key.ScheduleGroupIndex)));
     return scheduleGroupSet.size();
   }
 }

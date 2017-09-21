@@ -20,8 +20,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.stage.*;
@@ -72,7 +72,7 @@ public final class PhysicalPlanGenerator
 
     final SortedMap<Integer, List<IRVertex>> vertexListForEachStage = new TreeMap<>();
     irDAG.topologicalDo(irVertex -> {
-      final Integer stageNum = irVertex.getIntegerAttr(ExecutionFactor.Type.StageId);
+      final Integer stageNum = irVertex.getIntegerProperty(ExecutionProperty.Key.StageId);
       if (!vertexListForEachStage.containsKey(stageNum)) {
         vertexListForEachStage.put(stageNum, new ArrayList<>());
       }
@@ -89,8 +89,8 @@ public final class PhysicalPlanGenerator
       final IRVertex irVertexOfNewStage = stageVertices.stream().findAny()
           .orElseThrow(() -> new RuntimeException("Error: List " + stageVertices.getClass() + " is Empty"));
       final StageBuilder stageBuilder =
-          new StageBuilder(irVertexOfNewStage.getIntegerAttr(ExecutionFactor.Type.StageId),
-              irVertexOfNewStage.getIntegerAttr(ExecutionFactor.Type.ScheduleGroupIndex));
+          new StageBuilder(irVertexOfNewStage.getIntegerProperty(ExecutionProperty.Key.StageId),
+              irVertexOfNewStage.getIntegerProperty(ExecutionProperty.Key.ScheduleGroupIndex));
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {
@@ -123,7 +123,7 @@ public final class PhysicalPlanGenerator
             }
 
             final StageEdgeBuilder newEdgeBuilder = new StageEdgeBuilder(irEdge.getId())
-                .setEdgeAttributes(irEdge.getAttributes())
+                .setEdgeProperties(irEdge.getExecutionProperties())
                 .setSrcVertex(srcVertex).setDstVertex(dstVertex)
                 .setSrcStage(srcStage)
                 .setCoder(irEdge.getCoder());
@@ -178,9 +178,9 @@ public final class PhysicalPlanGenerator
       final PhysicalStageBuilder physicalStageBuilder;
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
-      final AttributeMap firstVertexAttrs = stageVertices.iterator().next().getAttributes();
-      final Integer stageParallelism = firstVertexAttrs.getIntegerAttr(ExecutionFactor.Type.Parallelism);
-      final String containerType = firstVertexAttrs.getStringAttr(ExecutionFactor.Type.ExecutorPlacement);
+      final ExecutionPropertyMap firstVertexProperties = stageVertices.iterator().next().getExecutionProperties();
+      final Integer stageParallelism = firstVertexProperties.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+      final String containerType = firstVertexProperties.getStringProperty(ExecutionProperty.Key.ExecutorPlacement);
 
       // Begin building a new stage in the physical plan.
       physicalStageBuilder = new PhysicalStageBuilder(stage.getId(), stageParallelism, stage.getScheduleGroupIndex());
@@ -231,7 +231,7 @@ public final class PhysicalPlanGenerator
         stageInternalDAG.getVertices().forEach(irVertex -> {
           final List<IREdge> inEdges = stageInternalDAG.getIncomingEdgesOf(irVertex);
           inEdges.forEach(edge ->
-              stageInternalDAGBuilder.connectVertices(new RuntimeEdge<>(edge.getId(), edge.getAttributes(),
+              stageInternalDAGBuilder.connectVertices(new RuntimeEdge<>(edge.getId(), edge.getExecutionProperties(),
                   irVertexTaskMap.get(edge.getSrc()), irVertexTaskMap.get(edge.getDst()), edge.getCoder())));
         });
 
@@ -254,7 +254,7 @@ public final class PhysicalPlanGenerator
         final PhysicalStage dstStage = runtimeStageIdToPhysicalStageMap.get(stageEdge.getDst().getId());
 
         physicalDAGBuilder.connectVertices(new PhysicalStageEdge(stageEdge.getId(),
-            stageEdge.getAttributes(),
+            stageEdge.getExecutionProperties(),
             stageEdge.getSrcVertex(), stageEdge.getDstVertex(),
             srcStage, dstStage,
             stageEdge.getCoder()));

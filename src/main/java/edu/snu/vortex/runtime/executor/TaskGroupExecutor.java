@@ -17,7 +17,7 @@ package edu.snu.vortex.runtime.executor;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -90,7 +90,7 @@ public final class TaskGroupExecutor {
   }
 
   /**
-   * Initializes readers and writers depending on the attributes.
+   * Initializes readers and writers depending on the execution properties.
    * Note that there are edges that are cross-stage and stage-internal.
    */
   private void initializeDataTransfer() {
@@ -215,7 +215,7 @@ public final class TaskGroupExecutor {
         .forEach(edge -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edge.getId(), edge.getSrc().getIndex());
           partitionManagerWorker
-              .removePartition(partitionId, edge.getStringAttr(ExecutionFactor.Type.DataStore));
+              .removePartition(partitionId, edge.getStringProperty(ExecutionProperty.Key.DataStore));
         });
   }
 

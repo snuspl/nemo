@@ -18,8 +18,8 @@ package edu.snu.vortex.runtime;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -150,12 +150,12 @@ public final class RuntimeTestUtil {
         // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
           final String commPattern =
-              physicalStageEdge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern);
+              physicalStageEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern);
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER)) {
               final int dstParallelism =
-                  physicalStageEdge.getDstVertex().getIntegerAttr(ExecutionFactor.Type.Parallelism);
+                  physicalStageEdge.getDstVertex().getIntegerProperty(ExecutionProperty.Key.Parallelism);
               IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
                 final String partitionId =
                     RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx);

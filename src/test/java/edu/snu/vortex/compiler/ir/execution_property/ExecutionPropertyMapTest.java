@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute;
+package edu.snu.vortex.compiler.ir.execution_property;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
-import edu.snu.vortex.compiler.ir.attribute.edge.Partitioning;
-import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,26 +32,26 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * Test {@link AttributeMap}.
+ * Test {@link ExecutionPropertyMap}.
  */
-public class AttributeMapTest {
+public class ExecutionPropertyMapTest {
   private final IRVertex source = new BoundedSourceVertex<>(new EmptyComponents.EmptyBoundedSource("Source"));
   private final IRVertex destination = new OperatorVertex(new EmptyComponents.EmptyTransform("MapElements"));
   private final IREdge edge = new IREdge(IREdge.Type.OneToOne, source, destination, Coder.DUMMY_CODER);
 
-  private AttributeMap edgeMap;
-  private AttributeMap vertexMap;
+  private ExecutionPropertyMap edgeMap;
+  private ExecutionPropertyMap vertexMap;
 
   @Before
   public void setUp() {
-    this.edgeMap = AttributeMap.of(edge);
-    this.vertexMap = AttributeMap.of(source);
+    this.edgeMap = ExecutionPropertyMap.of(edge);
+    this.vertexMap = ExecutionPropertyMap.of(source);
   }
 
   @Test
   public void testDefaultValues() {
-    assertEquals(Partitioning.HASH, edgeMap.getStringAttr(ExecutionFactor.Type.Partitioning));
-    assertEquals(1, (long) vertexMap.getIntegerAttr(ExecutionFactor.Type.Parallelism));
+    assertEquals(Partitioning.HASH, edgeMap.getStringProperty(ExecutionProperty.Key.Partitioning));
+    assertEquals(1, (long) vertexMap.getIntegerProperty(ExecutionProperty.Key.Parallelism));
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
   }
@@ -59,14 +59,14 @@ public class AttributeMapTest {
   @Test
   public void testPutGetAndRemove() {
     edgeMap.put(DataStore.of(DataStore.MEMORY));
-    assertEquals(DataStore.MEMORY, edgeMap.getStringAttr(ExecutionFactor.Type.DataStore));
+    assertEquals(DataStore.MEMORY, edgeMap.getStringProperty(ExecutionProperty.Key.DataStore));
     edgeMap.put(DataFlowModel.of(DataFlowModel.PULL));
-    assertEquals(DataFlowModel.PULL, edgeMap.getStringAttr(ExecutionFactor.Type.DataFlowModel));
+    assertEquals(DataFlowModel.PULL, edgeMap.getStringProperty(ExecutionProperty.Key.DataFlowModel));
 
-    edgeMap.remove(ExecutionFactor.Type.DataFlowModel);
-    assertNull(edgeMap.get(ExecutionFactor.Type.DataFlowModel));
+    edgeMap.remove(ExecutionProperty.Key.DataFlowModel);
+    assertNull(edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
     vertexMap.put(Parallelism.of(100));
-    assertEquals(100, (long) vertexMap.getIntegerAttr(ExecutionFactor.Type.Parallelism));
+    assertEquals(100, (long) vertexMap.getIntegerProperty(ExecutionProperty.Key.Parallelism));
   }
 }

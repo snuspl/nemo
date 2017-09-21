@@ -18,8 +18,8 @@ package edu.snu.vortex.compiler.optimizer.pass;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
 
 import java.util.List;
 
@@ -32,12 +32,12 @@ public final class PadoVertexPass implements StaticOptimizationPass {
     dag.topologicalDo(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (inEdges.isEmpty()) {
-        vertex.setAttr(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+        vertex.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
       } else {
         if (hasM2M(inEdges) || allFromReserved(inEdges)) {
-          vertex.setAttr(ExecutorPlacement.of(ExecutorPlacement.RESERVED));
+          vertex.setProperty(ExecutorPlacement.of(ExecutorPlacement.RESERVED));
         } else {
-          vertex.setAttr(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+          vertex.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
         }
       }
     });
@@ -61,6 +61,7 @@ public final class PadoVertexPass implements StaticOptimizationPass {
   private boolean allFromReserved(final List<IREdge> irEdges) {
     return irEdges.stream()
         .allMatch(edge ->
-            edge.getSrc().getStringAttr(ExecutionFactor.Type.ExecutorPlacement).equals(ExecutorPlacement.RESERVED));
+            edge.getSrc().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
+                .equals(ExecutorPlacement.RESERVED));
   }
 }

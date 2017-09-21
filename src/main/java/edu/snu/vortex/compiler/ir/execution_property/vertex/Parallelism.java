@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.vertex;
+package edu.snu.vortex.compiler.ir.execution_property.vertex;
 
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * StageId ExecutionFactor.
+ * Parallelism ExecutionProperty.
  */
-public final class StageId extends ExecutionFactor<Integer> {
-  private StageId(final Integer attribute) {
-    super(Type.StageId, attribute);
+public final class Parallelism extends ExecutionProperty<Integer> {
+  private Parallelism(final Integer value) {
+    super(Key.Parallelism, value);
   }
 
-  public static StageId of(final Integer stageId) {
-    return new StageId(stageId);
+  public static Parallelism of(final Integer value) {
+    return new Parallelism(value);
   }
 }

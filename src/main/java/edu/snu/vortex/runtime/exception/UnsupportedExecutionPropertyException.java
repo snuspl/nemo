@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.edge;
-
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+package edu.snu.vortex.runtime.exception;
 
 /**
- * DataFlowModel ExecutionFactor.
+ * UnsupportedExecutionPropertyException.
+ * Thrown when Runtime does not support the execution property or it is unknown.
  */
-public final class DataFlowModel extends ExecutionFactor<String> {
-  private DataFlowModel(final String attribute) {
-    super(Type.DataFlowModel, attribute);
+public final class UnsupportedExecutionPropertyException extends RuntimeException {
+  /**
+   * UnsupportedExecutionPropertyException.
+   * @param message message
+   */
+  public UnsupportedExecutionPropertyException(final String message) {
+    super(message);
   }
-
-  public static  DataFlowModel of(final String dataFlowModel) {
-    return new DataFlowModel(dataFlowModel);
-  }
-
-  // List of default pre-configured attributes.
-  public static final String PULL = "Pull";
-  public static final String PUSH = "Push";
 }

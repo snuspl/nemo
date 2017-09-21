@@ -18,8 +18,8 @@ package edu.snu.vortex.compiler.optimizer;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.vertex.DynamicOptimizationType;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationType;
 import edu.snu.vortex.compiler.optimizer.pass.*;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.common.dag.DAG;
@@ -41,7 +41,7 @@ public final class Optimizer {
    * @param dag input DAG.
    * @param optimizationPolicy the optimization policy that we want to use to optimize the DAG.
    * @param dagDirectory directory to save the DAG information.
-   * @return optimized DAG, tagged with attributes.
+   * @return optimized DAG, tagged with execution properties.
    * @throws Exception throws an exception if there is an exception.
    */
   public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final Policy optimizationPolicy,
@@ -83,7 +83,7 @@ public final class Optimizer {
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final String dynamicOptimizationType =
-        metricCollectionBarrierVertex.getStringAttr(ExecutionFactor.Type.DynamicOptimizationType);
+        metricCollectionBarrierVertex.getStringProperty(ExecutionProperty.Key.DynamicOptimizationType);
 
     switch (dynamicOptimizationType) {
       case DynamicOptimizationType.DATA_SKEW:

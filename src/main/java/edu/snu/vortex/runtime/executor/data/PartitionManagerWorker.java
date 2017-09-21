@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.executor.data;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
@@ -39,9 +39,9 @@ import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.LOCAL_FILE;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.MEMORY;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.REMOTE_FILE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.LOCAL_FILE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.MEMORY;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.REMOTE_FILE;
 
 /**
  * Executor-side partition manager.
@@ -321,7 +321,7 @@ public final class PartitionManagerWorker {
     final Optional<String> partitionStoreOptional = outputStream.getPartitionStore();
     final String partitionStore = partitionStoreOptional.get();
     if (partitionStore.equals(DataStore.LOCAL_FILE) || partitionStore.equals(DataStore.REMOTE_FILE)) {
-      // TODO #492: Modularize the data communication pattern. Remove attribute value dependant code.
+      // TODO #492: Modularize the data communication pattern. Remove execution property value dependant code.
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
         outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),

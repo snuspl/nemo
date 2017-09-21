@@ -23,14 +23,13 @@ import edu.snu.vortex.common.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.AttributeMap;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
-import edu.snu.vortex.compiler.ir.attribute.edge.Partitioning;
-import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
-import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
@@ -72,9 +71,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.BROADCAST;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.ONE_TO_ONE;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern.SCATTER_GATHER;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.BROADCAST;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.ONE_TO_ONE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.SCATTER_GATHER;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.flatten;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
@@ -257,12 +256,12 @@ public final class DataTransferTest {
 
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.OneToOne, srcVertex, dstVertex, CODER);
-    final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
-    edgeAttributes.put(DataCommunicationPattern.of(commPattern));
-    edgeAttributes.put(Partitioning.of(Partitioning.HASH));
-    edgeAttributes.put(DataStore.of(store));
+    final ExecutionPropertyMap edgeProperties = dummyIREdge.getExecutionProperties();
+    edgeProperties.put(DataCommunicationPattern.of(commPattern));
+    edgeProperties.put(Partitioning.of(Partitioning.HASH));
+    edgeProperties.put(DataStore.of(store));
     final RuntimeEdge<IRVertex> dummyEdge
-        = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
+        = new RuntimeEdge<>(edgeId, edgeProperties, srcVertex, dstVertex, CODER);
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
@@ -330,12 +329,12 @@ public final class DataTransferTest {
 
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.ScatterGather, srcVertex, dstVertex, CODER);
-    final AttributeMap edgeAttributes = dummyIREdge.getAttributes();
-    edgeAttributes.put(Partitioning.of(Partitioning.HASH));
-    edgeAttributes.put(DataStore.of(store));
-    edgeAttributes.put(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
+    final ExecutionPropertyMap edgeProperties = dummyIREdge.getExecutionProperties();
+    edgeProperties.put(Partitioning.of(Partitioning.HASH));
+    edgeProperties.put(DataStore.of(store));
+    edgeProperties.put(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
     final RuntimeEdge<IRVertex> dummyEdge
-        = new RuntimeEdge<>(edgeId, edgeAttributes, srcVertex, dstVertex, CODER);
+        = new RuntimeEdge<>(edgeId, edgeProperties, srcVertex, dstVertex, CODER);
 
     // Initialize the states of the I-File partitions in Master.
     final Set<String> taskGroupIds = new HashSet<>();
@@ -385,13 +384,13 @@ public final class DataTransferTest {
     // Src setup
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap srcVertexAttributes = srcVertex.getAttributes();
-    srcVertexAttributes.put(Parallelism.of(PARALLELISM_TEN));
+    final ExecutionPropertyMap srcVertexProperties = srcVertex.getExecutionProperties();
+    srcVertexProperties.put(Parallelism.of(PARALLELISM_TEN));
 
     // Dst setup
     final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
-    final AttributeMap dstVertexAttributes = dstVertex.getAttributes();
-    dstVertexAttributes.put(Parallelism.of(PARALLELISM_TEN));
+    final ExecutionPropertyMap dstVertexProperties = dstVertex.getExecutionProperties();
+    dstVertexProperties.put(Parallelism.of(PARALLELISM_TEN));
 
     return Pair.of(srcVertex, dstVertex);
   }

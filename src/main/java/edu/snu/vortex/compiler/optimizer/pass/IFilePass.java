@@ -18,15 +18,15 @@ package edu.snu.vortex.compiler.optimizer.pass;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
-import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
 
 import java.util.List;
 
 /**
  * Pass which enables I-File style write optimization.
- * It sets IFileWrite attribute on ScatterGather edges with RemoteFile partition store.
+ * It sets IFileWrite execution property on ScatterGather edges with RemoteFile partition store.
  */
 public final class IFilePass implements StaticOptimizationPass {
   @Override
@@ -35,8 +35,8 @@ public final class IFilePass implements StaticOptimizationPass {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
         if (edge.getType().equals(IREdge.Type.ScatterGather)
-            && edge.getStringAttr(ExecutionFactor.Type.DataStore).equals(DataStore.REMOTE_FILE)) {
-          edge.setAttr(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
+            && edge.getStringProperty(ExecutionProperty.Key.DataStore).equals(DataStore.REMOTE_FILE)) {
+          edge.setProperty(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
         }
       });
     });

@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.vertex;
+package edu.snu.vortex.compiler.ir.execution_property.edge;
 
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * Parallelism ExecutionFactor.
+ * DataFlowModel ExecutionProperty.
  */
-public final class Parallelism extends ExecutionFactor<Integer> {
-  private Parallelism(final Integer attribute) {
-    super(Type.Parallelism, attribute);
+public final class DataFlowModel extends ExecutionProperty<String> {
+  private DataFlowModel(final String value) {
+    super(Key.DataFlowModel, value);
   }
 
-  public static Parallelism of(final Integer parallelism) {
-    return new Parallelism(parallelism);
+  public static  DataFlowModel of(final String value) {
+    return new DataFlowModel(value);
   }
+
+  // List of default pre-configured values. TODO #479: Remove static values.
+  public static final String PULL = "Pull";
+  public static final String PUSH = "Push";
 }

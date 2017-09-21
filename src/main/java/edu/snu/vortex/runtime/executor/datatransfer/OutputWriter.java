@@ -18,9 +18,9 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
@@ -39,8 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
-import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.HASH;
-import static edu.snu.vortex.compiler.ir.attribute.edge.Partitioning.RANGE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning.HASH;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning.RANGE;
 
 /**
  * Represents the output data transfer from a task.
@@ -71,7 +71,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.channelDataPlacement = runtimeEdge.getStringAttr(ExecutionFactor.Type.DataStore);
+    this.channelDataPlacement = runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore);
   }
 
   /**
@@ -81,8 +81,8 @@ public final class OutputWriter extends DataTransfer {
    */
   public void write(final Iterable<Element> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge =
-        Boolean.TRUE.equals(runtimeEdge.getBooleanAttr(ExecutionFactor.Type.IsDataSizeMetricCollection));
-    final String writeOptAtt = runtimeEdge.getStringAttr(ExecutionFactor.Type.WriteOptimization);
+        Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
+    final String writeOptAtt = runtimeEdge.getStringProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     if (writeOptAtt != null && !writeOptAtt.equals(WriteOptimization.IFILE_WRITE)) {
@@ -91,7 +91,7 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch (runtimeEdge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)) {
+      switch (runtimeEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
         case DataCommunicationPattern.ONE_TO_ONE:
           writeOneToOne(dataToWrite);
           break;
@@ -135,10 +135,10 @@ public final class OutputWriter extends DataTransfer {
   }
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final String partition = runtimeEdge.getStringAttr(ExecutionFactor.Type.Partitioning);
+    final String partition = runtimeEdge.getStringProperty(ExecutionProperty.Key.Partitioning);
     switch (partition) {
       case HASH:
-        final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
+        final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
 
         // First partition the data to write,
         final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
@@ -191,7 +191,7 @@ public final class OutputWriter extends DataTransfer {
   private void hashAndWrite(final Iterable<Element> dataToWrite)
       throws ExecutionException, InterruptedException, PartitionWriteException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
+    final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -236,7 +236,7 @@ public final class OutputWriter extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   private void writeIFile(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final int dstParallelism = dstVertex.getIntegerAttr(ExecutionFactor.Type.Parallelism);
+    final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
     final List<List<Pair<Integer, Iterable<Element>>>> outputList = new ArrayList<>(dstParallelism);

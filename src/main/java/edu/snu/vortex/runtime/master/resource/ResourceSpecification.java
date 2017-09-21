@@ -5,8 +5,8 @@ import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 /**
  * Represents the specifications of a resource.
  */
-// TODO #249: Clean up Attributes
-// We should clean up and add attributes related to resource specification.
+// TODO #249: Clean up Execution Properties.
+// We should clean up and add execution properties related to resource specification.
 public final class ResourceSpecification {
   private final String resourceSpecId;
   private final String containerType;

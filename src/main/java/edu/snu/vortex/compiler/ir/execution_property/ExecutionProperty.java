@@ -13,46 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute;
+package edu.snu.vortex.compiler.ir.execution_property;
 
 import java.io.Serializable;
 
 /**
  * An abstract class for each execution factors.
- * @param <T> Type of the attribute.
+ * @param <T> Key of the value.
  */
-public abstract class ExecutionFactor<T> implements Serializable {
-  private Type type;
-  private T attribute;
+public abstract class ExecutionProperty<T> implements Serializable {
+  private Key key;
+  private T value;
 
   /**
    * Default constructor.
-   * @param type type of the ExecutionFactor, given by the enum in this class.
-   * @param attribute attribute of the execution factor.
+   * @param key key of the ExecutionProperty, given by the enum in this class.
+   * @param value value of the ExecutionProperty.
    */
-  public ExecutionFactor(final Type type, final T attribute) {
-    this.type = type;
-    this.attribute = attribute;
+  public ExecutionProperty(final Key key, final T value) {
+    this.key = key;
+    this.value = value;
   }
 
   /**
-   * @return the corresponding attribute.
+   * @return the value of the execution property.
    */
-  public final T getAttribute() {
-    return this.attribute;
+  public final T getValue() {
+    return this.value;
   }
 
   /**
-   * @return the type of the execution factor.
+   * @return the key of the execution property.
    */
-  public final Type getType() {
-    return type;
+  public final Key getKey() {
+    return key;
   }
 
   /**
-   * Different types of execution factors.
+   * Key for different types of execution property.
    */
-  public enum Type {
+  public enum Key {
     // IREdge
     DataCommunicationPattern,
     DataFlowModel,
@@ -62,15 +62,15 @@ public abstract class ExecutionFactor<T> implements Serializable {
     Partitioning,
     WriteOptimization,
 
-    // Scheduling
-    SchedulingPolicy,
-    SchedulerType,
-
     // IRVertex
     DynamicOptimizationType,
     ExecutorPlacement,
     Parallelism,
     ScheduleGroupIndex,
     StageId,
+
+    // Scheduling
+    SchedulingPolicy,
+    SchedulerType,
   }
 }

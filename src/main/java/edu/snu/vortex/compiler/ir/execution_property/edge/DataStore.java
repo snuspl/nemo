@@ -13,18 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.exception;
+package edu.snu.vortex.compiler.ir.execution_property.edge;
+
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * UnsupportedAttributeException.
- * Thrown when Runtime does not support the attribute or the attribute is unknown.
+ * DataStore ExecutionProperty.
  */
-public final class UnsupportedAttributeException extends RuntimeException {
-  /**
-   * UnsupportedAttributeException.
-   * @param message message
-   */
-  public UnsupportedAttributeException(final String message) {
-    super(message);
+public final class DataStore extends ExecutionProperty<String> {
+  private DataStore(final String value) {
+    super(Key.DataStore, value);
   }
+
+  public static DataStore of(final String value) {
+    return new DataStore(value);
+  }
+
+  // List of default pre-configured values. TODO #479: Remove static values.
+  public static final String MEMORY = "Memory";
+  public static final String LOCAL_FILE = "LocalFile";
+  public static final String REMOTE_FILE = "RemoteFile";
 }

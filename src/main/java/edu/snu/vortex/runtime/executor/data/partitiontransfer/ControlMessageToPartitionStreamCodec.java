@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import edu.snu.vortex.compiler.ir.attribute.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
 import edu.snu.vortex.runtime.executor.data.HashRange;
@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.LOCAL_FILE;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.MEMORY;
-import static edu.snu.vortex.compiler.ir.attribute.edge.DataStore.REMOTE_FILE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.LOCAL_FILE;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.MEMORY;
+import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.REMOTE_FILE;
 
 /**
  * Responses to control message by emitting a new {@link PartitionStream},
@@ -114,8 +114,8 @@ final class ControlMessageToPartitionStreamCodec
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
     LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
-        in.getPartitionStore().get().toString()});
+            in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
+            in.getPartitionStore().get().toString()});
   }
 
   /**
@@ -135,7 +135,7 @@ final class ControlMessageToPartitionStreamCodec
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
     LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
+            in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
   }
 
   /**
@@ -179,8 +179,8 @@ final class ControlMessageToPartitionStreamCodec
     out.add(outputStream);
     LOG.debug("Received pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
-        outputStream.getPartitionStore().get().toString()});
+            in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
+            outputStream.getPartitionStore().get().toString()});
   }
 
   /**
@@ -202,7 +202,7 @@ final class ControlMessageToPartitionStreamCodec
     out.add(inputStream);
     LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-        in.getPartitionId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
+            in.getPartitionId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
   }
 
   /**

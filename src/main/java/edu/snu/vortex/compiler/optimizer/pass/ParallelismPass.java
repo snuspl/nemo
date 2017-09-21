@@ -20,16 +20,16 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
-import edu.snu.vortex.compiler.ir.attribute.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
+import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 /**
- * Optimization pass for tagging parallelism attributes.
+ * Optimization pass for tagging parallelism execution property.
  */
 public final class ParallelismPass implements StaticOptimizationPass {
   @Override
@@ -38,21 +38,21 @@ public final class ParallelismPass implements StaticOptimizationPass {
     dag.topologicalDo(vertex -> {
       try {
         final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex).stream()
-            .filter(edge -> !Boolean.TRUE.equals(edge.getBooleanAttr(ExecutionFactor.Type.IsSideInput)))
+            .filter(edge -> !Boolean.TRUE.equals(edge.getBooleanProperty(ExecutionProperty.Key.IsSideInput)))
             .collect(Collectors.toList());
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
-          vertex.setAttr(Parallelism.of(sourceVertex.getReaders(1).size()));
+          vertex.setProperty(Parallelism.of(sourceVertex.getReaders(1).size()));
         } else if (!inEdges.isEmpty()) {
           final OptionalInt parallelism = inEdges.stream()
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
-              .filter(edge -> !edge.getStringAttr(ExecutionFactor.Type.DataCommunicationPattern)
+              .filter(edge -> !edge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)
                   .equals(DataCommunicationPattern.BROADCAST))
-              .mapToInt(edge -> edge.getSrc().getIntegerAttr(ExecutionFactor.Type.Parallelism))
+              .mapToInt(edge -> edge.getSrc().getIntegerProperty(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
-            vertex.setAttr(Parallelism.of(parallelism.getAsInt()));
+            vertex.setProperty(Parallelism.of(parallelism.getAsInt()));
           }
         } else {
           throw new RuntimeException("There is a non-source vertex that doesn't have any inEdges other than SideInput");

@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.attribute.vertex;
+package edu.snu.vortex.compiler.ir.execution_property.vertex;
 
-import edu.snu.vortex.compiler.ir.attribute.ExecutionFactor;
+import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 
 /**
- * ExecutionPlacement ExecutionFactor.
+ * ExecutionPlacement ExecutionProperty.
  */
-public final class ExecutorPlacement extends ExecutionFactor<String> {
-  private ExecutorPlacement(final String attribute) {
-    super(Type.ExecutorPlacement, attribute);
+public final class ExecutorPlacement extends ExecutionProperty<String> {
+  private ExecutorPlacement(final String value) {
+    super(Key.ExecutorPlacement, value);
   }
 
-  public static ExecutorPlacement of(final String executorPlacement) {
-    return new ExecutorPlacement(executorPlacement);
+  public static ExecutorPlacement of(final String value) {
+    return new ExecutorPlacement(value);
   }
 
-  // List of default pre-configured attributes.
+  // List of default pre-configured values. TODO #479: Remove static values.
   public static final String NONE = "None";
   public static final String TRANSIENT = "Transient";
   public static final String RESERVED = "Reserved";
