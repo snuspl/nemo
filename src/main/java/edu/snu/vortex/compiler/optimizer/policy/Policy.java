@@ -22,14 +22,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * An interface for policies, which are composed of a list of optimization passes.
- * The list of optimization passes are run in the order provided by the implementation.
+ * An interface for policies, each of which is composed of a list of static optimization passes.
+ * The list of static optimization passes are run in the order provided by the implementation.
  */
 @DefaultImplementation(DefaultPolicy.class)
 public interface Policy extends Serializable {
   // TODO #479: Group, organize passes and update them accordingly to Policies.
   /**
-   * @return the content of the policy: the list of optimization passes of the policy.
+   * @return the content of the policy: the list of static optimization passes of the policy.
    */
   List<StaticOptimizationPass> getOptimizationPasses();
 }

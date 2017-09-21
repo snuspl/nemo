@@ -19,25 +19,25 @@
 ## MapReduce Application using a separately defined pass
 ./bin/run.sh -job_id mr_default -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.DefaultPolicyWithSeparatePass -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## MapReduce Application with 'pado' optimization policy
+## MapReduce Application with Pado optimization policy
 ./bin/run.sh -job_id mr_pado -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## MapReduce Application with 'disaggregation' optimization policy
+## MapReduce Application with Disaggregation optimization policy
 ./bin/run.sh -job_id mr_disaggr -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.DisaggregationPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## MapReduce Application with 'dataskew' dynamic optimization policy
+## MapReduce Application with DataSkew dynamic optimization policy
 ./bin/run.sh -job_id mr_dataskew -user_main edu.snu.vortex.examples.beam.MapReduce -optimization_policy edu.snu.vortex.compiler.optimizer.policy.DataSkewPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## Broadcast Application 
+## Broadcast Application with Pado optimization policy
 ./bin/run.sh -job_id broadcast_pado -user_main edu.snu.vortex.examples.beam.Broadcast -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
-## Alternating Least Square Application with 'pado' optimization policy
+## Alternating Least Square Application with Pado optimization policy
 ./bin/run.sh -job_id als_pado -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 
-## An inefficient Alternating Least Square Application with 'pado' optimization policy (to show optimizer functionalities)
+## An inefficient Alternating Least Square Application with Pado optimization policy (to show optimizer functionalities)
 ./bin/run.sh -job_id als_ineff_pado -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquareInefficient -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 
-## Multinomial Logistic Regression Application with 'pado' optimization policy
+## Multinomial Logistic Regression Application with Pado optimization policy
 ./bin/run.sh -job_id mlr_pado -user_main edu.snu.vortex.examples.beam.MultinomialLogisticRegression -optimization_policy edu.snu.vortex.compiler.optimizer.policy.PadoPolicy -user_args "`pwd`/src/main/resources/sample_input_mlr 100 5 3"
 
 ## A simple toy example to demonstrate optimizer DAG transformation
