@@ -26,7 +26,12 @@
 ### Configurable options
 * `-job_id`: ID of the Beam job
 * `-user_main`: Beam application as a java class
-* `-optimization_policy`: DAG optimizer applied in Vortex compiler. `default`, `pado`, `disaggregation`, `dataskew` are supported
+* `-optimization_policy`: DAG optimizer applied in Vortex compiler.
+Four policies are supported:
+	* `default`: No DAG optimization is applied.
+	* `pado` : Annotate DAG to perform optimizations of [EuroSys 2017 Pado](http://dl.acm.org/citation.cfm?id=3064181). This policy sets vertices that are likely to have high eviction cost to be located in `Reserved` resources and else in `Transient` resources so that eviction cost is minimized while preserving high system utilization.
+	* `disaggregation` : Annotate DAG that this job will run under disaggregated storage environment. For edges other than one-to-one, this policy sets data placement to `RemoteFile` and data transfer to `Pull` fashion so that it can utilize remote storages in the disaggregated storage environment.
+	* `dataskew` : Reshape the DAG to resolve data skew. This policy collects metrics to repartition the skewed data to evenly partitioned data.
 * `-user_args`: locations of input and output files
 * `-deploy_mode`:  `yarn` is supported
 
@@ -96,9 +101,12 @@ java -cp target/vortex-0.1-SNAPSHOT-shaded.jar edu.snu.vortex.compiler.optimizer
 
 ### Configurable options
 * `num` (optional): Number of containers. Default value is 1
-* `type`: `Transient`, `Reserved`, `Compute` are available
+* `type`:  Three container types are supported:
+	* `Transient` : Containers that store eviction-prone resources. When batch jobs use idle resources in `Transient` containers, they can be arbitrarily evicted when latency-critical jobs attempt to use the resources.
+	* `Reserved` : Containers that store eviction-free resources. `Reserved` containers are used to reliably store intermediate data which have high eviction cost.
+	* `Compute` : Containers that are mainly used for computation.
 * `memory_mb`: Memory size in MB
-* `capacity`: Number of `TaskGroup`s that can be run in an executor. We define this value to be identical to the number of CPU cores of the container.
+* `capacity`: Number of `TaskGroup`s that can be run in an executor. Set this value to be the same as the number of CPU cores of the container.
 
 ### Examples
 ```json
@@ -122,9 +130,9 @@ This example configuration specifies
 * 1 reserved container with 2 cores and 1024MB memory
 
 ## Monitoring your job using web UI
-Vortex Compiler and Engine stores JSON representation of intermediate DAGs.
-`-dag_dir` command line option specifies the directory to store the JSON files. By default the JSON files are saved in `./target/dag`.
-You can easily visualize a DAG using our [online visualizer](https://service.jangho.kr/vortex-dag/) by dropping the corresponding JSON file to it.
+Vortex Compiler and Engine can store JSON representation of intermediate DAGs.
+`-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./target/dag`.
+Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can easily visualize a DAG. Just drop the JSON file of the DAG as an input to it.
 
 ### Examples
 ```bash
@@ -134,7 +142,3 @@ You can easily visualize a DAG using our [online visualizer](https://service.jan
     -dag_dir "./target/dag/als" \
     -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 ```
-
-
-
-
