@@ -26,6 +26,7 @@ import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.vertex.ExecutorPlacement;
 import edu.snu.vortex.compiler.ir.attribute.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.reef.tang.Tang;
@@ -79,7 +80,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -155,7 +156,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -237,7 +238,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+          new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -328,7 +329,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-        Optimizer.PolicyType.TestingPolicy, "");
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
