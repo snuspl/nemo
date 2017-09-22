@@ -58,12 +58,6 @@ public class RuntimeEdge<V extends Vertex> extends Edge<V> {
   public final Class getClassProperty(final ExecutionProperty.Key executionFactorTYpe) {
     return edgeProperties.getClassProperty(executionFactorTYpe);
   }
-  public final Integer getIntegerProperty(final ExecutionProperty.Key executionFactorKey) {
-    return edgeProperties.getIntegerProperty(executionFactorKey);
-  }
-  public final Boolean getBooleanProperty(final ExecutionProperty.Key executionFactorKey) {
-    return edgeProperties.getBooleanProperty(executionFactorKey);
-  }
 
   /**
    * @return the ExecutionPropertyMap of the Runtime Edge.

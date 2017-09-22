@@ -39,9 +39,7 @@ import java.util.stream.Collectors;
 public final class ExecutionPropertyMap implements Serializable {
   private final String id;
   private final Map<ExecutionProperty.Key, ExecutionProperty<?>> properties;
-  private final Map<ExecutionProperty.Key, ExecutionProperty<Class>> classProperties;
-  private final Map<ExecutionProperty.Key, ExecutionProperty<Integer>> intProperties;
-  private final Map<ExecutionProperty.Key, ExecutionProperty<Boolean>> boolProperties;
+  private final Map<ExecutionProperty.Key, ExecutionProperty<Class<?>>> classProperties;
 
   /**
    * Constructor for ExecutionPropertyMap class.
@@ -51,8 +49,6 @@ public final class ExecutionPropertyMap implements Serializable {
     this.id = id;
     properties = new HashMap<>();
     classProperties = new HashMap<>();
-    intProperties = new HashMap<>();
-    boolProperties = new HashMap<>();
   }
 
   /**
@@ -114,12 +110,8 @@ public final class ExecutionPropertyMap implements Serializable {
    * @return the inserted execution property.
    */
   public ExecutionProperty put(final ExecutionProperty<?> executionProperty) {
-    if (executionProperty.getValue() instanceof Integer) {
-      return intProperties.put(executionProperty.getKey(), (ExecutionProperty<Integer>) executionProperty);
-    } else if (executionProperty.getValue() instanceof Boolean) {
-      return boolProperties.put(executionProperty.getKey(), (ExecutionProperty<Boolean>) executionProperty);
-    } else if (executionProperty.getValue() instanceof Class) {
-      return classProperties.put(executionProperty.getKey(), (ExecutionProperty<Class>) executionProperty);
+    if (executionProperty.getValue() instanceof Class<?>) {
+      return classProperties.put(executionProperty.getKey(), (ExecutionProperty<Class<?>>) executionProperty);
     } else {
       return properties.put(executionProperty.getKey(), executionProperty);
     }
@@ -127,11 +119,7 @@ public final class ExecutionPropertyMap implements Serializable {
 
   public Object get(final ExecutionProperty.Key executionPropertyKey) {
     final ExecutionProperty<?> executionProperty;
-    if (intProperties.containsKey(executionPropertyKey)) {
-      executionProperty = intProperties.get(executionPropertyKey);
-    } else if (boolProperties.containsKey(executionPropertyKey)) {
-      executionProperty = boolProperties.get(executionPropertyKey);
-    } else if (classProperties.containsKey(executionPropertyKey)) {
+    if (classProperties.containsKey(executionPropertyKey)) {
       executionProperty = classProperties.get(executionPropertyKey);
     } else {
       executionProperty = properties.get(executionPropertyKey);
@@ -144,27 +132,7 @@ public final class ExecutionPropertyMap implements Serializable {
    * @return the value of the given execution property.
    */
   public Class<?> getClassProperty(final ExecutionProperty.Key executionPropertyKey) {
-    final ExecutionProperty<Class> executionProperty = classProperties.get(executionPropertyKey);
-    return executionProperty == null ? null : executionProperty.getValue();
-  }
-
-  /**
-   * Get the value of the given execution property type.
-   * @param executionPropertyKey the execution property type to find the value of.
-   * @return the value of the given execution property.
-   */
-  public Integer getIntegerProperty(final ExecutionProperty.Key executionPropertyKey) {
-    final ExecutionProperty<Integer> executionProperty = intProperties.get(executionPropertyKey);
-    return executionProperty == null ? null : executionProperty.getValue();
-  }
-
-  /**
-   * Get the value of the given execution property type.
-   * @param executionPropertyKey the execution property type to find the value of.
-   * @return the value of the given execution property.
-   */
-  public Boolean getBooleanProperty(final ExecutionProperty.Key executionPropertyKey) {
-    final ExecutionProperty<Boolean> executionProperty = boolProperties.get(executionPropertyKey);
+    final ExecutionProperty<Class<?>> executionProperty = classProperties.get(executionPropertyKey);
     return executionProperty == null ? null : executionProperty.getValue();
   }
 
@@ -174,10 +142,8 @@ public final class ExecutionPropertyMap implements Serializable {
    * @return the removed execution property
    */
   public ExecutionProperty remove(final ExecutionProperty.Key key) {
-    if (intProperties.containsKey(key)) {
-      return intProperties.remove(key);
-    } else if (boolProperties.containsKey(key)) {
-      return boolProperties.remove(key);
+    if (classProperties.containsKey(key)) {
+      return classProperties.remove(key);
     } else {
       return properties.remove(key);
     }
@@ -188,7 +154,7 @@ public final class ExecutionPropertyMap implements Serializable {
    * @return whether or not the execution property map contains the key.
    */
   public boolean containsKey(final ExecutionProperty.Key key) {
-    return properties.containsKey(key) || intProperties.containsKey(key) || boolProperties.containsKey(key);
+    return properties.containsKey(key) || classProperties.containsKey(key);
   }
 
   /**
@@ -196,9 +162,8 @@ public final class ExecutionPropertyMap implements Serializable {
    * @param action action to apply to each of the execution properties.
    */
   public void forEachProperties(final Consumer<? super ExecutionProperty> action) {
+    classProperties.values().forEach(action);
     properties.values().forEach(action);
-    intProperties.values().forEach(action);
-    boolProperties.values().forEach(action);
   }
 
   @Override
@@ -217,18 +182,7 @@ public final class ExecutionPropertyMap implements Serializable {
       sb.append(entry.getValue().getValue());
       sb.append("\"");
     }
-    for (final Map.Entry<ExecutionProperty.Key, ExecutionProperty<Integer>> entry : intProperties.entrySet()) {
-      if (!isFirstPair) {
-        sb.append(", ");
-      }
-      isFirstPair = false;
-      sb.append("\"");
-      sb.append(entry.getKey());
-      sb.append("\": \"");
-      sb.append(entry.getValue().getValue());
-      sb.append("\"");
-    }
-    for (final Map.Entry<ExecutionProperty.Key, ExecutionProperty<Boolean>> entry : boolProperties.entrySet()) {
+    for (final Map.Entry<ExecutionProperty.Key, ExecutionProperty<Class<?>>> entry : classProperties.entrySet()) {
       if (!isFirstPair) {
         sb.append(", ");
       }
@@ -259,10 +213,8 @@ public final class ExecutionPropertyMap implements Serializable {
     return new EqualsBuilder()
         .append(properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
             that.properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(intProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
-            that.intProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(boolProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
-            that.boolProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
+        .append(classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
+            that.classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
         .isEquals();
   }
 
@@ -270,8 +222,7 @@ public final class ExecutionPropertyMap implements Serializable {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(intProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(boolProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
+        .append(classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
         .toHashCode();
   }
 }

@@ -23,7 +23,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.IsDataSizeMetricCollection;
+import edu.snu.vortex.compiler.ir.execution_property.edge.MetricCollection;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationType;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
@@ -74,7 +74,7 @@ public final class DataSkewPass implements StaticOptimizationPass {
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           edge.copyExecutionProperties(edgeToGbK);
-          edgeToGbK.setProperty(IsDataSizeMetricCollection.of(true));
+          edgeToGbK.setProperty(MetricCollection.of(DataSkewDynamicOptimizationPass.class));
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });

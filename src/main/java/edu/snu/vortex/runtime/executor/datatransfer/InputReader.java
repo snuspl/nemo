@@ -19,6 +19,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -79,8 +80,8 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
-    final Boolean isDataSizeMetricCollectionEdge =
-        Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
+    final Boolean isDataSizeMetricCollectionEdge = runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection)
+        .equals(DataSkewDynamicOptimizationPass.class);
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
@@ -195,7 +196,7 @@ public final class InputReader extends DataTransfer {
   }
 
   public boolean isSideInputReader() {
-    return Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsSideInput));
+    return Boolean.TRUE.equals(runtimeEdge.get(ExecutionProperty.Key.IsSideInput));
   }
 
   public CompletableFuture<Object> getSideInput() {
@@ -213,7 +214,7 @@ public final class InputReader extends DataTransfer {
    */
   public int getSourceParallelism() {
     if (srcVertex != null) {
-      final Integer numSrcTasks = srcVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+      final Integer numSrcTasks = (Integer) srcVertex.get(ExecutionProperty.Key.Parallelism);
       return numSrcTasks == null ? 1 : numSrcTasks;
     } else {
       // Memory input reader

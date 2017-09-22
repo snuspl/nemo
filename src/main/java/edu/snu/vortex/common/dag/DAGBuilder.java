@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
@@ -242,7 +243,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
   private void executionPropertyCheck() {
     // SideInput edge must be one-to-one
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsSideInput)))
+        .filter(e -> Boolean.TRUE.equals(e.get(ExecutionProperty.Key.IsSideInput)))
         .filter(e -> !e.getType().equals(IREdge.Type.OneToOne))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
@@ -250,7 +251,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
         }));
     // SideInput is not compatible with Push
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsSideInput)))
+        .filter(e -> Boolean.TRUE.equals(e.get(ExecutionProperty.Key.IsSideInput)))
         .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
@@ -258,7 +259,8 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
         }));
     // DataSizeMetricCollection is not compatible with Push (All data have to be stored before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection)))
+        .filter(e -> e.getClassProperty(ExecutionProperty.Key.MetricCollection)
+            .equals(DataSkewDynamicOptimizationPass.class))
         .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
@@ -276,13 +278,13 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // All vertices connected with OneToOne edge should have identical Parallelism execution property.
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> e.getType().equals(IREdge.Type.OneToOne))
-        .filter(e -> !Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsSideInput))).forEach(e -> {
+        .filter(e -> !Boolean.TRUE.equals(e.get(ExecutionProperty.Key.IsSideInput))).forEach(e -> {
           if (e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
               && !(e.getSrc() instanceof LoopVertex) && !(e.getDst() instanceof LoopVertex)
-              && (e.getSrc()).getIntegerProperty(ExecutionProperty.Key.Parallelism) != null
-              && (e.getDst()).getIntegerProperty(ExecutionProperty.Key.Parallelism) != null
-              && !(e.getSrc()).getIntegerProperty(ExecutionProperty.Key.Parallelism)
-              .equals((e.getDst()).getIntegerProperty(ExecutionProperty.Key.Parallelism))) {
+              && (e.getSrc()).get(ExecutionProperty.Key.Parallelism) != null
+              && (e.getDst()).get(ExecutionProperty.Key.Parallelism) != null
+              && !(e.getSrc()).get(ExecutionProperty.Key.Parallelism)
+              .equals((e.getDst()).get(ExecutionProperty.Key.Parallelism))) {
             throw new RuntimeException("DAG execution property check: vertices are connected by OneToOne edge, "
                 + "but has different parallelism execution properties: " + e.getId());
           }

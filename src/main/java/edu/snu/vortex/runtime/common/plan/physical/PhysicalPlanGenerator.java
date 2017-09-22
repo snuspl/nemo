@@ -72,7 +72,7 @@ public final class PhysicalPlanGenerator
 
     final SortedMap<Integer, List<IRVertex>> vertexListForEachStage = new TreeMap<>();
     irDAG.topologicalDo(irVertex -> {
-      final Integer stageNum = irVertex.getIntegerProperty(ExecutionProperty.Key.StageId);
+      final Integer stageNum = (Integer) irVertex.get(ExecutionProperty.Key.StageId);
       if (!vertexListForEachStage.containsKey(stageNum)) {
         vertexListForEachStage.put(stageNum, new ArrayList<>());
       }
@@ -89,8 +89,8 @@ public final class PhysicalPlanGenerator
       final IRVertex irVertexOfNewStage = stageVertices.stream().findAny()
           .orElseThrow(() -> new RuntimeException("Error: List " + stageVertices.getClass() + " is Empty"));
       final StageBuilder stageBuilder =
-          new StageBuilder(irVertexOfNewStage.getIntegerProperty(ExecutionProperty.Key.StageId),
-              irVertexOfNewStage.getIntegerProperty(ExecutionProperty.Key.ScheduleGroupIndex));
+          new StageBuilder((Integer) irVertexOfNewStage.get(ExecutionProperty.Key.StageId),
+              (Integer) irVertexOfNewStage.get(ExecutionProperty.Key.ScheduleGroupIndex));
 
       // For each vertex in the stage,
       for (final IRVertex irVertex : stageVertices) {
@@ -179,7 +179,7 @@ public final class PhysicalPlanGenerator
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
       final ExecutionPropertyMap firstVertexProperties = stageVertices.iterator().next().getExecutionProperties();
-      final Integer stageParallelism = firstVertexProperties.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+      final Integer stageParallelism = (Integer) firstVertexProperties.get(ExecutionProperty.Key.Parallelism);
       final String containerType = (String) firstVertexProperties.get(ExecutionProperty.Key.ExecutorPlacement);
 
       // Begin building a new stage in the physical plan.

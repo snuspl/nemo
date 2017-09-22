@@ -53,23 +53,23 @@ public abstract class ExecutionProperty<T> implements Serializable {
    * Key for different types of execution property.
    */
   public enum Key {
-    // IREdge
-    DataCommunicationPattern,
+    // Applies to IREdge
+    DataCommunicationPattern, // TODO #492: modularizing runtime components for data communication pattern.
     DataFlowModel,
     DataStore,
-    IsDataSizeMetricCollection,
-    IsSideInput,
-    Partitioning,
-    WriteOptimization,
+    MetricCollection,
+    IsSideInput, // TODO #508: re-investigate sideInputs.
+    Partitioning, // TODO #493: modularizing runtime components for partitioning.
+    WriteOptimization, // TODO #492: to be removed with this issue.
 
-    // IRVertex
+    // Applies to IRVertex
     DynamicOptimizationType,
     ExecutorPlacement,
     Parallelism,
     ScheduleGroupIndex,
     StageId,
 
-    // Scheduling
+    // Applies to entire job DAG
     SchedulingPolicy,
     SchedulerType,
   }

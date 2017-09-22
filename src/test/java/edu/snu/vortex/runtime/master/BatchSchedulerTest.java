@@ -213,7 +213,7 @@ public final class BatchSchedulerTest {
   private int getNumScheduleGroups(final DAG<IRVertex, IREdge> irDAG) {
     final Set<Integer> scheduleGroupSet = new HashSet<>();
     irDAG.getVertices().forEach(irVertex ->
-        scheduleGroupSet.add(irVertex.getIntegerProperty(ExecutionProperty.Key.ScheduleGroupIndex)));
+        scheduleGroupSet.add((Integer) irVertex.get(ExecutionProperty.Key.ScheduleGroupIndex)));
     return scheduleGroupSet.size();
   }
 }

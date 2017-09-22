@@ -38,7 +38,7 @@ public final class ParallelismPass implements StaticOptimizationPass {
     dag.topologicalDo(vertex -> {
       try {
         final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex).stream()
-            .filter(edge -> !Boolean.TRUE.equals(edge.getBooleanProperty(ExecutionProperty.Key.IsSideInput)))
+            .filter(edge -> !Boolean.TRUE.equals(edge.get(ExecutionProperty.Key.IsSideInput)))
             .collect(Collectors.toList());
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
@@ -49,7 +49,7 @@ public final class ParallelismPass implements StaticOptimizationPass {
               // as a sideInput will have their own number of parallelism
               .filter(edge -> !edge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)
                   .equals(Broadcast.class))
-              .mapToInt(edge -> edge.getSrc().getIntegerProperty(ExecutionProperty.Key.Parallelism))
+              .mapToInt(edge -> (Integer) edge.getSrc().get(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
             vertex.setProperty(Parallelism.of(parallelism.getAsInt()));

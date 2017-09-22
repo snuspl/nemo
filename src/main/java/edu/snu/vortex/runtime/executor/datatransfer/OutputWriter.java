@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
@@ -83,8 +84,8 @@ public final class OutputWriter extends DataTransfer {
    * @param dataToWrite An iterable for the elements to be written.
    */
   public void write(final Iterable<Element> dataToWrite) {
-    final Boolean isDataSizeMetricCollectionEdge =
-        Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
+    final Boolean isDataSizeMetricCollectionEdge = runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection)
+        .equals(DataSkewDynamicOptimizationPass.class);
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
@@ -142,7 +143,7 @@ public final class OutputWriter extends DataTransfer {
         runtimeEdge.getClassProperty(ExecutionProperty.Key.Partitioning);
     switch (partition.getSimpleName()) {
       case Hash.SIMPLE_NAME:
-        final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+        final int dstParallelism = (Integer) dstVertex.get(ExecutionProperty.Key.Parallelism);
 
         // First partition the data to write,
         final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
@@ -195,7 +196,7 @@ public final class OutputWriter extends DataTransfer {
   private void hashAndWrite(final Iterable<Element> dataToWrite)
       throws ExecutionException, InterruptedException, PartitionWriteException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = (Integer) dstVertex.get(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -240,7 +241,7 @@ public final class OutputWriter extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   private void writeIFile(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = (Integer) dstVertex.get(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
     final List<List<Pair<Integer, Iterable<Element>>>> outputList = new ArrayList<>(dstParallelism);

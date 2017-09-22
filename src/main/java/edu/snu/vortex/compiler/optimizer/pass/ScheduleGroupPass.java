@@ -39,7 +39,7 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     // We assume that the input dag is tagged with stage ids.
-    if (dag.getVertices().stream().anyMatch(irVertex -> irVertex.getIntegerProperty(StageId) == null)) {
+    if (dag.getVertices().stream().anyMatch(irVertex -> irVertex.get(StageId) == null)) {
       throw new RuntimeException("There exists an IR vertex going through ScheduleGroupPass "
           + "without stage id tagged.");
     }
@@ -47,13 +47,13 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     // Map of stage id to the stage ids that it depends on.
     final Map<Integer, Set<Integer>> dependentStagesMap = new HashMap<>();
     dag.topologicalDo(irVertex -> {
-      final Integer currentStageId = irVertex.getIntegerProperty(StageId);
+      final Integer currentStageId = (Integer) irVertex.get(StageId);
       dependentStagesMap.putIfAbsent(currentStageId, new HashSet<>());
       // while traversing, we find the stages that point to the current stage and add them to the list.
       dag.getIncomingEdgesOf(irVertex).stream()
           .map(IREdge::getSrc)
-          .map(vertex -> vertex.getIntegerProperty(StageId))
-          .filter(n -> !n.equals(currentStageId))
+          .mapToInt(vertex -> (Integer) vertex.get(StageId))
+          .filter(n -> n != currentStageId)
           .forEach(n -> dependentStagesMap.get(currentStageId).add(n));
     });
 
@@ -97,11 +97,11 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
       if (!pushConnectedVertices.isEmpty()) { // if we need to do something,
         // we find the min value of the destination schedule groups.
         final Integer newSchedulerGroupIndex = pushConnectedVertices.stream()
-            .mapToInt(irVertex -> stageIdToScheduleGroupIndexMap.get(irVertex.getIntegerProperty(StageId)))
+            .mapToInt(irVertex -> stageIdToScheduleGroupIndexMap.get(irVertex.get(StageId)))
             .min().orElseThrow(() -> new RuntimeException("a list was not empty, but produced an empty result"));
         // overwrite
-        final Integer originalScheduleGroupIndex = stageIdToScheduleGroupIndexMap.get(v.getIntegerProperty(StageId));
-        stageIdToScheduleGroupIndexMap.replace(v.getIntegerProperty(StageId), newSchedulerGroupIndex);
+        final Integer originalScheduleGroupIndex = stageIdToScheduleGroupIndexMap.get(v.get(StageId));
+        stageIdToScheduleGroupIndexMap.replace((Integer) v.get(StageId), newSchedulerGroupIndex);
         // shift those if it came too far
         if (stageIdToScheduleGroupIndexMap.values().stream()
             .filter(stageIndex -> stageIndex.equals(originalScheduleGroupIndex))
@@ -120,7 +120,7 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     // do the tagging
     dag.topologicalDo(irVertex ->
         irVertex.setProperty(
-            ScheduleGroupIndex.of(stageIdToScheduleGroupIndexMap.get(irVertex.getIntegerProperty(StageId)))));
+            ScheduleGroupIndex.of(stageIdToScheduleGroupIndexMap.get(irVertex.get(StageId)))));
 
     return dag;
   }

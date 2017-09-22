@@ -47,7 +47,7 @@ public abstract class IRVertex extends Vertex {
   }
 
   /**
-   * Set an executionProperty to the IRVertex.
+   * Set an executionProperty of the IRVertex.
    * @param executionProperty new execution property.
    * @return the IRVertex with the execution property set.
    */
@@ -66,12 +66,6 @@ public abstract class IRVertex extends Vertex {
   }
   public final Class getClassProperty(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.getClassProperty(executionPropertyKey);
-  }
-  public final Integer getIntegerProperty(final ExecutionProperty.Key executionPropertyKey) {
-    return executionProperties.getIntegerProperty(executionPropertyKey);
-  }
-  public final Boolean getBooleanProperty(final ExecutionProperty.Key executionPropertyKey) {
-    return executionProperties.getBooleanProperty(executionPropertyKey);
   }
 
   /**

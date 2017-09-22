@@ -73,7 +73,7 @@ public final class IREdge extends Edge<IRVertex> {
   }
 
   /**
-   * Set an executionProperty to the IREdge.
+   * Set an executionProperty of the IREdge.
    * @param executionProperty the execution property.
    * @return the IREdge with the execution property set.
    */
@@ -92,12 +92,6 @@ public final class IREdge extends Edge<IRVertex> {
   }
   public Class getClassProperty(final ExecutionProperty.Key executionFactorKey) {
     return executionProperties.getClassProperty(executionFactorKey);
-  }
-  public Integer getIntegerProperty(final ExecutionProperty.Key executionFactorKey) {
-    return executionProperties.getIntegerProperty(executionFactorKey);
-  }
-  public Boolean getBooleanProperty(final ExecutionProperty.Key executionFactorKey) {
-    return executionProperties.getBooleanProperty(executionFactorKey);
   }
 
   /**
