@@ -252,16 +252,16 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // SideInput is not compatible with Push
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> Boolean.TRUE.equals(e.get(ExecutionProperty.Key.IsSideInput)))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
+        .filter(e -> DataFlowModelProperty.Value.Push.equals(e.get(ExecutionProperty.Key.DataFlowModel)))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "SideInput edge is not compatible with push" + e.getId());
         }));
     // DataSizeMetricCollection is not compatible with Push (All data have to be stored before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getClassProperty(ExecutionProperty.Key.MetricCollection)
-            .equals(DataSkewDynamicOptimizationPass.class))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
+        .filter(e -> DataSkewDynamicOptimizationPass.class
+            .equals(e.getClassProperty(ExecutionProperty.Key.MetricCollection)))
+        .filter(e -> DataFlowModelProperty.Value.Push.equals(e.get(ExecutionProperty.Key.DataFlowModel)))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "DataSizeMetricCollection edge is not compatible with push" + e.getId());
@@ -269,8 +269,8 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // IFileWrite is not compatible with Push (All I-Files have to be constructed before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> e.get(ExecutionProperty.Key.WriteOptimization) != null
-            && e.get(ExecutionProperty.Key.WriteOptimization).equals(WriteOptimizationProperty.IFILE_WRITE))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
+            && WriteOptimizationProperty.IFILE_WRITE.equals(e.get(ExecutionProperty.Key.WriteOptimization)))
+        .filter(e -> DataFlowModelProperty.Value.Push.equals(e.get(ExecutionProperty.Key.DataFlowModel)))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "DataSizeMetricCollection edge is not compatible with push" + e.getId());

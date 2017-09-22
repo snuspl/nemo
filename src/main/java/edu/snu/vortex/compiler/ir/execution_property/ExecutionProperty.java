@@ -60,7 +60,7 @@ public abstract class ExecutionProperty<T> implements Serializable {
     MetricCollection,
     IsSideInput, // TODO #508: re-investigate sideInputs.
     Partitioning, // TODO #493: modularizing runtime components for partitioning.
-    WriteOptimization, // TODO #492: to be removed with this issue.
+    WriteOptimization, // TODO #492: to be removed.
 
     // Applies to IRVertex
     DynamicOptimizationType,

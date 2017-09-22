@@ -72,7 +72,7 @@ public final class DefaultStagePartitioningPass implements StaticOptimizationPas
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne)) // One to one edges
             // Memory data placement
-            .filter(edge -> edge.getClassProperty(ExecutionProperty.Key.DataStore).equals(MemoryStore.class))
+            .filter(edge -> MemoryStore.class.equals(edge.getClassProperty(ExecutionProperty.Key.DataStore)))
             //Src and Dst same placement
             .filter(edge -> edge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
                 .equals(edge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)))

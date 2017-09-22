@@ -35,7 +35,7 @@ public final class IFilePass implements StaticOptimizationPass {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
         if (edge.getType().equals(IREdge.Type.ScatterGather)
-            && edge.getClassProperty(ExecutionProperty.Key.DataStore).equals(GlusterFileStore.class)) {
+            && GlusterFileStore.class.equals(edge.getClassProperty(ExecutionProperty.Key.DataStore))) {
           edge.setProperty(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
         }
       });

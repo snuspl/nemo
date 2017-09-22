@@ -84,8 +84,8 @@ public final class OutputWriter extends DataTransfer {
    * @param dataToWrite An iterable for the elements to be written.
    */
   public void write(final Iterable<Element> dataToWrite) {
-    final Boolean isDataSizeMetricCollectionEdge = runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection)
-        .equals(DataSkewDynamicOptimizationPass.class);
+    final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
+        .equals(runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);

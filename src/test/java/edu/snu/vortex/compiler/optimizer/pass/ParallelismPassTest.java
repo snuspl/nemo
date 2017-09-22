@@ -47,6 +47,6 @@ public class ParallelismPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new ParallelismPass().apply(compiledDAG);
 
     processedDAG.getTopologicalSort().forEach(irVertex ->
-        assertEquals(1, (long) irVertex.get(ExecutionProperty.Key.Parallelism)));
+        assertEquals(1, (long)(Integer) irVertex.get(ExecutionProperty.Key.Parallelism)));
   }
 }

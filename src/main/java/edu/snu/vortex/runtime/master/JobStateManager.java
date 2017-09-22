@@ -155,8 +155,8 @@ public final class JobStateManager {
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final Class<? extends DataCommunicationPattern> commPattern =
             physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
-        final Boolean isDataSizeMetricCollectionEdge = physicalStageEdge
-            .getClassProperty(ExecutionProperty.Key.MetricCollection).equals(DataSkewDynamicOptimizationPass.class);
+        final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
+            .equals(physicalStageEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
         final String writeOptAtt = (String) physicalStageEdge.get(ExecutionProperty.Key.WriteOptimization);
         final Boolean isIFileWriteEdge =
             writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);

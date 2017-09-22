@@ -51,16 +51,14 @@ public class IFilePassTest {
     final DAG<IRVertex, IREdge> processedDAG = new IFilePass().apply(disaggProcessedDAG);
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)
-            .equals(ScatterGather.class))
-        .filter(e -> e.getClassProperty(ExecutionProperty.Key.DataStore).equals(GlusterFileStore.class))
+        .filter(e -> ScatterGather.class.equals(e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)))
+        .filter(e -> GlusterFileStore.class.equals(e.getClassProperty(ExecutionProperty.Key.DataStore)))
         .forEach(e -> assertTrue(e.get(ExecutionProperty.Key.WriteOptimization) != null
-            && e.get(ExecutionProperty.Key.WriteOptimization).equals(WriteOptimizationProperty.IFILE_WRITE))));
+            && WriteOptimizationProperty.IFILE_WRITE.equals(e.get(ExecutionProperty.Key.WriteOptimization)))));
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> !e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)
-            .equals(ScatterGather.class))
-        .filter(e -> e.getClassProperty(ExecutionProperty.Key.DataStore).equals(GlusterFileStore.class))
+        .filter(e -> !ScatterGather.class.equals(e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)))
+        .filter(e -> GlusterFileStore.class.equals(e.getClassProperty(ExecutionProperty.Key.DataStore)))
         .forEach(e -> assertTrue(e.get(ExecutionProperty.Key.WriteOptimization) == null)));
   }
 }

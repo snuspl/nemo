@@ -80,8 +80,8 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
-    final Boolean isDataSizeMetricCollectionEdge = runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection)
-        .equals(DataSkewDynamicOptimizationPass.class);
+    final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
+        .equals(runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
