@@ -178,14 +178,14 @@ public final class JobStateManager {
             IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
               final String partitionId =
                   RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx);
-              partitionManagerMaster.initializeState(
-                  partitionId, srcTaskIdx, taskGroupsForStage.get(srcTaskIdx).getTaskGroupId());
+              partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                  Collections.singleton(taskGroupsForStage.get(srcTaskIdx).getTaskGroupId()));
             }));
         } else {
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             final String partitionId = RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx);
-            partitionManagerMaster.initializeState(partitionId, srcTaskIdx,
-                taskGroupsForStage.get(srcTaskIdx).getTaskGroupId());
+            partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                Collections.singleton(taskGroupsForStage.get(srcTaskIdx).getTaskGroupId()));
           });
         }
       });
@@ -198,7 +198,8 @@ public final class JobStateManager {
           internalOutgoingEdges.forEach(taskRuntimeEdge -> {
             final int srcTaskIdx = taskGroup.getTaskGroupIdx();
             final String partitionId = RuntimeIdGenerator.generatePartitionId(taskRuntimeEdge.getId(), srcTaskIdx);
-            partitionManagerMaster.initializeState(partitionId, srcTaskIdx, taskGroup.getTaskGroupId());
+            partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                Collections.singleton(taskGroup.getTaskGroupId()));
           });
         });
       });

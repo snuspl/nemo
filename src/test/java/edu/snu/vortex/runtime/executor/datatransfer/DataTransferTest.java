@@ -262,11 +262,13 @@ public final class DataTransferTest {
       if (commPattern == Attribute.ScatterGather) {
         IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex, dstTaskIndex);
-          master.initializeState(partitionId, srcTaskIndex, taskGroupPrefix + srcTaskIndex);
+          master.initializeState(partitionId, Collections.singleton(srcTaskIndex),
+              Collections.singleton(taskGroupPrefix + srcTaskIndex));
         });
       } else {
         final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
-        master.initializeState(partitionId, srcTaskIndex, taskGroupPrefix + srcTaskIndex);
+        master.initializeState(partitionId, Collections.singleton(srcTaskIndex),
+            Collections.singleton(taskGroupPrefix + srcTaskIndex));
       }
       master.onProducerTaskGroupScheduled(taskGroupPrefix + srcTaskIndex);
     });

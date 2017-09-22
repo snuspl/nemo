@@ -49,9 +49,9 @@ public final class PartitionManagerMaster {
   private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
   // A lock that can be acquired exclusively or not.
   // Because the PartitionMetadata itself is sufficiently synchronized,
-  // operation that runs in a single partition can just acquire a sharable lock.
+  // operation that runs in a single partition can just acquire a (sharable) read lock.
   // On the other hand, operation that deals with multiple partitions or
-  // modifies global variables in this class have to acquire an exclusive lock.
+  // modifies global variables in this class have to acquire an (exclusive) write lock.
   private final ReadWriteLock lock;
 
   @Inject
@@ -62,21 +62,7 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Initializes the states of a partition that has single producer task.
-   *
-   * @param partitionId         the id of the partition to initialize.
-   * @param srcTaskIndex        the index of the source task.
-   * @param producerTaskGroupId the id of the producer task group.
-   */
-  @VisibleForTesting
-  public void initializeState(final String partitionId,
-                              final int srcTaskIndex,
-                              final String producerTaskGroupId) {
-    this.initializeState(partitionId, Collections.singleton(srcTaskIndex), Collections.singleton(producerTaskGroupId));
-  }
-
-  /**
-   * Initializes the states of a partition that has multiple producer tasks.
+   * Initializes the states of a partition which will be produced by producer task(s).
    *
    * @param partitionId          the id of the partition to initialize.
    * @param producerTaskIndices  the indices of the producer tasks.
@@ -86,8 +72,8 @@ public final class PartitionManagerMaster {
   public void initializeState(final String partitionId,
                               final Set<Integer> producerTaskIndices,
                               final Set<String> producerTaskGroupIds) {
-    final Lock exclusiveLock = lock.writeLock();
-    exclusiveLock.lock();
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
     try {
       partitionIdToMetadata.put(partitionId, new PartitionMetadata(partitionId, producerTaskIndices));
       producerTaskGroupIds.forEach(producerTaskGroupId -> {
@@ -95,7 +81,7 @@ public final class PartitionManagerMaster {
         producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).add(partitionId);
       });
     } finally {
-      exclusiveLock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -109,8 +95,8 @@ public final class PartitionManagerMaster {
     final Set<String> taskGroupsToRecompute = new HashSet<>();
     LOG.warn("Worker {} is removed.", new Object[]{executorId});
 
-    final Lock exclusiveLock = lock.writeLock();
-    exclusiveLock.lock();
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
     try {
       // Set committed partition states to lost
       getCommittedPartitionsByWorker(executorId).forEach(partitionId -> {
@@ -122,7 +108,7 @@ public final class PartitionManagerMaster {
 
       return taskGroupsToRecompute;
     } finally {
-      exclusiveLock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -135,8 +121,8 @@ public final class PartitionManagerMaster {
    *         is not {@code SCHEDULED} or {@code COMMITTED}.
    */
   CompletableFuture<String> getPartitionLocationFuture(final String partitionId) {
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final PartitionState.State state =
           (PartitionState.State) getPartitionState(partitionId).getStateMachine().getCurrentState();
@@ -155,7 +141,7 @@ public final class PartitionManagerMaster {
           throw new UnsupportedOperationException(state.toString());
       }
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -167,8 +153,8 @@ public final class PartitionManagerMaster {
    */
   @VisibleForTesting
   public Set<String> getProducerTaskGroupIds(final String partitionId) {
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final Set<String> producerTaskGroupIds = new HashSet<>();
       for (Map.Entry<String, Set<String>> entry : producerTaskGroupIdToPartitionIds.entrySet()) {
@@ -179,7 +165,7 @@ public final class PartitionManagerMaster {
 
       return producerTaskGroupIds;
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -191,8 +177,8 @@ public final class PartitionManagerMaster {
    * @param scheduledTaskGroupId the ID of the scheduled task group.
    */
   public void onProducerTaskGroupScheduled(final String scheduledTaskGroupId) {
-    final Lock exclusiveLock = lock.writeLock();
-    exclusiveLock.lock();
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
     try {
       if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
         producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId -> {
@@ -203,7 +189,7 @@ public final class PartitionManagerMaster {
         });
       } // else this task group does not produce any partition
     } finally {
-      exclusiveLock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -214,8 +200,8 @@ public final class PartitionManagerMaster {
    * @param failedTaskGroupId the ID of the task group that failed.
    */
   public void onProducerTaskGroupFailed(final String failedTaskGroupId) {
-    final Lock exclusiveLock = lock.writeLock();
-    exclusiveLock.lock();
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
     try {
       if (producerTaskGroupIdToPartitionIds.containsKey(failedTaskGroupId)) {
         producerTaskGroupIdToPartitionIds.get(failedTaskGroupId).forEach(partitionId -> {
@@ -229,7 +215,7 @@ public final class PartitionManagerMaster {
         });
       } // else this task group does not produce any partition
     } finally {
-      exclusiveLock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -241,8 +227,8 @@ public final class PartitionManagerMaster {
    */
   @VisibleForTesting
   Set<String> getCommittedPartitionsByWorker(final String executorId) {
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final Set<String> partitionIds = new HashSet<>();
       partitionIdToMetadata.values().forEach(partitionMetadata -> {
@@ -253,7 +239,7 @@ public final class PartitionManagerMaster {
       });
       return partitionIds;
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -264,12 +250,12 @@ public final class PartitionManagerMaster {
    */
   @VisibleForTesting
   PartitionState getPartitionState(final String partitionId) {
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       return partitionIdToMetadata.get(partitionId).getPartitionState();
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -287,12 +273,12 @@ public final class PartitionManagerMaster {
                                       final PartitionState.State newState,
                                       @Nullable final String location,
                                       @Nullable final Integer producerTaskIdx) {
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       partitionIdToMetadata.get(partitionId).onStateChanged(newState, location, producerTaskIdx);
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -307,8 +293,8 @@ public final class PartitionManagerMaster {
     assert (message.getType() == ControlMessage.MessageType.RequestPartitionLocation);
     final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
         message.getRequestPartitionLocationMsg();
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final CompletableFuture<String> locationFuture
           = getPartitionLocationFuture(requestPartitionLocationMsg.getPartitionId());
@@ -331,7 +317,7 @@ public final class PartitionManagerMaster {
                 .build());
       });
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -352,8 +338,8 @@ public final class PartitionManagerMaster {
         ControlMessage.ReserveBlockResponseMsg.newBuilder()
             .setRequestId(message.getId());
 
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
 
@@ -372,7 +358,7 @@ public final class PartitionManagerMaster {
               .setReserveBlockResponseMsg(responseBuilder.build())
               .build());
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -388,8 +374,8 @@ public final class PartitionManagerMaster {
     final String partitionId = commitMsg.getPartitionId();
     final List<Integer> blockIndices = commitMsg.getBlockIdxList();
 
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
       if (metadata != null) {
@@ -398,7 +384,7 @@ public final class PartitionManagerMaster {
         LOG.error("Metadata for {} already exists. It will be replaced.", partitionId);
       }
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -415,8 +401,8 @@ public final class PartitionManagerMaster {
     final ControlMessage.RequestBlockMetadataMsg requestMsg = message.getRequestBlockMetadataMsg();
     final String partitionId = requestMsg.getPartitionId();
 
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       // Check whether the partition is committed. The actual location is not important.
       final CompletableFuture<String> locationFuture = getPartitionLocationFuture(partitionId);
@@ -446,7 +432,7 @@ public final class PartitionManagerMaster {
                 .build());
       });
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -461,13 +447,13 @@ public final class PartitionManagerMaster {
     final ControlMessage.RemoveBlockMetadataMsg removeMsg = message.getRemoveBlockMetadataMsg();
     final String partitionId = removeMsg.getPartitionId();
 
-    final Lock sharableLock = lock.readLock();
-    sharableLock.lock();
+    final Lock readLock = lock.readLock();
+    readLock.lock();
     try {
       final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
       metadata.removeBlockMetadata();
     } finally {
-      sharableLock.unlock();
+      readLock.unlock();
     }
   }
 }

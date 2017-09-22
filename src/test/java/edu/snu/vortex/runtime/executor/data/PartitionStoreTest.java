@@ -124,7 +124,8 @@ public final class PartitionStoreTest {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(
               RuntimeIdGenerator.generateRuntimeEdgeId(String.valueOf(currentNum)), writeTaskCount, readTaskCount);
           partitionIdList.add(partitionId);
-          partitionManagerMaster.initializeState(partitionId, writeTaskCount, "Unused");
+          partitionManagerMaster.initializeState(partitionId, Collections.singleton(writeTaskCount),
+              Collections.singleton("Unused"));
           partitionManagerMaster.onPartitionStateChanged(
               partitionId, PartitionState.State.SCHEDULED, null, null);
           partitionBlockList.add(new Block(getRangedNumList(currentNum * DATA_SIZE, (currentNum + 1) * DATA_SIZE)));
@@ -137,7 +138,8 @@ public final class PartitionStoreTest {
     // Generates the ids and the data to be used.
     concPartitionId = RuntimeIdGenerator.generatePartitionId(
         RuntimeIdGenerator.generateRuntimeEdgeId("concurrent read"), NUM_WRITE_TASKS + NUM_READ_TASKS + 1);
-    partitionManagerMaster.initializeState(concPartitionId, 0, "Unused");
+    partitionManagerMaster.initializeState(concPartitionId, Collections.singleton(0),
+        Collections.singleton("Unused"));
     partitionManagerMaster.onPartitionStateChanged(
         concPartitionId, PartitionState.State.SCHEDULED, null, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
@@ -165,7 +167,8 @@ public final class PartitionStoreTest {
           RuntimeIdGenerator.generateRuntimeEdgeId("scatter gather in range"),
           NUM_WRITE_TASKS + NUM_READ_TASKS + 1 + writeTaskCount);
       hashedPartitionIdList.add(partitionId);
-      partitionManagerMaster.initializeState(partitionId, writeTaskCount, "Unused");
+      partitionManagerMaster.initializeState(partitionId, Collections.singleton(writeTaskCount),
+          Collections.singleton("Unused"));
       partitionManagerMaster.onPartitionStateChanged(
           partitionId, PartitionState.State.SCHEDULED, null, null);
       final List<Block> hashedPartition = new ArrayList<>(HASH_RANGE);
@@ -206,7 +209,8 @@ public final class PartitionStoreTest {
     // Following part is for the concurrent write test
     concWriteBlocks = getRangedNumList(0, CONC_WRITE_DATA_IN_BLOCK);
     concWritePartitionId = RuntimeIdGenerator.generatePartitionId("Concurrent write test edge", 0);
-    partitionManagerMaster.initializeState(concWritePartitionId, NUM_CONC_WRITE_TASKS, "Unused");
+    partitionManagerMaster.initializeState(concWritePartitionId, Collections.singleton(NUM_CONC_WRITE_TASKS),
+        Collections.singleton("Unused"));
     partitionManagerMaster.onPartitionStateChanged(
         concWritePartitionId, PartitionState.State.SCHEDULED, null, null);
   }

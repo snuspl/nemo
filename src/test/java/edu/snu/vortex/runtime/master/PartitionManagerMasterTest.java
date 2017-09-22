@@ -23,6 +23,7 @@ import org.apache.reef.tang.Tang;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -83,7 +84,8 @@ public final class PartitionManagerMasterTest {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
 
     // Initially the partition state is READY.
-    partitionManagerMaster.initializeState(partitionId, srcTaskIndex, taskGroupId);
+    partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIndex),
+        Collections.singleton(taskGroupId));
     checkPartitionAbsentException(partitionManagerMaster.getPartitionLocationFuture(partitionId), partitionId,
         PartitionState.State.READY);
 
@@ -116,7 +118,8 @@ public final class PartitionManagerMasterTest {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
 
     // The partition is being scheduled.
-    partitionManagerMaster.initializeState(partitionId, srcTaskIndex, taskGroupId);
+    partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIndex),
+        Collections.singleton(taskGroupId));
     partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
     final CompletableFuture<String> future0 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
     checkPendingFuture(future0);

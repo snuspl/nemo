@@ -45,8 +45,8 @@ final class PartitionMetadata {
 
   // Block level metadata. These information will be managed only for remote partitions.
   private volatile List<BlockMetadataInServer> blockMetadataList;
-  private volatile long position; // How many bytes are (at least, logically) written in the file.
-  private volatile int publishCursor; // Cursor dividing the published blocks and un-published blocks.
+  private volatile long writtenBytesCursor; // How many bytes are (at least, logically) written in the file.
+  private volatile int publishedBlockCursor; // Cursor dividing the published blocks and un-published blocks.
 
   /**
    * Constructs the metadata for a partition.
@@ -64,8 +64,8 @@ final class PartitionMetadata {
     this.remainingProducerTaskIndices = new HashSet<>(producerTaskIndices);
     // Initialize block level metadata.
     this.blockMetadataList = new ArrayList<>();
-    this.position = 0;
-    this.publishCursor = 0;
+    this.writtenBytesCursor = 0;
+    this.publishedBlockCursor = 0;
   }
 
   /**
@@ -149,7 +149,7 @@ final class PartitionMetadata {
    */
   synchronized Pair<Integer, Long> reserveBlock(final ControlMessage.BlockMetadataMsg blockMetadata) {
     final int blockSize = blockMetadata.getBlockSize();
-    final long currentPosition = position;
+    final long currentPosition = writtenBytesCursor;
     final int blockIdx = blockMetadataList.size();
     final ControlMessage.BlockMetadataMsg blockMetadataToStore =
         ControlMessage.BlockMetadataMsg.newBuilder()
@@ -159,7 +159,7 @@ final class PartitionMetadata {
             .setNumElements(blockMetadata.getNumElements())
             .build();
 
-    position += blockSize;
+    writtenBytesCursor += blockSize;
     blockMetadataList.add(new BlockMetadataInServer(blockMetadataToStore));
     return Pair.of(blockIdx, currentPosition);
   }
@@ -173,10 +173,11 @@ final class PartitionMetadata {
     // Mark the blocks committed.
     blockIndicesToCommit.forEach(idx -> blockMetadataList.get(idx).setCommitted());
 
-    while (publishCursor < blockMetadataList.size() && blockMetadataList.get(publishCursor).isCommitted()) {
+    while (publishedBlockCursor < blockMetadataList.size()
+        && blockMetadataList.get(publishedBlockCursor).isCommitted()) {
       // If the first block in the un-published section is committed, publish it.
       // TODO #463: Support incremental read. Send the newly committed blocks to subscribers.
-      publishCursor++;
+      publishedBlockCursor++;
     }
   }
 
@@ -185,8 +186,8 @@ final class PartitionMetadata {
    */
   synchronized void removeBlockMetadata() {
     this.blockMetadataList = new ArrayList<>();
-    this.position = 0;
-    this.publishCursor = 0;
+    this.writtenBytesCursor = 0;
+    this.publishedBlockCursor = 0;
   }
 
   /**
@@ -196,7 +197,7 @@ final class PartitionMetadata {
    */
   synchronized List<BlockMetadataInServer> getBlockMetadataList() {
     // TODO #463: Support incremental read. Add the requester to the subscriber list.
-    return Collections.unmodifiableList(blockMetadataList.subList(0, publishCursor));
+    return Collections.unmodifiableList(blockMetadataList.subList(0, publishedBlockCursor));
   }
 
   /**

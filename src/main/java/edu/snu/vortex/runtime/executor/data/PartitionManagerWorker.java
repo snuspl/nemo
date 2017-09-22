@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 @ThreadSafe
 public final class PartitionManagerWorker {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerWorker.class.getName());
-  private static final String REMOTE_FILE_LOCATION = "REMOTE_FILE_STORE";
+  private static final String REMOTE_FILE_STORE = "REMOTE_FILE_STORE";
 
   private final String executorId;
 
@@ -228,7 +228,7 @@ public final class PartitionManagerWorker {
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
     if (partitionStore == Attribute.RemoteFile) {
-      partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_LOCATION);
+      partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
     } else {
       partitionStateChangedMsgBuilder.setLocation(executorId);
     }
@@ -272,7 +272,7 @@ public final class PartitionManagerWorker {
               .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
 
       if (partitionStore == Attribute.RemoteFile) {
-        partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_LOCATION);
+        partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
       } else {
         partitionStateChangedMsgBuilder.setLocation(executorId);
       }
