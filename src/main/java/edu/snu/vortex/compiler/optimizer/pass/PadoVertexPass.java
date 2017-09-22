@@ -61,7 +61,7 @@ public final class PadoVertexPass implements StaticOptimizationPass {
   private boolean allFromReserved(final List<IREdge> irEdges) {
     return irEdges.stream()
         .allMatch(edge ->
-            edge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+            edge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
                 .equals(ExecutorPlacement.RESERVED));
   }
 }

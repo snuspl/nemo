@@ -51,7 +51,7 @@ public class DisaggregationPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().apply(compiledDAG);
 
     processedDAG.getTopologicalSort().forEach(irVertex -> {
-      assertEquals(ExecutorPlacement.COMPUTE, irVertex.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
+      assertEquals(ExecutorPlacement.COMPUTE, irVertex.get(ExecutionProperty.Key.ExecutorPlacement));
       processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge ->
           assertEquals(DataFlowModelProperty.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel)));
     });

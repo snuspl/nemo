@@ -74,8 +74,8 @@ public final class DefaultStagePartitioningPass implements StaticOptimizationPas
             // Memory data placement
             .filter(edge -> edge.getClassProperty(ExecutionProperty.Key.DataStore).equals(MemoryStore.class))
             //Src and Dst same placement
-            .filter(edge -> edge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
-                .equals(edge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)))
+            .filter(edge -> edge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
+                .equals(edge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)))
             // Src that is already included in a stage
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             // Others don't depend on the candidate stage.

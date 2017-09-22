@@ -64,9 +64,9 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    * @return whether or not the edge satisfies the condition.
    */
   private static boolean fromTransientToReserved(final IREdge irEdge) {
-    return irEdge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+    return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.TRANSIENT)
-        && irEdge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+        && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.RESERVED);
   }
 
@@ -76,9 +76,9 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    * @return whether or not the edge satisfies the condition.
    */
   private static boolean fromReservedToTransient(final IREdge irEdge) {
-    return irEdge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+    return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.RESERVED)
-        && irEdge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+        && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.TRANSIENT);
   }
 }
