@@ -18,6 +18,12 @@ package edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern;
 /**
  * TODO #492: Implement Runtime classes for each DataCommunicationPatternProperty.
  */
-public class OneToOne implements DataCommunicationPattern {
+public final class OneToOne implements DataCommunicationPattern {
   public static final String SIMPLE_NAME = "OneToOne";
+
+  /**
+   * TODO #492: Implement Runtime classes for each DataCommunicationPatternProperty.
+   */
+  private OneToOne() {
+  }
 }

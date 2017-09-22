@@ -21,7 +21,8 @@ import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.D
 /**
  * DataCommunicationPattern ExecutionProperty.
  */
-public final class DataCommunicationPatternProperty extends ExecutionProperty<Class<? extends DataCommunicationPattern>> {
+public final class DataCommunicationPatternProperty
+    extends ExecutionProperty<Class<? extends DataCommunicationPattern>> {
   private DataCommunicationPatternProperty(final Class<? extends DataCommunicationPattern> value) {
     super(Key.DataCommunicationPattern, value);
   }

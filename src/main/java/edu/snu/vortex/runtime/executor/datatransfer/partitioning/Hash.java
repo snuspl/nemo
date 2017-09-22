@@ -18,6 +18,12 @@ package edu.snu.vortex.runtime.executor.datatransfer.partitioning;
 /**
  * TODO #493: Implement Runtime classes for each Partitioning methods.
  */
-public class Hash implements Partitioning {
+public final class Hash implements Partitioning {
   public static final String SIMPLE_NAME = "Hash";
+
+  /**
+   * TODO #493: Implement Runtime classes for each Partitioning methods.
+   */
+  private Hash() {
+  }
 }

@@ -18,6 +18,12 @@ package edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern;
 /**
  * TODO #492: Implement Runtime classes for each DataCommunicationPatternProperty.
  */
-public class ScatterGather implements DataCommunicationPattern {
+public final class ScatterGather implements DataCommunicationPattern {
   public static final String SIMPLE_NAME = "ScatterGather";
+
+  /**
+   * TODO #492: Implement Runtime classes for each DataCommunicationPatternProperty.
+   */
+  private ScatterGather() {
+  }
 }

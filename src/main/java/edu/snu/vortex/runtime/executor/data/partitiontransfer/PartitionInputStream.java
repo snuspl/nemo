@@ -50,7 +50,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
 
   private final String senderExecutorId;
   private final boolean encodePartialPartition;
-  private final Optional<String> partitionStore;
+  private final Optional<Class<? extends PartitionStore>> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
@@ -82,7 +82,7 @@ public final class PartitionInputStream<T> implements Iterable<Element<T, ?, ?>>
    */
   PartitionInputStream(final String senderExecutorId,
                        final boolean encodePartialPartition,
-                       final Optional<String> partitionStore,
+                       final Optional<Class<? extends PartitionStore>> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {

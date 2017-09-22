@@ -18,6 +18,12 @@ package edu.snu.vortex.runtime.executor.datatransfer.partitioning;
 /**
  * TODO #493: Implement Runtime classes for each Partitioning methods.
  */
-public class Range implements Partitioning {
+public final class Range implements Partitioning {
   public static final String SIMPLE_NAME = "Range";
+
+  /**
+   * TODO #493: Implement Runtime classes for each Partitioning methods.
+   */
+  private Range() {
+  }
 }
