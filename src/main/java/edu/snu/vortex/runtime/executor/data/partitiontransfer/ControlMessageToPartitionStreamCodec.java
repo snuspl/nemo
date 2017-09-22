@@ -15,10 +15,9 @@
  */
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionStoreException;
-import edu.snu.vortex.runtime.executor.data.HashRange;
+import edu.snu.vortex.runtime.executor.data.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -29,10 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.LOCAL_FILE;
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.MEMORY;
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.REMOTE_FILE;
 
 /**
  * Responses to control message by emitting a new {@link PartitionStream},
@@ -305,27 +300,29 @@ final class ControlMessageToPartitionStreamCodec
     return pushTransferIdToOutputStream;
   }
 
-  private static ControlMessage.PartitionStore convertPartitionStore(final String partitionStore) {
-    switch (partitionStore) {
-      case MEMORY:
+  private static ControlMessage.PartitionStore convertPartitionStore(
+      final Class<? extends PartitionStore> partitionStore) {
+    switch (partitionStore.getSimpleName()) {
+      case MemoryStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.MEMORY;
-      case LOCAL_FILE:
+      case LocalFileStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.LOCAL_FILE;
-      case REMOTE_FILE:
+      case GlusterFileStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
     }
   }
 
-  private static String convertPartitionStore(final ControlMessage.PartitionStore partitionStoreType) {
+  private static Class<? extends PartitionStore> convertPartitionStore(
+      final ControlMessage.PartitionStore partitionStoreType) {
     switch (partitionStoreType) {
       case MEMORY:
-        return MEMORY;
+        return MemoryStore.class;
       case LOCAL_FILE:
-        return LOCAL_FILE;
+        return LocalFileStore.class;
       case REMOTE_FILE:
-        return DataStore.REMOTE_FILE;
+        return GlusterFileStore.class;
       default:
         throw new UnsupportedPartitionStoreException(new Exception("This partition store is not yet supported"));
     }

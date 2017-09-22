@@ -83,7 +83,7 @@ public final class Optimizer {
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final String dynamicOptimizationType =
-        metricCollectionBarrierVertex.getStringProperty(ExecutionProperty.Key.DynamicOptimizationType);
+        metricCollectionBarrierVertex.getClassProperty(ExecutionProperty.Key.DynamicOptimizationType);
 
     switch (dynamicOptimizationType) {
       case DynamicOptimizationType.DATA_SKEW:

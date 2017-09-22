@@ -87,8 +87,8 @@ public final class IREdge extends Edge<IRVertex> {
   public Object get(final ExecutionProperty.Key executionFactorKey) {
     return executionProperties.get(executionFactorKey);
   }
-  public String getStringProperty(final ExecutionProperty.Key executionFactorKey) {
-    return executionProperties.getStringProperty(executionFactorKey);
+  public Class getClassProperty(final ExecutionProperty.Key executionFactorKey) {
+    return executionProperties.getClassProperty(executionFactorKey);
   }
   public Integer getIntegerProperty(final ExecutionProperty.Key executionFactorKey) {
     return executionProperties.getIntegerProperty(executionFactorKey);

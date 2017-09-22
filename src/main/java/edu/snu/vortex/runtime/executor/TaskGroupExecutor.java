@@ -215,7 +215,7 @@ public final class TaskGroupExecutor {
         .forEach(edge -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edge.getId(), edge.getSrc().getIndex());
           partitionManagerWorker
-              .removePartition(partitionId, edge.getStringProperty(ExecutionProperty.Key.DataStore));
+              .removePartition(partitionId, edge.getClassProperty(ExecutionProperty.Key.DataStore));
         });
   }
 

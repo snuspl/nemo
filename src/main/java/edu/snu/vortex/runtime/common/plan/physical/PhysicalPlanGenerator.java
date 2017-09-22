@@ -180,7 +180,7 @@ public final class PhysicalPlanGenerator
 
       final ExecutionPropertyMap firstVertexProperties = stageVertices.iterator().next().getExecutionProperties();
       final Integer stageParallelism = firstVertexProperties.getIntegerProperty(ExecutionProperty.Key.Parallelism);
-      final String containerType = firstVertexProperties.getStringProperty(ExecutionProperty.Key.ExecutorPlacement);
+      final String containerType = firstVertexProperties.getClassProperty(ExecutionProperty.Key.ExecutorPlacement);
 
       // Begin building a new stage in the physical plan.
       physicalStageBuilder = new PhysicalStageBuilder(stage.getId(), stageParallelism, stage.getScheduleGroupIndex());

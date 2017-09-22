@@ -71,7 +71,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.channelDataPlacement = runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore);
+    this.channelDataPlacement = runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore);
   }
 
   /**
@@ -82,7 +82,7 @@ public final class OutputWriter extends DataTransfer {
   public void write(final Iterable<Element> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge =
         Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-    final String writeOptAtt = runtimeEdge.getStringProperty(ExecutionProperty.Key.WriteOptimization);
+    final String writeOptAtt = runtimeEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     if (writeOptAtt != null && !writeOptAtt.equals(WriteOptimization.IFILE_WRITE)) {
@@ -91,7 +91,7 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch (runtimeEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
+      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
         case DataCommunicationPattern.ONE_TO_ONE:
           writeOneToOne(dataToWrite);
           break;
@@ -135,7 +135,7 @@ public final class OutputWriter extends DataTransfer {
   }
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final String partition = runtimeEdge.getStringProperty(ExecutionProperty.Key.Partitioning);
+    final String partition = runtimeEdge.getClassProperty(ExecutionProperty.Key.Partitioning);
     switch (partition) {
       case HASH:
         final int dstParallelism = dstVertex.getIntegerProperty(ExecutionProperty.Key.Parallelism);

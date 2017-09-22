@@ -16,6 +16,7 @@
 package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.runtime.executor.data.HashRange;
+import edu.snu.vortex.runtime.executor.data.PartitionStore;
 
 import java.util.Optional;
 
@@ -44,7 +45,7 @@ public interface PartitionStream {
    * @return an {@link Optional} with partition store type if this stream belongs to a pull-based transfer,
    *         an empty {@link Optional} otherwise.
    */
-  Optional<String> getPartitionStore();
+  Optional<Class<? extends PartitionStore>> getPartitionStore();
 
   /**
    * Gets the partition id.

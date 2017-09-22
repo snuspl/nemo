@@ -55,8 +55,8 @@ public class RuntimeEdge<V extends Vertex> extends Edge<V> {
   public final Object get(final ExecutionProperty.Key executionFactorKey) {
     return edgeProperties.get(executionFactorKey);
   }
-  public final String getStringProperty(final ExecutionProperty.Key executionFactorTYpe) {
-    return edgeProperties.getStringProperty(executionFactorTYpe);
+  public final Class getClassProperty(final ExecutionProperty.Key executionFactorTYpe) {
+    return edgeProperties.getClassProperty(executionFactorTYpe);
   }
   public final Integer getIntegerProperty(final ExecutionProperty.Key executionFactorKey) {
     return edgeProperties.getIntegerProperty(executionFactorKey);

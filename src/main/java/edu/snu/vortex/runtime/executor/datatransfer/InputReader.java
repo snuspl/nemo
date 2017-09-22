@@ -79,11 +79,11 @@ public final class InputReader extends DataTransfer {
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge =
         Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-    final String writeOptAtt = runtimeEdge.getStringProperty(ExecutionProperty.Key.WriteOptimization);
+    final String writeOptAtt = runtimeEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     try {
-      switch (runtimeEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
+      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
         case DataCommunicationPattern.ONE_TO_ONE:
           return Collections.singletonList(readOneToOne());
         case DataCommunicationPattern.BROADCAST:
@@ -109,7 +109,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all());
+        runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
@@ -120,7 +120,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
+          runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -134,7 +134,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
+          runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -161,7 +161,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
-              partitionId, getId(), runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore),
+              partitionId, getId(), runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }
 
@@ -176,7 +176,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readIFile() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getStringProperty(ExecutionProperty.Key.DataStore), HashRange.all());
+        runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   public RuntimeEdge getRuntimeEdge() {

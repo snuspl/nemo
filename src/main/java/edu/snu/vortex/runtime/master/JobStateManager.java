@@ -152,10 +152,10 @@ public final class JobStateManager {
       // Initialize states for partitions of inter-stage edges
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final String commPattern =
-            physicalStageEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern);
+            physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
         final Boolean isDataSizeMetricCollectionEdge =
             Boolean.TRUE.equals(physicalStageEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-        final String writeOptAtt = physicalStageEdge.getStringProperty(ExecutionProperty.Key.WriteOptimization);
+        final String writeOptAtt = physicalStageEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
         final Boolean isIFileWriteEdge =
             writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
 

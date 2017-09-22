@@ -16,21 +16,17 @@
 package edu.snu.vortex.compiler.ir.execution_property.edge;
 
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.runtime.executor.data.PartitionStore;
 
 /**
  * DataStore ExecutionProperty.
  */
-public final class DataStore extends ExecutionProperty<String> {
-  private DataStore(final String value) {
+public final class DataStore extends ExecutionProperty<Class<? extends PartitionStore>> {
+  private DataStore(final Class<? extends PartitionStore> value) {
     super(Key.DataStore, value);
   }
 
-  public static DataStore of(final String value) {
+  public static DataStore of(final Class<? extends PartitionStore> value) {
     return new DataStore(value);
   }
-
-  // List of default pre-configured values. TODO #479: Remove static values.
-  public static final String MEMORY = "Memory";
-  public static final String LOCAL_FILE = "LocalFile";
-  public static final String REMOTE_FILE = "RemoteFile";
 }

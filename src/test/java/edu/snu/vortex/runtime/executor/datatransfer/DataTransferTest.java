@@ -37,7 +37,7 @@ import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
-import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.*;
 import edu.snu.vortex.runtime.common.metric.PeriodicMetricSender;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
@@ -93,9 +93,9 @@ public final class DataTransferTest {
   private static final int EXECUTOR_CAPACITY = 1;
   private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private static final int SCHEDULE_TIMEOUT = 1000;
-  private static final String MEMORY_STORE = DataStore.MEMORY;
-  private static final String LOCAL_FILE_STORE = DataStore.LOCAL_FILE;
-  private static final String REMOTE_FILE_STORE = DataStore.REMOTE_FILE;
+  private static final Class<? extends PartitionStore> MEMORY_STORE = MemoryStore.class;
+  private static final Class<? extends PartitionStore> LOCAL_FILE_STORE = LocalFileStore.class;
+  private static final Class<? extends PartitionStore> REMOTE_FILE_STORE = GlusterFileStore.class;
   private static final String TMP_LOCAL_FILE_DIRECTORY = "./tmpLocalFiles";
   private static final String TMP_REMOTE_FILE_DIRECTORY = "./tmpRemoteFiles";
   private static final int PARALLELISM_TEN = 10;
@@ -246,7 +246,7 @@ public final class DataTransferTest {
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
                             final String commPattern,
-                            final String store) throws RuntimeException {
+                            final Class<? extends PartitionStore> store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
     final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);
@@ -319,7 +319,7 @@ public final class DataTransferTest {
    */
   private void iFileWriteAndRead(final PartitionManagerWorker sender,
                                  final PartitionManagerWorker receiver,
-                                 final String store) throws RuntimeException {
+                                 final Class<? extends PartitionStore> store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
     final String taskGroupPrefix = String.format(TASKGROUP_PREFIX_TEMPLATE, testIndex);

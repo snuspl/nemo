@@ -64,8 +64,8 @@ public abstract class IRVertex extends Vertex {
   public final Object get(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.get(executionPropertyKey);
   }
-  public final String getStringProperty(final ExecutionProperty.Key executionPropertyKey) {
-    return executionProperties.getStringProperty(executionPropertyKey);
+  public final Class getClassProperty(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.getClassProperty(executionPropertyKey);
   }
   public final Integer getIntegerProperty(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.getIntegerProperty(executionPropertyKey);

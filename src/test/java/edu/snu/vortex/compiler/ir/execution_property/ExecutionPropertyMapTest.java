@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,7 +51,7 @@ public class ExecutionPropertyMapTest {
 
   @Test
   public void testDefaultValues() {
-    assertEquals(Partitioning.HASH, edgeMap.getStringProperty(ExecutionProperty.Key.Partitioning));
+    assertEquals(Partitioning.HASH, edgeMap.getClassProperty(ExecutionProperty.Key.Partitioning));
     assertEquals(1, (long) vertexMap.getIntegerProperty(ExecutionProperty.Key.Parallelism));
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
@@ -58,10 +59,10 @@ public class ExecutionPropertyMapTest {
 
   @Test
   public void testPutGetAndRemove() {
-    edgeMap.put(DataStore.of(DataStore.MEMORY));
-    assertEquals(DataStore.MEMORY, edgeMap.getStringProperty(ExecutionProperty.Key.DataStore));
-    edgeMap.put(DataFlowModel.of(DataFlowModel.PULL));
-    assertEquals(DataFlowModel.PULL, edgeMap.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+    edgeMap.put(DataStore.of(MemoryStore.class));
+    assertEquals(MemoryStore.class, edgeMap.getClassProperty(ExecutionProperty.Key.DataStore));
+    edgeMap.put(DataFlowModel.of(DataFlowModel.Value.Pull));
+    assertEquals(DataFlowModel.Value.Pull, edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
     edgeMap.remove(ExecutionProperty.Key.DataFlowModel);
     assertNull(edgeMap.get(ExecutionProperty.Key.DataFlowModel));

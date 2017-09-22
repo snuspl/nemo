@@ -24,6 +24,8 @@ import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.runtime.executor.data.LocalFileStore;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,41 +52,41 @@ public class PadoPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new PadoEdgePass().apply(new PadoVertexPass().apply(compiledDAG));
 
     final IRVertex vertex1 = processedDAG.getTopologicalSort().get(0);
-    assertEquals(ExecutorPlacement.TRANSIENT, vertex1.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.TRANSIENT, vertex1.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
 
     final IRVertex vertex5 = processedDAG.getTopologicalSort().get(1);
-    assertEquals(ExecutorPlacement.TRANSIENT, vertex5.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.TRANSIENT, vertex5.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
     processedDAG.getIncomingEdgesOf(vertex5).forEach(irEdge -> {
-      assertEquals(DataStore.MEMORY, irEdge.getStringProperty(ExecutionProperty.Key.DataStore));
-      assertEquals(DataFlowModel.PULL, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+      assertEquals(MemoryStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore));
+      assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel));
     });
 
     final IRVertex vertex6 = processedDAG.getTopologicalSort().get(2);
-    assertEquals(ExecutorPlacement.RESERVED, vertex6.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.RESERVED, vertex6.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
     processedDAG.getIncomingEdgesOf(vertex6).forEach(irEdge -> {
-      assertEquals(DataStore.LOCAL_FILE, irEdge.getStringProperty(ExecutionProperty.Key.DataStore));
-      assertEquals(DataFlowModel.PUSH, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+      assertEquals(LocalFileStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore));
+      assertEquals(DataFlowModel.Value.Push, irEdge.get(ExecutionProperty.Key.DataFlowModel));
     });
 
     final IRVertex vertex4 = processedDAG.getTopologicalSort().get(6);
-    assertEquals(ExecutorPlacement.RESERVED, vertex4.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.RESERVED, vertex4.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
     processedDAG.getIncomingEdgesOf(vertex4).forEach(irEdge -> {
-      assertEquals(DataStore.MEMORY, irEdge.getStringProperty(ExecutionProperty.Key.DataStore));
-      assertEquals(DataFlowModel.PULL, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+      assertEquals(MemoryStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore));
+      assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel));
     });
 
     final IRVertex vertex12 = processedDAG.getTopologicalSort().get(10);
-    assertEquals(ExecutorPlacement.RESERVED, vertex12.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.RESERVED, vertex12.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
     processedDAG.getIncomingEdgesOf(vertex12).forEach(irEdge -> {
-      assertEquals(DataStore.LOCAL_FILE, irEdge.getStringProperty(ExecutionProperty.Key.DataStore));
-      assertEquals(DataFlowModel.PULL, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+      assertEquals(LocalFileStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore));
+      assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel));
     });
 
     final IRVertex vertex13 = processedDAG.getTopologicalSort().get(11);
-    assertEquals(ExecutorPlacement.RESERVED, vertex13.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+    assertEquals(ExecutorPlacement.RESERVED, vertex13.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
     processedDAG.getIncomingEdgesOf(vertex13).forEach(irEdge -> {
-      assertEquals(DataStore.MEMORY, irEdge.getStringProperty(ExecutionProperty.Key.DataStore));
-      assertEquals(DataFlowModel.PULL, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel));
+      assertEquals(MemoryStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore));
+      assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel));
     });
   }
 }

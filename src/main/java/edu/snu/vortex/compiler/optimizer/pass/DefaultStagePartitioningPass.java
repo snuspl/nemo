@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.StageId;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,8 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataStore.MEMORY;
 
 /**
  * Default method of partitioning an IR DAG into stages.
@@ -73,10 +72,10 @@ public final class DefaultStagePartitioningPass implements StaticOptimizationPas
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne)) // One to one edges
             // Memory data placement
-            .filter(edge -> edge.getStringProperty(ExecutionProperty.Key.DataStore).equals(MEMORY))
+            .filter(edge -> edge.getClassProperty(ExecutionProperty.Key.DataStore).equals(MemoryStore.class))
             //Src and Dst same placement
-            .filter(edge -> edge.getSrc().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
-                .equals(edge.getDst().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)))
+            .filter(edge -> edge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
+                .equals(edge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)))
             // Src that is already included in a stage
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             // Others don't depend on the candidate stage.

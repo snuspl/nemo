@@ -21,6 +21,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.List;
 
@@ -39,11 +41,11 @@ public final class DisaggregationPass implements StaticOptimizationPass {
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (edge.getType().equals(IREdge.Type.OneToOne)) {
-            edge.setProperty(DataStore.of(DataStore.MEMORY));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.PULL));
+            edge.setProperty(DataStore.of(MemoryStore.class));
+            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
           } else {
-            edge.setProperty(DataStore.of(DataStore.REMOTE_FILE));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.PULL));
+            edge.setProperty(DataStore.of(GlusterFileStore.class));
+            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
           }
         });
       }

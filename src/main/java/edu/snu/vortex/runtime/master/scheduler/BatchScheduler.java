@@ -202,7 +202,7 @@ public final class BatchScheduler implements Scheduler {
           physicalPlan.getStageDAG().getOutgoingEdgesOf(stageIdForTaskGroupUponCompletion);
       boolean pushOutput = false;
       for (PhysicalStageEdge outputEdge : outputsOfThisStage) {
-        if (outputEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.PUSH)) {
+        if (outputEdge.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push)) {
           pushOutput = true;
           break;
         }

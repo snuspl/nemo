@@ -22,6 +22,8 @@ import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.runtime.executor.data.LocalFileStore;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.List;
 
@@ -36,18 +38,18 @@ public final class PadoEdgePass implements StaticOptimizationPass {
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            edge.setProperty(DataStore.of(DataStore.LOCAL_FILE));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.PUSH));
+            edge.setProperty(DataStore.of(LocalFileStore.class));
+            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Push));
           } else if (fromReservedToTransient(edge)) {
-            edge.setProperty(DataStore.of(DataStore.LOCAL_FILE));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.PULL));
+            edge.setProperty(DataStore.of(LocalFileStore.class));
+            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
           } else {
             if (edge.getType().equals(IREdge.Type.OneToOne)) {
-              edge.setProperty(DataStore.of(DataStore.MEMORY));
-              edge.setProperty(DataFlowModel.of(DataFlowModel.PULL));
+              edge.setProperty(DataStore.of(MemoryStore.class));
+              edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
             } else {
-              edge.setProperty(DataStore.of(DataStore.LOCAL_FILE));
-              edge.setProperty(DataFlowModel.of(DataFlowModel.PULL));
+              edge.setProperty(DataStore.of(LocalFileStore.class));
+              edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
             }
           }
         });
@@ -62,9 +64,9 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    * @return whether or not the edge satisfies the condition.
    */
   private static boolean fromTransientToReserved(final IREdge irEdge) {
-    return irEdge.getSrc().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
+    return irEdge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.TRANSIENT)
-        && irEdge.getDst().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
+        && irEdge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.RESERVED);
   }
 
@@ -74,9 +76,9 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    * @return whether or not the edge satisfies the condition.
    */
   private static boolean fromReservedToTransient(final IREdge irEdge) {
-    return irEdge.getSrc().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
+    return irEdge.getSrc().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.RESERVED)
-        && irEdge.getDst().getStringProperty(ExecutionProperty.Key.ExecutorPlacement)
+        && irEdge.getDst().getClassProperty(ExecutionProperty.Key.ExecutorPlacement)
         .equals(ExecutorPlacement.TRANSIENT);
   }
 }

@@ -22,8 +22,9 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,19 +51,19 @@ public class DisaggregationPassTest {
     final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().apply(compiledDAG);
 
     processedDAG.getTopologicalSort().forEach(irVertex -> {
-      assertEquals(ExecutorPlacement.COMPUTE, irVertex.getStringProperty(ExecutionProperty.Key.ExecutorPlacement));
+      assertEquals(ExecutorPlacement.COMPUTE, irVertex.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
       processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge ->
-          assertEquals(DataFlowModel.PULL, irEdge.getStringProperty(ExecutionProperty.Key.DataFlowModel)));
+          assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel)));
     });
 
     final IRVertex vertex4 = processedDAG.getTopologicalSort().get(6);
     processedDAG.getIncomingEdgesOf(vertex4).forEach(irEdge ->
-      assertEquals(DataStore.MEMORY, irEdge.getStringProperty(ExecutionProperty.Key.DataStore)));
+      assertEquals(MemoryStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore)));
     processedDAG.getOutgoingEdgesOf(vertex4).forEach(irEdge ->
-      assertEquals(DataStore.MEMORY, irEdge.getStringProperty(ExecutionProperty.Key.DataStore)));
+      assertEquals(MemoryStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore)));
 
     final IRVertex vertex12 = processedDAG.getTopologicalSort().get(10);
     processedDAG.getIncomingEdgesOf(vertex12).forEach(irEdge ->
-      assertEquals(DataStore.REMOTE_FILE, irEdge.getStringProperty(ExecutionProperty.Key.DataStore)));
+      assertEquals(GlusterFileStore.class, irEdge.getClassProperty(ExecutionProperty.Key.DataStore)));
   }
 }

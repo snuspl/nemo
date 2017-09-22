@@ -25,6 +25,8 @@ import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatte
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
 import edu.snu.vortex.compiler.ir.execution_property.edge.IsDataSizeMetricCollection;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationType;
+import edu.snu.vortex.runtime.executor.data.LocalFileStore;
+import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,9 +65,9 @@ public final class DataSkewPass implements StaticOptimizationPass {
           // we want it to be in the same stage
           newEdge.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
           if (edge.equals(edgeToUseMemory)) {
-            newEdge.setProperty(DataStore.of(DataStore.MEMORY));
+            newEdge.setProperty(DataStore.of(MemoryStore.class));
           } else {
-            newEdge.setProperty(DataStore.of(DataStore.LOCAL_FILE));
+            newEdge.setProperty(DataStore.of(LocalFileStore.class));
           }
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());

@@ -150,7 +150,7 @@ public final class RuntimeTestUtil {
         // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
           final String commPattern =
-              physicalStageEdge.getStringProperty(ExecutionProperty.Key.DataCommunicationPattern);
+              physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER)) {

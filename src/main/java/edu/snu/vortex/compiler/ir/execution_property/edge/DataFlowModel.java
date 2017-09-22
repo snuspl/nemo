@@ -20,16 +20,20 @@ import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 /**
  * DataFlowModel ExecutionProperty.
  */
-public final class DataFlowModel extends ExecutionProperty<String> {
-  private DataFlowModel(final String value) {
+public final class DataFlowModel extends ExecutionProperty<DataFlowModel.Value> {
+  private DataFlowModel(final Value value) {
     super(Key.DataFlowModel, value);
   }
 
-  public static  DataFlowModel of(final String value) {
+  public static  DataFlowModel of(final Value value) {
     return new DataFlowModel(value);
   }
 
-  // List of default pre-configured values. TODO #479: Remove static values.
-  public static final String PULL = "Pull";
-  public static final String PUSH = "Push";
+  /**
+   * Possible values of DataFlowModel ExecutionProperty.
+   */
+  public enum Value {
+    Pull,
+    Push,
+  }
 }

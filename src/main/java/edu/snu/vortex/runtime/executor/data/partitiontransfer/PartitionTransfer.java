@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.PartitionStore;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -102,7 +103,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    */
   public PartitionInputStream initiatePull(final String executorId,
                                            final boolean encodePartialPartition,
-                                           final String partitionStore,
+                                           final Class<? extends PartitionStore> partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
