@@ -19,7 +19,7 @@ import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
 import edu.snu.vortex.runtime.master.eventhandler.DynamicOptimizationEvent;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
@@ -202,7 +202,7 @@ public final class BatchScheduler implements Scheduler {
           physicalPlan.getStageDAG().getOutgoingEdgesOf(stageIdForTaskGroupUponCompletion);
       boolean pushOutput = false;
       for (PhysicalStageEdge outputEdge : outputsOfThisStage) {
-        if (outputEdge.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push)) {
+        if (outputEdge.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push)) {
           pushOutput = true;
           break;
         }

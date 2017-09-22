@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.executor.datatransfer;
+package edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern;
 
 /**
- * TODO #492: Implement Runtime classes for each DataCommunicationPattern.
+ * TODO #492: Implement Runtime classes for each DataCommunicationPatternProperty.
  */
-public class ScatterGather implements CommunicationPattern {
-  public static final String SIMPLE_NAME = "ScatterGather";
+public class OneToOne implements DataCommunicationPattern {
+  public static final String SIMPLE_NAME = "OneToOne";
 }

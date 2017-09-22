@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -27,6 +27,10 @@ import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -78,9 +82,9 @@ public final class InputReader extends DataTransfer {
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge =
         Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-    final Class<? extends CommunicationPattern> writeOptAtt = runtimeEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
+    final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
-        writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
+        writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
     try {
       switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:

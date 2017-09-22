@@ -20,7 +20,7 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ScheduleGroupIndex;
 
 import java.util.*;
@@ -91,7 +91,7 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     Lists.reverse(dag.getTopologicalSort()).forEach(v -> {
       // get the destination vertices of the edges that are marked as push
       final List<IRVertex> pushConnectedVertices = dag.getOutgoingEdgesOf(v).stream()
-          .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push))
+          .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
           .map(IREdge::getDst)
           .collect(Collectors.toList());
       if (!pushConnectedVertices.isEmpty()) { // if we need to do something,

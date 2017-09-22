@@ -25,10 +25,10 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
-import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.PartitioningProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
@@ -39,6 +39,11 @@ import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
 import edu.snu.vortex.runtime.executor.data.*;
 import edu.snu.vortex.runtime.common.metric.PeriodicMetricSender;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
@@ -242,7 +247,7 @@ public final class DataTransferTest {
 
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
-                            final Class<? extends CommunicationPattern> commPattern,
+                            final Class<? extends DataCommunicationPattern> commPattern,
                             final Class<? extends PartitionStore> store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
@@ -254,9 +259,9 @@ public final class DataTransferTest {
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.OneToOne, srcVertex, dstVertex, CODER);
     final ExecutionPropertyMap edgeProperties = dummyIREdge.getExecutionProperties();
-    edgeProperties.put(DataCommunicationPattern.of(commPattern));
-    edgeProperties.put(Partitioning.of(Partitioning.HASH));
-    edgeProperties.put(DataStore.of(store));
+    edgeProperties.put(DataCommunicationPatternProperty.of(commPattern));
+    edgeProperties.put(PartitioningProperty.of(Hash.class));
+    edgeProperties.put(DataStoreProperty.of(store));
     final RuntimeEdge<IRVertex> dummyEdge
         = new RuntimeEdge<>(edgeId, edgeProperties, srcVertex, dstVertex, CODER);
 
@@ -327,9 +332,9 @@ public final class DataTransferTest {
     // Edge setup
     final IREdge dummyIREdge = new IREdge(IREdge.Type.ScatterGather, srcVertex, dstVertex, CODER);
     final ExecutionPropertyMap edgeProperties = dummyIREdge.getExecutionProperties();
-    edgeProperties.put(Partitioning.of(Partitioning.HASH));
-    edgeProperties.put(DataStore.of(store));
-    edgeProperties.put(WriteOptimization.of(WriteOptimization.IFILE_WRITE));
+    edgeProperties.put(PartitioningProperty.of(Hash.class));
+    edgeProperties.put(DataStoreProperty.of(store));
+    edgeProperties.put(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
     final RuntimeEdge<IRVertex> dummyEdge
         = new RuntimeEdge<>(edgeId, edgeProperties, srcVertex, dstVertex, CODER);
 

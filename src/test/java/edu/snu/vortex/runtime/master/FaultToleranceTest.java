@@ -23,8 +23,8 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
@@ -39,7 +39,7 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
-import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -152,13 +152,13 @@ public final class FaultToleranceTest {
     irDAGBuilder.addVertex(v3);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
-    e1.setProperty(DataStore.of(MemoryStore.class));
-    e1.setProperty(DataCommunicationPattern.of(ScatterGather.class));
+    e1.setProperty(DataStoreProperty.of(MemoryStore.class));
+    e1.setProperty(DataCommunicationPatternProperty.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e1);
 
     final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
-    e2.setProperty(DataStore.of(LocalFileStore.class));
-    e2.setProperty(DataCommunicationPattern.of(ScatterGather.class));
+    e2.setProperty(DataStoreProperty.of(LocalFileStore.class));
+    e2.setProperty(DataCommunicationPatternProperty.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();

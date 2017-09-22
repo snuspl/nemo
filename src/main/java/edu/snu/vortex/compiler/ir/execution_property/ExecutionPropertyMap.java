@@ -17,13 +17,14 @@ package edu.snu.vortex.compiler.ir.execution_property;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
-import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.PartitioningProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -80,14 +81,14 @@ public final class ExecutionPropertyMap implements Serializable {
    * @param type type of the edge.
    */
   private void setDefaultEdgeValues(final IREdge.Type type) {
-    this.put(Partitioning.of(Partitioning.HASH));
-    this.put(DataFlowModel.of(DataFlowModel.Value.Pull));
+    this.put(PartitioningProperty.of(Hash.class));
+    this.put(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
     switch (type) {
       case OneToOne:
-        this.put(DataStore.of(MemoryStore.class));
+        this.put(DataStoreProperty.of(MemoryStore.class));
         break;
       default:
-        this.put(DataStore.of(LocalFileStore.class));
+        this.put(DataStoreProperty.of(LocalFileStore.class));
         break;
     }
   }

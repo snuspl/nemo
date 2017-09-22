@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property.edge;
-
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.runtime.executor.data.PartitionStore;
+package edu.snu.vortex.runtime.executor.datatransfer.partitioning;
 
 /**
- * DataStore ExecutionProperty.
+ * TODO #493: Implement Runtime classes for each Partitioning methods.
  */
-public final class DataStore extends ExecutionProperty<Class<? extends PartitionStore>> {
-  private DataStore(final Class<? extends PartitionStore> value) {
-    super(Key.DataStore, value);
-  }
-
-  public static DataStore of(final Class<? extends PartitionStore> value) {
-    return new DataStore(value);
-  }
+public interface Partitioning {
 }

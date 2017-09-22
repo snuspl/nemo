@@ -23,6 +23,7 @@ import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationT
 import edu.snu.vortex.compiler.optimizer.pass.*;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DynamicOptimizationPass;
 import edu.snu.vortex.compiler.optimizer.policy.Policy;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
@@ -82,11 +83,11 @@ public final class Optimizer {
   public static synchronized PhysicalPlan dynamicOptimization(
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
-    final String dynamicOptimizationType =
+    final Class<? extends DynamicOptimizationPass> dynamicOptimizationType =
         metricCollectionBarrierVertex.getClassProperty(ExecutionProperty.Key.DynamicOptimizationType);
 
-    switch (dynamicOptimizationType) {
-      case DynamicOptimizationType.DATA_SKEW:
+    switch (dynamicOptimizationType.getSimpleName()) {
+      case DataSkewDynamicOptimizationPass.SIMPLE_NAME:
         // Map between a partition ID to corresponding metric data (e.g., the size of each block).
         final Map<String, List<Long>> metricData = metricCollectionBarrierVertex.getMetricData();
         return new DataSkewDynamicOptimizationPass().apply(originalPlan, metricData);

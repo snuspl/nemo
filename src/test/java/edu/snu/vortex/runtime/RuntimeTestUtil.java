@@ -19,15 +19,14 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
-import edu.snu.vortex.runtime.executor.datatransfer.CommunicationPattern;
-import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
@@ -151,7 +150,7 @@ public final class RuntimeTestUtil {
 
         // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
-          final Class<? extends CommunicationPattern> commPattern =
+          final Class<? extends DataCommunicationPattern> commPattern =
               physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {

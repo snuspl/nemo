@@ -16,8 +16,7 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.JobState;
@@ -41,7 +40,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import edu.snu.vortex.runtime.common.metric.MetricData;
 import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
-import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
@@ -152,13 +152,13 @@ public final class JobStateManager {
 
       // Initialize states for partitions of inter-stage edges
       stageOutgoingEdges.forEach(physicalStageEdge -> {
-        final String commPattern =
+        final Class<? extends DataCommunicationPattern> commPattern =
             physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
         final Boolean isDataSizeMetricCollectionEdge =
             Boolean.TRUE.equals(physicalStageEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-        final String writeOptAtt = physicalStageEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
+        final String writeOptAtt = (String) physicalStageEdge.get(ExecutionProperty.Key.WriteOptimization);
         final Boolean isIFileWriteEdge =
-            writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
+            writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
 
         final int srcParallelism = taskGroupsForStage.size();
 

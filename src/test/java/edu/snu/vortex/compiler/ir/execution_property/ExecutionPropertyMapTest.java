@@ -20,12 +20,12 @@ import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
-import edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,7 +51,7 @@ public class ExecutionPropertyMapTest {
 
   @Test
   public void testDefaultValues() {
-    assertEquals(Partitioning.HASH, edgeMap.getClassProperty(ExecutionProperty.Key.Partitioning));
+    assertEquals(Hash.class, edgeMap.getClassProperty(ExecutionProperty.Key.Partitioning));
     assertEquals(1, (long) vertexMap.getIntegerProperty(ExecutionProperty.Key.Parallelism));
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
@@ -59,10 +59,10 @@ public class ExecutionPropertyMapTest {
 
   @Test
   public void testPutGetAndRemove() {
-    edgeMap.put(DataStore.of(MemoryStore.class));
+    edgeMap.put(DataStoreProperty.of(MemoryStore.class));
     assertEquals(MemoryStore.class, edgeMap.getClassProperty(ExecutionProperty.Key.DataStore));
-    edgeMap.put(DataFlowModel.of(DataFlowModel.Value.Pull));
-    assertEquals(DataFlowModel.Value.Pull, edgeMap.get(ExecutionProperty.Key.DataFlowModel));
+    edgeMap.put(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
+    assertEquals(DataFlowModelProperty.Value.Pull, edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
     edgeMap.remove(ExecutionProperty.Key.DataFlowModel);
     assertNull(edgeMap.get(ExecutionProperty.Key.DataFlowModel));

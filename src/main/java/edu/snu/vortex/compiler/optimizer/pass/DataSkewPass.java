@@ -21,13 +21,14 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.IsDataSizeMetricCollection;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationType;
+import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
-import edu.snu.vortex.runtime.executor.datatransfer.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,7 @@ public final class DataSkewPass implements StaticOptimizationPass {
       if (v instanceof OperatorVertex && dag.getIncomingEdgesOf(v).stream().anyMatch(irEdge ->
           irEdge.getType().equals(IREdge.Type.ScatterGather))) {
         final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
-        metricCollectionBarrierVertex.setProperty(DynamicOptimizationType.of(DynamicOptimizationType.DATA_SKEW));
+        metricCollectionBarrierVertex.setProperty(DynamicOptimizationType.of(DataSkewDynamicOptimizationPass.class));
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -64,11 +65,11 @@ public final class DataSkewPass implements StaticOptimizationPass {
               new IREdge(IREdge.Type.OneToOne, edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
           // we tell the edge that it needs to collect the metrics when transferring data.
           // we want it to be in the same stage
-          newEdge.setProperty(DataCommunicationPattern.of(OneToOne.class));
+          newEdge.setProperty(DataCommunicationPatternProperty.of(OneToOne.class));
           if (edge.equals(edgeToUseMemory)) {
-            newEdge.setProperty(DataStore.of(MemoryStore.class));
+            newEdge.setProperty(DataStoreProperty.of(MemoryStore.class));
           } else {
-            newEdge.setProperty(DataStore.of(LocalFileStore.class));
+            newEdge.setProperty(DataStoreProperty.of(LocalFileStore.class));
           }
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());

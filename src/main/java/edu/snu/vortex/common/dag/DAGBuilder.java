@@ -18,8 +18,8 @@ package edu.snu.vortex.common.dag;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
 import java.util.*;
@@ -251,7 +251,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // SideInput is not compatible with Push
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsSideInput)))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push))
+        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "SideInput edge is not compatible with push" + e.getId());
@@ -259,16 +259,16 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // DataSizeMetricCollection is not compatible with Push (All data have to be stored before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> Boolean.TRUE.equals(e.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection)))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push))
+        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "DataSizeMetricCollection edge is not compatible with push" + e.getId());
         }));
     // IFileWrite is not compatible with Push (All I-Files have to be constructed before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getClassProperty(ExecutionProperty.Key.WriteOptimization) != null
-            && e.getClassProperty(ExecutionProperty.Key.WriteOptimization).equals(WriteOptimization.IFILE_WRITE))
-        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModel.Value.Push))
+        .filter(e -> e.get(ExecutionProperty.Key.WriteOptimization) != null
+            && e.get(ExecutionProperty.Key.WriteOptimization).equals(WriteOptimizationProperty.IFILE_WRITE))
+        .filter(e -> e.get(ExecutionProperty.Key.DataFlowModel).equals(DataFlowModelProperty.Value.Push))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "DataSizeMetricCollection edge is not compatible with push" + e.getId());

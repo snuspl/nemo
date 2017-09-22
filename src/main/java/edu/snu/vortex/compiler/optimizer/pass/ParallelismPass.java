@@ -21,9 +21,8 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
-import edu.snu.vortex.runtime.executor.datatransfer.Broadcast;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
 
 import java.util.List;
 import java.util.OptionalInt;

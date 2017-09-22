@@ -21,7 +21,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
@@ -53,7 +53,7 @@ public class DisaggregationPassTest {
     processedDAG.getTopologicalSort().forEach(irVertex -> {
       assertEquals(ExecutorPlacement.COMPUTE, irVertex.getClassProperty(ExecutionProperty.Key.ExecutorPlacement));
       processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge ->
-          assertEquals(DataFlowModel.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel)));
+          assertEquals(DataFlowModelProperty.Value.Pull, irEdge.get(ExecutionProperty.Key.DataFlowModel)));
     });
 
     final IRVertex vertex4 = processedDAG.getTopologicalSort().get(6);

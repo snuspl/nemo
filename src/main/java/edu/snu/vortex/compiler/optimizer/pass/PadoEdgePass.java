@@ -19,8 +19,8 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModel;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStore;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
@@ -38,18 +38,18 @@ public final class PadoEdgePass implements StaticOptimizationPass {
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            edge.setProperty(DataStore.of(LocalFileStore.class));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Push));
+            edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
+            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Push));
           } else if (fromReservedToTransient(edge)) {
-            edge.setProperty(DataStore.of(LocalFileStore.class));
-            edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
+            edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
+            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
           } else {
             if (edge.getType().equals(IREdge.Type.OneToOne)) {
-              edge.setProperty(DataStore.of(MemoryStore.class));
-              edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
+              edge.setProperty(DataStoreProperty.of(MemoryStore.class));
+              edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
             } else {
-              edge.setProperty(DataStore.of(LocalFileStore.class));
-              edge.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
+              edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
+              edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
             }
           }
         });

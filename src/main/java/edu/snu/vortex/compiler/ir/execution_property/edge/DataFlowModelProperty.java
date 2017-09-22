@@ -20,13 +20,13 @@ import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 /**
  * DataFlowModel ExecutionProperty.
  */
-public final class DataFlowModel extends ExecutionProperty<DataFlowModel.Value> {
-  private DataFlowModel(final Value value) {
+public final class DataFlowModelProperty extends ExecutionProperty<DataFlowModelProperty.Value> {
+  private DataFlowModelProperty(final Value value) {
     super(Key.DataFlowModel, value);
   }
 
-  public static  DataFlowModel of(final Value value) {
-    return new DataFlowModel(value);
+  public static DataFlowModelProperty of(final Value value) {
+    return new DataFlowModelProperty(value);
   }
 
   /**

@@ -16,17 +16,17 @@
 package edu.snu.vortex.compiler.ir.execution_property.edge;
 
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.runtime.executor.datatransfer.CommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
 
 /**
  * DataCommunicationPattern ExecutionProperty.
  */
-public final class DataCommunicationPattern extends ExecutionProperty<Class<? extends CommunicationPattern>> {
-  private DataCommunicationPattern(final Class<? extends CommunicationPattern> value) {
+public final class DataCommunicationPatternProperty extends ExecutionProperty<Class<? extends DataCommunicationPattern>> {
+  private DataCommunicationPatternProperty(final Class<? extends DataCommunicationPattern> value) {
     super(Key.DataCommunicationPattern, value);
   }
 
-  public static DataCommunicationPattern of(final Class<? extends CommunicationPattern> value) {
-    return new DataCommunicationPattern(value);
+  public static DataCommunicationPatternProperty of(final Class<? extends DataCommunicationPattern> value) {
+    return new DataCommunicationPatternProperty(value);
   }
 }
