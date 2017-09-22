@@ -16,21 +16,17 @@
 package edu.snu.vortex.compiler.ir.execution_property.edge;
 
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.runtime.executor.datatransfer.CommunicationPattern;
 
 /**
  * DataCommunicationPattern ExecutionProperty.
  */
-public final class DataCommunicationPattern extends ExecutionProperty<String> {
-  private DataCommunicationPattern(final String value) {
+public final class DataCommunicationPattern extends ExecutionProperty<Class<? extends CommunicationPattern>> {
+  private DataCommunicationPattern(final Class<? extends CommunicationPattern> value) {
     super(Key.DataCommunicationPattern, value);
   }
 
-  public static DataCommunicationPattern of(final String value) {
+  public static DataCommunicationPattern of(final Class<? extends CommunicationPattern> value) {
     return new DataCommunicationPattern(value);
   }
-
-  // List of default pre-configured values. TODO #479: Remove static values.
-  public static final String ONE_TO_ONE = "OneToOne";
-  public static final String BROADCAST = "Broadcast";
-  public static final String SCATTER_GATHER = "ScatterGather";
 }

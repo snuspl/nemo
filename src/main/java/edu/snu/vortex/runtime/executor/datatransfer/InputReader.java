@@ -18,7 +18,6 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimization;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
@@ -79,16 +78,16 @@ public final class InputReader extends DataTransfer {
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge =
         Boolean.TRUE.equals(runtimeEdge.getBooleanProperty(ExecutionProperty.Key.IsDataSizeMetricCollection));
-    final String writeOptAtt = runtimeEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
+    final Class<? extends CommunicationPattern> writeOptAtt = runtimeEdge.getClassProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimization.IFILE_WRITE);
     try {
-      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
-        case DataCommunicationPattern.ONE_TO_ONE:
+      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern).getSimpleName()) {
+        case OneToOne.SIMPLE_NAME:
           return Collections.singletonList(readOneToOne());
-        case DataCommunicationPattern.BROADCAST:
+        case Broadcast.SIMPLE_NAME:
           return readBroadcast();
-        case DataCommunicationPattern.SCATTER_GATHER:
+        case ScatterGather.SIMPLE_NAME:
           // If the dynamic optimization which detects data skew is enabled, read the data in the assigned range.
           // TODO #492: Modularize the data communication pattern.
           if (isDataSizeMetricCollectionEdge) {

@@ -39,6 +39,7 @@ import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
+import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -152,12 +153,12 @@ public final class FaultToleranceTest {
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
     e1.setProperty(DataStore.of(MemoryStore.class));
-    e1.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e1.setProperty(DataCommunicationPattern.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e1);
 
     final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
     e2.setProperty(DataStore.of(LocalFileStore.class));
-    e2.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e2.setProperty(DataCommunicationPattern.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();

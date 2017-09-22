@@ -33,6 +33,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
+import edu.snu.vortex.runtime.executor.datatransfer.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
@@ -166,43 +168,43 @@ public final class DAGConverterTest {
     final IREdge e1 = new IREdge(IREdge.Type.OneToOne, v1, v2, Coder.DUMMY_CODER);
     e1.setProperty(DataStore.of(MemoryStore.class));
     e1.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
-    e1.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+    e1.setProperty(DataCommunicationPattern.of(OneToOne.class));
 
     final IREdge e2 = new IREdge(IREdge.Type.OneToOne, v1, v3, Coder.DUMMY_CODER);
     e2.setProperty(DataStore.of(MemoryStore.class));
     e2.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
-    e2.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+    e2.setProperty(DataCommunicationPattern.of(OneToOne.class));
 
     final IREdge e3 = new IREdge(IREdge.Type.ScatterGather, v2, v4, Coder.DUMMY_CODER);
     e3.setProperty(DataStore.of(MemoryStore.class));
     e3.setProperty(DataFlowModel.of(DataFlowModel.Value.Push));
-    e3.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e3.setProperty(DataCommunicationPattern.of(ScatterGather.class));
 
     final IREdge e4 = new IREdge(IREdge.Type.ScatterGather, v3, v5, Coder.DUMMY_CODER);
     e4.setProperty(DataStore.of(MemoryStore.class));
     e4.setProperty(DataFlowModel.of(DataFlowModel.Value.Push));
-    e4.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+    e4.setProperty(DataCommunicationPattern.of(ScatterGather.class));
 
     final IREdge e5 = new IREdge(IREdge.Type.OneToOne, v4, v6, Coder.DUMMY_CODER);
     e5.setProperty(DataStore.of(LocalFileStore.class));
     e5.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
-    e5.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+    e5.setProperty(DataCommunicationPattern.of(OneToOne.class));
 
     final IREdge e6 = new IREdge(IREdge.Type.OneToOne, v4, v8, Coder.DUMMY_CODER);
     e6.setProperty(DataStore.of(LocalFileStore.class));
     e6.setProperty(DataFlowModel.of(DataFlowModel.Value.Pull));
-    e6.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+    e6.setProperty(DataCommunicationPattern.of(OneToOne.class));
 
     // TODO #13: Implement Join Node
-//    final IREdge e7 = new IREdge(IREdge.Key.ONE_TO_ONE, v7, v5);
+//    final IREdge e7 = new IREdge(IREdge.Key.OneToOne, v7, v5);
 //    e7.setProperty(DataStore.of(MemoryStore.class));
 //    e7.setProperty(Attribute.Key.PullOrPush, DataFlowModel.Value.Push));
-//    e7.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+//    e7.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.OneToOne));
 //
-//    final IREdge e8 = new IREdge(IREdge.Key.ONE_TO_ONE, v5, v8);
+//    final IREdge e8 = new IREdge(IREdge.Key.OneToOne, v5, v8);
 //    e8.setProperty(DataStore.of(MemoryStore.class));
 //    e8.setProperty(Attribute.Key.PullOrPush, DataFlowModel.Value.Pull));
-//    e8.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+//    e8.setProperty(DataCommunicationPattern.of(DataCommunicationPattern.OneToOne));
 
     // Stage 1 = {v1, v2, v3}
     irDAGBuilder.connectVertices(e1);

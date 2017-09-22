@@ -71,9 +71,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.BROADCAST;
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.ONE_TO_ONE;
-import static edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern.SCATTER_GATHER;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.flatten;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
@@ -204,34 +201,34 @@ public final class DataTransferTest {
   @Test
   public void testWriteAndRead() throws Exception {
     // test OneToOne same worker
-    writeAndRead(worker1, worker1, ONE_TO_ONE, MEMORY_STORE);
+    writeAndRead(worker1, worker1, OneToOne.class, MEMORY_STORE);
 
     // test OneToOne different worker
-    writeAndRead(worker1, worker2, ONE_TO_ONE, MEMORY_STORE);
+    writeAndRead(worker1, worker2, OneToOne.class, MEMORY_STORE);
 
     // test OneToMany same worker
-    writeAndRead(worker1, worker1, BROADCAST, MEMORY_STORE);
+    writeAndRead(worker1, worker1, Broadcast.class, MEMORY_STORE);
 
     // test OneToMany different worker
-    writeAndRead(worker1, worker2, BROADCAST, MEMORY_STORE);
+    writeAndRead(worker1, worker2, Broadcast.class, MEMORY_STORE);
 
     // test ManyToMany same worker
-    writeAndRead(worker1, worker1, SCATTER_GATHER, MEMORY_STORE);
+    writeAndRead(worker1, worker1, ScatterGather.class, MEMORY_STORE);
 
     // test ManyToMany different worker
-    writeAndRead(worker1, worker2, SCATTER_GATHER, MEMORY_STORE);
+    writeAndRead(worker1, worker2, ScatterGather.class, MEMORY_STORE);
 
     // test ManyToMany same worker (local file)
-    writeAndRead(worker1, worker1, SCATTER_GATHER, LOCAL_FILE_STORE);
+    writeAndRead(worker1, worker1, ScatterGather.class, LOCAL_FILE_STORE);
 
     // test ManyToMany different worker (local file)
-    writeAndRead(worker1, worker2, SCATTER_GATHER, LOCAL_FILE_STORE);
+    writeAndRead(worker1, worker2, ScatterGather.class, LOCAL_FILE_STORE);
 
     // test ManyToMany same worker (remote file)
-    writeAndRead(worker1, worker1, SCATTER_GATHER, REMOTE_FILE_STORE);
+    writeAndRead(worker1, worker1, ScatterGather.class, REMOTE_FILE_STORE);
 
     // test ManyToMany different worker (remote file)
-    writeAndRead(worker1, worker2, SCATTER_GATHER, REMOTE_FILE_STORE);
+    writeAndRead(worker1, worker2, ScatterGather.class, REMOTE_FILE_STORE);
   }
 
   @Test
@@ -245,7 +242,7 @@ public final class DataTransferTest {
 
   private void writeAndRead(final PartitionManagerWorker sender,
                             final PartitionManagerWorker receiver,
-                            final String commPattern,
+                            final Class<? extends CommunicationPattern> commPattern,
                             final Class<? extends PartitionStore> store) throws RuntimeException {
     final int testIndex = TEST_INDEX.getAndIncrement();
     final String edgeId = String.format(EDGE_PREFIX_TEMPLATE, testIndex);
@@ -265,7 +262,7 @@ public final class DataTransferTest {
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-      if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER)) {
+      if (commPattern.equals(ScatterGather.class)) {
         IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
           master.initializeState(edgeId, srcTaskIndex, dstTaskIndex, taskGroupPrefix + srcTaskIndex);
         });
@@ -302,7 +299,7 @@ public final class DataTransferTest {
     // Compare (should be the same)
     final List<Element> flattenedWrittenData = flatten(dataWrittenList);
     final List<Element> flattenedReadData = flatten(dataReadList);
-    if (commPattern.equals(DataCommunicationPattern.BROADCAST)) {
+    if (commPattern.equals(Broadcast.class)) {
       final List<Element> broadcastedWrittenData = new ArrayList<>();
       IntStream.range(0, PARALLELISM_TEN).forEach(i -> broadcastedWrittenData.addAll(flattenedWrittenData));
       assertEquals(broadcastedWrittenData.size(), flattenedReadData.size());

@@ -23,6 +23,7 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.runtime.executor.datatransfer.Broadcast;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -48,7 +49,7 @@ public final class ParallelismPass implements StaticOptimizationPass {
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
               .filter(edge -> !edge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)
-                  .equals(DataCommunicationPattern.BROADCAST))
+                  .equals(Broadcast.class))
               .mapToInt(edge -> edge.getSrc().getIntegerProperty(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {

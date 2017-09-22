@@ -26,6 +26,8 @@ import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.common.state.StageState;
 import edu.snu.vortex.runtime.common.state.TaskGroupState;
+import edu.snu.vortex.runtime.executor.datatransfer.CommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
 import edu.snu.vortex.runtime.master.JobStateManager;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
@@ -149,11 +151,11 @@ public final class RuntimeTestUtil {
 
         // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
-          final String commPattern =
+          final Class<? extends CommunicationPattern> commPattern =
               physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
-            if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER)) {
+            if (commPattern.equals(ScatterGather.class)) {
               final int dstParallelism =
                   physicalStageEdge.getDstVertex().getIntegerProperty(ExecutionProperty.Key.Parallelism);
               IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {

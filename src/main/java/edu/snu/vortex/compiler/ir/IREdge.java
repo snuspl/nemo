@@ -21,6 +21,9 @@ import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPattern;
 import edu.snu.vortex.runtime.exception.UnsupportedExecutionPropertyException;
 import edu.snu.vortex.common.dag.Edge;
+import edu.snu.vortex.runtime.executor.datatransfer.Broadcast;
+import edu.snu.vortex.runtime.executor.datatransfer.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
 
 /**
  * Physical execution plan of intermediate data movement.
@@ -56,13 +59,13 @@ public final class IREdge extends Edge<IRVertex> {
     this.executionProperties = ExecutionPropertyMap.of(this);
     switch (this.getType()) {
       case OneToOne:
-        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.ONE_TO_ONE));
+        setProperty(DataCommunicationPattern.of(OneToOne.class));
         break;
       case Broadcast:
-        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.BROADCAST));
+        setProperty(DataCommunicationPattern.of(Broadcast.class));
         break;
       case ScatterGather:
-        setProperty(DataCommunicationPattern.of(DataCommunicationPattern.SCATTER_GATHER));
+        setProperty(DataCommunicationPattern.of(ScatterGather.class));
         break;
       default:
         throw new UnsupportedExecutionPropertyException("There is no such edge type as: " + this.getType());

@@ -29,6 +29,7 @@ import edu.snu.vortex.runtime.exception.UnsupportedMethodException;
 import edu.snu.vortex.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.vortex.runtime.executor.data.Block;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.vortex.runtime.executor.data.PartitionStore;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -48,10 +49,10 @@ import static edu.snu.vortex.compiler.ir.execution_property.edge.Partitioning.RA
 public final class OutputWriter extends DataTransfer {
   private final int hashRangeMultiplier;
   private final int srcTaskIdx;
-  private final RuntimeEdge runtimeEdge;
+  private final RuntimeEdge<?> runtimeEdge;
   private final String srcVertexId;
   private final IRVertex dstVertex;
-  private final String channelDataPlacement;
+  private final Class<? extends PartitionStore> channelDataPlacement;
 
   /**
    * The Block Manager Worker.
@@ -62,7 +63,7 @@ public final class OutputWriter extends DataTransfer {
                       final int srcTaskIdx,
                       final String srcRuntimeVertexId,
                       @Nullable final IRVertex dstRuntimeVertex, // Null if it is not a runtime vertex.
-                      final RuntimeEdge runtimeEdge,
+                      final RuntimeEdge<?> runtimeEdge,
                       final PartitionManagerWorker partitionManagerWorker) {
     super(runtimeEdge.getId());
     this.hashRangeMultiplier = hashRangeMultiplier;
@@ -91,14 +92,14 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)) {
-        case DataCommunicationPattern.ONE_TO_ONE:
+      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern).getSimpleName()) {
+        case OneToOne.SIMPLE_NAME:
           writeOneToOne(dataToWrite);
           break;
-        case DataCommunicationPattern.BROADCAST:
+        case Broadcast.SIMPLE_NAME:
           writeBroadcast(dataToWrite);
           break;
-        case DataCommunicationPattern.SCATTER_GATHER:
+        case ScatterGather.SIMPLE_NAME:
           // If the dynamic optimization which detects data skew is enabled, sort the data and write it.
           if (isDataSizeMetricCollectionEdge) {
             hashAndWrite(dataToWrite);

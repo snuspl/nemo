@@ -41,6 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import edu.snu.vortex.runtime.common.metric.MetricData;
 import edu.snu.vortex.runtime.common.metric.MetricDataBuilder;
+import edu.snu.vortex.runtime.executor.datatransfer.ScatterGather;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
@@ -161,14 +162,14 @@ public final class JobStateManager {
 
         final int srcParallelism = taskGroupsForStage.size();
 
-        if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER) && isIFileWriteEdge) {
+        if (commPattern.equals(ScatterGather.class) && isIFileWriteEdge) {
           final int dstParallelism =
               physicalStageEdge.getDstVertex().getIntegerProperty(ExecutionProperty.Key.Parallelism);
           final Set<String> taskGroupIds = new HashSet<>();
           taskGroupsForStage.forEach(taskGroup -> taskGroupIds.add(taskGroup.getTaskGroupId()));
           IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> partitionManagerMaster.initializeState(
               physicalStageEdge.getId(), dstTaskIdx, taskGroupIds));
-        } else if (commPattern.equals(DataCommunicationPattern.SCATTER_GATHER) && !isDataSizeMetricCollectionEdge) {
+        } else if (commPattern.equals(ScatterGather.class) && !isDataSizeMetricCollectionEdge) {
           final int dstParallelism =
               physicalStageEdge.getDstVertex().getIntegerProperty(ExecutionProperty.Key.Parallelism);
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx ->
