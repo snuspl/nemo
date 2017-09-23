@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.master;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.JobState;
@@ -166,21 +167,29 @@ public final class JobStateManager {
         if (commPattern.equals(ScatterGather.class) && isIFileWriteEdge) {
           final int dstParallelism =
               (Integer) physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
-          final Set<String> taskGroupIds = new HashSet<>();
-          taskGroupsForStage.forEach(taskGroup -> taskGroupIds.add(taskGroup.getTaskGroupId()));
-          IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> partitionManagerMaster.initializeState(
-              physicalStageEdge.getId(), dstTaskIdx, taskGroupIds));
-        } else if (commPattern.equals(ScatterGather.class) && !isDataSizeMetricCollectionEdge) {
+          final Set<String> producerTaskGroupIds = new HashSet<>();
+          taskGroupsForStage.forEach(taskGroup -> producerTaskGroupIds.add(taskGroup.getTaskGroupId()));
+          final Set<Integer> producerTaskIndices =
+              IntStream.range(0, producerTaskGroupIds.size()).boxed().collect(Collectors.toSet());
+          IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
+            final String partitionId = RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), dstTaskIdx);
+            partitionManagerMaster.initializeState(partitionId, producerTaskIndices, producerTaskGroupIds);
+          });
+        } else if (ScatterGather.class.equals(commPattern) && !isDataSizeMetricCollectionEdge) {
           final int dstParallelism =
               (Integer) physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx ->
-            IntStream.range(0, dstParallelism).forEach(dstTaskIdx ->
-                partitionManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx,
-                    taskGroupsForStage.get(srcTaskIdx).getTaskGroupId())));
+            IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
+              final String partitionId =
+                  RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx, dstTaskIdx);
+              partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                  Collections.singleton(taskGroupsForStage.get(srcTaskIdx).getTaskGroupId()));
+            }));
         } else {
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
-            partitionManagerMaster.initializeState(physicalStageEdge.getId(), srcTaskIdx,
-                taskGroupsForStage.get(srcTaskIdx).getTaskGroupId());
+            final String partitionId = RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx);
+            partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                Collections.singleton(taskGroupsForStage.get(srcTaskIdx).getTaskGroupId()));
           });
         }
       });
@@ -190,9 +199,12 @@ public final class JobStateManager {
         final DAG<Task, RuntimeEdge<Task>> taskGroupInternalDag = taskGroup.getTaskDAG();
         taskGroupInternalDag.getVertices().forEach(task -> {
           final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
-          internalOutgoingEdges.forEach(taskRuntimeEdge ->
-              partitionManagerMaster.initializeState(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx(),
-                  taskGroup.getTaskGroupId()));
+          internalOutgoingEdges.forEach(taskRuntimeEdge -> {
+            final int srcTaskIdx = taskGroup.getTaskGroupIdx();
+            final String partitionId = RuntimeIdGenerator.generatePartitionId(taskRuntimeEdge.getId(), srcTaskIdx);
+            partitionManagerMaster.initializeState(partitionId, Collections.singleton(srcTaskIdx),
+                Collections.singleton(taskGroup.getTaskGroupId()));
+          });
         });
       });
     });

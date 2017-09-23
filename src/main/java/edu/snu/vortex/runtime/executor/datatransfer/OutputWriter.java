@@ -131,7 +131,7 @@ public final class OutputWriter extends DataTransfer {
 
     // Commit partition.
     partitionManagerWorker.commitPartition(
-        partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx, false);
+        partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx);
   }
 
   private void writeBroadcast(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
@@ -167,7 +167,7 @@ public final class OutputWriter extends DataTransfer {
 
           // Commit partition.
           partitionManagerWorker.commitPartition(
-              partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx, false);
+              partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx);
         }
         break;
       case Range.SIMPLE_NAME:
@@ -220,7 +220,7 @@ public final class OutputWriter extends DataTransfer {
     if (optionalBlockSize.isPresent()) {
       // Commit partition.
       partitionManagerWorker.commitPartition(
-          partitionId, channelDataPlacement, optionalBlockSize.get(), srcVertexId, srcTaskIdx, false);
+          partitionId, channelDataPlacement, optionalBlockSize.get(), srcVertexId, srcTaskIdx);
     } else {
       throw new PartitionWriteException(new Throwable("Cannot know the size of blocks"));
     }
@@ -279,7 +279,7 @@ public final class OutputWriter extends DataTransfer {
 
       // Commit partition.
       partitionManagerWorker.commitPartition(
-          partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx, true);
+          partitionId, channelDataPlacement, Collections.emptyList(), srcVertexId, srcTaskIdx);
     }
   }
 }
