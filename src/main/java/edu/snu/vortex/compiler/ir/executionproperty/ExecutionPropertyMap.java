@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property;
+package edu.snu.vortex.compiler.ir.executionproperty;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.PartitioningProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.PartitioningProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 public final class ExecutionPropertyMap implements Serializable {
   private final String id;
   private final Map<ExecutionProperty.Key, ExecutionProperty<?>> properties;
-  private final Map<ExecutionProperty.Key, ExecutionProperty<Class<?>>> classProperties;
 
   /**
    * Constructor for ExecutionPropertyMap class.
@@ -48,7 +47,6 @@ public final class ExecutionPropertyMap implements Serializable {
   private ExecutionPropertyMap(final String id) {
     this.id = id;
     properties = new HashMap<>();
-    classProperties = new HashMap<>();
   }
 
   /**
@@ -58,7 +56,7 @@ public final class ExecutionPropertyMap implements Serializable {
    */
   public static ExecutionPropertyMap of(final IREdge irEdge) {
     final ExecutionPropertyMap map = new ExecutionPropertyMap(irEdge.getId());
-    map.setDefaultEdgeValues(irEdge.getType());
+    map.setDefaultEdgeExecutionProperties(irEdge.getType());
     return map;
   }
   /**
@@ -68,7 +66,7 @@ public final class ExecutionPropertyMap implements Serializable {
    */
   public static ExecutionPropertyMap of(final IRVertex irVertex) {
     final ExecutionPropertyMap map = new ExecutionPropertyMap(irVertex.getId());
-    map.setDefaultVertexValues();
+    map.setDefaultVertexExecutionProperties();
     return map;
   }
 
@@ -76,7 +74,7 @@ public final class ExecutionPropertyMap implements Serializable {
    * Putting default execution property for edges.
    * @param type type of the edge.
    */
-  private void setDefaultEdgeValues(final IREdge.Type type) {
+  private void setDefaultEdgeExecutionProperties(final IREdge.Type type) {
     this.put(PartitioningProperty.of(Hash.class));
     this.put(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
     switch (type) {
@@ -91,9 +89,9 @@ public final class ExecutionPropertyMap implements Serializable {
   /**
    * Putting default execution property for vertices.
    */
-  private void setDefaultVertexValues() {
-    this.put(ExecutorPlacement.of(ExecutorPlacement.NONE));
-    this.put(Parallelism.of(1));
+  private void setDefaultVertexExecutionProperties() {
+    this.put(ExecutorPlacementProperty.of(ExecutorPlacementProperty.NONE));
+    this.put(ParallelismProperty.of(1));
   }
 
   /**
@@ -109,31 +107,18 @@ public final class ExecutionPropertyMap implements Serializable {
    * @param executionProperty execution property to insert.
    * @return the inserted execution property.
    */
-  public ExecutionProperty put(final ExecutionProperty<?> executionProperty) {
-    if (executionProperty.getValue() instanceof Class<?>) {
-      return classProperties.put(executionProperty.getKey(), (ExecutionProperty<Class<?>>) executionProperty);
-    } else {
-      return properties.put(executionProperty.getKey(), executionProperty);
-    }
+  public ExecutionProperty<?> put(final ExecutionProperty<?> executionProperty) {
+    return properties.put(executionProperty.getKey(), executionProperty);
   }
 
-  public Object get(final ExecutionProperty.Key executionPropertyKey) {
-    final ExecutionProperty<?> executionProperty;
-    if (classProperties.containsKey(executionPropertyKey)) {
-      executionProperty = classProperties.get(executionPropertyKey);
-    } else {
-      executionProperty = properties.get(executionPropertyKey);
-    }
-    return executionProperty == null ? null : executionProperty.getValue();
-  }
   /**
    * Get the value of the given execution property type.
    * @param executionPropertyKey the execution property type to find the value of.
    * @return the value of the given execution property.
    */
-  public Class<?> getClassProperty(final ExecutionProperty.Key executionPropertyKey) {
-    final ExecutionProperty<Class<?>> executionProperty = classProperties.get(executionPropertyKey);
-    return executionProperty == null ? null : executionProperty.getValue();
+  public Object get(final ExecutionProperty.Key executionPropertyKey) {
+    ExecutionProperty<?> property = properties.get(executionPropertyKey);
+    return property == null ? null : property.getValue();
   }
 
   /**
@@ -141,12 +126,8 @@ public final class ExecutionPropertyMap implements Serializable {
    * @param key key of the execution property to remove.
    * @return the removed execution property
    */
-  public ExecutionProperty remove(final ExecutionProperty.Key key) {
-    if (classProperties.containsKey(key)) {
-      return classProperties.remove(key);
-    } else {
-      return properties.remove(key);
-    }
+  public ExecutionProperty<?> remove(final ExecutionProperty.Key key) {
+    return properties.remove(key);
   }
 
   /**
@@ -154,7 +135,7 @@ public final class ExecutionPropertyMap implements Serializable {
    * @return whether or not the execution property map contains the key.
    */
   public boolean containsKey(final ExecutionProperty.Key key) {
-    return properties.containsKey(key) || classProperties.containsKey(key);
+    return properties.containsKey(key);
   }
 
   /**
@@ -162,7 +143,6 @@ public final class ExecutionPropertyMap implements Serializable {
    * @param action action to apply to each of the execution properties.
    */
   public void forEachProperties(final Consumer<? super ExecutionProperty> action) {
-    classProperties.values().forEach(action);
     properties.values().forEach(action);
   }
 
@@ -172,17 +152,6 @@ public final class ExecutionPropertyMap implements Serializable {
     sb.append("{");
     boolean isFirstPair = true;
     for (final Map.Entry<ExecutionProperty.Key, ExecutionProperty<?>> entry : properties.entrySet()) {
-      if (!isFirstPair) {
-        sb.append(", ");
-      }
-      isFirstPair = false;
-      sb.append("\"");
-      sb.append(entry.getKey());
-      sb.append("\": \"");
-      sb.append(entry.getValue().getValue());
-      sb.append("\"");
-    }
-    for (final Map.Entry<ExecutionProperty.Key, ExecutionProperty<Class<?>>> entry : classProperties.entrySet()) {
       if (!isFirstPair) {
         sb.append(", ");
       }
@@ -213,8 +182,6 @@ public final class ExecutionPropertyMap implements Serializable {
     return new EqualsBuilder()
         .append(properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
             that.properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()),
-            that.classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
         .isEquals();
   }
 
@@ -222,7 +189,6 @@ public final class ExecutionPropertyMap implements Serializable {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(properties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
-        .append(classProperties.values().stream().map(ExecutionProperty::getValue).collect(Collectors.toSet()))
         .toHashCode();
   }
 }

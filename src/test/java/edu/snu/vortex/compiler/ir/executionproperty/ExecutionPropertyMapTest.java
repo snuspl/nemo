@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property;
+package edu.snu.vortex.compiler.ir.executionproperty;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
@@ -51,7 +51,7 @@ public class ExecutionPropertyMapTest {
 
   @Test
   public void testDefaultValues() {
-    assertEquals(Hash.class, edgeMap.getClassProperty(ExecutionProperty.Key.Partitioning));
+    assertEquals(Hash.class, edgeMap.get(ExecutionProperty.Key.Partitioning));
     assertEquals(1, (long)(Integer) vertexMap.get(ExecutionProperty.Key.Parallelism));
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
@@ -60,14 +60,14 @@ public class ExecutionPropertyMapTest {
   @Test
   public void testPutGetAndRemove() {
     edgeMap.put(DataStoreProperty.of(MemoryStore.class));
-    assertEquals(MemoryStore.class, edgeMap.getClassProperty(ExecutionProperty.Key.DataStore));
+    assertEquals(MemoryStore.class, edgeMap.get(ExecutionProperty.Key.DataStore));
     edgeMap.put(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
     assertEquals(DataFlowModelProperty.Value.Pull, edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
     edgeMap.remove(ExecutionProperty.Key.DataFlowModel);
     assertNull(edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
-    vertexMap.put(Parallelism.of(100));
+    vertexMap.put(ParallelismProperty.of(100));
     assertEquals(100, (long)(Integer) vertexMap.get(ExecutionProperty.Key.Parallelism));
   }
 }

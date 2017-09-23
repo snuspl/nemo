@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property.edge;
+package edu.snu.vortex.compiler.ir.executionproperty.edge;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
 
 /**

@@ -18,8 +18,8 @@ package edu.snu.vortex.runtime.common.plan;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.common.dag.Edge;
 import edu.snu.vortex.common.dag.Vertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 /**
  * Represents the edge between vertices in a logical/physical plan in runtime.
@@ -49,14 +49,11 @@ public class RuntimeEdge<V extends Vertex> extends Edge<V> {
 
   /**
    * Get the execution property of the Runtime Edge.
-   * @param executionFactorKey key of the execution property.
+   * @param executionPropertyKey key of the execution property.
    * @return the execution property.
    */
-  public final Object get(final ExecutionProperty.Key executionFactorKey) {
-    return edgeProperties.get(executionFactorKey);
-  }
-  public final Class getClassProperty(final ExecutionProperty.Key executionFactorTYpe) {
-    return edgeProperties.getClassProperty(executionFactorTYpe);
+  public final Object get(final ExecutionProperty.Key executionPropertyKey) {
+    return edgeProperties.get(executionPropertyKey);
   }
 
   /**

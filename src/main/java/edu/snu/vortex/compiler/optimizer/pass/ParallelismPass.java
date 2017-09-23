@@ -20,8 +20,8 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
 
 import java.util.List;
@@ -42,17 +42,16 @@ public final class ParallelismPass implements StaticOptimizationPass {
             .collect(Collectors.toList());
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
-          vertex.setProperty(Parallelism.of(sourceVertex.getReaders(1).size()));
+          vertex.setProperty(ParallelismProperty.of(sourceVertex.getReaders(1).size()));
         } else if (!inEdges.isEmpty()) {
           final OptionalInt parallelism = inEdges.stream()
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
-              .filter(edge -> !Broadcast.class
-                  .equals(edge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)))
+              .filter(edge -> !Broadcast.class.equals(edge.get(ExecutionProperty.Key.DataCommunicationPattern)))
               .mapToInt(edge -> (Integer) edge.getSrc().get(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
-            vertex.setProperty(Parallelism.of(parallelism.getAsInt()));
+            vertex.setProperty(ParallelismProperty.of(parallelism.getAsInt()));
           }
         } else {
           throw new RuntimeException("There is a non-source vertex that doesn't have any inEdges other than SideInput");

@@ -15,9 +15,9 @@
  */
 package edu.snu.vortex.compiler.ir;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.vortex.common.dag.Vertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 /**
  * The top-most wrapper for a user operation in the Vortex IR.
@@ -40,10 +40,10 @@ public abstract class IRVertex extends Vertex {
 
   /**
    * Static function to copy executionProperties from a vertex to the other.
-   * @param that the edge to copy executionProperties to.
+   * @param thatVertex the edge to copy executionProperties to.
    */
-  public final void copyExecutionPropertiesTo(final IRVertex that) {
-    this.getExecutionProperties().forEachProperties(that::setProperty);
+  public final void copyExecutionPropertiesTo(final IRVertex thatVertex) {
+    this.getExecutionProperties().forEachProperties(thatVertex::setProperty);
   }
 
   /**
@@ -63,9 +63,6 @@ public abstract class IRVertex extends Vertex {
    */
   public final Object get(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.get(executionPropertyKey);
-  }
-  public final Class getClassProperty(final ExecutionProperty.Key executionPropertyKey) {
-    return executionProperties.getClassProperty(executionPropertyKey);
   }
 
   /**

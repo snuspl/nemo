@@ -15,8 +15,8 @@
  */
 package edu.snu.vortex.runtime.master;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -154,9 +154,9 @@ public final class JobStateManager {
       // Initialize states for partitions of inter-stage edges
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final Class<? extends DataCommunicationPattern> commPattern =
-            physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
+            (Class) physicalStageEdge.get(ExecutionProperty.Key.DataCommunicationPattern);
         final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
-            .equals(physicalStageEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
+            .equals(physicalStageEdge.get(ExecutionProperty.Key.MetricCollection));
         final String writeOptAtt = (String) physicalStageEdge.get(ExecutionProperty.Key.WriteOptimization);
         final Boolean isIFileWriteEdge =
             writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);

@@ -18,10 +18,10 @@ package edu.snu.vortex.compiler.optimizer.pass;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
@@ -65,9 +65,9 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    */
   private static boolean fromTransientToReserved(final IREdge irEdge) {
     return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacement.TRANSIENT)
+        .equals(ExecutorPlacementProperty.TRANSIENT)
         && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacement.RESERVED);
+        .equals(ExecutorPlacementProperty.RESERVED);
   }
 
   /**
@@ -77,8 +77,8 @@ public final class PadoEdgePass implements StaticOptimizationPass {
    */
   private static boolean fromReservedToTransient(final IREdge irEdge) {
     return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacement.RESERVED)
+        .equals(ExecutorPlacementProperty.RESERVED)
         && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacement.TRANSIENT);
+        .equals(ExecutorPlacementProperty.TRANSIENT);
   }
 }

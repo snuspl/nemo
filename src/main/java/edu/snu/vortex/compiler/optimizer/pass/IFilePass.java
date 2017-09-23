@@ -18,8 +18,8 @@ package edu.snu.vortex.compiler.optimizer.pass;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public final class IFilePass implements StaticOptimizationPass {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
         if (edge.getType().equals(IREdge.Type.ScatterGather)
-            && GlusterFileStore.class.equals(edge.getClassProperty(ExecutionProperty.Key.DataStore))) {
+            && GlusterFileStore.class.equals(edge.get(ExecutionProperty.Key.DataStore))) {
           edge.setProperty(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
         }
       });

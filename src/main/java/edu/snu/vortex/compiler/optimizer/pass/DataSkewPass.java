@@ -21,10 +21,10 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.MetricCollection;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.DynamicOptimizationType;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.MetricCollectionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.DynamicOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
@@ -52,7 +52,8 @@ public final class DataSkewPass implements StaticOptimizationPass {
       if (v instanceof OperatorVertex && dag.getIncomingEdgesOf(v).stream().anyMatch(irEdge ->
           irEdge.getType().equals(IREdge.Type.ScatterGather))) {
         final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
-        metricCollectionBarrierVertex.setProperty(DynamicOptimizationType.of(DataSkewDynamicOptimizationPass.class));
+        metricCollectionBarrierVertex
+            .setProperty(DynamicOptimizationProperty.of(DataSkewDynamicOptimizationPass.class));
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -73,8 +74,8 @@ public final class DataSkewPass implements StaticOptimizationPass {
           }
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
-          edge.copyExecutionProperties(edgeToGbK);
-          edgeToGbK.setProperty(MetricCollection.of(DataSkewDynamicOptimizationPass.class));
+          edge.copyExecutionPropertiesTo(edgeToGbK);
+          edgeToGbK.setProperty(MetricCollectionProperty.of(DataSkewDynamicOptimizationPass.class));
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });

@@ -19,11 +19,11 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.common.plan.stage.Stage;
@@ -62,11 +62,11 @@ public final class DAGConverterTest {
   public void testSimplePlan() throws Exception {
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setProperty(Parallelism.of(3));
+    v1.setProperty(ParallelismProperty.of(3));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(new DoTransform(null, null));
-    v2.setProperty(Parallelism.of(2));
+    v2.setProperty(ParallelismProperty.of(2));
     irDAGBuilder.addVertex(v2);
 
     final IREdge e = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
@@ -120,39 +120,39 @@ public final class DAGConverterTest {
     when(s.split(3L, null)).thenReturn(dummyReaderList);
 
     final IRVertex v1 = new BoundedSourceVertex<>(s);
-    v1.setProperty(Parallelism.of(3));
-    v1.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v1.setProperty(ParallelismProperty.of(3));
+    v1.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final Transform t = mock(Transform.class);
     final DoTransform dt = new DoTransform(null, null);
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setProperty(Parallelism.of(3));
-    v2.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v2.setProperty(ParallelismProperty.of(3));
+    v2.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setProperty(Parallelism.of(3));
-    v3.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v3.setProperty(ParallelismProperty.of(3));
+    v3.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final IRVertex v4 = new OperatorVertex(t);
-    v4.setProperty(Parallelism.of(2));
-    v4.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v4.setProperty(ParallelismProperty.of(2));
+    v4.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final IRVertex v5 = new OperatorVertex(dt);
-    v5.setProperty(Parallelism.of(2));
-    v5.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v5.setProperty(ParallelismProperty.of(2));
+    v5.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final IRVertex v6 = new OperatorVertex(dt);
-    v6.setProperty(Parallelism.of(2));
-    v6.setProperty(ExecutorPlacement.of(ExecutorPlacement.RESERVED));
+    v6.setProperty(ParallelismProperty.of(2));
+    v6.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.RESERVED));
 
     // TODO #13: Implement Join Node
 //    final IRVertex v7 = new OperatorVertex(t);
-//    v7.setProperty(Parallelism.of(2));
-//    v7.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+//    v7.setProperty(ParallelismProperty.of(2));
+//    v7.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     final IRVertex v8 = new OperatorVertex(dt);
-    v8.setProperty(Parallelism.of(2));
-    v8.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v8.setProperty(ParallelismProperty.of(2));
+    v8.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
 
     irDAGBuilder.addVertex(v1);
     irDAGBuilder.addVertex(v2);

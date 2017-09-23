@@ -13,27 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property.edge;
+package edu.snu.vortex.compiler.ir.executionproperty.vertex;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 /**
- * DataFlowModel ExecutionProperty.
+ * StageId ExecutionProperty.
  */
-public final class DataFlowModelProperty extends ExecutionProperty<DataFlowModelProperty.Value> {
-  private DataFlowModelProperty(final Value value) {
-    super(Key.DataFlowModel, value);
+public final class StageIdProperty extends ExecutionProperty<Integer> {
+  private StageIdProperty(final Integer value) {
+    super(Key.StageId, value);
   }
 
-  public static DataFlowModelProperty of(final Value value) {
-    return new DataFlowModelProperty(value);
-  }
-
-  /**
-   * Possible values of DataFlowModel ExecutionProperty.
-   */
-  public enum Value {
-    Pull,
-    Push,
+  public static StageIdProperty of(final Integer value) {
+    return new StageIdProperty(value);
   }
 }

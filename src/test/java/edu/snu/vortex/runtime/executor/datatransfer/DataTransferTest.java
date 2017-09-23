@@ -23,13 +23,13 @@ import edu.snu.vortex.common.coder.BeamCoder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.PartitioningProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.PartitioningProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
@@ -387,12 +387,12 @@ public final class DataTransferTest {
     final BoundedSource s = mock(BoundedSource.class);
     final BoundedSourceVertex srcVertex = new BoundedSourceVertex<>(s);
     final ExecutionPropertyMap srcVertexProperties = srcVertex.getExecutionProperties();
-    srcVertexProperties.put(Parallelism.of(PARALLELISM_TEN));
+    srcVertexProperties.put(ParallelismProperty.of(PARALLELISM_TEN));
 
     // Dst setup
     final BoundedSourceVertex dstVertex = new BoundedSourceVertex<>(s);
     final ExecutionPropertyMap dstVertexProperties = dstVertex.getExecutionProperties();
-    dstVertexProperties.put(Parallelism.of(PARALLELISM_TEN));
+    dstVertexProperties.put(ParallelismProperty.of(PARALLELISM_TEN));
 
     return Pair.of(srcVertex, dstVertex);
   }

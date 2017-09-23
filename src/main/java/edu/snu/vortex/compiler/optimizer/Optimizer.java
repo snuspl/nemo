@@ -18,7 +18,7 @@ package edu.snu.vortex.compiler.optimizer;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.*;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.common.dag.DAG;
@@ -83,7 +83,7 @@ public final class Optimizer {
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final Class<? extends DynamicOptimizationPass> dynamicOptimizationType =
-        metricCollectionBarrierVertex.getClassProperty(ExecutionProperty.Key.DynamicOptimizationType);
+        (Class) metricCollectionBarrierVertex.get(ExecutionProperty.Key.DynamicOptimizationType);
 
     switch (dynamicOptimizationType.getSimpleName()) {
       case DataSkewDynamicOptimizationPass.SIMPLE_NAME:

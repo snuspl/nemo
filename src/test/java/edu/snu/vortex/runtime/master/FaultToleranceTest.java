@@ -23,10 +23,10 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -101,7 +101,7 @@ public final class FaultToleranceTest {
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
-    final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacement.COMPUTE, 1, 0);
+    final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacementProperty.COMPUTE, 1, 0);
     final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
@@ -137,18 +137,18 @@ public final class FaultToleranceTest {
     final JobStateManager jobStateManager;
     final Transform t = mock(Transform.class);
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setProperty(Parallelism.of(3));
-    v1.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v1.setProperty(ParallelismProperty.of(3));
+    v1.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setProperty(Parallelism.of(2));
-    v2.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v2.setProperty(ParallelismProperty.of(2));
+    v2.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setProperty(Parallelism.of(4));
-    v3.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v3.setProperty(ParallelismProperty.of(4));
+    v3.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);

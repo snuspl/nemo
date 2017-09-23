@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -151,7 +151,7 @@ public final class RuntimeTestUtil {
         // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
           final Class<? extends DataCommunicationPattern> commPattern =
-              physicalStageEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern);
+              (Class) physicalStageEdge.get(ExecutionProperty.Key.DataCommunicationPattern);
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             if (commPattern.equals(ScatterGather.class)) {

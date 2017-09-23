@@ -18,9 +18,9 @@ package edu.snu.vortex.compiler.optimizer.pass;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
@@ -33,7 +33,7 @@ public final class DisaggregationPass implements StaticOptimizationPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(vertex -> {
-      vertex.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+      vertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     });
 
     dag.getVertices().forEach(vertex -> {

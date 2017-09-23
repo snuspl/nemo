@@ -20,8 +20,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.stage.*;
@@ -179,8 +179,10 @@ public final class PhysicalPlanGenerator
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
       final ExecutionPropertyMap firstVertexProperties = stageVertices.iterator().next().getExecutionProperties();
-      final Integer stageParallelism = (Integer) firstVertexProperties.get(ExecutionProperty.Key.Parallelism);
-      final String containerType = (String) firstVertexProperties.get(ExecutionProperty.Key.ExecutorPlacement);
+      final Integer stageParallelism =
+          (Integer) firstVertexProperties.get(ExecutionProperty.Key.Parallelism);
+      final String containerType =
+          (String) firstVertexProperties.get(ExecutionProperty.Key.ExecutorPlacement);
 
       // Begin building a new stage in the physical plan.
       physicalStageBuilder = new PhysicalStageBuilder(stage.getId(), stageParallelism, stage.getScheduleGroupIndex());

@@ -17,8 +17,8 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
@@ -81,12 +81,12 @@ public final class InputReader extends DataTransfer {
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
     final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
-        .equals(runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
+        .equals(runtimeEdge.get(ExecutionProperty.Key.MetricCollection));
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
     try {
-      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern).getSimpleName()) {
+      switch (((Class) runtimeEdge.get(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:
           return Collections.singletonList(readOneToOne());
         case Broadcast.SIMPLE_NAME:
@@ -112,7 +112,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readOneToOne() throws ExecutionException, InterruptedException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all());
+        (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   private List<CompletableFuture<Iterable<Element>>> readBroadcast()
@@ -123,7 +123,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
+          (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -137,7 +137,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx, dstTaskIndex);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all()));
+          (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore), HashRange.all()));
     }
 
     return futures;
@@ -164,7 +164,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(
-              partitionId, getId(), runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore),
+              partitionId, getId(), (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }
 
@@ -179,7 +179,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable<Element>> readIFile() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore), HashRange.all());
+        (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore), HashRange.all());
   }
 
   public RuntimeEdge getRuntimeEdge() {

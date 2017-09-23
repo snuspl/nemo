@@ -20,8 +20,8 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import org.junit.Before;
@@ -51,14 +51,14 @@ public class IFilePassTest {
     final DAG<IRVertex, IREdge> processedDAG = new IFilePass().apply(disaggProcessedDAG);
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> ScatterGather.class.equals(e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)))
-        .filter(e -> GlusterFileStore.class.equals(e.getClassProperty(ExecutionProperty.Key.DataStore)))
+        .filter(e -> ScatterGather.class.equals(e.get(ExecutionProperty.Key.DataCommunicationPattern)))
+        .filter(e -> GlusterFileStore.class.equals(e.get(ExecutionProperty.Key.DataStore)))
         .forEach(e -> assertTrue(e.get(ExecutionProperty.Key.WriteOptimization) != null
             && WriteOptimizationProperty.IFILE_WRITE.equals(e.get(ExecutionProperty.Key.WriteOptimization)))));
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> !ScatterGather.class.equals(e.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern)))
-        .filter(e -> GlusterFileStore.class.equals(e.getClassProperty(ExecutionProperty.Key.DataStore)))
+        .filter(e -> !ScatterGather.class.equals(e.get(ExecutionProperty.Key.DataCommunicationPattern)))
+        .filter(e -> GlusterFileStore.class.equals(e.get(ExecutionProperty.Key.DataStore)))
         .forEach(e -> assertTrue(e.get(ExecutionProperty.Key.WriteOptimization) == null)));
   }
 }

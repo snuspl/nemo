@@ -1,6 +1,6 @@
-package edu.snu.vortex.compiler.ir.execution_property.scheduler;
+package edu.snu.vortex.compiler.ir.executionproperty.scheduler;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.runtime.master.scheduler.SchedulingPolicy;
 
 /**

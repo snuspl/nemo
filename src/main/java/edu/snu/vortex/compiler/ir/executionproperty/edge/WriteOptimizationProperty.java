@@ -1,6 +1,6 @@
-package edu.snu.vortex.compiler.ir.execution_property.edge;
+package edu.snu.vortex.compiler.ir.executionproperty.edge;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 /**
  * WriteOptimization ExecutionProperty.

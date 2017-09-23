@@ -19,14 +19,14 @@ import com.google.common.collect.Lists;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ScheduleGroupIndex;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ScheduleGroupIndexProperty;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty.Key.StageId;
+import static edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty.Key.StageId;
 
 /**
  * A pass for assigning each stages in schedule groups.
@@ -120,7 +120,7 @@ public final class ScheduleGroupPass implements StaticOptimizationPass {
     // do the tagging
     dag.topologicalDo(irVertex ->
         irVertex.setProperty(
-            ScheduleGroupIndex.of(stageIdToScheduleGroupIndexMap.get(irVertex.get(StageId)))));
+            ScheduleGroupIndexProperty.of(stageIdToScheduleGroupIndexMap.get(irVertex.get(StageId)))));
 
     return dag;
   }

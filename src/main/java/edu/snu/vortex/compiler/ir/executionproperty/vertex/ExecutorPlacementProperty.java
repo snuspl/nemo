@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property.vertex;
+package edu.snu.vortex.compiler.ir.executionproperty.vertex;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 /**
  * ExecutionPlacement ExecutionProperty.
  */
-public final class ExecutorPlacement extends ExecutionProperty<String> {
-  private ExecutorPlacement(final String value) {
+public final class ExecutorPlacementProperty extends ExecutionProperty<String> {
+  private ExecutorPlacementProperty(final String value) {
     super(Key.ExecutorPlacement, value);
   }
 
-  public static ExecutorPlacement of(final String value) {
-    return new ExecutorPlacement(value);
+  public static ExecutorPlacementProperty of(final String value) {
+    return new ExecutorPlacementProperty(value);
   }
 
   // List of default pre-configured values. TODO #479: Remove static values.

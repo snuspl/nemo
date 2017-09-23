@@ -16,9 +16,9 @@
 package edu.snu.vortex.compiler.ir;
 
 import edu.snu.vortex.common.coder.Coder;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataCommunicationPatternProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
 import edu.snu.vortex.runtime.exception.UnsupportedExecutionPropertyException;
 import edu.snu.vortex.common.dag.Edge;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
@@ -84,14 +84,11 @@ public final class IREdge extends Edge<IRVertex> {
 
   /**
    * Get the executionProperty of the IREdge.
-   * @param executionFactorKey key of the execution property.
+   * @param executionPropertyKey key of the execution property.
    * @return the execution property.
    */
-  public Object get(final ExecutionProperty.Key executionFactorKey) {
-    return executionProperties.get(executionFactorKey);
-  }
-  public Class getClassProperty(final ExecutionProperty.Key executionFactorKey) {
-    return executionProperties.getClassProperty(executionFactorKey);
+  public Object get(final ExecutionProperty.Key executionPropertyKey) {
+    return executionProperties.get(executionPropertyKey);
   }
 
   /**
@@ -125,10 +122,10 @@ public final class IREdge extends Edge<IRVertex> {
 
   /**
    * Static function to copy executionProperties from an edge to the other.
-   * @param that the edge to copy executionProperties to.
+   * @param thatEdge the edge to copy executionProperties to.
    */
-  public void copyExecutionProperties(final IREdge that) {
-    this.getExecutionProperties().forEachProperties(that::setProperty);
+  public void copyExecutionPropertiesTo(final IREdge thatEdge) {
+    this.getExecutionProperties().forEachProperties(thatEdge::setProperty);
   }
 
   @Override

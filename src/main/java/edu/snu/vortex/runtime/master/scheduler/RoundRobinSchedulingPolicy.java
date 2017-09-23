@@ -16,7 +16,7 @@
 package edu.snu.vortex.runtime.master.scheduler;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.vortex.runtime.exception.SchedulingException;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
@@ -88,7 +88,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     this.executorRepresenterMap = new HashMap<>();
     this.conditionByContainerType = new HashMap<>();
     this.nextExecutorIndexByContainerType = new HashMap<>();
-    initializeContainerTypeIfAbsent(ExecutorPlacement.NONE); // Need this to avoid potential null errors
+    initializeContainerTypeIfAbsent(ExecutorPlacementProperty.NONE); // Need this to avoid potential null errors
   }
 
   public long getScheduleTimeoutMs() {
@@ -128,7 +128,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * @return (optionally) the selected executor.
    */
   private Optional<String> selectExecutorByRR(final String containerType) {
-    final List<String> candidateExecutorIds = (containerType.equals(ExecutorPlacement.NONE))
+    final List<String> candidateExecutorIds = (containerType.equals(ExecutorPlacementProperty.NONE))
         ? getAllContainers() // all containers
         : executorIdByContainerType.get(containerType); // containers of a particular type
 
@@ -169,8 +169,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
 
   private void signalPossiblyWaitingScheduler(final String typeOfContainerWithNewFreeSlot) {
     conditionByContainerType.get(typeOfContainerWithNewFreeSlot).signal();
-    if (!typeOfContainerWithNewFreeSlot.equals(ExecutorPlacement.NONE)) {
-      conditionByContainerType.get(ExecutorPlacement.NONE).signal();
+    if (!typeOfContainerWithNewFreeSlot.equals(ExecutorPlacementProperty.NONE)) {
+      conditionByContainerType.get(ExecutorPlacementProperty.NONE).signal();
     }
   }
 

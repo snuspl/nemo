@@ -17,9 +17,9 @@ package edu.snu.vortex.common.dag;
 
 import edu.snu.vortex.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.vortex.compiler.ir.*;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
 
@@ -260,7 +260,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // DataSizeMetricCollection is not compatible with Push (All data have to be stored before the data collection)
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> DataSkewDynamicOptimizationPass.class
-            .equals(e.getClassProperty(ExecutionProperty.Key.MetricCollection)))
+            .equals(e.get(ExecutionProperty.Key.MetricCollection)))
         .filter(e -> DataFlowModelProperty.Value.Push.equals(e.get(ExecutionProperty.Key.DataFlowModel)))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
@@ -275,7 +275,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
           throw new RuntimeException("DAG execution property check: "
               + "DataSizeMetricCollection edge is not compatible with push" + e.getId());
         }));
-    // All vertices connected with OneToOne edge should have identical Parallelism execution property.
+    // All vertices connected with OneToOne edge should have identical ParallelismProperty execution property.
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> e.getType().equals(IREdge.Type.OneToOne))
         .filter(e -> !Boolean.TRUE.equals(e.get(ExecutionProperty.Key.IsSideInput))).forEach(e -> {

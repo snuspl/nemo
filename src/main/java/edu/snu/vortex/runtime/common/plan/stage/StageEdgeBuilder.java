@@ -18,7 +18,7 @@ package edu.snu.vortex.runtime.common.plan.stage;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionPropertyMap;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
 
 /**
  * Stage Edge Builder.

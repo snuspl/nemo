@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.ir.execution_property.vertex;
+package edu.snu.vortex.compiler.ir.executionproperty.edge;
 
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.runtime.executor.data.PartitionStore;
 
 /**
- * Parallelism ExecutionProperty.
+ * DataStore ExecutionProperty.
  */
-public final class Parallelism extends ExecutionProperty<Integer> {
-  private Parallelism(final Integer value) {
-    super(Key.Parallelism, value);
+public final class DataStoreProperty extends ExecutionProperty<Class<? extends PartitionStore>> {
+  private DataStoreProperty(final Class<? extends PartitionStore> value) {
+    super(Key.DataStore, value);
   }
 
-  public static Parallelism of(final Integer value) {
-    return new Parallelism(value);
+  public static DataStoreProperty of(final Class<? extends PartitionStore> value) {
+    return new DataStoreProperty(value);
   }
 }

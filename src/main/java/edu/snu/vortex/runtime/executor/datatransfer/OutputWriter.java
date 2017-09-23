@@ -18,8 +18,8 @@ package edu.snu.vortex.runtime.executor.datatransfer;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.edge.WriteOptimizationProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
@@ -75,7 +75,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.channelDataPlacement = runtimeEdge.getClassProperty(ExecutionProperty.Key.DataStore);
+    this.channelDataPlacement = (Class) runtimeEdge.get(ExecutionProperty.Key.DataStore);
   }
 
   /**
@@ -85,7 +85,7 @@ public final class OutputWriter extends DataTransfer {
    */
   public void write(final Iterable<Element> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
-        .equals(runtimeEdge.getClassProperty(ExecutionProperty.Key.MetricCollection));
+        .equals(runtimeEdge.get(ExecutionProperty.Key.MetricCollection));
     final String writeOptAtt = (String) runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
@@ -95,7 +95,7 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch (runtimeEdge.getClassProperty(ExecutionProperty.Key.DataCommunicationPattern).getSimpleName()) {
+      switch (((Class) runtimeEdge.get(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:
           writeOneToOne(dataToWrite);
           break;
@@ -140,7 +140,7 @@ public final class OutputWriter extends DataTransfer {
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
     final Class<? extends Partitioning> partition =
-        runtimeEdge.getClassProperty(ExecutionProperty.Key.Partitioning);
+        (Class) runtimeEdge.get(ExecutionProperty.Key.Partitioning);
     switch (partition.getSimpleName()) {
       case Hash.SIMPLE_NAME:
         final int dstParallelism = (Integer) dstVertex.get(ExecutionProperty.Key.Parallelism);

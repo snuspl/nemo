@@ -22,9 +22,9 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.execution_property.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.ExecutorPlacement;
-import edu.snu.vortex.compiler.ir.execution_property.vertex.Parallelism;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.compiler.optimizer.TestPolicy;
@@ -98,12 +98,12 @@ public final class BatchSchedulerTest {
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
-    final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacement.COMPUTE, 1, 0);
+    final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacementProperty.COMPUTE, 1, 0);
     final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
 
-    final ResourceSpecification storageSpec = new ResourceSpecification(ExecutorPlacement.TRANSIENT, 1, 0);
+    final ResourceSpecification storageSpec = new ResourceSpecification(ExecutorPlacementProperty.TRANSIENT, 1, 0);
     final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext);
     final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext);
 
@@ -134,28 +134,28 @@ public final class BatchSchedulerTest {
     // Build DAG
     final Transform t = new EmptyComponents.EmptyTransform("empty");
     final IRVertex v1 = new OperatorVertex(t);
-    v1.setProperty(Parallelism.of(3));
-    v1.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v1.setProperty(ParallelismProperty.of(3));
+    v1.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v1);
 
     final IRVertex v2 = new OperatorVertex(t);
-    v2.setProperty(Parallelism.of(2));
-    v2.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v2.setProperty(ParallelismProperty.of(2));
+    v2.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v2);
 
     final IRVertex v3 = new OperatorVertex(t);
-    v3.setProperty(Parallelism.of(3));
-    v3.setProperty(ExecutorPlacement.of(ExecutorPlacement.COMPUTE));
+    v3.setProperty(ParallelismProperty.of(3));
+    v3.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
     final IRVertex v4 = new OperatorVertex(t);
-    v4.setProperty(Parallelism.of(2));
-    v4.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+    v4.setProperty(ParallelismProperty.of(2));
+    v4.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.TRANSIENT));
     irDAGBuilder.addVertex(v4);
 
     final IRVertex v5 = new OperatorVertex(new DoTransform(null, null));
-    v5.setProperty(Parallelism.of(2));
-    v5.setProperty(ExecutorPlacement.of(ExecutorPlacement.TRANSIENT));
+    v5.setProperty(ParallelismProperty.of(2));
+    v5.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.TRANSIENT));
     irDAGBuilder.addVertex(v5);
 
     final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
