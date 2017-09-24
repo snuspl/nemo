@@ -52,7 +52,7 @@ public class ExecutionPropertyMapTest {
   @Test
   public void testDefaultValues() {
     assertEquals(Hash.class, edgeMap.get(ExecutionProperty.Key.Partitioning));
-    assertEquals(1, (long)(Integer) vertexMap.get(ExecutionProperty.Key.Parallelism));
+    assertEquals(1, vertexMap.<Integer>get(ExecutionProperty.Key.Parallelism).longValue());
     assertEquals(edge.getId(), edgeMap.getId());
     assertEquals(source.getId(), vertexMap.getId());
   }
@@ -68,6 +68,6 @@ public class ExecutionPropertyMapTest {
     assertNull(edgeMap.get(ExecutionProperty.Key.DataFlowModel));
 
     vertexMap.put(ParallelismProperty.of(100));
-    assertEquals(100, (long)(Integer) vertexMap.get(ExecutionProperty.Key.Parallelism));
+    assertEquals(100, vertexMap.<Integer>get(ExecutionProperty.Key.Parallelism).longValue());
   }
 }

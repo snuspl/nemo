@@ -49,10 +49,11 @@ public class RuntimeEdge<V extends Vertex> extends Edge<V> {
 
   /**
    * Get the execution property of the Runtime Edge.
+   * @param <T> Type of the return value.
    * @param executionPropertyKey key of the execution property.
    * @return the execution property.
    */
-  public final Object get(final ExecutionProperty.Key executionPropertyKey) {
+  public final <T> T get(final ExecutionProperty.Key executionPropertyKey) {
     return edgeProperties.get(executionPropertyKey);
   }
 

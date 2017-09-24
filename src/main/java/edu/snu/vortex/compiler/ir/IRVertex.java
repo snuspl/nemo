@@ -58,10 +58,11 @@ public abstract class IRVertex extends Vertex {
 
   /**
    * Get the executionProperty of the IRVertex.
+   * @param <T> Type of the return value.
    * @param executionPropertyKey key of the execution property.
    * @return the execution property.
    */
-  public final Object get(final ExecutionProperty.Key executionPropertyKey) {
+  public final <T> T get(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.get(executionPropertyKey);
   }
 

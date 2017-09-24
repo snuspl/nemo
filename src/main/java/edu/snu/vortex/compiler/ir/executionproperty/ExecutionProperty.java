@@ -49,6 +49,11 @@ public abstract class ExecutionProperty<T> implements Serializable {
     return key;
   }
 
+  static <T> ExecutionProperty<T> emptyExecutionProperty() {
+    return new ExecutionProperty<T>(null, null) {
+    };
+  }
+
   /**
    * Key for different types of execution property.
    */

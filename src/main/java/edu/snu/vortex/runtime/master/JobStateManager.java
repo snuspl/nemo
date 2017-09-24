@@ -155,10 +155,10 @@ public final class JobStateManager {
       // Initialize states for partitions of inter-stage edges
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final Class<? extends DataCommunicationPattern> commPattern =
-            (Class) physicalStageEdge.get(ExecutionProperty.Key.DataCommunicationPattern);
+            physicalStageEdge.get(ExecutionProperty.Key.DataCommunicationPattern);
         final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
             .equals(physicalStageEdge.get(ExecutionProperty.Key.MetricCollection));
-        final String writeOptAtt = (String) physicalStageEdge.get(ExecutionProperty.Key.WriteOptimization);
+        final String writeOptAtt = physicalStageEdge.get(ExecutionProperty.Key.WriteOptimization);
         final Boolean isIFileWriteEdge =
             writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
 
@@ -166,7 +166,7 @@ public final class JobStateManager {
 
         if (commPattern.equals(ScatterGather.class) && isIFileWriteEdge) {
           final int dstParallelism =
-              (Integer) physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
+              physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
           final Set<String> producerTaskGroupIds = new HashSet<>();
           taskGroupsForStage.forEach(taskGroup -> producerTaskGroupIds.add(taskGroup.getTaskGroupId()));
           final Set<Integer> producerTaskIndices =
@@ -177,7 +177,7 @@ public final class JobStateManager {
           });
         } else if (ScatterGather.class.equals(commPattern) && !isDataSizeMetricCollectionEdge) {
           final int dstParallelism =
-              (Integer) physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
+              physicalStageEdge.getDstVertex().get(ExecutionProperty.Key.Parallelism);
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx ->
             IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> {
               final String partitionId =
@@ -322,7 +322,7 @@ public final class JobStateManager {
           if (stage.getId().equals(stageId)) {
             Set<String> remainingTaskGroupIds = new HashSet<>();
             remainingTaskGroupIds.addAll(
-                stage.getTaskGroupList().stream().map(taskGroup -> taskGroup.getTaskGroupId())
+                stage.getTaskGroupList().stream().map(TaskGroup::getTaskGroupId)
                     .collect(Collectors.toSet()));
             stageIdToRemainingTaskGroupSet.put(stageId, remainingTaskGroupIds);
             break;

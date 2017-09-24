@@ -48,7 +48,7 @@ public final class ParallelismPass implements StaticOptimizationPass {
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
               .filter(edge -> !Broadcast.class.equals(edge.get(ExecutionProperty.Key.DataCommunicationPattern)))
-              .mapToInt(edge -> (Integer) edge.getSrc().get(ExecutionProperty.Key.Parallelism))
+              .mapToInt(edge -> edge.getSrc().get(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
             vertex.setProperty(ParallelismProperty.of(parallelism.getAsInt()));

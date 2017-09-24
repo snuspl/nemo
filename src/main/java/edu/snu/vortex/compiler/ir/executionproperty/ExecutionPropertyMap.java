@@ -46,7 +46,7 @@ public final class ExecutionPropertyMap implements Serializable {
    */
   private ExecutionPropertyMap(final String id) {
     this.id = id;
-    properties = new HashMap<>();
+    properties = new EnumMap<>(ExecutionProperty.Key.class);
   }
 
   /**
@@ -113,12 +113,14 @@ public final class ExecutionPropertyMap implements Serializable {
 
   /**
    * Get the value of the given execution property type.
+   * @param <T> Type of the return value.
    * @param executionPropertyKey the execution property type to find the value of.
    * @return the value of the given execution property.
    */
-  public Object get(final ExecutionProperty.Key executionPropertyKey) {
-    ExecutionProperty<?> property = properties.get(executionPropertyKey);
-    return property == null ? null : property.getValue();
+  public <T> T get(final ExecutionProperty.Key executionPropertyKey) {
+    ExecutionProperty<T> property = (ExecutionProperty<T>) properties.getOrDefault(executionPropertyKey,
+        ExecutionProperty.<T>emptyExecutionProperty());
+    return property.getValue();
   }
 
   /**

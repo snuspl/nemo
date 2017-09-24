@@ -84,10 +84,11 @@ public final class IREdge extends Edge<IRVertex> {
 
   /**
    * Get the executionProperty of the IREdge.
+   * @param <T> Type of the return value.
    * @param executionPropertyKey key of the execution property.
    * @return the execution property.
    */
-  public Object get(final ExecutionProperty.Key executionPropertyKey) {
+  public <T> T get(final ExecutionProperty.Key executionPropertyKey) {
     return executionProperties.get(executionPropertyKey);
   }
 
