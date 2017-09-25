@@ -33,13 +33,13 @@
 ## Running Beam applications
 ### Running a Beam application as a standalone Maven project
 * Create a standalone Maven project such as the `MapReduce` example provided.
-* Create a jar file of the project and replace `target/bd17f-1.0-SNAPSHOT.jar` in `bin/run_standalone.sh` with the path of your jar file
+* Create a jar file of the project and replace `target/bd17f-1.0-SNAPSHOT.jar` in `bin/run_standalone.sh` with the path of your jar file.
 * Example execution of MapReduce Beam application as a standalone Maven project:
 ```bash
 ./bin/run_standalone.sh \
-	-job_id mapreduce \
-	-user_main MapReduce \
-	-user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+  -job_id mapreduce \
+  -user_main MapReduce \
+  -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 ```
 ### Configurable options
 * `-job_id`: ID of the Beam job
@@ -166,8 +166,8 @@ Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can ea
 ### Examples
 ```bash
 ./bin/run.sh \
-    -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare \
-    -optimization_policy pado \
-    -dag_dir "./target/dag/als" \
-    -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
+  -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare \
+  -optimization_policy pado \
+  -dag_dir "./target/dag/als" \
+  -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 ```
