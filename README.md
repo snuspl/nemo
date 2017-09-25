@@ -11,7 +11,7 @@
     * Download Hadoop 2.6.5 at http://apache.tt.co.kr/hadoop/common/hadoop-2.6.5/
     * Set the shell profile as following:
         ```bash
-        export HADOOP_HOME=/Users/jyeo/Downloads/hadoop-2.6.5
+        export HADOOP_HOME=/path/to/hadoo-2.6.5
         export YARN_HOME=$HADOOP_HOME
         export PATH=$PATH:$HADOOP_HOME/bin
         ```
