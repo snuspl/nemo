@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
@@ -169,8 +170,7 @@ public final class BatchSchedulerTest {
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
-
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -206,11 +206,12 @@ public final class BatchSchedulerTest {
 
     }
     assertTrue(jobStateManager.checkJobTermination());
+    RuntimeTestUtil.cleanup();
   }
 
   private int getNumScheduleGroups(final DAG<IRVertex, IREdge> irDAG) {
     final Set<Integer> scheduleGroupSet = new HashSet<>();
-    irDAG.getTopologicalSort().forEach(irVertex ->
+    irDAG.getVertices().forEach(irVertex ->
         scheduleGroupSet.add(irVertex.getAttr(Attribute.IntegerKey.ScheduleGroupIndex)));
     return scheduleGroupSet.size();
   }

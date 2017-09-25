@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.compiler.ir.attribute.Attribute;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
+import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.reef.tang.Tang;
@@ -78,7 +79,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -154,7 +155,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+        new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -236,7 +237,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
-            Optimizer.PolicyType.TestingPolicy, "");
+          new TestPolicy(), "");
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
@@ -295,5 +296,57 @@ public final class PendingTaskGroupPriorityQueueTest {
     // The dequeued TaskGroup should belong to the 3rd stage.
     assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
         dagOf3Stages.get(2).getId());
+  }
+
+  /**
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link PendingTaskGroupPriorityQueue}.
+   * Tests whether the dequeued TaskGroups are according to the stage-dependency priority,
+   * while concurrently scheduling TaskGroups that have dependencies, but are of different container types.
+   */
+  @Test
+  public void testContainerTypeAwareness() throws Exception {
+    final Transform t = mock(Transform.class);
+    final IRVertex v1 = new OperatorVertex(t);
+    v1.setAttr(Attribute.IntegerKey.Parallelism, 3);
+    v1.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    irDAGBuilder.addVertex(v1);
+
+    final IRVertex v2 = new OperatorVertex(t);
+    v2.setAttr(Attribute.IntegerKey.Parallelism, 2);
+    v2.setAttr(Attribute.Key.Placement, Attribute.Transient);
+    irDAGBuilder.addVertex(v2);
+
+    final IRVertex v3 = new OperatorVertex(new DoTransform(null, null));
+    v3.setAttr(Attribute.IntegerKey.Parallelism, 4);
+    v3.setAttr(Attribute.Key.Placement, Attribute.Compute);
+    irDAGBuilder.addVertex(v3);
+
+    final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
+    irDAGBuilder.connectVertices(e1);
+
+    final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
+    irDAGBuilder.connectVertices(e2);
+
+    final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
+        new TestPolicy(), "");
+    final PhysicalPlanGenerator physicalPlanGenerator =
+        Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
+    final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
+
+    pendingTaskGroupPriorityQueue.onJobScheduled(
+        new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()));
+
+    final List<PhysicalStage> dagOf3Stages = physicalDAG.getTopologicalSort();
+    for (int i = 0; i < dagOf3Stages.size(); i++) {
+      dagOf3Stages.get(i).getTaskGroupList().forEach(taskGroup ->
+          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
+    }
+
+    assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        dagOf3Stages.get(0).getId());
+    assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        dagOf3Stages.get(1).getId());
+    assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        dagOf3Stages.get(0).getId());
   }
 }
