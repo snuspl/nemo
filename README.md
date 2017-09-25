@@ -7,6 +7,14 @@
 * Java 8
 * Maven
 * Latest REEF snapshot
+* YARN settings
+    * Download Hadoop 2.6.5 at http://apache.tt.co.kr/hadoop/common/hadoop-2.6.5/
+    * Set the shell profile as following:
+        ```bash
+        export HADOOP_HOME=/Users/jyeo/Downloads/hadoop-2.6.5
+        export YARN_HOME=$HADOOP_HOME
+        export PATH=$PATH:$HADOOP_HOME/bin
+        ```
 * Protobuf 2.5.0
     * Downloadable at https://github.com/google/protobuf/releases/tag/v2.5.0
     * On Ubuntu:
@@ -22,18 +30,23 @@
 * Run all tests and install: `mvn clean install -T 2C`
 * Run only unit tests and install: `mvn clean install -DskipITs -T 2C`
 
-## Running Apache Beam applications
+## Running Beam applications
+### Running a Beam application as a standalone Maven project
+* Create a standalone Maven project such as the `MapReduce` example provided.
+* Create a jar file of the project and replace `target/bd17f-1.0-SNAPSHOT.jar` in `bin/run_standalone.sh` with the path of your jar file
+* Example execution of MapReduce Beam application as a standalone Maven project:
+```bash
+./bin/run_standalone.sh \
+	-job_id mapreduce \
+	-user_main MapReduce \
+	-user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+```
 ### Configurable options
 * `-job_id`: ID of the Beam job
-* `-user_main`: Beam application as a java class
-* `-optimization_policy`: DAG optimizer applied in Vortex compiler.
-Four policies are supported:
-	* `default`: No DAG optimization is applied.
-	* `pado` : Annotate DAG to perform optimizations of [EuroSys 2017 Pado](http://dl.acm.org/citation.cfm?id=3064181). This policy sets vertices that are likely to have high eviction cost to be located in `Reserved` resources and else in `Transient` resources so that eviction cost is minimized while preserving high system utilization.
-	* `disaggregation` : Annotate DAG that this job will run under disaggregated storage environment. For edges other than one-to-one, this policy sets data placement to `RemoteFile` and data transfer to `Pull` fashion so that it can utilize remote storages in the disaggregated storage environment.
-	* `dataskew` : Reshape the DAG to resolve data skew. This policy collects metrics to repartition the skewed data to evenly partitioned data.
-* `-user_args`: locations of input and output files
-* `-deploy_mode`:  `yarn` is supported
+* `-user_main`: Canonical name of the Beam application
+* `-user_args`: Arguments that the Beam application accepts
+* `-optimization_policy`: Canonical name of the optimization policy to apply to a job DAG in Vortex Compiler
+* `-deploy_mode`: `yarn` is supported(default value is `local`)
 
 ### Examples
 ```bash
@@ -131,7 +144,7 @@ This example configuration specifies
 
 ## Monitoring your job using web UI
 Vortex Compiler and Engine can store JSON representation of intermediate DAGs.
-`-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./target/dag`.
+* `-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./target/dag`.
 Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can easily visualize a DAG. Just drop the JSON file of the DAG as an input to it.
 
 ### Examples
