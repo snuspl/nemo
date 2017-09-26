@@ -8,10 +8,10 @@
 * Maven
 * Latest REEF snapshot
 * YARN settings
-    * Download Hadoop 2.6.5 at http://apache.tt.co.kr/hadoop/common/hadoop-2.6.5/
+    * Download Hadoop 2.7.4 at http://apache.tt.co.kr/hadoop/common/hadoop-2.7.4/
     * Set the shell profile as following:
         ```bash
-        export HADOOP_HOME=/path/to/hadoop-2.6.5
+        export HADOOP_HOME=/path/to/hadoop-2.7.4
         export YARN_HOME=$HADOOP_HOME
         export PATH=$PATH:$HADOOP_HOME/bin
         ```
