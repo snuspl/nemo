@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
@@ -28,7 +28,7 @@ import java.util.List;
  * Pass which enables I-File style write optimization.
  * It sets IFileWrite execution property on ScatterGather edges with RemoteFile partition store.
  */
-public final class IFilePass implements StaticOptimizationPass {
+public final class IFilePass implements AnnotatingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.getVertices().forEach(vertex -> {

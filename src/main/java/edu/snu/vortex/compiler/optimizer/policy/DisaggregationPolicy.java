@@ -15,8 +15,11 @@
  */
 package edu.snu.vortex.compiler.optimizer.policy;
 
-import edu.snu.vortex.compiler.optimizer.pass.*;
-import edu.snu.vortex.compiler.optimizer.pass.optimization.LoopOptimizations;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.*;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.*;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +29,7 @@ import java.util.List;
  */
 public final class DisaggregationPolicy implements Policy {
   @Override
-  public List<StaticOptimizationPass> getOptimizationPasses() {
+  public List<CompileTimePass> getOptimizationPasses() {
     return  Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new LoopGroupingPass(),

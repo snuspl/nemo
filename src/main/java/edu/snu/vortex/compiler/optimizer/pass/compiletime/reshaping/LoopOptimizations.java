@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.optimization;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.optimizer.pass.StaticOptimizationPass;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -96,7 +95,7 @@ public final class LoopOptimizations {
   /**
    * Pass for Loop Fusion optimization.
    */
-  public static final class LoopFusionPass implements StaticOptimizationPass {
+  public static final class LoopFusionPass implements ReshapingPass {
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       final List<LoopVertex> loopVertices = new ArrayList<>();
@@ -237,7 +236,7 @@ public final class LoopOptimizations {
   /**
    * Pass for Loop Invariant Code Motion optimization.
    */
-  public static final class LoopInvariantCodeMotionPass implements StaticOptimizationPass {
+  public static final class LoopInvariantCodeMotionPass implements ReshapingPass {
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       final List<LoopVertex> loopVertices = new ArrayList<>();

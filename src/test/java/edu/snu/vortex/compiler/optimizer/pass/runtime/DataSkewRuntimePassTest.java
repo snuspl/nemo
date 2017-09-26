@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization;
+package edu.snu.vortex.compiler.optimizer.pass.runtime;
 
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import org.junit.Before;
@@ -27,9 +27,9 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link DataSkewDynamicOptimizationPass}.
+ * Test {@link DataSkewRuntimePass}.
  */
-public class DataSkewDynamicOptimizationPassTest {
+public class DataSkewRuntimePassTest {
   private final Map<String, List<Long>> testMetricData = new HashMap<>();
 
   @Before
@@ -48,7 +48,7 @@ public class DataSkewDynamicOptimizationPassTest {
     final Integer taskGroupListSize = 5;
 
     final List<HashRange> hashRanges =
-        new DataSkewDynamicOptimizationPass().calculateHashRanges(testMetricData, taskGroupListSize);
+        new DataSkewRuntimePass().calculateHashRanges(testMetricData, taskGroupListSize);
 
     assertEquals(0, hashRanges.get(0).rangeStartInclusive());
     assertEquals(3, hashRanges.get(0).rangeEndExclusive());

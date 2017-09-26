@@ -18,10 +18,10 @@ package edu.snu.vortex.compiler.optimizer.policy;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.compiler.optimizer.pass.DefaultStagePartitioningPass;
-import edu.snu.vortex.compiler.optimizer.pass.ParallelismPass;
-import edu.snu.vortex.compiler.optimizer.pass.ScheduleGroupPass;
-import edu.snu.vortex.compiler.optimizer.pass.StaticOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.List;
  */
 public final class DefaultPolicyWithSeparatePass implements Policy {
   @Override
-  public List<StaticOptimizationPass> getOptimizationPasses() {
+  public List<CompileTimePass> getOptimizationPasses() {
     return Arrays.asList(
         new ParallelismPass(),
         new RefactoredPass()
@@ -43,7 +43,7 @@ public final class DefaultPolicyWithSeparatePass implements Policy {
   /**
    * A simple custom pass consisted of the two passes at the end of the default pass.
    */
-  public final class RefactoredPass implements StaticOptimizationPass {
+  public final class RefactoredPass implements CompileTimePass {
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       return new ScheduleGroupPass().apply(new DefaultStagePartitioningPass().apply(dag));

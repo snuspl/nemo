@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization;
+package edu.snu.vortex.compiler.optimizer.pass.runtime;
 
 import com.google.common.annotations.VisibleForTesting;
 import edu.snu.vortex.common.dag.DAG;
@@ -35,8 +35,8 @@ import java.util.stream.IntStream;
 /**
  * Dynamic optimization pass for handling data skew.
  */
-public final class DataSkewDynamicOptimizationPass implements DynamicOptimizationPass<Long> {
-  public static final String SIMPLE_NAME = "DataSkewDynamicOptimizationPass";
+public final class DataSkewRuntimePass implements RuntimePass<Long> {
+  public static final String SIMPLE_NAME = "DataSkewRuntimePass";
 
   @Override
   public PhysicalPlan apply(final PhysicalPlan originalPlan, final Map<String, List<Long>> metricData) {

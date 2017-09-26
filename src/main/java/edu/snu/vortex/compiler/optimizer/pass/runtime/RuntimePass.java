@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization;
+package edu.snu.vortex.compiler.optimizer.pass.runtime;
 
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 
@@ -28,6 +28,6 @@ import java.util.function.BiFunction;
  * after dynamic optimization.
  * @param <T> type of the metric data used for dynamic optimization.
  */
-public interface DynamicOptimizationPass<T>
+public interface RuntimePass<T>
     extends BiFunction<PhysicalPlan, Map<String, List<T>>, PhysicalPlan>, Serializable {
 }

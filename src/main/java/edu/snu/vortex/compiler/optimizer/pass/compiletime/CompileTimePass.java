@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
@@ -23,8 +23,8 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 /**
- * Interface for optimization passes that processes the DAG.
+ * Interface for compile-time optimization passes that processes the DAG.
  * It is a function that takes an original DAG to produce a processed DAG, after an optimization.
  */
-public interface StaticOptimizationPass extends Function<DAG<IRVertex, IREdge>, DAG<IRVertex, IREdge>>, Serializable {
+public interface CompileTimePass extends Function<DAG<IRVertex, IREdge>, DAG<IRVertex, IREdge>>, Serializable {
 }

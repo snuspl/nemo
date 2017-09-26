@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
 import com.google.common.collect.Lists;
 import edu.snu.vortex.common.dag.DAG;
@@ -33,7 +33,7 @@ import static edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty.Key
  * We traverse the DAG topologically to find the dependency information between stages and number them appropriately
  * to give correct order or schedule groups.
  */
-public final class ScheduleGroupPass implements StaticOptimizationPass {
+public final class ScheduleGroupPass implements AnnotatingPass {
   private final int initialScheduleGroup = 0;
 
   @Override

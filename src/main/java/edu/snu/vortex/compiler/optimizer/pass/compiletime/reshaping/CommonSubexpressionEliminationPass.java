@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.optimization;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping;
 
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
@@ -21,7 +21,6 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.optimizer.pass.StaticOptimizationPass;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,7 +31,7 @@ import java.util.stream.Collectors;
  * they include the same transform, and has incoming edges from an identical set of vertices.
  * Refer to CommonSubexpressionEliminationPassTest for such cases.
  */
-public final class CommonSubexpressionEliminationPass implements StaticOptimizationPass {
+public final class CommonSubexpressionEliminationPass implements ReshapingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     // find and collect vertices with equivalent transforms

@@ -15,7 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer.policy;
 
-import edu.snu.vortex.compiler.optimizer.pass.StaticOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.io.Serializable;
@@ -31,5 +31,5 @@ public interface Policy extends Serializable {
   /**
    * @return the content of the policy: the list of static optimization passes of the policy.
    */
-  List<StaticOptimizationPass> getOptimizationPasses();
+  List<CompileTimePass> getOptimizationPasses();
 }

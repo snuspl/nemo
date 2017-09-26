@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime;
 
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
@@ -25,7 +25,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatter
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.MetricCollectionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.DynamicOptimizationProperty;
-import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.vortex.runtime.executor.data.LocalFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
@@ -41,7 +41,7 @@ import java.util.List;
  * the end of the pass. This could be prevented by modifying other passes to take the snapshot of the DAG at the end of
  * each passes for metricCollectionVertices.
  */
-public final class DataSkewPass implements StaticOptimizationPass {
+public final class DataSkewPass implements CompileTimePass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
@@ -53,7 +53,7 @@ public final class DataSkewPass implements StaticOptimizationPass {
           irEdge.getType().equals(IREdge.Type.ScatterGather))) {
         final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
         metricCollectionBarrierVertex
-            .setProperty(DynamicOptimizationProperty.of(DataSkewDynamicOptimizationPass.class));
+            .setProperty(DynamicOptimizationProperty.of(DataSkewRuntimePass.class));
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
@@ -75,7 +75,7 @@ public final class DataSkewPass implements StaticOptimizationPass {
 
           final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
           edge.copyExecutionPropertiesTo(edgeToGbK);
-          edgeToGbK.setProperty(MetricCollectionProperty.of(DataSkewDynamicOptimizationPass.class));
+          edgeToGbK.setProperty(MetricCollectionProperty.of(DataSkewRuntimePass.class));
           builder.connectVertices(newEdge);
           builder.connectVertices(edgeToGbK);
         });

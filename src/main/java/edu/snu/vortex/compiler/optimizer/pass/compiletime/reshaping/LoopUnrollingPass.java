@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping;
 
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.common.dag.DAG;
@@ -24,7 +24,7 @@ import edu.snu.vortex.common.dag.DAGBuilder;
  * It first unrolls the root LoopVertex, which is in the form of linked list, into a straight line in the DAG.
  * Then, it decomposes each of the LoopVertices with the DAG information that each of them contain.
  */
-public final class LoopUnrollingPass implements StaticOptimizationPass {
+public final class LoopUnrollingPass implements ReshapingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     return recursivelyUnroll(dag);

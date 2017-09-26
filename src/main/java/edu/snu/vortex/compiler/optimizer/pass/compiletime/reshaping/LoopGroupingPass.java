@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping;
 
 import edu.snu.vortex.compiler.ir.*;
 import edu.snu.vortex.common.dag.DAG;
@@ -27,7 +27,7 @@ import java.util.*;
  * Then, it rolls repetitive operators into one root LoopOperator, which contains enough information to produce all
  * other iterative computations.
  */
-public final class LoopGroupingPass implements StaticOptimizationPass {
+public final class LoopGroupingPass implements ReshapingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     final Integer maxStackDepth = this.findMaxLoopVertexStackDepth(dag);

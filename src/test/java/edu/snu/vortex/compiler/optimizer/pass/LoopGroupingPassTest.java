@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

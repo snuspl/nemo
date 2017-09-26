@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.optimization;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.common.coder.Coder;
@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.CommonSubexpressionEliminationPass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

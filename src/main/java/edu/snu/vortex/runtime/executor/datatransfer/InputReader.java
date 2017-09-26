@@ -19,7 +19,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
-import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
@@ -81,7 +81,7 @@ public final class InputReader extends DataTransfer {
    * @return the read data.
    */
   public List<CompletableFuture<Iterable<Element>>> read() {
-    final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
+    final Boolean isDataSizeMetricCollectionEdge = DataSkewRuntimePass.class
         .equals(runtimeEdge.get(ExecutionProperty.Key.MetricCollection));
     final String writeOptAtt = (String) runtimeEdge.<String>get(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
