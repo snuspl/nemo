@@ -72,7 +72,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
   }
 
   @Override
-  public synchronized <T> Future<MessageSender<T>> asyncConnect(final String receiverId, final String messageTypeId) {
+  public synchronized <T> Future<MessageSender<T>> asyncConnect(final String receiverId, final String listenerId) {
     try {
       Connection connection = receiverToConnectionMap.get(receiverId);
       if (connection == null) {
@@ -122,15 +122,15 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     }
 
     private void processSendMessage(final ControlMessage.Message controlMessage) {
-      final String messageType = controlMessage.getListenerId();
-      listenerConcurrentMap.get(messageType).onMessage(controlMessage);
+      final String listenerId = controlMessage.getListenerId();
+      listenerConcurrentMap.get(listenerId).onMessage(controlMessage);
     }
 
     private void processRequestMessage(final ControlMessage.Message controlMessage) {
-      final String messageType = controlMessage.getListenerId();
+      final String listenerId = controlMessage.getListenerId();
       final String executorId = getExecutorId(controlMessage);
       final MessageContext messageContext = new NcsMessageContext(executorId, connectionFactory, idFactory);
-      listenerConcurrentMap.get(messageType).onMessageWithContext(controlMessage, messageContext);
+      listenerConcurrentMap.get(listenerId).onMessageWithContext(controlMessage, messageContext);
     }
 
     private void processReplyMessage(final ControlMessage.Message controlMessage) {

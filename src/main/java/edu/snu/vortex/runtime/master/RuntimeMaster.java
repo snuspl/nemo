@@ -135,6 +135,7 @@ public final class RuntimeMaster {
   /**
    * Accumulates the metric data for a barrier vertex.
    * TODO #511: Refactor metric aggregation for (general) run-rime optimization.
+   * TODO #513: Replace MetricCollectionBarrierVertex with a Customizable IRVertex.
    *
    * @param blockSizeInfo the block size info to accumulate.
    * @param srcVertexId   the ID of the source vertex.
@@ -214,7 +215,6 @@ public final class RuntimeMaster {
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
       switch (message.getType()) {
       default:
-        System.out.println("Listener id is " + message.getListenerId());
         throw new IllegalMessageException(
             new Exception("This message should not be requested to Master :" + message.getType()));
       }
