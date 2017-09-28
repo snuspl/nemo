@@ -20,7 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
-import edu.snu.vortex.runtime.executor.PersistentConnectionToMaster;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.vortex.runtime.executor.data.metadata.RemoteFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import org.apache.reef.tang.InjectionFuture;
@@ -49,10 +49,11 @@ import java.util.function.Supplier;
  * TODO #410: Implement metadata caching for the RemoteFileMetadata.
  */
 @ThreadSafe
-final class GlusterFileStore extends FileStore implements RemoteFileStore {
+public final class GlusterFileStore extends FileStore implements RemoteFileStore {
+  public static final String SIMPLE_NAME = "GlusterFileStore";
 
   private final ExecutorService executorService;
-  private final PersistentConnectionToMaster persistentConnectionToMaster;
+  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
   private final String executorId;
 
   @Inject
@@ -61,12 +62,12 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
                            @Parameter(JobConf.GlusterFileStoreNumThreads.class) final int numThreads,
                            @Parameter(JobConf.ExecutorId.class) final String executorId,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
-                           final PersistentConnectionToMaster persistentConnectionToMaster) {
+                           final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
     super(volumeDirectory + "/" + jobId, partitionManagerWorker);
     new File(getFileDirectory()).mkdirs();
     this.executorService = Executors.newFixedThreadPool(numThreads);
     this.executorId = executorId;
-    this.persistentConnectionToMaster = persistentConnectionToMaster;
+    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
   }
 
   /**
@@ -86,7 +87,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
         FilePartition partition = null;
         try {
           final RemoteFileMetadata metadata =
-              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
+              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
           partition = new FilePartition(coder, filePath, metadata);
           return partition.retrieveInHashRange(hashRange);
         } catch (final IOException cause) {
@@ -113,7 +114,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
       try {
         final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMaster);
+            new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
         partition = new FilePartition(coder, filePath, metadata);
         // Serialize and write the given blocks.
         final List<Long> blockSizeList = putBlocks(coder, partition, blocks);
@@ -136,7 +137,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
 
     try {
       final RemoteFileMetadata metadata =
-          new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
+          new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
       new FilePartition(coder, filePath, metadata).commit();
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
@@ -159,7 +160,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
       try {
         if (new File(filePath).isFile()) {
           final RemoteFileMetadata metadata =
-              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
+              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
           partition = new FilePartition(coder, filePath, metadata);
           partition.deleteFile();
           return true;
@@ -187,7 +188,7 @@ final class GlusterFileStore extends FileStore implements RemoteFileStore {
     try {
       if (new File(filePath).isFile()) {
         final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMaster);
+            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         partition = new FilePartition(coder, filePath, metadata);
         return partition.asFileAreas(hashRange);
       } else {
