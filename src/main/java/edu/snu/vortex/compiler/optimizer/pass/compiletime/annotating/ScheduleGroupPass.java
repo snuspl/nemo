@@ -25,6 +25,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.vertex.ScheduleGroupIndexPro
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty.Key.StageId;
 
@@ -33,13 +34,27 @@ import static edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty.Key
  * We traverse the DAG topologically to find the dependency information between stages and number them appropriately
  * to give correct order or schedule groups.
  */
-public final class ScheduleGroupPass implements AnnotatingPass {
-  private final int initialScheduleGroup = 0;
+public final class ScheduleGroupPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "ScheduleGroupPass";
+
+  ScheduleGroupPass() {
+    super(ExecutionProperty.Key.ScheduleGroupIndex, Stream.of(
+        ExecutionProperty.Key.StageId,
+        ExecutionProperty.Key.DataFlowModel
+    ).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
+  private static final int INITIAL_SCHEDULE_GROUP = 0;
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     // We assume that the input dag is tagged with stage ids.
-    if (dag.getVertices().stream().anyMatch(irVertex -> irVertex.get(StageId) == null)) {
+    if (dag.getVertices().stream().anyMatch(irVertex -> irVertex.getProperty(StageId) == null)) {
       throw new RuntimeException("There exists an IR vertex going through ScheduleGroupPass "
           + "without stage id tagged.");
     }
@@ -47,12 +62,12 @@ public final class ScheduleGroupPass implements AnnotatingPass {
     // Map of stage id to the stage ids that it depends on.
     final Map<Integer, Set<Integer>> dependentStagesMap = new HashMap<>();
     dag.topologicalDo(irVertex -> {
-      final Integer currentStageId = irVertex.get(StageId);
+      final Integer currentStageId = irVertex.getProperty(StageId);
       dependentStagesMap.putIfAbsent(currentStageId, new HashSet<>());
       // while traversing, we find the stages that point to the current stage and add them to the list.
       dag.getIncomingEdgesOf(irVertex).stream()
           .map(IREdge::getSrc)
-          .mapToInt(vertex -> vertex.get(StageId))
+          .mapToInt(vertex -> vertex.getProperty(StageId))
           .filter(n -> n != currentStageId)
           .forEach(n -> dependentStagesMap.get(currentStageId).add(n));
     });
@@ -67,9 +82,9 @@ public final class ScheduleGroupPass implements AnnotatingPass {
       final Integer previousSize = stageIdToScheduleGroupIndexMap.size();
       dependentStagesMap.forEach((stageId, dependentStages) -> {
         if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
-            && dependentStages.size() == initialScheduleGroup) { // initial source stages
+            && dependentStages.size() == INITIAL_SCHEDULE_GROUP) { // initial source stages
           // initial source stages are indexed with schedule group 0.
-          stageIdToScheduleGroupIndexMap.put(stageId, initialScheduleGroup);
+          stageIdToScheduleGroupIndexMap.put(stageId, INITIAL_SCHEDULE_GROUP);
         } else if (!stageIdToScheduleGroupIndexMap.keySet().contains(stageId)
             && dependentStages.stream().allMatch(stageIdToScheduleGroupIndexMap::containsKey)) { // next stages
           // We find the maximum schedule group index from previous stages, and index current stage with that number +1.
@@ -91,17 +106,17 @@ public final class ScheduleGroupPass implements AnnotatingPass {
     Lists.reverse(dag.getTopologicalSort()).forEach(v -> {
       // get the destination vertices of the edges that are marked as push
       final List<IRVertex> pushConnectedVertices = dag.getOutgoingEdgesOf(v).stream()
-          .filter(e -> DataFlowModelProperty.Value.Push.equals(e.get(ExecutionProperty.Key.DataFlowModel)))
+          .filter(e -> DataFlowModelProperty.Value.Push.equals(e.getProperty(ExecutionProperty.Key.DataFlowModel)))
           .map(IREdge::getDst)
           .collect(Collectors.toList());
       if (!pushConnectedVertices.isEmpty()) { // if we need to do something,
         // we find the min value of the destination schedule groups.
         final Integer newSchedulerGroupIndex = pushConnectedVertices.stream()
-            .mapToInt(irVertex -> stageIdToScheduleGroupIndexMap.get(irVertex.<Integer>get(StageId)))
+            .mapToInt(irVertex -> stageIdToScheduleGroupIndexMap.get(irVertex.<Integer>getProperty(StageId)))
             .min().orElseThrow(() -> new RuntimeException("a list was not empty, but produced an empty result"));
         // overwrite
-        final Integer originalScheduleGroupIndex = stageIdToScheduleGroupIndexMap.get(v.<Integer>get(StageId));
-        stageIdToScheduleGroupIndexMap.replace(v.get(StageId), newSchedulerGroupIndex);
+        final Integer originalScheduleGroupIndex = stageIdToScheduleGroupIndexMap.get(v.<Integer>getProperty(StageId));
+        stageIdToScheduleGroupIndexMap.replace(v.getProperty(StageId), newSchedulerGroupIndex);
         // shift those if it came too far
         if (stageIdToScheduleGroupIndexMap.values().stream()
             .filter(stageIndex -> stageIndex.equals(originalScheduleGroupIndex))
@@ -120,7 +135,7 @@ public final class ScheduleGroupPass implements AnnotatingPass {
     // do the tagging
     dag.topologicalDo(irVertex ->
         irVertex.setProperty(
-            ScheduleGroupIndexProperty.of(stageIdToScheduleGroupIndexMap.get(irVertex.<Integer>get(StageId)))));
+            ScheduleGroupIndexProperty.of(stageIdToScheduleGroupIndexMap.get(irVertex.<Integer>getProperty(StageId)))));
 
     return dag;
   }

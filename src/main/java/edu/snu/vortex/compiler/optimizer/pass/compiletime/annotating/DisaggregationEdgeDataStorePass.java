@@ -18,34 +18,39 @@ package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.List;
 
 /**
- * Disaggregated Resources pass for tagging vertices.
+ * A pass to support Disaggregated Resources by tagging vertices.
+ * This pass handles the DataStore ExecutionProperty.
  */
-public final class DisaggregationPass implements AnnotatingPass {
+public final class DisaggregationEdgeDataStorePass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DisaggregationEdgeDataStorePass";
+
+  public DisaggregationEdgeDataStorePass() {
+    super(ExecutionProperty.Key.DataStore);
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.topologicalDo(vertex -> {
-      vertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
-    });
-
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (edge.getType().equals(IREdge.Type.OneToOne)) {
             edge.setProperty(DataStoreProperty.of(MemoryStore.class));
-            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
           } else {
             edge.setProperty(DataStoreProperty.of(GlusterFileStore.class));
-            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
           }
         });
       }

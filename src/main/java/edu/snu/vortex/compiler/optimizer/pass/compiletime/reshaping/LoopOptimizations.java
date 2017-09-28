@@ -95,7 +95,14 @@ public final class LoopOptimizations {
   /**
    * Pass for Loop Fusion optimization.
    */
-  public static final class LoopFusionPass implements ReshapingPass {
+  public static final class LoopFusionPass extends ReshapingPass {
+    public static final String SIMPLE_NAME = "LoopFusionPass";
+
+    @Override
+    public String getName() {
+      return SIMPLE_NAME;
+    }
+
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       final List<LoopVertex> loopVertices = new ArrayList<>();
@@ -236,7 +243,14 @@ public final class LoopOptimizations {
   /**
    * Pass for Loop Invariant Code Motion optimization.
    */
-  public static final class LoopInvariantCodeMotionPass implements ReshapingPass {
+  public static final class LoopInvariantCodeMotionPass extends ReshapingPass {
+    public static final String SIMPLE_NAME = "LoopInvariantCodeMotionPass";
+
+    @Override
+    public String getName() {
+      return SIMPLE_NAME;
+    }
+
     @Override
     public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
       final List<LoopVertex> loopVertices = new ArrayList<>();

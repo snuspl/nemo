@@ -15,7 +15,10 @@
  */
 package edu.snu.vortex.compiler.optimizer.pass.runtime;
 
+import edu.snu.vortex.common.Pair;
+import edu.snu.vortex.compiler.eventhandler.RuntimeEventHandler;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.master.eventhandler.CompilerEventHandler;
 
 import java.io.Serializable;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.function.BiFunction;
  * after dynamic optimization.
  * @param <T> type of the metric data used for dynamic optimization.
  */
-public interface RuntimePass<T>
-    extends BiFunction<PhysicalPlan, Map<String, List<T>>, PhysicalPlan>, Serializable {
+public interface RuntimePass<T> extends BiFunction<PhysicalPlan, T, PhysicalPlan>, Serializable {
+  String getName();
+  Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler>> getEventHandlers();
 }

@@ -18,8 +18,10 @@ package edu.snu.vortex.compiler.optimizer.pass.compiletime;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 import java.io.Serializable;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -27,4 +29,6 @@ import java.util.function.Function;
  * It is a function that takes an original DAG to produce a processed DAG, after an optimization.
  */
 public interface CompileTimePass extends Function<DAG<IRVertex, IREdge>, DAG<IRVertex, IREdge>>, Serializable {
+  String getName();
+  Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties();
 }

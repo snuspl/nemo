@@ -15,22 +15,33 @@
  */
 package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
+import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
-import edu.snu.vortex.runtime.executor.data.LocalFileStore;
-import edu.snu.vortex.runtime.executor.data.MemoryStore;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- * Pado pass for tagging edges.
- */
-public final class PadoEdgePass implements AnnotatingPass {
+import static edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromReservedToTransient;
+import static edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromTransientToReserved;
+
+public final class PadoEdgeDataFlowModelPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "PadoEdgeDataFlowModelPass";
+
+  public PadoEdgeDataFlowModelPass() {
+    super(ExecutionProperty.Key.DataFlowModel, Stream.of(
+        ExecutionProperty.Key.ExecutorPlacement
+    ).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.getVertices().forEach(vertex -> {
@@ -38,17 +49,13 @@ public final class PadoEdgePass implements AnnotatingPass {
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
           if (fromTransientToReserved(edge)) {
-            edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
             edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Push));
           } else if (fromReservedToTransient(edge)) {
-            edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
             edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
           } else {
             if (edge.getType().equals(IREdge.Type.OneToOne)) {
-              edge.setProperty(DataStoreProperty.of(MemoryStore.class));
               edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
             } else {
-              edge.setProperty(DataStoreProperty.of(LocalFileStore.class));
               edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
             }
           }
@@ -56,29 +63,5 @@ public final class PadoEdgePass implements AnnotatingPass {
       }
     });
     return dag;
-  }
-
-  /**
-   * checks if the edge is from transient container to a reserved container.
-   * @param irEdge edge to check.
-   * @return whether or not the edge satisfies the condition.
-   */
-  private static boolean fromTransientToReserved(final IREdge irEdge) {
-    return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacementProperty.TRANSIENT)
-        && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacementProperty.RESERVED);
-  }
-
-  /**
-   * checks if the edge is from reserved container to a transient container.
-   * @param irEdge edge to check.
-   * @return whether or not the edge satisfies the condition.
-   */
-  private static boolean fromReservedToTransient(final IREdge irEdge) {
-    return irEdge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacementProperty.RESERVED)
-        && irEdge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)
-        .equals(ExecutorPlacementProperty.TRANSIENT);
   }
 }

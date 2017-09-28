@@ -27,7 +27,14 @@ import java.util.*;
  * Then, it rolls repetitive operators into one root LoopOperator, which contains enough information to produce all
  * other iterative computations.
  */
-public final class LoopGroupingPass implements ReshapingPass {
+public final class LoopGroupingPass extends ReshapingPass {
+  public static final String SIMPLE_NAME = "LoopGroupingPass";
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     final Integer maxStackDepth = this.findMaxLoopVertexStackDepth(dag);

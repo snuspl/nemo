@@ -49,7 +49,7 @@ public final class Optimizer {
     if (optimizationPolicy == null || optimizationPolicy.getOptimizationPasses().isEmpty()) {
       throw new RuntimeException("A policy name should be specified.");
     }
-    return process(dag, optimizationPolicy.getOptimizationPasses(), dagDirectory);
+    return process(dag, optimizationPolicy.getOptimizationPasses().iterator(), dagDirectory);
   }
 
   /**
@@ -58,18 +58,19 @@ public final class Optimizer {
    * @param passes passes to apply.
    * @param dagDirectory directory to save the DAG information.
    * @return the processed DAG.
-   * @throws Exception Exceptionso n the way.
+   * @throws Exception Exceptions on the way.
    */
   private static DAG<IRVertex, IREdge> process(final DAG<IRVertex, IREdge> dag,
-                                               final List<CompileTimePass> passes,
+                                               final Iterator<CompileTimePass> passes,
                                                final String dagDirectory) throws Exception {
-    if (passes.isEmpty()) {
-      return dag;
-    } else {
-      final DAG<IRVertex, IREdge> processedDAG = passes.get(0).apply(dag);
-      processedDAG.storeJSON(dagDirectory, "ir-after-" + passes.get(0).getClass().getSimpleName(),
+    if (passes.hasNext()) {
+      final CompileTimePass passToApply = passes.next();
+      final DAG<IRVertex, IREdge> processedDAG = passToApply.apply(dag);
+      processedDAG.storeJSON(dagDirectory, "ir-after-" + passToApply.getClass().getSimpleName(),
           "DAG after optimization");
-      return process(processedDAG, passes.subList(1, passes.size()), dagDirectory);
+      return process(processedDAG, passes, dagDirectory);
+    } else {
+      return dag;
     }
   }
 
@@ -83,7 +84,7 @@ public final class Optimizer {
           final PhysicalPlan originalPlan,
           final MetricCollectionBarrierVertex metricCollectionBarrierVertex) {
     final Class<? extends RuntimePass> dynamicOptimizationType =
-        (Class) metricCollectionBarrierVertex.get(ExecutionProperty.Key.DynamicOptimizationType);
+        (Class) metricCollectionBarrierVertex.getProperty(ExecutionProperty.Key.DynamicOptimizationType);
 
     switch (dynamicOptimizationType.getSimpleName()) {
       case DataSkewRuntimePass.SIMPLE_NAME:

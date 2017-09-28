@@ -27,18 +27,30 @@ import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.B
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Optimization pass for tagging parallelism execution property.
  */
-public final class ParallelismPass implements AnnotatingPass {
+public final class ParallelismPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "ParallelismPass";
+
+  public ParallelismPass() {
+    super(ExecutionProperty.Key.Parallelism);
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     // Propagate forward source parallelism
     dag.topologicalDo(vertex -> {
       try {
         final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex).stream()
-            .filter(edge -> !Boolean.TRUE.equals(edge.get(ExecutionProperty.Key.IsSideInput)))
+            .filter(edge -> !Boolean.TRUE.equals(edge.isSideInput()))
             .collect(Collectors.toList());
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
@@ -47,8 +59,8 @@ public final class ParallelismPass implements AnnotatingPass {
           final OptionalInt parallelism = inEdges.stream()
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
-              .filter(edge -> !Broadcast.class.equals(edge.get(ExecutionProperty.Key.DataCommunicationPattern)))
-              .mapToInt(edge -> edge.getSrc().get(ExecutionProperty.Key.Parallelism))
+              .filter(edge -> IREdge.Type.Broadcast.equals(edge.getType()))
+              .mapToInt(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
             vertex.setProperty(ParallelismProperty.of(parallelism.getAsInt()));

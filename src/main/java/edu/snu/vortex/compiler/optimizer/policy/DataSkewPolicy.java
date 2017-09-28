@@ -15,10 +15,11 @@
  */
 package edu.snu.vortex.compiler.optimizer.policy;
 
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.*;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DataSkewPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;

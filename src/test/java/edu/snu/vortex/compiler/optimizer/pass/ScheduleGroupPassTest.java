@@ -54,8 +54,8 @@ public final class ScheduleGroupPassTest {
 
     Integer previousScheduleGroupIndex = 0;
     for (final IRVertex irVertex : processedDAG.getTopologicalSort()) {
-      assertTrue(irVertex.get(ExecutionProperty.Key.ScheduleGroupIndex) != null);
-      final Integer currentScheduleGroupIndex = irVertex.get(ExecutionProperty.Key.ScheduleGroupIndex);
+      assertTrue(irVertex.getProperty(ExecutionProperty.Key.ScheduleGroupIndex) != null);
+      final Integer currentScheduleGroupIndex = irVertex.getProperty(ExecutionProperty.Key.ScheduleGroupIndex);
       assertTrue(currentScheduleGroupIndex >= previousScheduleGroupIndex);
       if (currentScheduleGroupIndex > previousScheduleGroupIndex) {
         previousScheduleGroupIndex = currentScheduleGroupIndex;

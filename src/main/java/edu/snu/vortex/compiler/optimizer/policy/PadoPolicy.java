@@ -38,7 +38,7 @@ public final class PadoPolicy implements Policy {
         LoopOptimizations.getLoopInvariantCodeMotionPass(),
         new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
         // Processes vertices and edges with Pado algorithm.
-        new PadoVertexPass(), new PadoEdgePass(),
+        new PadoVertexPass(), new PadoEdgeDataStorePass(),
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()
     );

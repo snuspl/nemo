@@ -26,7 +26,18 @@ import java.util.List;
 /**
  * Pado pass for tagging vertices.
  */
-public final class PadoVertexPass implements AnnotatingPass {
+public final class PadoVertexPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "PadoVertexPass";
+
+  public PadoVertexPass() {
+    super(ExecutionProperty.Key.ExecutorPlacement);
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(vertex -> {
@@ -61,7 +72,7 @@ public final class PadoVertexPass implements AnnotatingPass {
   private boolean allFromReserved(final List<IREdge> irEdges) {
     return irEdges.stream()
         .allMatch(edge ->
-            edge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
+            edge.getSrc().getProperty(ExecutionProperty.Key.ExecutorPlacement)
                 .equals(ExecutorPlacementProperty.RESERVED));
   }
 }

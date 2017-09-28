@@ -23,7 +23,6 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.IsSideInputProperty;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.*;
 import org.apache.beam.sdk.io.Read;
@@ -191,8 +190,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
           final IRVertex src = pValueToVertex.get(pValue);
           final BeamCoder coder = pValueToCoder.get(pValue);
           final IREdge edge =
-              new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder)
-                  .setProperty(IsSideInputProperty.of(true));
+              new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder, true);
           builder.connectVertices(edge);
         });
   }

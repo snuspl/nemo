@@ -19,24 +19,19 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
-import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * Pass which enables I-File style write optimization.
- * It sets IFileWrite execution property on ScatterGather edges with RemoteFile partition store.
+ * A pass to support Disaggregated Resources by tagging vertices.
+ * This pass handles the DataFlowModel ExecutionProperty.
  */
-public final class IFilePass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "IFilePass";
+public class DisaggregationEdgeDataFlowModelPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DisaggregationEdgeDataFlowModelPass";
 
-  public IFilePass() {
-    super(ExecutionProperty.Key.WriteOptimization, Stream.of(
-        ExecutionProperty.Key.DataStore
-    ).collect(Collectors.toSet()));
+  public DisaggregationEdgeDataFlowModelPass() {
+    super(ExecutionProperty.Key.DataFlowModel);
   }
 
   @Override
@@ -45,15 +40,18 @@ public final class IFilePass extends AnnotatingPass {
   }
 
   @Override
-  public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
+  public DAG<IRVertex, IREdge> apply(DAG<IRVertex, IREdge> dag) {
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
-      inEdges.forEach(edge -> {
-        if (edge.getType().equals(IREdge.Type.ScatterGather)
-            && GlusterFileStore.class.equals(edge.getProperty(ExecutionProperty.Key.DataStore))) {
-          edge.setProperty(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
-        }
-      });
+      if (!inEdges.isEmpty()) {
+        inEdges.forEach(edge -> {
+          if (edge.getType().equals(IREdge.Type.OneToOne)) {
+            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
+          } else {
+            edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
+          }
+        });
+      }
     });
     return dag;
   }

@@ -31,7 +31,14 @@ import java.util.stream.Collectors;
  * they include the same transform, and has incoming edges from an identical set of vertices.
  * Refer to CommonSubexpressionEliminationPassTest for such cases.
  */
-public final class CommonSubexpressionEliminationPass implements ReshapingPass {
+public final class CommonSubexpressionEliminationPass extends ReshapingPass {
+  public static final String SIMPLE_NAME = "CommonSubexpressionEliminationPass";
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     // find and collect vertices with equivalent transforms

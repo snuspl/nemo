@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default method of partitioning an IR DAG into stages.
@@ -35,7 +36,21 @@ import java.util.stream.Collectors;
  * to a new stage. We filter out the candidate incoming edges to connect to an existing stage, and if it exists, we
  * connect it to the stage, and otherwise we don't.
  */
-public final class DefaultStagePartitioningPass implements AnnotatingPass {
+public final class DefaultStagePartitioningPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DefaultStagePartitioningPass";
+
+  public DefaultStagePartitioningPass() {
+    super(ExecutionProperty.Key.StageId, Stream.of(
+        ExecutionProperty.Key.ExecutorPlacement,
+        ExecutionProperty.Key.DataStore
+    ).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
+  }
+
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> irDAG) {
     final AtomicInteger stageNum = new AtomicInteger(0);
@@ -72,10 +87,10 @@ public final class DefaultStagePartitioningPass implements AnnotatingPass {
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             .filter(edge -> edge.getType().equals(IREdge.Type.OneToOne)) // One to one edges
             // MemoryStore placement
-            .filter(edge -> MemoryStore.class.equals(edge.get(ExecutionProperty.Key.DataStore)))
+            .filter(edge -> MemoryStore.class.equals(edge.getProperty(ExecutionProperty.Key.DataStore)))
             // if src and dst are placed on same container types
-            .filter(edge -> edge.getSrc().get(ExecutionProperty.Key.ExecutorPlacement)
-                .equals(edge.getDst().get(ExecutionProperty.Key.ExecutorPlacement)))
+            .filter(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.ExecutorPlacement)
+                .equals(edge.getDst().getProperty(ExecutionProperty.Key.ExecutorPlacement)))
             // Src that is already included in a stage
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
             // Others don't depend on the candidate stage.

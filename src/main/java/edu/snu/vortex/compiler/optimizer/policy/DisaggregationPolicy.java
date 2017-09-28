@@ -36,7 +36,7 @@ public final class DisaggregationPolicy implements Policy {
         LoopOptimizations.getLoopFusionPass(),
         LoopOptimizations.getLoopInvariantCodeMotionPass(),
         new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
-        new DisaggregationPass(), new IFilePass(),
+        new DisaggregationEdgeDataStorePass(), new IFilePass(),
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()
     );

@@ -75,7 +75,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.channelDataPlacement = runtimeEdge.get(ExecutionProperty.Key.DataStore);
+    this.channelDataPlacement = runtimeEdge.getProperty(ExecutionProperty.Key.DataStore);
   }
 
   /**
@@ -85,8 +85,8 @@ public final class OutputWriter extends DataTransfer {
    */
   public void write(final Iterable<Element> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge = DataSkewRuntimePass.class
-        .equals(runtimeEdge.get(ExecutionProperty.Key.MetricCollection));
-    final String writeOptAtt = runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
+        .equals(runtimeEdge.getProperty(ExecutionProperty.Key.MetricCollection));
+    final String writeOptAtt = runtimeEdge.getProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
     if (writeOptAtt != null && !writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE)) {
@@ -95,7 +95,7 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch ((runtimeEdge.<Class>get(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
+      switch ((runtimeEdge.<Class>getProperty(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:
           writeOneToOne(dataToWrite);
           break;
@@ -140,10 +140,10 @@ public final class OutputWriter extends DataTransfer {
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
     final Class<? extends Partitioning> partition =
-        runtimeEdge.get(ExecutionProperty.Key.Partitioning);
+        runtimeEdge.getProperty(ExecutionProperty.Key.Partitioning);
     switch (partition.getSimpleName()) {
       case Hash.SIMPLE_NAME:
-        final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+        final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
 
         // First partition the data to write,
         final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
@@ -196,7 +196,7 @@ public final class OutputWriter extends DataTransfer {
   private void hashAndWrite(final Iterable<Element> dataToWrite)
       throws ExecutionException, InterruptedException, PartitionWriteException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -241,7 +241,7 @@ public final class OutputWriter extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   private void writeIFile(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
     final List<List<Pair<Integer, Iterable<Element>>>> outputList = new ArrayList<>(dstParallelism);
