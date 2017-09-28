@@ -31,16 +31,19 @@
 * Run only unit tests and install: `mvn clean install -DskipITs -T 2C`
 
 ## Running Beam applications
-### Running a Beam application as a standalone Maven project
-* Create a standalone Maven project such as the `MapReduce` example provided.
-* Create a jar file of the project and replace `target/bd17f-1.0-SNAPSHOT.jar` in `bin/run_standalone.sh` with the path of your jar file.
-* Example execution of MapReduce Beam application as a standalone Maven project:
+### Running an external Beam application
+* Use run_external_app.sh instead of run.sh
+* Set the first argument the path to the external Beam application jar
+
 ```bash
-./bin/run_standalone.sh \
-  -job_id mapreduce \
-  -user_main MapReduce \
-  -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
+./bin/run_external_app.sh \
+`pwd`/vortex_app/target/bd17f-1.0-SNAPSHOT.jar \
+-job_id mapreduce \
+-executor_json `pwd`/vortex_runtime/config/default.json \
+-user_main MapReduce \
+-user_args "`pwd`/mr_input_data `pwd`/vortex_output/output_data"
 ```
+
 ### Configurable options
 * `-job_id`: ID of the Beam job
 * `-user_main`: Canonical name of the Beam application
@@ -101,7 +104,7 @@ This example configuration specifies
 
 ## Monitoring your job using web UI
 Vortex Compiler and Engine can store JSON representation of intermediate DAGs.
-* `-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./target/dag`.
+* `-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./dag`.
 Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can easily visualize a DAG. Just drop the JSON file of the DAG as an input to it.
 
 ### Examples
@@ -109,6 +112,6 @@ Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can ea
 ./bin/run.sh \
   -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare \
   -optimization_policy pado \
-  -dag_dir "./target/dag/als" \
+  -dag_dir "./dag/als" \
   -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 ```

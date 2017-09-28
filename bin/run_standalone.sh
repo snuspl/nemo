@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-java -cp "target/vortex-0.1-SNAPSHOT-shaded.jar:`yarn classpath`:target/bd17f-1.0-SNAPSHOT.jar" edu.snu.vortex.client.JobLauncher "$@"
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd $parent_path
+java -cp ../target/vortex-0.1-SNAPSHOT-shaded.jar:$1:`yarn classpath` edu.snu.vortex.client.JobLauncher "${@:2}"
