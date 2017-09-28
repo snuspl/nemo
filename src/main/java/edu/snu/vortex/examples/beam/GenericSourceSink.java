@@ -93,14 +93,16 @@ final class GenericSourceSink {
     }
 
     @ProcessElement
-    public void processElement(final ProcessElement c) {
+    public void processElement(final ProcessContext c) {
       SimpleDateFormat dateFormatTime = new SimpleDateFormat("yyyy:mm:dd:hh:mm:ss");
       String dateFormatTimeStr = dateFormatTime.format(new Date(System.currentTimeMillis()));
 
-      String data = c.toString();
+      String data = c.element();
+
+      LOG.info("HDFS writing {} to a file {}", data, path + "_" + dateFormatTimeStr);
 
       try (final BufferedWriter writer = new BufferedWriter(
-          new FileWriter(path + dateFormatTimeStr))) {
+          new FileWriter(path + "_" + dateFormatTimeStr, true))) {
         writer.write(data + "\n");
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -111,13 +113,12 @@ final class GenericSourceSink {
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
     if (path.startsWith("hdfs://")) {
-      // TODO #268 Import beam-sdks-java-io-hadoop-file-system
-      //throw new UnsupportedOperationException("Writing to HDFS is not yet supported");
       LOG.info("HDFS write start: " + System.nanoTime());
 
       dataToWrite.apply(ParDo.of(new HDFSWrite(path)));
 
       LOG.info("HDFS write end: " + System.nanoTime());
+
       return PDone.in(dataToWrite.getPipeline());
     } else {
       return dataToWrite.apply(TextIO.write().to(path));
