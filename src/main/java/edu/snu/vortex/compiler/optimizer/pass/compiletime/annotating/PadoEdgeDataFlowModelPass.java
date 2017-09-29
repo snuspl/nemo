@@ -28,6 +28,9 @@ import java.util.stream.Stream;
 import static edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromReservedToTransient;
 import static edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromTransientToReserved;
 
+/**
+ * Pado pass for tagging edges with DataFlowModel ExecutionProperty.
+ */
 public final class PadoEdgeDataFlowModelPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "PadoEdgeDataFlowModelPass";
 

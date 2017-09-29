@@ -15,23 +15,24 @@
  */
 package edu.snu.vortex.compiler.optimizer.pass.compiletime.composite;
 
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataFlowModelPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.PadoVertexPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;
 
 import java.util.Arrays;
 
 /**
- * A series of passes to support Pado optimization.
+ * A series of passes to perform LoopOptimization.
  */
-public final class PadoPass extends CompositePass {
-  public static final String SIMPLE_NAME = "PadoPass";
+public final class LoopOptimizationPass extends CompositePass {
+  public static final String SIMPLE_NAME = "LoopOptimizationPass";
 
-  public PadoPass() {
+  public LoopOptimizationPass() {
     super(Arrays.asList(
-        new PadoVertexPass(),
-        new PadoEdgeDataStorePass(),
-        new PadoEdgeDataFlowModelPass()
+        new LoopGroupingPass(),
+        LoopOptimizations.getLoopFusionPass(),
+        LoopOptimizations.getLoopInvariantCodeMotionPass(),
+        new LoopUnrollingPass() // Groups then unrolls loops. TODO #162: remove unrolling pt.
     ));
   }
 

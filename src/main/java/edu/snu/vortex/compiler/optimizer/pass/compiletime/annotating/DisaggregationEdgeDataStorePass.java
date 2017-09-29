@@ -26,7 +26,7 @@ import edu.snu.vortex.runtime.executor.data.MemoryStore;
 import java.util.List;
 
 /**
- * A pass to support Disaggregated Resources by tagging vertices.
+ * A pass to support Disaggregated Resources by tagging edges.
  * This pass handles the DataStore ExecutionProperty.
  */
 public final class DisaggregationEdgeDataStorePass extends AnnotatingPass {

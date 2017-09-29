@@ -21,8 +21,6 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.master.eventhandler.CompilerEventHandler;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 /**

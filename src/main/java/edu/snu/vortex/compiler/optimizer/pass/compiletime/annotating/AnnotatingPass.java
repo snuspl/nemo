@@ -25,26 +25,26 @@ import java.util.Set;
  * A compile-time pass that annotates the DAG with execution properties.
  */
 public abstract class AnnotatingPass implements CompileTimePass {
-  final ExecutionProperty.Key keyOfExecutionPropertyToModify;
-  final Set<ExecutionProperty.Key> prerequisiteExecutionProperties;
+  private final ExecutionProperty.Key keyOfExecutionPropertyToModify;
+  private final Set<ExecutionProperty.Key> prerequisiteExecutionProperties;
 
-  AnnotatingPass(ExecutionProperty.Key keyOfExecutionPropertyToModify,
-                 Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
+  public AnnotatingPass(final ExecutionProperty.Key keyOfExecutionPropertyToModify,
+                        final Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
     this.keyOfExecutionPropertyToModify = keyOfExecutionPropertyToModify;
     this.prerequisiteExecutionProperties = prerequisiteExecutionProperties;
   }
 
-  AnnotatingPass(ExecutionProperty.Key keyOfExecutionPropertyToModify) {
+  public AnnotatingPass(final ExecutionProperty.Key keyOfExecutionPropertyToModify) {
     this.keyOfExecutionPropertyToModify = keyOfExecutionPropertyToModify;
     this.prerequisiteExecutionProperties = new HashSet<>();
   }
 
-  ExecutionProperty.Key getExecutionPropertyToModify() {
+  final ExecutionProperty.Key getExecutionPropertyToModify() {
     return keyOfExecutionPropertyToModify;
   }
 
   @Override
-  public Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
+  public final Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
     return prerequisiteExecutionProperties;
   }
 }

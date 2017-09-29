@@ -20,9 +20,7 @@ import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStag
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DataSkewPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.LoopOptimizationPass;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,13 +30,10 @@ import java.util.List;
  */
 public final class DataSkewPolicy implements Policy {
   @Override
-  public List<CompileTimePass> getOptimizationPasses() {
+  public List<CompileTimePass> getCompileTimePasses() {
     return Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
-        new LoopGroupingPass(),
-        LoopOptimizations.getLoopFusionPass(),
-        LoopOptimizations.getLoopInvariantCodeMotionPass(),
-        new LoopUnrollingPass(), // Groups then unrolls loops. TODO #162: remove unrolling pt.
+        new LoopOptimizationPass(),
         new DataSkewPass(),
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()

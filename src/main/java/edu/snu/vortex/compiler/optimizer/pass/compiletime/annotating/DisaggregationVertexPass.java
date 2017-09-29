@@ -25,7 +25,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProp
  * A pass to support Disaggregated Resources by tagging vertices.
  * This pass handles the ExecutorPlacement ExecutionProperty.
  */
-public class DisaggregationVertexPass extends AnnotatingPass {
+public final class DisaggregationVertexPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DisaggregationVertexPass";
 
   public DisaggregationVertexPass() {
@@ -38,7 +38,7 @@ public class DisaggregationVertexPass extends AnnotatingPass {
   }
 
   @Override
-  public DAG<IRVertex, IREdge> apply(DAG<IRVertex, IREdge> dag) {
+  public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(vertex ->
         vertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE)));
     return dag;

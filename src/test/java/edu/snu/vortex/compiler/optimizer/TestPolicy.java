@@ -28,7 +28,7 @@ import java.util.List;
  */
 public final class TestPolicy implements Policy {
   @Override
-  public List<CompileTimePass> getOptimizationPasses() {
+  public List<CompileTimePass> getCompileTimePasses() {
     return  Arrays.asList(
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()

@@ -30,29 +30,30 @@ public abstract class CompositePass implements CompileTimePass {
   private final List<CompileTimePass> passList;
   private final Set<ExecutionProperty.Key> prerequisiteExecutionProperties;
 
-  CompositePass(List<CompileTimePass> passList) {
+  public CompositePass(final List<CompileTimePass> passList) {
     this.passList = passList;
     this.prerequisiteExecutionProperties = new HashSet<>();
     passList.forEach(pass -> prerequisiteExecutionProperties.addAll(pass.getPrerequisiteExecutionProperties()));
   }
 
-  CompositePass(List<CompileTimePass> passList,
-                Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
+  public CompositePass(final List<CompileTimePass> passList,
+                       final Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
     this.passList = passList;
     this.prerequisiteExecutionProperties = prerequisiteExecutionProperties;
     passList.forEach(pass -> prerequisiteExecutionProperties.addAll(pass.getPrerequisiteExecutionProperties()));
   }
 
-  public List<CompileTimePass> getPassList() {
+  public final List<CompileTimePass> getPassList() {
     return passList;
   }
 
   @Override
-  public DAG<IRVertex, IREdge> apply(DAG<IRVertex, IREdge> irVertexIREdgeDAG) {
+  public final DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> irVertexIREdgeDAG) {
     return recursivelyApply(irVertexIREdgeDAG, getPassList().iterator());
   }
 
-  private DAG<IRVertex, IREdge> recursivelyApply(DAG<IRVertex, IREdge> dag, Iterator<CompileTimePass> passIterator) {
+  private DAG<IRVertex, IREdge> recursivelyApply(final DAG<IRVertex, IREdge> dag,
+                                                 final Iterator<CompileTimePass> passIterator) {
     if (passIterator.hasNext()) {
       return recursivelyApply(passIterator.next().apply(dag), passIterator);
     } else {
@@ -61,7 +62,7 @@ public abstract class CompositePass implements CompileTimePass {
   }
 
   @Override
-  public Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
+  public final Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
     return prerequisiteExecutionProperties;
   }
 }

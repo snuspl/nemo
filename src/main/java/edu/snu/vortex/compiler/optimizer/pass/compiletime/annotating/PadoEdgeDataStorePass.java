@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Pado pass for tagging edges.
+ * Pado pass for tagging edges with DataStore ExecutionProperty.
  */
 public final class PadoEdgeDataStorePass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "PadoEdgeDataStorePass";

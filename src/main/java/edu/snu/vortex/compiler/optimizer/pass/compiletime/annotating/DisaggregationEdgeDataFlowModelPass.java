@@ -24,10 +24,10 @@ import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 import java.util.List;
 
 /**
- * A pass to support Disaggregated Resources by tagging vertices.
+ * A pass to support Disaggregated Resources by tagging edges.
  * This pass handles the DataFlowModel ExecutionProperty.
  */
-public class DisaggregationEdgeDataFlowModelPass extends AnnotatingPass {
+public final class DisaggregationEdgeDataFlowModelPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DisaggregationEdgeDataFlowModelPass";
 
   public DisaggregationEdgeDataFlowModelPass() {
@@ -40,7 +40,7 @@ public class DisaggregationEdgeDataFlowModelPass extends AnnotatingPass {
   }
 
   @Override
-  public DAG<IRVertex, IREdge> apply(DAG<IRVertex, IREdge> dag) {
+  public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {

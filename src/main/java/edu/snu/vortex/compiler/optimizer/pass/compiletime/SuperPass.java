@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass.compiletime.supre;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime;
 
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 
 import java.util.Set;
 
@@ -26,12 +25,12 @@ import java.util.Set;
 public abstract class SuperPass implements CompileTimePass {
   private final Set<ExecutionProperty.Key> prerequisiteExecutionProperties;
 
-  SuperPass(Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
+  public SuperPass(final Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
     this.prerequisiteExecutionProperties = prerequisiteExecutionProperties;
   }
 
   @Override
-  public Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
+  public final Set<ExecutionProperty.Key> getPrerequisiteExecutionProperties() {
     return prerequisiteExecutionProperties;
   }
 }

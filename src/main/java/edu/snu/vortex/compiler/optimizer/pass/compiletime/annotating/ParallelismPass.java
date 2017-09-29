@@ -22,12 +22,10 @@ import edu.snu.vortex.compiler.ir.SourceVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
 
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Optimization pass for tagging parallelism execution property.

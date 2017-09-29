@@ -37,7 +37,7 @@ import static edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty.Key
 public final class ScheduleGroupPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "ScheduleGroupPass";
 
-  ScheduleGroupPass() {
+  public ScheduleGroupPass() {
     super(ExecutionProperty.Key.ScheduleGroupIndex, Stream.of(
         ExecutionProperty.Key.StageId,
         ExecutionProperty.Key.DataFlowModel

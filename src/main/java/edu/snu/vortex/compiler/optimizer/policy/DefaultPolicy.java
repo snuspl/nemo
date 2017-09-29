@@ -28,7 +28,7 @@ import java.util.List;
  */
 public final class DefaultPolicy implements Policy {
   @Override
-  public List<CompileTimePass> getOptimizationPasses() {
+  public List<CompileTimePass> getCompileTimePasses() {
     return Arrays.asList(
         new ParallelismPass(), // Provides parallelism information.
         new DefaultStagePartitioningPass(),
