@@ -61,7 +61,8 @@ public final class DataSkewReshapingPass extends ReshapingPass {
             final IREdge newEdge =
                 new IREdge(IREdge.Type.OneToOne, edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
 
-            final IREdge edgeToGbK = new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder());
+            final IREdge edgeToGbK =
+                new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder(), edge.isSideInput());
             edge.copyExecutionPropertiesTo(edgeToGbK);
             builder.connectVertices(newEdge);
             builder.connectVertices(edgeToGbK);

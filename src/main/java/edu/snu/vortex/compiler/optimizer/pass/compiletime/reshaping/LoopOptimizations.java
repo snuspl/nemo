@@ -157,8 +157,8 @@ public final class LoopOptimizations {
             // inEdges.
             inEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(irEdge -> {
               if (builder.contains(irEdge.getSrc())) {
-                final IREdge newIREdge =
-                    new IREdge(irEdge.getType(), irEdge.getSrc(), newLoopVertex, irEdge.getCoder());
+                final IREdge newIREdge = new IREdge(irEdge.getType(),
+                    irEdge.getSrc(), newLoopVertex, irEdge.getCoder(), irEdge.isSideInput());
                 irEdge.copyExecutionPropertiesTo(newIREdge);
                 builder.connectVertices(newIREdge);
               }
@@ -166,8 +166,8 @@ public final class LoopOptimizations {
             // outEdges.
             outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(irEdge -> {
               if (builder.contains(irEdge.getDst())) {
-                final IREdge newIREdge =
-                    new IREdge(irEdge.getType(), newLoopVertex, irEdge.getDst(), irEdge.getCoder());
+                final IREdge newIREdge = new IREdge(irEdge.getType(),
+                    newLoopVertex, irEdge.getDst(), irEdge.getCoder(), irEdge.isSideInput());
                 irEdge.copyExecutionPropertiesTo(newIREdge);
                 builder.connectVertices(newIREdge);
               }

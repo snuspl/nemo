@@ -126,7 +126,8 @@ public final class PhysicalPlanGenerator
                 .setEdgeProperties(irEdge.getExecutionProperties())
                 .setSrcVertex(srcVertex).setDstVertex(dstVertex)
                 .setSrcStage(srcStage)
-                .setCoder(irEdge.getCoder());
+                .setCoder(irEdge.getCoder())
+                .setSideInputFlag(irEdge.isSideInput());
             currentStageIncomingEdges.add(newEdgeBuilder);
           }
         }));
@@ -260,7 +261,8 @@ public final class PhysicalPlanGenerator
             stageEdge.getExecutionProperties(),
             stageEdge.getSrcVertex(), stageEdge.getDstVertex(),
             srcStage, dstStage,
-            stageEdge.getCoder()));
+            stageEdge.getCoder(),
+            stageEdge.isSideInput()));
       }));
 
     return physicalDAGBuilder.build();
