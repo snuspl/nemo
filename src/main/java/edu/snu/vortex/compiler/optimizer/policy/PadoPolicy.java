@@ -18,7 +18,6 @@ package edu.snu.vortex.compiler.optimizer.policy;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.*;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.*;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.LoopOptimizationPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.PadoPass;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +33,7 @@ public final class PadoPolicy implements Policy {
         new ParallelismPass(), // Provides parallelism information.
         new LoopOptimizationPass(),
         // Processes vertices and edges with Pado algorithm.
-        new PadoPass(),
+//        new PadoVertexPass(), new PadoEdgeDataFlowModelPass(), new PadoEdgeDataStorePass(),
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()
     );
