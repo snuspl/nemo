@@ -18,7 +18,6 @@ import org.apache.reef.wake.remote.transport.LinkListener;
 
 import javax.inject.Inject;
 import java.net.SocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,7 +55,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     this.senderId = senderId;
     this.replyFutureMap = new ReplyFutureMap<>();
     this.listenerConcurrentMap = new ConcurrentHashMap<>();
-    this.receiverToConnectionMap = new HashMap<>();
+    this.receiverToConnectionMap = new ConcurrentHashMap<>();
     this.connectionFactory = networkConnectionService.registerConnectionFactory(
         idFactory.getNewInstance(NCS_CONN_FACTORY_ID),
         new ControlMessageCodec(),
@@ -195,6 +194,9 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case CommitBlock:
       case RemoveBlockMetadata:
       case DataSizeMetric:
+      case MetricMessageReceived:
+      case ContainerFailed:
+      case CommittedBlockMetadata:
         return MessageType.Send;
       case RequestPartitionLocation:
       case RequestBlockMetadata:

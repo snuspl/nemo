@@ -30,6 +30,7 @@ import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.metric.MetricMessageHandler;
 import edu.snu.vortex.runtime.common.plan.physical.*;
@@ -74,6 +75,7 @@ public final class BatchSchedulerTest {
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
+  private final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
   private PhysicalPlanGenerator physicalPlanGenerator;
 
@@ -103,13 +105,13 @@ public final class BatchSchedulerTest {
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
     final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacementProperty.COMPUTE, 1, 0);
-    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
+    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
+    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
+    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
 
     final ResourceSpecification storageSpec = new ResourceSpecification(ExecutorPlacementProperty.TRANSIENT, 1, 0);
-    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext);
+    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgEnv, mockMsgSender, activeContext);
+    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgEnv, mockMsgSender, activeContext);
 
     executorRepresenterMap.put(a1.getExecutorId(), a1);
     executorRepresenterMap.put(a2.getExecutorId(), a2);

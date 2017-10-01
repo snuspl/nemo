@@ -35,6 +35,7 @@ import edu.snu.vortex.runtime.common.state.TaskGroupState;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -70,8 +71,10 @@ public final class JobStateManagerTest {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    injector.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
     partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
     metricMessageHandler = mock(MetricMessageHandler.class);
   }

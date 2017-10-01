@@ -30,7 +30,9 @@ import edu.snu.vortex.compiler.ir.executionproperty.edge.PartitioningProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
@@ -45,16 +47,17 @@ import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.D
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
-import edu.snu.vortex.runtime.master.MetricManagerMaster;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.scheduler.*;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.commons.io.FileUtils;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.io.network.naming.NameResolverConfiguration;
 import org.apache.reef.io.network.naming.NameServer;
 import org.apache.reef.io.network.util.StringIdentifierFactory;
@@ -74,6 +77,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -117,11 +121,16 @@ public final class DataTransferTest {
 
   @Before
   public void setUp() throws InjectionException {
+    final Injector injector1 = Tang.Factory.getTang().newInjector();
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
     final MetricMessageHandler metricMessageHandler = mock(MetricMessageHandler.class);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
+    injector1.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
+    injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    final ContainerManager containerManager = injector1.getInstance(ContainerManager.class);
+    
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
@@ -134,8 +143,6 @@ public final class DataTransferTest {
         new RuntimeMaster(scheduler, containerManager, metricMessageHandler, messageEnvironment,
             updatePhysicalPlanEventHandler, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
-    final Injector injector1 = Tang.Factory.getTang().newInjector();
-    injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
     injector1.bindVolatileInstance(RuntimeMaster.class, runtimeMaster);
     final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
 
@@ -147,6 +154,23 @@ public final class DataTransferTest {
         injector2);
     this.worker2 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher,
         injector2);
+    try {
+      final MessageSender<ControlMessage.Message> messageSender1 =
+          messageEnvironment.<ControlMessage.Message>asyncConnect(
+              worker1.getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID).get();
+      final MessageSender<ControlMessage.Message> messageSender2 =
+          messageEnvironment.<ControlMessage.Message>asyncConnect(
+              worker2.getExecutorId(), MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID).get();
+      final ExecutorRepresenter executorRepresenter1 = new ExecutorRepresenter(
+          worker1.getExecutorId(),  null, messageEnvironment, messageSender1,null);
+      final ExecutorRepresenter executorRepresenter2 = new ExecutorRepresenter(
+          worker2.getExecutorId(),  null, messageEnvironment, messageSender2,null);
+      final Map<String, ExecutorRepresenter> executorRepresenterMap = containerManager.getExecutorRepresenterMap();
+      executorRepresenterMap.put(worker1.getExecutorId(), executorRepresenter1);
+      executorRepresenterMap.put(worker2.getExecutorId(), executorRepresenter2);
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @After

@@ -22,6 +22,7 @@ enum MessageType {
     MetadataResponse = 12;
     ReserveBlock = 13;
     ReserveBlockResponse = 14;
+    CommittedBlockMetadata = 15;
 }
 
 message Message {
@@ -44,6 +45,7 @@ message Message {
     optional RequestBlockMetadataMsg requestBlockMetadataMsg = 16;
     optional ReserveBlockMsg reserveBlockMsg = 17;
     optional ReserveBlockResponseMsg reserveBlockResponseMsg = 18;
+    optional CommittedBlockMetadataMsg committedBlockMetadataMsg = 19;
 }
 
 // Messages from Master to Executors
@@ -170,6 +172,11 @@ message ReserveBlockResponseMsg {
     required int64 requestId = 1; // To find the matching request msg
     optional int64 positionToWrite = 2;
     optional int32 blockIdx = 3;
+}
+
+message CommittedBlockMetadataMsg {
+    optional BlockMetadataMsg blockMetadataMsg = 1;
+    optional string error = 2;
 }
 
 // Messages from Executors to Master

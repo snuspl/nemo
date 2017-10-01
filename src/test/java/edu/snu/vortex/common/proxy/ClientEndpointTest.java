@@ -30,6 +30,7 @@ import edu.snu.vortex.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.vortex.runtime.common.state.JobState;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.JobStateManager;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Test;
@@ -74,8 +75,10 @@ public class ClientEndpointTest {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    injector.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
     final PartitionManagerMaster pmm = injector.getInstance(PartitionManagerMaster.class);
     final JobStateManager jobStateManager = new JobStateManager(
         new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
