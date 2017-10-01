@@ -21,6 +21,7 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.exception.AbsentPartitionException;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
@@ -33,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test for {@link PartitionManagerMaster}.
@@ -45,8 +47,10 @@ public final class PartitionManagerMasterTest {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    injector.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
     partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
   }
 

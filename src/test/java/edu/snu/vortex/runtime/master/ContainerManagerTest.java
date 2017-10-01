@@ -17,6 +17,8 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
 import org.apache.reef.driver.context.ActiveContext;
@@ -46,10 +48,10 @@ public final class ContainerManagerTest {
 
   @Before
   public void setUp() {
-
-    final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
-    when(mockMsgEnv.asyncConnect(anyString(), anyString())).thenReturn(mock(Future.class));
-    containerManager = new ContainerManager(mock(EvaluatorRequestor.class), mockMsgEnv);
+    final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
+    final LocalMessageEnvironment messageEnvironment =
+        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    containerManager = new ContainerManager(mock(EvaluatorRequestor.class), messageEnvironment);
   }
 
   @Test(timeout=5000)

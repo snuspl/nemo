@@ -17,9 +17,14 @@ package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.StateMachine;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.exception.AbsentPartitionException;
+import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +38,10 @@ import java.util.concurrent.CompletableFuture;
  */
 @ThreadSafe
 final class PartitionMetadata {
-  // Partition level metadata.
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerMaster.class.getName());
+  private final ContainerManager containerManager;
+
+  // Partition level metadata.
   private final String partitionId;
   private final PartitionState partitionState;
   private final Set<Integer> producerTaskIndices;
@@ -51,11 +58,14 @@ final class PartitionMetadata {
   /**
    * Constructs the metadata for a partition.
    *
+   * @param containerManager    the container manager.
    * @param partitionId         the id of the partition.
    * @param producerTaskIndices the indices of the producer tasks.
    */
-  PartitionMetadata(final String partitionId,
+  PartitionMetadata(final ContainerManager containerManager,
+                    final String partitionId,
                     final Set<Integer> producerTaskIndices) {
+    this.containerManager = containerManager;
     // Initialize partition level metadata.
     this.partitionId = partitionId;
     this.partitionState = new PartitionState();
@@ -223,6 +233,92 @@ final class PartitionMetadata {
 
     ControlMessage.BlockMetadataMsg getBlockMetadataMsg() {
       return blockMetadataMsg;
+    }
+  }
+
+  /**
+   * The {@link io.reactivex.Observer} handling block subscription.
+   */
+  private final class CommittedBlockMetadataObserver implements io.reactivex.Observer<BlockMetadataInServer> {
+    private final String executorId;
+    private final String listenerId;
+    private Disposable disposable;
+
+    private CommittedBlockMetadataObserver(final String executorId,
+                                           final String listenerId) {
+      this.executorId = executorId;
+      this.listenerId = listenerId;
+    }
+
+    @Override
+    public synchronized void onSubscribe(@NonNull final Disposable givenDisposable) {
+      this.disposable = givenDisposable;
+    }
+
+    @Override
+    public synchronized void onNext(@NonNull final BlockMetadataInServer blockMetadataInServer) {
+      final ExecutorRepresenter executorRepresenter = containerManager.getExecutorRepresenterMap().get(executorId);
+      if (executorRepresenter == null) {
+        disposable.dispose();
+        LOG.warn("The container manager doesn't have the representer for the subscribing executor having listener {}."
+            + "The subscribing executor may failed. Stop the subscription form this executor.", listenerId);
+      } else {
+        // Send the committed block metadata to the subscribing executor.
+        final ControlMessage.Message message = ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setListenerId(listenerId)
+            .setType(ControlMessage.MessageType.CommittedBlockMetadata)
+            .setCommittedBlockMetadataMsg(
+                ControlMessage.CommittedBlockMetadataMsg.newBuilder()
+                    .setBlockMetadataMsg(blockMetadataInServer.getBlockMetadataMsg())
+                    .build())
+            .build();
+        executorRepresenter.sendControlMessage(message, listenerId);
+      }
+    }
+
+    @Override
+    public synchronized void onError(@NonNull final Throwable throwable) {
+      LOG.error(throwable.toString());
+      final ExecutorRepresenter executorRepresenter = containerManager.getExecutorRepresenterMap().get(executorId);
+      if (executorRepresenter == null) {
+        disposable.dispose();
+        LOG.warn("The container manager doesn't have the representer for the subscribing executor having listener {}."
+            + "The subscribing executor may failed. Stop the subscription form this executor.", listenerId);
+      } else {
+        // Notify the end of subscription with cause.
+        final ControlMessage.Message message = ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setListenerId(listenerId)
+            .setType(ControlMessage.MessageType.CommittedBlockMetadata)
+            .setCommittedBlockMetadataMsg(
+                ControlMessage.CommittedBlockMetadataMsg.newBuilder()
+                    .setError(throwable.toString())
+                    .build())
+            .build();
+        executorRepresenter.sendControlMessage(message, listenerId);
+      }
+    }
+
+    @Override
+    public synchronized void onComplete() {
+      LOG.debug("Committed block metadata subscription for the listener {} is completed.", listenerId);
+      final ExecutorRepresenter executorRepresenter = containerManager.getExecutorRepresenterMap().get(executorId);
+      if (executorRepresenter == null) {
+        disposable.dispose();
+        LOG.warn("The container manager doesn't have the representer for the subscribing executor having listener {}."
+            + "The subscribing executor may failed. Stop the subscription form this executor.", listenerId);
+      } else {
+        // Notify the end of subscription with cause.
+        final ControlMessage.Message message = ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setListenerId(listenerId)
+            .setType(ControlMessage.MessageType.CommittedBlockMetadata)
+            .setCommittedBlockMetadataMsg(
+                ControlMessage.CommittedBlockMetadataMsg.newBuilder().build())
+            .build();
+        executorRepresenter.sendControlMessage(message, listenerId);
+      }
     }
   }
 }
