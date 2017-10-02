@@ -107,7 +107,7 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
         .forEach(pValue -> {
           final IRVertex src = pValueToVertex.get(pValue);
           final BeamCoder coder = pValueToCoder.get(pValue);
-          final IREdge edge = new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder);
+          final IREdge edge = new IREdge(getEdgeCommunicationPattern(src, vortexIRVertex), src, vortexIRVertex, coder);
           this.builder.connectVertices(edge);
         });
   }
@@ -194,9 +194,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
         .forEach(pValue -> {
           final IRVertex src = pValueToVertex.get(pValue);
           final BeamCoder coder = pValueToCoder.get(pValue);
-          final IREdge edge =
-              new IREdge(getEdgeType(src, vortexIRVertex), src, vortexIRVertex, coder)
-                  .setProperty(IsSideInputProperty.of(true));
+          final IREdge edge = new IREdge(getEdgeCommunicationPattern(src, vortexIRVertex), src, vortexIRVertex, coder)
+              .setProperty(IsSideInputProperty.of(true));
           builder.connectVertices(edge);
         });
   }
@@ -233,7 +232,8 @@ final class Visitor extends Pipeline.PipelineVisitor.Defaults {
    * @param dst destination vertex.
    * @return the appropriate edge type.
    */
-  private static Class<? extends DataCommunicationPattern> getEdgeType(final IRVertex src, final IRVertex dst) {
+  private static Class<? extends DataCommunicationPattern> getEdgeCommunicationPattern(final IRVertex src,
+                                                                                       final IRVertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform) {
       return ScatterGather.class;
     } else if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof BroadcastTransform) {

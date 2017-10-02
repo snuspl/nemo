@@ -46,7 +46,7 @@ public class ExecutionPropertyMapTest {
 
   @Before
   public void setUp() {
-    this.edgeMap = ExecutionPropertyMap.of(edge);
+    this.edgeMap = ExecutionPropertyMap.of(edge, OneToOne.class);
     this.vertexMap = ExecutionPropertyMap.of(source);
   }
 

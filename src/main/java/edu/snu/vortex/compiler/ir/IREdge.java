@@ -18,7 +18,6 @@ package edu.snu.vortex.compiler.ir;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
 import edu.snu.vortex.common.dag.Edge;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -32,19 +31,18 @@ public final class IREdge extends Edge<IRVertex> {
 
   /**
    * Constructor of IREdge.
-   * @param type type of the edge.
+   * @param commPattern data communication pattern type of the edge.
    * @param src source vertex.
    * @param dst destination vertex.
    * @param coder coder.
    */
-  public IREdge(final Class<? extends DataCommunicationPattern> type,
+  public IREdge(final Class<? extends DataCommunicationPattern> commPattern,
                 final IRVertex src,
                 final IRVertex dst,
                 final Coder coder) {
     super(IdManager.newEdgeId(), src, dst);
     this.coder = coder;
-    this.executionProperties = ExecutionPropertyMap.of(this);
-    setProperty(DataCommunicationPatternProperty.of(type));
+    this.executionProperties = ExecutionPropertyMap.of(this, commPattern);
   }
 
   /**
