@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
-import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link LoopUnrollingPass}.
+ * Test {@link LoopGroupingPass}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class LoopUnrollingPassTest {
+public class LoopGroupingPassTest {
   private DAG<IRVertex, IREdge> compiledDAG;
 
   @Before
@@ -49,22 +43,9 @@ public class LoopUnrollingPassTest {
   }
 
   @Test
-  public void testLoopUnrollingPass() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG =
-        new LoopUnrollingPass().apply(new LoopGroupingPass().apply(compiledDAG));
+  public void testLoopGrouping() throws Exception {
+    final DAG<IRVertex, IREdge> processedDAG = new LoopGroupingPass().apply(compiledDAG);
 
-    assertEquals(compiledDAG.getTopologicalSort().size(), processedDAG.getTopologicalSort().size());
-    // zip vertices
-    final Iterator<IRVertex> vertices1 = compiledDAG.getTopologicalSort().iterator();
-    final Iterator<IRVertex> vertices2 = processedDAG.getTopologicalSort().iterator();
-    final List<Pair<IRVertex, IRVertex>> list = new ArrayList<>();
-    while  (vertices1.hasNext() && vertices2.hasNext()) {
-      list.add(Pair.of(vertices1.next(), vertices2.next()));
-    }
-    list.forEach(irVertexPair -> {
-        assertEquals(irVertexPair.left().getExecutionProperties(), irVertexPair.right().getExecutionProperties());
-        assertEquals(compiledDAG.getIncomingEdgesOf(irVertexPair.left()).size(),
-            processedDAG.getIncomingEdgesOf(irVertexPair.right()).size());
-    });
+    assertEquals(9, processedDAG.getTopologicalSort().size());
   }
 }

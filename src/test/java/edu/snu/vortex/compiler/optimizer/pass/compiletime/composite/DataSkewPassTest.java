@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.composite;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.common.dag.DAG;
@@ -23,12 +23,16 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DataSkewPass;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,10 +44,24 @@ import static org.junit.Assert.assertTrue;
 @PrepareForTest(JobLauncher.class)
 public class DataSkewPassTest {
   private DAG<IRVertex, IREdge> mrDAG;
+  private static final long NUM_OF_PASSES_IN_DATA_SKEW_PASS = 4;
 
   @Before
   public void setUp() throws Exception {
-    mrDAG = CompilerTestUtil.compileMRDAG();
+  }
+
+  /**
+   * Test if the getpassList() method returns the right value upon calling it from a composite pass.
+   */
+  @Test
+  public void testCompositePass() {
+    final CompositePass dataSkewPass = new DataSkewPass();
+    assertEquals(NUM_OF_PASSES_IN_DATA_SKEW_PASS, dataSkewPass.getPassList().size());
+
+    final Set<ExecutionProperty.Key> prerequisites = new HashSet<>();
+    dataSkewPass.getPassList().forEach(compileTimePass ->
+        prerequisites.addAll(compileTimePass.getPrerequisiteExecutionProperties()));
+    assertEquals(prerequisites, dataSkewPass.getPrerequisiteExecutionProperties());
   }
 
   /**
@@ -53,13 +71,15 @@ public class DataSkewPassTest {
    */
   @Test
   public void testDataSkewPass() throws Exception {
+    mrDAG = CompilerTestUtil.compileMRDAG();
     final Integer originalVerticesNum = mrDAG.getVertices().size();
-    final Long numOfGroupByKeyOperatorVertices = mrDAG.getVertices().stream().filter(irVertex ->
-        irVertex instanceof OperatorVertex
-            && ((OperatorVertex) irVertex).getTransform() instanceof GroupByKeyTransform).count();
+    final Long numOfScatterGatherEdges = mrDAG.getVertices().stream().filter(irVertex ->
+        mrDAG.getIncomingEdgesOf(irVertex).stream().anyMatch(irEdge ->
+            ScatterGather.class.equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))))
+        .count();
     final DAG<IRVertex, IREdge> processedDAG = new DataSkewPass().apply(mrDAG);
 
-    assertEquals(originalVerticesNum + numOfGroupByKeyOperatorVertices, processedDAG.getVertices().size());
+    assertEquals(originalVerticesNum + numOfScatterGatherEdges, processedDAG.getVertices().size());
     processedDAG.getVertices().stream().filter(irVertex -> irVertex instanceof OperatorVertex
         && ((OperatorVertex) irVertex).getTransform() instanceof GroupByKeyTransform).forEach(irVertex ->
           processedDAG.getIncomingEdgesOf(irVertex).stream().map(IREdge::getSrc).forEach(irVertex1 ->

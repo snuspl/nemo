@@ -22,7 +22,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A compile-time pass that reshapes the structure of the DAG.
+ * A compile-time pass that reshapes the structure of the IR DAG.
+ * It is ensured by the compiler that no execution properties are modified by a ReshapingPass.
  */
 public abstract class ReshapingPass implements CompileTimePass {
   private final Set<ExecutionProperty.Key> prerequisiteExecutionProperties;

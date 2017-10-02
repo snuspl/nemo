@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.common.dag.DAG;
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -38,11 +39,14 @@ import static org.junit.Assert.assertTrue;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class ScheduleGroupPassTest {
-  private DAG<IRVertex, IREdge> compiledDAG;
-
   @Before
   public void setUp() throws Exception {
-    compiledDAG = CompilerTestUtil.compileALSDAG();
+  }
+
+  @Test
+  public void testAnnotatingPass() {
+    final AnnotatingPass scheduleGroupPass = new ScheduleGroupPass();
+    assertEquals(ExecutionProperty.Key.ScheduleGroupIndex, scheduleGroupPass.getExecutionPropertyToModify());
   }
 
   @Test
@@ -50,6 +54,7 @@ public final class ScheduleGroupPassTest {
    * This test ensures that a topologically sorted DAG has an increasing sequence of schedule group indexes.
    */
   public void testScheduleGroupPass() throws Exception {
+    final DAG<IRVertex, IREdge> compiledDAG = CompilerTestUtil.compileALSDAG();
     final DAG<IRVertex, IREdge> processedDAG = Optimizer.optimize(compiledDAG, new TestPolicy(), "");
 
     Integer previousScheduleGroupIndex = 0;

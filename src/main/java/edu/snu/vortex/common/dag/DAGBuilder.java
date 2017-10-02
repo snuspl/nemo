@@ -279,7 +279,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> e.getType().equals(IREdge.Type.OneToOne))
         .filter(e -> !Boolean.TRUE.equals(e.isSideInput())).forEach(e -> {
-          if (e.getSrc() instanceof IRVertex && e.getDst() instanceof IRVertex
+          if (e.getSrc() != null && e.getDst() != null
               && !(e.getSrc() instanceof LoopVertex) && !(e.getDst() instanceof LoopVertex)
               && (e.getSrc()).getProperty(ExecutionProperty.Key.Parallelism) != null
               && (e.getDst()).getProperty(ExecutionProperty.Key.Parallelism) != null

@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.common.dag.DAG;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,22 +31,27 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link LoopGroupingPass}.
+ * Test {@link ParallelismPass}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class LoopGroupingPassTest {
-  private DAG<IRVertex, IREdge> compiledDAG;
-
+public class ParallelismPassTest {
   @Before
   public void setUp() throws Exception {
-    compiledDAG = CompilerTestUtil.compileALSDAG();
   }
 
   @Test
-  public void testLoopGrouping() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG = new LoopGroupingPass().apply(compiledDAG);
+  public void testAnnotatingPass() {
+    final AnnotatingPass parallelismPass = new ParallelismPass();
+    assertEquals(ExecutionProperty.Key.Parallelism, parallelismPass.getExecutionPropertyToModify());
+  }
 
-    assertEquals(9, processedDAG.getTopologicalSort().size());
+  @Test
+  public void testParallelism() throws Exception {
+    final DAG<IRVertex, IREdge> compiledDAG = CompilerTestUtil.compileALSDAG();
+    final DAG<IRVertex, IREdge> processedDAG = new ParallelismPass().apply(compiledDAG);
+
+    processedDAG.getTopologicalSort().forEach(irVertex ->
+        assertEquals(1, irVertex.<Integer>getProperty(ExecutionProperty.Key.Parallelism).longValue()));
   }
 }

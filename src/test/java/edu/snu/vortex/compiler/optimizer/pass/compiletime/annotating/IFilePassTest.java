@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer.pass;
+package edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating;
 
 import edu.snu.vortex.client.JobLauncher;
 import edu.snu.vortex.common.dag.DAG;
@@ -24,6 +24,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DisaggregationEdgeDataStorePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.IFilePass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DisaggregationPass;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import org.junit.Before;
@@ -32,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -40,17 +42,23 @@ import static org.junit.Assert.assertTrue;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public class IFilePassTest {
-  private DAG<IRVertex, IREdge> compiledDAG;
+  private AnnotatingPass iFilePass;
 
   @Before
   public void setUp() throws Exception {
-    compiledDAG = CompilerTestUtil.compileALSDAG();
+    iFilePass = new IFilePass();
+  }
+
+  @Test
+  public void testAnnotatingPass() {
+    assertEquals(ExecutionProperty.Key.WriteOptimization, iFilePass.getExecutionPropertyToModify());
   }
 
   @Test
   public void testIFileWrite() throws Exception {
-    final DAG<IRVertex, IREdge> disaggProcessedDAG = new DisaggregationEdgeDataStorePass().apply(compiledDAG);
-    final DAG<IRVertex, IREdge> processedDAG = new IFilePass().apply(disaggProcessedDAG);
+    final DAG<IRVertex, IREdge> compiledDAG = CompilerTestUtil.compileALSDAG();
+    final DAG<IRVertex, IREdge> disaggProcessedDAG = new DisaggregationPass().apply(compiledDAG);
+    final DAG<IRVertex, IREdge> processedDAG = iFilePass.apply(disaggProcessedDAG);
 
     processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
         .filter(e -> ScatterGather.class.equals(e.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))

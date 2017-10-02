@@ -22,7 +22,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A compile-time pass that annotates the DAG with execution properties.
+ * A compile-time pass that annotates the IR DAG with execution properties.
+ * It is ensured by the compiler that the shape of the IR DAG itself is not modified by an AnnotatingPass.
  */
 public abstract class AnnotatingPass implements CompileTimePass {
   private final ExecutionProperty.Key keyOfExecutionPropertyToModify;

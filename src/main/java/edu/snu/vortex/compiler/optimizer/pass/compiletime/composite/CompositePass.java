@@ -24,7 +24,7 @@ import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import java.util.*;
 
 /**
- * A compile-time pass composed of multiple passes.
+ * A compile-time pass composed of multiple compile-time passes, which each modifies an IR DAG.
  */
 public abstract class CompositePass implements CompileTimePass {
   private final List<CompileTimePass> passList;
@@ -33,13 +33,6 @@ public abstract class CompositePass implements CompileTimePass {
   public CompositePass(final List<CompileTimePass> passList) {
     this.passList = passList;
     this.prerequisiteExecutionProperties = new HashSet<>();
-    passList.forEach(pass -> prerequisiteExecutionProperties.addAll(pass.getPrerequisiteExecutionProperties()));
-  }
-
-  public CompositePass(final List<CompileTimePass> passList,
-                       final Set<ExecutionProperty.Key> prerequisiteExecutionProperties) {
-    this.passList = passList;
-    this.prerequisiteExecutionProperties = prerequisiteExecutionProperties;
     passList.forEach(pass -> prerequisiteExecutionProperties.addAll(pass.getPrerequisiteExecutionProperties()));
   }
 
