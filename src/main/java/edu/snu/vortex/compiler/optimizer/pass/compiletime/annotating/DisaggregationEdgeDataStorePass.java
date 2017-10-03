@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
 import edu.snu.vortex.runtime.executor.data.MemoryStore;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 
 import java.util.List;
 
@@ -47,7 +48,7 @@ public final class DisaggregationEdgeDataStorePass extends AnnotatingPass {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
         inEdges.forEach(edge -> {
-          if (edge.getType().equals(IREdge.Type.OneToOne)) {
+          if (OneToOne.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
             edge.setProperty(DataStoreProperty.of(MemoryStore.class));
           } else {
             edge.setProperty(DataStoreProperty.of(GlusterFileStore.class));

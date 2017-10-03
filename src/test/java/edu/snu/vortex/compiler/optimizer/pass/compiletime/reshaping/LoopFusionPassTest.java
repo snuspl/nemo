@@ -22,8 +22,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -109,12 +108,13 @@ public class LoopFusionPassTest {
                                              final LoopVertex loopVertexToFollow) {
     builder.addVertex(loopVertexToFollow);
     loopVertexToFollow.getIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(irEdge -> {
-      final IREdge newIREdge =
-          new IREdge(irEdge.getType(), vertexToBeFollowed, loopVertexToFollow, irEdge.getCoder());
+      final IREdge newIREdge = new IREdge(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
+          vertexToBeFollowed, loopVertexToFollow, irEdge.getCoder());
       builder.connectVertices(newIREdge);
     }));
     loopVertexToFollow.getNonIterativeIncomingEdges().values().forEach(irEdges -> irEdges.forEach(irEdge -> {
-      final IREdge newIREdge = new IREdge(irEdge.getType(), irEdge.getSrc(), loopVertexToFollow, irEdge.getCoder());
+      final IREdge newIREdge = new IREdge(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
+          irEdge.getSrc(), loopVertexToFollow, irEdge.getCoder());
       builder.connectVertices(newIREdge);
     }));
   }

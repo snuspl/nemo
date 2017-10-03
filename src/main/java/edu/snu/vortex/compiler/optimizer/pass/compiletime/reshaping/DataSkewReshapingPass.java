@@ -21,6 +21,9 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,20 +52,20 @@ public final class DataSkewReshapingPass extends ReshapingPass {
     dag.topologicalDo(v -> {
       // We care about OperatorVertices that have any incoming edges that are of type ScatterGather.
       if (v instanceof OperatorVertex && dag.getIncomingEdgesOf(v).stream().anyMatch(irEdge ->
-          IREdge.Type.ScatterGather.equals(irEdge.getType()))) {
+          ScatterGather.class.equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))) {
         final MetricCollectionBarrierVertex metricCollectionBarrierVertex = new MetricCollectionBarrierVertex();
         metricCollectionVertices.add(metricCollectionBarrierVertex);
         builder.addVertex(v);
         builder.addVertex(metricCollectionBarrierVertex);
         dag.getIncomingEdgesOf(v).forEach(edge -> {
           // we insert the metric collection vertex when we meet a scatter gather edge
-          if (IREdge.Type.ScatterGather.equals(edge.getType())) {
+          if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
             // We then insert the dynamicOptimizationVertex between the vertex and incoming vertices.
-            final IREdge newEdge =
-                new IREdge(IREdge.Type.OneToOne, edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
+            final IREdge newEdge = new IREdge(OneToOne.class,
+                edge.getSrc(), metricCollectionBarrierVertex, edge.getCoder());
 
-            final IREdge edgeToGbK =
-                new IREdge(edge.getType(), metricCollectionBarrierVertex, v, edge.getCoder(), edge.isSideInput());
+            final IREdge edgeToGbK = new IREdge(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
+                metricCollectionBarrierVertex, v, edge.getCoder(), edge.isSideInput());
             edge.copyExecutionPropertiesTo(edgeToGbK);
             builder.connectVertices(newEdge);
             builder.connectVertices(edgeToGbK);

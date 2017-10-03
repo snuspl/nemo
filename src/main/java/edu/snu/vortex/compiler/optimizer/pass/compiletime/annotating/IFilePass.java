@@ -21,6 +21,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public final class IFilePass extends AnnotatingPass {
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
-        if (edge.getType().equals(IREdge.Type.ScatterGather)
+        if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))
             && GlusterFileStore.class.equals(edge.getProperty(ExecutionProperty.Key.DataStore))) {
           edge.setProperty(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
         }

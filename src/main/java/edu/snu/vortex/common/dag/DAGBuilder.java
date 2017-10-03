@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.vortex.runtime.exception.IllegalVertexOperationException;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -244,7 +245,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
     // SideInput edge must be one-to-one
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
         .filter(e -> Boolean.TRUE.equals(e.isSideInput()))
-        .filter(e -> !e.getType().equals(IREdge.Type.OneToOne))
+        .filter(e -> !OneToOne.class.equals(e.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
         .forEach(e -> {
           throw new RuntimeException("DAG execution property check: "
               + "SideInput edge must be one-to-one: " + e.getId());
@@ -277,7 +278,7 @@ public final class DAGBuilder<V extends Vertex, E extends Edge<V>> {
         }));
     // All vertices connected with OneToOne edge should have identical ParallelismProperty execution property.
     vertices.forEach(v -> incomingEdges.get(v).stream().filter(e -> e instanceof IREdge).map(e -> (IREdge) e)
-        .filter(e -> e.getType().equals(IREdge.Type.OneToOne))
+        .filter(e -> OneToOne.class.equals(e.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
         .filter(e -> !Boolean.TRUE.equals(e.isSideInput())).forEach(e -> {
           if (e.getSrc() != null && e.getDst() != null
               && !(e.getSrc() instanceof LoopVertex) && !(e.getDst() instanceof LoopVertex)

@@ -22,6 +22,7 @@ import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.MetricCollectionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 
 /**
  * Pass to annotate the DAG for a job to perform data skew.
@@ -46,7 +47,8 @@ public final class DataSkewEdgeMetricCollectionPass extends AnnotatingPass {
       // we only care about metric collection barrier vertices.
       if (v instanceof MetricCollectionBarrierVertex) {
         dag.getOutgoingEdgesOf(v).forEach(edge -> {
-          if (IREdge.Type.ScatterGather.equals(edge.getType())) { // double checking.
+          // double checking.
+          if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
             edge.setProperty(MetricCollectionProperty.of(DataSkewRuntimePass.class));
           }
         });

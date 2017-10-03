@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +57,7 @@ public final class PadoEdgeDataFlowModelPass extends AnnotatingPass {
           } else if (fromReservedToTransient(edge)) {
             edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
           } else {
-            if (edge.getType().equals(IREdge.Type.OneToOne)) {
+            if (OneToOne.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
               edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
             } else {
               edge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));

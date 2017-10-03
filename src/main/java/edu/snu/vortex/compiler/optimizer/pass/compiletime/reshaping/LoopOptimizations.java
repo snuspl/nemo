@@ -20,6 +20,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 
 import java.util.*;
 import java.util.function.IntPredicate;
@@ -157,7 +158,7 @@ public final class LoopOptimizations {
             // inEdges.
             inEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(irEdge -> {
               if (builder.contains(irEdge.getSrc())) {
-                final IREdge newIREdge = new IREdge(irEdge.getType(),
+                final IREdge newIREdge = new IREdge(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
                     irEdge.getSrc(), newLoopVertex, irEdge.getCoder(), irEdge.isSideInput());
                 irEdge.copyExecutionPropertiesTo(newIREdge);
                 builder.connectVertices(newIREdge);
@@ -166,7 +167,7 @@ public final class LoopOptimizations {
             // outEdges.
             outEdges.getOrDefault(loopVertex, new ArrayList<>()).forEach(irEdge -> {
               if (builder.contains(irEdge.getDst())) {
-                final IREdge newIREdge = new IREdge(irEdge.getType(),
+                final IREdge newIREdge = new IREdge(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
                     newLoopVertex, irEdge.getDst(), irEdge.getCoder(), irEdge.isSideInput());
                 irEdge.copyExecutionPropertiesTo(newIREdge);
                 builder.connectVertices(newIREdge);
@@ -284,7 +285,8 @@ public final class LoopOptimizations {
               candidate.getValue().stream().map(IREdge::getSrc).anyMatch(edgeSrc -> edgeSrc.equals(e.getSrc())))
               .forEach(edge -> {
                 edgesToRemove.add(edge);
-                edgesToAdd.add(new IREdge(edge.getType(), candidate.getKey(), edge.getDst(), edge.getCoder()));
+                edgesToAdd.add(new IREdge(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern),
+                    candidate.getKey(), edge.getDst(), edge.getCoder(), edge.isSideInput()));
               });
           final List<IREdge> listToModify = inEdges.getOrDefault(loopVertex, new ArrayList<>());
           listToModify.removeAll(edgesToRemove);

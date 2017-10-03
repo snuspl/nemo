@@ -22,8 +22,7 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.LoopVertex;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopGroupingPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
+import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,8 +87,9 @@ public class LoopInvariantCodeMotionPassTest {
           } else {
             final Optional<IREdge> theIncomingEdge = newDAGIncomingEdge.stream().findFirst();
             assertTrue(theIncomingEdge.isPresent());
-            final IREdge newIREdge = new IREdge(theIncomingEdge.get().getType(), theIncomingEdge.get().getSrc(),
-                alsLoop, theIncomingEdge.get().getCoder());
+            final IREdge newIREdge =
+                new IREdge(theIncomingEdge.get().getProperty(ExecutionProperty.Key.DataCommunicationPattern),
+                    theIncomingEdge.get().getSrc(), alsLoop, theIncomingEdge.get().getCoder());
             builder.connectVertices(newIREdge);
           }
         });
