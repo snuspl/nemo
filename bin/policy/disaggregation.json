@@ -1,0 +1,24 @@
+{
+  "policy": [
+    {
+      "type": "CompileTimePass",
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass"
+    },
+    {
+      "type": "CompileTimePass",
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.LoopOptimizationPass"
+    },
+    {
+      "type": "CompileTimePass",
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DisaggregationPass"
+    },
+    {
+      "type": "CompileTimePass",
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass"
+    },
+    {
+      "type": "CompileTimePass",
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass"
+    }
+  ]
+}

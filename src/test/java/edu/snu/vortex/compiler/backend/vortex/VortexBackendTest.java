@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.backend.vortex;
 
+import edu.snu.vortex.compiler.CompilerTestUtil;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.frontend.beam.BoundedSourceVertex;
@@ -24,12 +25,17 @@ import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 import edu.snu.vortex.compiler.optimizer.examples.EmptyComponents;
-import edu.snu.vortex.compiler.optimizer.policy.PadoPolicy;
+import edu.snu.vortex.compiler.optimizer.policy.Policy;
+import edu.snu.vortex.compiler.optimizer.policy.PolicyBuilder;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.FileReader;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +62,9 @@ public final class VortexBackendTest<I, O> {
         .connectVertices(new IREdge(OneToOne.class, combine, map2, Coder.DUMMY_CODER))
         .build();
 
-    this.dag = Optimizer.optimize(dag, new PadoPolicy(), EMPTY_DAG_DIRECTORY);
+    final Policy padoPolicy =
+        new PolicyBuilder((JSONObject) new JSONParser().parse(new FileReader(CompilerTestUtil.padoPolicy))).build();
+    this.dag = Optimizer.optimize(dag, padoPolicy, EMPTY_DAG_DIRECTORY);
   }
 
   /**

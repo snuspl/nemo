@@ -27,12 +27,16 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.eventhandler.DynamicOptimizationEventHandler;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.compiler.optimizer.policy.Policy;
+import edu.snu.vortex.compiler.optimizer.policy.PolicyBuilder;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import org.apache.reef.tang.annotations.Parameter;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.FileReader;
 
 /**
  * Compiles and runs User application.
@@ -43,7 +47,7 @@ public final class UserApplicationRunner implements Runnable {
   private final String dagDirectory;
   private final String className;
   private final String[] arguments;
-  private final String optimizationPolicyCanonicalName;
+  private final String optimizationPolicyJson;
 
   private final RuntimeMaster runtimeMaster;
   private final Frontend frontend;
@@ -53,13 +57,13 @@ public final class UserApplicationRunner implements Runnable {
   private UserApplicationRunner(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                                 @Parameter(JobConf.UserMainClass.class) final String className,
                                 @Parameter(JobConf.UserMainArguments.class) final String arguments,
-                                @Parameter(JobConf.OptimizationPolicy.class) final String optimizationPolicy,
+                                @Parameter(JobConf.OptimizationPolicy.class) final String optimizationPolicyJson,
                                 final DynamicOptimizationEventHandler handler,
                                 final RuntimeMaster runtimeMaster) {
     this.dagDirectory = dagDirectory;
     this.className = className;
     this.arguments = arguments.split(" ");
-    this.optimizationPolicyCanonicalName = optimizationPolicy;
+    this.optimizationPolicyJson = optimizationPolicyJson;
     this.runtimeMaster = runtimeMaster;
     this.frontend = new BeamFrontend();
     this.backend = new VortexBackend();
@@ -71,7 +75,7 @@ public final class UserApplicationRunner implements Runnable {
       LOG.info("##### VORTEX Compiler #####");
 
       final Pair<DAG<IRVertex, IREdge>, Policy> dagPolicyPair =
-          clientSideCompilation(className, arguments, optimizationPolicyCanonicalName, dagDirectory);
+          clientSideCompilation(className, arguments, optimizationPolicyJson, dagDirectory);
       final DAG<IRVertex, IREdge> dag = dagPolicyPair.left();
       final Policy optimizationPolicy = dagPolicyPair.right();
 
@@ -91,12 +95,13 @@ public final class UserApplicationRunner implements Runnable {
 
   private static Pair<DAG<IRVertex, IREdge>, Policy> clientSideCompilation(final String className,
                                                                            final String[] arguments,
-                                                                           final String optimizationPolicyCanonicalName,
+                                                                           final String optimizationPolicy,
                                                                            final String dagDirectory) throws Exception {
     final DAG<IRVertex, IREdge> dag = new BeamFrontend().compile(className, arguments);
     dag.storeJSON(dagDirectory, "ir", "IR before optimization");
 
-    final Policy optimizationPolicy = (Policy) Class.forName(optimizationPolicyCanonicalName).newInstance();
-    return Pair.of(dag, optimizationPolicy);
+    final Policy derivedPolicy =
+        new PolicyBuilder((JSONObject) new JSONParser().parse(new FileReader(optimizationPolicy))).build();
+    return Pair.of(dag, derivedPolicy);
   }
 }

@@ -42,7 +42,7 @@ import java.util.stream.IntStream;
  */
 public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<Long>>> {
   public static final String SIMPLE_NAME = "DataSkewRuntimePass";
-  private final Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler>> eventHandlers;
+  private final Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler<?>>> eventHandlers;
 
   public DataSkewRuntimePass() {
     this.eventHandlers = Pair.of(UpdatePhysicalPlanEventHandler.class, DynamicOptimizationEventHandler.class);
@@ -54,7 +54,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
   }
 
   @Override
-  public Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler>> getEventHandlers() {
+  public Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler<?>>> getEventHandlers() {
     return eventHandlers;
   }
 

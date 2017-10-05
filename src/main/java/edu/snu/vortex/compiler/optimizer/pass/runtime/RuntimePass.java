@@ -31,5 +31,5 @@ import java.util.function.BiFunction;
  */
 public interface RuntimePass<T> extends BiFunction<PhysicalPlan, T, PhysicalPlan>, Serializable {
   String getName();
-  Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler>> getEventHandlers();
+  Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler<?>>> getEventHandlers();
 }

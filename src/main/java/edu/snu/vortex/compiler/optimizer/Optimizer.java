@@ -15,16 +15,22 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
+import edu.snu.vortex.common.Pair;
+import edu.snu.vortex.compiler.eventhandler.RuntimeEventHandler;
+import edu.snu.vortex.compiler.exception.CompileTimeOptimizationException;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
 import edu.snu.vortex.compiler.optimizer.policy.Policy;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.vortex.runtime.master.eventhandler.CompilerEventHandler;
 
 import java.util.*;
 
@@ -47,8 +53,14 @@ public final class Optimizer {
   public static DAG<IRVertex, IREdge> optimize(final DAG<IRVertex, IREdge> dag, final Policy optimizationPolicy,
                                                final String dagDirectory) throws Exception {
     if (optimizationPolicy == null || optimizationPolicy.getCompileTimePasses().isEmpty()) {
-      throw new RuntimeException("A policy name should be specified.");
+      throw new CompileTimeOptimizationException("A policy name should be specified.");
     }
+    // Register EventHandlers
+    optimizationPolicy.getRuntimePasses().forEach(runtimePass -> {
+      final Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler<?>>> eventHandlerPair =
+          runtimePass.getEventHandlers();
+      // TODO
+    });
     return process(dag, optimizationPolicy.getCompileTimePasses().iterator(), dagDirectory);
   }
 
@@ -66,12 +78,67 @@ public final class Optimizer {
     if (passes.hasNext()) {
       final CompileTimePass passToApply = passes.next();
       final DAG<IRVertex, IREdge> processedDAG = passToApply.apply(dag);
+      // Ensure AnnotatingPass and ReshapingPass functions as intended.
+      if ((passToApply instanceof AnnotatingPass && !checkAnnotatingPass(dag, processedDAG))
+          || (passToApply instanceof ReshapingPass && !checkReshapingPass(dag, processedDAG))) {
+        throw new CompileTimeOptimizationException(passToApply.getName() + "is implemented in a way that doesn't "
+            + "follow its original intention of annotating or reshaping. Modify it or use a general CompileTimePass");
+      }
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passToApply.getClass().getSimpleName(),
           "DAG after optimization");
       return process(processedDAG, passes, dagDirectory);
     } else {
       return dag;
     }
+  }
+
+  /**
+   * Checks if the annotating pass hasn't modified the DAG structure.
+   * It checks if the number of Vertices and Edges are the same.
+   * @param before DAG before modification.
+   * @param after DAG after modification.
+   * @return true if there is no problem, false if there is a problem.
+   */
+  private static Boolean checkAnnotatingPass(final DAG<IRVertex, IREdge> before, final DAG<IRVertex, IREdge> after) {
+    final Iterator<IRVertex> beforeVertices = before.getTopologicalSort().iterator();
+    final Iterator<IRVertex> afterVertices = after.getTopologicalSort().iterator();
+    while (beforeVertices.hasNext() && afterVertices.hasNext()) {
+      if (before.getIncomingEdgesOf(beforeVertices.next()).size()
+          != after.getIncomingEdgesOf(afterVertices.next()).size()) {
+        return false;
+      }
+    }
+    return !beforeVertices.hasNext() && !afterVertices.hasNext();
+  }
+
+  /**
+   * Checks if the reshaping pass hasn't modified execution properties.
+   * It checks if all of its vertices and edges have the same execution properties as before (if it existed then).
+   * @param before DAG before modification.
+   * @param after DAG after modification.
+   * @return true if there is no problem, false if there is a problem.
+   */
+  private static Boolean checkReshapingPass(final DAG<IRVertex, IREdge> before, final DAG<IRVertex, IREdge> after) {
+    final List<IRVertex> previousVertices = before.getVertices();
+    for (final IRVertex irVertex : after.getVertices()) {
+      final Integer indexOfVertex = previousVertices.indexOf(irVertex);
+      if (indexOfVertex >= 0) {
+        final IRVertex previousVertexToCompare = previousVertices.get(indexOfVertex);
+        if (!previousVertexToCompare.getExecutionProperties().equals(irVertex.getExecutionProperties())) {
+          return false;
+        }
+        for (final IREdge irEdge : after.getIncomingEdgesOf(irVertex)) {
+          final Integer indexOfEdge = before.getIncomingEdgesOf(previousVertexToCompare).indexOf(irEdge);
+          if (indexOfEdge >= 0) {
+            final IREdge previousIREdgeToCompare = before.getIncomingEdgesOf(previousVertexToCompare).get(indexOfEdge);
+            if (!previousIREdgeToCompare.getExecutionProperties().equals(irEdge.getExecutionProperties())) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    return true;
   }
 
   /**
