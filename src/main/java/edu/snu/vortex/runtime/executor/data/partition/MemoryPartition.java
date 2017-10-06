@@ -15,13 +15,19 @@
  */
 package edu.snu.vortex.runtime.executor.data.partition;
 
+import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.ClosableBlockingIterable;
+import edu.snu.vortex.runtime.common.ObservableIterableWrapper;
 import edu.snu.vortex.runtime.executor.data.Block;
+import edu.snu.vortex.runtime.executor.data.HashRange;
+import edu.snu.vortex.runtime.executor.data.partition.observer.CollectBlockObserver;
+import io.reactivex.schedulers.Schedulers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -29,12 +35,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @ThreadSafe
 public final class MemoryPartition {
-
-  private final List<Block> blocks;
+  private static final Logger LOG = LoggerFactory.getLogger(MemoryPartition.class.getName());
+  private final ClosableBlockingIterable<Block> blocks;
+  private final ObservableIterableWrapper<Block> observableBlocks;
   private volatile AtomicBoolean committed;
 
   public MemoryPartition() {
-    blocks = Collections.synchronizedList(new ArrayList<>());
+    blocks = new ClosableBlockingIterable<>();
+    observableBlocks = new ObservableIterableWrapper<>(blocks);
     committed = new AtomicBoolean(false);
   }
 
@@ -46,7 +54,6 @@ public final class MemoryPartition {
    */
   public void appendBlocks(final Iterable<Block> blocksToAppend) throws IOException {
     if (!committed.get()) {
-      // TODO #463: Support incremental write.
       blocksToAppend.forEach(blocks::add);
     } else {
       throw new IOException("Cannot append blocks to the committed partition");
@@ -54,10 +61,17 @@ public final class MemoryPartition {
   }
 
   /**
-   * @return the list of the blocks in this partition.
+   * Gets elements having key in a specific {@link HashRange} from a partition.
+   * The result will be an {@link Iterable}, and looking up for it's {@link java.util.Iterator} can be blocked.
+   *
+   * @see edu.snu.vortex.runtime.executor.data.PartitionStore#getElements(String, HashRange).
+   * @param hashRange the range of key to get.
+   * @return the future of the iterable of the blocks in a specific hash range of this partition.
    */
-  public List<Block> getBlocks() {
-    return blocks;
+  public CompletableFuture<Iterable<Element>> getElements(final HashRange hashRange) {
+    final CompletableFuture<Iterable<Element>> iterableFuture = new CompletableFuture<>();
+    observableBlocks.subscribeOn(Schedulers.io()).subscribe(new CollectBlockObserver(hashRange, iterableFuture));
+    return iterableFuture;
   }
 
   /**
@@ -65,6 +79,7 @@ public final class MemoryPartition {
    * If someone "subscribing" the data in this partition, it will be finished.
    */
   public void commit() {
+    blocks.close();
     committed.set(true);
   }
 }

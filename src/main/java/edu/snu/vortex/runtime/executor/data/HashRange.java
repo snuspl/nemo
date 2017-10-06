@@ -83,11 +83,7 @@ public final class HashRange implements Serializable {
    * @return the length of this range
    */
   public int length() {
-    if (all) {
-      return 0;
-    } else {
-      return rangeEndExclusive - rangeStartInclusive;
-    }
+    return rangeEndExclusive - rangeStartInclusive;
   }
 
   /**

@@ -18,6 +18,7 @@ package edu.snu.vortex.runtime.executor.data;
 import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.ObservableIterableWrapper;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -29,11 +30,11 @@ import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionInputStre
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionOutputStream;
 import edu.snu.vortex.runtime.executor.data.partitiontransfer.PartitionTransfer;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -45,7 +46,6 @@ import org.slf4j.LoggerFactory;
 @ThreadSafe
 public final class PartitionManagerWorker {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerWorker.class.getName());
-  private static final String REMOTE_FILE_STORE = "REMOTE_FILE_STORE";
 
   private final String executorId;
 
@@ -112,6 +112,8 @@ public final class PartitionManagerWorker {
    * Retrieves data from the stored partition. A specific hash value range can be designated.
    * This can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
+   * The result will be an {@link Iterable}, and looking up for it's {@link java.util.Iterator} can be blocked.
+   * For the further details, check {@link PartitionStore#getElements(String, HashRange)}.
    *
    * @param partitionId    of the partition.
    * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
@@ -128,11 +130,12 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final Optional<CompletableFuture<Iterable<Element>>> optionalResultData = store.getBlocks(partitionId, hashRange);
+    final Optional<CompletableFuture<Iterable<Element>>> optionalResultElements =
+        store.getElements(partitionId, hashRange);
 
-    if (optionalResultData.isPresent()) {
+    if (optionalResultElements.isPresent()) {
       // Partition resides in this evaluator!
-      return optionalResultData.get();
+      return optionalResultElements.get();
     } else if (partitionStore.equals(GlusterFileStore.class)) {
       throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
     } else {
@@ -234,14 +237,9 @@ public final class PartitionManagerWorker {
         ControlMessage.PartitionStateChangedMsg.newBuilder()
             .setExecutorId(executorId)
             .setPartitionId(partitionId)
+            .setLocation(executorId)
             .setSrcTaskIdx(srcTaskIdx)
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
-
-    if (partitionStore == GlusterFileStore.class) {
-      partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
-    } else {
-      partitionStateChangedMsgBuilder.setLocation(executorId);
-    }
 
     persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
         .send(ControlMessage.Message.newBuilder()
@@ -289,13 +287,8 @@ public final class PartitionManagerWorker {
           ControlMessage.PartitionStateChangedMsg.newBuilder()
               .setExecutorId(executorId)
               .setPartitionId(partitionId)
-              .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
-
-      if (GlusterFileStore.class.equals(partitionStore)) {
-        partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
-      } else {
-        partitionStateChangedMsgBuilder.setLocation(executorId);
-      }
+              .setState(ControlMessage.PartitionStateFromExecutor.REMOVED)
+              .setLocation(executorId);
 
       persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
           .send(ControlMessage.Message.newBuilder()
@@ -338,25 +331,55 @@ public final class PartitionManagerWorker {
       // TODO #492: Modularize the data communication pattern. Remove execution property value dependant code.
       final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
       try {
-        outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
-            outputStream.getHashRange())).close();
-      } catch (final IOException | PartitionFetchException e) {
-        LOG.error("Closing a pull request exceptionally", e);
-        outputStream.closeExceptionally(e);
+        final Iterable<FileArea> fileAreas =
+            fileStore.getFileAreas(outputStream.getPartitionId(), outputStream.getHashRange()).get();
+        // The iteration for this iterable can be blocked.
+        // Therefore, schedule the subscription for the result file areas on an I/O scheduler and release this thread.
+        final ObservableIterableWrapper<FileArea> observableFileAreas =
+            new ObservableIterableWrapper<>(fileAreas);
+        observableFileAreas.subscribeOn(Schedulers.io()).subscribe(
+            // onNext
+            outputStream::writeFileArea,
+            // onError
+            throwable -> closeOutputStreamExceptionally(outputStream, throwable),
+            // onComplete
+            outputStream::close);
+      } catch (final InterruptedException | ExecutionException | PartitionFetchException e) {
+        closeOutputStreamExceptionally(outputStream, e);
       }
     } else {
-      final CompletableFuture<Iterable<Element>> partitionFuture =
-          retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
-              partitionStore, outputStream.getHashRange());
-      partitionFuture.thenAcceptAsync(partition -> {
-        try {
-          outputStream.writeElements(partition).close();
-        } catch (final IOException e) {
-          LOG.error("Closing a pull request exceptionally", e);
-          outputStream.closeExceptionally(e);
-        }
-      });
+      try {
+        final CompletableFuture<Iterable<Element>> partitionFuture =
+            retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
+                partitionStore, outputStream.getHashRange());
+        partitionFuture.thenAcceptAsync(elements -> {
+          // The iteration for this iterable can be blocked.
+          // Therefore, schedule the subscription for the result file areas on an I/O scheduler and release this thread.
+          final ObservableIterableWrapper<Element> observableElements =
+              new ObservableIterableWrapper<>(elements);
+          observableElements.subscribeOn(Schedulers.io()).subscribe(
+              // onNext
+              outputStream::writeElement,
+              // onError
+              throwable -> closeOutputStreamExceptionally(outputStream, throwable),
+              // onComplete
+              outputStream::close);
+        });
+      } catch (final PartitionFetchException e) {
+        closeOutputStreamExceptionally(outputStream, e);
+      }
     }
+  }
+
+  /**
+   * Close a partition output stream exceptionally.
+   * @param outputStream the output stream to close.
+   * @param throwable    the cause.
+   */
+  private void closeOutputStreamExceptionally(final PartitionOutputStream outputStream,
+                                              final Throwable throwable) {
+    LOG.error("Closing a pull request exceptionally", throwable);
+    outputStream.closeExceptionally(throwable);
   }
 
   /**

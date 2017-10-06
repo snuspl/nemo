@@ -17,10 +17,14 @@ package edu.snu.vortex.runtime.executor.data.partition;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.ObservableIterableWrapper;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.vortex.runtime.executor.data.metadata.FileMetadata;
 import edu.snu.vortex.runtime.executor.data.FileArea;
+import edu.snu.vortex.runtime.executor.data.partition.observer.DeserializeBlockObserver;
+import edu.snu.vortex.runtime.executor.data.partition.observer.FileAreaObserver;
+import io.reactivex.schedulers.Schedulers;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.*;
@@ -29,28 +33,32 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 
 /**
  * This class represents a partition which is stored in (local or remote) file.
  */
 @ThreadSafe
 public final class FilePartition {
-
   private final Coder coder;
   private final String filePath;
   private final FileMetadata metadata;
   private final Queue<BlockMetadata> blockMetadataToCommit;
   private final boolean commitPerBlock;
+  private final ExecutorService executorService; // Executor service for deserialization.
 
   public FilePartition(final Coder coder,
                        final String filePath,
-                       final FileMetadata metadata) {
+                       final FileMetadata metadata,
+                       final ExecutorService executorService) {
     this.coder = coder;
     this.filePath = filePath;
     this.metadata = metadata;
     this.blockMetadataToCommit = new ConcurrentLinkedQueue<>();
     this.commitPerBlock = metadata.isBlockCommitPerWrite();
+    this.executorService = executorService;
   }
 
   /**
@@ -101,52 +109,37 @@ public final class FilePartition {
   }
 
   /**
-   * Retrieves the elements of this partition from the file in a specific hash range and deserializes it.
+   * Gets blocks having data in a specific {@link HashRange} from a partition and deserializes it.
+   * The result will be an {@link Iterable}, and looking up for it's {@link java.util.Iterator} can be blocked.
    *
-   * @param hashRange the hash range
-   * @return an iterable of deserialized elements.
+   * @param hashRange the hash range.
+   * @return the future of the iterable of the (deserialized) blocks in a specific hash range of this partition.
    * @throws IOException if failed to deserialize.
    */
-  public Iterable<Element> retrieveInHashRange(final HashRange hashRange) throws IOException {
-    // Deserialize the data
-    final ArrayList<Element> deserializedData = new ArrayList<>();
-    try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
-        // TODO #463: Support incremental read.
-        final int hashVal = blockMetadata.getHashValue();
-        if (hashRange.includes(hashVal)) {
-          // The hash value of this block is in the range.
-          deserializeBlock(blockMetadata, fileStream, deserializedData);
-        } else {
-          // Have to skip this block.
-          final long bytesToSkip = blockMetadata.getBlockSize();
-          final long skippedBytes = fileStream.skip(bytesToSkip);
-          if (skippedBytes != bytesToSkip) {
-            throw new IOException("The file stream failed to skip to the next block.");
-          }
-        }
-      }
-    }
+  public CompletableFuture<Iterable<Element>> getElementsInRange(final HashRange hashRange) throws IOException {
+    final CompletableFuture<Iterable<Element>> iterableFuture = new CompletableFuture<>();
+    final ObservableIterableWrapper<BlockMetadata> observableBlockMetadata =
+        new ObservableIterableWrapper<>(metadata.getBlockMetadataIterable());
+    observableBlockMetadata.subscribeOn(Schedulers.io()).subscribe(
+        new DeserializeBlockObserver(hashRange, iterableFuture, filePath, coder, executorService));
 
-    return deserializedData;
+    return iterableFuture;
   }
 
   /**
    * Retrieves the list of {@link FileArea}s for the specified {@link HashRange}.
    *
-   * @param hashRange     the hash range
-   * @return list of the file areas
-   * @throws IOException if failed to open a file channel
+   * @param hashRange the hash range.
+   * @return the future of the iterable of the file areas.
    */
-  public List<FileArea> asFileAreas(final HashRange hashRange) throws IOException {
-    final List<FileArea> fileAreas = new ArrayList<>();
-    for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
-      // TODO #463: Support incremental read.
-      if (hashRange.includes(blockMetadata.getHashValue())) {
-        fileAreas.add(new FileArea(filePath, blockMetadata.getOffset(), blockMetadata.getBlockSize()));
-      }
-    }
-    return fileAreas;
+  public CompletableFuture<Iterable<FileArea>> asFileAreas(final HashRange hashRange) {
+    final CompletableFuture<Iterable<FileArea>> iterableFuture = new CompletableFuture<>();
+    final ObservableIterableWrapper<BlockMetadata> observableBlockMetadata =
+        new ObservableIterableWrapper<>(metadata.getBlockMetadataIterable());
+    observableBlockMetadata.subscribeOn(Schedulers.io()).subscribe(
+        new FileAreaObserver(hashRange, iterableFuture, filePath));
+
+    return iterableFuture;
   }
 
   /**
@@ -156,40 +149,15 @@ public final class FilePartition {
    * @throws IOException if failed to delete.
    */
   public void deleteFile() throws IOException {
-    metadata.deleteMetadata();
     Files.delete(Paths.get(filePath));
   }
 
   /**
    * Commits this partition to prevent further write.
    * If someone "subscribing" the data in this partition, it will be finished.
-   *
-   * @throws IOException if failed to close.
    */
-  public void commit() throws IOException {
+  public void commit() {
     commitRemainderMetadata();
     metadata.commitPartition();
-  }
-
-  /**
-   * Reads and deserializes a block.
-   *
-   * @param blockMetadata    the block metadata.
-   * @param fileInputStream  the stream contains the actual data.
-   * @param deserializedData the list of elements to put the deserialized data.
-   * @throws IOException if fail to read and deserialize.
-   */
-  private void deserializeBlock(final BlockMetadata blockMetadata,
-                                final FileInputStream fileInputStream,
-                                final List<Element> deserializedData) {
-    final int size = blockMetadata.getBlockSize();
-    final long numElements = blockMetadata.getElementsTotal();
-    if (size != 0) {
-      // This stream will be not closed, but it is okay as long as the file stream is closed well.
-      final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream, size);
-      for (int i = 0; i < numElements; i++) {
-        deserializedData.add(coder.decode(bufferedInputStream));
-      }
-    }
   }
 }

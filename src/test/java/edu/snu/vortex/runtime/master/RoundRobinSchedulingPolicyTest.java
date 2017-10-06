@@ -51,7 +51,7 @@ public final class RoundRobinSchedulingPolicyTest {
   private static final int TIMEOUT_MS = 1000;
 
   private SchedulingPolicy schedulingPolicy;
-  private ContainerManager containerManager = mock(ContainerManager.class);
+  private final ContainerManager containerManager = mock(ContainerManager.class);
   private final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 

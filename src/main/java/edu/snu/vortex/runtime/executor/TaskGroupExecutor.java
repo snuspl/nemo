@@ -286,6 +286,7 @@ public final class TaskGroupExecutor {
       try {
         // Because the data queue is a blocking queue, we may need to wait some available data to be pushed.
         final Pair<Iterable<Element>, String> availableData = dataQueue.take();
+        // Note: the iteration for this iterable might be blocked if the whole elements are not committed yet.
         transform.onData(availableData.left(), availableData.right());
       } catch (final InterruptedException e) {
         throw new PartitionFetchException(e);

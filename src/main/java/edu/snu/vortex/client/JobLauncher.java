@@ -125,6 +125,8 @@ public final class JobLauncher {
     cl.registerShortNameOfClass(JobConf.UserMainClass.class);
     cl.registerShortNameOfClass(JobConf.UserMainArguments.class);
     cl.registerShortNameOfClass(JobConf.DAGDirectory.class);
+    cl.registerShortNameOfClass(JobConf.FileDirectory.class);
+    cl.registerShortNameOfClass(JobConf.GlusterVolumeDirectory.class);
     cl.registerShortNameOfClass(JobConf.OptimizationPolicy.class);
     cl.registerShortNameOfClass(JobConf.DeployMode.class);
     cl.registerShortNameOfClass(JobConf.DriverMemMb.class);

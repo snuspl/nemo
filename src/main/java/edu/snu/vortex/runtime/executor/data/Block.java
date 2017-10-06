@@ -20,7 +20,6 @@ import edu.snu.vortex.compiler.ir.Element;
 /**
  * A collection of data {@link Element}.
  * This is a unit of write towards {@link PartitionStore}s.
- * TODO #463: Support incremental read. Consider to make the {@link Block} as a unit of read also.
  * TODO #494: Refactor HashRange to be general. int -> generic Key, and so on...
  */
 public final class Block {
@@ -43,5 +42,10 @@ public final class Block {
 
   public Iterable<Element> getData() {
     return data;
+  }
+
+  @Override
+  public String toString() {
+    return "Block{" + "key=" + key + ", data=" + data + '}';
   }
 }

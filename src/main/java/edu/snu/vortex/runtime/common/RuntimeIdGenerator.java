@@ -25,11 +25,13 @@ public final class RuntimeIdGenerator {
   private static AtomicInteger physicalPlanIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskIdGenerator = new AtomicInteger(1);
   private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(1);
+  private static AtomicInteger committedBlockListenerCount = new AtomicInteger(0);
   private static AtomicInteger executorIdGenerator = new AtomicInteger(1);
   private static AtomicLong messageIdGenerator = new AtomicLong(1L);
   private static AtomicLong resourceSpecIdGenerator = new AtomicLong(1);
   private static String partitionPrefix = "Partition-";
   private static String partitionIdSplitter = "_";
+  private static String committedBlockListenerPrefix = "CommittedBlockListener-";
 
   private RuntimeIdGenerator() {
   }
@@ -155,5 +157,16 @@ public final class RuntimeIdGenerator {
   public static String[] parsePartitionId(final String partitionId) {
     final String woPrefix = partitionId.split(partitionPrefix)[1];
     return woPrefix.split(partitionIdSplitter);
+  }
+
+  /**
+   * Generates the ID of a committed blocks listener for the given partition ID.
+   * TODO #410: Implement metadata caching for the RemoteFileMetadata. Sustain only a single listener at the same time.
+   *
+   * @param partitionId to listen.
+   * @return the generated listener ID.
+   */
+  public static String generateCommittedBlockListenerId(final String partitionId) {
+    return committedBlockListenerPrefix + partitionId + "-" + committedBlockListenerCount.getAndIncrement();
   }
 }

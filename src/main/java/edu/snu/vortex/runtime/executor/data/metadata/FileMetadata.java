@@ -15,7 +15,8 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
-import java.io.IOException;
+import edu.snu.vortex.runtime.exception.PartitionFetchException;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
 
 /**
  * This class represents a metadata for a (local / remote) file partition.
@@ -40,11 +41,11 @@ public abstract class FileMetadata {
    * @param blockSize     the size of the block.
    * @param elementsTotal the number of elements in the block.
    * @return the {@link BlockMetadata} having all given information, the block offset, and the index.
-   * @throws IOException if fail to append the block metadata.
+   * @throws PartitionWriteException if fail to append the block metadata.
    */
   public abstract BlockMetadata reserveBlock(final int hashValue,
                                              final int blockSize,
-                                             final long elementsTotal) throws IOException;
+                                             final long elementsTotal) throws PartitionWriteException;
 
   /**
    * Notifies that some blocks are written.
@@ -54,20 +55,14 @@ public abstract class FileMetadata {
   public abstract void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit);
 
   /**
-   * Gets a iterable containing the block metadata of corresponding partition.
+   * Gets an iterable containing the block metadata of corresponding partition.
    * It returns a "blocking iterable" to which metadata for blocks that become available will be published.
+   * For the further details, check {@link edu.snu.vortex.runtime.common.ClosableBlockingIterable}.
    *
    * @return the "blocking iterable" containing the block metadata.
-   * @throws IOException if fail to get the iterable.
+   * @throws PartitionFetchException fail to get the iterable.
    */
-  public abstract Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException;
-
-  /**
-   * Deletes the metadata.
-   *
-   * @throws IOException if fail to delete.
-   */
-  public abstract void deleteMetadata() throws IOException;
+  public abstract Iterable<BlockMetadata> getBlockMetadataIterable() throws PartitionFetchException;
 
   /**
    * @return whether commit every block write or not.

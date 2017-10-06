@@ -146,10 +146,11 @@ enum TaskGroupStateFromExecutor {
 enum PartitionStateFromExecutor {
     PARTITION_READY = 0;
     SCHEDULED = 1;
-    COMMITTED = 2;
-    LOST = 3;
-    LOST_BEFORE_COMMIT = 4;
-    REMOVED = 5;
+    CREATED = 2;
+    COMMITTED = 3;
+    LOST = 4;
+    LOST_BEFORE_COMMIT = 5;
+    REMOVED = 6;
 }
 
 enum PartitionStore {
@@ -158,11 +159,13 @@ enum PartitionStore {
     REMOTE_FILE = 2;
 }
 
+// TODO #507: Modularize communication component. Detach the partition state managing messages from the ControlMessage.
 // Messages for metadata passing
 // Messages from Master to Executors
 message MetadataResponseMsg {
+    // This response just notifies whether the subsription is successful or not.
+    // The actual metadata will be sent as CommittedBlockMetadataMsg.
     required int64 requestId = 1; // To find the matching request msg
-    repeated BlockMetadataMsg blockMetadata = 2;
     optional PartitionStateFromExecutor state = 3;
 }
 
@@ -192,6 +195,7 @@ message ReserveBlockMsg {
 message RequestBlockMetadataMsg {
     required string executorId = 1;
     required string partitionId = 2;
+    required string listenerId = 3;
 }
 
 // Common messages

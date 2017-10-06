@@ -39,9 +39,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Represents the input data transfer to a task.
@@ -76,6 +73,7 @@ public final class InputReader extends DataTransfer {
 
   /**
    * Reads input data depending on the communication pattern of the srcVertex.
+   * Note: the iteration for the result iterable might be blocked if the whole elements are not committed yet.
    *
    * @return the read data.
    */
@@ -225,24 +223,5 @@ public final class InputReader extends DataTransfer {
       // Memory input reader
       return 1;
     }
-  }
-
-  /**
-   * Combine the given list of futures.
-   *
-   * @param futures to combine.
-   * @return the combined iterable of elements.
-   * @throws ExecutionException   when fail to get results from futures.
-   * @throws InterruptedException when interrupted during getting results from futures.
-   */
-  public static Iterable<Element> combineFutures(final List<CompletableFuture<Iterable<Element>>> futures)
-      throws ExecutionException, InterruptedException {
-    final List<Element> concatStreamBase = new ArrayList<>();
-    Stream<Element> concatStream = concatStreamBase.stream();
-    for (int srcTaskIdx = 0; srcTaskIdx < futures.size(); srcTaskIdx++) {
-      final Iterable<Element> dataFromATask = futures.get(srcTaskIdx).get();
-      concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
-    }
-    return concatStream.collect(Collectors.toList());
   }
 }

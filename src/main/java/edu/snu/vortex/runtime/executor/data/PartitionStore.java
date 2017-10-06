@@ -16,7 +16,11 @@
 package edu.snu.vortex.runtime.executor.data;
 
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
+import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,13 +30,47 @@ import java.util.concurrent.CompletableFuture;
  * Interface for partition placement.
  */
 public interface PartitionStore {
+
   /**
-   * Retrieves data in a specific {@link HashRange} from a partition.
-   * If the target partition is not committed yet, the requester may "subscribe" the further data until it is committed.
+   * Report the partition creation to the master.
+   *
+   * @param partitionId                     the ID of the created partition.
+   * @param executorId                      the ID of the sender executor.
+   * @param location                        the location of this partition.
+   * @param persistentConnectionToMasterMap map having connection to the master.
+   */
+  default void reportPartitionCreation(final String partitionId,
+                                       final String executorId,
+                                       final String location,
+                                       final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
+    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
+        ControlMessage.PartitionStateChangedMsg.newBuilder()
+            .setExecutorId(executorId)
+            .setPartitionId(partitionId)
+            .setState(ControlMessage.PartitionStateFromExecutor.CREATED)
+            .setLocation(location);
+
+    persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
+        .send(ControlMessage.Message.newBuilder()
+            .setId(RuntimeIdGenerator.generateMessageId())
+            .setListenerId(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
+            .setType(ControlMessage.MessageType.PartitionStateChanged)
+            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
+            .build());
+  }
+
+  /**
+   * Gets elements having key in a specific {@link HashRange} from a partition.
+   * The result will be an {@link Iterable}, and looking up for it's {@link java.util.Iterator} can be blocked.
+   * If all of the data of the target partition are not committed yet,
+   * the iterable will have the committed data only.
+   * The requester can just wait the further committed blocks by using it's block-able iterator, or
+   * subscribes the further blocks by using {@link org.apache.reef.wake.rx.Observable}.
+   * For the further details, check {@link edu.snu.vortex.runtime.common.ClosableBlockingIterable}
+   * and {@link edu.snu.vortex.runtime.common.ObservableIterableWrapper}.
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range.
-   * TODO #463: Support incremental write. Consider returning Blocks in some "subscribable" data structure.
    * @return the result data from the target partition (if the target partition exists).
    *         (the future completes exceptionally with {@link edu.snu.vortex.runtime.exception.PartitionFetchException}
    *          for any error occurred while trying to fetch a partition.
@@ -40,8 +78,8 @@ public interface PartitionStore {
    *          through {@link edu.snu.vortex.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<CompletableFuture<Iterable<Element>>> getBlocks(String partitionId,
-                                                           HashRange hashRange);
+  Optional<CompletableFuture<Iterable<Element>>> getElements(String partitionId,
+                                                             HashRange hashRange);
 
   /**
    * Saves an iterable of data blocks to a partition.

@@ -75,7 +75,7 @@ public final class ContainerManagerTest {
     allocateResource(createMockContext());
     allocateResource(createMockContext());
 
-    // Say the job finishes,
+    // Say the job finishes,M
     // and we would like to shutdown the running executors and terminate ContainerManager.
     final Future<Boolean> terminationResult = containerManager.terminate();
 

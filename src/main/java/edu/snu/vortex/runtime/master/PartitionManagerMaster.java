@@ -39,6 +39,7 @@ import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static edu.snu.vortex.runtime.common.state.PartitionState.State.COMMITTED;
 import static edu.snu.vortex.runtime.common.state.PartitionState.State.SCHEDULED;
 import static edu.snu.vortex.runtime.master.RuntimeMaster.convertPartitionState;
 
@@ -124,7 +125,6 @@ public final class PartitionManagerMaster {
 
   /**
    * Returns a {@link CompletableFuture} of partition location, which is not yet resolved in {@code SCHEDULED} state.
-   * TODO #446: Control the Point of Partition Fetch in Executor.
    *
    * @param partitionId id of the specified partition.
    * @return {@link CompletableFuture} of partition location, which completes exceptionally when the partition
@@ -138,6 +138,7 @@ public final class PartitionManagerMaster {
           (PartitionState.State) getPartitionState(partitionId).getStateMachine().getCurrentState();
       switch (state) {
         case SCHEDULED:
+        case CREATED:
         case COMMITTED:
           return partitionIdToMetadata.get(partitionId).getLocationFuture();
         case READY:
@@ -242,9 +243,11 @@ public final class PartitionManagerMaster {
     try {
       final Set<String> partitionIds = new HashSet<>();
       partitionIdToMetadata.values().forEach(partitionMetadata -> {
-        final String location = partitionMetadata.getLocationFuture().getNow("NOT_COMMITTED");
-        if (location.equals(executorId)) {
-          partitionIds.add(partitionMetadata.getPartitionId());
+        if (partitionMetadata.getPartitionState().getStateMachine().getCurrentState().equals(COMMITTED)) {
+          final String location = partitionMetadata.getLocationFuture().getNow("NOT_COMMITTED");
+          if (location.equals(executorId)) {
+            partitionIds.add(partitionMetadata.getPartitionId());
+          }
         }
       });
       return partitionIds;
@@ -275,7 +278,7 @@ public final class PartitionManagerMaster {
    * @param partitionId     the id of the partition.
    * @param newState        the new state of the partition.
    * @param location        the location of the partition (e.g., worker id, remote store).
-   *                        {@code null} if not committed or lost.
+   *                        {@code null} if not created or lost.
    * @param producerTaskIdx the index of the task produced the commit. {@code null} if not committed.
    */
   @VisibleForTesting
@@ -306,8 +309,8 @@ public final class PartitionManagerMaster {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final CompletableFuture<String> locationFuture
-          = getPartitionLocationFuture(requestPartitionLocationMsg.getPartitionId());
+      final CompletableFuture<String> locationFuture =
+          getPartitionLocationFuture(requestPartitionLocationMsg.getPartitionId());
       locationFuture.whenComplete((location, throwable) -> {
         final ControlMessage.PartitionLocationInfoMsg.Builder infoMsgBuilder =
             ControlMessage.PartitionLocationInfoMsg.newBuilder()
@@ -339,8 +342,7 @@ public final class PartitionManagerMaster {
    * @param message        the message having the block metadata to append.
    * @param messageContext the context which will be used for response.
    */
-  @VisibleForTesting
-  public void onReserveBlock(final ControlMessage.Message message,
+  private void onReserveBlock(final ControlMessage.Message message,
                              final MessageContext messageContext) {
     assert (message.getType() == ControlMessage.MessageType.ReserveBlock);
     final ControlMessage.ReserveBlockMsg reserveBlockMsg = message.getReserveBlockMsg();
@@ -355,11 +357,13 @@ public final class PartitionManagerMaster {
       final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
 
       // Reserve a region for this block and append the metadata.
-      final Pair<Integer, Long> reserveResult = metadata.reserveBlock(reserveBlockMsg.getBlockMetadata());
-      final int blockIndex = reserveResult.left();
-      final long positionToWrite = reserveResult.right();
-      responseBuilder.setBlockIdx(blockIndex);
-      responseBuilder.setPositionToWrite(positionToWrite);
+      final Optional<Pair<Integer, Long>> reserveResult = metadata.reserveBlock(reserveBlockMsg.getBlockMetadata());
+      if (reserveResult.isPresent()) {
+        final int blockIndex = reserveResult.get().left();
+        final long positionToWrite = reserveResult.get().right();
+        responseBuilder.setBlockIdx(blockIndex);
+        responseBuilder.setPositionToWrite(positionToWrite);
+      }
 
       // Reply with the position to write in the file.
       messageContext.reply(
@@ -379,8 +383,7 @@ public final class PartitionManagerMaster {
    *
    * @param message the message having metadata to commit.
    */
-  @VisibleForTesting
-  public void onCommitBlocks(final ControlMessage.Message message) {
+  private void onCommitBlocks(final ControlMessage.Message message) {
     assert (message.getType() == ControlMessage.MessageType.CommitBlock);
     final ControlMessage.CommitBlockMsg commitMsg = message.getCommitBlockMsg();
     final String partitionId = commitMsg.getPartitionId();
@@ -406,9 +409,9 @@ public final class PartitionManagerMaster {
    * @param message        the message having metadata to store.
    * @param messageContext the context to reply.
    */
-  @VisibleForTesting
-  public void onRequestBlockMetadata(final ControlMessage.Message message,
-                                     final MessageContext messageContext) {
+
+  private void onRequestBlockMetadata(final ControlMessage.Message message,
+                                      final MessageContext messageContext) {
     assert (message.getType() == ControlMessage.MessageType.RequestBlockMetadata);
     final ControlMessage.RequestBlockMetadataMsg requestMsg = message.getRequestBlockMetadataMsg();
     final String partitionId = requestMsg.getPartitionId();
@@ -424,11 +427,12 @@ public final class PartitionManagerMaster {
             ControlMessage.MetadataResponseMsg.newBuilder()
                 .setRequestId(message.getId());
         if (throwable == null) {
-          // Well committed.
+          // Well located.
           final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
           if (metadata != null) {
-            metadata.getBlockMetadataList().forEach(blockMetadataInServer ->
-                responseBuilder.addBlockMetadata(blockMetadataInServer.getBlockMetadataMsg()));
+            final ControlMessage.RequestBlockMetadataMsg requestBlockMetadataMsg = message.getRequestBlockMetadataMsg();
+            metadata.subscribeCommittedBlocks(
+                requestBlockMetadataMsg.getExecutorId(), requestBlockMetadataMsg.getListenerId());
           } else {
             LOG.error("Metadata for {} dose not exist. Failed to get it.", partitionId);
           }

@@ -33,6 +33,7 @@ public final class PartitionState {
     // Add states
     stateMachineBuilder.addState(State.READY, "The partition is ready to be created.");
     stateMachineBuilder.addState(State.SCHEDULED, "The partition is scheduled for creation.");
+    stateMachineBuilder.addState(State.CREATED, "The partition is created.");
     stateMachineBuilder.addState(State.COMMITTED, "The partition has been committed.");
     stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The task group that produces the partition is scheduled, "
         + "but failed before committing");
@@ -42,8 +43,10 @@ public final class PartitionState {
     // Add transitions
     stateMachineBuilder.addTransition(State.READY, State.SCHEDULED,
         "The task group that produces the partition is scheduled.");
-    stateMachineBuilder.addTransition(State.SCHEDULED, State.COMMITTED, "Successfully moved and committed");
+    stateMachineBuilder.addTransition(State.SCHEDULED, State.CREATED, "Successfully located");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.LOST_BEFORE_COMMIT, "The partition is lost before commit");
+    stateMachineBuilder.addTransition(State.CREATED, State.COMMITTED, "Successfully committed");
+    stateMachineBuilder.addTransition(State.CREATED, State.LOST_BEFORE_COMMIT, "The partition is lost before commit");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.REMOVED, "Removed after committed");
     stateMachineBuilder.addTransition(State.REMOVED, State.SCHEDULED,
@@ -68,6 +71,7 @@ public final class PartitionState {
   public enum State {
     READY,
     SCHEDULED,
+    CREATED,
     COMMITTED,
     LOST_BEFORE_COMMIT,
     LOST,

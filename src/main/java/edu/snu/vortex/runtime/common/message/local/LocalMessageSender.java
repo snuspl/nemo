@@ -12,17 +12,17 @@ public final class LocalMessageSender<T> implements MessageSender<T> {
 
   private final String senderId;
   private final String targetId;
-  private final String messageTypeId;
+  private final String listenerId;
   private final LocalMessageDispatcher dispatcher;
   private boolean isClosed;
 
   public LocalMessageSender(final String senderId,
                      final String targetId,
-                     final String messageTypeId,
+                     final String listenerId,
                      final LocalMessageDispatcher dispatcher) {
     this.senderId = senderId;
     this.targetId = targetId;
-    this.messageTypeId = messageTypeId;
+    this.listenerId = listenerId;
     this.dispatcher = dispatcher;
     this.isClosed = false;
   }
@@ -32,7 +32,7 @@ public final class LocalMessageSender<T> implements MessageSender<T> {
     if (isClosed) {
       throw new RuntimeException("Closed");
     }
-    dispatcher.dispatchSendMessage(targetId, messageTypeId, message);
+    dispatcher.dispatchSendMessage(targetId, listenerId, message);
   }
 
   @Override
@@ -40,7 +40,7 @@ public final class LocalMessageSender<T> implements MessageSender<T> {
     if (isClosed) {
       throw new RuntimeException("Closed");
     }
-    return dispatcher.dispatchRequestMessage(senderId, targetId, messageTypeId, message);
+    return dispatcher.dispatchRequestMessage(senderId, targetId, listenerId, message);
   }
 
   @Override

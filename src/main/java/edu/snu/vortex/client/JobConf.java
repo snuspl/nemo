@@ -119,18 +119,20 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * Number of I/O threads for {@link edu.snu.vortex.runtime.executor.data.LocalFileStore}.
+   * Number of threads for non-blocking computation such as (de)serialization
+   * at {@link edu.snu.vortex.runtime.executor.data.LocalFileStore}.
    */
-  @NamedParameter(doc = "Number of I/O threads for LocalFileStore", short_name = "local_file_threads",
-      default_value = "5")
+  @NamedParameter(doc = "Number of threads for non-blocking computation at LocalFileStore",
+      short_name = "local_file_threads", default_value = "5")
   public final class LocalFileStoreNumThreads implements Name<Integer> {
   }
 
   /**
-   * Number of I/O threads for {@link edu.snu.vortex.runtime.executor.data.GlusterFileStore}.
+   * Number of threads for non-blocking computation such as (de)serialization
+   * at {@link edu.snu.vortex.runtime.executor.data.GlusterFileStore}.
    */
-  @NamedParameter(doc = "Number of I/O threads for GlusterFileStore", short_name = "gluster_file_threads",
-      default_value = "5")
+  @NamedParameter(doc = "Number of threads for non-blocking computation at GlusterFileStore",
+      short_name = "gluster_file_threads", default_value = "5")
   public final class GlusterFileStoreNumThreads implements Name<Integer> {
   }
 

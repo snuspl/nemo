@@ -38,6 +38,7 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.message.ncs.NcsParameters;
 import edu.snu.vortex.runtime.common.metric.MetricMessageHandler;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
+import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.executor.Executor;
 import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.vortex.runtime.executor.data.*;
@@ -77,9 +78,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 import static edu.snu.vortex.runtime.RuntimeTestUtil.flatten;
@@ -296,18 +301,24 @@ public final class DataTransferTest {
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
+      final List<String> partitionIds = new ArrayList<>();
       if (commPattern.equals(ScatterGather.class)) {
         IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex, dstTaskIndex);
+          partitionIds.add(partitionId);
           master.initializeState(partitionId, Collections.singleton(srcTaskIndex),
               Collections.singleton(taskGroupPrefix + srcTaskIndex));
         });
       } else {
         final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
+        partitionIds.add(partitionId);
         master.initializeState(partitionId, Collections.singleton(srcTaskIndex),
             Collections.singleton(taskGroupPrefix + srcTaskIndex));
       }
-      master.onProducerTaskGroupScheduled(taskGroupPrefix + srcTaskIndex);
+      final String taskGroupId = taskGroupPrefix + srcTaskIndex;
+      master.onProducerTaskGroupScheduled(taskGroupId);
+      partitionIds.forEach(partitionId -> master.onPartitionStateChanged(
+          partitionId, PartitionState.State.CREATED, sender.getExecutorId(), null));
     });
 
     // Write
@@ -327,7 +338,7 @@ public final class DataTransferTest {
           new InputReader(dstTaskIndex, taskGroupPrefix + dstTaskIndex, srcVertex, dummyEdge, receiver);
       final List<Element> dataRead = new ArrayList<>();
       try {
-        InputReader.combineFutures(reader.read()).forEach(dataRead::add);
+        combineFutures(reader.read()).forEach(dataRead::add);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
@@ -378,11 +389,15 @@ public final class DataTransferTest {
       taskGroupIds.add(taskGroupPrefix + srcTaskIndex);
       producerTaskIndices.add(srcTaskIndex);
     });
+    final List<String> partitionIds = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, dstTaskIndex);
+      partitionIds.add(partitionId);
       master.initializeState(partitionId, producerTaskIndices, taskGroupIds);
     });
     taskGroupIds.forEach(master::onProducerTaskGroupScheduled);
+    partitionIds.forEach(partitionId -> master.onPartitionStateChanged(
+        partitionId, PartitionState.State.CREATED, sender.getExecutorId(), null));
 
     // Write
     final List<List<Element>> dataWrittenList = new ArrayList<>();
@@ -401,7 +416,7 @@ public final class DataTransferTest {
           new InputReader(dstTaskIndex, taskGroupPrefix + dstTaskIndex, srcVertex, dummyEdge, receiver);
       final List<Element> dataRead = new ArrayList<>();
       try {
-        InputReader.combineFutures(reader.read()).forEach(dataRead::add);
+        combineFutures(reader.read()).forEach(dataRead::add);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
@@ -434,5 +449,24 @@ public final class DataTransferTest {
     dstVertexProperties.put(ParallelismProperty.of(PARALLELISM_TEN));
 
     return Pair.of(srcVertex, dstVertex);
+  }
+
+  /**
+   * Combine the given list of futures.
+   *
+   * @param futures to combine.
+   * @return the combined iterable of elements.
+   * @throws ExecutionException   when fail to get results from futures.
+   * @throws InterruptedException when interrupted during getting results from futures.
+   */
+  private static Iterable<Element> combineFutures(final List<CompletableFuture<Iterable<Element>>> futures)
+      throws ExecutionException, InterruptedException {
+    final List<Element> concatStreamBase = new ArrayList<>();
+    Stream<Element> concatStream = concatStreamBase.stream();
+    for (int srcTaskIdx = 0; srcTaskIdx < futures.size(); srcTaskIdx++) {
+      final Iterable<Element> dataFromATask = futures.get(srcTaskIdx).get();
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
+    }
+    return concatStream.collect(Collectors.toList());
   }
 }
