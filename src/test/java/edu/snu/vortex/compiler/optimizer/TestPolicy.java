@@ -15,8 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer;
 
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.*;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
 import edu.snu.vortex.compiler.optimizer.policy.Policy;
@@ -32,6 +31,10 @@ public final class TestPolicy implements Policy {
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
     return  Arrays.asList(
+        new DefaultExecutorPlacementPropertyPass(),
+        new DefaultPartitioningPropertyPass(),
+        new DefaultDataFlowModelPropertyPass(),
+        new DefaultDataStorePropertyPass(),
         new DefaultStagePartitioningPass(),
         new ScheduleGroupPass()
     );

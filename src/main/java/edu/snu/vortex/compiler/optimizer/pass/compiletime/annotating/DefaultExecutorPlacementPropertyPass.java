@@ -21,10 +21,13 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 
-public final class DefaultExecutorPlacementPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DefaultExecutorPlacementPass";
+/**
+ * Pass for initiating IRVertex ExecutorPlacement ExecutionProperty with default values.
+ */
+public final class DefaultExecutorPlacementPropertyPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DefaultExecutorPlacementPropertyPass";
 
-  public DefaultExecutorPlacementPass() {
+  public DefaultExecutorPlacementPropertyPass() {
     super(ExecutionProperty.Key.ExecutorPlacement);
   }
 

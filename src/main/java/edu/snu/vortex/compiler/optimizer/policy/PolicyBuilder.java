@@ -19,6 +19,7 @@ import edu.snu.vortex.compiler.exception.CompileTimeOptimizationException;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.CompositePass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,6 +43,8 @@ public final class PolicyBuilder {
     this.runtimePasses = new ArrayList<>();
     this.requiredExecutionProperties = new HashSet<>();
     this.annotatedExecutionProperties = new HashSet<>();
+    // DataCommunicationPattern is already set when creating the IREdge itself.
+    annotatedExecutionProperties.add(ExecutionProperty.Key.DataCommunicationPattern);
   }
 
   public PolicyBuilder(final JSONObject jsonObject) throws Exception {
@@ -68,6 +71,13 @@ public final class PolicyBuilder {
   }
 
   public PolicyBuilder registerCompileTimePass(final CompileTimePass compileTimePass) {
+    // We decompose CompositePasses.
+    if (compileTimePass instanceof CompositePass) {
+      final CompositePass compositePass = (CompositePass) compileTimePass;
+      compositePass.getPassList().forEach(this::registerCompileTimePass);
+      return this;
+    }
+
     // Check prerequisite execution properties.
     if (!annotatedExecutionProperties.containsAll(compileTimePass.getPrerequisiteExecutionProperties())) {
       throw new CompileTimeOptimizationException("Prerequisite ExecutionProperty hasn't been met for "

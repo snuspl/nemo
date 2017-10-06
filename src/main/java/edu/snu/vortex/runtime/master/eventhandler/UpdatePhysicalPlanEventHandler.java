@@ -18,7 +18,6 @@
  */
 package edu.snu.vortex.runtime.master.eventhandler;
 
-import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.compiler.eventhandler.UpdatePhysicalPlanEvent;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;

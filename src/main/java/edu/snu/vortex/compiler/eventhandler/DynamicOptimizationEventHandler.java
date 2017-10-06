@@ -36,7 +36,7 @@ public final class DynamicOptimizationEventHandler implements RuntimeEventHandle
   private final PubSubEventHandler pubSubEventHandler;
 
   @Inject
-  private DynamicOptimizationEventHandler(PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
+  private DynamicOptimizationEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
     this.pubSubEventHandler = pubSubEventHandlerWrapper.getPubSubEventHandler();
   }
 

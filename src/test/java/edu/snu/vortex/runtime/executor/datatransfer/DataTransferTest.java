@@ -122,7 +122,6 @@ public final class DataTransferTest {
     final ContainerManager containerManager = new ContainerManager(null,
                                                                     messageEnvironment);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
-    final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
         new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
             new PendingTaskGroupPriorityQueue(), pubSubEventHandler);
@@ -130,8 +129,7 @@ public final class DataTransferTest {
 
     // Necessary for wiring up the message environments
     final RuntimeMaster runtimeMaster =
-        new RuntimeMaster(scheduler, containerManager, messageEnvironment,
-            updatePhysicalPlanEventHandler, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
+        new RuntimeMaster(scheduler, containerManager, messageEnvironment, EMPTY_DAG_DIRECTORY, MAX_SCHEDULE_ATTEMPT);
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);

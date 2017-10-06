@@ -2,7 +2,7 @@
   "policy": [
     {
       "type": "CompileTimePass",
-      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ParallelismPass"
+      "name": "edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.InitiationPass"
     },
     {
       "type": "CompileTimePass",
