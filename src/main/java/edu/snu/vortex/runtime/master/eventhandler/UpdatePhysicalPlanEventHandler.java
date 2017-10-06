@@ -34,10 +34,13 @@ public final class UpdatePhysicalPlanEventHandler implements CompilerEventHandle
   private final Scheduler scheduler;
 
   @Inject
-  private UpdatePhysicalPlanEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
-                                         final Scheduler scheduler) {
+  private UpdatePhysicalPlanEventHandler(final Scheduler scheduler) {
     this.scheduler = scheduler;
-    pubSubEventHandlerWrapper.getPubSubEventHandler().subscribe(UpdatePhysicalPlanEvent.class, this);
+  }
+
+  @Override
+  public Class<UpdatePhysicalPlanEvent> getEventClass() {
+    return UpdatePhysicalPlanEvent.class;
   }
 
   @Override

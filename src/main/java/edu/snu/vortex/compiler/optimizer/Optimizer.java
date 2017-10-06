@@ -55,12 +55,6 @@ public final class Optimizer {
     if (optimizationPolicy == null || optimizationPolicy.getCompileTimePasses().isEmpty()) {
       throw new CompileTimeOptimizationException("A policy name should be specified.");
     }
-    // Register EventHandlers
-    optimizationPolicy.getRuntimePasses().forEach(runtimePass -> {
-      final Pair<Class<? extends CompilerEventHandler>, Class<? extends RuntimeEventHandler<?>>> eventHandlerPair =
-          runtimePass.getEventHandlers();
-      // TODO
-    });
     return process(dag, optimizationPolicy.getCompileTimePasses().iterator(), dagDirectory);
   }
 
@@ -77,6 +71,7 @@ public final class Optimizer {
                                                final String dagDirectory) throws Exception {
     if (passes.hasNext()) {
       final CompileTimePass passToApply = passes.next();
+      // Apply the pass to the DAG.
       final DAG<IRVertex, IREdge> processedDAG = passToApply.apply(dag);
       // Ensure AnnotatingPass and ReshapingPass functions as intended.
       if ((passToApply instanceof AnnotatingPass && !checkAnnotatingPass(dag, processedDAG))
@@ -84,8 +79,10 @@ public final class Optimizer {
         throw new CompileTimeOptimizationException(passToApply.getName() + "is implemented in a way that doesn't "
             + "follow its original intention of annotating or reshaping. Modify it or use a general CompileTimePass");
       }
+      // Save the processed JSON DAG.
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passToApply.getClass().getSimpleName(),
           "DAG after optimization");
+      // recursively apply the following passes.
       return process(processedDAG, passes, dagDirectory);
     } else {
       return dag;

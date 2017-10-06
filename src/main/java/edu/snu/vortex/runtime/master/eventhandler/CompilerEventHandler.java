@@ -26,4 +26,5 @@ import org.apache.reef.wake.EventHandler;
  * @param <T> type of the compiler event to handle.
  */
 public interface CompilerEventHandler<T extends CompilerEvent> extends EventHandler<T> {
+  Class<T> getEventClass();
 }

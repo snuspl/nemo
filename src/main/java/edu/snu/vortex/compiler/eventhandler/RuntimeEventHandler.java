@@ -26,4 +26,5 @@ import org.apache.reef.wake.EventHandler;
  * @param <T> type of the runtime event to handle.
  */
 public interface RuntimeEventHandler<T extends RuntimeEvent> extends EventHandler<T> {
+  Class<T> getEventClass();
 }
