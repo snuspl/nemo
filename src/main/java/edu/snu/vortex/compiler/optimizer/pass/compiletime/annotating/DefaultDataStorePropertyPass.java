@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 /**
  * Pass for initiating IREdge DataStore ExecutionProperty with default values.
+ * MemoryStore is default for OneToOne edges and LocalFileStore is default for the others.
  */
 public final class DefaultDataStorePropertyPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DefaultDataStorePropertyPass";
@@ -48,13 +49,13 @@ public final class DefaultDataStorePropertyPass extends AnnotatingPass {
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex ->
         dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
-            switch (irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern).getClass().getSimpleName()) {
-              case OneToOne.SIMPLE_NAME:
-                irEdge.setProperty(DataStoreProperty.of(MemoryStore.class));
-                break;
-              default:
-                irEdge.setProperty(DataStoreProperty.of(LocalFileStore.class));
+          if (irEdge.getProperty(ExecutionProperty.Key.DataStore) == null) {
+            if (OneToOne.class.equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
+              irEdge.setProperty(DataStoreProperty.of(MemoryStore.class));
+            } else {
+              irEdge.setProperty(DataStoreProperty.of(LocalFileStore.class));
             }
+          }
         }));
     return dag;
   }

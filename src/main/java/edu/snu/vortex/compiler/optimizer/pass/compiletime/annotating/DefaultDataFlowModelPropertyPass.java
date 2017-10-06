@@ -23,6 +23,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 
 /**
  * Pass for initiating IREdge DataFlowModel ExecutionProperty with default values.
+ * Pull is the default value.
  */
 public final class DefaultDataFlowModelPropertyPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DefaultDataFlowModelPropertyPass";
@@ -39,8 +40,11 @@ public final class DefaultDataFlowModelPropertyPass extends AnnotatingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex ->
-        dag.getIncomingEdgesOf(irVertex).forEach(irEdge ->
-            irEdge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull))));
+        dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
+          if (irEdge.getProperty(ExecutionProperty.Key.DataFlowModel) == null) {
+            irEdge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
+          }
+        }));
     return dag;
   }
 }

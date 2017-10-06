@@ -9,6 +9,7 @@ import edu.snu.vortex.runtime.executor.datatransfer.partitioning.Hash;
 
 /**
  * Pass for initiating IREdge Partitioning ExecutionProperty with default values.
+ * Hash is the default value.
  */
 public final class DefaultPartitioningPropertyPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DefaultPartitioningPropertyPass";
@@ -25,7 +26,11 @@ public final class DefaultPartitioningPropertyPass extends AnnotatingPass {
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex ->
-      dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> irEdge.setProperty(PartitioningProperty.of(Hash.class))));
+      dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
+        if (irEdge.getProperty(ExecutionProperty.Key.Partitioning) == null) {
+          irEdge.setProperty(PartitioningProperty.of(Hash.class));
+        }
+      }));
     return dag;
   }
 }

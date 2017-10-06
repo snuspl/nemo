@@ -23,6 +23,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProp
 
 /**
  * Pass for initiating IRVertex ExecutorPlacement ExecutionProperty with default values.
+ * NONE is the default value.
  */
 public final class DefaultExecutorPlacementPropertyPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "DefaultExecutorPlacementPropertyPass";
@@ -38,7 +39,11 @@ public final class DefaultExecutorPlacementPropertyPass extends AnnotatingPass {
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.topologicalDo(irVertex -> irVertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.NONE)));
+    dag.topologicalDo(irVertex -> {
+      if (irVertex.getProperty(ExecutionProperty.Key.ExecutorPlacement) == null) {
+        irVertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.NONE));
+      }
+    });
     return dag;
   }
 }

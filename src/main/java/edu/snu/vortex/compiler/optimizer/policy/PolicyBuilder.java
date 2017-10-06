@@ -20,6 +20,8 @@ import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.CompositePass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.InitiationPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -84,11 +86,17 @@ public final class PolicyBuilder {
           + compileTimePass.getName());
     }
 
+    // check annotation of annotating passes.
     if (compileTimePass instanceof AnnotatingPass) {
       final AnnotatingPass annotatingPass = (AnnotatingPass) compileTimePass;
       this.annotatedExecutionProperties.add(annotatingPass.getExecutionPropertyToModify());
     }
     this.compileTimePasses.add(compileTimePass);
+
+    // re-initiate after each reshaping pass.
+    if (compileTimePass instanceof ReshapingPass) {
+      this.registerCompileTimePass(new InitiationPass());
+    }
     return this;
   }
 

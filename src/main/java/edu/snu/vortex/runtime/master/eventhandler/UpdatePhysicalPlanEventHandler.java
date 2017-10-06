@@ -30,10 +30,13 @@ import javax.inject.Inject;
  * Class for handling event to update physical plan to the scheduler.
  */
 public final class UpdatePhysicalPlanEventHandler implements CompilerEventHandler<UpdatePhysicalPlanEvent> {
-  private final Scheduler scheduler;
+  private Scheduler scheduler;
 
   @Inject
-  private UpdatePhysicalPlanEventHandler(final Scheduler scheduler) {
+  private UpdatePhysicalPlanEventHandler() {
+  }
+
+  public void setScheduler(final Scheduler scheduler) {
     this.scheduler = scheduler;
   }
 
