@@ -68,7 +68,7 @@ public final class TaskGroupStateManager {
                                final int attemptIdx,
                                final String executorId,
                                final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
-                               final MetricManagerWorker metricMessageSender) {
+                               final MetricMessageSender metricMessageSender) {
     this.taskGroupId = taskGroup.getTaskGroupId();
     this.attemptIdx = attemptIdx;
     this.executorId = executorId;
