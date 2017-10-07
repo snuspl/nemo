@@ -37,12 +37,18 @@ public final class MetricDataBuilder {
   public String getComputationUnitId() {
     return computationUnitId;
   }
+
   public Map<String, Object> getMetrics() {
-    return metrics; }
+    return metrics;
+  }
+
   public long getStartTime() {
-    return startTime; }
+    return startTime;
+  }
+
   public long getEndTime() {
-    return endTime; }
+    return endTime;
+  }
 
   public void beginMeasurement(final Map<String, Object> metricMap) {
     startTime = System.nanoTime();

@@ -49,7 +49,7 @@ public final class MetricManagerMaster implements MetricMessageHandler {
   }
 
   @Override
-  public List<String> getMetricByKey(final String metricKey) {
+  public synchronized List<String> getMetricByKey(final String metricKey) {
     return compUnitIdToMetricInJson.get(metricKey);
   }
 }

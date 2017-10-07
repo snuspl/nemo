@@ -262,12 +262,24 @@ public final class TaskGroupStateManager {
     }
   }
 
+  /**
+   * Begins recording the start time of this metric measurement, in addition to the metric given.
+   * This method ensures thread-safety by synchronizing its callers.
+   * @param compUnitId to be used as metricKey
+   * @param initialMetric metric to add
+   */
   private void beginMeasurement(final String compUnitId, final Map<String, Object> initialMetric) {
     final MetricDataBuilder metricDataBuilder = new MetricDataBuilder(compUnitId);
     metricDataBuilder.beginMeasurement(initialMetric);
     metricDataBuilderMap.put(compUnitId, metricDataBuilder);
   }
 
+  /**
+   * Ends this metric measurement, recording the end time in addition to the metric given.
+   * This method ensures thread-safety by synchronizing its callers.
+   * @param compUnitId to be used as metricKey
+   * @param finalMetric metric to add
+   */
   private void endMeasurement(final String compUnitId, final Map<String, Object> finalMetric) {
     final MetricDataBuilder metricDataBuilder = metricDataBuilderMap.get(compUnitId);
     metricDataBuilder.endMeasurement(finalMetric);
