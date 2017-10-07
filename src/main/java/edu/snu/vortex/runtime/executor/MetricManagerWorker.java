@@ -79,7 +79,7 @@ public final class MetricManagerWorker implements MetricMessageSender {
   @Override
   public void send(final String metricKey, final String metricValue) {
     metricMessageQueue.add(
-        ControlMessage.Metric.newBuilder().setMetricKey(metricKey).setMetricKey(metricValue).build());
+        ControlMessage.Metric.newBuilder().setMetricKey(metricKey).setMetricValue(metricValue).build());
   }
 
   @Override
