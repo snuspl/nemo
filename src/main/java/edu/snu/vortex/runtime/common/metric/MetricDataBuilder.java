@@ -22,23 +22,18 @@ import java.util.Map;
  * MetricData Builder.
  */
 public final class MetricDataBuilder {
-  private final Enum computationUnitEnum;
   private final String computationUnitId;
   private long startTime;
   private long endTime;
   private Map<String, Object> metrics;
 
-  public MetricDataBuilder(final Enum computationUnitEnum,
-                          final String computationUnitId) {
-    this.computationUnitEnum = computationUnitEnum;
+  public MetricDataBuilder(final String computationUnitId) {
     this.computationUnitId = computationUnitId;
     startTime = 0;
     endTime = 0;
     metrics = null;
   }
 
-  public Enum getComputationUnit() {
-    return computationUnitEnum; }
   public String getComputationUnitId() {
     return computationUnitId;
   }
@@ -67,6 +62,6 @@ public final class MetricDataBuilder {
    * @return the MetricData constructed by the builder.
    */
   public MetricData build() {
-    return new MetricData(getComputationUnit(), getComputationUnitId(), getMetrics());
+    return new MetricData(getComputationUnitId(), getMetrics());
   }
 }

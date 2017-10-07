@@ -13,19 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.runtime.master;
+package edu.snu.vortex.runtime.common.metric;
 
+import edu.snu.vortex.runtime.master.MetricManagerMaster;
 import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import java.util.List;
 
 /**
  * Metric message handler.
  */
-@DefaultImplementation(DefaultMetricMessageHandler.class)
+@DefaultImplementation(MetricManagerMaster.class)
 public interface MetricMessageHandler {
 
   /**
    * Handle the received metric message.
-   * @param metricData String type metric data.
+   * @param metricKey a given key for the metric (ex. TaskGroup ID)
+   * @param metricValue the metric formatted as a string (ex. JSON).
    */
-  void onMetricMessageReceived(String metricData);
+  void onMetricMessageReceived(final String metricKey, final String metricValue);
+
+  /**
+   * Retrieves the string form of metric given the metric key.
+   * @param metricKey to retrieve the metric for
+   * @return the list of accumulated metric in string (ex. JSON)
+   */
+  List<String> getMetricByKey(final String metricKey);
 }

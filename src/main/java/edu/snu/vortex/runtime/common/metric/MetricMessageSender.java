@@ -15,14 +15,14 @@
  */
 package edu.snu.vortex.runtime.common.metric;
 
+import edu.snu.vortex.runtime.executor.MetricManagerWorker;
 import org.apache.reef.tang.annotations.DefaultImplementation;
-import java.util.*;
 
 /**
  * Interface for metric sender.
  */
-@DefaultImplementation(PeriodicMetricSender.class)
-public interface MetricSender extends AutoCloseable {
+@DefaultImplementation(MetricManagerWorker.class)
+public interface MetricMessageSender extends AutoCloseable {
 
-  void send(final String jsonStr);
+  void send(final String metricKey, final String metricValue);
 }
