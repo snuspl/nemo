@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -75,8 +76,8 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
    * @see PartitionStore#getBlocks(String, HashRange).
    */
   @Override
-  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
-                                                                  final HashRange hashRange) {
+  public Optional<Iterable<Element>> getBlocks(final String partitionId,
+                                               final HashRange hashRange) throws PartitionFetchException {
     final String filePath = partitionIdToFilePath(partitionId);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
@@ -95,7 +96,11 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
           throw new PartitionFetchException(combinedThrowable);
         }
       };
-      return Optional.of(CompletableFuture.supplyAsync(supplier, executorService));
+      try {
+        return Optional.of(CompletableFuture.supplyAsync(supplier, executorService).get());
+      } catch (final InterruptedException | ExecutionException e) {
+        throw new PartitionFetchException(e);
+      }
     }
   }
 
@@ -104,9 +109,9 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
    * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
-  public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
-                                                           final Iterable<Block> blocks,
-                                                           final boolean commitPerBlock) {
+  public Optional<List<Long>> putBlocks(final String partitionId,
+                                        final Iterable<Block> blocks,
+                                        final boolean commitPerBlock) throws PartitionWriteException {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
@@ -124,7 +129,11 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
         throw new PartitionWriteException(combinedThrowable);
       }
     };
-    return CompletableFuture.supplyAsync(supplier, executorService);
+    try {
+      return CompletableFuture.supplyAsync(supplier, executorService).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new PartitionWriteException(e);
+    }
   }
 
   /**
@@ -151,7 +160,7 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
    * @return whether the partition exists or not.
    */
   @Override
-  public CompletableFuture<Boolean> removePartition(final String partitionId) {
+  public Boolean removePartition(final String partitionId) throws PartitionFetchException {
     final Supplier<Boolean> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final String filePath = partitionIdToFilePath(partitionId);
@@ -172,7 +181,11 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
         throw new PartitionFetchException(combinedThrowable);
       }
     };
-    return CompletableFuture.supplyAsync(supplier, executorService);
+    try {
+      return CompletableFuture.supplyAsync(supplier, executorService).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 
   /**

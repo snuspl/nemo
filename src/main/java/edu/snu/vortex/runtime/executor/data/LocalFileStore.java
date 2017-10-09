@@ -59,8 +59,8 @@ public final class LocalFileStore extends FileStore {
    * @see PartitionStore#getBlocks(String, HashRange).
    */
   @Override
-  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
-                                                                  final HashRange hashRange) {
+  public Optional<Iterable<Element>> getBlocks(final String partitionId,
+                                               final HashRange hashRange) throws PartitionFetchException {
     // Deserialize the target data in the corresponding file.
     final FilePartition partition = partitionIdToFilePartition.get(partitionId);
     if (partition == null) {
@@ -74,7 +74,11 @@ public final class LocalFileStore extends FileStore {
           throw new PartitionFetchException(combinedThrowable);
         }
       };
-      return Optional.of(CompletableFuture.supplyAsync(supplier, executorService));
+      try {
+        return Optional.of(CompletableFuture.supplyAsync(supplier, executorService).get());
+      } catch (final InterruptedException | ExecutionException e) {
+        throw new PartitionFetchException(e);
+      }
     }
   }
 
@@ -83,9 +87,9 @@ public final class LocalFileStore extends FileStore {
    * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
-  public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
-                                                           final Iterable<Block> blocks,
-                                                           final boolean commitPerBlock) {
+  public Optional<List<Long>> putBlocks(final String partitionId,
+                                        final Iterable<Block> blocks,
+                                        final boolean commitPerBlock) throws PartitionWriteException {
     final Supplier<Optional<List<Long>>> supplier = () -> {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
@@ -106,7 +110,11 @@ public final class LocalFileStore extends FileStore {
 
       return Optional.of(blockSizeList);
     };
-    return CompletableFuture.supplyAsync(supplier, executorService);
+    try {
+      return CompletableFuture.supplyAsync(supplier, executorService).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new PartitionWriteException(e);
+    }
   }
 
   /**
@@ -133,10 +141,10 @@ public final class LocalFileStore extends FileStore {
    * @return whether the partition exists or not.
    */
   @Override
-  public CompletableFuture<Boolean> removePartition(final String partitionId) {
+  public Boolean removePartition(final String partitionId) throws PartitionFetchException {
     final FilePartition serializedPartition = partitionIdToFilePartition.remove(partitionId);
     if (serializedPartition == null) {
-      return CompletableFuture.completedFuture(false);
+      return false;
     }
     final Supplier<Boolean> supplier = () -> {
       try {
@@ -147,7 +155,11 @@ public final class LocalFileStore extends FileStore {
       }
       return true;
     };
-    return CompletableFuture.supplyAsync(supplier, executorService);
+    try {
+      return CompletableFuture.supplyAsync(supplier, executorService).get();
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new PartitionFetchException(e);
+    }
   }
 
   /**
