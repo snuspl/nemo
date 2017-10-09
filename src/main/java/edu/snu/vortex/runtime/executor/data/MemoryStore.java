@@ -43,11 +43,11 @@ public final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#getBlocks(String, HashRange).
+   * @see PartitionStore#getFromPartition(String, HashRange).
    */
   @Override
-  public Optional<Iterable<Element>> getBlocks(final String partitionId,
-                                               final HashRange hashRange) {
+  public Optional<Iterable<Element>> getFromPartition(final String partitionId,
+                                                      final HashRange hashRange) {
     final MemoryPartition partition = partitionMap.get(partitionId);
 
     if (partition != null) {
@@ -67,12 +67,12 @@ public final class MemoryStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#putBlocks(String, Iterable, boolean).
+   * @see PartitionStore#putToPartition(String, Iterable, boolean).
    */
   @Override
-  public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<Block> blocks,
-                                        final boolean commitPerBlock) throws PartitionWriteException {
+  public Optional<List<Long>> putToPartition(final String partitionId,
+                                             final Iterable<Block> blocks,
+                                             final boolean commitPerBlock) throws PartitionWriteException {
     partitionMap.putIfAbsent(partitionId, new MemoryPartition());
     try {
       partitionMap.get(partitionId).appendBlocks(blocks);

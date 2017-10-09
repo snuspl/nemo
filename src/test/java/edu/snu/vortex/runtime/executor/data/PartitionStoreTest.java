@@ -320,7 +320,7 @@ public final class PartitionStoreTest {
               IntStream.range(writeTaskCount * NUM_READ_TASKS, (writeTaskCount + 1) * NUM_READ_TASKS).forEach(
                   partitionNumber -> {
                     final String partitionId = partitionIdList.get(partitionNumber);
-                    writerSideStore.putBlocks(partitionId,
+                    writerSideStore.putToPartition(partitionId,
                         Collections.singleton(partitionBlockList.get(partitionNumber)), false);
                     writerSideStore.commitPartition(partitionId);
                     partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
@@ -354,7 +354,7 @@ public final class PartitionStoreTest {
                   writeTaskNumber -> {
                     final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskCount;
                     final Optional<Iterable<Element>> optionalData =
-                        readerSideStore.getBlocks(partitionIdList.get(partitionNumber), HashRange.all());
+                        readerSideStore.getFromPartition(partitionIdList.get(partitionNumber), HashRange.all());
                     if (!optionalData.isPresent()) {
                       throw new RuntimeException("The result of retrieveData(" +
                           partitionIdList.get(partitionNumber) + ") is empty");
@@ -416,7 +416,7 @@ public final class PartitionStoreTest {
       @Override
       public Boolean call() {
         try {
-          writerSideStore.putBlocks(concPartitionId, Collections.singleton(concPartitionBlock), false);
+          writerSideStore.putToPartition(concPartitionId, Collections.singleton(concPartitionBlock), false);
           writerSideStore.commitPartition(concPartitionId);
           partitionManagerMaster.onPartitionStateChanged(
               concPartitionId, PartitionState.State.COMMITTED, "Writer side of the concurrent read edge", 0);
@@ -443,7 +443,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               final Optional<Iterable<Element>> optionalData =
-                  readerSideStore.getBlocks(concPartitionId, HashRange.all());
+                  readerSideStore.getFromPartition(concPartitionId, HashRange.all());
               if (!optionalData.isPresent()) {
                 throw new RuntimeException("The result of retrieveData(" +
                     concPartitionId + ") is empty");
@@ -506,7 +506,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               final String partitionId = hashedPartitionIdList.get(writeTaskCount);
-              writerSideStore.putBlocks(partitionId,
+              writerSideStore.putToPartition(partitionId,
                   hashedPartitionBlockList.get(writeTaskCount), false);
               writerSideStore.commitPartition(partitionId);
               partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
@@ -538,7 +538,7 @@ public final class PartitionStoreTest {
               IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
                   writeTaskNumber -> {
                     final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskCount);
-                    final Optional<Iterable<Element>> optionalData = readerSideStore.getBlocks(
+                    final Optional<Iterable<Element>> optionalData = readerSideStore.getFromPartition(
                         hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve);
                     if (!optionalData.isPresent()) {
                       throw new RuntimeException("The result of get partition" +
@@ -609,7 +609,7 @@ public final class PartitionStoreTest {
               final List<Block> blockToAppend = new ArrayList<>(CONC_WRITE_BLOCK_NUM);
               IntStream.range(0, CONC_WRITE_BLOCK_NUM).forEach(blockIdx ->
                   blockToAppend.add(new Block(blockIdx, concWriteBlocks)));
-              writerSideStore.putBlocks(concWritePartitionId, blockToAppend, false);
+              writerSideStore.putToPartition(concWritePartitionId, blockToAppend, false);
               partitionManagerMaster.onPartitionStateChanged(concWritePartitionId, PartitionState.State.COMMITTED,
                   "Writer side of the concurrent write edge", writeTaskCount);
               return true;
@@ -637,7 +637,7 @@ public final class PartitionStoreTest {
       public Boolean call() {
         try {
           final Optional<Iterable<Element>> optionalData =
-              readerSideStore.getBlocks(concWritePartitionId, HashRange.all());
+              readerSideStore.getFromPartition(concWritePartitionId, HashRange.all());
           if (!optionalData.isPresent()) {
             throw new RuntimeException("The result of retrieveData(" + concWritePartitionId + ") is empty");
           }

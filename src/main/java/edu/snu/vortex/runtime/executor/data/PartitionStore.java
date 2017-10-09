@@ -39,8 +39,8 @@ public interface PartitionStore {
    *          through {@link edu.snu.vortex.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable<Element>> getBlocks(String partitionId,
-                                        HashRange hashRange) throws PartitionFetchException;
+  Optional<Iterable<Element>> getFromPartition(String partitionId,
+                                               HashRange hashRange) throws PartitionFetchException;
 
   /**
    * Saves an iterable of data blocks to a partition.
@@ -58,9 +58,9 @@ public interface PartitionStore {
    *          through {@link edu.snu.vortex.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<List<Long>> putBlocks(String partitionId,
-                                 Iterable<Block> blocks,
-                                 boolean commitPerBlock) throws PartitionWriteException;
+  Optional<List<Long>> putToPartition(String partitionId,
+                                      Iterable<Block> blocks,
+                                      boolean commitPerBlock) throws PartitionWriteException;
 
   /**
    * Notifies that all writes for a partition is end.

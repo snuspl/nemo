@@ -121,7 +121,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final Optional<Iterable<Element>> optionalResultData = store.getBlocks(partitionId, hashRange);
+    final Optional<Iterable<Element>> optionalResultData = store.getFromPartition(partitionId, hashRange);
 
     if (optionalResultData.isPresent()) {
       // Partition resides in this evaluator!
@@ -198,7 +198,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
-      return store.putBlocks(partitionId, blocks, commitPerBlock);
+      return store.putToPartition(partitionId, blocks, commitPerBlock);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }

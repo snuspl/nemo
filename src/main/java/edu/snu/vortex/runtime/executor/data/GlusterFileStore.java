@@ -33,11 +33,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
 /**
  * Stores partitions in a mounted GlusterFS volume.
@@ -73,66 +70,54 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
 
   /**
    * Retrieves a deserialized partition of data through remote disks.
-   * @see PartitionStore#getBlocks(String, HashRange).
+   *
+   * @see PartitionStore#getFromPartition(String, HashRange).
    */
   @Override
-  public Optional<Iterable<Element>> getBlocks(final String partitionId,
-                                               final HashRange hashRange) throws PartitionFetchException {
+  public Optional<Iterable<Element>> getFromPartition(final String partitionId,
+                                                      final HashRange hashRange) throws PartitionFetchException {
     final String filePath = partitionIdToFilePath(partitionId);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
-      final Supplier<Iterable<Element>> supplier = () -> {
-        // Deserialize the target data in the corresponding file.
-        final Coder coder = getCoderFromWorker(partitionId);
-        FilePartition partition = null;
-        try {
-          final RemoteFileMetadata metadata =
-              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
-          partition = new FilePartition(coder, filePath, metadata);
-          return partition.retrieveInHashRange(hashRange);
-        } catch (final IOException cause) {
-          final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
-          throw new PartitionFetchException(combinedThrowable);
-        }
-      };
+      // Deserialize the target data in the corresponding file.
+      final Coder coder = getCoderFromWorker(partitionId);
+      FilePartition partition = null;
       try {
-        return Optional.of(CompletableFuture.supplyAsync(supplier, executorService).get());
-      } catch (final InterruptedException | ExecutionException e) {
-        throw new PartitionFetchException(e);
+        final RemoteFileMetadata metadata =
+            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
+        partition = new FilePartition(coder, filePath, metadata);
+        return Optional.of(partition.retrieveInHashRange(hashRange));
+      } catch (final IOException cause) {
+        final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
+        throw new PartitionFetchException(combinedThrowable);
       }
     }
   }
 
   /**
    * Saves an iterable of data blocks to a partition.
-   * @see PartitionStore#putBlocks(String, Iterable, boolean).
+   *
+   * @see PartitionStore#putToPartition(String, Iterable, boolean).
    */
   @Override
-  public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<Block> blocks,
-                                        final boolean commitPerBlock) throws PartitionWriteException {
-    final Supplier<Optional<List<Long>>> supplier = () -> {
-      final Coder coder = getCoderFromWorker(partitionId);
-      final String filePath = partitionIdToFilePath(partitionId);
-      FilePartition partition = null;
+  public Optional<List<Long>> putToPartition(final String partitionId,
+                                             final Iterable<Block> blocks,
+                                             final boolean commitPerBlock) throws PartitionWriteException {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = partitionIdToFilePath(partitionId);
+    FilePartition partition = null;
 
-      try {
-        final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
-        partition = new FilePartition(coder, filePath, metadata);
-        // Serialize and write the given blocks.
-        final List<Long> blockSizeList = putBlocks(coder, partition, blocks);
-        return Optional.of(blockSizeList);
-      } catch (final IOException cause) {
-        final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
-        throw new PartitionWriteException(combinedThrowable);
-      }
-    };
     try {
-      return CompletableFuture.supplyAsync(supplier, executorService).get();
-    } catch (final InterruptedException | ExecutionException e) {
-      throw new PartitionWriteException(e);
+      final RemoteFileMetadata metadata =
+          new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
+      partition = new FilePartition(coder, filePath, metadata);
+      // Serialize and write the given blocks.
+      final List<Long> blockSizeList = putBlocks(coder, partition, blocks);
+      return Optional.of(blockSizeList);
+    } catch (final IOException cause) {
+      final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
+      throw new PartitionWriteException(combinedThrowable);
     }
   }
 
@@ -161,30 +146,23 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
    */
   @Override
   public Boolean removePartition(final String partitionId) throws PartitionFetchException {
-    final Supplier<Boolean> supplier = () -> {
-      final Coder coder = getCoderFromWorker(partitionId);
-      final String filePath = partitionIdToFilePath(partitionId);
-      FilePartition partition = null;
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = partitionIdToFilePath(partitionId);
+    FilePartition partition = null;
 
-      try {
-        if (new File(filePath).isFile()) {
-          final RemoteFileMetadata metadata =
-              new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
-          partition = new FilePartition(coder, filePath, metadata);
-          partition.deleteFile();
-          return true;
-        } else {
-          return false;
-        }
-      } catch (final IOException cause) {
-        final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
-        throw new PartitionFetchException(combinedThrowable);
-      }
-    };
     try {
-      return CompletableFuture.supplyAsync(supplier, executorService).get();
-    } catch (final InterruptedException | ExecutionException e) {
-      throw new PartitionFetchException(e);
+      if (new File(filePath).isFile()) {
+        final RemoteFileMetadata metadata =
+            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
+        partition = new FilePartition(coder, filePath, metadata);
+        partition.deleteFile();
+        return true;
+      } else {
+        return false;
+      }
+    } catch (final IOException cause) {
+      final Throwable combinedThrowable = commitPartitionWithException(partition, cause);
+      throw new PartitionFetchException(combinedThrowable);
     }
   }
 
