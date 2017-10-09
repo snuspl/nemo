@@ -22,19 +22,21 @@ import edu.snu.vortex.compiler.frontend.beam.BeamElement;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
-import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
-import edu.snu.vortex.runtime.common.message.MessageListener;
+import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.state.PartitionState;
-import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.vortex.runtime.master.PartitionManagerMaster;
 import edu.snu.vortex.runtime.master.RuntimeMaster;
+import edu.snu.vortex.runtime.master.resource.ContainerManager;
+import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.values.KV;
 import org.apache.commons.io.FileUtils;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
@@ -45,10 +47,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,6 +70,8 @@ import static org.mockito.Mockito.when;
 public final class PartitionStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
+  private static final String WRITE_EXECUTOR_ID = "WRITE_EXECUTOR_ID";
+  private static final String READ_EXECUTOR_ID = "READ_EXECUTOR_ID";
   private PartitionManagerMaster partitionManagerMaster;
   private LocalMessageDispatcher messageDispatcher;
   // Variables for scatter and gather test
@@ -105,12 +106,34 @@ public final class PartitionStoreTest {
    */
   @Before
   public void setUp() throws Exception {
+    // Set up for messaging.
     messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    injector.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
+    final ContainerManager containerManager = injector.getInstance(ContainerManager.class);
+    try {
+      final MessageSender<ControlMessage.Message> messageSender1 =
+          messageEnvironment.<ControlMessage.Message>asyncConnect(
+              WRITE_EXECUTOR_ID, MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID).get();
+      final MessageSender<ControlMessage.Message> messageSender2 =
+          messageEnvironment.<ControlMessage.Message>asyncConnect(
+              READ_EXECUTOR_ID, MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID).get();
+      final ExecutorRepresenter executorRepresenter1 = new ExecutorRepresenter(
+          WRITE_EXECUTOR_ID,  null, messageEnvironment, messageSender1,null);
+      final ExecutorRepresenter executorRepresenter2 = new ExecutorRepresenter(
+          READ_EXECUTOR_ID,  null, messageEnvironment, messageSender2,null);
+      final Map<String, ExecutorRepresenter> executorRepresenterMap = containerManager.getExecutorRepresenterMap();
+      executorRepresenterMap.put(WRITE_EXECUTOR_ID, executorRepresenter1);
+      executorRepresenterMap.put(READ_EXECUTOR_ID, executorRepresenter2);
+    } catch (final InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
     partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
+
     // Following part is for for the scatter and gather test.
     final int numPartitions = NUM_WRITE_TASKS * NUM_READ_TASKS;
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
@@ -216,7 +239,9 @@ public final class PartitionStoreTest {
     // Following part is for the concurrent write test
     concWriteBlocks = getRangedNumList(0, CONC_WRITE_DATA_IN_BLOCK);
     concWritePartitionId = RuntimeIdGenerator.generatePartitionId("Concurrent write test edge", 0);
-    partitionManagerMaster.initializeState(concWritePartitionId, Collections.singleton(NUM_CONC_WRITE_TASKS),
+    final Set<Integer> producerTaskIndices =
+        IntStream.range(0, NUM_CONC_WRITE_TASKS).boxed().collect(Collectors.toSet());
+    partitionManagerMaster.initializeState(concWritePartitionId, producerTaskIndices,
         Collections.singleton("Unused"));
     partitionManagerMaster.onPartitionStateChanged(
         concWritePartitionId, PartitionState.State.SCHEDULED, null, null);
@@ -227,7 +252,13 @@ public final class PartitionStoreTest {
    */
   @Test(timeout = 10000)
   public void testMemoryStore() throws Exception {
-    final PartitionStore memoryStore = Tang.Factory.getTang().newInjector().getInstance(MemoryStore.class);
+    final LocalMessageEnvironment messageEnvironment =
+        new LocalMessageEnvironment(WRITE_EXECUTOR_ID, messageDispatcher);
+    final PersistentConnectionToMasterMap conToMaster = new PersistentConnectionToMasterMap(messageEnvironment);
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    injector.bindVolatileInstance(PersistentConnectionToMasterMap.class, conToMaster);
+    injector.bindVolatileParameter(JobConf.ExecutorId.class, WRITE_EXECUTOR_ID);
+    final PartitionStore memoryStore = injector.getInstance(MemoryStore.class);
     scatterGather(memoryStore, memoryStore);
     concurrentRead(memoryStore, memoryStore);
     scatterGatherInHashRange(memoryStore, memoryStore);
@@ -241,8 +272,13 @@ public final class PartitionStoreTest {
   public void testLocalFileStore() throws Exception {
     final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
     when(worker.getCoder(any())).thenReturn(CODER);
+    final LocalMessageEnvironment messageEnvironment =
+        new LocalMessageEnvironment(WRITE_EXECUTOR_ID, messageDispatcher);
+    final PersistentConnectionToMasterMap conToMaster = new PersistentConnectionToMasterMap(messageEnvironment);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.ExecutorId.class, WRITE_EXECUTOR_ID);
+    injector.bindVolatileInstance(PersistentConnectionToMasterMap.class, conToMaster);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
 
     final PartitionStore localFileStore = injector.getInstance(LocalFileStore.class);
@@ -264,18 +300,13 @@ public final class PartitionStoreTest {
     when(pmw.getCoder(any())).thenReturn(CODER);
 
     // Mimic the metadata server with local message handler.
-    /*final Injector injector = Tang.Factory.getTang().newInjector();
+    final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(PartitionManagerMaster.class, partitionManagerMaster);
-    final LocalMessageEnvironment metaserverMessageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    metaserverMessageEnvironment.setupListener(
-        MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID,
-        new LocalMetadataServerMessageReceiver(partitionManagerMaster));*/
 
     final RemoteFileStore writerSideRemoteFileStore =
-        createGlusterFileStore("writer", pmw);
+        createGlusterFileStore(WRITE_EXECUTOR_ID, pmw);
     final RemoteFileStore readerSideRemoteFileStore =
-        createGlusterFileStore("reader", pmw);
+        createGlusterFileStore(READ_EXECUTOR_ID, pmw);
 
     scatterGather(writerSideRemoteFileStore, readerSideRemoteFileStore);
     concurrentRead(writerSideRemoteFileStore, readerSideRemoteFileStore);
@@ -325,8 +356,10 @@ public final class PartitionStoreTest {
                   partitionNumber -> {
                     try {
                       final String partitionId = partitionIdList.get(partitionNumber);
+                      partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.CREATED,
+                          "Writer side of the scatter gather edge", null);
                       writerSideStore.putBlocks(partitionId,
-                          Collections.singleton(partitionBlockList.get(partitionNumber)), false).get();
+                          Collections.singleton(partitionBlockList.get(partitionNumber)), true).get();
                       writerSideStore.commitPartition(partitionId);
                       partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
                           "Writer side of the scatter gather edge", writeTaskCount);
@@ -363,12 +396,14 @@ public final class PartitionStoreTest {
                     try {
                       final int partitionNumber = writeTaskNumber * NUM_READ_TASKS + readTaskCount;
                       final Optional<CompletableFuture<Iterable<Element>>> optionalData =
-                          readerSideStore.getBlocks(partitionIdList.get(partitionNumber), HashRange.all());
+                          readerSideStore.getElements(partitionIdList.get(partitionNumber), HashRange.all());
                       if (!optionalData.isPresent()) {
                         throw new RuntimeException("The result of retrieveData(" +
                             partitionIdList.get(partitionNumber) + ") is empty");
                       }
-                      assertEquals(partitionBlockList.get(partitionNumber).getData(), optionalData.get().get());
+                      assertEquals(
+                          partitionBlockList.get(partitionNumber).getData(),
+                          collectWholeData(optionalData.get().get().iterator()));
 
                       final boolean exist = readerSideStore.removePartition(partitionIdList.get(partitionNumber)).get();
                       if (!exist) {
@@ -428,7 +463,9 @@ public final class PartitionStoreTest {
       @Override
       public Boolean call() {
         try {
-          writerSideStore.putBlocks(concPartitionId, Collections.singleton(concPartitionBlock), false).get();
+          partitionManagerMaster.onPartitionStateChanged(concPartitionId, PartitionState.State.CREATED,
+              "Writer side of the concurrent read edge", null);
+          writerSideStore.putBlocks(concPartitionId, Collections.singleton(concPartitionBlock), true).get();
           writerSideStore.commitPartition(concPartitionId);
           partitionManagerMaster.onPartitionStateChanged(
               concPartitionId, PartitionState.State.COMMITTED, "Writer side of the concurrent read edge", 0);
@@ -455,12 +492,14 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               final Optional<CompletableFuture<Iterable<Element>>> optionalData =
-                  readerSideStore.getBlocks(concPartitionId, HashRange.all());
+                  readerSideStore.getElements(concPartitionId, HashRange.all());
               if (!optionalData.isPresent()) {
                 throw new RuntimeException("The result of retrieveData(" +
                     concPartitionId + ") is empty");
               }
-              assertEquals(concPartitionBlock.getData(), optionalData.get().get());
+              assertEquals(
+                  concPartitionBlock.getData(),
+                  collectWholeData(optionalData.get().get().iterator()));
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -522,11 +561,14 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               final String partitionId = hashedPartitionIdList.get(writeTaskCount);
+              partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.CREATED,
+                  "Writer side of the scatter gather in hash range edge", null);
               writerSideStore.putBlocks(partitionId,
-                  hashedPartitionBlockList.get(writeTaskCount), false).get();
+                  hashedPartitionBlockList.get(writeTaskCount), true).get();
               writerSideStore.commitPartition(partitionId);
               partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
                   "Writer side of the scatter gather in hash range edge", writeTaskCount);
+              System.out.println("Partition id: " + partitionId + ", data: " + hashedPartitionBlockList.get(writeTaskCount));
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -556,15 +598,20 @@ public final class PartitionStoreTest {
                     try {
                       final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskCount);
                       final Optional<CompletableFuture<Iterable<Element>>> optionalData =
-                          readerSideStore.getBlocks(
+                          readerSideStore.getElements(
                               hashedPartitionIdList.get(writeTaskNumber), hashRangeToRetrieve);
                       if (!optionalData.isPresent()) {
                         throw new RuntimeException("The result of get partition" +
                             hashedPartitionIdList.get(writeTaskNumber) + " in range " + hashRangeToRetrieve.toString() +
                             " is empty");
                       }
+
+                      System.out.println("Result for write task " + writeTaskNumber + ", read task " + readTaskCount
+                          + ", hash range " + hashRangeToRetrieve + ", partition id " + hashedPartitionIdList.get(writeTaskNumber));
+
                       assertEquals(
-                          expectedDataInRange.get(readTaskCount).get(writeTaskNumber), optionalData.get().get());
+                          expectedDataInRange.get(readTaskCount).get(writeTaskNumber),
+                          collectWholeData(optionalData.get().get().iterator()));
                     } catch (final InterruptedException | ExecutionException e) {
                       throw new RuntimeException(e);
                     }
@@ -624,6 +671,8 @@ public final class PartitionStoreTest {
     final ExecutorService readExecutor = Executors.newFixedThreadPool(1);
     final List<Future<Boolean>> writeFutureList = new ArrayList<>(NUM_CONC_WRITE_TASKS);
     final long startNano = System.nanoTime();
+    partitionManagerMaster.onPartitionStateChanged(concWritePartitionId, PartitionState.State.CREATED,
+        "Writer side of the concurrent write edge", null);
 
     // Write concurrently.
     IntStream.range(0, NUM_CONC_WRITE_TASKS).forEach(writeTaskCount ->
@@ -635,7 +684,7 @@ public final class PartitionStoreTest {
               IntStream.range(0, CONC_WRITE_BLOCK_NUM).forEach(blockIdx ->
                   blockToAppend.add(new Block(blockIdx, concWriteBlocks)));
               try {
-                writerSideStore.putBlocks(concWritePartitionId, blockToAppend, false).get();
+                writerSideStore.putBlocks(concWritePartitionId, blockToAppend, true).get();
                 partitionManagerMaster.onPartitionStateChanged(concWritePartitionId, PartitionState.State.COMMITTED,
                     "Writer side of the concurrent write edge", writeTaskCount);
               } catch (final InterruptedException | ExecutionException e) {
@@ -667,7 +716,7 @@ public final class PartitionStoreTest {
         try {
           try {
             final Optional<CompletableFuture<Iterable<Element>>> optionalData =
-                readerSideStore.getBlocks(concWritePartitionId, HashRange.all());
+                readerSideStore.getElements(concWritePartitionId, HashRange.all());
             if (!optionalData.isPresent()) {
               throw new RuntimeException("The result of retrieveData(" + concWritePartitionId + ") is empty");
             }
@@ -675,7 +724,7 @@ public final class PartitionStoreTest {
                 new ArrayList<>(CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS);
             IntStream.range(0, CONC_WRITE_BLOCK_NUM * NUM_CONC_WRITE_TASKS).
                 forEach(blockIdx -> expectedResults.add(concWriteBlocks));
-            assertEquals(flatten(expectedResults), optionalData.get().get());
+            assertEquals(flatten(expectedResults), collectWholeData(optionalData.get().get().iterator()));
 
             final boolean exist = readerSideStore.removePartition(concWritePartitionId).get();
             if (!exist) {
@@ -716,5 +765,13 @@ public final class PartitionStoreTest {
     final List<Element> numList = new ArrayList<>(end - start);
     IntStream.range(start, end).forEach(number -> numList.add(new BeamElement<>(KV.of(key, number))));
     return numList;
+  }
+
+  private Iterable<Element> collectWholeData(final Iterator<Element> blockingIterator) {
+    final List<Element> resultIterable = new ArrayList<>();
+    while(blockingIterator.hasNext()) {
+      resultIterable.add(blockingIterator.next());
+    }
+    return resultIterable;
   }
 }

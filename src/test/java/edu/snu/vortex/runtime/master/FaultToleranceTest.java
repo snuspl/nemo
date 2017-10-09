@@ -23,12 +23,12 @@ import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.OperatorVertex;
 import edu.snu.vortex.compiler.ir.Transform;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
+import edu.snu.vortex.runtime.common.message.MessageEnvironment;
 import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.common.metric.MetricMessageHandler;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
@@ -82,6 +82,7 @@ public final class FaultToleranceTest {
   private final Map<String, ExecutorRepresenter> failedExecutorRepresenterMap = new HashMap<>();
   private ContainerManager containerManager = mock(ContainerManager.class);
   private MetricMessageHandler metricMessageHandler = mock(MetricMessageHandler.class);
+  private final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
   @Before
@@ -104,9 +105,9 @@ public final class FaultToleranceTest {
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
     final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacementProperty.COMPUTE, 1, 0);
-    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
+    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
+    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
+    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgEnv, mockMsgSender, activeContext);
 
     executorRepresenterMap.put(a1.getExecutorId(), a1);
     executorRepresenterMap.put(a2.getExecutorId(), a2);

@@ -6,8 +6,8 @@ import edu.snu.vortex.runtime.common.message.MessageSender;
 import edu.snu.vortex.runtime.exception.NodeConnectionException;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -20,7 +20,7 @@ public final class PersistentConnectionToMasterMap {
   @Inject
   public PersistentConnectionToMasterMap(final MessageEnvironment messageEnvironment) {
     this.messageEnvironment = messageEnvironment;
-    messageSenders = new HashMap<>();
+    messageSenders = new ConcurrentHashMap<>();
     try {
       // Connect the globally known message listener IDs.
       messageSenders.put(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID,
@@ -40,20 +40,18 @@ public final class PersistentConnectionToMasterMap {
    * @param listenerId the ID of the listener.
    * @return the message sender.
    */
-  public synchronized MessageSender<ControlMessage.Message> getMessageSender(final String listenerId) {
-    final MessageSender<ControlMessage.Message> messageSender = messageSenders.get(listenerId);
-    if (messageSender != null) {
-      return messageSender;
-    } else { // Unknown message listener.
+  public MessageSender<ControlMessage.Message> getMessageSender(final String listenerId) {
+    return messageSenders.computeIfAbsent(listenerId, newListenerId -> {
+      // Unknown message listener.
       final MessageSender<ControlMessage.Message> createdMessageSender;
       try {
         createdMessageSender = messageEnvironment.<ControlMessage.Message>asyncConnect(
-            MessageEnvironment.MASTER_COMMUNICATION_ID, listenerId).get();
+            MessageEnvironment.MASTER_COMMUNICATION_ID, newListenerId).get();
         messageSenders.put(listenerId, createdMessageSender);
       } catch (InterruptedException | ExecutionException e) {
         throw new NodeConnectionException(e);
       }
       return createdMessageSender;
-    }
+    });
   }
 }

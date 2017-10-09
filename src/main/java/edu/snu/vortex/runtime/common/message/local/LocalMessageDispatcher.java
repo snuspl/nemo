@@ -20,7 +20,7 @@ public final class LocalMessageDispatcher {
   }
 
   <T> MessageSender<T> setupListener(
-      final String currentNodeId, final String messageTypeId, final MessageListener<T> listener) {
+      final String currentNodeId, final String listenerId, final MessageListener<T> listener) {
 
     ConcurrentMap<String, MessageListener> messageTypeToListenerMap = nodeIdToMessageListenersMap.get(currentNodeId);
 
@@ -33,12 +33,12 @@ public final class LocalMessageDispatcher {
       }
     }
 
-    if (messageTypeToListenerMap.putIfAbsent(messageTypeId, listener) != null) {
+    if (messageTypeToListenerMap.putIfAbsent(listenerId, listener) != null) {
       throw new LocalDispatcherException(
-          messageTypeId + " was already used in " + currentNodeId);
+          listenerId + " was already used in " + currentNodeId);
     }
 
-    return new LocalMessageSender<>(currentNodeId, currentNodeId, messageTypeId, this);
+    return new LocalMessageSender<>(currentNodeId, currentNodeId, listenerId, this);
   }
 
   void removeListener(final String currentNodeId,
@@ -47,10 +47,10 @@ public final class LocalMessageDispatcher {
   }
 
   <T> void dispatchSendMessage(
-      final String targetId, final String messageTypeId, final T message) {
-    final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(messageTypeId);
+      final String targetId, final String listenerId, final T message) {
+    final MessageListener listener = nodeIdToMessageListenersMap.get(targetId).get(listenerId);
     if (listener == null) {
-      throw new LocalDispatcherException("There was no set up listener for " + messageTypeId + " in " + targetId);
+      throw new LocalDispatcherException("There was no set up listener for " + listenerId + " in " + targetId);
     }
     listener.onMessage(message);
   }

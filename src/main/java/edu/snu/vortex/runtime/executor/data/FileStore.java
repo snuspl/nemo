@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Stores partitions in (local or remote) files.
@@ -41,13 +42,21 @@ abstract class FileStore implements PartitionStore {
   }
 
   /**
-   * Gets the list of {@link FileArea}s for the specified partition.
+   * Gets {@link FileArea}s corresponding to the blocks having data in a specific {@link HashRange} from a partition.
+   * The result will be an {@link Iterable}, and looking up for it's {@link java.util.Iterator} can be blocked.
+   * If all of the blocks of the target partition are not committed yet,
+   * the iterable will have the file areas for the committed blocks only.
+   * The requester can just wait the further committed file areas by using it's block-able iterator, or
+   * subscribes the further file areas by using {@link org.apache.reef.wake.rx.Observable}.
+   * For the further details, check {@link edu.snu.vortex.runtime.common.ClosableBlockingIterable}
+   * and {@link edu.snu.vortex.runtime.common.ObservableIterableWrapper}.
    *
    * @param partitionId the partition id
    * @param hashRange   the hash range
-   * @return the list of file areas
+   * @return the completable future of the list of file areas
    */
-  public abstract List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange);
+  public abstract CompletableFuture<Iterable<FileArea>> getFileAreas(final String partitionId,
+                                                                     final HashRange hashRange);
 
   /**
    * Makes the given stream to a block and write it to the given file partition.

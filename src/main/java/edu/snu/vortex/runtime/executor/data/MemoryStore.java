@@ -15,9 +15,12 @@
  */
 package edu.snu.vortex.runtime.executor.data;
 
+import edu.snu.vortex.client.JobConf;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.vortex.runtime.executor.data.partition.MemoryPartition;
+import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -25,9 +28,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Store data in local memory.
@@ -37,33 +37,27 @@ public final class MemoryStore implements PartitionStore {
   public static final String SIMPLE_NAME = "MemoryStore";
   // A map between partition id and data blocks.
   private final ConcurrentHashMap<String, MemoryPartition> partitionMap;
+  private final String executorId;
+  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
 
   @Inject
-  private MemoryStore() {
+  private MemoryStore(@Parameter(JobConf.ExecutorId.class) final String executorId,
+                      final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
+    this.executorId = executorId;
+    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
     this.partitionMap = new ConcurrentHashMap<>();
   }
 
   /**
-   * @see PartitionStore#getBlocks(String, HashRange).
+   * @see PartitionStore#getElements(String, HashRange).
    */
   @Override
-  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
-                                                                  final HashRange hashRange) {
+  public Optional<CompletableFuture<Iterable<Element>>> getElements(final String partitionId,
+                                                                    final HashRange hashRange) {
     final MemoryPartition partition = partitionMap.get(partitionId);
 
     if (partition != null) {
-      final CompletableFuture<Iterable<Element>> future = new CompletableFuture<>();
-      final Iterable<Block> blocks = partition.getBlocks();
-      // Retrieves data in the hash range from the target partition
-      final List<Iterable<Element>> retrievedData = new ArrayList<>();
-      blocks.forEach(block -> {
-        if (hashRange.includes(block.getKey())) {
-          retrievedData.add(block.getData());
-        }
-      });
-
-      future.complete(concatBlocks(retrievedData));
-      return Optional.of(future);
+      return Optional.of(partition.getElements(hashRange));
     } else {
       return Optional.empty();
     }
@@ -76,7 +70,12 @@ public final class MemoryStore implements PartitionStore {
   public CompletableFuture<Optional<List<Long>>> putBlocks(final String partitionId,
                                                            final Iterable<Block> blocks,
                                                            final boolean commitPerBlock) {
-    partitionMap.putIfAbsent(partitionId, new MemoryPartition());
+    final MemoryPartition previousPartition = partitionMap.putIfAbsent(partitionId, new MemoryPartition());
+    if (previousPartition == null) {
+      // If this partition is newly created, report the creation to the master.
+      reportPartitionCreation(partitionId, executorId, executorId, persistentConnectionToMasterMap);
+    }
+
     final CompletableFuture<Optional<List<Long>>> future = new CompletableFuture<>();
     try {
       partitionMap.get(partitionId).appendBlocks(blocks);
@@ -109,20 +108,5 @@ public final class MemoryStore implements PartitionStore {
   @Override
   public CompletableFuture<Boolean> removePartition(final String partitionId) {
     return CompletableFuture.completedFuture(partitionMap.remove(partitionId) != null);
-  }
-
-  /**
-   * concatenates an iterable of blocks into a single iterable of elements.
-   *
-   * @param blocks the iterable of blocks to concatenate.
-   * @return the concatenated iterable of all elements.
-   */
-  private Iterable<Element> concatBlocks(final Iterable<Iterable<Element>> blocks) {
-    final List<Element> concatStreamBase = new ArrayList<>();
-    Stream<Element> concatStream = concatStreamBase.stream();
-    for (final Iterable<Element> block : blocks) {
-      concatStream = Stream.concat(concatStream, StreamSupport.stream(block.spliterator(), false));
-    }
-    return concatStream.collect(Collectors.toList());
   }
 }

@@ -21,6 +21,7 @@ import edu.snu.vortex.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.vortex.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.vortex.runtime.common.state.PartitionState;
 import edu.snu.vortex.runtime.exception.AbsentPartitionException;
+import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
@@ -33,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test for {@link PartitionManagerMaster}.
@@ -45,8 +47,10 @@ public final class PartitionManagerMasterTest {
     final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
     final LocalMessageEnvironment messageEnvironment =
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
+    final EvaluatorRequestor evaluatorRequestor = mock(EvaluatorRequestor.class);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
+    injector.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
     partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
   }
 
@@ -98,12 +102,18 @@ public final class PartitionManagerMasterTest {
 
     // The partition is being SCHEDULED.
     partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
-    final CompletableFuture<String> future = partitionManagerMaster.getPartitionLocationFuture(partitionId);
-    checkPendingFuture(future);
+    final CompletableFuture<String> scheduledFuture = partitionManagerMaster.getPartitionLocationFuture(partitionId);
+    checkPendingFuture(scheduledFuture);
 
-    // The partition is COMMITTED
-    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
-    checkPartitionLocation(future, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
+    // The partition is CREATED.
+    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.CREATED, executorId, null);
+    // A future, previously pending on SCHEDULED state, is now resolved.
+    checkPartitionLocation(scheduledFuture, executorId);
+    checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
+
+    // The partition is COMMITTED.
+    partitionManagerMaster.onPartitionStateChanged(
+        partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
     checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
 
     // We LOST the partition.
@@ -144,9 +154,29 @@ public final class PartitionManagerMasterTest {
     final CompletableFuture<String> future1 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
     checkPendingFuture(future1);
 
-    // Committed.
-    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
+    // The partition is CREATED.
+    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.CREATED, executorId, null);
     checkPartitionLocation(future1, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
+    checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
+
+    // Producer task group fails again.
+    partitionManagerMaster.onProducerTaskGroupFailed(taskGroupId);
+    checkPartitionAbsentException(partitionManagerMaster.getPartitionLocationFuture(partitionId), partitionId,
+        PartitionState.State.LOST_BEFORE_COMMIT);
+
+    // Re-scheduling the taskGroup.
+    partitionManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
+    final CompletableFuture<String> future2 = partitionManagerMaster.getPartitionLocationFuture(partitionId);
+    checkPendingFuture(future2);
+
+    // The partition is CREATED.
+    partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.CREATED, executorId, null);
+    checkPartitionLocation(future2, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
+    checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
+
+    // Committed.
+    partitionManagerMaster.onPartitionStateChanged(
+        partitionId, PartitionState.State.COMMITTED, executorId, srcTaskIndex);
     checkPartitionLocation(partitionManagerMaster.getPartitionLocationFuture(partitionId), executorId);
 
     // Then removed.

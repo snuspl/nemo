@@ -35,9 +35,9 @@ public final class LocalMessageEnvironment implements MessageEnvironment {
 
   @Override
   public <T> Future<MessageSender<T>> asyncConnect(
-      final String targetId, final String messageTypeId) {
+      final String targetId, final String listenerId) {
     return CompletableFuture.completedFuture(new LocalMessageSender<T>(
-        currentNodeId, targetId, messageTypeId, dispatcher));
+        currentNodeId, targetId, listenerId, dispatcher));
   }
 
   @Override

@@ -244,6 +244,8 @@ public final class RuntimeMaster {
       return PartitionState.State.READY;
     case SCHEDULED:
       return PartitionState.State.SCHEDULED;
+    case CREATED:
+      return PartitionState.State.CREATED;
     case COMMITTED:
       return PartitionState.State.COMMITTED;
     case LOST_BEFORE_COMMIT:
@@ -264,6 +266,8 @@ public final class RuntimeMaster {
         return ControlMessage.PartitionStateFromExecutor.PARTITION_READY;
       case SCHEDULED:
         return ControlMessage.PartitionStateFromExecutor.SCHEDULED;
+      case CREATED:
+        return ControlMessage.PartitionStateFromExecutor.CREATED;
       case COMMITTED:
         return ControlMessage.PartitionStateFromExecutor.COMMITTED;
       case LOST_BEFORE_COMMIT:

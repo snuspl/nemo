@@ -15,11 +15,11 @@
  */
 package edu.snu.vortex.runtime.executor.data.metadata;
 
+import edu.snu.vortex.runtime.common.ClosableBlockingIterable;
+import edu.snu.vortex.runtime.exception.PartitionWriteException;
+
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 
 /**
@@ -30,10 +30,11 @@ import java.util.Queue;
 public final class LocalFileMetadata extends FileMetadata {
 
   // When a writer reserves a file region for a block to write, the metadata of the block is stored in this queue.
-  // When a block in this queue is committed, the committed blocks are polled and go into the committed iterable.
+  // When a block in this queue is committed, the committed blocks are polled and go into the committed iterable
+  // if any pre-reserved but not committed block does not exist.
   private final Queue<BlockMetadata> reserveBlockMetadataQue;
-  // TODO #463: Support incremental read. Change this iterable to "ClosableBlockingIterable".
-  private final List<BlockMetadata> commitBlockMetadataIterable; // The list of committed block metadata.
+  // The list of committed block metadata.
+  private final ClosableBlockingIterable<BlockMetadata> commitBlockMetadataIterable;
   private volatile long writtenBytesCursor; // Indicates how many bytes are (at least, logically) written in the file.
   private volatile int blockCount;
   private volatile boolean committed;
@@ -41,7 +42,7 @@ public final class LocalFileMetadata extends FileMetadata {
   public LocalFileMetadata(final boolean commitPerBlock) {
     super(commitPerBlock);
     this.reserveBlockMetadataQue = new ArrayDeque<>();
-    this.commitBlockMetadataIterable = new ArrayList<>();
+    this.commitBlockMetadataIterable = new ClosableBlockingIterable<>();
     this.blockCount = 0;
     this.writtenBytesCursor = 0;
     this.committed = false;
@@ -54,9 +55,9 @@ public final class LocalFileMetadata extends FileMetadata {
   @Override
   public synchronized BlockMetadata reserveBlock(final int hashValue,
                                                  final int blockSize,
-                                                 final long elementsTotal) throws IOException {
+                                                 final long elementsTotal) throws PartitionWriteException {
     if (committed) {
-      throw new IOException("Cannot write a new block to a closed partition.");
+      throw new PartitionWriteException(new Throwable("Cannot write a new block to a closed partition."));
     }
 
     final BlockMetadata blockMetadata =
@@ -82,20 +83,12 @@ public final class LocalFileMetadata extends FileMetadata {
   }
 
   /**
-   * Gets a iterable containing the block metadata of corresponding partition.
+   * Gets an iterable containing the block metadata of corresponding partition.
    * @see FileMetadata#getBlockMetadataIterable().
    */
   @Override
   public Iterable<BlockMetadata> getBlockMetadataIterable() {
     return commitBlockMetadataIterable;
-  }
-
-  /**
-   * @see FileMetadata#deleteMetadata().
-   */
-  @Override
-  public void deleteMetadata() {
-    // Do nothing because this metadata is only in the local memory.
   }
 
   /**
@@ -105,7 +98,7 @@ public final class LocalFileMetadata extends FileMetadata {
    */
   @Override
   public synchronized void commitPartition() {
-    // TODO #463: Support incremental write. Close the "ClosableBlockingIterable".
     committed = true;
+    commitBlockMetadataIterable.close();
   }
 }

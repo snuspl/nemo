@@ -20,6 +20,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.runtime.exception.PartitionFetchException;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
+import edu.snu.vortex.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.vortex.runtime.executor.data.metadata.LocalFileMetadata;
 import edu.snu.vortex.runtime.executor.data.partition.FilePartition;
 import org.apache.reef.tang.InjectionFuture;
@@ -42,39 +43,41 @@ public final class LocalFileStore extends FileStore {
   public static final String SIMPLE_NAME = "LocalFileStore";
 
   private final Map<String, FilePartition> partitionIdToFilePartition;
-  private final ExecutorService executorService;
+  private final ExecutorService executorService; // Executor service for non-blocking computation.
+  private final String executorId;
+  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
 
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
                          @Parameter(JobConf.LocalFileStoreNumThreads.class) final int numThreads,
-                         final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+                         @Parameter(JobConf.ExecutorId.class) final String executorId,
+                         final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+                         final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
     super(fileDirectory, partitionManagerWorker);
     this.partitionIdToFilePartition = new ConcurrentHashMap<>();
+    this.executorId = executorId;
+    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
+    this.executorService = Executors.newFixedThreadPool(numThreads);
     new File(fileDirectory).mkdirs();
-    executorService = Executors.newFixedThreadPool(numThreads);
   }
 
   /**
    * Retrieves data in a specific hash range from a partition.
-   * @see PartitionStore#getBlocks(String, HashRange).
+   * @see PartitionStore#getElements(String, HashRange).
    */
   @Override
-  public Optional<CompletableFuture<Iterable<Element>>> getBlocks(final String partitionId,
-                                                                  final HashRange hashRange) {
+  public Optional<CompletableFuture<Iterable<Element>>> getElements(final String partitionId,
+                                                                    final HashRange hashRange) {
     // Deserialize the target data in the corresponding file.
     final FilePartition partition = partitionIdToFilePartition.get(partitionId);
     if (partition == null) {
       return Optional.empty();
     } else {
-      final Supplier<Iterable<Element>> supplier = () -> {
-        try {
-          return partition.retrieveInHashRange(hashRange);
-        } catch (final IOException retrievalException) {
-          final Throwable combinedThrowable = commitPartitionWithException(partitionId, retrievalException);
-          throw new PartitionFetchException(combinedThrowable);
-        }
-      };
-      return Optional.of(CompletableFuture.supplyAsync(supplier, executorService));
+      try {
+        return Optional.of(partition.getElementsInRange(hashRange));
+      } catch (final IOException retrievalException) {
+        throw new PartitionFetchException(retrievalException);
+      }
     }
   }
 
@@ -90,18 +93,18 @@ public final class LocalFileStore extends FileStore {
       final Coder coder = getCoderFromWorker(partitionId);
       final List<Long> blockSizeList;
       final LocalFileMetadata metadata = new LocalFileMetadata(commitPerBlock);
+      final FilePartition partition = partitionIdToFilePartition.computeIfAbsent(partitionId, absentPartitionId -> {
+        // If this partition is newly created, report the creation to the master.
+        reportPartitionCreation(partitionId, executorId, executorId, persistentConnectionToMasterMap);
+        return new FilePartition(coder, partitionIdToFilePath(partitionId), metadata, executorService);
+      });
 
       try {
-        FilePartition partition =
-            new FilePartition(coder, partitionIdToFilePath(partitionId), metadata);
-        partitionIdToFilePartition.putIfAbsent(partitionId, partition);
-        partition = partitionIdToFilePartition.get(partitionId);
-
         // Serialize and write the given blocks.
         blockSizeList = putBlocks(coder, partition, blocks);
       } catch (final IOException writeException) {
-        final Throwable combinedThrowable = commitPartitionWithException(partitionId, writeException);
-        throw new PartitionWriteException(combinedThrowable);
+        partition.commit();
+        throw new PartitionWriteException(writeException);
       }
 
       return Optional.of(blockSizeList);
@@ -116,11 +119,7 @@ public final class LocalFileStore extends FileStore {
   public void commitPartition(final String partitionId) throws PartitionWriteException {
     final FilePartition partition = partitionIdToFilePartition.get(partitionId);
     if (partition != null) {
-      try {
-        partition.commit();
-      } catch (final IOException e) {
-        throw new PartitionWriteException(e);
-      }
+      partition.commit();
     } else {
       throw new PartitionWriteException(new Throwable("There isn't any partition with id " + partitionId));
     }
@@ -142,8 +141,7 @@ public final class LocalFileStore extends FileStore {
       try {
         serializedPartition.deleteFile();
       } catch (final IOException e) {
-        final Throwable combinedThrowable = commitPartitionWithException(partitionId, e);
-        throw new PartitionFetchException(combinedThrowable);
+        throw new PartitionFetchException(e);
       }
       return true;
     };
@@ -154,40 +152,13 @@ public final class LocalFileStore extends FileStore {
    * @see FileStore#getFileAreas(String, HashRange).
    */
   @Override
-  public List<FileArea> getFileAreas(final String partitionId,
-                                     final HashRange hashRange) {
-    try {
-      final FilePartition partition = partitionIdToFilePartition.get(partitionId);
-      if (partition == null) {
-        throw new IOException(String.format("%s does not exists", partitionId));
-      }
+  public CompletableFuture<Iterable<FileArea>> getFileAreas(final String partitionId,
+                                                            final HashRange hashRange) {
+    final FilePartition partition = partitionIdToFilePartition.get(partitionId);
+    if (partition == null) {
+      throw new PartitionFetchException(new Throwable(String.format("%s does not exists", partitionId)));
+    } else {
       return partition.asFileAreas(hashRange);
-    } catch (final IOException retrievalException) {
-      final Throwable combinedThrowable = commitPartitionWithException(partitionId, retrievalException);
-      throw new PartitionFetchException(combinedThrowable);
     }
-  }
-
-  /**
-   * Commits a partition exceptionally.
-   * If there are any subscribers who are waiting the data of the target partition,
-   * they will be notified that partition is committed (exceptionally).
-   * If failed to commit, it combines the cause and newly thrown exception.
-   *
-   * @param partitionId of the partition to commit.
-   * @param cause       of this exception.
-   * @return original cause of this exception if success to commit, combined {@link Throwable} if else.
-   */
-  private Throwable commitPartitionWithException(final String partitionId,
-                                                 final Throwable cause) {
-    try {
-      final FilePartition partitionToClose = partitionIdToFilePartition.get(partitionId);
-      if (partitionToClose != null) {
-        partitionToClose.commit();
-      }
-    } catch (final IOException closeException) {
-      return new Throwable(closeException.getMessage(), cause);
-    }
-    return cause;
   }
 }
