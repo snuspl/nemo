@@ -17,6 +17,7 @@ package edu.snu.vortex.runtime.executor.data.partitiontransfer;
 
 import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.Element;
+import edu.snu.vortex.runtime.common.ClosableBlockingIterable;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionStore;
 import io.netty.buffer.ByteBuf;

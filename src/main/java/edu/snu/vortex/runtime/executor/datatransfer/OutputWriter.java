@@ -93,7 +93,7 @@ public final class OutputWriter extends DataTransfer {
       throw new UnsupportedMethodException("Unsupported write optimization.");
     }
 
-    // TODO #463: Support incremental write.
+    // TODO #518: Add execution property values for incremental data transfer.
     try {
       switch ((runtimeEdge.<Class>getProperty(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:

@@ -204,7 +204,7 @@ public final class ContainerManager {
 
     // Create the executor representation.
     final ExecutorRepresenter executorRepresenter =
-        new ExecutorRepresenter(executorId, resourceSpec, messageSender, activeContext);
+        new ExecutorRepresenter(executorId, resourceSpec, messageEnvironment, messageSender, activeContext);
 
     executorsByContainerType.putIfAbsent(resourceSpec.getContainerType(), new ArrayList<>());
     executorsByContainerType.get(resourceSpec.getContainerType()).add(executorRepresenter);

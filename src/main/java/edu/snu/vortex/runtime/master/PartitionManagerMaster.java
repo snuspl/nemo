@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import edu.snu.vortex.runtime.exception.IllegalMessageException;
+import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ import static edu.snu.vortex.runtime.master.RuntimeMaster.convertPartitionState;
 @ThreadSafe
 public final class PartitionManagerMaster {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerMaster.class.getName());
+  private final ContainerManager containerManager;
   private final Map<String, PartitionMetadata> partitionIdToMetadata;
   private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
   // A lock that can be acquired exclusively or not.
@@ -59,9 +61,11 @@ public final class PartitionManagerMaster {
   private final ReadWriteLock lock;
 
   @Inject
-  private PartitionManagerMaster(final MessageEnvironment masterMessageEnvironment) {
+  private PartitionManagerMaster(final MessageEnvironment masterMessageEnvironment,
+                                 final ContainerManager containerManager) {
     masterMessageEnvironment.setupListener(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID,
         new PartitionManagerMasterControlMessageReceiver());
+    this.containerManager = containerManager;
     this.partitionIdToMetadata = new HashMap<>();
     this.producerTaskGroupIdToPartitionIds = new HashMap<>();
     this.lock = new ReentrantReadWriteLock();
@@ -81,7 +85,7 @@ public final class PartitionManagerMaster {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
-      partitionIdToMetadata.put(partitionId, new PartitionMetadata(partitionId, producerTaskIndices));
+      partitionIdToMetadata.put(partitionId, new PartitionMetadata(containerManager, partitionId, producerTaskIndices));
       producerTaskGroupIds.forEach(producerTaskGroupId -> {
         producerTaskGroupIdToPartitionIds.putIfAbsent(producerTaskGroupId, new HashSet<>());
         producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).add(partitionId);

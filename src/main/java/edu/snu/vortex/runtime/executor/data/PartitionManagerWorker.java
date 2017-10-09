@@ -102,6 +102,13 @@ public final class PartitionManagerWorker {
   }
 
   /**
+   * @return the id of the executor.
+   */
+  public String getExecutorId() {
+    return executorId;
+  }
+
+  /**
    * Retrieves data from the stored partition. A specific hash value range can be designated.
    * This can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.

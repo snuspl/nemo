@@ -26,6 +26,7 @@ import org.apache.reef.driver.context.ActiveContext;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Contains information/state regarding an executor.
@@ -42,16 +43,19 @@ public final class ExecutorRepresenter {
   private final Set<String> runningTaskGroups;
   private final Set<String> completeTaskGroups;
   private final Set<String> failedTaskGroups;
-  private final MessageSender<ControlMessage.Message> messageSender;
+  private final MessageEnvironment messageEnvironment;
+  private final MessageSender<ControlMessage.Message> messageSenderToExecutor;
   private final ActiveContext activeContext;
 
   public ExecutorRepresenter(final String executorId,
                              final ResourceSpecification resourceSpecification,
-                             final MessageSender<ControlMessage.Message> messageSender,
+                             final MessageEnvironment messageEnvironment,
+                             final MessageSender<ControlMessage.Message> messageSenderToMaster,
                              final ActiveContext activeContext) {
     this.executorId = executorId;
     this.resourceSpecification = resourceSpecification;
-    this.messageSender = messageSender;
+    this.messageEnvironment = messageEnvironment;
+    this.messageSenderToExecutor = messageSenderToMaster;
     this.runningTaskGroups = new HashSet<>();
     this.completeTaskGroups = new HashSet<>();
     this.failedTaskGroups = new HashSet<>();
@@ -79,8 +83,30 @@ public final class ExecutorRepresenter {
             .build());
   }
 
+  /**
+   * Send a message to the executor.
+   *
+   * @param message the message to send.
+   */
   public void sendControlMessage(final ControlMessage.Message message) {
-    messageSender.send(message);
+    messageSenderToExecutor.send(message);
+  }
+
+  /**
+   * Send a message to a specific listener in the executor.
+   *
+   * @param message    the message ot send.
+   * @param listenerId the listener to send the message.
+   */
+  public void sendControlMessage(final ControlMessage.Message message,
+                                 final String listenerId) {
+    try {
+      final MessageSender<ControlMessage.Message> messageSender =
+          messageEnvironment.<ControlMessage.Message>asyncConnect(executorId, listenerId).get();
+      messageSender.send(message);
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void onTaskGroupExecutionComplete(final String taskGroupId) {
