@@ -131,7 +131,7 @@ public final class DataTransferTest {
     injector1.bindVolatileInstance(EvaluatorRequestor.class, evaluatorRequestor);
     injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
     final ContainerManager containerManager = injector1.getInstance(ContainerManager.class);
-    
+
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
