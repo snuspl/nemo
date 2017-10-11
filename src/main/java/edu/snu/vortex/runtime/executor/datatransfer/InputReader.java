@@ -28,9 +28,9 @@ import edu.snu.vortex.runtime.exception.UnsupportedCommPatternException;
 import edu.snu.vortex.runtime.executor.data.HashRange;
 import edu.snu.vortex.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.vortex.runtime.executor.data.PartitionStore;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.Broadcast;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.communication.Broadcast;
+import edu.snu.vortex.runtime.executor.datatransfer.communication.OneToOne;
+import edu.snu.vortex.runtime.executor.datatransfer.communication.ScatterGather;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
