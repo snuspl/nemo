@@ -16,27 +16,21 @@
 package edu.snu.vortex.runtime.master;
 
 import edu.snu.vortex.client.JobConf;
-import edu.snu.vortex.common.CommonEventHandler;
 import edu.snu.vortex.common.Pair;
 import edu.snu.vortex.common.PubSubEventHandlerWrapper;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.backend.Backend;
 import edu.snu.vortex.compiler.backend.vortex.VortexBackend;
 import edu.snu.vortex.compiler.eventhandler.DynamicOptimizationEventHandler;
-import edu.snu.vortex.compiler.exception.CompileTimeOptimizationException;
 import edu.snu.vortex.compiler.frontend.Frontend;
 import edu.snu.vortex.compiler.frontend.beam.BeamFrontend;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.optimizer.Optimizer;
-import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
 import edu.snu.vortex.compiler.optimizer.policy.Policy;
 import edu.snu.vortex.compiler.optimizer.policy.PolicyBuilder;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
-import org.apache.reef.tang.Injector;
-import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.annotations.Parameter;
-import org.apache.reef.wake.impl.PubSubEventHandler;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -44,8 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.FileReader;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Compiles and runs User application.
@@ -97,8 +89,6 @@ public final class UserApplicationRunner implements Runnable {
       optimizedDAG.storeJSON(dagDirectory, "ir-" + optimizationPolicy.getClass().getSimpleName(),
           "IR optimized for " + optimizationPolicy.getClass().getSimpleName());
 
-      assignRuntimePassEventHandlers(optimizationPolicy.getRuntimePasses());
-
       final PhysicalPlan physicalPlan = backend.compile(optimizedDAG);
 
       physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
@@ -119,23 +109,5 @@ public final class UserApplicationRunner implements Runnable {
     final Policy derivedPolicy =
         new PolicyBuilder((JSONObject) new JSONParser().parse(new FileReader(optimizationPolicy))).build();
     return Pair.of(dag, derivedPolicy);
-  }
-
-  private void assignRuntimePassEventHandlers(final List<RuntimePass<?>> runtimePasses) {
-    runtimePasses.forEach(runtimePass -> {
-      final Set<Class<? extends CommonEventHandler<?>>> eventHandlers = runtimePass.getEventHandlers();
-      final PubSubEventHandler pubSubEventHandler = pubSubEventHandlerWrapper.getPubSubEventHandler();
-      final Injector tangInjector = Tang.Factory.getTang().newInjector();
-      tangInjector.bindVolatileInstance(PubSubEventHandler.class, pubSubEventHandler);
-      eventHandlers.forEach(eventHandler -> {
-        try {
-          // TODO #529: Actually subscribe event handlers here.
-          final CommonEventHandler<?> commonEventHandler = tangInjector.getInstance(eventHandler);
-          pubSubEventHandler.subscribe(commonEventHandler.getEventClass(), commonEventHandler);
-        } catch (Exception e) {
-          throw new CompileTimeOptimizationException(e);
-        }
-      });
-    });
   }
 }
