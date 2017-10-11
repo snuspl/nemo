@@ -76,7 +76,7 @@ public final class MapReduceDisaggregationOptimization {
 
     // Optimize
     final Policy disaggregationPolicy = new PolicyBuilder((JSONObject) new JSONParser().parse(
-        new FileReader(System.getProperty("user.dir") + "/bin/policy/disaggregation.json"))).build();
+        new FileReader(System.getProperty("user.dir") + "/src/main/resources/policy/disaggregation.json"))).build();
     final DAG optimizedDAG = Optimizer.optimize(dag, disaggregationPolicy, EMPTY_DAG_DIRECTORY);
 
     // After

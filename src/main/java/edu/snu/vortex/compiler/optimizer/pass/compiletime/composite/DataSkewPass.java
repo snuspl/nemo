@@ -41,9 +41,4 @@ public final class DataSkewPass extends CompositePass {
         new DataSkewEdgeMetricCollectionPass()
     ));
   }
-
-  @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
 }

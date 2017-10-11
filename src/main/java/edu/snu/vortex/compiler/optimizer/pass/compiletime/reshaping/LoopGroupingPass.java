@@ -32,11 +32,6 @@ public final class LoopGroupingPass extends ReshapingPass {
   public static final String SIMPLE_NAME = "LoopGroupingPass";
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     final Integer maxStackDepth = this.findMaxLoopVertexStackDepth(dag);
     return groupLoops(dag, maxStackDepth);

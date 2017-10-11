@@ -57,7 +57,7 @@
 ./bin/run.sh \
   -job_id mr_default \
   -user_main edu.snu.vortex.examples.beam.MapReduce \
-  -optimization_policy "`pwd`/bin/policy/default.json" \
+  -optimization_policy "`pwd`/src/main/resources/policy/default.json" \
   -user_args "`pwd`/src/main/resources/sample_input_mr `pwd`/src/main/resources/sample_output"
 
 ## YARN cluster example
@@ -65,7 +65,7 @@
   -deploy_mode yarn \
   -job_id mr_pado \
   -user_main edu.snu.vortex.examples.beam.MapReduce \
-  -optimization_policy "`pwd`/bin/policy/pado.json" \
+  -optimization_policy "`pwd`/src/main/resources/policy/pado.json" \
   -user_args "hdfs://v-m:9000/sample_input_mr hdfs://v-m:9000/sample_output_mr"
 ```
 
@@ -111,7 +111,7 @@ Using our [online visualizer](https://service.jangho.kr/vortex-dag/), you can ea
 ```bash
 ./bin/run.sh \
   -user_main edu.snu.vortex.examples.beam.AlternatingLeastSquare \
-  -optimization_policy "`pwd`/bin/policy/pado.json" \
+  -optimization_policy "`pwd`/src/main/resources/policy/pado.json" \
   -dag_dir "./dag/als" \
   -user_args "`pwd`/src/main/resources/sample_input_als 10 3"
 ```

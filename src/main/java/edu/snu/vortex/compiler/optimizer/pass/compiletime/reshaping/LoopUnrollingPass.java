@@ -28,11 +28,6 @@ public final class LoopUnrollingPass extends ReshapingPass {
   public static final String SIMPLE_NAME = "LoopUnrollingPass";
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     return recursivelyUnroll(dag);
   }

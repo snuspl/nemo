@@ -31,10 +31,10 @@ import org.apache.reef.tang.Tang;
  */
 public final class CompilerTestUtil {
   public static final String rootDir = System.getProperty("user.dir");
-  public static final String padoPolicy = rootDir + "/bin/policy/pado.json";
-  public static final String disaggregationPolicy = rootDir + "/bin/policy/disaggregation.json";
-  public static final String defaultPolicy = rootDir + "/bin/policy/default.json";
-  public static final String dataSkewPolicy = rootDir + "/bin/policy/data_skew.json";
+  public static final String padoPolicy = rootDir + "/src/main/resources/policy/pado.json";
+  public static final String disaggregationPolicy = rootDir + "/src/main/resources/policy/disaggregation.json";
+  public static final String defaultPolicy = rootDir + "/src/main/resources/policy/default.json";
+  public static final String dataSkewPolicy = rootDir + "/src/main/resources/policy/data_skew.json";
 
   public static DAG<IRVertex, IREdge> compileMRDAG() throws Exception {
     final Frontend beamFrontend = new BeamFrontend();

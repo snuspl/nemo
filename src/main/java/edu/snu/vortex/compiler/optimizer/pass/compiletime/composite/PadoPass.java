@@ -34,9 +34,4 @@ public final class PadoPass extends CompositePass {
         new PadoEdgeDataFlowModelPass()
     ));
   }
-
-  @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
 }

@@ -73,8 +73,9 @@ public final class Optimizer {
       // Ensure AnnotatingPass and ReshapingPass functions as intended.
       if ((passToApply instanceof AnnotatingPass && !checkAnnotatingPass(dag, processedDAG))
           || (passToApply instanceof ReshapingPass && !checkReshapingPass(dag, processedDAG))) {
-        throw new CompileTimeOptimizationException(passToApply.getName() + "is implemented in a way that doesn't "
-            + "follow its original intention of annotating or reshaping. Modify it or use a general CompileTimePass");
+        throw new CompileTimeOptimizationException(passToApply.getClass().getSimpleName()
+            + "is implemented in a way that doesn't follow its original intention of annotating or reshaping. "
+            + "Modify it or use a general CompileTimePass");
       }
       // Save the processed JSON DAG.
       processedDAG.storeJSON(dagDirectory, "ir-after-" + passToApply.getClass().getSimpleName(),
@@ -97,11 +98,35 @@ public final class Optimizer {
     final Iterator<IRVertex> beforeVertices = before.getTopologicalSort().iterator();
     final Iterator<IRVertex> afterVertices = after.getTopologicalSort().iterator();
     while (beforeVertices.hasNext() && afterVertices.hasNext()) {
-      if (before.getIncomingEdgesOf(beforeVertices.next()).size()
-          != after.getIncomingEdgesOf(afterVertices.next()).size()) {
+      final IRVertex beforeVertex = beforeVertices.next();
+      final IRVertex afterVertex = afterVertices.next();
+      // each of vertices should have same ids.
+      if (!beforeVertex.getId().equals(afterVertex.getId())) {
+        return false;
+      }
+      final Iterator<IREdge> beforeVertexIncomingEdges = before.getIncomingEdgesOf(beforeVertex).iterator();
+      final Iterator<IREdge> afterVertexIncomingEdges = after.getIncomingEdgesOf(afterVertex).iterator();
+      final Iterator<IREdge> beforeVertexOutgoingEdges = before.getOutgoingEdgesOf(beforeVertex).iterator();
+      final Iterator<IREdge> afterVertexOutgoingEdges = after.getOutgoingEdgesOf(afterVertex).iterator();
+      while (beforeVertexIncomingEdges.hasNext() && afterVertexIncomingEdges.hasNext()) {
+        // each of them should have same ids.
+        if (!beforeVertexIncomingEdges.next().getId().equals(afterVertexIncomingEdges.next().getId())) {
+          return false;
+        }
+      }
+      while (beforeVertexOutgoingEdges.hasNext() && afterVertexOutgoingEdges.hasNext()) {
+        // each of them should have same ids.
+        if (!beforeVertexOutgoingEdges.next().getId().equals(afterVertexOutgoingEdges.next().getId())) {
+          return false;
+        }
+      }
+      // number of edges should match.
+      if (beforeVertexIncomingEdges.hasNext() || afterVertexIncomingEdges.hasNext()
+          || beforeVertexOutgoingEdges.hasNext() || afterVertexOutgoingEdges.hasNext()) {
         return false;
       }
     }
+    // number of vertices should match.
     return !beforeVertices.hasNext() && !afterVertices.hasNext();
   }
 

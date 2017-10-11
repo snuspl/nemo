@@ -33,11 +33,6 @@ public final class DisaggregationVertexPass extends AnnotatingPass {
   }
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(vertex ->
         vertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE)));

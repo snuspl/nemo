@@ -64,7 +64,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
    * The name of the optimization policy.
    */
   @NamedParameter(doc = "The json file of the optimization policy", short_name = "optimization_policy",
-      default_value = "`pwd`/bin/policy/default.json")
+      default_value = "`pwd`/src/main/resources/policy/default.json")
   public final class OptimizationPolicy implements Name<String> {
   }
 

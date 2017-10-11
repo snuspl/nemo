@@ -40,11 +40,6 @@ public final class DataSkewReshapingPass extends ReshapingPass {
   public static final String SIMPLE_NAME = "DataSkewReshapingPass";
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
     final List<MetricCollectionBarrierVertex> metricCollectionVertices = new ArrayList<>();

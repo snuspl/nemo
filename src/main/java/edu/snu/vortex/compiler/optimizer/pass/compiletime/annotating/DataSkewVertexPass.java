@@ -35,11 +35,6 @@ public final class DataSkewVertexPass extends AnnotatingPass {
   }
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(v -> {
       // we only care about metric collection barrier vertices.

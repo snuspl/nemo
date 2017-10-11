@@ -48,11 +48,6 @@ public final class DefaultStagePartitioningPass extends AnnotatingPass {
   }
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> irDAG) {
     final AtomicInteger stageNum = new AtomicInteger(0);
     final List<List<IRVertex>> vertexListForEachStage = groupVerticesByStage(irDAG);

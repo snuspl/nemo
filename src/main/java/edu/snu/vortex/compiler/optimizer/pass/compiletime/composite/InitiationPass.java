@@ -34,9 +34,4 @@ public final class InitiationPass extends CompositePass {
         new DefaultDataStorePropertyPass()
     ));
   }
-
-  @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
 }

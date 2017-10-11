@@ -36,9 +36,4 @@ public final class DisaggregationPass extends CompositePass {
         new IFilePass()
     ));
   }
-
-  @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
 }

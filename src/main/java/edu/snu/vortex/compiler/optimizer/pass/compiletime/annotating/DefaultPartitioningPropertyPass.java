@@ -19,11 +19,6 @@ public final class DefaultPartitioningPropertyPass extends AnnotatingPass {
   }
 
   @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
-
-  @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.topologicalDo(irVertex ->
       dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {

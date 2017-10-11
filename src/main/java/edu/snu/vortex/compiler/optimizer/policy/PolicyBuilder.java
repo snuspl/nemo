@@ -83,7 +83,7 @@ public final class PolicyBuilder {
     // Check prerequisite execution properties.
     if (!annotatedExecutionProperties.containsAll(compileTimePass.getPrerequisiteExecutionProperties())) {
       throw new CompileTimeOptimizationException("Prerequisite ExecutionProperty hasn't been met for "
-          + compileTimePass.getName());
+          + compileTimePass.getClass().getSimpleName());
     }
 
     // check annotation of annotating passes.

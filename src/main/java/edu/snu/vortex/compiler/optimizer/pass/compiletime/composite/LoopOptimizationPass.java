@@ -35,9 +35,4 @@ public final class LoopOptimizationPass extends CompositePass {
         new LoopUnrollingPass() // Groups then unrolls loops. TODO #162: remove unrolling pt.
     ));
   }
-
-  @Override
-  public String getName() {
-    return SIMPLE_NAME;
-  }
 }
