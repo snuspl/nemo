@@ -31,8 +31,10 @@ import edu.snu.vortex.compiler.optimizer.TestPolicy;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.metric.MetricMessageHandler;
 import edu.snu.vortex.runtime.common.plan.physical.*;
 import edu.snu.vortex.runtime.common.state.StageState;
+import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
 import edu.snu.vortex.runtime.master.resource.ContainerManager;
 import edu.snu.vortex.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.vortex.runtime.master.resource.ResourceSpecification;
@@ -60,13 +62,15 @@ import static org.mockito.Mockito.when;
  * Tests {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, PubSubEventHandlerWrapper.class})
+@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class,
+    PubSubEventHandlerWrapper.class, MetricMessageHandler.class})
 public final class BatchSchedulerTest {
   private static final Logger LOG = LoggerFactory.getLogger(BatchSchedulerTest.class.getName());
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
   private SchedulingPolicy schedulingPolicy;
   private ContainerManager containerManager;
+  private MetricMessageHandler metricMessageHandler;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
@@ -83,6 +87,7 @@ public final class BatchSchedulerTest {
     RuntimeTestUtil.initialize();
     irDAGBuilder = new DAGBuilder<>();
     containerManager = mock(ContainerManager.class);
+    metricMessageHandler = mock(MetricMessageHandler.class);
     pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
@@ -157,16 +162,16 @@ public final class BatchSchedulerTest {
     v5.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.TRANSIENT));
     irDAGBuilder.addVertex(v5);
 
-    final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
+    final IREdge e1 = new IREdge(ScatterGather.class, v1, v2, Coder.DUMMY_CODER);
     irDAGBuilder.connectVertices(e1);
 
-    final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v3, v2, Coder.DUMMY_CODER);
+    final IREdge e2 = new IREdge(ScatterGather.class, v3, v2, Coder.DUMMY_CODER);
     irDAGBuilder.connectVertices(e2);
 
-    final IREdge e4 = new IREdge(IREdge.Type.ScatterGather, v2, v4, Coder.DUMMY_CODER);
+    final IREdge e4 = new IREdge(ScatterGather.class, v2, v4, Coder.DUMMY_CODER);
     irDAGBuilder.connectVertices(e4);
 
-    final IREdge e5 = new IREdge(IREdge.Type.ScatterGather, v2, v5, Coder.DUMMY_CODER);
+    final IREdge e5 = new IREdge(ScatterGather.class, v2, v5, Coder.DUMMY_CODER);
     irDAGBuilder.connectVertices(e5);
 
     final DAG<IRVertex, IREdge> irDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
@@ -177,7 +182,7 @@ public final class BatchSchedulerTest {
 
     final JobStateManager jobStateManager =
         scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-            1);
+            metricMessageHandler, 1);
 
     // For each ScheduleGroup, test:
     // a) all stages in the ScheduleGroup enters the executing state
@@ -212,7 +217,7 @@ public final class BatchSchedulerTest {
   private int getNumScheduleGroups(final DAG<IRVertex, IREdge> irDAG) {
     final Set<Integer> scheduleGroupSet = new HashSet<>();
     irDAG.getVertices().forEach(irVertex ->
-        scheduleGroupSet.add((Integer) irVertex.get(ExecutionProperty.Key.ScheduleGroupIndex)));
+        scheduleGroupSet.add((Integer) irVertex.getProperty(ExecutionProperty.Key.ScheduleGroupIndex)));
     return scheduleGroupSet.size();
   }
 }

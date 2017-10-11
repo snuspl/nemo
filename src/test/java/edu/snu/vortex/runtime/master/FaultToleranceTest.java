@@ -30,6 +30,7 @@ import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.vortex.runtime.RuntimeTestUtil;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageSender;
+import edu.snu.vortex.runtime.common.metric.MetricMessageHandler;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalPlanGenerator;
 import edu.snu.vortex.runtime.common.plan.physical.PhysicalStage;
@@ -63,7 +64,7 @@ import static org.mockito.Mockito.*;
  * Tests the fault tolerance mechanism implemented in {@link BatchScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PubSubEventHandlerWrapper.class})
+@PrepareForTest({ContainerManager.class, PubSubEventHandlerWrapper.class, MetricMessageHandler.class})
 public final class FaultToleranceTest {
   private static final int TEST_TIMEOUT_MS = 500;
   private static final int MAX_SCHEDULE_ATTEMPT = 5;
@@ -80,6 +81,7 @@ public final class FaultToleranceTest {
   private final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
   private final Map<String, ExecutorRepresenter> failedExecutorRepresenterMap = new HashMap<>();
   private ContainerManager containerManager = mock(ContainerManager.class);
+  private MetricMessageHandler metricMessageHandler = mock(MetricMessageHandler.class);
   private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
 
   @Before
@@ -151,14 +153,12 @@ public final class FaultToleranceTest {
     v3.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.COMPUTE));
     irDAGBuilder.addVertex(v3);
 
-    final IREdge e1 = new IREdge(IREdge.Type.ScatterGather, v1, v2, Coder.DUMMY_CODER);
+    final IREdge e1 = new IREdge(ScatterGather.class, v1, v2, Coder.DUMMY_CODER);
     e1.setProperty(DataStoreProperty.of(MemoryStore.class));
-    e1.setProperty(DataCommunicationPatternProperty.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e1);
 
-    final IREdge e2 = new IREdge(IREdge.Type.ScatterGather, v2, v3, Coder.DUMMY_CODER);
+    final IREdge e2 = new IREdge(ScatterGather.class, v2, v3, Coder.DUMMY_CODER);
     e2.setProperty(DataStoreProperty.of(LocalFileStore.class));
-    e2.setProperty(DataCommunicationPatternProperty.of(ScatterGather.class));
     irDAGBuilder.connectVertices(e2);
 
     final DAG<IRVertex, IREdge> irDAG = irDAGBuilder.buildWithoutSourceSinkCheck();
@@ -168,7 +168,7 @@ public final class FaultToleranceTest {
 
     jobStateManager = scheduler.scheduleJob(
         new PhysicalPlan("SimpleJob", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-        MAX_SCHEDULE_ATTEMPT);
+        metricMessageHandler, MAX_SCHEDULE_ATTEMPT);
 
     // The physical DAG made from the above IR consists of 3 stages.
     final List<PhysicalStage> dagTopoSorted3Stages = physicalDAG.getTopologicalSort();

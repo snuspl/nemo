@@ -20,7 +20,7 @@ import edu.snu.vortex.compiler.ir.Element;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
-import edu.snu.vortex.compiler.optimizer.pass.dynamic_optimization.DataSkewDynamicOptimizationPass;
+import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.vortex.runtime.common.RuntimeIdGenerator;
 import edu.snu.vortex.runtime.common.plan.RuntimeEdge;
 import edu.snu.vortex.runtime.exception.PartitionWriteException;
@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
@@ -75,7 +74,7 @@ public final class OutputWriter extends DataTransfer {
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
     this.srcTaskIdx = srcTaskIdx;
-    this.channelDataPlacement = runtimeEdge.get(ExecutionProperty.Key.DataStore);
+    this.channelDataPlacement = runtimeEdge.getProperty(ExecutionProperty.Key.DataStore);
   }
 
   /**
@@ -84,9 +83,9 @@ public final class OutputWriter extends DataTransfer {
    * @param dataToWrite An iterable for the elements to be written.
    */
   public void write(final Iterable<Element> dataToWrite) {
-    final Boolean isDataSizeMetricCollectionEdge = DataSkewDynamicOptimizationPass.class
-        .equals(runtimeEdge.get(ExecutionProperty.Key.MetricCollection));
-    final String writeOptAtt = runtimeEdge.get(ExecutionProperty.Key.WriteOptimization);
+    final Boolean isDataSizeMetricCollectionEdge = DataSkewRuntimePass.class
+        .equals(runtimeEdge.getProperty(ExecutionProperty.Key.MetricCollection));
+    final String writeOptAtt = runtimeEdge.getProperty(ExecutionProperty.Key.WriteOptimization);
     final Boolean isIFileWriteEdge =
         writeOptAtt != null && writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE);
     if (writeOptAtt != null && !writeOptAtt.equals(WriteOptimizationProperty.IFILE_WRITE)) {
@@ -95,7 +94,7 @@ public final class OutputWriter extends DataTransfer {
 
     // TODO #463: Support incremental write.
     try {
-      switch ((runtimeEdge.<Class>get(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
+      switch ((runtimeEdge.<Class>getProperty(ExecutionProperty.Key.DataCommunicationPattern)).getSimpleName()) {
         case OneToOne.SIMPLE_NAME:
           writeOneToOne(dataToWrite);
           break;
@@ -125,9 +124,8 @@ public final class OutputWriter extends DataTransfer {
     final Block blockToWrite = new Block(dataToWrite);
 
     // Write data.
-    final CompletableFuture future = partitionManagerWorker.putBlocks(
+    partitionManagerWorker.putBlocks(
         partitionId, Collections.singleton(blockToWrite), channelDataPlacement, false);
-    future.get(); // Synchronize.
 
     // Commit partition.
     partitionManagerWorker.commitPartition(
@@ -140,10 +138,10 @@ public final class OutputWriter extends DataTransfer {
 
   private void writeScatterGather(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
     final Class<? extends Partitioning> partition =
-        runtimeEdge.get(ExecutionProperty.Key.Partitioning);
+        runtimeEdge.getProperty(ExecutionProperty.Key.Partitioning);
     switch (partition.getSimpleName()) {
       case Hash.SIMPLE_NAME:
-        final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+        final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
 
         // First partition the data to write,
         final List<List<Element>> partitionedOutputList = new ArrayList<>(dstParallelism);
@@ -161,9 +159,8 @@ public final class OutputWriter extends DataTransfer {
           final Block blockToWrite = new Block(partitionedOutputList.get(partitionIdx));
 
           // Write data.
-          final CompletableFuture future = partitionManagerWorker.putBlocks(
+          partitionManagerWorker.putBlocks(
               partitionId, Collections.singleton(blockToWrite), channelDataPlacement, false);
-          future.get(); // synchronize.
 
           // Commit partition.
           partitionManagerWorker.commitPartition(
@@ -196,7 +193,7 @@ public final class OutputWriter extends DataTransfer {
   private void hashAndWrite(final Iterable<Element> dataToWrite)
       throws ExecutionException, InterruptedException, PartitionWriteException {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-    final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -214,9 +211,8 @@ public final class OutputWriter extends DataTransfer {
     }
 
     // Write data.
-    final CompletableFuture<Optional<List<Long>>> future = partitionManagerWorker.putBlocks(
+    final Optional<List<Long>> optionalBlockSize = partitionManagerWorker.putBlocks(
         partitionId, blockList, channelDataPlacement, false);
-    final Optional<List<Long>> optionalBlockSize = future.get(); // synchronize.
     if (optionalBlockSize.isPresent()) {
       // Commit partition.
       partitionManagerWorker.commitPartition(
@@ -241,7 +237,7 @@ public final class OutputWriter extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   private void writeIFile(final Iterable<Element> dataToWrite) throws ExecutionException, InterruptedException {
-    final int dstParallelism = dstVertex.get(ExecutionProperty.Key.Parallelism);
+    final int dstParallelism = dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
     // For this hash range, please check the description of HashRangeMultiplier
     final int hashRange = hashRangeMultiplier * dstParallelism;
     final List<List<Pair<Integer, Iterable<Element>>>> outputList = new ArrayList<>(dstParallelism);
@@ -273,9 +269,8 @@ public final class OutputWriter extends DataTransfer {
       }
 
       // Write data.
-      final CompletableFuture future = partitionManagerWorker.putBlocks(
+      partitionManagerWorker.putBlocks(
           partitionId, blockList, channelDataPlacement, false);
-      future.get(); // synchronize.
 
       // Commit partition.
       partitionManagerWorker.commitPartition(
