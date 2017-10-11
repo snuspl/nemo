@@ -124,8 +124,8 @@ public final class InputReader extends DataTransfer {
 
   /**
    * Read data in the assigned range of hash value.
-   * Constraint: If a partition is written by {@link OutputWriter#hashAndWrite(Iterable)}
-   * or {@link OutputWriter#writeScatterGather(Iterable)}, it must be read using this method.
+   * Constraint: If a partition is written by {@link OutputWriter#dataSkewWrite(List)}
+   * or {@link OutputWriter#writeScatterGather(List)}, it must be read using this method.
    *
    * @return the list of the completable future of the data.
    */
@@ -151,7 +151,7 @@ public final class InputReader extends DataTransfer {
   }
 
   /**
-   * Read the I-File prepared for this task by using {@link OutputWriter#writeIFile(Iterable)}.
+   * Read the I-File prepared for this task by using {@link OutputWriter#iFileWrite(List)}.
    *
    * @return the completable future of the data.
    */
