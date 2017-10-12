@@ -13,35 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.vortex.compiler.optimizer;
+package edu.snu.vortex.compiler.optimizer.policy;
 
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.*;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.InitiationCompositePass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
-import edu.snu.vortex.compiler.optimizer.policy.Policy;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
- * A policy for tests.
+ * A basic default policy, that performs the minimum amount of optimization to be done to a specific DAG.
  */
-public final class TestPolicy implements Policy {
+public final class DefaultPolicy implements Policy {
+  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+
+  public DefaultPolicy() {
+    this.policyBuilder
+        .registerCompileTimePass(new InitiationCompositePass())
+        .registerCompileTimePass(new DefaultStagePartitioningPass())
+        .registerCompileTimePass(new ScheduleGroupPass());
+  }
+
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return  Arrays.asList(
-        new DefaultVertexExecutorPlacementPass(),
-        new DefaultPartitioningPropertyPass(),
-        new DefaultEdgeDataFlowModelPass(),
-        new DefaultEdgeDataStorePass(),
-        new DefaultStagePartitioningPass(),
-        new ScheduleGroupPass()
-    );
+    return this.policyBuilder.build().getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return new ArrayList<>();
+    return this.policyBuilder.build().getRuntimePasses();
   }
 }

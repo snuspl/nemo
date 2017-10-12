@@ -15,23 +15,24 @@
  */
 package edu.snu.vortex.compiler.optimizer.pass.compiletime.composite;
 
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.*;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopExtractionPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopOptimizations;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.LoopUnrollingPass;
 
 import java.util.Arrays;
 
 /**
- * Pass for initiating DAG ExecutionProperties with default values.
+ * A series of passes to perform LoopOptimization.
  */
-public final class InitiationPass extends CompositePass {
-  public static final String SIMPLE_NAME = "InitiationPass";
+public final class LoopOptimizationCompositePass extends CompositePass {
+  public static final String SIMPLE_NAME = "LoopOptimizationCompositePass";
 
-  public InitiationPass() {
+  public LoopOptimizationCompositePass() {
     super(Arrays.asList(
-        new ParallelismPass(),
-        new DefaultExecutorPlacementPropertyPass(),
-        new DefaultPartitioningPropertyPass(),
-        new DefaultDataFlowModelPropertyPass(),
-        new DefaultDataStorePropertyPass()
+        new LoopExtractionPass(),
+        LoopOptimizations.getLoopFusionPass(),
+        LoopOptimizations.getLoopInvariantCodeMotionPass(),
+        new LoopUnrollingPass() // Groups then unrolls loops. TODO #162: remove unrolling pt.
     ));
   }
 }

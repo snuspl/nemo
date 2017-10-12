@@ -67,7 +67,7 @@ public final class DefaultStagePartitioningPass extends AnnotatingPass {
     // Data structures used for stage partitioning.
     final HashMap<IRVertex, Integer> vertexStageNumHashMap = new HashMap<>();
     final List<List<IRVertex>> vertexListForEachStage = new ArrayList<>();
-    final AtomicInteger stageNumber = new AtomicInteger(0);
+    final AtomicInteger stageNumber = new AtomicInteger(1);
     final List<Integer> dependentStagesList = new ArrayList<>();
 
     // First, traverse the DAG topologically to add each vertices to a list associated with each of the stage number.

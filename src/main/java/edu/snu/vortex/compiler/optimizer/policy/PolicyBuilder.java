@@ -20,11 +20,9 @@ import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.InitiationPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.InitiationCompositePass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.RuntimePass;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,29 +45,6 @@ public final class PolicyBuilder {
     this.annotatedExecutionProperties = new HashSet<>();
     // DataCommunicationPattern is already set when creating the IREdge itself.
     annotatedExecutionProperties.add(ExecutionProperty.Key.DataCommunicationPattern);
-  }
-
-  public PolicyBuilder(final JSONObject jsonObject) throws Exception {
-    this();
-    JSONArray commands = (JSONArray) jsonObject.get("policy");
-    for (int i = 0; i < commands.size(); i++) {
-      JSONObject command = (JSONObject) commands.get(i);
-      String type = (String) command.get("type");
-      switch (type) {
-        case "CompileTimePass":
-          registerCompileTimePass((CompileTimePass) Class.forName((String) command.get("name")).newInstance());
-          break;
-        case "RuntimePass":
-          final JSONArray namePair = (JSONArray) command.get("names");
-          registerRuntimePass((RuntimePass<?>) Class.forName((String) namePair.get(0)).newInstance(),
-              (CompileTimePass) Class.forName((String) namePair.get(1)).newInstance());
-          break;
-        case "ExecutionProperty":
-          addExecutionPropertyRequirement(ExecutionProperty.Key.valueOf((String) command.get("key")));
-        default:
-          throw new CompileTimeOptimizationException("There is no such pass type: " + type);
-      }
-    }
   }
 
   public PolicyBuilder registerCompileTimePass(final CompileTimePass compileTimePass) {
@@ -95,7 +70,7 @@ public final class PolicyBuilder {
 
     // re-initiate after each reshaping pass.
     if (compileTimePass instanceof ReshapingPass) {
-      this.registerCompileTimePass(new InitiationPass());
+      this.registerCompileTimePass(new InitiationCompositePass());
     }
     return this;
   }

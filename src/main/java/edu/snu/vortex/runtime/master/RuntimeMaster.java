@@ -22,7 +22,7 @@ import edu.snu.vortex.common.proxy.ClientEndpoint;
 import edu.snu.vortex.common.proxy.DriverEndpoint;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
-import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DataSkewPass;
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass;
 import edu.snu.vortex.runtime.common.comm.ControlMessage;
 import edu.snu.vortex.runtime.common.message.MessageContext;
 import edu.snu.vortex.runtime.common.message.MessageEnvironment;
@@ -155,7 +155,7 @@ public final class RuntimeMaster {
           (MetricCollectionBarrierVertex) vertexToSendMetricDataTo;
       metricCollectionBarrierVertex.accumulateMetric(partitionId, blockSizeInfo);
     } else {
-      throw new RuntimeException("Something wrong happened at " + DataSkewPass.class.getSimpleName() + ". ");
+      throw new RuntimeException("Something wrong happened at " + DataSkewCompositePass.class.getSimpleName() + ". ");
     }
   }
 

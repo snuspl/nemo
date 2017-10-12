@@ -31,10 +31,10 @@ import java.util.stream.Stream;
  * Pass for initiating IREdge DataStore ExecutionProperty with default values.
  * MemoryStore is default for OneToOne edges and LocalFileStore is default for the others.
  */
-public final class DefaultDataStorePropertyPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DefaultDataStorePropertyPass";
+public final class DefaultEdgeDataStorePass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DefaultEdgeDataStorePass";
 
-  public DefaultDataStorePropertyPass() {
+  public DefaultEdgeDataStorePass() {
     super(ExecutionProperty.Key.DataStore, Stream.of(
         ExecutionProperty.Key.DataCommunicationPattern
     ).collect(Collectors.toSet()));

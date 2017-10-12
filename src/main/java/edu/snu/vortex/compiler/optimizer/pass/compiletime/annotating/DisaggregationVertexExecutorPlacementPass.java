@@ -25,10 +25,10 @@ import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProp
  * A pass to support Disaggregated Resources by tagging vertices.
  * This pass handles the ExecutorPlacement ExecutionProperty.
  */
-public final class DisaggregationVertexPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DisaggregationVertexPass";
+public final class DisaggregationVertexExecutorPlacementPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DisaggregationVertexExecutorPlacementPass";
 
-  public DisaggregationVertexPass() {
+  public DisaggregationVertexExecutorPlacementPass() {
     super(ExecutionProperty.Key.ExecutorPlacement);
   }
 

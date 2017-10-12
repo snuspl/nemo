@@ -20,7 +20,7 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 
 /**
- * Pass for unrolling the loops grouped by the {@link LoopGroupingPass}.
+ * Pass for unrolling the loops grouped by the {@link LoopExtractionPass}.
  * It first unrolls the root LoopVertex, which is in the form of linked list, into a straight line in the DAG.
  * Then, it decomposes each of the LoopVertices with the DAG information that each of them contain.
  */

@@ -19,27 +19,26 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 
 /**
- * Pass for initiating IREdge DataFlowModel ExecutionProperty with default values.
- * Pull is the default value.
+ * Pass for initiating IRVertex ExecutorPlacement ExecutionProperty with default values.
+ * NONE is the default value.
  */
-public final class DefaultDataFlowModelPropertyPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DefaultDataFlowModelPropertyPass";
+public final class DefaultVertexExecutorPlacementPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DefaultVertexExecutorPlacementPass";
 
-  public DefaultDataFlowModelPropertyPass() {
-    super(ExecutionProperty.Key.DataFlowModel);
+  public DefaultVertexExecutorPlacementPass() {
+    super(ExecutionProperty.Key.ExecutorPlacement);
   }
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.topologicalDo(irVertex ->
-        dag.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
-          if (irEdge.getProperty(ExecutionProperty.Key.DataFlowModel) == null) {
-            irEdge.setProperty(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
-          }
-        }));
+    dag.topologicalDo(irVertex -> {
+      if (irVertex.getProperty(ExecutionProperty.Key.ExecutorPlacement) == null) {
+        irVertex.setProperty(ExecutorPlacementProperty.of(ExecutorPlacementProperty.NONE));
+      }
+    });
     return dag;
   }
 }

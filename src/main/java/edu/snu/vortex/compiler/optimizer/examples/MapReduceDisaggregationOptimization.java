@@ -23,16 +23,11 @@ import edu.snu.vortex.compiler.optimizer.Optimizer;
 import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.common.dag.DAGBuilder;
 
-import edu.snu.vortex.compiler.optimizer.policy.Policy;
-import edu.snu.vortex.compiler.optimizer.policy.PolicyBuilder;
+import edu.snu.vortex.compiler.optimizer.policy.DisaggregationPolicy;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.OneToOne;
 import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.ScatterGather;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileReader;
 
 import static edu.snu.vortex.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
@@ -75,9 +70,7 @@ public final class MapReduceDisaggregationOptimization {
     LOG.info(dag.toString());
 
     // Optimize
-    final Policy disaggregationPolicy = new PolicyBuilder((JSONObject) new JSONParser().parse(
-        new FileReader(System.getProperty("user.dir") + "/src/main/resources/policy/disaggregation.json"))).build();
-    final DAG optimizedDAG = Optimizer.optimize(dag, disaggregationPolicy, EMPTY_DAG_DIRECTORY);
+    final DAG optimizedDAG = Optimizer.optimize(dag, new DisaggregationPolicy(), EMPTY_DAG_DIRECTORY);
 
     // After
     LOG.info("After Optimization");
