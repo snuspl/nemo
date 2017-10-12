@@ -27,22 +27,23 @@ import java.util.List;
  * A basic default policy, that performs the minimum amount of optimization to be done to a specific DAG.
  */
 public final class DefaultPolicy implements Policy {
-  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+  private final Policy policy;
 
   public DefaultPolicy() {
-    this.policyBuilder
+    this.policy = new PolicyBuilder()
         .registerCompileTimePass(new InitiationCompositePass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new ScheduleGroupPass());
+        .registerCompileTimePass(new ScheduleGroupPass())
+        .build();
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return this.policyBuilder.build().getCompileTimePasses();
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return this.policyBuilder.build().getRuntimePasses();
+    return this.policy.getRuntimePasses();
   }
 }

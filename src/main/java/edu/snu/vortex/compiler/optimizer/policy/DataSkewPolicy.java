@@ -30,24 +30,25 @@ import java.util.List;
  * A policy to perform data skew dynamic optimization.
  */
 public final class DataSkewPolicy implements Policy {
-  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+  private final Policy policy;
 
   public DataSkewPolicy() {
-    this.policyBuilder
+    this.policy = new PolicyBuilder()
         .registerCompileTimePass(new InitiationCompositePass())
         .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerRuntimePass(new DataSkewRuntimePass(), new DataSkewCompositePass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new ScheduleGroupPass());
+        .registerCompileTimePass(new ScheduleGroupPass())
+        .build();
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return this.policyBuilder.build().getCompileTimePasses();
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return this.policyBuilder.build().getRuntimePasses();
+    return this.policy.getRuntimePasses();
   }
 }

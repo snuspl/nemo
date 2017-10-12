@@ -28,24 +28,25 @@ import java.util.List;
  * A policy to demonstrate the disaggregation optimization, that performs the job in a Sailfish style.
  */
 public final class DisaggregationPolicy implements Policy {
-  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+  private final Policy policy;
 
   public DisaggregationPolicy() {
-    this.policyBuilder
+    this.policy = new PolicyBuilder()
         .registerCompileTimePass(new InitiationCompositePass())
         .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new DisaggregationPass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new ScheduleGroupPass());
+        .registerCompileTimePass(new ScheduleGroupPass())
+        .build();
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return this.policyBuilder.build().getCompileTimePasses();
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return this.policyBuilder.build().getRuntimePasses();
+    return this.policy.getRuntimePasses();
   }
 }

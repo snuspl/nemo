@@ -31,22 +31,23 @@ import java.util.List;
  * This example simply shows that users can define their own pass in their policy.
  */
 public final class DefaultPolicyWithSeparatePass implements Policy {
-  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+  private final Policy policy;
 
   public DefaultPolicyWithSeparatePass() {
-    this.policyBuilder
+    this.policy = new PolicyBuilder()
         .registerCompileTimePass(new InitiationCompositePass())
-        .registerCompileTimePass(new RefactoredPass());
+        .registerCompileTimePass(new RefactoredPass())
+        .build();
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return this.policyBuilder.build().getCompileTimePasses();
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return this.policyBuilder.build().getRuntimePasses();
+    return this.policy.getRuntimePasses();
   }
 
   /**

@@ -75,8 +75,9 @@ public final class PolicyBuilder {
     return this;
   }
 
-  public PolicyBuilder registerRuntimePass(final RuntimePass<?> runtimePass, final CompileTimePass compileTimePass) {
-    registerCompileTimePass(compileTimePass);
+  public PolicyBuilder registerRuntimePass(final RuntimePass<?> runtimePass,
+                                           final CompileTimePass runtimePassRegistrator) {
+    registerCompileTimePass(runtimePassRegistrator);
     this.runtimePasses.add(runtimePass);
     return this;
   }

@@ -29,24 +29,25 @@ import java.util.List;
  * link to paper: http://dl.acm.org/citation.cfm?id=3064181
  */
 public final class PadoPolicy implements Policy {
-  private final PolicyBuilder policyBuilder = new PolicyBuilder();
+  private final Policy policy;
 
   public PadoPolicy() {
-    this.policyBuilder
+    this.policy = new PolicyBuilder()
         .registerCompileTimePass(new InitiationCompositePass())
         .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new PadoCompositePass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new ScheduleGroupPass());
+        .registerCompileTimePass(new ScheduleGroupPass())
+        .build();
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    return this.policyBuilder.build().getCompileTimePasses();
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return this.policyBuilder.build().getRuntimePasses();
+    return this.policy.getRuntimePasses();
   }
 }
