@@ -20,31 +20,37 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.MetricCollectionProperty;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.PartitionerProperty;
 import edu.snu.vortex.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
-import edu.snu.vortex.runtime.executor.datatransfer.communication.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.DataSkewHashPartitioner;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Pass to annotate the DAG for a job to perform data skew.
- * It specifies the outgoing ScatterGather edges from MetricCollectionVertices with a MetricCollection ExecutionProperty
- * which lets the edge to know what metric collection it should perform.
+ * Pado pass for tagging edges with {@link PartitionerProperty}.
  */
-public final class DataSkewEdgeMetricCollectionPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DataSkewEdgeMetricCollectionPass";
+public final class DataSkewEdgePartitionerPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DataSkewEdgePartitionerPass";
 
-  public DataSkewEdgeMetricCollectionPass() {
-    super(ExecutionProperty.Key.MetricCollection);
+  public DataSkewEdgePartitionerPass() {
+    super(ExecutionProperty.Key.Partitioner, Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
+  }
+
+  @Override
+  public String getName() {
+    return SIMPLE_NAME;
   }
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.topologicalDo(v -> {
-      // we only care about metric collection barrier vertices.
-      if (v instanceof MetricCollectionBarrierVertex) {
-        dag.getOutgoingEdgesOf(v).forEach(edge -> {
+    dag.getVertices().forEach(vertex -> {
+      if (vertex instanceof MetricCollectionBarrierVertex) {
+        final List<IREdge> outEdges = dag.getOutgoingEdgesOf(vertex);
+        outEdges.forEach(edge -> {
           // double checking.
-          if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
-            edge.setProperty(MetricCollectionProperty.of(DataSkewRuntimePass.class));
+          if (DataSkewRuntimePass.class.equals(edge.getProperty(ExecutionProperty.Key.MetricCollection))) {
+            edge.setProperty(PartitionerProperty.of(DataSkewHashPartitioner.class));
           }
         });
       }

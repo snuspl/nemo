@@ -19,7 +19,7 @@ import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
 import edu.snu.vortex.compiler.ir.executionproperty.vertex.ParallelismProperty;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.communication.DataCommunicationPattern;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 

@@ -19,35 +19,36 @@ import edu.snu.vortex.common.dag.DAG;
 import edu.snu.vortex.compiler.ir.IREdge;
 import edu.snu.vortex.compiler.ir.IRVertex;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.vortex.compiler.ir.executionproperty.edge.WriteOptimizationProperty;
-import edu.snu.vortex.runtime.executor.data.GlusterFileStore;
+import edu.snu.vortex.compiler.ir.executionproperty.edge.PartitionerProperty;
 import edu.snu.vortex.runtime.executor.datatransfer.communication.ScatterGather;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.HashPartitioner;
+import edu.snu.vortex.runtime.executor.datatransfer.partitioning.IntactPartitioner;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * Pass which enables I-File style write optimization.
- * It sets IFileWrite execution property on ScatterGather edges with RemoteFile partition store.
+ * Optimization pass for tagging {@link PartitionerProperty}
+ * execution property.
  */
-public final class IFilePass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "IFilePass";
+public final class DefaultPartitionerPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "DefaultPartitionerPass";
 
-  public IFilePass() {
-    super(ExecutionProperty.Key.WriteOptimization, Stream.of(
-        ExecutionProperty.Key.DataStore
-    ).collect(Collectors.toSet()));
+  public DefaultPartitionerPass() {
+    super(ExecutionProperty.Key.Partitioner, Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
   }
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.getVertices().forEach(vertex -> {
+    dag.topologicalDo(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       inEdges.forEach(edge -> {
-        if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))
-            && GlusterFileStore.class.equals(edge.getProperty(ExecutionProperty.Key.DataStore))) {
-          edge.setProperty(WriteOptimizationProperty.of(WriteOptimizationProperty.IFILE_WRITE));
+        if (edge.getProperty(ExecutionProperty.Key.Partitioner) == null) {
+          if (ScatterGather.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
+            edge.setProperty(PartitionerProperty.of(HashPartitioner.class));
+          } else {
+            edge.setProperty(PartitionerProperty.of(IntactPartitioner.class));
+          }
         }
       });
     });

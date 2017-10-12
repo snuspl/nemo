@@ -29,7 +29,7 @@ public final class InitiationCompositePass extends CompositePass {
     super(Arrays.asList(
         new ParallelismPass(),
         new DefaultVertexExecutorPlacementPass(),
-        new DefaultPartitioningPropertyPass(),
+        new DefaultPartitionerPass(),
         new DefaultEdgeDataFlowModelPass(),
         new DefaultEdgeDataStorePass()
     ));

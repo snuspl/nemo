@@ -15,6 +15,7 @@
  */
 package edu.snu.vortex.compiler.optimizer.policy;
 
+import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultPartitionerPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.vortex.compiler.optimizer.pass.compiletime.CompileTimePass;
@@ -38,11 +39,20 @@ public final class DefaultPolicy implements Policy {
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
+<<<<<<< HEAD
     return this.policyBuilder.build().getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
     return this.policyBuilder.build().getRuntimePasses();
+=======
+    return Arrays.asList(
+        new ParallelismPass(), // Provides parallelism information.
+        new DefaultPartitionerPass(), // TODO #515: Move to InitializePass
+        new DefaultStagePartitioningPass(),
+        new ScheduleGroupPass()
+    );
+>>>>>>> master
   }
 }

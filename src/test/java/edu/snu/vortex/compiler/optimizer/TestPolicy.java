@@ -32,7 +32,7 @@ public final class TestPolicy implements Policy {
   public List<CompileTimePass> getCompileTimePasses() {
     return  Arrays.asList(
         new DefaultVertexExecutorPlacementPass(),
-        new DefaultPartitioningPropertyPass(),
+        new DefaultPartitionerPass(),
         new DefaultEdgeDataFlowModelPass(),
         new DefaultEdgeDataStorePass(),
         new DefaultStagePartitioningPass(),
