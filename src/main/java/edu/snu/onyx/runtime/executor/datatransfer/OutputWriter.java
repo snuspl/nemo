@@ -64,6 +64,7 @@ public final class OutputWriter extends DataTransfer {
     this.partitionManagerWorker = partitionManagerWorker;
     this.channelDataPlacement = runtimeEdge.getProperty(ExecutionProperty.Key.DataStore);
     this.partitionerMap = new HashMap<>();
+    // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
     this.accumulatedBlockSizeInfo = new ArrayList<>();
     // TODO #535: Enable user to create new implementation of each execution property.
     partitionerMap.put(IntactPartitioner.class, new IntactPartitioner());
