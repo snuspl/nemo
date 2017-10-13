@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.common.plan.stage;
 
-import edu.snu.onyx.compiler.backend.onyx.OnyxBackend;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.common.dag.DAG;
@@ -24,7 +23,7 @@ import edu.snu.onyx.common.dag.Vertex;
 /**
  * Represents a stage in Runtime's execution of a job.
  * Each stage contains a part of a whole execution plan.
- * Stage partitioning is determined by {@link OnyxBackend}.
+ * Stage partitioning is determined by {@link edu.snu.onyx.compiler.backend.onyx.OnyxBackend}.
  */
 public final class Stage extends Vertex {
   private final DAG<IRVertex, IREdge> stageInternalDAG;

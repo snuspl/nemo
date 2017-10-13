@@ -24,7 +24,7 @@ TODO #252: AWS Setup Guide and Scripts
 * This is the case for our cmslab cluster
 * Use ssh tunneling: `ssh -D 8123 -f -C -q -N johnyangk@cmscluster.snu.ac.kr`
 * Turn on SOCKS proxy in chrome(web browser) advanced settings
-* Set your mac's `/etc/hosts`t 
+* Set your mac's `/etc/hosts`
 * Go to `v-m:8088` and `v-m:50070`
 
 ## Run Onyx in the cluster

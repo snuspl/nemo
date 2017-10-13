@@ -110,6 +110,7 @@ Using our [online visualizer](https://service.jangho.io/onyx-dag/), you can easi
 ### Examples
 ```bash
 ./bin/run.sh \
+  -job_id als \
   -user_main edu.snu.onyx.examples.beam.AlternatingLeastSquare \
   -optimization_policy edu.snu.onyx.compiler.optimizer.policy.PadoPolicy \
   -dag_dir "./dag/als" \
