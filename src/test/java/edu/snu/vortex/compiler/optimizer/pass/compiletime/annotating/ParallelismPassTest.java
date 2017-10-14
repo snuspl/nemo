@@ -47,7 +47,6 @@ public class ParallelismPassTest {
 
   @Test
   public void testParallelism() throws Exception {
-
     final DAG<IRVertex, IREdge> compiledDAG = CompilerTestUtil.compileALSDAG();
     final DAG<IRVertex, IREdge> processedDAG = new ParallelismPass().apply(compiledDAG);
 
