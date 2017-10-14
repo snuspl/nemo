@@ -27,12 +27,15 @@ import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.B
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Optimization pass for tagging parallelism execution property.
  */
 public final class ParallelismPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "ParallelismPass";
+  private static final Logger LOG = LoggerFactory.getLogger(ParallelismPass.class.getName());
 
   public ParallelismPass() {
     super(ExecutionProperty.Key.Parallelism);
@@ -62,6 +65,7 @@ public final class ParallelismPass extends AnnotatingPass {
               .mapToInt(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {
+            LOG.debug("Parallelism: {}", parallelism.getAsInt());
             vertex.setProperty(ParallelismProperty.of(parallelism.getAsInt()));
           }
         } else {

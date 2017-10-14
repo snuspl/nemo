@@ -19,23 +19,21 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.*;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.io.hadoop.inputformat.HadoopInputFormatIO;
-import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.values.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
+import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 
 /**
  * Helper class for handling source/sink in a generic way.
@@ -78,54 +76,56 @@ final class GenericSourceSink {
   }
 
   /**
-   * Write HDFS according to the parallelism.
+   * Write output to HDFS according to the parallelism.
   */
   public static class HDFSWrite extends DoFn<String, Void> {
 
-    private final String dir;
-    private BufferedWriter writer;
+    private static final Logger LOG = LoggerFactory.getLogger(HDFSWrite.class.getName());
 
-    HDFSWrite(final String dir) {
+    private final String path;
+    private Path fileName;
+    private FileSystem hdfsFileSystem;
+    private FSDataOutputStream outputStream;
 
-      this.dir = dir;
+    HDFSWrite(final String path) {
+      this.path = path;
+      this.fileName = null;
+      this.hdfsFileSystem = null;
     }
 
+    // The number of output files are determined according to the parallelism.
+    // i.e. if parallelism is 2, then there are total 2 output files.
+    // Each output file is written as a bundle.
     @StartBundle
     public void startBundle(final StartBundleContext c) {
-      // Reset state in case of reuse. We need to make sure that each bundle gets unique writers.
-      writer = null;
+      fileName = new Path(path + UUID.randomUUID().toString());
+      try {
+        hdfsFileSystem = fileName.getFileSystem(new JobConf());
+        outputStream = hdfsFileSystem.create(fileName);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      LOG.info("startBundle");
     }
 
     @ProcessElement
-    public void processElement(final ProcessContext c, final BoundedWindow boundedWindow) throws Exception {
-      // Cache a single writer for the bundle.
-      if (writer == null) {
-        // Make unique file path
-        Random random = new Random();
-        SimpleDateFormat dateFormatTime = new SimpleDateFormat("yyyy:mm:dd:hh:mm:ss");
-        String dateFormatTimeStr = dateFormatTime.format(new Date(System.currentTimeMillis()));
-        String filePath = dir + dateFormatTimeStr + "-" + random.nextGaussian();
-        LOG.info("Bundle created and processing");
-        writer = new BufferedWriter(new FileWriter(filePath, true));
-      }
-      writer.write(c.element() + "\n");
+    public void processElement(final ProcessContext c) throws Exception {
+      outputStream.writeChars(c.element() + "\n");
     }
 
     @FinishBundle
     public void finishBundle(final FinishBundleContext c) throws Exception {
-      if (writer == null) {
-        LOG.info("finishBundle: writer is null, returning");
-        return;
-      }
-      writer.close();
+      outputStream.close();
+      hdfsFileSystem.close();
     }
   }
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
-
     if (path.startsWith("hdfs://")) {
+      LOG.info("HDFS writing start");
       dataToWrite.apply(ParDo.of(new HDFSWrite(path)));
+      LOG.info("HDFS writing end");
       return PDone.in(dataToWrite.getPipeline());
     } else {
       return dataToWrite.apply(TextIO.write().to(path));
@@ -133,66 +133,3 @@ final class GenericSourceSink {
   }
 }
 
-/**
- * Default filename policy for Vortex.
- */
-final class VortexDefaultFilenamePolicy {
-
-  //private final Logger LOG = LoggerFactory.getLogger(VortexDefaultFilenamePolicy.class);
-  public final String defaultShardTemplate = ShardNameTemplate.INDEX_OF_MAX;
-  private final Pattern shardFormatRe = Pattern.compile("(S+|N+)");
-
-  private final String prefix;
-  private final String shardTemplate;
-  private final String suffix;
-
-  VortexDefaultFilenamePolicy(final String prefix) {
-    this.prefix = prefix;
-    shardTemplate = defaultShardTemplate;
-    suffix = "";
-  }
-
-  /**
-   * Constructs a fully qualified name from components.
-   *
-   * <p>The name is built from a prefix, shard template (with shard numbers
-   * applied), and a suffix.  All components are required, but may be empty
-   * strings.
-   *
-   * <p>Within a shard template, repeating sequences of the letters "S" or "N"
-   * are replaced with the shard number, or number of shards respectively.  The
-   * numbers are formatted with leading zeros to match the length of the
-   * repeated sequence of letters.
-   *
-   * <p>For example, if prefix = "output", shardTemplate = "-SSS-of-NNN", and
-   * suffix = ".txt", with shardNum = 1 and numShards = 100, the following is
-   * produced:  "output-001-of-100.txt".
-   *
-   * @param prefix1 prefix.
-   * @param shardNum shardNum.
-   * @return String.
-   */
-  public String constructName(final String prefix1,
-                              final int shardNum) {
-    // Matcher API works with StringBuffer, rather than StringBuilder.
-    StringBuffer sb = new StringBuffer();
-    sb.append(prefix1);
-
-    //LOG.info("prefix: {} shardTemplate: {} shardNum: {} numShards: {}", prefix1, shardTemplate, shardNum);
-
-    Matcher m = shardFormatRe.matcher(shardTemplate);
-    while (m.find()) {
-      boolean isShardNum = (m.group(1).charAt(0) == 'S');
-
-      char[] zeros = new char[m.end() - m.start()];
-      Arrays.fill(zeros, '0');
-      DecimalFormat df = new DecimalFormat(String.valueOf(zeros));
-      String formatted = df.format(isShardNum ? shardNum : shardNum);
-      m.appendReplacement(sb, formatted);
-    }
-    m.appendTail(sb);
-
-    sb.append(suffix);
-    return sb.toString();
-  }
-}
