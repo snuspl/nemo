@@ -230,7 +230,7 @@ public final class TaskGroupExecutor {
 
     taskIdToOutputWriterMap.get(boundedSourceTask.getId()).forEach(outputWriter -> {
       outputWriter.write(readData);
-      outputWriter.commit();
+      outputWriter.close();
     });
   }
 
@@ -309,7 +309,7 @@ public final class TaskGroupExecutor {
         if (!output.isEmpty()) {
           outputWriter.write(output);
         }
-        outputWriter.commit();
+        outputWriter.close();
       });
     } else {
       LOG.info("This is a sink task: {}", operatorTask.getId());
@@ -340,7 +340,7 @@ public final class TaskGroupExecutor {
     });
     taskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> {
       outputWriter.write(data);
-      outputWriter.commit();
+      outputWriter.close();
     });
   }
 }

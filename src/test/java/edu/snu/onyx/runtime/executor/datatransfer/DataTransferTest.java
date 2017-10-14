@@ -291,7 +291,7 @@ public final class DataTransferTest {
       final OutputWriter writer = new OutputWriter(HASH_RANGE_MULTIPLIER, srcTaskIndex, srcVertex.getId(), dstVertex,
           dummyEdge, sender);
       writer.write(dataWritten);
-      writer.commit();
+      writer.close();
       dataWrittenList.add(dataWritten);
     });
 

@@ -36,7 +36,7 @@ import java.util.*;
 /**
  * Represents the output data transfer from a task.
  */
-public final class OutputWriter extends DataTransfer {
+public final class OutputWriter extends DataTransfer implements AutoCloseable {
   private final String partitionId;
   private final RuntimeEdge<?> runtimeEdge;
   private final String srcVertexId;
@@ -121,7 +121,8 @@ public final class OutputWriter extends DataTransfer {
    * Subscribers waiting for the data of the target partition are notified when the partition is committed.
    * Also, further subscription about a committed partition will not blocked but get the data in it and finished.
    */
-  public void commit() {
+  @Override
+  public void close() {
     // Commit partition.
     partitionManagerWorker.commitPartition(partitionId, channelDataPlacement, accumulatedBlockSizeInfo, srcVertexId);
   }
