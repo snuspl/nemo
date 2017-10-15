@@ -38,6 +38,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static edu.snu.onyx.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
@@ -58,7 +61,7 @@ public final class TaskGroupExecutorTest {
   private static final int SOURCE_PARALLELISM = 5;
   private PartitionManagerWorker partitionManagerWorker;
   private List<Element> elements;
-  private Map<String, List<Element>> taskIdToOutputData;
+  private Map<String, List<Iterable<Element>>> taskIdToOutputData;
   private DataTransferFactory dataTransferFactory;
   private TaskGroupStateManager taskGroupStateManager;
   private Map<String, List<TaskState.State>> taskIdToStateList;
@@ -131,7 +134,8 @@ public final class TaskGroupExecutorTest {
     taskGroupExecutor.execute();
 
     // Check the output.
-    assertEquals(elements, taskIdToOutputData.get(sourceTaskId));
+    assertEquals(1, taskIdToOutputData.get(sourceTaskId).size());
+    assertEquals(elements, taskIdToOutputData.get(sourceTaskId).get(0));
     // Check the state transition.
     taskIdToStateList.forEach((taskId, taskStateList) -> assertEquals(expectedTaskStateList, taskStateList));
   }
@@ -142,7 +146,10 @@ public final class TaskGroupExecutorTest {
    * The {@link TaskGroup} to test will looks like:
    * operator task 1 -> operator task 2
    *
-   * The operator task 1 will process multiple partitions from source stage and emit data in multiple times also.
+   * The output data from upstream stage will be split
+   * according to source parallelism through {@link InterStageReaderAnswer}.
+   * Because of this, the operator task 1 will process multiple partitions and emit data in multiple times also.
+   * On the other hand, operator task 2 will receive the output data once and produce a single output.
    */
   @Test//(timeout=2000)
   public void testOperatorTask() throws Exception {
@@ -183,8 +190,16 @@ public final class TaskGroupExecutorTest {
     taskGroupExecutor.execute();
 
     // Check the output.
-    assertEquals(elements, taskIdToOutputData.get(operatorTaskId1));
-    assertEquals(elements, taskIdToOutputData.get(operatorTaskId2));
+    assertEquals(SOURCE_PARALLELISM, taskIdToOutputData.get(operatorTaskId1).size()); // Multiple output emission.
+    final List<Iterable<Element>> outputs = taskIdToOutputData.get(operatorTaskId1);
+    final List<Element> concatStreamBase = new ArrayList<>();
+    Stream<Element> concatStream = concatStreamBase.stream();
+    for (int srcIdx = 0; srcIdx < SOURCE_PARALLELISM; srcIdx++) {
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(outputs.get(srcIdx).spliterator(), false));
+    }
+    assertEquals(elements, concatStream.collect(Collectors.toList()));
+    assertEquals(1, taskIdToOutputData.get(operatorTaskId2).size());
+    assertEquals(elements, taskIdToOutputData.get(operatorTaskId2).get(0));
     // Check the state transition.
     taskIdToStateList.forEach((taskId, taskStateList) -> assertEquals(expectedTaskStateList, taskStateList));
   }
@@ -244,8 +259,7 @@ public final class TaskGroupExecutorTest {
           final Object[] args = invocationOnMock.getArguments();
           final Iterable<Element> dataToWrite = (Iterable<Element>) args[0];
           taskIdToOutputData.computeIfAbsent(dstTask.getId(), emptyTaskId -> new ArrayList<>());
-          final List<Element> accumulatedOutput = taskIdToOutputData.get(dstTask.getId());
-          dataToWrite.forEach(accumulatedOutput::add);
+          taskIdToOutputData.get(dstTask.getId()).add(dataToWrite);
           return null;
         }
       }).when(outputWriter).write(any());
