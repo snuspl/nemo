@@ -41,7 +41,6 @@ import org.apache.hadoop.mapred.JobConf;
  */
 final class GenericSourceSink {
   private static final Logger LOG = LoggerFactory.getLogger(GenericSourceSink.class.getName());
-
   private GenericSourceSink() {
   }
 
