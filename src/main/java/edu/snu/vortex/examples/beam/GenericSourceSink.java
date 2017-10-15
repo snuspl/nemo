@@ -99,7 +99,7 @@ final class GenericSourceSink {
           LOG.info("Written {}", t);
       } catch (Exception e) {
         try {
-          LOG.debug("Closes and delete file");
+          LOG.debug("Closes and deletes the file");
           outputStream.close();
           hdfsFileSystem.delete(fileName, true);
           hdfsFileSystem.close();
