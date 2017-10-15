@@ -83,14 +83,36 @@ final class GenericSourceSink {
     private static final Logger LOG = LoggerFactory.getLogger(HDFSWrite.class.getName());
 
     private final String path;
-    private Path fileName;
-    private FileSystem hdfsFileSystem;
-    private FSDataOutputStream outputStream;
+    private static Path fileName;
+    private static FileSystem hdfsFileSystem;
+    private static FSDataOutputStream outputStream;
 
     HDFSWrite(final String path) {
       this.path = path;
       this.fileName = null;
       this.hdfsFileSystem = null;
+    }
+
+    private static <T> void writeOrClose(final String t) throws Exception {
+      try {
+          outputStream.writeChars(t + "\n");
+          LOG.info("Written {}", t);
+      } catch (Exception e) {
+        try {
+          LOG.debug("Closes and delete file");
+          outputStream.close();
+          hdfsFileSystem.delete(fileName, true);
+          hdfsFileSystem.close();
+        } catch (Exception closeException) {
+          if (closeException instanceof InterruptedException) {
+            // Do not silently ignore interrupted state.
+            Thread.currentThread().interrupt();
+          }
+          // Do not mask the exception that caused the write to fail.
+          e.addSuppressed(closeException);
+        }
+        throw e;
+      }
     }
 
     // The number of output files are determined according to the parallelism.
@@ -110,7 +132,7 @@ final class GenericSourceSink {
 
     @ProcessElement
     public void processElement(final ProcessContext c) throws Exception {
-      outputStream.writeChars(c.element() + "\n");
+      writeOrClose(c.element());
     }
 
     @FinishBundle
