@@ -75,82 +75,67 @@ final class GenericSourceSink {
     }
   }
 
-  /**
-   * Write output to HDFS according to the parallelism.
-  */
-  public static class HDFSWrite extends DoFn<String, Void> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HDFSWrite.class.getName());
-
-    private final String path;
-    private static Path fileName;
-    private static FileSystem hdfsFileSystem;
-    private static FSDataOutputStream outputStream;
-
-    HDFSWrite(final String path) {
-      this.path = path;
-      this.fileName = null;
-      this.hdfsFileSystem = null;
-    }
-
-    private static <T> void writeOrClose(final String t) throws Exception {
-      try {
-          outputStream.writeChars(t + "\n");
-          LOG.info("Written {}", t);
-      } catch (Exception e) {
-        try {
-          LOG.debug("Closes and deletes the file");
-          outputStream.close();
-          hdfsFileSystem.delete(fileName, true);
-          hdfsFileSystem.close();
-        } catch (Exception closeException) {
-          if (closeException instanceof InterruptedException) {
-            // Do not silently ignore interrupted state.
-            Thread.currentThread().interrupt();
-          }
-          // Do not mask the exception that caused the write to fail.
-          e.addSuppressed(closeException);
-        }
-        throw e;
-      }
-    }
-
-    // The number of output files are determined according to the parallelism.
-    // i.e. if parallelism is 2, then there are total 2 output files.
-    // Each output file is written as a bundle.
-    @StartBundle
-    public void startBundle(final StartBundleContext c) {
-      fileName = new Path(path + UUID.randomUUID().toString());
-      try {
-        hdfsFileSystem = fileName.getFileSystem(new JobConf());
-        outputStream = hdfsFileSystem.create(fileName);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      LOG.info("startBundle");
-    }
-
-    @ProcessElement
-    public void processElement(final ProcessContext c) throws Exception {
-      writeOrClose(c.element());
-    }
-
-    @FinishBundle
-    public void finishBundle(final FinishBundleContext c) throws Exception {
-      outputStream.close();
-      hdfsFileSystem.close();
-    }
-  }
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
     if (path.startsWith("hdfs://")) {
-      LOG.info("HDFS writing start");
       dataToWrite.apply(ParDo.of(new HDFSWrite(path)));
-      LOG.info("HDFS writing end");
       return PDone.in(dataToWrite.getPipeline());
     } else {
       return dataToWrite.apply(TextIO.write().to(path));
     }
+  }
+}
+
+/**
+ * Write output to HDFS according to the parallelism.
+ */
+final class HDFSWrite extends DoFn<String, Void> {
+  private final String path;
+  private Path fileName;
+  private FileSystem hdfsFileSystem;
+  private FSDataOutputStream outputStream;
+
+  HDFSWrite(final String path) {
+    this.path = path;
+  }
+
+  // The number of output files are determined according to the parallelism.
+  // i.e. if parallelism is 2, then there are total 2 output files.
+  // Each output file is written as a bundle.
+  @StartBundle
+  public void startBundle(final StartBundleContext c) {
+    fileName = new Path(path + UUID.randomUUID().toString());
+    try {
+      hdfsFileSystem = fileName.getFileSystem(new JobConf());
+      outputStream = hdfsFileSystem.create(fileName, false);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @ProcessElement
+  public void processElement(final ProcessContext c) throws Exception {
+    try {
+      outputStream.writeChars(c.element() + "\n");
+    } catch (Exception e) {
+      try {
+        outputStream.close();
+        hdfsFileSystem.delete(fileName, true);
+        hdfsFileSystem.close();
+      } catch (Exception closeException) {
+        if (closeException instanceof InterruptedException) {
+          Thread.currentThread().interrupt();
+        }
+        e.addSuppressed(closeException);
+      }
+      throw e;
+    }
+  }
+
+  @FinishBundle
+  public void finishBundle(final FinishBundleContext c) throws Exception {
+    outputStream.close();
+    hdfsFileSystem.close();
   }
 }
