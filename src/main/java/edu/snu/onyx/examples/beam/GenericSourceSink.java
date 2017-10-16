@@ -26,8 +26,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.fs.FileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -40,7 +38,6 @@ import org.apache.hadoop.mapred.JobConf;
  * Assumes String-type PCollections.
  */
 final class GenericSourceSink {
-  private static final Logger LOG = LoggerFactory.getLogger(GenericSourceSink.class.getName());
   private GenericSourceSink() {
   }
 
@@ -77,7 +74,7 @@ final class GenericSourceSink {
 
   public static PDone write(final PCollection<String> dataToWrite,
                             final String path) {
-    if (path.startsWith("hdfs://")) {
+    if (path.startsWith("hdfs://") || path.startsWith("s3a://") || path.startsWith("file://")) {
       dataToWrite.apply(ParDo.of(new HDFSWrite(path)));
       return PDone.in(dataToWrite.getPipeline());
     } else {
@@ -92,7 +89,7 @@ final class GenericSourceSink {
 final class HDFSWrite extends DoFn<String, Void> {
   private final String path;
   private Path fileName;
-  private FileSystem hdfsFileSystem;
+  private FileSystem fileSystem;
   private FSDataOutputStream outputStream;
 
   HDFSWrite(final String path) {
@@ -106,8 +103,8 @@ final class HDFSWrite extends DoFn<String, Void> {
   public void startBundle(final StartBundleContext c) {
     fileName = new Path(path + UUID.randomUUID().toString());
     try {
-      hdfsFileSystem = fileName.getFileSystem(new JobConf());
-      outputStream = hdfsFileSystem.create(fileName, false);
+      fileSystem = fileName.getFileSystem(new JobConf());
+      outputStream = fileSystem.create(fileName, false);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -116,25 +113,18 @@ final class HDFSWrite extends DoFn<String, Void> {
   @ProcessElement
   public void processElement(final ProcessContext c) throws Exception {
     try {
-      outputStream.writeChars(c.element() + "\n");
+      outputStream.writeBytes(c.element() + "\n");
     } catch (Exception e) {
-      try {
         outputStream.close();
-        hdfsFileSystem.delete(fileName, true);
-        hdfsFileSystem.close();
-      } catch (Exception closeException) {
-        if (closeException instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
-        e.addSuppressed(closeException);
-      }
-      throw e;
+        fileSystem.delete(fileName, true);
+        fileSystem.close();
+        throw new RuntimeException(e);
     }
   }
 
   @FinishBundle
   public void finishBundle(final FinishBundleContext c) throws Exception {
     outputStream.close();
-    hdfsFileSystem.close();
+    fileSystem.close();
   }
 }
