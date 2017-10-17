@@ -19,7 +19,7 @@ import edu.snu.vortex.common.coder.Coder;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.vortex.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.vortex.common.dag.Edge;
-import edu.snu.vortex.runtime.executor.datatransfer.data_communication_pattern.DataCommunicationPattern;
+import edu.snu.vortex.runtime.executor.datatransfer.communication.DataCommunicationPattern;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
@@ -148,7 +148,7 @@ public final class IREdge extends Edge<IRVertex> {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"id\": \"").append(getId());
     sb.append("\", \"executionProperties\": ").append(executionProperties);
-    sb.append("\", \"coder\": \"").append(coder.toString());
+    sb.append(", \"coder\": \"").append(coder.toString());
     sb.append("\"}");
     return sb.toString();
   }
