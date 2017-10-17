@@ -102,6 +102,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    * Retrieves the vertex given its ID.
    * @param id of the vertex to retrieve
    * @return the vertex
+   * @throws IllegalVertexOperationException when the requested vertex does not exist.
    */
   public V getVertexById(final String id) {
     for (final V vertex : vertices) {
