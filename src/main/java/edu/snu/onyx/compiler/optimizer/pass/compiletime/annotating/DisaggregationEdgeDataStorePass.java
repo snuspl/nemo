@@ -23,6 +23,7 @@ import edu.snu.onyx.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.onyx.runtime.executor.data.GlusterFileStore;
 import edu.snu.onyx.runtime.executor.data.MemoryStore;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
+import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
 import java.util.List;
 
@@ -39,16 +40,29 @@ public final class DisaggregationEdgeDataStorePass extends AnnotatingPass {
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
-    dag.getVertices().forEach(vertex -> {
+    dag.getVertices().forEach(vertex -> { // Initialize the DataStore of the DAG with GlusterFileStore.
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
-      if (!inEdges.isEmpty()) {
-        inEdges.forEach(edge -> {
-          if (OneToOne.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
-            edge.setProperty(DataStoreProperty.of(MemoryStore.class));
-          } else {
-            edge.setProperty(DataStoreProperty.of(GlusterFileStore.class));
+      inEdges.forEach(edge -> {
+        if (OneToOne.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
+          edge.setProperty(DataStoreProperty.of(MemoryStore.class));
+        } else {
+          edge.setProperty(DataStoreProperty.of(GlusterFileStore.class));
+        }
+      });
+    });
+    dag.getVertices().forEach(vertex -> {
+      // Find the merger vertex inserted by reshaping pass.
+      if (dag.getIncomingEdgesOf(vertex).stream().anyMatch(irEdge ->
+          ScatterGather.class.equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))) {
+        dag.getIncomingEdgesOf(vertex).forEach(edgeToMerger -> {
+          if (ScatterGather.class.equals(edgeToMerger.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
+            // Pass data through memory to the merger vertex.
+            edgeToMerger.setProperty(DataStoreProperty.of(MemoryStore.class));
           }
         });
+        dag.getOutgoingEdgesOf(vertex).forEach(edgeFromMerger ->
+            // Merge the input data and write it immediately to the remote disk.
+            edgeFromMerger.setProperty(DataStoreProperty.of(GlusterFileStore.class)));
       }
     });
     return dag;
