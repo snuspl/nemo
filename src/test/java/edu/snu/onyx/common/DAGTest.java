@@ -114,7 +114,7 @@ public final class DAGTest {
     assertEquals(dag.getChildren("3").size(), 0);
     assertEquals(dag.getParents("5").size(), 1);
     assertEquals(dag.getChildren("5").size(), 0);
-    assertEquals(dag.getVertexById("4"), new IntegerVertex(4));
+    assertEquals(dag.getVertexById("3"), new IntegerVertex(3));
 
     List<IntegerVertex> ancestors = dag.getAncestors("5");
     assertEquals(ancestors.size(), 1);
