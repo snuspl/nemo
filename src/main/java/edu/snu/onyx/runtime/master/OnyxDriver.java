@@ -83,7 +83,7 @@ public final class OnyxDriver {
                      final LocalAddressProvider localAddressProvider,
                      @Parameter(JobConf.ExecutorJsonContents.class) final String resourceSpecificationString,
                      @Parameter(JobConf.JobId.class) final String jobId,
-                     @Parameter(JobConf.FileDirectory.class) final String locaDlirectory,
+                     @Parameter(JobConf.FileDirectory.class) final String localDirectory,
                      @Parameter(JobConf.GlusterVolumeDirectory.class) final String glusterDirectory) {
     this.userApplicationRunner = userApplicationRunner;
     this.containerManager = containerManager;
@@ -92,7 +92,7 @@ public final class OnyxDriver {
     this.localAddressProvider = localAddressProvider;
     this.resourceSpecificationString = resourceSpecificationString;
     this.jobId = jobId;
-    this.localDirectory = locaDlirectory;
+    this.localDirectory = localDirectory;
     this.glusterDirectory = glusterDirectory;
   }
 
