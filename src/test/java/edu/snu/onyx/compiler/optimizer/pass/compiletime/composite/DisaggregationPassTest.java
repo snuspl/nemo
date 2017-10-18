@@ -51,7 +51,6 @@ public class DisaggregationPassTest {
   @Test
   public void testDisaggregation() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().apply(compiledDAG);
-    processedDAG.storeJSON("./", "test", "");
 
     processedDAG.getTopologicalSort().forEach(irVertex -> {
       assertEquals(ExecutorPlacementProperty.COMPUTE, irVertex.getProperty(ExecutionProperty.Key.ExecutorPlacement));

@@ -30,7 +30,6 @@ public final class DisaggregationPass extends CompositePass {
   public DisaggregationPass() {
     super(Arrays.asList(
         new DisaggregationReshapingPass(),
-        new DefaultPartitionerPass(), // TODO #?: Move to InitializePass after #530 is merged.
         new DisaggregationVertexExecutorPlacementPass(),
         new DisaggregationEdgeDataStorePass(),
         new DisaggregationEdgeDataFlowModelPass()
