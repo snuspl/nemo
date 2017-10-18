@@ -206,12 +206,15 @@ public final class PartitionManagerMaster {
     writeLock.lock();
     try {
       if (producerTaskGroupIdToPartitionIds.containsKey(failedTaskGroupId)) {
+        LOG.info("ProducerTaskGroup {} failed for a list of partitions:", failedTaskGroupId);
         producerTaskGroupIdToPartitionIds.get(failedTaskGroupId).forEach(partitionId -> {
           final PartitionState.State state = (PartitionState.State)
               partitionIdToMetadata.get(partitionId).getPartitionState().getStateMachine().getCurrentState();
           if (state == PartitionState.State.COMMITTED) {
+            LOG.info("Partition lost: {}", partitionId);
             onPartitionStateChanged(partitionId, PartitionState.State.LOST, null);
           } else {
+            LOG.info("Partition lost_before_commit: {}", partitionId);
             onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null);
           }
         });
@@ -467,24 +470,28 @@ public final class PartitionManagerMaster {
 
     @Override
     public void onMessage(final ControlMessage.Message message) {
-      switch (message.getType()) {
-        case PartitionStateChanged:
-          final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg =
-              message.getPartitionStateChangedMsg();
-          final String partitionId = partitionStateChangedMsg.getPartitionId();
-          onPartitionStateChanged(partitionId, convertPartitionState(partitionStateChangedMsg.getState()),
-              partitionStateChangedMsg.getLocation());
-          break;
-        case CommitBlock:
-          onCommitBlocks(message);
-          break;
-        case RemoveBlockMetadata:
-          onRemoveBlockMetadata(message);
-          break;
-        default:
-          throw new IllegalMessageException(
-              new Exception("This message should not be received by "
-                  + PartitionManagerMaster.class.getName() + ":" + message.getType()));
+      try {
+        switch (message.getType()) {
+          case PartitionStateChanged:
+            final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg =
+                message.getPartitionStateChangedMsg();
+            final String partitionId = partitionStateChangedMsg.getPartitionId();
+            onPartitionStateChanged(partitionId, convertPartitionState(partitionStateChangedMsg.getState()),
+                partitionStateChangedMsg.getLocation());
+            break;
+          case CommitBlock:
+            onCommitBlocks(message);
+            break;
+          case RemoveBlockMetadata:
+            onRemoveBlockMetadata(message);
+            break;
+          default:
+            throw new IllegalMessageException(
+                new Exception("This message should not be received by "
+                    + PartitionManagerMaster.class.getName() + ":" + message.getType()));
+        }
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
       }
     }
 
