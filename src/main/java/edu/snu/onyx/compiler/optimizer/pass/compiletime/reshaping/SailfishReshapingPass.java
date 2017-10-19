@@ -27,8 +27,8 @@ import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
  * It adds a {@link OperatorVertex} with {@link RelayTransform} before the vertices
  * receiving {@link ScatterGather} edges, to merge the shuffled data in memory and write to the disk at once.
  */
-public final class DisaggregationReshapingPass extends ReshapingPass {
-  public static final String SIMPLE_NAME = "DisaggregationReshapingPass";
+public final class SailfishReshapingPass extends ReshapingPass {
+  public static final String SIMPLE_NAME = "SailfishReshapingPass";
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {

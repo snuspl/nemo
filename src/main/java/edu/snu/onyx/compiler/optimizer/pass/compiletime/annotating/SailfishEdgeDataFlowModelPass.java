@@ -25,13 +25,13 @@ import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 import java.util.List;
 
 /**
- * A pass to support Disaggregated Resources by tagging edges.
+ * A pass to support Sailfish-like shuffle by tagging edges.
  * This pass handles the DataFlowModel ExecutionProperty.
  */
-public final class DisaggregationEdgeDataFlowModelPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DisaggregationEdgeDataFlowModelPass";
+public final class SailfishEdgeDataFlowModelPass extends AnnotatingPass {
+  public static final String SIMPLE_NAME = "SailfishEdgeDataFlowModelPass";
 
-  public DisaggregationEdgeDataFlowModelPass() {
+  public SailfishEdgeDataFlowModelPass() {
     super(ExecutionProperty.Key.DataFlowModel);
   }
 

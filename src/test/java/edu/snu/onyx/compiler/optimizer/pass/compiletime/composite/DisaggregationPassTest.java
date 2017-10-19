@@ -21,12 +21,10 @@ import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.onyx.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.onyx.runtime.executor.data.GlusterFileStore;
 import edu.snu.onyx.runtime.executor.data.MemoryStore;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,32 +48,18 @@ public class DisaggregationPassTest {
 
   @Test
   public void testDisaggregation() throws Exception {
-    final DAG<IRVertex, IREdge> processedDAG = new DisaggregationPass().apply(compiledDAG);
+    final DAG<IRVertex, IREdge> processedDAG =
+        new DisaggregationPass().apply(new InitiationCompositePass().apply(compiledDAG));
 
     processedDAG.getTopologicalSort().forEach(irVertex -> {
       assertEquals(ExecutorPlacementProperty.COMPUTE, irVertex.getProperty(ExecutionProperty.Key.ExecutorPlacement));
-      if (processedDAG.getIncomingEdgesOf(irVertex).stream().anyMatch(irEdge ->
-          ScatterGather.class.equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))) {
-        // Merger vertex
-        processedDAG.getIncomingEdgesOf(irVertex).forEach(edgeToMerger -> {
-          if (ScatterGather.class.equals(edgeToMerger.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
-            assertEquals(DataFlowModelProperty.Value.Push, edgeToMerger.getProperty(ExecutionProperty.Key.DataFlowModel));
-            assertEquals(MemoryStore.class, edgeToMerger.getProperty(ExecutionProperty.Key.DataStore));
-          } else {
-            assertEquals(DataFlowModelProperty.Value.Pull, edgeToMerger.getProperty(ExecutionProperty.Key.DataFlowModel));
-          }
-        });
-        processedDAG.getOutgoingEdgesOf(irVertex).forEach(edgeFromMerger -> {
-          assertEquals(DataFlowModelProperty.Value.Pull, edgeFromMerger.getProperty(ExecutionProperty.Key.DataFlowModel));
-          assertEquals(OneToOne.class, edgeFromMerger.getProperty(ExecutionProperty.Key.DataCommunicationPattern));
-          assertEquals(GlusterFileStore.class, edgeFromMerger.getProperty(ExecutionProperty.Key.DataStore));
-        });
-      } else {
-        // Non merger vertex.
-        processedDAG.getIncomingEdgesOf(irVertex).forEach(irEdge -> {
-          assertEquals(DataFlowModelProperty.Value.Pull, irEdge.getProperty(ExecutionProperty.Key.DataFlowModel));
-        });
-      }
+      processedDAG.getIncomingEdgesOf(irVertex).forEach(edgeToMerger -> {
+        if (OneToOne.class.equals(edgeToMerger.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
+          assertEquals(MemoryStore.class, edgeToMerger.getProperty(ExecutionProperty.Key.DataStore));
+        } else {
+          assertEquals(GlusterFileStore.class, edgeToMerger.getProperty(ExecutionProperty.Key.DataStore));
+        }
+      });
     });
   }
 }
