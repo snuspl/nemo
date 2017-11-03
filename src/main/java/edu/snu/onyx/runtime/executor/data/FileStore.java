@@ -23,6 +23,9 @@ import org.apache.reef.tang.InjectionFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +51,20 @@ abstract class FileStore implements PartitionStore {
    * @return the list of file areas
    */
   public abstract List<FileArea> getFileAreas(final String partitionId, final HashRange hashRange);
+
+  /**
+   * Deletes a stale file, which might be created by the previous failed task, if exist.
+   *
+   * @param filePath the path of the file.
+   * @throws IOException if fail to delete the stale file.
+   */
+  protected void deleteStaleFile(final String filePath) throws IOException {
+    try {
+      Files.delete(Paths.get(filePath));
+    } catch (final NoSuchFileException e) {
+      // No such file. It is okay.
+    }
+  }
 
   /**
    * Makes the given stream to a block and write it to the given file partition.
