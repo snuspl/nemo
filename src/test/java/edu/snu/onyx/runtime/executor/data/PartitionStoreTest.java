@@ -23,6 +23,7 @@ import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -214,6 +215,21 @@ public final class PartitionStoreTest {
     scatterGather(memoryStore, memoryStore);
     concurrentRead(memoryStore, memoryStore);
     scatterGatherInHashRange(memoryStore, memoryStore);
+  }
+
+  /**
+   * Test {@link SerializingMemoryStore}.
+   */
+  @Test(timeout = 10000)
+  public void testSerMemoryStore() throws Exception {
+    final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
+    when(worker.getCoder(any())).thenReturn(CODER);
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
+    final PartitionStore serMemoryStore = injector.getInstance(SerializingMemoryStore.class);
+    scatterGather(serMemoryStore, serMemoryStore);
+    concurrentRead(serMemoryStore, serMemoryStore);
+    scatterGatherInHashRange(serMemoryStore, serMemoryStore);
   }
 
   /**

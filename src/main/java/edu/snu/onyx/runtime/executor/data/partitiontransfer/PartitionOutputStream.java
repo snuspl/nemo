@@ -19,7 +19,7 @@ import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.executor.data.FileArea;
 import edu.snu.onyx.runtime.executor.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.PartitionStore;
+import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import org.slf4j.Logger;
@@ -185,6 +185,8 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
             }
           } else if (thing instanceof FileArea) {
             byteBufOutputStream.writeFileArea(false, (FileArea) thing);
+          } else if (thing instanceof byte[]) {
+            byteBufOutputStream.write((byte[]) thing);
           } else {
             coder.encode((T) thing, byteBufOutputStream);
           }
@@ -276,6 +278,40 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
     for (final FileArea fileArea : fileAreas) {
       elementQueue.put(fileArea);
     }
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
+    return this;
+  }
+
+  /**
+   * Writes an array of bytes.
+   *
+   * @param bytes bytes to write
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream writeByteArray(final byte[] bytes) throws IOException {
+    checkWritableCondition();
+    elementQueue.put(bytes);
+    if (encodePartialPartition) {
+      startEncodingThreadIfNeeded();
+    }
+    return this;
+  }
+
+  /**
+   * Writes a collection of arrays of bytes.
+   *
+   * @param byteArrays the collection of arrays of bytes to write
+   * @return {@link PartitionOutputStream} (i.e. {@code this})
+   * @throws IOException if an exception was set
+   * @throws IllegalStateException if this stream is closed already
+   */
+  public PartitionOutputStream writeByteArrays(final Iterable<byte[]> byteArrays) throws IOException {
+    checkWritableCondition();
+    byteArrays.forEach(elementQueue::put);
     if (encodePartialPartition) {
       startEncodingThreadIfNeeded();
     }

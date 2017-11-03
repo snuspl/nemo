@@ -18,6 +18,7 @@ package edu.snu.onyx.runtime.executor.data;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.executor.data.partition.FilePartition;
+import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.ByteArrayOutputStream;

@@ -16,55 +16,94 @@
 package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.HashRange;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class represents a partition which is stored in local memory and not serialized.
  */
 @ThreadSafe
-public final class MemoryPartition {
+public final class MemoryPartition implements Partition {
 
   private final List<Block> blocks;
-  private volatile AtomicBoolean committed;
+  private volatile boolean committed;
 
   public MemoryPartition() {
-    blocks = Collections.synchronizedList(new ArrayList<>());
-    committed = new AtomicBoolean(false);
+    blocks = new ArrayList<>();
+    committed = false;
   }
 
   /**
-   * Appends all data in the block to this partition.
+   * Writes {@link Block}s to this partition.
+   * Constraint: This should not be invoked after this partition is committed.
    *
-   * @param blocksToAppend the blocks to append.
-   * @throws IOException if this partition is committed already.
+   * @param blocksToWrite the {@link Block}s to write.
+   * @throws IOException if fail to write.
    */
-  public void appendBlocks(final Iterable<Block> blocksToAppend) throws IOException {
-    if (!committed.get()) {
-      // TODO #463: Support incremental write.
-      blocksToAppend.forEach(blocks::add);
+  @Override
+  public synchronized List<Long> writeBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+    if (!committed) {
+      blocksToWrite.forEach(blocks::add);
     } else {
       throw new IOException("Cannot append blocks to the committed partition");
+    }
+
+    return Collections.emptyList();
+  }
+
+  /**
+   * Retrieves the elements in a specific hash range and deserializes it from this partition.
+   * Constraint: This should not be invoked before this partition is committed.
+   *
+   * @param hashRange the hash range to retrieve.
+   * @return an iterable of deserialized elements.
+   * @throws IOException if failed to deserialize.
+   */
+  @Override
+  public Iterable retrieve(final HashRange hashRange) throws IOException {
+    if (committed) {
+      // Retrieves data in the hash range from the target partition
+      final List<Iterable> retrievedData = new ArrayList<>();
+      blocks.forEach(block -> {
+        if (hashRange.includes(block.getKey())) {
+          retrievedData.add(block.getData());
+        }
+      });
+
+      return concatBlocks(retrievedData);
+    } else {
+      throw new IOException("Cannot retrieve elements before a partition is committed");
     }
   }
 
   /**
-   * @return the list of the blocks in this partition.
+   * Commits this partition to prevent further write.
    */
-  public List<Block> getBlocks() {
-    return blocks;
+  @Override
+  public synchronized void commit() {
+    committed = true;
   }
 
   /**
-   * Commits this partition to prevent further write.
-   * If someone "subscribing" the data in this partition, it will be finished.
+   * concatenates an iterable of blocks into a single iterable of elements.
+   *
+   * @param blocksToConcat the iterable of blocks to concatenate.
+   * @return the concatenated iterable of all elements.
    */
-  public void commit() {
-    committed.set(true);
+  private Iterable concatBlocks(final Iterable<Iterable> blocksToConcat) {
+    final List concatStreamBase = new ArrayList<>();
+    Stream<Object> concatStream = concatStreamBase.stream();
+    for (final Iterable block : blocksToConcat) {
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(block.spliterator(), false));
+    }
+    return concatStream.collect(Collectors.toList());
   }
 }

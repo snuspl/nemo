@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data;
+package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.runtime.exception.PartitionFetchException;
 import edu.snu.onyx.runtime.exception.PartitionWriteException;
+import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.HashRange;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +53,7 @@ public interface PartitionStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<Iterable> getFromPartition(String partitionId,
-                                               HashRange hashRange) throws PartitionFetchException;
+                                      HashRange hashRange) throws PartitionFetchException;
 
   /**
    * Saves an iterable of data blocks to a partition.
