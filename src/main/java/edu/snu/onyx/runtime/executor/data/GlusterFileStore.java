@@ -73,6 +73,9 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
   public void createPartition(final String partitionId) {
     try {
       deleteStaleFile(partitionIdToFilePath(partitionId));
+      final RemoteFileMetadata metadata =
+          new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
+      metadata.deleteMetadata();
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }
