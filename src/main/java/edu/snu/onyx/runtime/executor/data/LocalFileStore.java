@@ -58,11 +58,7 @@ public final class LocalFileStore extends FileStore {
    */
   @Override
   public void createPartition(final String partitionId) {
-    try {
-      deleteStaleFile(partitionIdToFilePath(partitionId));
-    } catch (final IOException e) {
-      throw new PartitionFetchException(e);
-    }
+    removePartition(partitionId);
 
     final Coder coder = getCoderFromWorker(partitionId);
     final LocalFileMetadata metadata = new LocalFileMetadata(false);

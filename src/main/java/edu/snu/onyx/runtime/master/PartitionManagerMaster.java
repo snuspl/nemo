@@ -444,6 +444,7 @@ public final class PartitionManagerMaster {
 
   /**
    * Removes the block metadata for a remote partition.
+   * If the target partition was not previously created, ignores this message.
    *
    * @param message the message pointing the metadata to remove.
    */
@@ -459,7 +460,7 @@ public final class PartitionManagerMaster {
       final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
       if (metadata != null) {
         metadata.removeBlockMetadata();
-      } // if else, the partition is not created. Ignore it.
+      } // if else, the partition was not previously created. Ignore it.
     } finally {
       readLock.unlock();
     }
