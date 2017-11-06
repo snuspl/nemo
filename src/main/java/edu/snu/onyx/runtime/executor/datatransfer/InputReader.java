@@ -179,7 +179,7 @@ public final class InputReader extends DataTransfer {
         return 1;
       } else {
         final Integer numSrcTasks = srcVertex.getProperty(ExecutionProperty.Key.Parallelism);
-        return numSrcTasks == null ? 1 : numSrcTasks;
+        return numSrcTasks;
       }
     } else {
       // Memory input reader
