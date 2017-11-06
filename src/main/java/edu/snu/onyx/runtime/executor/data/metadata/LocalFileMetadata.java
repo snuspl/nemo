@@ -38,7 +38,7 @@ public final class LocalFileMetadata extends FileMetadata {
   public LocalFileMetadata(final boolean commitPerBlock) {
     super(commitPerBlock);
     this.reserveBlockMetadataQue = new ArrayDeque<>();
-    this.commitBlockMetadataIterable = Collections.synchronizedList(new ArrayList<>());
+    this.commitBlockMetadataIterable = new ArrayList<>();
     this.blockCount = 0;
     this.writtenBytesCursor = 0;
     this.committed = false;
@@ -84,7 +84,7 @@ public final class LocalFileMetadata extends FileMetadata {
    */
   @Override
   public Iterable<BlockMetadata> getBlockMetadataIterable() {
-    return commitBlockMetadataIterable;
+    return Collections.unmodifiableCollection(commitBlockMetadataIterable);
   }
 
   /**
