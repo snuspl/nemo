@@ -1,4 +1,4 @@
-package edu.snu.onyx.compiler.ir.executionproperty.scheduler;
+package edu.snu.onyx.compiler.ir.executionproperty.job;
 
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.runtime.master.scheduler.SchedulingPolicy;

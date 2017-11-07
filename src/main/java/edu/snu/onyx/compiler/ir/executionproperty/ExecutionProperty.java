@@ -76,5 +76,6 @@ public abstract class ExecutionProperty<T> implements Serializable {
     // Applies to entire job DAG
     SchedulingPolicy,
     SchedulerType,
+    ElementKeyExtractor,
   }
 }

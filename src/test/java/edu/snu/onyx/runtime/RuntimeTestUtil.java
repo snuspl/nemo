@@ -222,10 +222,10 @@ public final class RuntimeTestUtil {
    * @param end   value of the range (exclusive).
    * @return the list of elements.
    */
-  public static List<Element> getRangedNumList(final int start,
+  public static List<Object> getRangedNumList(final int start,
                                                final int end) {
-    final List<Element> numList = new ArrayList<>(end - start);
-    IntStream.range(start, end).forEach(number -> numList.add(new BeamElement<>(KV.of(number, number))));
+    final List<Object> numList = new ArrayList<>(end - start);
+    IntStream.range(start, end).forEach(number -> numList.add(KV.of(number, number)));
     return numList;
   }
 
@@ -235,7 +235,7 @@ public final class RuntimeTestUtil {
    * @param listOfList to flattens.
    * @return the flattened list of elements.
    */
-  public static List<Element> flatten(final List<List<Element>> listOfList) {
+  public static List<Object> flatten(final List<List<Object>> listOfList) {
     return listOfList.stream().flatMap(list -> list.stream()).collect(Collectors.toList());
   }
 }

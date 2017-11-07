@@ -164,7 +164,7 @@ public final class InputReader extends DataTransfer {
       throw new RuntimeException();
     }
     final CompletableFuture<Iterable<Object>> future = this.read().get(0);
-    return future.thenApply(f -> f.iterator().next().getData());
+    return future.thenApply(f -> f.iterator().next());
   }
 
   /**

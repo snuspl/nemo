@@ -27,7 +27,7 @@ public final class IntactPartitioner implements Partitioner {
   public static final String SIMPLE_NAME = "Intact";
 
   @Override
-  public List<Block> partition(final Iterable<Element> elements,
+  public List<Block> partition(final Iterable<Object> elements,
                                final int dstParallelism) {
     return Collections.singletonList(new Block(elements));
   }

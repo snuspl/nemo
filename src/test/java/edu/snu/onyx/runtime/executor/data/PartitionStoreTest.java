@@ -85,7 +85,7 @@ public final class PartitionStoreTest {
   private List<String> hashedPartitionIdList;
   private List<List<Block>> hashedPartitionBlockList;
   private List<HashRange> readHashRangeList;
-  private List<List<Iterable<Element>>> expectedDataInRange;
+  private List<List<Iterable<Object>>> expectedDataInRange;
 
   /**
    * Generates the ids and the data which will be used for the partition store tests.
@@ -189,14 +189,14 @@ public final class PartitionStoreTest {
     // Generates the expected result of hash range retrieval for each read task.
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(readTaskIdx -> {
       final HashRange hashRange = readHashRangeList.get(readTaskIdx);
-      final List<Iterable<Element>> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
+      final List<Iterable<Object>> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
       IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
-        final List<Iterable<Element>> appendingList = new ArrayList<>();
+        final List<Iterable<Object>> appendingList = new ArrayList<>();
         IntStream.range(hashRange.rangeStartInclusive(), hashRange.rangeEndExclusive()).forEach(hashVal ->
             appendingList.add(hashedPartitionBlockList.get(writeTaskIdx).get(hashVal).getData()));
-        final List<Element> concatStreamBase = new ArrayList<>();
-        Stream<Element> concatStream = concatStreamBase.stream();
-        for (final Iterable<Element> data : appendingList) {
+        final List<Object> concatStreamBase = new ArrayList<>();
+        Stream<Object> concatStream = concatStreamBase.stream();
+        for (final Iterable<Object> data : appendingList) {
           concatStream = Stream.concat(concatStream, StreamSupport.stream(data.spliterator(), false));
         }
         expectedRangeBlocks.add(concatStream.collect(Collectors.toList()));
@@ -325,7 +325,7 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskIdx -> {
-                final Optional<Iterable<Element>> optionalData = readerSideStore.getFromPartition(
+                final Optional<Iterable<Object>> optionalData = readerSideStore.getFromPartition(
                     partitionIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1));
                 if (!optionalData.isPresent()) {
                   throw new RuntimeException("The result of retrieveData(" +
@@ -418,7 +418,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Iterable<Element>> optionalData =
+              final Optional<Iterable<Object>> optionalData =
                   readerSideStore.getFromPartition(concPartitionId, HashRange.all());
               if (!optionalData.isPresent()) {
                 throw new RuntimeException("The result of retrieveData(" +
@@ -514,7 +514,7 @@ public final class PartitionStoreTest {
             try {
               IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
                 final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskIdx);
-                final Optional<Iterable<Element>> optionalData = readerSideStore.getFromPartition(
+                final Optional<Iterable<Object>> optionalData = readerSideStore.getFromPartition(
                     hashedPartitionIdList.get(writeTaskIdx), hashRangeToRetrieve);
                 if (!optionalData.isPresent()) {
                   throw new RuntimeException("The result of get partition" +
@@ -561,11 +561,11 @@ public final class PartitionStoreTest {
             writerSideStore.getClass().toString());
   }
 
-  private List<Element> getFixedKeyRangedNumList(final int key,
+  private List<Object> getFixedKeyRangedNumList(final int key,
                                                  final int start,
                                                  final int end) {
-    final List<Element> numList = new ArrayList<>(end - start);
-    IntStream.range(start, end).forEach(number -> numList.add(new BeamElement<>(KV.of(key, number))));
+    final List<Object> numList = new ArrayList<>(end - start);
+    IntStream.range(start, end).forEach(number -> numList.add(KV.of(key, number)));
     return numList;
   }
 }

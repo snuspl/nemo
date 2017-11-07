@@ -55,8 +55,6 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
     source.split(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null).forEach(boundedSource -> {
       readers.add(new BoundedSourceReader<>(boundedSource));
     });
-
-    LOG.info("readers: {}", readers);
     return readers;
   }
 

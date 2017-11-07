@@ -53,12 +53,12 @@ public interface Coder<T> extends Serializable {
   final class DummyCoder implements Coder {
 
     @Override
-    public void encode(final Element value, final OutputStream outStream) {
+    public void encode(final Object value, final OutputStream outStream) {
       throw new RuntimeException("DummyCoder is not supposed to be used.");
     }
 
     @Override
-    public Element decode(final InputStream inStream) {
+    public Object decode(final InputStream inStream) {
       throw new RuntimeException("DummyCoder is not supposed to be used.");
     }
 

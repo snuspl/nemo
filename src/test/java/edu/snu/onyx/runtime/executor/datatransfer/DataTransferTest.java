@@ -284,9 +284,9 @@ public final class DataTransferTest {
     });
 
     // Write
-    final List<List<Element>> dataWrittenList = new ArrayList<>();
+    final List<List<Object>> dataWrittenList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-      final List<Element> dataWritten = getRangedNumList(0, PARALLELISM_TEN);
+      final List<Object> dataWritten = getRangedNumList(0, PARALLELISM_TEN);
       final OutputWriter writer = new OutputWriter(HASH_RANGE_MULTIPLIER, srcTaskIndex, srcVertex.getId(), dstVertex,
           dummyEdge, sender);
       writer.write(dataWritten);
@@ -295,7 +295,7 @@ public final class DataTransferTest {
     });
 
     // Read
-    final List<List<Element>> dataReadList = new ArrayList<>();
+    final List<List<Object>> dataReadList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
       final InputReader reader =
           new InputReader(dstTaskIndex, taskGroupPrefix + dstTaskIndex, srcVertex, dummyEdge, receiver);
@@ -306,7 +306,7 @@ public final class DataTransferTest {
         assertEquals(PARALLELISM_TEN, reader.getSourceParallelism());
       }
 
-      final List<Element> dataRead = new ArrayList<>();
+      final List<Object> dataRead = new ArrayList<>();
       try {
         InputReader.combineFutures(reader.read()).forEach(dataRead::add);
       } catch (final Exception e) {
@@ -316,10 +316,10 @@ public final class DataTransferTest {
     });
 
     // Compare (should be the same)
-    final List<Element> flattenedWrittenData = flatten(dataWrittenList);
-    final List<Element> flattenedReadData = flatten(dataReadList);
+    final List<Object> flattenedWrittenData = flatten(dataWrittenList);
+    final List<Object> flattenedReadData = flatten(dataReadList);
     if (commPattern.equals(Broadcast.class)) {
-      final List<Element> broadcastedWrittenData = new ArrayList<>();
+      final List<Object> broadcastedWrittenData = new ArrayList<>();
       IntStream.range(0, PARALLELISM_TEN).forEach(i -> broadcastedWrittenData.addAll(flattenedWrittenData));
       assertEquals(broadcastedWrittenData.size(), flattenedReadData.size());
       flattenedReadData.forEach(rData -> assertTrue(broadcastedWrittenData.remove(rData)));

@@ -30,9 +30,9 @@ public final class HashPartitioner implements Partitioner {
   public static final String SIMPLE_NAME = "Hash";
 
   @Override
-  public List<Block> partition(final Iterable<Element> elements,
+  public List<Block> partition(final Iterable<Object> elements,
                                final int dstParallelism) {
-    final List<List<Element>> elementsByKey = new ArrayList<>(dstParallelism);
+    final List<List<Object>> elementsByKey = new ArrayList<>(dstParallelism);
     IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> elementsByKey.add(new ArrayList<>()));
     elements.forEach(element -> {
       // Hash the data by its key, and "modulo" by the number of destination tasks.

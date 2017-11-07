@@ -60,8 +60,8 @@ public final class TaskGroupExecutorTest {
   private static final String CONTAINER_TYPE = "CONTAINER_TYPE";
   private static final int SOURCE_PARALLELISM = 5;
   private PartitionManagerWorker partitionManagerWorker;
-  private List<Element> elements;
-  private Map<String, List<Iterable<Element>>> taskIdToOutputData;
+  private List<Object> elements;
+  private Map<String, List<Iterable<Object>>> taskIdToOutputData;
   private DataTransferFactory dataTransferFactory;
   private TaskGroupStateManager taskGroupStateManager;
   private Map<String, List<TaskState.State>> taskIdToStateList;
@@ -114,7 +114,7 @@ public final class TaskGroupExecutorTest {
 
     final Reader sourceReader = new Reader() {
       @Override
-      public Iterable<Element> read() throws Exception {
+      public Iterable<Object> read() throws Exception {
         return elements;
       }
     };
@@ -191,9 +191,9 @@ public final class TaskGroupExecutorTest {
 
     // Check the output.
     assertEquals(SOURCE_PARALLELISM, taskIdToOutputData.get(operatorTaskId1).size()); // Multiple output emission.
-    final List<Iterable<Element>> outputs = taskIdToOutputData.get(operatorTaskId1);
-    final List<Element> concatStreamBase = new ArrayList<>();
-    Stream<Element> concatStream = concatStreamBase.stream();
+    final List<Iterable<Object>> outputs = taskIdToOutputData.get(operatorTaskId1);
+    final List<Object> concatStreamBase = new ArrayList<>();
+    Stream<Object> concatStream = concatStreamBase.stream();
     for (int srcIdx = 0; srcIdx < SOURCE_PARALLELISM; srcIdx++) {
       concatStream = Stream.concat(concatStream, StreamSupport.stream(outputs.get(srcIdx).spliterator(), false));
     }
@@ -212,7 +212,7 @@ public final class TaskGroupExecutorTest {
     @Override
     public InputReader answer(final InvocationOnMock invocationOnMock) throws Throwable {
       // Read the data.
-      final List<CompletableFuture<Iterable<Element>>> inputFutures = new ArrayList<>();
+      final List<CompletableFuture<Iterable<Object>>> inputFutures = new ArrayList<>();
       inputFutures.add(CompletableFuture.completedFuture(elements));
       final InputReader inputReader = mock(InputReader.class);
       when(inputReader.read()).thenReturn(inputFutures);
@@ -229,7 +229,7 @@ public final class TaskGroupExecutorTest {
   private class InterStageReaderAnswer implements Answer<InputReader> {
     @Override
     public InputReader answer(final InvocationOnMock invocationOnMock) throws Throwable {
-      final List<CompletableFuture<Iterable<Element>>> inputFutures = new ArrayList<>(SOURCE_PARALLELISM);
+      final List<CompletableFuture<Iterable<Object>>> inputFutures = new ArrayList<>(SOURCE_PARALLELISM);
       final int elementsPerSource = DATA_SIZE / SOURCE_PARALLELISM;
       for (int i = 0; i < SOURCE_PARALLELISM; i++) {
         inputFutures.add(CompletableFuture.completedFuture(
@@ -257,7 +257,7 @@ public final class TaskGroupExecutorTest {
         @Override
         public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
           final Object[] args = invocationOnMock.getArguments();
-          final Iterable<Element> dataToWrite = (Iterable<Element>) args[0];
+          final Iterable<Object> dataToWrite = (Iterable<Object>) args[0];
           taskIdToOutputData.computeIfAbsent(dstTask.getId(), emptyTaskId -> new ArrayList<>());
           taskIdToOutputData.get(dstTask.getId()).add(dataToWrite);
           return null;
@@ -289,7 +289,7 @@ public final class TaskGroupExecutorTest {
     }
 
     @Override
-    public void onData(final Iterable<Element> data, final String srcVertexId) {
+    public void onData(final Iterable<Object> data, final String srcVertexId) {
       data.forEach(outputCollector::emit);
     }
 

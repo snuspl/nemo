@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Output Collector Implementation.
  */
 public final class OutputCollectorImpl implements OutputCollector {
-  private AtomicReference<List<Element>> outputList;
+  private AtomicReference<List<Object>> outputList;
 
   /**
    * Constructor of a new OutputCollector.
@@ -35,12 +35,12 @@ public final class OutputCollectorImpl implements OutputCollector {
   }
 
   @Override
-  public void emit(final Element output) {
+  public void emit(final Object output) {
     outputList.get().add(output);
   }
 
   @Override
-  public void emit(final String dstVertexId, final Element output) {
+  public void emit(final String dstVertexId, final Object output) {
     throw new UnsupportedOperationException("emit(dstVertexId, output) in OutputCollectorImpl.");
   }
 
@@ -49,7 +49,7 @@ public final class OutputCollectorImpl implements OutputCollector {
    *
    * @return the list of output elements.
    */
-  public List<Element> collectOutputList() {
+  public List<Object> collectOutputList() {
     return outputList.getAndSet(new ArrayList<>());
   }
 }

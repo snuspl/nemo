@@ -21,8 +21,8 @@ import java.util.List;
 
 /**
  * This interface represents the way of partitioning output data from a source task.
- * It takes an iterable of {@link Element} and divide the data into multiple {@link Block}s,
- * according to the number of destination tasks, the key of each {@link Element}, etc.
+ * It takes an iterable of elements and divide the data into multiple {@link Block}s,
+ * according to the number of destination tasks, the key of each element, etc.
  */
 public interface Partitioner {
 
@@ -33,5 +33,5 @@ public interface Partitioner {
    * @param dstParallelism the number of destination tasks.
    * @return the list of partitioned blocks.
    */
-  List<Block> partition(Iterable<Element> elements, int dstParallelism);
+  List<Block> partition(Iterable<Object> elements, int dstParallelism);
 }
