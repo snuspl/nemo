@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.master.irimpl;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.OutputCollector;
 
 import java.util.ArrayList;

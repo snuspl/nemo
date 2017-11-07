@@ -22,7 +22,6 @@ import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.onyx.common.coder.BeamCoder;
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionPropertyMap;

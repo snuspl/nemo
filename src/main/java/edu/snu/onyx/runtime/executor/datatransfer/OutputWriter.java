@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.executor.datatransfer;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
@@ -78,7 +77,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
    *
    * @param dataToWrite An iterable for the elements to be written.
    */
-  public void write(final Iterable<Element> dataToWrite) {
+  public void write(final Iterable<Object> dataToWrite) {
     final Boolean isDataSizeMetricCollectionEdge = DataSkewRuntimePass.class
         .equals(runtimeEdge.getProperty(ExecutionProperty.Key.MetricCollection));
 

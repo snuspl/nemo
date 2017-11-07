@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.compiler.optimizer.examples;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.OutputCollector;
 import edu.snu.onyx.compiler.ir.Transform;
 import org.apache.beam.sdk.io.BoundedSource;

@@ -18,8 +18,6 @@ package edu.snu.onyx.runtime.executor.data;
 import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.compiler.frontend.beam.BeamElement;
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;

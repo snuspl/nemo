@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.compiler.frontend.beam.transform;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.OutputCollector;
 import edu.snu.onyx.compiler.ir.Transform;
 import org.apache.beam.sdk.transforms.windowing.WindowFn;
@@ -43,7 +42,7 @@ public final class WindowTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data, final String srcVertexId) {
+  public void onData(final Iterable<Object> data, final String srcVertexId) {
     // TODO #36: Actually assign windows
     data.forEach(outputCollector::emit);
   }

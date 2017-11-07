@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.onyx.runtime.executor.data.Block;
 

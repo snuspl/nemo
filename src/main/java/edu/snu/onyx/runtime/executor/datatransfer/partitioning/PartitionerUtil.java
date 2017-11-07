@@ -1,7 +1,5 @@
 package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
 
-import edu.snu.onyx.compiler.ir.Element;
-
 /**
  * Utility methods for {@link Partitioner}.
  */

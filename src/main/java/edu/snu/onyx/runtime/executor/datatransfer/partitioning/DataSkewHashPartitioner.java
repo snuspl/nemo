@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.ArrayList;

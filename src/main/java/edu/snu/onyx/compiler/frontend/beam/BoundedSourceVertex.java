@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.compiler.frontend.beam;
 
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.Reader;
 import edu.snu.onyx.compiler.ir.SourceVertex;
 import org.apache.beam.sdk.io.BoundedSource;
@@ -88,11 +87,11 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
     }
 
     @Override
-    public final Iterable<Element<T, ?, ?>> read() throws Exception {
-      final ArrayList<Element<T, ?, ?>> data = new ArrayList<>();
+    public final Iterable<T> read() throws Exception {
+      final ArrayList<T> data = new ArrayList<>();
       try (BoundedSource.BoundedReader<T> reader = boundedSource.createReader(null)) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
-          data.add(new BeamElement<>(reader.getCurrent()));
+          data.add(reader.getCurrent());
         }
       }
       return data;

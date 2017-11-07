@@ -15,8 +15,6 @@
  */
 package edu.snu.onyx.compiler.frontend.beam.transform;
 
-import edu.snu.onyx.compiler.frontend.beam.BeamElement;
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.OutputCollector;
 import edu.snu.onyx.compiler.ir.Transform;
 import org.apache.beam.sdk.transforms.ViewFn;
@@ -48,12 +46,12 @@ public final class BroadcastTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data, final String srcVertexId) {
+  public void onData(final Iterable<Object> data, final String srcVertexId) {
     final List<WindowedValue> windowed = StreamSupport.stream(data.spliterator(), false)
-        .map(element -> WindowedValue.valueInGlobalWindow(element.getData()))
+        .map(element -> WindowedValue.valueInGlobalWindow(element))
         .collect(Collectors.toList());
     final ViewFn viewFn = this.pCollectionView.getViewFn();
-    outputCollector.emit(new BeamElement<>(viewFn.apply(windowed)));
+    outputCollector.emit(viewFn.apply(windowed));
   }
 
   /**

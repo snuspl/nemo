@@ -16,8 +16,6 @@
 package edu.snu.onyx.compiler.frontend.beam.transform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.snu.onyx.compiler.frontend.beam.BeamElement;
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.compiler.ir.OutputCollector;
 import edu.snu.onyx.compiler.ir.Transform;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -71,7 +69,7 @@ public final class DoTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Element> data, final String srcVertexId) {
+  public void onData(final Iterable<Object> data, final String srcVertexId) {
     final StartBundleContext startBundleContext = new StartBundleContext(doFn, serializedOptions);
     final FinishBundleContext finishBundleContext = new FinishBundleContext(doFn, outputCollector, serializedOptions);
     final ProcessContext processContext = new ProcessContext(doFn, outputCollector, sideInputs, serializedOptions);
@@ -79,7 +77,7 @@ public final class DoTransform implements Transform {
     invoker.invokeSetup();
     invoker.invokeStartBundle(startBundleContext);
     data.forEach(element -> { // No need to check for input index, since it is always 0 for DoTransform
-      processContext.setElement(element.getData());
+      processContext.setElement(element);
       invoker.invokeProcessElement(processContext);
     });
     invoker.invokeFinishBundle(finishBundleContext);
@@ -155,7 +153,7 @@ public final class DoTransform implements Transform {
 
     @Override
     public void output(final O output, final Instant instant, final BoundedWindow boundedWindow) {
-      outputCollector.emit(new BeamElement<>(output));
+      outputCollector.emit(output);
     }
 
     @Override
@@ -243,7 +241,7 @@ public final class DoTransform implements Transform {
 
     @Override
     public void output(final O output) {
-      outputCollector.emit(new BeamElement<>(output));
+      outputCollector.emit(output);
     }
 
     @Override

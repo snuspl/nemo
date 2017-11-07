@@ -16,7 +16,6 @@
 package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.compiler.ir.Element;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.executor.data.FileArea;
 import edu.snu.onyx.runtime.executor.data.HashRange;

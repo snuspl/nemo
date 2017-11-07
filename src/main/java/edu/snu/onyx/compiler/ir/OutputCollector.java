@@ -25,16 +25,16 @@ import java.io.Serializable;
 public interface OutputCollector extends Serializable {
   /**
    * Single-destination emit.
-   * @param output element.
+   * @param output value.
    */
-  void emit(Element output);
+  void emit(Object output);
 
   /**
    * Multi-destination emit.
    * Currently unused, but might come in handy
    * for operations like multi-output map.
    * @param dstVertexId destination vertex id.
-   * @param output element.
+   * @param output value.
    */
-  void emit(String dstVertexId, Element output);
+  void emit(String dstVertexId, Object output);
 }

@@ -15,37 +15,32 @@
  */
 package edu.snu.onyx.common.coder;
 
-import edu.snu.onyx.compiler.ir.Element;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
 /**
  * A {@link Coder Coder&lt;T&gt;} object encodes or decodes values of type {@code T} into byte streams.
- *
- * @param <Data> data type.
- * @param <Key> key type.
- * @param <Value> value type.
+ * @param <T> data type.
  */
-public interface Coder<Data, Key, Value> extends Serializable {
+public interface Coder<T> extends Serializable {
   /**
    * Encodes the given value onto the specified output stream.
    * It have to be able to encode the given stream consequently by calling this method repeatedly.
    *
-   * @param value the value to be encoded
+   * @param data the data to be encoded
    * @param outStream the stream on which encoded bytes are written
    */
-  void encode(Element<Data, Key, Value> value, OutputStream outStream);
+  void encode(T data, OutputStream outStream);
 
   /**
    * Decodes the a value from the given input stream.
    * It have to be able to decode the given stream consequently by calling this method repeatedly.
    *
    * @param inStream the stream from which bytes are read
-   * @return the decoded value
+   * @return the decoded data
    */
-  Element<Data, Key, Value> decode(InputStream inStream);
+  T decode(InputStream inStream);
 
   /**
    * Dummy coder.
