@@ -72,10 +72,5 @@ public abstract class ExecutionProperty<T> implements Serializable {
     Parallelism,
     ScheduleGroupIndex,
     StageId,
-
-    // Applies to entire job DAG
-    SchedulingPolicy,
-    SchedulerType,
-    ElementKeyExtractor,
   }
 }
