@@ -86,13 +86,13 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
 
     @Override
     public final Iterable<T> read() throws Exception {
-      final ArrayList<T> data = new ArrayList<>();
+      final ArrayList<T> elements = new ArrayList<>();
       try (BoundedSource.BoundedReader<T> reader = boundedSource.createReader(null)) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
-          data.add(reader.getCurrent());
+          elements.add(reader.getCurrent());
         }
       }
-      return data;
+      return elements;
     }
   }
 }

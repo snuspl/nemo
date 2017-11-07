@@ -32,8 +32,8 @@ public final class RelayTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> data, final String srcVertexId) {
-    data.forEach(outputCollector::emit);
+  public void onData(final Iterable<Object> elements, final String srcVertexId) {
+    elements.forEach(outputCollector::emit);
   }
 
   @Override

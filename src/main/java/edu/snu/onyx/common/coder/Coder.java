@@ -21,24 +21,24 @@ import java.io.Serializable;
 
 /**
  * A {@link Coder Coder&lt;T&gt;} object encodes or decodes values of type {@code T} into byte streams.
- * @param <T> data type.
+ * @param <T> element type.
  */
 public interface Coder<T> extends Serializable {
   /**
    * Encodes the given value onto the specified output stream.
    * It have to be able to encode the given stream consequently by calling this method repeatedly.
    *
-   * @param data the data to be encoded
+   * @param element the element to be encoded
    * @param outStream the stream on which encoded bytes are written
    */
-  void encode(T data, OutputStream outStream);
+  void encode(T element, OutputStream outStream);
 
   /**
    * Decodes the a value from the given input stream.
    * It have to be able to decode the given stream consequently by calling this method repeatedly.
    *
    * @param inStream the stream from which bytes are read
-   * @return the decoded data
+   * @return the decoded element
    */
   T decode(InputStream inStream);
 

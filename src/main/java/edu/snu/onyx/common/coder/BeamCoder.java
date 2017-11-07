@@ -21,7 +21,7 @@ import java.io.OutputStream;
 
 /**
  * {@link Coder} from {@link org.apache.beam.sdk.coders.Coder}.
- * @param <T> data type.
+ * @param <T> element type.
  */
 public final class BeamCoder<T> implements Coder<T> {
   private final org.apache.beam.sdk.coders.Coder<T> beamCoder;

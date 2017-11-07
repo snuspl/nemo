@@ -40,8 +40,8 @@ public final class FlattenTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> data, final String srcVertexId) {
-    data.forEach(collectedElements::add);
+  public void onData(final Iterable<Object> elements, final String srcVertexId) {
+    elements.forEach(collectedElements::add);
   }
 
   @Override

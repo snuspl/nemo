@@ -289,8 +289,8 @@ public final class TaskGroupExecutorTest {
     }
 
     @Override
-    public void onData(final Iterable<Object> data, final String srcVertexId) {
-      data.forEach(outputCollector::emit);
+    public void onData(final Iterable<Object> elements, final String srcVertexId) {
+      elements.forEach(outputCollector::emit);
     }
 
     @Override

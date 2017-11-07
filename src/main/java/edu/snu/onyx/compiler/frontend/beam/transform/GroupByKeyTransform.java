@@ -44,8 +44,8 @@ public final class GroupByKeyTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> data, final String srcVertexId) {
-    data.forEach(element -> {
+  public void onData(final Iterable<Object> elements, final String srcVertexId) {
+    elements.forEach(element -> {
       final KV kv = (KV) element;
       keyToValues.putIfAbsent(kv.getKey(), new ArrayList());
       keyToValues.get(kv.getKey()).add(kv.getValue());
