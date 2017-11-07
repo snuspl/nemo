@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
+package edu.snu.onyx.compiler.ir;
 
-import edu.snu.onyx.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.List;
 
 /**
- * An implementation of {@link Partitioner} which divides output data from a source task into multiple {@link Block}s
- * according to the range of their key.
+ * This interface represents the way of partitioning output data from a source task.
+ * It takes an iterable of elements and divide the data into multiple {@link Block}s,
+ * according to the number of destination tasks, the key of each element, etc.
  */
-public final class RangePartitioner implements Partitioner {
-  public static final String SIMPLE_NAME = "Range";
+public interface Partitioner {
 
-  @Override
-  public List<Block> partition(final Iterable<Object> elements,
-                               final int dstParallelism) {
-    throw new UnsupportedPartitionerException(
-        new Throwable(RangePartitioner.class.getName() + "partitioning not yet supported"));
-  }
+  /**
+   * Divides the output data from a task into multiple blocks.
+   *
+   * @param elements       the output data from a source task.
+   * @param dstParallelism the number of destination tasks.
+   * @return the list of partitioned blocks.
+   */
+  List<Block> partition(Iterable<Object> elements, int dstParallelism);
 }

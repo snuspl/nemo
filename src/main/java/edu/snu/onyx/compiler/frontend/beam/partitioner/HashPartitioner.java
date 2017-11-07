@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
+package edu.snu.onyx.compiler.frontend.beam.partitioner;
 
+import edu.snu.onyx.compiler.ir.Partitioner;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.ArrayList;

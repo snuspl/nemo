@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
+package edu.snu.onyx.compiler.frontend.beam.partitioner;
 
+import edu.snu.onyx.compiler.ir.Partitioner;
 import edu.snu.onyx.runtime.executor.data.Block;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * This interface represents the way of partitioning output data from a source task.
- * It takes an iterable of elements and divide the data into multiple {@link Block}s,
- * according to the number of destination tasks, the key of each element, etc.
+ * An implementation of {@link Partitioner} which makes an output data from a source task to a single {@link Block}.
  */
-public interface Partitioner {
+public final class IntactPartitioner implements Partitioner {
+  public static final String SIMPLE_NAME = "Intact";
 
-  /**
-   * Divides the output data from a task into multiple blocks.
-   *
-   * @param elements       the output data from a source task.
-   * @param dstParallelism the number of destination tasks.
-   * @return the list of partitioned blocks.
-   */
-  List<Block> partition(Iterable<Object> elements, int dstParallelism);
+  @Override
+  public List<Block> partition(final Iterable<Object> elements,
+                               final int dstParallelism) {
+    return Collections.singletonList(new Block(elements));
+  }
 }

@@ -16,6 +16,7 @@
 package edu.snu.onyx.runtime.executor.datatransfer;
 
 import edu.snu.onyx.compiler.ir.IRVertex;
+import edu.snu.onyx.compiler.ir.Partitioner;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
@@ -27,7 +28,7 @@ import edu.snu.onyx.runtime.executor.data.PartitionStore;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
-import edu.snu.onyx.runtime.executor.datatransfer.partitioning.*;
+import edu.snu.onyx.compiler.frontend.beam.partitioner.*;
 
 import javax.annotation.Nullable;
 import java.util.*;

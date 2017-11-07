@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioning;
+package edu.snu.onyx.compiler.frontend.beam.partitioner;
 
+import edu.snu.onyx.compiler.ir.Partitioner;
+import edu.snu.onyx.runtime.exception.UnsupportedPartitionerException;
 import edu.snu.onyx.runtime.executor.data.Block;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * An implementation of {@link Partitioner} which makes an output data from a source task to a single {@link Block}.
+ * An implementation of {@link Partitioner} which divides output data from a source task into multiple {@link Block}s
+ * according to the range of their key.
  */
-public final class IntactPartitioner implements Partitioner {
-  public static final String SIMPLE_NAME = "Intact";
+public final class RangePartitioner implements Partitioner {
+  public static final String SIMPLE_NAME = "Range";
 
   @Override
   public List<Block> partition(final Iterable<Object> elements,
                                final int dstParallelism) {
-    return Collections.singletonList(new Block(elements));
+    throw new UnsupportedPartitionerException(
+        new Throwable(RangePartitioner.class.getName() + "partitioning not yet supported"));
   }
 }
