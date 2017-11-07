@@ -144,18 +144,9 @@ public final class PendingTaskGroupPriorityQueue {
    * @param candidateStageContainerType for the stage that can potentially be scheduled.
    */
   private void updateSchedulableStages(final String candidateStageId, final String candidateStageContainerType) {
-    boolean readyToScheduleImmediately = true;
     final DAG<PhysicalStage, PhysicalStageEdge> jobDAG = physicalPlan.getStageDAG();
-    for (final PhysicalStage descendantStage : jobDAG.getDescendants(candidateStageId)) {
-      if (schedulableStages.contains(descendantStage.getId())) {
-        if (candidateStageContainerType.equals(descendantStage.getTaskGroupList().get(0).getContainerType())) {
-          readyToScheduleImmediately = false;
-          break;
-        }
-      }
-    }
 
-    if (readyToScheduleImmediately) {
+    if (isSchedulable(candidateStageId, candidateStageContainerType)) {
       // Check for ancestor stages that became schedulable due to candidateStage's absence from the queue.
       jobDAG.getAncestors(candidateStageId).forEach(ancestorStage -> {
         if (schedulableStages.contains(ancestorStage.getId())) {
@@ -169,6 +160,24 @@ public final class PendingTaskGroupPriorityQueue {
         schedulableStages.addLast(candidateStageId);
       }
     }
+  }
+
+  /**
+   * Determines whether the given candidate stage is schedulable immediately or not.
+   * @param candidateStageId for the stage that can potentially be scheduled.
+   * @param candidateStageContainerType for the stage that can potentially be scheduled.
+   * @return true if schedulable, false otherwise.
+   */
+  private boolean isSchedulable(final String candidateStageId, final String candidateStageContainerType) {
+    final DAG<PhysicalStage, PhysicalStageEdge> jobDAG = physicalPlan.getStageDAG();
+    for (final PhysicalStage descendantStage : jobDAG.getDescendants(candidateStageId)) {
+      if (schedulableStages.contains(descendantStage.getId())) {
+        if (candidateStageContainerType.equals(descendantStage.getTaskGroupList().get(0).getContainerType())) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   public void onJobScheduled(final PhysicalPlan physicalPlanForJob) {

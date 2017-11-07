@@ -255,20 +255,11 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
    */
   public List<V> getDescendants(final String vertexId) {
     final List<V> descendants = new ArrayList<>();
-    addDescendants(descendants, vertexId);
+    final Set<V> visited = new HashSet<>();
+    final V vertex = getVertexById(vertexId);
+    dfsDo(vertex, descendants::add, TraversalOrder.PostOrder, visited);
+    descendants.remove(vertex);
     return descendants;
-  }
-
-  /**
-   * Recursively adds descendants of a vertex to the given list.
-   * @param descendantList to accumulate the descendants.
-   * @param vertexId to find the descendants for.
-   */
-  private void addDescendants(final List<V> descendantList, final String vertexId) {
-    getChildren(vertexId).forEach(child -> {
-      descendantList.add(child);
-      addAncestors(descendantList, child.getId());
-    });
   }
 
   /**

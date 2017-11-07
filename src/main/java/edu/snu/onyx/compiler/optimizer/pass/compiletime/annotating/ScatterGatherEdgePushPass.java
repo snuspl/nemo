@@ -32,7 +32,6 @@ import java.util.stream.Stream;
  * It sets DataFlowModel ExecutionProperty as "push".
  */
 public final class ScatterGatherEdgePushPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "ScatterGatherEdgePushPass";
 
   public ScatterGatherEdgePushPass() {
     super(ExecutionProperty.Key.DataFlowModel, Stream.of(

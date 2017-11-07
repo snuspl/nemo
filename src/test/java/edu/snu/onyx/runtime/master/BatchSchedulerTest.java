@@ -230,7 +230,8 @@ public final class BatchSchedulerTest {
     final IREdge e5 = new IREdge(ScatterGather.class, v2, v5, Coder.DUMMY_CODER);
     irDAGBuilder.connectVertices(e5);
 
-    final DAG<IRVertex, IREdge> pushIRDAG = Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
+    final DAG<IRVertex, IREdge> pushIRDAG =
+        Optimizer.optimize(irDAGBuilder.buildWithoutSourceSinkCheck(),
         new TestPolicy(true), "");
 
     scheduleAndCheckJobTermination(pushIRDAG);
