@@ -41,13 +41,13 @@ public final class DataSkewHashPartitioner implements Partitioner {
   }
 
   @Override
-  public List<Block> partition(final Iterable<Object> elements,
+  public List<Block> partition(final Iterable elements,
                                final int dstParallelism) {
     // For this hash range, please check the description of HashRangeMultiplier in JobConf.
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
     // Separate the data into blocks according to the hash value of their key.
-    final List<List<Object>> elementsByKey = new ArrayList<>(hashRange);
+    final List<List> elementsByKey = new ArrayList<>(hashRange);
     IntStream.range(0, hashRange).forEach(hashVal -> elementsByKey.add(new ArrayList<>()));
     elements.forEach(element -> {
       // Hash the data by its key, and "modulo" by the hash range.

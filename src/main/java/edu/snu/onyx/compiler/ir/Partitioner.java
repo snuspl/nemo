@@ -33,5 +33,5 @@ public interface Partitioner {
    * @param dstParallelism the number of destination tasks.
    * @return the list of partitioned blocks.
    */
-  List<Block> partition(Iterable<Object> elements, int dstParallelism);
+  List<Block> partition(Iterable elements, int dstParallelism);
 }

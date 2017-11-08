@@ -69,7 +69,7 @@ public final class DoTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> elements, final String srcVertexId) {
+  public void onData(final Iterable elements, final String srcVertexId) {
     final StartBundleContext startBundleContext = new StartBundleContext(doFn, serializedOptions);
     final FinishBundleContext finishBundleContext = new FinishBundleContext(doFn, outputCollector, serializedOptions);
     final ProcessContext processContext = new ProcessContext(doFn, outputCollector, sideInputs, serializedOptions);

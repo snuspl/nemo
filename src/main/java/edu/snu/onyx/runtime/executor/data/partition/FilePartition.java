@@ -106,9 +106,9 @@ public final class FilePartition {
    * @return an iterable of deserialized elements.
    * @throws IOException if failed to deserialize.
    */
-  public Iterable<Object> retrieveInHashRange(final HashRange hashRange) throws IOException {
+  public Iterable retrieveInHashRange(final HashRange hashRange) throws IOException {
     // Deserialize the data
-    final ArrayList<Object> deserializedData = new ArrayList<>();
+    final ArrayList deserializedData = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
         // TODO #463: Support incremental read.
@@ -180,7 +180,7 @@ public final class FilePartition {
    */
   private void deserializeBlock(final BlockMetadata blockMetadata,
                                 final FileInputStream fileInputStream,
-                                final List<Object> deserializedData) {
+                                final List deserializedData) {
     final int size = blockMetadata.getBlockSize();
     final long numElements = blockMetadata.getElementsTotal();
     if (size != 0) {

@@ -24,7 +24,7 @@ import java.util.ArrayList;
  * Flatten transform implementation.
  */
 public final class FlattenTransform implements Transform {
-  private final ArrayList<Object> collectedElements;
+  private final ArrayList collectedElements;
   private OutputCollector outputCollector;
 
   /**
@@ -40,7 +40,7 @@ public final class FlattenTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> elements, final String srcVertexId) {
+  public void onData(final Iterable elements, final String srcVertexId) {
     elements.forEach(collectedElements::add);
   }
 

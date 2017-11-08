@@ -73,7 +73,7 @@ public final class LocalFileStore extends FileStore {
    * @see PartitionStore#getFromPartition(String, HashRange).
    */
   @Override
-  public Optional<Iterable<Object>> getFromPartition(final String partitionId,
+  public Optional<Iterable> getFromPartition(final String partitionId,
                                                       final HashRange hashRange) throws PartitionFetchException {
     // Deserialize the target data in the corresponding file.
     final FilePartition partition = partitionIdToFilePartition.get(partitionId);

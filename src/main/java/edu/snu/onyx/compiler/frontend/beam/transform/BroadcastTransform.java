@@ -46,8 +46,9 @@ public final class BroadcastTransform implements Transform {
   }
 
   @Override
-  public void onData(final Iterable<Object> elements, final String srcVertexId) {
-    final List<WindowedValue> windowed = StreamSupport.stream(elements.spliterator(), false)
+  public void onData(final Iterable elements, final String srcVertexId) {
+    final List<WindowedValue> windowed = StreamSupport
+        .stream(((Iterable<Object>) elements).spliterator(), false)
         .map(element -> WindowedValue.valueInGlobalWindow(element))
         .collect(Collectors.toList());
     final ViewFn viewFn = this.pCollectionView.getViewFn();

@@ -121,7 +121,7 @@ public final class PartitionManagerWorker {
    * @param hashRange      the hash range descriptor
    * @return the result data in the partition.
    */
-  public CompletableFuture<Iterable<Object>> retrieveDataFromPartition(
+  public CompletableFuture<Iterable> retrieveDataFromPartition(
       final String partitionId,
       final String runtimeEdgeId,
       final Class<? extends PartitionStore> partitionStore,
@@ -130,7 +130,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final Optional<Iterable<Object>> optionalResultData = store.getFromPartition(partitionId, hashRange);
+    final Optional<Iterable> optionalResultData = store.getFromPartition(partitionId, hashRange);
 
     if (optionalResultData.isPresent()) {
       // Partition resides in this evaluator!
@@ -153,7 +153,7 @@ public final class PartitionManagerWorker {
    * @param hashRange         the hash range descriptor
    * @return the {@link CompletableFuture} of the partition.
    */
-  private CompletableFuture<Iterable<Object>> requestPartitionInRemoteWorker(
+  private CompletableFuture<Iterable> requestPartitionInRemoteWorker(
       final String partitionId,
       final String runtimeEdgeId,
       final Class<? extends PartitionStore> partitionStore,
@@ -345,7 +345,7 @@ public final class PartitionManagerWorker {
           }
         } else {
           try {
-            final Iterable<Object> partition =
+            final Iterable partition =
                 retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
                     partitionStore, outputStream.getHashRange()).get();
             outputStream.writeElements(partition).close();

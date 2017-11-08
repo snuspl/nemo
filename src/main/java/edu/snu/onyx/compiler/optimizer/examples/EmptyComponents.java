@@ -58,7 +58,7 @@ public class EmptyComponents {
     }
 
     @Override
-    public void onData(final Iterable<Object> elements, final String srcVertexId) {
+    public void onData(final Iterable elements, final String srcVertexId) {
     }
 
     @Override

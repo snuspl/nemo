@@ -29,7 +29,7 @@ public final class RangePartitioner implements Partitioner {
   public static final String SIMPLE_NAME = "Range";
 
   @Override
-  public List<Block> partition(final Iterable<Object> elements,
+  public List<Block> partition(final Iterable elements,
                                final int dstParallelism) {
     throw new UnsupportedPartitionerException(
         new Throwable(RangePartitioner.class.getName() + "partitioning not yet supported"));

@@ -79,7 +79,7 @@ public final class GlusterFileStore extends FileStore implements RemoteFileStore
    * @see PartitionStore#getFromPartition(String, HashRange).
    */
   @Override
-  public Optional<Iterable<Object>> getFromPartition(final String partitionId,
+  public Optional<Iterable> getFromPartition(final String partitionId,
                                                       final HashRange hashRange) throws PartitionFetchException {
     final String filePath = partitionIdToFilePath(partitionId);
     if (!new File(filePath).isFile()) {

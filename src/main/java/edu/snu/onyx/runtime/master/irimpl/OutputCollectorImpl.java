@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Output Collector Implementation.
  */
 public final class OutputCollectorImpl implements OutputCollector {
-  private AtomicReference<List<Object>> outputList;
+  private AtomicReference<List> outputList;
 
   /**
    * Constructor of a new OutputCollector.
@@ -49,7 +49,7 @@ public final class OutputCollectorImpl implements OutputCollector {
    *
    * @return the list of output elements.
    */
-  public List<Object> collectOutputList() {
+  public List collectOutputList() {
     return outputList.getAndSet(new ArrayList<>());
   }
 }

@@ -76,7 +76,7 @@ public final class InputReader extends DataTransfer {
    *
    * @return the read data.
    */
-  public List<CompletableFuture<Iterable<Object>>> read() {
+  public List<CompletableFuture<Iterable>> read() {
 
     switch (((Class) runtimeEdge.<Class>getProperty(ExecutionProperty.Key.DataCommunicationPattern))
         .getSimpleName()) {
@@ -93,17 +93,17 @@ public final class InputReader extends DataTransfer {
     }
   }
 
-  private CompletableFuture<Iterable<Object>> readOneToOne() {
+  private CompletableFuture<Iterable> readOneToOne() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
         (Class<? extends PartitionStore>) runtimeEdge.<Class>getProperty(ExecutionProperty.Key.DataStore),
         HashRange.all());
   }
 
-  private List<CompletableFuture<Iterable<Object>>> readBroadcast() {
+  private List<CompletableFuture<Iterable>> readBroadcast() {
     final int numSrcTasks = this.getSourceParallelism();
 
-    final List<CompletableFuture<Iterable<Object>>> futures = new ArrayList<>();
+    final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
@@ -121,7 +121,7 @@ public final class InputReader extends DataTransfer {
    *
    * @return the list of the completable future of the data.
    */
-  private List<CompletableFuture<Iterable<Object>>> readDataInRange() {
+  private List<CompletableFuture<Iterable>> readDataInRange() {
     assert (runtimeEdge instanceof PhysicalStageEdge);
     final HashRange hashRangeToRead =
         ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdToHashRangeMap().get(taskGroupId);
@@ -130,7 +130,7 @@ public final class InputReader extends DataTransfer {
     }
 
     final int numSrcTasks = this.getSourceParallelism();
-    final List<CompletableFuture<Iterable<Object>>> futures = new ArrayList<>();
+    final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
@@ -163,7 +163,7 @@ public final class InputReader extends DataTransfer {
     if (!isSideInputReader()) {
       throw new RuntimeException();
     }
-    final CompletableFuture<Iterable<Object>> future = this.read().get(0);
+    final CompletableFuture<Iterable> future = this.read().get(0);
     return future.thenApply(f -> f.iterator().next());
   }
 
@@ -195,12 +195,12 @@ public final class InputReader extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   @VisibleForTesting
-  public static Iterable<Object> combineFutures(final List<CompletableFuture<Iterable<Object>>> futures)
+  public static Iterable combineFutures(final List<CompletableFuture<Iterable>> futures)
       throws ExecutionException, InterruptedException {
-    final List<Object> concatStreamBase = new ArrayList<>();
+    final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();
     for (int srcTaskIdx = 0; srcTaskIdx < futures.size(); srcTaskIdx++) {
-      final Iterable<Object> dataFromATask = futures.get(srcTaskIdx).get();
+      final Iterable dataFromATask = futures.get(srcTaskIdx).get();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(dataFromATask.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

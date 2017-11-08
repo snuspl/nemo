@@ -23,14 +23,14 @@ package edu.snu.onyx.runtime.executor.data;
  */
 public final class Block {
   private final int key;
-  private final Iterable<Object> data;
+  private final Iterable data;
 
-  public Block(final Iterable<Object> data) {
+  public Block(final Iterable data) {
     this(HashRange.NOT_HASHED, data);
   }
 
   public Block(final int key,
-               final Iterable<Object> data) {
+               final Iterable data) {
     this.key = key;
     this.data = data;
   }
@@ -39,7 +39,7 @@ public final class Block {
     return key;
   }
 
-  public Iterable<Object> getData() {
+  public Iterable getData() {
     return data;
   }
 }
