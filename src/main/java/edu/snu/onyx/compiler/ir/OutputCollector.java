@@ -21,13 +21,14 @@ import java.io.Serializable;
  * Interface through which Transform emits outputs.
  * This is to be implemented in the runtime with
  * runtime-specific distributed data movement and storage mechanisms.
+ * @param <O> output type.
  */
-public interface OutputCollector extends Serializable {
+public interface OutputCollector<O> extends Serializable {
   /**
    * Single-destination emit.
    * @param output value.
    */
-  void emit(Object output);
+  void emit(O output);
 
   /**
    * Multi-destination emit.

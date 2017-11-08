@@ -72,5 +72,7 @@ public abstract class ExecutionProperty<T> implements Serializable {
     Parallelism,
     ScheduleGroupIndex,
     StageId,
+
+    // TODO #586: Job-wide execution properties
   }
 }

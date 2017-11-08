@@ -22,10 +22,11 @@ import java.util.ArrayList;
 
 /**
  * Flatten transform implementation.
+ * @param <T> input/output type.
  */
-public final class FlattenTransform implements Transform {
-  private final ArrayList collectedElements;
-  private OutputCollector outputCollector;
+public final class FlattenTransform<T> implements Transform<T, T> {
+  private final ArrayList<T> collectedElements;
+  private OutputCollector<T> outputCollector;
 
   /**
    * FlattenTransform Constructor.
@@ -35,12 +36,12 @@ public final class FlattenTransform implements Transform {
   }
 
   @Override
-  public void prepare(final Context context, final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector<T> oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final Iterable elements, final String srcVertexId) {
+  public void onData(final Iterable<T> elements, final String srcVertexId) {
     elements.forEach(collectedElements::add);
   }
 

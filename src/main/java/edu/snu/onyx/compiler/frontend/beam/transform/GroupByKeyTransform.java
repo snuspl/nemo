@@ -26,10 +26,11 @@ import java.util.Map;
 
 /**
  * Group Beam KVs.
+ * @param <I> input type.
  */
-public final class GroupByKeyTransform implements Transform {
+public final class GroupByKeyTransform<I> implements Transform<I, KV<Object, List>> {
   private final Map<Object, List> keyToValues;
-  private OutputCollector outputCollector;
+  private OutputCollector<KV<Object, List>> outputCollector;
 
   /**
    * GroupByKey constructor.
@@ -39,12 +40,12 @@ public final class GroupByKeyTransform implements Transform {
   }
 
   @Override
-  public void prepare(final Context context, final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector<KV<Object, List>> oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final Iterable elements, final String srcVertexId) {
+  public void onData(final Iterable<I> elements, final String srcVertexId) {
     elements.forEach(element -> {
       final KV kv = (KV) element;
       keyToValues.putIfAbsent(kv.getKey(), new ArrayList());

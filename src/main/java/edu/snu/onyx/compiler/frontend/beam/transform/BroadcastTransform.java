@@ -27,31 +27,33 @@ import java.util.stream.StreamSupport;
 
 /**
  * Broadcast transform implementation.
+ * @param <I> input type.
+ * @param <O> output type.
  */
-public final class BroadcastTransform implements Transform {
+public final class BroadcastTransform<I, O> implements Transform<I, O> {
   private final PCollectionView pCollectionView;
-  private OutputCollector outputCollector;
+  private OutputCollector<O> outputCollector;
 
   /**
    * Constructor of BroadcastTransform.
    * @param pCollectionView the pCollectionView to broadcast.
    */
-  public BroadcastTransform(final PCollectionView pCollectionView) {
+  public BroadcastTransform(final PCollectionView<O> pCollectionView) {
     this.pCollectionView = pCollectionView;
   }
 
   @Override
-  public void prepare(final Context context, final OutputCollector oc) {
+  public void prepare(final Context context, final OutputCollector<O> oc) {
     this.outputCollector = oc;
   }
 
   @Override
-  public void onData(final Iterable elements, final String srcVertexId) {
-    final List<WindowedValue> windowed = StreamSupport
-        .stream(((Iterable<Object>) elements).spliterator(), false)
+  public void onData(final Iterable<I> elements, final String srcVertexId) {
+    final List<WindowedValue<I>> windowed = StreamSupport
+        .stream((elements).spliterator(), false)
         .map(element -> WindowedValue.valueInGlobalWindow(element))
         .collect(Collectors.toList());
-    final ViewFn viewFn = this.pCollectionView.getViewFn();
+    final ViewFn<Iterable<WindowedValue<I>>, O> viewFn = this.pCollectionView.getViewFn();
     outputCollector.emit(viewFn.apply(windowed));
   }
 

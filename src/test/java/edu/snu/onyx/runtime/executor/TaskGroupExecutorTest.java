@@ -279,18 +279,19 @@ public final class TaskGroupExecutorTest {
 
   /**
    * Simple {@link Transform} for testing.
+   * @param <T> input/output type.
    */
-  private class SimpleTransform implements Transform {
-    private OutputCollector outputCollector;
+  private class SimpleTransform<T> implements Transform<T, T> {
+    private OutputCollector<T> outputCollector;
 
     @Override
-    public void prepare(final Context context, final OutputCollector outputCollector) {
+    public void prepare(final Context context, final OutputCollector<T> outputCollector) {
       this.outputCollector = outputCollector;
     }
 
     @Override
-    public void onData(final Iterable elements, final String srcVertexId) {
-      elements.forEach(outputCollector::emit);
+    public void onData(final Iterable<T> elements, final String srcVertexId) {
+      elements.forEach(element -> outputCollector.emit(element));
     }
 
     @Override
