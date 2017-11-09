@@ -427,24 +427,12 @@ public final class BatchScheduler implements Scheduler {
    * @param stageToSchedule the stage to schedule.
    */
   private synchronized void scheduleStage(final PhysicalStage stageToSchedule) {
-    boolean scheduleCallForFT = false;
     final List<PhysicalStageEdge> stageIncomingEdges =
         physicalPlan.getStageDAG().getIncomingEdgesOf(stageToSchedule.getId());
     final List<PhysicalStageEdge> stageOutgoingEdges =
         physicalPlan.getStageDAG().getOutgoingEdgesOf(stageToSchedule.getId());
 
     final Enum stageState = jobStateManager.getStageState(stageToSchedule.getId()).getStateMachine().getCurrentState();
-
-    if (stageState == StageState.State.FAILED_RECOVERABLE) {
-      // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'
-      jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
-      scheduleCallForFT = true;
-    }
-
-    // attemptIdx is only initialized/updated when we set the stage's state to executing
-    jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
-    final int attemptIdx = jobStateManager.getAttemptCountForStage(stageToSchedule.getId());
-    LOG.info("Scheduling Stage {} with attemptIdx={}", new Object[]{stageToSchedule.getId(), attemptIdx});
 
     final List<TaskGroup> taskGroupsToSchedule = new LinkedList<>();
     for (final TaskGroup taskGroup : stageToSchedule.getTaskGroupList()) {
@@ -454,21 +442,42 @@ public final class BatchScheduler implements Scheduler {
           (TaskGroupState.State)
               jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState();
 
-      if (taskGroupState == TaskGroupState.State.COMPLETE || taskGroupState == TaskGroupState.State.EXECUTING) {
-        LOG.info("Skipping {} because its outputs are safe!", taskGroup.getTaskGroupId());
-      } else if (taskGroupState == TaskGroupState.State.READY) {
-        if (scheduleCallForFT) {
-          LOG.info("Skipping {} because it is already in the queue, but just hasn't been scheduled yet!",
-              taskGroup.getTaskGroupId());
-        } else {
+      switch (taskGroupState) {
+        case COMPLETE:
+        case EXECUTING:
+          LOG.info("Skipping {} because its outputs are safe!", taskGroup.getTaskGroupId());
+          break;
+        case READY:
+          if (stageState == StageState.State.FAILED_RECOVERABLE) {
+            LOG.info("Skipping {} because it is already in the queue, but just hasn't been scheduled yet!",
+                taskGroup.getTaskGroupId());
+          } else {
+            LOG.info("Scheduling {}", taskGroup.getTaskGroupId());
+            taskGroupsToSchedule.add(taskGroup);
+          }
+          break;
+        case FAILED_RECOVERABLE:
+          LOG.info("Re-scheduling {} for failure recovery", taskGroup.getTaskGroupId());
+          jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.READY);
           taskGroupsToSchedule.add(taskGroup);
-        }
-      } else if (taskGroupState == TaskGroupState.State.FAILED_RECOVERABLE) {
-        LOG.info("Re-scheduling {} for failure recovery", taskGroup.getTaskGroupId());
-        jobStateManager.onTaskGroupStateChanged(taskGroup, TaskGroupState.State.READY);
-        taskGroupsToSchedule.add(taskGroup);
+          break;
+        case ON_HOLD:
+          // Do nothing
+          break;
+        default:
+          throw new SchedulingException(new Throwable("Detected a FAILED_UNRECOVERABLE TaskGroup"));
       }
     }
+    if (stageState == StageState.State.FAILED_RECOVERABLE) {
+      // The 'failed_recoverable' stage has been selected as the next stage to execute. Change its state back to 'ready'
+      jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.READY);
+    }
+
+    // attemptIdx is only initialized/updated when we set the stage's state to executing
+    jobStateManager.onStageStateChanged(stageToSchedule.getId(), StageState.State.EXECUTING);
+    final int attemptIdx = jobStateManager.getAttemptCountForStage(stageToSchedule.getId());
+    LOG.info("Scheduling Stage {} with attemptIdx={}", new Object[]{stageToSchedule.getId(), attemptIdx});
+
     taskGroupsToSchedule.forEach(taskGroup -> {
       partitionManagerMaster.onProducerTaskGroupScheduled(taskGroup.getTaskGroupId());
       LOG.debug("Enquing {}", taskGroup.getTaskGroupId());
