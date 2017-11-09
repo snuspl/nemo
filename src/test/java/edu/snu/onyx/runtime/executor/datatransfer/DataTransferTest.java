@@ -49,7 +49,7 @@ import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.DataCommunicationPattern;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
-import edu.snu.onyx.compiler.frontend.beam.partitioner.HashPartitioner;
+import edu.snu.onyx.runtime.executor.datatransfer.partitioner.HashPartitioner;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
 import edu.snu.onyx.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.onyx.runtime.master.RuntimeMaster;

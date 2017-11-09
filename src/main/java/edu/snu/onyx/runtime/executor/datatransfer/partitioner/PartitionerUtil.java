@@ -1,4 +1,4 @@
-package edu.snu.onyx.compiler.frontend.beam.partitioner;
+package edu.snu.onyx.runtime.executor.datatransfer.partitioner;
 
 import org.apache.beam.sdk.values.KV;
 
