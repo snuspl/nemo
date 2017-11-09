@@ -65,12 +65,4 @@ public final class AlternatingLeastSquareITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
   }
-
-  @Test (timeout = TIMEOUT)
-  public void testDualParallelism() throws Exception {
-    JobLauncher.main(builder
-        .addJobId(AlternatingLeastSquare.class.getSimpleName() + "_dualparallelism")
-        .addOptimizationPolicy(TestMultiParallelismPolicy.class.getCanonicalName())
-        .build());
-  }
 }
