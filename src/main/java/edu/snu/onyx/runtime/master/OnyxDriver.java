@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.ncs.NcsMessageEnvironment;
-import edu.snu.onyx.runtime.common.message.ncs.NcsParameters;
+import edu.snu.onyx.runtime.common.message.MessageParameters;
+import edu.snu.onyx.runtime.common.message.grpc.GrpcMessageEnvironment;
 import edu.snu.onyx.runtime.executor.OnyxContext;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
@@ -217,8 +217,8 @@ public final class OnyxDriver {
 
   private Configuration getExecutorMessageConfiguration(final String executorId) {
     return Tang.Factory.getTang().newConfigurationBuilder()
-        .bindImplementation(MessageEnvironment.class, NcsMessageEnvironment.class)
-        .bindNamedParameter(NcsParameters.SenderId.class, executorId)
+        .bindImplementation(MessageEnvironment.class, GrpcMessageEnvironment.class)
+        .bindNamedParameter(MessageParameters.SenderId.class, executorId)
         .build();
   }
 }
