@@ -70,10 +70,14 @@ public abstract class LocalPartitionStore implements PartitionStore {
       if (partition == null) {
         throw new PartitionWriteException(new Throwable("The partition " + partitionId + "is not created yet."));
       }
-      partition.writeBlocks(blocks);
+      final List<Long> blockSizeList = partition.writeBlocks(blocks);
 
-      // The partition is not serialized.
-      return Optional.empty();
+      if (blockSizeList.isEmpty()) {
+        // Empty block or not serialized.
+        return Optional.empty();
+      } else {
+        return Optional.of(blockSizeList);
+      }
     } catch (final IOException e) {
       // The partition is committed already.
       throw new PartitionWriteException(new Throwable("This partition is already committed."));
