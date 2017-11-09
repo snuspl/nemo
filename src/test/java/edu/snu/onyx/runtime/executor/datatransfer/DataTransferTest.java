@@ -24,10 +24,12 @@ import edu.snu.onyx.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
+import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.onyx.common.PubSubEventHandlerWrapper;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.onyx.compiler.ir.executionproperty.edge.KeyExtractorProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.PartitionerProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
@@ -258,6 +260,7 @@ public final class DataTransferTest {
 
     // Edge setup
     final IREdge dummyIREdge = new IREdge(commPattern, srcVertex, dstVertex, CODER);
+    dummyIREdge.setProperty(KeyExtractorProperty.of((element -> element)));
     final ExecutionPropertyMap edgeProperties = dummyIREdge.getExecutionProperties();
     edgeProperties.put(DataCommunicationPatternProperty.of(commPattern));
     edgeProperties.put(PartitionerProperty.of(HashPartitioner.class));
