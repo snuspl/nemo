@@ -72,7 +72,8 @@ public class TestMultiParallelismPolicy implements Policy {
           throw new RuntimeException(e);
         }
       });
-      return dag;
+      final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
+      return builder.build();
     }
   }
 }
