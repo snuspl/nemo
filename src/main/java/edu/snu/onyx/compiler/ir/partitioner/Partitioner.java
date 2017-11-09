@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.compiler.ir;
+package edu.snu.onyx.compiler.ir.partitioner;
 
+import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.List;
@@ -31,7 +32,8 @@ public interface Partitioner {
    *
    * @param elements       the output data from a source task.
    * @param dstParallelism the number of destination tasks.
+   * @param keyExtractor   extracts keys from elements.
    * @return the list of partitioned blocks.
    */
-  List<Block> partition(Iterable elements, int dstParallelism);
+  List<Block> partition(Iterable elements, int dstParallelism, KeyExtractor keyExtractor);
 }

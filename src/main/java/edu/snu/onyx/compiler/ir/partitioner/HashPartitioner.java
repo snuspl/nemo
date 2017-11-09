@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioner;
+package edu.snu.onyx.compiler.ir.partitioner;
 
-import edu.snu.onyx.compiler.ir.Partitioner;
+import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.ArrayList;
@@ -32,12 +32,13 @@ public final class HashPartitioner implements Partitioner {
 
   @Override
   public List<Block> partition(final Iterable elements,
-                               final int dstParallelism) {
+                               final int dstParallelism,
+                               final KeyExtractor keyExtractor) {
     final List<List> elementsByKey = new ArrayList<>(dstParallelism);
     IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> elementsByKey.add(new ArrayList<>()));
     elements.forEach(element -> {
       // Hash the data by its key, and "modulo" by the number of destination tasks.
-      final int dstIdx = Math.abs(PartitionerUtil.getHashCodeFromElementKey(element) % dstParallelism);
+      final int dstIdx = Math.abs(keyExtractor.extractKey(element).hashCode() % dstParallelism);
       elementsByKey.get(dstIdx).add(element);
     });
 

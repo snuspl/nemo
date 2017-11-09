@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioner;
+package edu.snu.onyx.compiler.ir.partitioner;
 
-import edu.snu.onyx.compiler.ir.Partitioner;
+import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.ArrayList;
@@ -42,7 +42,8 @@ public final class DataSkewHashPartitioner implements Partitioner {
 
   @Override
   public List<Block> partition(final Iterable elements,
-                               final int dstParallelism) {
+                               final int dstParallelism,
+                               final KeyExtractor keyExtractor) {
     // For this hash range, please check the description of HashRangeMultiplier in JobConf.
     final int hashRange = hashRangeMultiplier * dstParallelism;
 
@@ -51,7 +52,7 @@ public final class DataSkewHashPartitioner implements Partitioner {
     IntStream.range(0, hashRange).forEach(hashVal -> elementsByKey.add(new ArrayList<>()));
     elements.forEach(element -> {
       // Hash the data by its key, and "modulo" by the hash range.
-      final int hashVal = Math.abs(PartitionerUtil.getHashCodeFromElementKey(element) % hashRange);
+      final int hashVal = Math.abs(keyExtractor.extractKey(element).hashCode() % hashRange);
       elementsByKey.get(hashVal).add(element);
     });
 

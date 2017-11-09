@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.partitioner;
+package edu.snu.onyx.compiler.ir.partitioner;
 
-import edu.snu.onyx.compiler.ir.Partitioner;
+import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.Collections;
@@ -29,7 +29,8 @@ public final class IntactPartitioner implements Partitioner {
 
   @Override
   public List<Block> partition(final Iterable elements,
-                               final int dstParallelism) {
+                               final int dstParallelism,
+                               final KeyExtractor keyExtractor) {
     return Collections.singletonList(new Block(elements));
   }
 }

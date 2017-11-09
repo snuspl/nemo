@@ -1,7 +1,7 @@
 package edu.snu.onyx.compiler.ir.executionproperty.edge;
 
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.onyx.compiler.ir.Partitioner;
+import edu.snu.onyx.compiler.ir.partitioner.Partitioner;
 
 /**
  * Partitioner ExecutionProperty.
