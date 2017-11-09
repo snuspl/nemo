@@ -50,10 +50,12 @@ public final class DataSerializationUtil {
                                       final Coder coder,
                                       final InputStream bytesInputStream,
                                       final List deserializedData) {
-    // This stream will be not closed, but it is okay as long as the file stream is closed well.
-    final BufferedInputStream bufferedInputStream = new BufferedInputStream(bytesInputStream, size);
-    for (int i = 0; i < elementsInBlock; i++) {
-      deserializedData.add(coder.decode(bufferedInputStream));
+    if (size != 0) {
+      // This stream will be not closed, but it is okay as long as the file stream is closed well.
+      final BufferedInputStream bufferedInputStream = new BufferedInputStream(bytesInputStream, size);
+      for (int i = 0; i < elementsInBlock; i++) {
+        deserializedData.add(coder.decode(bufferedInputStream));
+      }
     }
   }
 
