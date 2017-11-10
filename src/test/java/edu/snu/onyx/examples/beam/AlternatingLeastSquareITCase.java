@@ -66,7 +66,7 @@ public final class AlternatingLeastSquareITCase {
         .build());
   }
 
-  public void testDualParallelism() throws Exception {
+  public void testMultiParallelism() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_multiparallelism")
         .addOptimizationPolicy(CompilerTestUtil.testMultiParallelismPolicy)

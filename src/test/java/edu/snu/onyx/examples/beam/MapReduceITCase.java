@@ -58,7 +58,7 @@ public final class MapReduceITCase {
   }
 
   @Test (timeout = TIMEOUT)
-  public void testDualParallelism() throws Exception {
+  public void testMultiParallelism() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_multiparallelism")
         .addOptimizationPolicy(CompilerTestUtil.testMultiParallelismPolicy)
