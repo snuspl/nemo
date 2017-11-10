@@ -61,19 +61,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests {@link BatchScheduler}.
+ * Tests {@link BatchSingleJobScheduler}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ContainerManager.class, PartitionManagerMaster.class,
     PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class, MetricMessageHandler.class})
-public final class BatchSchedulerTest {
-  private static final Logger LOG = LoggerFactory.getLogger(BatchSchedulerTest.class.getName());
+public final class BatchSingleJobSchedulerTest {
+  private static final Logger LOG = LoggerFactory.getLogger(BatchSingleJobSchedulerTest.class.getName());
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
   private SchedulingPolicy schedulingPolicy;
   private ContainerManager containerManager;
   private MetricMessageHandler metricMessageHandler;
-  private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
+  private PendingTaskGroupQueue pendingTaskGroupQueue;
   private PubSubEventHandlerWrapper pubSubEventHandler;
   private UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
@@ -91,12 +91,12 @@ public final class BatchSchedulerTest {
     irDAGBuilder = new DAGBuilder<>();
     containerManager = mock(ContainerManager.class);
     metricMessageHandler = mock(MetricMessageHandler.class);
-    pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
+    pendingTaskGroupQueue = new PendingTaskGroupQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     scheduler =
-        new BatchScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupPriorityQueue,
+        new BatchSingleJobScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupQueue,
             pubSubEventHandler, updatePhysicalPlanEventHandler);
 
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
@@ -135,7 +135,7 @@ public final class BatchSchedulerTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchScheduler}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchSingleJobScheduler}.
    * TaskGroup state changes are explicitly submitted to scheduler instead of executor messages.
    */
   @Test(timeout=10000)
@@ -186,7 +186,7 @@ public final class BatchSchedulerTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchScheduler}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link BatchSingleJobScheduler}.
    * TaskGroup state changes are explicitly submitted to scheduler instead of executor messages.
    */
   @Test(timeout=10000)

@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * {@inheritDoc}
- * A Round-Robin implementation used by {@link BatchScheduler}.
+ * A Round-Robin implementation used by {@link BatchSingleJobScheduler}.
  *
  * This policy keeps a list of available {@link ExecutorRepresenter} for each type of container.
  * The RR policy is used for each container type when trying to schedule a task group.

@@ -29,6 +29,7 @@ import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.optimizer.Optimizer;
 import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
+import org.apache.reef.client.parameters.JobCompletedHandler;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +46,18 @@ public final class UserApplicationRunner implements Runnable {
   private final String className;
   private final String[] arguments;
   private final String optimizationPolicyCanonicalName;
+  private final int maxScheduleAttempt;
 
   private final RuntimeMaster runtimeMaster;
   private final Frontend frontend;
   private final Backend<PhysicalPlan> backend;
-  private final PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   @Inject
   private UserApplicationRunner(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
                                 @Parameter(JobConf.UserMainClass.class) final String className,
                                 @Parameter(JobConf.UserMainArguments.class) final String arguments,
                                 @Parameter(JobConf.OptimizationPolicy.class) final String optimizationPolicy,
+                                @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt,
                                 final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
                                 final DynamicOptimizationEventHandler dynamicOptimizationEventHandler,
                                 final RuntimeMaster runtimeMaster) {
@@ -63,10 +65,10 @@ public final class UserApplicationRunner implements Runnable {
     this.className = className;
     this.arguments = arguments.split(" ");
     this.optimizationPolicyCanonicalName = optimizationPolicy;
+    this.maxScheduleAttempt = maxScheduleAttempt;
     this.runtimeMaster = runtimeMaster;
     this.frontend = new BeamFrontend();
     this.backend = new OnyxBackend();
-    this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
     pubSubEventHandlerWrapper.getPubSubEventHandler()
         .subscribe(dynamicOptimizationEventHandler.getEventClass(), dynamicOptimizationEventHandler);
   }
@@ -88,7 +90,7 @@ public final class UserApplicationRunner implements Runnable {
       final PhysicalPlan physicalPlan = backend.compile(optimizedDAG);
 
       physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
-      runtimeMaster.execute(physicalPlan, frontend.getClientEndpoint());
+      runtimeMaster.execute(physicalPlan, maxScheduleAttempt, frontend.getClientEndpoint());
       runtimeMaster.terminate();
     } catch (Exception e) {
       throw new RuntimeException(e);

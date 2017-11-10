@@ -24,7 +24,6 @@ import edu.snu.onyx.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
-import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.onyx.common.PubSubEventHandlerWrapper;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
@@ -130,8 +129,8 @@ public final class DataTransferTest {
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final Scheduler scheduler =
-        new BatchScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
-            new PendingTaskGroupPriorityQueue(), pubSubEventHandler, updatePhysicalPlanEventHandler);
+        new BatchSingleJobScheduler(master, new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT),
+            new PendingTaskGroupQueue(), pubSubEventHandler, updatePhysicalPlanEventHandler);
     final AtomicInteger executorCount = new AtomicInteger(0);
 
     // Necessary for wiring up the message environments

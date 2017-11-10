@@ -52,4 +52,9 @@ public final class MetricManagerMaster implements MetricMessageHandler {
   public synchronized List<String> getMetricByKey(final String metricKey) {
     return compUnitIdToMetricInJson.get(metricKey);
   }
+
+  @Override
+  public synchronized void terminate() {
+    compUnitIdToMetricInJson.clear();
+  }
 }

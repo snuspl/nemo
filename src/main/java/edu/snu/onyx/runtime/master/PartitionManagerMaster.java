@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import edu.snu.onyx.runtime.exception.IllegalMessageException;
+import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,7 +175,7 @@ public final class PartitionManagerMaster {
   /**
    * To be called when a potential producer task group is scheduled.
    * To be precise, it is called when the task group is enqueued to
-   * {@link edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupPriorityQueue}.
+   * {@link PendingTaskGroupQueue}.
    *
    * @param scheduledTaskGroupId the ID of the scheduled task group.
    */
@@ -516,5 +517,9 @@ public final class PartitionManagerMaster {
                   + PartitionManagerMaster.class.getName() + ":" + message.getType()));
       }
     }
+  }
+
+  public void terminate() {
+    // do nothing
   }
 }

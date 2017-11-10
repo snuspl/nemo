@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2017 Seoul National University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.snu.onyx.runtime.master.scheduler;
+
+import edu.snu.onyx.common.Pair;
+import edu.snu.onyx.common.dag.DAG;
+import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
+import net.jcip.annotations.ThreadSafe;
+import org.apache.reef.annotations.audience.DriverSide;
+import org.apache.reef.tang.annotations.DefaultImplementation;
+
+import javax.inject.Inject;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Optional;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.BiFunction;
+
+/**
+ * Keep tracks of all pending task groups.
+ * {@link Scheduler} enqueues the TaskGroups to schedule to this queue.
+ * {@link SchedulerRunner} refers to this queue when scheduling TaskGroups.
+ */
+@ThreadSafe
+@DriverSide
+@DefaultImplementation(SingleJobTaskGroupQueue.class)
+public interface PendingTaskGroupQueue {
+
+  /**
+   * Enqueues a TaskGroup to this PQ.
+   * @param scheduledTaskGroup to enqueue.
+   */
+  void enqueue(final ScheduledTaskGroup scheduledTaskGroup);
+
+  /**
+   * Dequeues the next TaskGroup to be scheduled.
+   * @return an optional of the jobID and the next TaskGroup to be scheduled,
+   * an empty optional if no such TaskGroup exists.
+   */
+  Optional<Pair<String, ScheduledTaskGroup>> dequeueNextTaskGroup();
+
+  void onJobScheduled(final PhysicalPlan physicalPlanForJob);
+
+  /**
+   * Removes a stage and its descendant stages from this queue.
+   * This is to be used for fault tolerance purposes.
+   * @param stageId for the stage to begin the removal recursively.
+   */
+  void removeStageAndDescendantsFromQueue(final String stageId);
+
+  /**
+   * Closes and cleans up this queue.
+   */
+  void close();
+}

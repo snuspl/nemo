@@ -18,7 +18,6 @@ package edu.snu.onyx.runtime.master;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
-import edu.snu.onyx.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.OperatorVertex;
@@ -30,7 +29,6 @@ import edu.snu.onyx.compiler.optimizer.TestPolicy;
 import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
-import edu.snu.onyx.runtime.master.scheduler.*;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -47,7 +44,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Tests {@link PendingTaskGroupPriorityQueue}.
  */
-public final class PendingTaskGroupPriorityQueueTest {
+public final class PendingTaskGroupQueueTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
 
@@ -110,7 +107,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
       // First schedule the children TaskGroups (since it is push).
-      // BatchScheduler will schedule TaskGroups in this order as well.
+      // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
       dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
           pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
 
@@ -197,7 +194,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
       // First schedule the parent TaskGroups (since it is pull).
-      // BatchScheduler will schedule TaskGroups in this order as well.
+      // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
       dagOf2Stages.get(0).getTaskGroupList().forEach(taskGroup ->
           pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
 
@@ -312,7 +309,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
       // First schedule the children TaskGroups (since it is push).
-      // BatchScheduler will schedule TaskGroups in this order as well.
+      // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
       dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
           pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
 
@@ -372,7 +369,7 @@ public final class PendingTaskGroupPriorityQueueTest {
     final CountDownLatch countDownLatch = new CountDownLatch(2);
 
     // First schedule the children TaskGroups (since it is push).
-    // BatchScheduler will schedule TaskGroups in this order as well.
+    // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
     dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
         pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
 

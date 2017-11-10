@@ -36,7 +36,9 @@ import edu.snu.onyx.runtime.exception.IllegalMessageException;
 import edu.snu.onyx.runtime.exception.UnknownExecutionStateException;
 import edu.snu.onyx.runtime.exception.UnknownFailureCauseException;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
+import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.onyx.runtime.master.scheduler.Scheduler;
+import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
@@ -63,10 +65,12 @@ public final class RuntimeMaster {
   private static final int DAG_LOGGING_PERIOD = 3000;
 
   private final Scheduler scheduler;
+  private final SchedulerRunner schedulerRunner;
+  private final PendingTaskGroupQueue pendingTaskGroupQueue;
   private final ContainerManager containerManager;
+  private final PartitionManagerMaster partitionManagerMaster;
   private final MetricMessageHandler metricMessageHandler;
   private final MessageEnvironment masterMessageEnvironment;
-  private JobStateManager jobStateManager;
 
   // For converting json data. This is a thread safe.
   // TODO #420: Create a Singleton ObjectMapper
@@ -74,18 +78,21 @@ public final class RuntimeMaster {
 
   private final String dagDirectory;
   private final Set<IRVertex> irVertices;
-  private final int maxScheduleAttempt;
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
+                       final SchedulerRunner schedulerRunner,
+                       final PendingTaskGroupQueue pendingTaskGroupQueue,
                        final ContainerManager containerManager,
+                       final PartitionManagerMaster partitionManagerMaster,
                        final MetricMessageHandler metricMessageHandler,
                        final MessageEnvironment masterMessageEnvironment,
-                       @Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
-                       @Parameter(JobConf.MaxScheduleAttempt.class) final int maxScheduleAttempt) {
+                       @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
-    this.maxScheduleAttempt = maxScheduleAttempt;
+    this.schedulerRunner = schedulerRunner;
+    this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.containerManager = containerManager;
+    this.partitionManagerMaster = partitionManagerMaster;
     this.metricMessageHandler = metricMessageHandler;
     this.masterMessageEnvironment = masterMessageEnvironment;
     this.masterMessageEnvironment
@@ -101,16 +108,20 @@ public final class RuntimeMaster {
    * @param clientEndpoint of this plan.
    */
   public void execute(final PhysicalPlan plan,
+                      final int maxScheduleAttempt,
                       final ClientEndpoint clientEndpoint) {
     this.irVertices.addAll(plan.getTaskIRVertexMap().values());
     try {
-      jobStateManager = scheduler.scheduleJob(plan, metricMessageHandler, maxScheduleAttempt);
+      final JobStateManager jobStateManager =
+          new JobStateManager(plan, partitionManagerMaster, metricMessageHandler, maxScheduleAttempt);
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
-      // Schedule dag logging thread
-      final ScheduledExecutorService dagLoggingExecutor = scheduleDagLogging();
+      scheduler.scheduleJob(plan, jobStateManager, maxScheduleAttempt);
 
-      // Wait the job to finish and stop logging
+      // Schedule dag logging thread
+      final ScheduledExecutorService dagLoggingExecutor = scheduleDagLogging(jobStateManager);
+
+      // Wait for the job to finish and stop logging
       jobStateManager.waitUntilFinish();
       dagLoggingExecutor.shutdown();
 
@@ -122,9 +133,14 @@ public final class RuntimeMaster {
   }
 
   public void terminate() {
-    final Future<Boolean> allExecutorsClosed = containerManager.terminate();
-
     try {
+      scheduler.terminate();
+      schedulerRunner.terminate();
+      pendingTaskGroupQueue.close();
+      partitionManagerMaster.terminate();
+      masterMessageEnvironment.close();
+      final Future<Boolean> allExecutorsClosed = containerManager.terminate();
+
       if (allExecutorsClosed.get()) {
         LOG.info("All executors were closed successfully!");
       }
@@ -299,7 +315,7 @@ public final class RuntimeMaster {
    *
    * @return the scheduled executor service.
    */
-  private ScheduledExecutorService scheduleDagLogging() {
+  private ScheduledExecutorService scheduleDagLogging(final JobStateManager jobStateManager) {
     final ScheduledExecutorService dagLoggingExecutor = Executors.newSingleThreadScheduledExecutor();
     dagLoggingExecutor.scheduleAtFixedRate(new Runnable() {
       private int dagLogFileIndex = 0;

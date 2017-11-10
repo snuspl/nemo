@@ -15,11 +15,13 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
+import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.onyx.runtime.exception.SchedulingException;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
 
@@ -37,7 +39,7 @@ import java.util.function.BiFunction;
  */
 @ThreadSafe
 @DriverSide
-public final class PendingTaskGroupPriorityQueue {
+public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
   private PhysicalPlan physicalPlan;
 
   /**
@@ -51,15 +53,15 @@ public final class PendingTaskGroupPriorityQueue {
   private final BlockingDeque<String> schedulableStages;
 
   @Inject
-  public PendingTaskGroupPriorityQueue() {
+  public SingleJobTaskGroupQueue() {
     stageIdToPendingTaskGroups = new ConcurrentHashMap<>();
     schedulableStages = new LinkedBlockingDeque<>();
   }
 
   /**
-   * Enqueues a TaskGroup to this PQ.
-   * @param scheduledTaskGroup to enqueue.
+   * @inheritDoc
    */
+  @Override
   public void enqueue(final ScheduledTaskGroup scheduledTaskGroup) {
     final String stageId = scheduledTaskGroup.getTaskGroup().getStageId();
 
@@ -85,12 +87,19 @@ public final class PendingTaskGroupPriorityQueue {
 
   /**
    * Dequeues the next TaskGroup to be scheduled according to job dependency priority.
-   * @return the next TaskGroup to be scheduled
+   * @return the jobID and the next TaskGroup to be scheduled
    * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
-  public Optional<ScheduledTaskGroup> dequeueNextTaskGroup() throws InterruptedException {
+  @Override
+  public Optional<Pair<String, ScheduledTaskGroup>> dequeueNextTaskGroup() {
     ScheduledTaskGroup taskGroupToSchedule = null;
-    final String stageId = schedulableStages.takeFirst();
+    final String stageId;
+    try {
+      stageId = schedulableStages.takeFirst();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      throw new SchedulingException(new Throwable("An exception occurred while trying to dequeue the next TaskGroup"));
+    }
 
     synchronized (stageIdToPendingTaskGroups) {
       final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
@@ -109,7 +118,8 @@ public final class PendingTaskGroupPriorityQueue {
       }
     }
 
-    return (taskGroupToSchedule == null) ? Optional.empty() : Optional.of(taskGroupToSchedule);
+    return (taskGroupToSchedule == null) ? Optional.empty()
+        : Optional.of(Pair.of(physicalPlan.getId(), taskGroupToSchedule));
   }
 
   /**
@@ -180,7 +190,14 @@ public final class PendingTaskGroupPriorityQueue {
     return true;
   }
 
+  @Override
   public void onJobScheduled(final PhysicalPlan physicalPlanForJob) {
     this.physicalPlan = physicalPlanForJob;
+  }
+
+  @Override
+  public void close() {
+    schedulableStages.clear();
+    stageIdToPendingTaskGroups.clear();
   }
 }
