@@ -93,6 +93,8 @@ final class GrpcMessageClient {
 
       @Override
       public void onCompleted() {
+        LOG.trace("[REQUEST] completed. msg.id={}, msg.listenerId={}, msg.type={}",
+            message.getId(), message.getListenerId(), message.getType());
       }
     });
 

@@ -72,7 +72,6 @@ public final class GrpcMessageEnvironment implements MessageEnvironment {
   public <T> Future<MessageSender<T>> asyncConnect(final String receiverId, final String listenerId) {
     final CompletableFuture completableFuture = new CompletableFuture();
 
-
     // It can be optimized by sharing  ManagedChannel of same grpc clients connecting to the same ip address,
     // when it figured out there are significant duplicated clients should be created.
     final GrpcMessageClient grpcClient = new GrpcMessageClient(nameResolver, idFactory, receiverId);
