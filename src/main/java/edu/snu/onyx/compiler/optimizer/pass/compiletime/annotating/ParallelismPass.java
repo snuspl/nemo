@@ -33,9 +33,15 @@ import java.util.stream.Collectors;
  */
 public final class ParallelismPass extends AnnotatingPass {
   public static final String SIMPLE_NAME = "ParallelismPass";
+  public final Integer desiredNumOfSourceSplits;
 
   public ParallelismPass() {
+    this(1);
+  }
+
+  public ParallelismPass(final Integer desiredNumOfSourceSplits) {
     super(ExecutionProperty.Key.Parallelism);
+    this.desiredNumOfSourceSplits = desiredNumOfSourceSplits;
   }
 
   @Override
@@ -48,7 +54,7 @@ public final class ParallelismPass extends AnnotatingPass {
             .collect(Collectors.toList());
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           final SourceVertex sourceVertex = (SourceVertex) vertex;
-          vertex.setProperty(ParallelismProperty.of(sourceVertex.getReaders(1).size()));
+          vertex.setProperty(ParallelismProperty.of(sourceVertex.getReaders(desiredNumOfSourceSplits).size()));
         } else if (!inEdges.isEmpty()) {
           final OptionalInt parallelism = inEdges.stream()
               // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
