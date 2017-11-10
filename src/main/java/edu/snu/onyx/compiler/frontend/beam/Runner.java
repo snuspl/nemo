@@ -15,6 +15,7 @@
  */
 package edu.snu.onyx.compiler.frontend.beam;
 
+import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
@@ -57,7 +58,7 @@ public final class Runner extends PipelineRunner<BeamResult> {
     pipeline.traverseTopologically(visitor);
     final DAG dag = builder.build();
     final BeamResult beamResult = new BeamResult();
-    BeamFrontend.supplyDAGFromRunner(dag, beamResult);
+    JobLauncher.launch(dag);
     return beamResult;
   }
 }

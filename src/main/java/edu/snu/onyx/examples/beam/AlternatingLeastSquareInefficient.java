@@ -103,6 +103,21 @@ public final class AlternatingLeastSquareInefficient {
    */
   public static void main(final String[] args) {
     final Long start = System.currentTimeMillis();
+
+    final PipelineOptions options = PipelineOptionsFactory.create();
+    options.setRunner(Runner.class);
+
+    createPipeline(args, options).run();
+    LOG.info("JCT " + (System.currentTimeMillis() - start));
+  }
+
+  /**
+   * Create a {@link Pipeline} from the given {@link PipelineOptions}.
+   * @param args user-provided argument
+   * @param options {@link PipelineOptions}.
+   * @return {@link Pipeline} which includes the application logic
+   */
+  public static Pipeline createPipeline(final String[] args, final PipelineOptions options) {
     LOG.info(Arrays.toString(args));
     final String inputFilePath = args[0];
     final Integer numFeatures = Integer.parseInt(args[1]);
@@ -114,8 +129,6 @@ public final class AlternatingLeastSquareInefficient {
       lambda = 0.05;
     }
 
-    final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(Runner.class);
     options.setJobName("ALS");
     options.setStableUniqueNames(PipelineOptions.CheckEnabled.OFF);
 
@@ -157,8 +170,6 @@ public final class AlternatingLeastSquareInefficient {
       // NOTE: a single composite transform for the iteration.
       itemMatrix = itemMatrix.apply(new UpdateUserAndItemMatrix(numFeatures, lambda, rawData, parsedItemData));
     }
-
-    p.run();
-    LOG.info("JCT " + (System.currentTimeMillis() - start));
+    return p;
   }
 }

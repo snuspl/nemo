@@ -16,7 +16,6 @@
 package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.compiler.frontend.beam.Runner;
-import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineOptions;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -36,13 +35,24 @@ public final class MapReduce {
 
   /**
    * Main function for the MR BEAM program.
-   * @param args arguments.
+   * @param args user-provided arguments.
    */
   public static void main(final String[] args) {
+    final PipelineOptions options = PipelineOptionsFactory.create();
+    options.setRunner(Runner.class);
+
+    createPipeline(args, options).run();
+  }
+
+  /**
+   * Creates pipeline for MR program.
+   * @param args user-provided arguments.
+   * @param options {@link PipelineOptions}.
+   * @return {@link Pipeline} for user program.
+   */
+  public static Pipeline createPipeline(final String[] args, final PipelineOptions options) {
     final String inputFilePath = args[0];
     final String outputFilePath = args[1];
-    final PipelineOptions options = PipelineOptionsFactory.create().as(OnyxPipelineOptions.class);
-    options.setRunner(Runner.class);
     options.setJobName("MapReduce");
 
     final Pipeline p = Pipeline.create(options);
@@ -65,6 +75,6 @@ public final class MapReduce {
           }
         }));
     GenericSourceSink.write(result, outputFilePath);
-    p.run();
+    return p;
   }
 }

@@ -18,8 +18,6 @@ package edu.snu.onyx.runtime.master;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.onyx.client.JobConf;
-import edu.snu.onyx.common.proxy.ClientEndpoint;
-import edu.snu.onyx.common.proxy.DriverEndpoint;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass;
@@ -98,14 +96,11 @@ public final class RuntimeMaster {
   /**
    * Submits the {@link PhysicalPlan} to Runtime.
    * @param plan to execute.
-   * @param clientEndpoint of this plan.
    */
-  public void execute(final PhysicalPlan plan,
-                      final ClientEndpoint clientEndpoint) {
+  public void execute(final PhysicalPlan plan) {
     this.irVertices.addAll(plan.getTaskIRVertexMap().values());
     try {
       jobStateManager = scheduler.scheduleJob(plan, metricMessageHandler, maxScheduleAttempt);
-      final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
       // Schedule dag logging thread
       final ScheduledExecutorService dagLoggingExecutor = scheduleDagLogging();
