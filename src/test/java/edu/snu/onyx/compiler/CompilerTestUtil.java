@@ -81,7 +81,7 @@ public final class CompilerTestUtil {
   private static final class BeamCompilerForTest {
     private static DAG dag;
 
-    private static DAG<IRVertex, IREdge> compile(final String[] args) throws Exception {
+    private static synchronized DAG<IRVertex, IREdge> compile(final String[] args) throws Exception {
       dag = null;
 
       final Configuration configuration = JobLauncher.getJobConf(args);
