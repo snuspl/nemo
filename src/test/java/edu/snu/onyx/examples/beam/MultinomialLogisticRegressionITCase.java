@@ -67,11 +67,10 @@ public final class MultinomialLogisticRegressionITCase {
         .build());
   }
 
-  @Test (timeout = TIMEOUT)
   public void testDualParallelism() throws Exception {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_dualparallelism")
-        .addOptimizationPolicy(TestMultiParallelismPolicy.class.getCanonicalName())
+        .addOptimizationPolicy(CompilerTestUtil.testMultiParallelismPolicy)
         .build());
   }
 }
