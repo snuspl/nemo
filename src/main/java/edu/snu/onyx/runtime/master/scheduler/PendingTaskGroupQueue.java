@@ -62,7 +62,8 @@ public interface PendingTaskGroupQueue {
 
   /**
    * Removes a stage and its descendant stages from this queue.
-   * This is to be used for fault tolerance purposes.
+   * This is to be used for fault tolerance purposes,
+   * say when a stage fails and all affected TaskGroups must be removed.
    * @param stageId for the stage to begin the removal recursively.
    */
   void removeStageAndDescendantsFromQueue(final String stageId);

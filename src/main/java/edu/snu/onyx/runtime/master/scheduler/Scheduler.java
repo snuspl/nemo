@@ -21,13 +21,15 @@ import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
 import edu.snu.onyx.runtime.master.JobStateManager;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.List;
 
 /**
- * Receives a job to execute and schedules {@link edu.snu.onyx.runtime.common.plan.physical.TaskGroup} to executors.
+ * Receives jobs to execute and schedules {@link edu.snu.onyx.runtime.common.plan.physical.TaskGroup} to executors.
  */
+@DriverSide
 @DefaultImplementation(BatchSingleJobScheduler.class)
 public interface Scheduler {
 

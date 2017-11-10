@@ -26,6 +26,7 @@ import edu.snu.onyx.runtime.exception.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
 import edu.snu.onyx.runtime.master.JobStateManager;
 import edu.snu.onyx.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
@@ -37,44 +38,45 @@ import org.slf4j.Logger;
 import static edu.snu.onyx.runtime.common.state.TaskGroupState.State.ON_HOLD;
 
 /**
- * BatchSingleJobScheduler receives a {@link PhysicalPlan} to execute and asynchronously schedules the task groups.
+ * BatchSingleJobScheduler receives a single {@link PhysicalPlan} to execute and schedules the TaskGroups.
  * The policy by which it schedules them is dependent on the implementation of {@link SchedulingPolicy}.
  */
+@DriverSide
 public final class BatchSingleJobScheduler implements Scheduler {
   private static final Logger LOG = LoggerFactory.getLogger(BatchSingleJobScheduler.class.getName());
   private static final int SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE = Integer.MAX_VALUE;
-  private int initialScheduleGroup;
 
   /**
-   * The {@link SchedulingPolicy} used to schedule task groups.
+   * Components related to scheduling the given job.
    */
   private final SchedulingPolicy schedulingPolicy;
-
   private final SchedulerRunner schedulerRunner;
-
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
+  /**
+   * Other necessary components of this {@link edu.snu.onyx.runtime.master.RuntimeMaster}.
+   */
   private final PartitionManagerMaster partitionManagerMaster;
-
   private final PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   /**
-   * The current job being executed.
+   * The below variables depend on the submitted job to execute.
    */
   private PhysicalPlan physicalPlan;
   private JobStateManager jobStateManager;
+  private int initialScheduleGroup;
 
   @Inject
-  public BatchSingleJobScheduler(final PartitionManagerMaster partitionManagerMaster,
-                                 final SchedulingPolicy schedulingPolicy,
+  public BatchSingleJobScheduler(final SchedulingPolicy schedulingPolicy,
                                  final SchedulerRunner schedulerRunner,
                                  final PendingTaskGroupQueue pendingTaskGroupQueue,
+                                 final PartitionManagerMaster partitionManagerMaster,
                                  final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
                                  final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler) {
-    this.partitionManagerMaster = partitionManagerMaster;
     this.schedulingPolicy = schedulingPolicy;
     this.schedulerRunner = schedulerRunner;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
+    this.partitionManagerMaster = partitionManagerMaster;
     this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
     updatePhysicalPlanEventHandler.setScheduler(this);
     if (pubSubEventHandlerWrapper.getPubSubEventHandler() != null) {
@@ -504,6 +506,6 @@ public final class BatchSingleJobScheduler implements Scheduler {
 
   @Override
   public void terminate() {
-    schedulerRunner.terminate();
+    // nothing to do yet.
   }
 }

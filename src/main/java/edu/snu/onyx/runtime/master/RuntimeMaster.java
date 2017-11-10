@@ -40,6 +40,7 @@ import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.onyx.runtime.master.scheduler.Scheduler;
 import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +58,13 @@ import static edu.snu.onyx.runtime.common.state.TaskGroupState.State.ON_HOLD;
  * Runtime Master is the central controller of Runtime.
  * Compiler submits an {@link PhysicalPlan} to Runtime Master to execute a job.
  * Runtime Master handles:
- *    a) Scheduling the job with {@link Scheduler}.
- *    b) (Please list others done by Runtime Master as features are added).
+ *    a) Scheduling the job with {@link Scheduler}, {@link SchedulerRunner}, {@link PendingTaskGroupQueue}.
+ *    b) Managing resources with {@link ContainerManager}.
+ *    c) Managing partitions with {@link PartitionManagerMaster}.
+ *    d) Receiving and sending control messages with {@link MessageEnvironment}.
+ *    e) Metric using {@link MetricMessageHandler}.
  */
+@DriverSide
 public final class RuntimeMaster {
   private static final Logger LOG = LoggerFactory.getLogger(RuntimeMaster.class.getName());
   private static final int DAG_LOGGING_PERIOD = 3000;

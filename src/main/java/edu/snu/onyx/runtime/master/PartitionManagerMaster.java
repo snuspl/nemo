@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import edu.snu.onyx.runtime.exception.IllegalMessageException;
 import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
+import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ import static edu.snu.onyx.runtime.master.RuntimeMaster.convertPartitionState;
  * TODO #493: Detach partitioning from writing.
  */
 @ThreadSafe
+@DriverSide
 public final class PartitionManagerMaster {
   private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerMaster.class.getName());
   private final Map<String, PartitionMetadata> partitionIdToMetadata;
