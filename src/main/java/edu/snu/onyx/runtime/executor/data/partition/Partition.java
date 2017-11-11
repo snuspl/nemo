@@ -34,7 +34,7 @@ public interface Partition {
    * @return the size of the data per block (only when the data is serialized).
    * @throws IOException if fail to write.
    */
-  List<Long> writeBlocks(final Iterable<Block> blocks) throws IOException;
+  List<Long> putBlocks(final Iterable<Block> blocks) throws IOException;
 
   /**
    * Retrieves the elements in a specific hash range and deserializes it from this partition.
@@ -44,7 +44,7 @@ public interface Partition {
    * @return an iterable of deserialized elements.
    * @throws IOException if failed to deserialize.
    */
-  Iterable retrieve(final HashRange hashRange) throws IOException;
+  Iterable getElements(final HashRange hashRange) throws IOException;
 
   /**
    * Commits this partition to prevent further write.

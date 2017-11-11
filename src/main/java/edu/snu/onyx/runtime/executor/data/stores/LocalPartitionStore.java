@@ -49,7 +49,7 @@ public abstract class LocalPartitionStore implements PartitionStore {
 
     if (partition != null) {
       try {
-        return Optional.of(partition.retrieve(hashRange));
+        return Optional.of(partition.getElements(hashRange));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -70,7 +70,7 @@ public abstract class LocalPartitionStore implements PartitionStore {
       if (partition == null) {
         throw new PartitionWriteException(new Throwable("The partition " + partitionId + "is not created yet."));
       }
-      final List<Long> blockSizeList = partition.writeBlocks(blocks);
+      final List<Long> blockSizeList = partition.putBlocks(blocks);
 
       if (blockSizeList.isEmpty()) {
         // Empty block or not serialized.

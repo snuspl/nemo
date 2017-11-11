@@ -93,7 +93,7 @@ public final class GlusterFileStore implements RemoteFileStore {
         final RemoteFileMetadata metadata =
             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        return Optional.of(partition.retrieve(hashRange));
+        return Optional.of(partition.getElements(hashRange));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -117,7 +117,7 @@ public final class GlusterFileStore implements RemoteFileStore {
           new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
       final FilePartition partition = new FilePartition(coder, filePath, metadata);
       // Serialize and write the given blocks.
-      final List<Long> blockSizeList = partition.writeBlocks(blocks);
+      final List<Long> blockSizeList = partition.putBlocks(blocks);
       return Optional.of(blockSizeList);
     } catch (final IOException e) {
       throw new PartitionWriteException(e);

@@ -349,12 +349,7 @@ public final class PartitionManagerWorker {
             final SerializingMemoryStore serMemoryStore = (SerializingMemoryStore) getPartitionStore(partitionStore);
             final Optional<Iterable<byte[]>> optionalResult = serMemoryStore.getSerializedBlocksFromPartition(
                 outputStream.getPartitionId(), outputStream.getHashRange());
-            if (optionalResult.isPresent()) {
-              outputStream.writeByteArrays(optionalResult.get()).close();
-            } else {
-              throw new PartitionFetchException(
-                  new Throwable("OnPullRequest: There is no such partition " + outputStream.getPartitionId()));
-            }
+            outputStream.writeByteArrays(optionalResult.get()).close();
           } else {
             final Iterable partition =
                 retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),

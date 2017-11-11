@@ -94,7 +94,7 @@ public final class FilePartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public List<Long> writeBlocks(final Iterable<Block> blocks) throws IOException {
+  public List<Long> putBlocks(final Iterable<Block> blocks) throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
     try (final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream()) {
@@ -135,22 +135,22 @@ public final class FilePartition implements Partition {
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable retrieve(final HashRange hashRange) throws IOException {
+  public Iterable getElements(final HashRange hashRange) throws IOException {
     // Deserialize the data
     final ArrayList deserializedData = new ArrayList<>();
-    try (final FileInputStream fileStream = new FileInputStream(filePath)) {
+    try (final FileInputStream fileStream = new FileInputStream(filePath);
+         final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
         // TODO #463: Support incremental read.
         final int hashVal = blockMetadata.getHashValue();
         if (hashRange.includes(hashVal)) {
           // The hash value of this block is in the range.
           DataSerializationUtil.deserializeBlock(
-              blockMetadata.getBlockSize(), blockMetadata.getElementsTotal(),
-              coder, fileStream, deserializedData);
+              blockMetadata.getElementsTotal(), coder, bufferedInputStream, deserializedData);
         } else {
           // Have to skip this block.
           final long bytesToSkip = blockMetadata.getBlockSize();
-          final long skippedBytes = fileStream.skip(bytesToSkip);
+          final long skippedBytes = bufferedInputStream.skip(bytesToSkip);
           if (skippedBytes != bytesToSkip) {
             throw new IOException("The file stream failed to skip to the next block.");
           }

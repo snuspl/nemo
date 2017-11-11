@@ -51,7 +51,7 @@ public final class SerializedMemoryPartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public synchronized List<Long> writeBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+  public synchronized List<Long> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
     if (!committed) {
       final List<Long> blockSizeList = new ArrayList<>();
       // Serialize the given blocks
@@ -82,7 +82,7 @@ public final class SerializedMemoryPartition implements Partition {
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable retrieve(final HashRange hashRange) throws IOException {
+  public Iterable getElements(final HashRange hashRange) throws IOException {
     if (committed) {
       final List deserializedData = new ArrayList<>();
       for (final SerializedBlock serializedBlock : blocks) {
@@ -92,8 +92,7 @@ public final class SerializedMemoryPartition implements Partition {
           try (final ByteArrayInputStream byteArrayInputStream =
                    new ByteArrayInputStream(serializedBlock.getSerializedData())) {
             DataSerializationUtil.deserializeBlock(
-                serializedBlock.getSize(), serializedBlock.getElementsInBlock(),
-                coder, byteArrayInputStream, deserializedData);
+                serializedBlock.getElementsInBlock(), coder, byteArrayInputStream, deserializedData);
           }
         }
       }
@@ -163,10 +162,6 @@ public final class SerializedMemoryPartition implements Partition {
 
     private byte[] getSerializedData() {
       return serializedData;
-    }
-
-    private int getSize() {
-      return serializedData.length;
     }
   }
 }

@@ -3,7 +3,6 @@ package edu.snu.onyx.runtime.executor.data;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
@@ -39,23 +38,17 @@ public final class DataSerializationUtil {
   /**
    * Reads the data of a block from an input stream and deserializes it.
    *
-   * @param size             the size of this block in bytes.
    * @param elementsInBlock  the number of elements in this block.
    * @param coder            the coder to decode the bytes.
-   * @param bytesInputStream the input stream which will return the data in the block as bytes.
+   * @param inputStream      the input stream which will return the data in the block as bytes.
    * @param deserializedData the list of elements to put the deserialized data.
    */
-  public static void deserializeBlock(final int size,
-                                      final long elementsInBlock,
+  public static void deserializeBlock(final long elementsInBlock,
                                       final Coder coder,
-                                      final InputStream bytesInputStream,
+                                      final InputStream inputStream,
                                       final List deserializedData) {
-    if (size != 0) {
-      // This stream will be not closed, but it is okay as long as the file stream is closed well.
-      final BufferedInputStream bufferedInputStream = new BufferedInputStream(bytesInputStream, size);
-      for (int i = 0; i < elementsInBlock; i++) {
-        deserializedData.add(coder.decode(bufferedInputStream));
-      }
+    for (int i = 0; i < elementsInBlock; i++) {
+      deserializedData.add(coder.decode(inputStream));
     }
   }
 
@@ -68,7 +61,7 @@ public final class DataSerializationUtil {
    */
   public static Coder getCoderFromWorker(final String partitionId,
                                          final PartitionManagerWorker worker) {
-    final String runtimeEdgeId = RuntimeIdGenerator.parsePartitionId(partitionId)[0];
+    final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromPartitionId(partitionId);
     return worker.getCoder(runtimeEdgeId);
   }
 }

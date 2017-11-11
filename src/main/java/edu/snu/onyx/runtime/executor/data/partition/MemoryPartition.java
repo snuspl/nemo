@@ -49,7 +49,7 @@ public final class MemoryPartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public synchronized List<Long> writeBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+  public synchronized List<Long> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
     if (!committed) {
       blocksToWrite.forEach(blocks::add);
     } else {
@@ -68,7 +68,7 @@ public final class MemoryPartition implements Partition {
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable retrieve(final HashRange hashRange) throws IOException {
+  public Iterable getElements(final HashRange hashRange) throws IOException {
     if (committed) {
       // Retrieves data in the hash range from the target partition
       final List<Iterable> retrievedData = new ArrayList<>();
