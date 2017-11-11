@@ -149,10 +149,13 @@ public final class FilePartition implements Partition {
               blockMetadata.getElementsTotal(), coder, bufferedInputStream, deserializedData);
         } else {
           // Have to skip this block.
-          final long bytesToSkip = blockMetadata.getBlockSize();
-          final long skippedBytes = bufferedInputStream.skip(bytesToSkip);
-          if (skippedBytes != bytesToSkip) {
-            throw new IOException("The file stream failed to skip to the next block.");
+          long bytesToSkip = blockMetadata.getBlockSize();
+          while (bytesToSkip > 0) {
+            final long skippedBytes = bufferedInputStream.skip(bytesToSkip);
+            bytesToSkip -= skippedBytes;
+            if (skippedBytes <= 0) {
+              throw new IOException("The file stream failed to skip to the next block.");
+            }
           }
         }
       }
