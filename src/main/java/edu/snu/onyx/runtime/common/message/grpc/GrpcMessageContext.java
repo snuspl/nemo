@@ -22,7 +22,7 @@ final class GrpcMessageContext implements MessageContext {
   @Override
   public <U> void reply(final U replyMessage) {
     final ControlMessage.Message message = (ControlMessage.Message) replyMessage;
-    LOG.trace("[REQUEST] response msg.id={}, msg.listenerId={}, msg.type={}",
+    LOG.debug("[REQUEST] response msg.id={}, msg.listenerId={}, msg.type={}",
         message.getId(), message.getListenerId(), message.getType());
     responseObserver.onNext((ControlMessage.Message) replyMessage);
     responseObserver.onCompleted();

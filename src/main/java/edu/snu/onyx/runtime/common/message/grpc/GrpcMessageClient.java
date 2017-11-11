@@ -43,6 +43,11 @@ final class GrpcMessageClient {
     this.receiverId = receiverId;
   }
 
+  /**
+   * Find receiver's ip address using receiverId and the name server, and try to connect to the receiver.
+   *
+   * @throws Exception if it fails to resolve receiver's ip from the name server, or to establish connection using grpc
+   */
   void connect() throws Exception {
     // 1. Look-up destination ip address using receiver id
     final Identifier identifier = idFactory.getNewInstance(receiverId);
@@ -60,8 +65,13 @@ final class GrpcMessageClient {
       this.asyncStub = MessageServiceGrpc.newStub(managedChannel);
   }
 
+  /**
+   * Issue {@link edu.snu.onyx.runtime.common.message.MessageSender#send(Object)} rpc call.
+   *
+   * @param message a message to send
+   */
   void send(final ControlMessage.Message message) {
-    LOG.trace("[SEND] request msg.id={}, msg.listenerId={}, msg.type={}",
+    LOG.debug("[SEND] request msg.id={}, msg.listenerId={}, msg.type={}",
         message.getId(), message.getListenerId(), message.getType());
     try {
       blockingStub.send(message);
@@ -71,15 +81,21 @@ final class GrpcMessageClient {
     }
   }
 
+  /**
+   * Issue {@link edu.snu.onyx.runtime.common.message.MessageSender#request(Object)} rpc call.
+   *
+   * @param message a message to request
+   * @return a future containing response message
+   */
   CompletableFuture<ControlMessage.Message> request(final ControlMessage.Message message) {
-    LOG.trace("[REQUEST] request msg.id={}, msg.listenerId={}, msg.type={}",
+    LOG.debug("[REQUEST] request msg.id={}, msg.listenerId={}, msg.type={}",
         message.getId(), message.getListenerId(), message.getType());
 
     final CompletableFuture<ControlMessage.Message> completableFuture = new CompletableFuture<>();
     asyncStub.request(message, new StreamObserver<ControlMessage.Message>() {
       @Override
       public void onNext(final ControlMessage.Message responseMessage) {
-        LOG.trace("[REQUEST] response msg.id={}, msg.listenerId={}, msg.type={}",
+        LOG.debug("[REQUEST] response msg.id={}, msg.listenerId={}, msg.type={}",
             responseMessage.getId(), responseMessage.getListenerId(), responseMessage.getType());
         completableFuture.complete(responseMessage);
       }
@@ -93,7 +109,7 @@ final class GrpcMessageClient {
 
       @Override
       public void onCompleted() {
-        LOG.trace("[REQUEST] completed. msg.id={}, msg.listenerId={}, msg.type={}",
+        LOG.debug("[REQUEST] completed. msg.id={}, msg.listenerId={}, msg.type={}",
             message.getId(), message.getListenerId(), message.getType());
       }
     });

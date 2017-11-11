@@ -67,6 +67,12 @@ final class GrpcMessageServer {
     listenerMap.remove(listenerId);
   }
 
+  /**
+   * This method starts a {@link Server} with random port, and register the ip address with the local sender id
+   * to the name server.
+   *
+   * @throws Exception when any network exception occur during starting procedure
+   */
   void start() throws Exception {
     // 1. Bind to random port
     this.server = ServerBuilder.forPort(0)
@@ -106,6 +112,15 @@ final class GrpcMessageServer {
    */
   private class MessageService extends MessageServiceGrpc.MessageServiceImplBase {
 
+    private final GrpcMessageService.Void voidMessage = GrpcMessageService.Void.newBuilder().build();
+
+    /**
+     * Receive a message from a client, notify a corresponding listener, if exists, and finish the rpc call by calling
+     * {@link StreamObserver#onNext(Object)} with the VOID_MESSAGE and calling {@link StreamObserver#onCompleted()}.
+     *
+     * @param message a message from a client
+     * @param responseObserver an observer to control this rpc call
+     */
     @Override
     public void send(final ControlMessage.Message message,
                      final StreamObserver<GrpcMessageService.Void> responseObserver) {
@@ -113,26 +128,30 @@ final class GrpcMessageServer {
       if (listener == null) {
         LOG.warn("A msg is ignored since there is no registered listener. msg.id={}, msg.listenerId={}, msg.type={}",
             message.getId(), message.getListenerId(), message.getType());
-        responseObserver.onNext(createVoidResponse());
+        responseObserver.onNext(voidMessage);
         responseObserver.onCompleted();
         return;
       }
 
-      LOG.trace("[SEND] request msg.id={}, msg.listenerId={}, msg.type={}",
+      LOG.debug("[SEND] request msg.id={}, msg.listenerId={}, msg.type={}",
           message.getId(), message.getListenerId(), message.getType());
       listener.onMessage(message);
-      responseObserver.onNext(createVoidResponse());
+      responseObserver.onNext(voidMessage);
       responseObserver.onCompleted();
     }
 
-    private GrpcMessageService.Void createVoidResponse() {
-      return GrpcMessageService.Void.newBuilder().build();
-    }
-
+    /**
+     * Receive a message from a client, and notify a corresponding listener. If the listener is not registered, it
+     * raises an exception with {@link StreamObserver#onError(Throwable)}. This rpc call will be finished in
+     * {@link GrpcMessageContext} since the context only know when the {@link MessageListener} would reply a message.
+     *
+     * @param message a message from a client
+     * @param responseObserver an observer to control this rpc call
+     */
     @Override
     public void request(final ControlMessage.Message message,
                         final StreamObserver<ControlMessage.Message> responseObserver) {
-      LOG.trace("[REQUEST] request msg.id={}, msg.listenerId={}, msg.type={}",
+      LOG.debug("[REQUEST] request msg.id={}, msg.listenerId={}, msg.type={}",
           message.getId(), message.getListenerId(), message.getType());
 
       final MessageListener<ControlMessage.Message> listener = listenerMap.get(message.getListenerId());
