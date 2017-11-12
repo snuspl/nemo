@@ -18,9 +18,9 @@ package edu.snu.onyx.examples.beam;
 import com.github.fommil.netlib.BLAS;
 import com.github.fommil.netlib.LAPACK;
 import edu.snu.onyx.client.beam.LoopCompositeTransform;
-import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineRunner;
 import edu.snu.onyx.common.coder.PairCoder;
 import edu.snu.onyx.common.Pair;
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineRunner;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.CoderProviders;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -298,12 +298,11 @@ public final class AlternatingLeastSquare {
   }
 
   /**
-   * Create a {@link Pipeline} from the given {@link PipelineOptions}.
-   * @param args user-provided argument
-   * @param options {@link PipelineOptions}.
-   * @return {@link Pipeline} which includes the application logic
+   * Main function for the ALS BEAM program.
+   * @param args arguments.
    */
-  public static Pipeline createPipeline(final String[] args, final PipelineOptions options) {
+  public static void main(final String[] args) {
+    final Long start = System.currentTimeMillis();
     LOG.info(Arrays.toString(args));
     final String inputFilePath = args[0];
     final Integer numFeatures = Integer.parseInt(args[1]);
@@ -315,6 +314,8 @@ public final class AlternatingLeastSquare {
       lambda = 0.05;
     }
 
+    final PipelineOptions options = PipelineOptionsFactory.create();
+    options.setRunner(OnyxPipelineRunner.class);
     options.setJobName("ALS");
     options.setStableUniqueNames(PipelineOptions.CheckEnabled.OFF);
 
@@ -363,20 +364,7 @@ public final class AlternatingLeastSquare {
       itemMatrix = itemMatrix.apply(new UpdateUserAndItemMatrix(numFeatures, lambda, parsedUserData, parsedItemData));
     }
 
-    return p;
-  }
-
-  /**
-   * Main function for the ALS BEAM program.
-   * @param args arguments.
-   */
-  public static void main(final String[] args) {
-    final Long start = System.currentTimeMillis();
-
-    final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(OnyxPipelineRunner.class);
-
-    createPipeline(args, options).run();
+    p.run();
     LOG.info("JCT " + (System.currentTimeMillis() - start));
   }
 }

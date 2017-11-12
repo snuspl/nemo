@@ -400,25 +400,10 @@ public final class MultinomialLogisticRegression {
 
   /**
    * Main function for the MLR BEAM program.
-   * @param args user-provided arguments.
+   * @param args arguments.
    */
   public static void main(final String[] args) {
     final long start = System.currentTimeMillis();
-
-    final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(OnyxPipelineRunner.class);
-
-    createPipeline(args, options).run();
-    LOG.info("JCT " + (System.currentTimeMillis() - start));
-  }
-
-  /**
-   * Creates pipeline for MLR program.
-   * @param args user-provided arguments.
-   * @param options {@link PipelineOptions}.
-   * @return {@link Pipeline} for user program.
-   */
-  public static Pipeline createPipeline(final String[] args, final PipelineOptions options) {
     LOG.info(Arrays.toString(args));
     final String inputFilePath = args[0];
     final Integer numFeatures = Integer.parseInt(args[1]);
@@ -432,6 +417,8 @@ public final class MultinomialLogisticRegression {
       initialModelKeys.add(i);
     }
 
+    final PipelineOptions options = PipelineOptionsFactory.create();
+    options.setRunner(OnyxPipelineRunner.class);
     options.setJobName("MLR");
     options.setStableUniqueNames(PipelineOptions.CheckEnabled.OFF);
 
@@ -466,6 +453,7 @@ public final class MultinomialLogisticRegression {
       model = model.apply(new UpdateModel(numFeatures, numClasses, i, readInput));
     }
 
-    return p;
+    p.run();
+    LOG.info("JCT " + (System.currentTimeMillis() - start));
   }
 }
