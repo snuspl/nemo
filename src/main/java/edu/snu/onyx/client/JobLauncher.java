@@ -91,6 +91,7 @@ public final class JobLauncher {
    * Launch application using the application DAG.
    * @param dag the application DAG.
    */
+  // When modifying the signature of this method, see CompilerTestUtil#compileDAG and make corresponding changes
   public static void launchDAG(final DAG dag) {
     try {
       if (jobAndDriverConf == null || deployModeConf == null) {
