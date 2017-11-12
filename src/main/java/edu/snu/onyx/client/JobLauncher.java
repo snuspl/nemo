@@ -83,20 +83,20 @@ public final class JobLauncher {
     deployModeConf = getDeployModeConf(jobConf);
 
     // Launch client main
-    launchClientMain(jobConf);
+    runUserProgramMain(jobConf);
   }
 
   /**
    * Launch application using the application DAG.
    * @param dag the application DAG.
    */
-  public static void launch(final DAG dag) {
+  public static void launchDAG(final DAG dag) {
     try {
       if (jobAndDriverConf == null || deployModeConf == null) {
         throw new RuntimeException("Configuration for launching driver is not ready");
       }
       final Configuration dagConf = TANG.newConfigurationBuilder()
-          .bindNamedParameter(JobConf.DAGString.class, DAGCodec.encode(dag))
+          .bindNamedParameter(JobConf.SerializedDAG.class, DAGCodec.encode(dag))
           .build();
       // Launch and wait indefinitely for the job to finish
       final LauncherStatus launcherStatus =  DriverLauncher.getLauncher(deployModeConf)
@@ -117,7 +117,7 @@ public final class JobLauncher {
    * @param jobConf the job configuration
    * @throws Exception on any exceptions on the way
    */
-  private static void launchClientMain(final Configuration jobConf) throws Exception {
+  private static void runUserProgramMain(final Configuration jobConf) throws Exception {
     final Injector injector = TANG.newInjector(jobConf);
     final String className = injector.getNamedInstance(JobConf.UserMainClass.class);
     final String[] args = injector.getNamedInstance(JobConf.UserMainArguments.class).split(" ");

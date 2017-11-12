@@ -18,7 +18,7 @@ package edu.snu.onyx.examples.beam;
 import com.github.fommil.netlib.BLAS;
 import com.github.fommil.netlib.LAPACK;
 import edu.snu.onyx.client.beam.LoopCompositeTransform;
-import edu.snu.onyx.compiler.frontend.beam.Runner;
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineRunner;
 import edu.snu.onyx.common.coder.PairCoder;
 import edu.snu.onyx.common.Pair;
 import org.apache.beam.sdk.Pipeline;
@@ -374,7 +374,7 @@ public final class AlternatingLeastSquare {
     final Long start = System.currentTimeMillis();
 
     final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(Runner.class);
+    options.setRunner(OnyxPipelineRunner.class);
 
     createPipeline(args, options).run();
     LOG.info("JCT " + (System.currentTimeMillis() - start));

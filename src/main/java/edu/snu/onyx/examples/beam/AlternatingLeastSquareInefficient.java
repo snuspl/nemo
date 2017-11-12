@@ -17,7 +17,7 @@ package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.beam.LoopCompositeTransform;
 import edu.snu.onyx.common.Pair;
-import edu.snu.onyx.compiler.frontend.beam.Runner;
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineRunner;
 import edu.snu.onyx.common.coder.PairCoder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.CoderProviders;
@@ -105,7 +105,7 @@ public final class AlternatingLeastSquareInefficient {
     final Long start = System.currentTimeMillis();
 
     final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(Runner.class);
+    options.setRunner(OnyxPipelineRunner.class);
 
     createPipeline(args, options).run();
     LOG.info("JCT " + (System.currentTimeMillis() - start));

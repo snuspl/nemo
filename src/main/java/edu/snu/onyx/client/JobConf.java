@@ -240,8 +240,8 @@ public final class JobConf extends ConfigurationModuleBuilder {
   /**
    * Serialized {@link edu.snu.onyx.common.dag.DAG} from user main method.
    */
-  @NamedParameter(doc = "DAG String")
-  public final class DAGString implements Name<String> {
+  @NamedParameter(doc = "String serialized DAG")
+  public final class SerializedDAG implements Name<String> {
   }
 
   public static final RequiredParameter<String> EXECUTOR_ID = new RequiredParameter<>();

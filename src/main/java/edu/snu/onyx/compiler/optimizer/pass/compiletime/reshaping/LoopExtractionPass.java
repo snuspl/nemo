@@ -15,6 +15,7 @@
  */
 package edu.snu.onyx.compiler.optimizer.pass.compiletime.reshaping;
 
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineVisitor;
 import edu.snu.onyx.compiler.ir.*;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
@@ -52,7 +53,7 @@ public final class LoopExtractionPass extends ReshapingPass {
 
   /**
    * This part groups each iteration of loops together by observing the LoopVertex assigned to primitive operators,
-   * which is assigned by the {@link edu.snu.onyx.compiler.frontend.beam.Visitor}. This also shows in which depth of
+   * which is assigned by the {@link OnyxPipelineVisitor}. This also shows in which depth of
    * nested loops the function handles. It recursively calls itself from the maximum depth until 0.
    * @param dag DAG to process
    * @param depth the depth of the stack to process. Must be greater than 0.

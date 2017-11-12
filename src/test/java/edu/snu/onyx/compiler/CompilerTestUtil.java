@@ -18,9 +18,9 @@ package edu.snu.onyx.compiler;
 import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAGBuilder;
-import edu.snu.onyx.compiler.frontend.beam.BeamResult;
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineResult;
 import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineOptions;
-import edu.snu.onyx.compiler.frontend.beam.Visitor;
+import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineVisitor;
 import edu.snu.onyx.compiler.ir.*;
 import edu.snu.onyx.compiler.optimizer.policy.*;
 import edu.snu.onyx.examples.beam.*;
@@ -33,7 +33,6 @@ import org.apache.beam.sdk.options.PipelineOptionsValidator;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
-import org.apache.reef.tang.exceptions.InjectionException;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -126,7 +125,7 @@ public final class CompilerTestUtil {
   /**
    * Fake Beam runner for obtaining DAG from client application.
    */
-  private static final class BeamRunnerForTest extends PipelineRunner<BeamResult> {
+  private static final class BeamRunnerForTest extends PipelineRunner<OnyxPipelineResult> {
     private final OnyxPipelineOptions onyxPipelineOptions;
 
     /**
@@ -142,7 +141,7 @@ public final class CompilerTestUtil {
      * @param options given PipelineOptions.
      * @return The created PipelineRunner.
      */
-    public static PipelineRunner<BeamResult> fromOptions(final PipelineOptions options) {
+    public static PipelineRunner<OnyxPipelineResult> fromOptions(final PipelineOptions options) {
       final OnyxPipelineOptions onyxOptions = PipelineOptionsValidator.validate(OnyxPipelineOptions.class, options);
       return new BeamRunnerForTest(onyxOptions);
     }
@@ -153,15 +152,15 @@ public final class CompilerTestUtil {
      * @return The result of the pipeline.
      */
     @Override
-    public BeamResult run(Pipeline pipeline) {
+    public OnyxPipelineResult run(Pipeline pipeline) {
       final DAGBuilder builder = new DAGBuilder<>();
-      final Visitor visitor = new Visitor(builder, onyxPipelineOptions);
-      pipeline.traverseTopologically(visitor);
+      final OnyxPipelineVisitor onyxPipelineVisitor = new OnyxPipelineVisitor(builder, onyxPipelineOptions);
+      pipeline.traverseTopologically(onyxPipelineVisitor);
       final DAG dag = builder.build();
-      final BeamResult beamResult = new BeamResult();
+      final OnyxPipelineResult onyxPipelineResult = new OnyxPipelineResult();
       // Supply the dag.
       BeamCompilerForTest.supplyDAGFromRunner(dag);
-      return beamResult;
+      return onyxPipelineResult;
     }
   }
 }

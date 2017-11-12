@@ -45,11 +45,10 @@ public final class UserApplicationRunner implements Runnable {
 
   private final RuntimeMaster runtimeMaster;
   private final Backend<PhysicalPlan> backend;
-  private final PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
 
   @Inject
   private UserApplicationRunner(@Parameter(JobConf.DAGDirectory.class) final String dagDirectory,
-                                @Parameter(JobConf.DAGString.class) final String dagString,
+                                @Parameter(JobConf.SerializedDAG.class) final String dagString,
                                 @Parameter(JobConf.OptimizationPolicy.class) final String optimizationPolicy,
                                 final PubSubEventHandlerWrapper pubSubEventHandlerWrapper,
                                 final DynamicOptimizationEventHandler dynamicOptimizationEventHandler,
@@ -59,7 +58,6 @@ public final class UserApplicationRunner implements Runnable {
     this.optimizationPolicyCanonicalName = optimizationPolicy;
     this.runtimeMaster = runtimeMaster;
     this.backend = new OnyxBackend();
-    this.pubSubEventHandlerWrapper = pubSubEventHandlerWrapper;
     pubSubEventHandlerWrapper.getPubSubEventHandler()
         .subscribe(dynamicOptimizationEventHandler.getEventClass(), dynamicOptimizationEventHandler);
   }
