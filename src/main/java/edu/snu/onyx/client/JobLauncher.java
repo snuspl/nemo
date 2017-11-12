@@ -15,12 +15,12 @@
  */
 package edu.snu.onyx.client;
 
-import edu.snu.onyx.common.DAGCodec;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.ncs.NcsMessageEnvironment;
 import edu.snu.onyx.runtime.common.message.ncs.NcsParameters;
 import edu.snu.onyx.runtime.master.OnyxDriver;
+import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
 import org.apache.reef.client.LauncherStatus;
@@ -42,6 +42,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,8 +96,9 @@ public final class JobLauncher {
       if (jobAndDriverConf == null || deployModeConf == null) {
         throw new RuntimeException("Configuration for launching driver is not ready");
       }
+      final String serializedDAG = Base64.getEncoder().encodeToString(SerializationUtils.serialize(dag));
       final Configuration dagConf = TANG.newConfigurationBuilder()
-          .bindNamedParameter(JobConf.SerializedDAG.class, DAGCodec.encode(dag))
+          .bindNamedParameter(JobConf.SerializedDAG.class, serializedDAG)
           .build();
       // Launch and wait indefinitely for the job to finish
       final LauncherStatus launcherStatus =  DriverLauncher.getLauncher(deployModeConf)
@@ -107,7 +109,7 @@ public final class JobLauncher {
       } else {
         LOG.info("Job successfully completed");
       }
-    } catch (final IOException | InjectionException e) {
+    } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
   }

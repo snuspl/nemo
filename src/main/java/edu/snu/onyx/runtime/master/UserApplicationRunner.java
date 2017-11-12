@@ -16,7 +16,6 @@
 package edu.snu.onyx.runtime.master;
 
 import edu.snu.onyx.client.JobConf;
-import edu.snu.onyx.common.DAGCodec;
 import edu.snu.onyx.common.PubSubEventHandlerWrapper;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.backend.Backend;
@@ -27,11 +26,13 @@ import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.optimizer.Optimizer;
 import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
+import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.Base64;
 
 /**
  * Compiles and runs User application.
@@ -67,7 +68,7 @@ public final class UserApplicationRunner implements Runnable {
     try {
       LOG.info("##### ONYX Compiler #####");
 
-      final DAG<IRVertex, IREdge> dag = DAGCodec.decode(dagString);
+      final DAG<IRVertex, IREdge> dag = SerializationUtils.deserialize(Base64.getDecoder().decode(dagString));
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
       final Policy optimizationPolicy = (Policy) Class.forName(optimizationPolicyCanonicalName).newInstance();
 
