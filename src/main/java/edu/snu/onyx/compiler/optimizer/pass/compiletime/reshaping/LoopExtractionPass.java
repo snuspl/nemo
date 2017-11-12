@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.compiler.optimizer.pass.compiletime.reshaping;
 
-import edu.snu.onyx.compiler.frontend.beam.OnyxPipelineVisitor;
 import edu.snu.onyx.compiler.ir.*;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
