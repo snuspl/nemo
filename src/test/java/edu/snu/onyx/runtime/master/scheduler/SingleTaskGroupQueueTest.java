@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.master;
+package edu.snu.onyx.runtime.master.scheduler;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.dag.DAG;
@@ -42,11 +42,11 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
- * Tests {@link PendingTaskGroupPriorityQueue}.
+ * Tests {@link SingleJobTaskGroupQueue}.
  */
-public final class PendingTaskGroupQueueTest {
+public final class SingleTaskGroupQueueTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
-  private PendingTaskGroupPriorityQueue pendingTaskGroupPriorityQueue;
+  private SingleJobTaskGroupQueue pendingTaskGroupPriorityQueue;
 
   /**
    * To be used for a thread pool to execute task groups.
@@ -56,12 +56,12 @@ public final class PendingTaskGroupQueueTest {
   @Before
   public void setUp() {
     irDAGBuilder = new DAGBuilder<>();
-    pendingTaskGroupPriorityQueue = new PendingTaskGroupPriorityQueue();
+    pendingTaskGroupPriorityQueue = new SingleJobTaskGroupQueue();
     executorService = Executors.newFixedThreadPool(2);
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link PendingTaskGroupPriorityQueue}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link SingleJobTaskGroupQueue}.
    * Tests whether the dequeued TaskGroups are according to the stage-dependency priority.
    */
   @Test
@@ -121,22 +121,22 @@ public final class PendingTaskGroupQueueTest {
     // This mimics SchedulerRunner's behavior
     executorService.execute(() -> {
       try {
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
-        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get();
+        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right();
         assertEquals(dequeuedTaskGroup.getTaskGroup().getStageId(), dagOf2Stages.get(1).getId());
 
         // Let's say we fail to schedule, and enqueue this TaskGroup back.
         pendingTaskGroupPriorityQueue.enqueue(dequeuedTaskGroup);
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
 
         // Now that we've dequeued all of the children TaskGroups, we should now start getting the parents.
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-      } catch (InterruptedException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       } finally {
         countDownLatch.countDown();
@@ -147,7 +147,7 @@ public final class PendingTaskGroupQueueTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link PendingTaskGroupPriorityQueue}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link SingleJobTaskGroupQueue}.
    * Tests whether the dequeued TaskGroups are according to the stage-dependency priority.
    */
   @Test
@@ -204,24 +204,24 @@ public final class PendingTaskGroupQueueTest {
     // This mimics SchedulerRunner's behavior
     executorService.execute(() -> {
       try {
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get();
+        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right();
         assertEquals(dequeuedTaskGroup.getTaskGroup().getStageId(), dagOf2Stages.get(0).getId());
 
         // Let's say we fail to schedule, and enqueue this TaskGroup back.
         pendingTaskGroupPriorityQueue.enqueue(dequeuedTaskGroup);
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
 
         // Now that we've dequeued all of the children TaskGroups, we should now schedule children.
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
 
         // Schedule the children TaskGroups.
         dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
             pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(taskGroup, null, null, 0)));
-      } catch (InterruptedException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       } finally {
         countDownLatch.countDown();
@@ -232,7 +232,7 @@ public final class PendingTaskGroupQueueTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link PendingTaskGroupPriorityQueue}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link SingleJobTaskGroupQueue}.
    * Tests whether the dequeued TaskGroups are according to the stage-dependency priority.
    */
   @Test
@@ -279,27 +279,27 @@ public final class PendingTaskGroupQueueTest {
     // as opposed to testPushPriority.
     executorService.execute(() -> {
       try {
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
-        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get();
+        final ScheduledTaskGroup dequeuedTaskGroup = pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right();
         assertEquals(dequeuedTaskGroup.getTaskGroup().getStageId(), dagOf2Stages.get(1).getId());
 
         // SchedulerRunner will never dequeue another TaskGroup before enquing back the failed TaskGroup,
         // but just for testing purposes of PendingTGPQ...
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
 
         // Let's say we fail to schedule, and enqueue this TaskGroup back.
         pendingTaskGroupPriorityQueue.enqueue(dequeuedTaskGroup);
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
 
         // Now that we've dequeued all of the children TaskGroups, we should now start getting the parents.
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-      } catch (InterruptedException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       } finally {
         countDownLatch.countDown();
@@ -324,7 +324,7 @@ public final class PendingTaskGroupQueueTest {
   }
 
   /**
-   * This method builds a physical DAG starting from an IR DAG and submits it to {@link PendingTaskGroupPriorityQueue}.
+   * This method builds a physical DAG starting from an IR DAG and submits it to {@link SingleJobTaskGroupQueue}.
    * Tests whether the dequeued TaskGroups are according to the stage-dependency priority,
    * while concurrently scheduling TaskGroups that have dependencies, but are of different container types.
    */
@@ -383,21 +383,21 @@ public final class PendingTaskGroupQueueTest {
     executorService.execute(() -> {
       try {
         // Since Stage-0 and Stage-1 have different container types, they should simply alternate turns in scheduling.
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
 
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
 
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(1).getId());
 
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
 
-        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().getTaskGroup().getStageId(),
+        assertEquals(pendingTaskGroupPriorityQueue.dequeueNextTaskGroup().get().right().getTaskGroup().getStageId(),
             dagOf2Stages.get(0).getId());
-      } catch (InterruptedException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       } finally {
         countDownLatch.countDown();

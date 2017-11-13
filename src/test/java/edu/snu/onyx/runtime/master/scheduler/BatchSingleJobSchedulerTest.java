@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.master;
+package edu.snu.onyx.runtime.master.scheduler;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.compiler.frontend.beam.transform.DoTransform;
@@ -35,11 +35,12 @@ import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.StageState;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
+import edu.snu.onyx.runtime.master.JobStateManager;
+import edu.snu.onyx.runtime.master.PartitionManagerMaster;
 import edu.snu.onyx.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
-import edu.snu.onyx.runtime.master.scheduler.*;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import org.apache.reef.driver.context.ActiveContext;
@@ -71,6 +72,7 @@ public final class BatchSingleJobSchedulerTest {
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
   private Scheduler scheduler;
   private SchedulingPolicy schedulingPolicy;
+  private SchedulerRunner schedulerRunner;
   private ContainerManager containerManager;
   private MetricMessageHandler metricMessageHandler;
   private PendingTaskGroupQueue pendingTaskGroupQueue;
@@ -91,13 +93,14 @@ public final class BatchSingleJobSchedulerTest {
     irDAGBuilder = new DAGBuilder<>();
     containerManager = mock(ContainerManager.class);
     metricMessageHandler = mock(MetricMessageHandler.class);
-    pendingTaskGroupQueue = new PendingTaskGroupQueue();
+    pendingTaskGroupQueue = new SingleJobTaskGroupQueue();
     schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, TEST_TIMEOUT_MS);
+    schedulerRunner = new SchedulerRunner(schedulingPolicy, pendingTaskGroupQueue);
     pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     scheduler =
-        new BatchSingleJobScheduler(partitionManagerMaster, schedulingPolicy, pendingTaskGroupQueue,
-            pubSubEventHandler, updatePhysicalPlanEventHandler);
+        new BatchSingleJobScheduler(schedulingPolicy, schedulerRunner, pendingTaskGroupQueue,
+            partitionManagerMaster, pubSubEventHandler, updatePhysicalPlanEventHandler);
 
     final Map<String, ExecutorRepresenter> executorRepresenterMap = new HashMap<>();
     when(containerManager.getExecutorRepresenterMap()).thenReturn(executorRepresenterMap);
@@ -240,9 +243,9 @@ public final class BatchSingleJobSchedulerTest {
   private void scheduleAndCheckJobTermination(final DAG<IRVertex, IREdge> irDAG) throws InjectionException {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalDAG = irDAG.convert(physicalPlanGenerator);
 
-    final JobStateManager jobStateManager =
-        scheduler.scheduleJob(new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap()),
-            metricMessageHandler, 1);
+    final PhysicalPlan plan = new PhysicalPlan("TestPlan", physicalDAG, physicalPlanGenerator.getTaskIRVertexMap());
+    final JobStateManager jobStateManager = new JobStateManager(plan, partitionManagerMaster, metricMessageHandler, 1);
+    scheduler.scheduleJob(plan, jobStateManager);
 
     // For each ScheduleGroup, test:
     // a) all stages in the ScheduleGroup enters the executing state

@@ -92,8 +92,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
    */
   @Override
   public synchronized void scheduleJob(final PhysicalPlan jobToSchedule,
-                                       final JobStateManager scheduledJobStateManager,
-                                       final int maxScheduleAttempt) {
+                                       final JobStateManager scheduledJobStateManager) {
     this.physicalPlan = jobToSchedule;
     this.jobStateManager = scheduledJobStateManager;
 

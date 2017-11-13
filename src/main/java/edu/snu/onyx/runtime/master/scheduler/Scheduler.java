@@ -36,11 +36,9 @@ public interface Scheduler {
    * Schedules the given job.
    * @param physicalPlan of the job being submitted.
    * @param jobStateManager to manage the states of the submitted job.
-   * @param maxScheduleAttempt the max. number of times a stage can be attempted for execution.
    */
   void scheduleJob(PhysicalPlan physicalPlan,
-                   JobStateManager jobStateManager,
-                   int maxScheduleAttempt);
+                   JobStateManager jobStateManager);
 
   /**
    * Receives and updates the scheduler with a new physical plan for a job.

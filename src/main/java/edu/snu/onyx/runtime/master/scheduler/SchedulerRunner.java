@@ -45,8 +45,8 @@ public final class SchedulerRunner {
   private boolean isTerminated;
 
   @Inject
-  private SchedulerRunner(final SchedulingPolicy schedulingPolicy,
-                          final PendingTaskGroupQueue pendingTaskGroupQueue) {
+  public SchedulerRunner(final SchedulingPolicy schedulingPolicy,
+                         final PendingTaskGroupQueue pendingTaskGroupQueue) {
     this.jobStateManagers = new HashMap<>();
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.schedulingPolicy = schedulingPolicy;

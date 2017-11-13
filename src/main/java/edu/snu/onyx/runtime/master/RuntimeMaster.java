@@ -127,7 +127,7 @@ public final class RuntimeMaster {
           new JobStateManager(plan, partitionManagerMaster, metricMessageHandler, maxScheduleAttempt);
       final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
-      scheduler.scheduleJob(plan, jobStateManager, maxScheduleAttempt);
+      scheduler.scheduleJob(plan, jobStateManager);
 
       // Schedule dag logging thread
       final ScheduledExecutorService dagLoggingExecutor = scheduleDagLogging(jobStateManager);
