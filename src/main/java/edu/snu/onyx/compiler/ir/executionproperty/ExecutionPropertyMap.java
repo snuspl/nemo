@@ -81,6 +81,9 @@ public final class ExecutionPropertyMap implements Serializable {
         map.put(PartitionerProperty.of(IntactPartitioner.class));
         map.put(DataStoreProperty.of(MemoryStore.class));
         break;
+      default:
+        map.put(PartitionerProperty.of(HashPartitioner.class));
+        map.put(DataStoreProperty.of(LocalFileStore.class));
     }
     return map;
   }

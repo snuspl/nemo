@@ -20,13 +20,11 @@ import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataFlowModelProperty;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromReservedToTransient;
 import static edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass.fromTransientToReserved;
 
 /**

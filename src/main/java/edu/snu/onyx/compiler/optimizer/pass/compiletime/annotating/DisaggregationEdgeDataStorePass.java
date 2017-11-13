@@ -23,10 +23,8 @@ import edu.snu.onyx.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.onyx.runtime.executor.data.stores.GlusterFileStore;
 import edu.snu.onyx.runtime.executor.data.stores.LocalFileStore;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * A pass to support Disaggregated Resources by tagging edges.

@@ -22,8 +22,6 @@ import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataStoreProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.onyx.runtime.executor.data.stores.LocalFileStore;
-import edu.snu.onyx.runtime.executor.data.stores.MemoryStore;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 
 import java.util.List;
 import java.util.stream.Collectors;

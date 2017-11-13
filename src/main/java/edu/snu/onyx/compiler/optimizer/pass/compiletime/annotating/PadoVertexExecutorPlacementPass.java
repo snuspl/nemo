@@ -22,7 +22,6 @@ import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

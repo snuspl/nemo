@@ -22,7 +22,6 @@ import edu.snu.onyx.compiler.ir.SourceVertex;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 
 import java.util.List;
 import java.util.OptionalInt;

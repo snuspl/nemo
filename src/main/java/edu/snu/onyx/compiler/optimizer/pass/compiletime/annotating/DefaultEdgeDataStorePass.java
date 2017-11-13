@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * Default edge data store pass.
  */
-public class DefaultEdgeDataStorePass extends AnnotatingPass {
+public final class DefaultEdgeDataStorePass extends AnnotatingPass {
   public DefaultEdgeDataStorePass() {
     super(ExecutionProperty.Key.DataStore, Stream.of(
         ExecutionProperty.Key.StageId,
@@ -25,7 +25,7 @@ public class DefaultEdgeDataStorePass extends AnnotatingPass {
   }
 
   @Override
-  public DAG<IRVertex, IREdge> apply(DAG<IRVertex, IREdge> dag) {
+  public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
     dag.getVertices().forEach(vertex -> {
       final List<IREdge> inEdges = dag.getIncomingEdgesOf(vertex);
       if (!inEdges.isEmpty()) {
