@@ -36,11 +36,11 @@ public final class DataSkewPolicy implements Policy {
   public DataSkewPolicy() {
     this.policy = new PolicyBuilder()
         .registerRuntimePass(new DataSkewRuntimePass(), new DataSkewCompositePass())
+        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new DefaultParallelismPass()) // after reshaping passes
         .registerCompileTimePass(new DefaultStagePartitioningPass())
         .registerCompileTimePass(new DefaultEdgeDataStorePass())
         .registerCompileTimePass(new ScheduleGroupPass())
-        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .build();
   }
 

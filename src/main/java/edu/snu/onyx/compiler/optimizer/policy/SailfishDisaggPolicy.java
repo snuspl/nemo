@@ -37,12 +37,12 @@ public final class SailfishDisaggPolicy implements Policy {
   public SailfishDisaggPolicy() {
     this.policy = new PolicyBuilder()
         .registerCompileTimePass(new SailfishPass())
+        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new DefaultParallelismPass()) // after reshaping passes
         .registerCompileTimePass(new DefaultStagePartitioningPass())
         .registerCompileTimePass(new DefaultEdgeDataStorePass())
         .registerCompileTimePass(new DisaggregationPass())
         .registerCompileTimePass(new ScheduleGroupPass())
-        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .build();
   }
 

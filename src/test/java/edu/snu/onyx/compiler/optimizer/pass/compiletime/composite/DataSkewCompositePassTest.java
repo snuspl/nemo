@@ -24,6 +24,7 @@ import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.OperatorVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 import edu.snu.onyx.compiler.ir.partitioner.DataSkewHashPartitioner;
@@ -63,6 +64,11 @@ public class DataSkewCompositePassTest {
     final Set<ExecutionProperty.Key> prerequisites = new HashSet<>();
     dataSkewPass.getPassList().forEach(compileTimePass ->
         prerequisites.addAll(compileTimePass.getPrerequisiteExecutionProperties()));
+    dataSkewPass.getPassList().forEach(compileTimePass -> {
+      if (compileTimePass instanceof AnnotatingPass) {
+        prerequisites.remove(((AnnotatingPass) compileTimePass).getExecutionPropertyToModify());
+      }
+    });
     assertEquals(prerequisites, dataSkewPass.getPrerequisiteExecutionProperties());
   }
 
