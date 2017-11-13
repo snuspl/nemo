@@ -250,9 +250,9 @@ public final class FaultToleranceTest {
   }
 
   /**
-   * Tests fault tolerance after a container removal.
+   * Tests fault tolerance after an input read failure.
    */
-  @Test//(timeout=10000)
+  @Test(timeout=10000)
   public void testInputReadFailure() throws Exception {
     // Build DAG
     final Transform t = new EmptyComponents.EmptyTransform("empty");
