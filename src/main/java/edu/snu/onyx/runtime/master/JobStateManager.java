@@ -39,7 +39,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import edu.snu.onyx.runtime.common.metric.MetricDataBuilder;
-import edu.snu.onyx.runtime.master.scheduler.BatchSingleJobScheduler;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,9 +270,10 @@ public final class JobStateManager {
   /**
    * Updates the state of a task group.
    * Task group state changes can occur both in master and executor.
-   * State changes that occur in master are initiated in {@link BatchSingleJobScheduler}.
+   * State changes that occur in master are
+   * initiated in {@link edu.snu.onyx.runtime.master.scheduler.BatchSingleJobScheduler}.
    * State changes that occur in executors are sent to master as a control message,
-   * and the call to this method is initiated in {@link BatchSingleJobScheduler}
+   * and the call to this method is initiated in {@link edu.snu.onyx.runtime.master.scheduler.BatchSingleJobScheduler}
    * when the message/event is received.
    * A task group completion implies completion of all its tasks.
    * @param taskGroup the task group.

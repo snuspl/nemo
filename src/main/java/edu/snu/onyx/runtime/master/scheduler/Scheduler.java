@@ -16,7 +16,6 @@
 package edu.snu.onyx.runtime.master.scheduler;
 
 import edu.snu.onyx.common.Pair;
-import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;

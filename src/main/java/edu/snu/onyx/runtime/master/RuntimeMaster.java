@@ -114,6 +114,7 @@ public final class RuntimeMaster {
   /**
    * Submits the {@link PhysicalPlan} to Runtime.
    * @param plan to execute.
+   * @param maxScheduleAttempt the max number of times this plan/sub-part of the plan should be attempted.
    * @param clientEndpoint of this plan.
    */
   public void execute(final PhysicalPlan plan,
@@ -370,6 +371,7 @@ public final class RuntimeMaster {
   /**
    * Schedules a periodic DAG logging thread.
    * TODO #58: Web UI (Real-time visualization)
+   * @param jobStateManager for the job the DAG should be logged.
    *
    * @return the scheduled executor service.
    */

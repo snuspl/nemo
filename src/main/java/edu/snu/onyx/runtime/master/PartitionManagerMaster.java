@@ -21,7 +21,6 @@ import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageContext;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.MessageListener;
 import edu.snu.onyx.runtime.common.state.PartitionState;
 import edu.snu.onyx.runtime.exception.AbsentPartitionException;
 
@@ -35,7 +34,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import edu.snu.onyx.runtime.exception.IllegalMessageException;
-import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,7 +175,7 @@ public final class PartitionManagerMaster {
   /**
    * To be called when a potential producer task group is scheduled.
    * To be precise, it is called when the task group is enqueued to
-   * {@link PendingTaskGroupQueue}.
+   * {@link edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue}.
    *
    * @param scheduledTaskGroupId the ID of the scheduled task group.
    */

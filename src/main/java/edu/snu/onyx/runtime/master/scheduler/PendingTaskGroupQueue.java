@@ -16,24 +16,13 @@
 package edu.snu.onyx.runtime.master.scheduler;
 
 import edu.snu.onyx.common.Pair;
-import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import javax.inject.Inject;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Optional;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.function.BiFunction;
 
 /**
  * Keep tracks of all pending task groups.
