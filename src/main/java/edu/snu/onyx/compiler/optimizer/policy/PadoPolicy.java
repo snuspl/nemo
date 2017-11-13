@@ -33,11 +33,11 @@ public final class PadoPolicy implements Policy {
   public PadoPolicy() {
     this.policy = new PolicyBuilder()
         .registerCompileTimePass(new PadoCompositePass())
+        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new DefaultParallelismPass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
         .registerCompileTimePass(new DefaultEdgeDataStorePass())
         .registerCompileTimePass(new ScheduleGroupPass())
-        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .build();
   }
 

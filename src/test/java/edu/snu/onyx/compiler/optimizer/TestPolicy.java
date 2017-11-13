@@ -41,11 +41,12 @@ public final class TestPolicy implements Policy {
   public List<CompileTimePass> getCompileTimePasses() {
     List<CompileTimePass> policy = new ArrayList<>();
     policy.add(new DefaultStagePartitioningPass());
-    policy.add(new ScheduleGroupPass());
 
     if (testPushPolicy) {
-      policy.add(3, new ScatterGatherEdgePushPass());
+      policy.add(new ScatterGatherEdgePushPass());
     }
+
+    policy.add(new ScheduleGroupPass());
     return policy;
   }
 
