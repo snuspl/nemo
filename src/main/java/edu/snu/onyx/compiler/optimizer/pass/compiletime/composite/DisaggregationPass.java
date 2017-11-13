@@ -26,8 +26,6 @@ import java.util.Arrays;
  * will be replaces with {@link edu.snu.onyx.runtime.executor.data.stores.GlusterFileStore}.
  */
 public final class DisaggregationPass extends CompositePass {
-  public static final String SIMPLE_NAME = "DisaggregationPass";
-
   public DisaggregationPass() {
     super(Arrays.asList(
         new DisaggregationEdgeDataStorePass()

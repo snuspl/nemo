@@ -16,10 +16,11 @@
 package edu.snu.onyx.compiler.optimizer.policy;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.InitiationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.RuntimePass;
@@ -34,11 +35,12 @@ public final class DataSkewPolicy implements Policy {
 
   public DataSkewPolicy() {
     this.policy = new PolicyBuilder()
-        .registerCompileTimePass(new InitiationCompositePass())
-        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerRuntimePass(new DataSkewRuntimePass(), new DataSkewCompositePass())
+        .registerCompileTimePass(new DefaultParallelismPass()) // after reshaping passes
         .registerCompileTimePass(new DefaultStagePartitioningPass())
+        .registerCompileTimePass(new DefaultEdgeDataStorePass())
         .registerCompileTimePass(new ScheduleGroupPass())
+        .registerCompileTimePass(new LoopOptimizationCompositePass())
         .build();
   }
 

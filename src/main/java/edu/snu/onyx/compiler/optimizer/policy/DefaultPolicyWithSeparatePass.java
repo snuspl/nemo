@@ -15,11 +15,12 @@
  */
 package edu.snu.onyx.compiler.optimizer.policy;
 
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.InitiationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.RuntimePass;
 
 import java.util.Arrays;
@@ -35,7 +36,7 @@ public final class DefaultPolicyWithSeparatePass implements Policy {
 
   public DefaultPolicyWithSeparatePass() {
     this.policy = new PolicyBuilder()
-        .registerCompileTimePass(new InitiationCompositePass())
+        .registerCompileTimePass(new DefaultParallelismPass())
         .registerCompileTimePass(new RefactoredPass())
         .build();
   }
@@ -59,6 +60,7 @@ public final class DefaultPolicyWithSeparatePass implements Policy {
     RefactoredPass() {
       super(Arrays.asList(
           new DefaultStagePartitioningPass(),
+          new DefaultEdgeDataStorePass(),
           new ScheduleGroupPass()
       ));
     }

@@ -26,15 +26,17 @@ import edu.snu.onyx.compiler.ir.partitioner.DataSkewHashPartitioner;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Pado pass for tagging edges with {@link PartitionerProperty}.
  */
 public final class DataSkewEdgePartitionerPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DataSkewEdgePartitionerPass";
-
   public DataSkewEdgePartitionerPass() {
-    super(ExecutionProperty.Key.Partitioner, Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
+    super(ExecutionProperty.Key.Partitioner, Stream.of(
+        ExecutionProperty.Key.MetricCollection
+    ).collect(Collectors.toSet()));
   }
 
   @Override
