@@ -38,7 +38,7 @@ public final class Block {
     return key;
   }
 
-  public Iterable getData() {
+  public Iterable getElements() {
     return data;
   }
 }

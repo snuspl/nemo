@@ -18,6 +18,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 import edu.snu.onyx.runtime.exception.PartitionFetchException;
 import edu.snu.onyx.runtime.exception.PartitionWriteException;
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.executor.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.partition.Partition;
 
@@ -40,16 +41,17 @@ public abstract class LocalPartitionStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#getFromPartition(String, HashRange).
+   * @see PartitionStore#getElements(String, HashRange).
    */
   @Override
-  public final Optional<Iterable> getFromPartition(final String partitionId,
-                                                   final HashRange hashRange) {
+  public final Optional<Iterable> getElements(final String partitionId,
+                                              final HashRange hashRange) {
     final Partition partition = partitionMap.get(partitionId);
 
     if (partition != null) {
       try {
-        return Optional.of(partition.getElements(hashRange));
+        final Iterable<Block> blocks = partition.getBlocks(hashRange);
+        return Optional.of(DataUtil.concatBlocks(blocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -59,25 +61,18 @@ public abstract class LocalPartitionStore implements PartitionStore {
   }
 
   /**
-   * @see PartitionStore#putToPartition(String, Iterable, boolean).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
-  public final Optional<List<Long>> putToPartition(final String partitionId,
-                                                   final Iterable<Block> blocks,
-                                                   final boolean commitPerBlock) throws PartitionWriteException {
+  public final Optional<List<Long>> putBlocks(final String partitionId,
+                                              final Iterable<Block> blocks,
+                                              final boolean commitPerBlock) throws PartitionWriteException {
     try {
       final Partition partition = partitionMap.get(partitionId);
       if (partition == null) {
         throw new PartitionWriteException(new Throwable("The partition " + partitionId + "is not created yet."));
       }
-      final List<Long> blockSizeList = partition.putBlocks(blocks);
-
-      if (blockSizeList.isEmpty()) {
-        // Empty block or not serialized.
-        return Optional.empty();
-      } else {
-        return Optional.of(blockSizeList);
-      }
+      return partition.putBlocks(blocks);
     } catch (final IOException e) {
       // The partition is committed already.
       throw new PartitionWriteException(new Throwable("This partition is already committed."));

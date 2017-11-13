@@ -24,7 +24,6 @@ import edu.snu.onyx.compiler.frontend.beam.BoundedSourceVertex;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
-import edu.snu.onyx.compiler.ir.KeyExtractor;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionPropertyMap;
 import edu.snu.onyx.common.PubSubEventHandlerWrapper;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
@@ -105,7 +104,7 @@ public final class DataTransferTest {
   private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private static final int SCHEDULE_TIMEOUT = 1000;
   private static final Class<? extends PartitionStore> MEMORY_STORE = MemoryStore.class;
-  private static final Class<? extends PartitionStore> SER_MEMORY_STORE = SerializingMemoryStore.class;
+  private static final Class<? extends PartitionStore> SER_MEMORY_STORE = SerializedMemoryStore.class;
   private static final Class<? extends PartitionStore> LOCAL_FILE_STORE = LocalFileStore.class;
   private static final Class<? extends PartitionStore> REMOTE_FILE_STORE = GlusterFileStore.class;
   private static final String TMP_LOCAL_FILE_DIRECTORY = "./tmpLocalFiles";

@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.executor.data.Block;
-import edu.snu.onyx.runtime.executor.data.DataSerializationUtil;
+import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.executor.data.HashRange;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class represents a partition which is serialized and stored in local memory.
@@ -51,13 +52,13 @@ public final class SerializedMemoryPartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public synchronized List<Long> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+  public synchronized Optional<List<Long>> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
     if (!committed) {
       final List<Long> blockSizeList = new ArrayList<>();
       // Serialize the given blocks
       try (final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream()) {
         for (final Block block : blocksToWrite) {
-          final long elementsTotal = DataSerializationUtil.serializeBlock(coder, block, bytesOutputStream);
+          final long elementsTotal = DataUtil.serializeBlock(coder, block, bytesOutputStream);
 
           // Write the serialized block.
           final byte[] serialized = bytesOutputStream.toByteArray();
@@ -67,37 +68,39 @@ public final class SerializedMemoryPartition implements Partition {
         }
       }
 
-      return blockSizeList;
+      return Optional.of(blockSizeList);
     } else {
       throw new IOException("Cannot append blocks to the committed partition");
     }
   }
 
   /**
-   * Retrieves the elements in a specific hash range and deserializes it from this partition.
+   * Retrieves the blocks in a specific hash range and deserializes it from this partition.
    * Constraint: This should not be invoked before this partition is committed.
    *
    * @param hashRange the hash range to retrieve.
-   * @return an iterable of deserialized elements.
+   * @return an iterable of deserialized blocks.
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable getElements(final HashRange hashRange) throws IOException {
+  public Iterable<Block> getBlocks(final HashRange hashRange) throws IOException {
     if (committed) {
-      final List deserializedData = new ArrayList<>();
+      final List<Block> deserializedBlock = new ArrayList<>();
       for (final SerializedBlock serializedBlock : blocks) {
         final int hashVal = serializedBlock.getKey();
         if (hashRange.includes(hashVal)) {
+          final List deserializedData = new ArrayList<>();
           // The hash value of this block is in the range.
           try (final ByteArrayInputStream byteArrayInputStream =
                    new ByteArrayInputStream(serializedBlock.getSerializedData())) {
-            DataSerializationUtil.deserializeBlock(
+            DataUtil.deserializeBlock(
                 serializedBlock.getElementsInBlock(), coder, byteArrayInputStream, deserializedData);
           }
+          deserializedBlock.add(new Block(hashVal, deserializedData));
         }
       }
 
-      return deserializedData;
+      return deserializedBlock;
     } else {
       throw new IOException("Cannot retrieve elements before a partition is committed");
     }

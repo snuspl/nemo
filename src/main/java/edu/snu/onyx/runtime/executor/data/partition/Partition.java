@@ -20,6 +20,7 @@ import edu.snu.onyx.runtime.executor.data.HashRange;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This interface represents a partition, which is the output of a specific task.
@@ -34,17 +35,17 @@ public interface Partition {
    * @return the size of the data per block (only when the data is serialized).
    * @throws IOException if fail to write.
    */
-  List<Long> putBlocks(final Iterable<Block> blocks) throws IOException;
+  Optional<List<Long>> putBlocks(final Iterable<Block> blocks) throws IOException;
 
   /**
-   * Retrieves the elements in a specific hash range and deserializes it from this partition.
+   * Retrieves the blocks in a specific hash range and deserializes it from this partition.
    * Constraint: This should not be invoked before this partition is committed.
    *
    * @param hashRange the hash range to retrieve.
-   * @return an iterable of deserialized elements.
+   * @return an iterable of deserialized blocks.
    * @throws IOException if failed to deserialize.
    */
-  Iterable getElements(final HashRange hashRange) throws IOException;
+  Iterable<Block> getBlocks(final HashRange hashRange) throws IOException;
 
   /**
    * Commits this partition to prevent further write.

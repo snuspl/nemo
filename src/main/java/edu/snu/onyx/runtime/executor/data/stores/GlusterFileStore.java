@@ -76,24 +76,25 @@ public final class GlusterFileStore implements RemoteFileStore {
   }
 
   /**
-   * Retrieves a deserialized partition of data through remote disks.
+   * Retrieves a deserialized partition of elements through remote disks.
    *
-   * @see PartitionStore#getFromPartition(String, HashRange).
+   * @see PartitionStore#getElements(String, HashRange).
    */
   @Override
-  public Optional<Iterable> getFromPartition(final String partitionId,
-                                                      final HashRange hashRange) throws PartitionFetchException {
-    final String filePath = partitionIdToFilePath(partitionId);
+  public Optional<Iterable> getElements(final String partitionId,
+                                        final HashRange hashRange) throws PartitionFetchException {
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
       // Deserialize the target data in the corresponding file.
-      final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+      final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
       try {
         final RemoteFileMetadata metadata =
             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        return Optional.of(partition.getElements(hashRange));
+        final Iterable<Block> deserializedBlocks = partition.getBlocks(hashRange);
+        return Optional.of(DataUtil.concatBlocks(deserializedBlocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -103,22 +104,21 @@ public final class GlusterFileStore implements RemoteFileStore {
   /**
    * Saves an iterable of data blocks to a partition.
    *
-   * @see PartitionStore#putToPartition(String, Iterable, boolean).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
-  public Optional<List<Long>> putToPartition(final String partitionId,
-                                             final Iterable<Block> blocks,
-                                             final boolean commitPerBlock) throws PartitionWriteException {
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
-    final String filePath = partitionIdToFilePath(partitionId);
+  public Optional<List<Long>> putBlocks(final String partitionId,
+                                        final Iterable<Block> blocks,
+                                        final boolean commitPerBlock) throws PartitionWriteException {
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
       final RemoteFileMetadata metadata =
           new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
       final FilePartition partition = new FilePartition(coder, filePath, metadata);
       // Serialize and write the given blocks.
-      final List<Long> blockSizeList = partition.putBlocks(blocks);
-      return Optional.of(blockSizeList);
+      return partition.putBlocks(blocks);
     } catch (final IOException e) {
       throw new PartitionWriteException(e);
     }
@@ -129,8 +129,8 @@ public final class GlusterFileStore implements RemoteFileStore {
    */
   @Override
   public void commitPartition(final String partitionId) throws PartitionWriteException {
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
-    final String filePath = partitionIdToFilePath(partitionId);
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     final RemoteFileMetadata metadata =
         new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
@@ -145,8 +145,8 @@ public final class GlusterFileStore implements RemoteFileStore {
    */
   @Override
   public Boolean removePartition(final String partitionId) throws PartitionFetchException {
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
-    final String filePath = partitionIdToFilePath(partitionId);
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
@@ -169,8 +169,8 @@ public final class GlusterFileStore implements RemoteFileStore {
   @Override
   public List<FileArea> getFileAreas(final String partitionId,
                                      final HashRange hashRange) {
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
-    final String filePath = partitionIdToFilePath(partitionId);
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
@@ -184,15 +184,5 @@ public final class GlusterFileStore implements RemoteFileStore {
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }
-  }
-
-  /**
-   * Converts a partition id to the corresponding file path.
-   *
-   * @param partitionId of the partition
-   * @return the file path of the partition.
-   */
-  private String partitionIdToFilePath(final String partitionId) {
-    return fileDirectory + "/" + partitionId;
   }
 }

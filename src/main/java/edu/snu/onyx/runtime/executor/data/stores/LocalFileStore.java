@@ -57,11 +57,11 @@ public final class LocalFileStore extends LocalPartitionStore implements FileSto
   public void createPartition(final String partitionId) {
     removePartition(partitionId);
 
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
     final LocalFileMetadata metadata = new LocalFileMetadata(false);
 
     final FilePartition partition =
-        new FilePartition(coder, partitionIdToFilePath(partitionId), metadata);
+        new FilePartition(coder, DataUtil.partitionIdToFilePath(partitionId, fileDirectory), metadata);
     getPartitionMap().put(partitionId, partition);
   }
 
@@ -100,15 +100,5 @@ public final class LocalFileStore extends LocalPartitionStore implements FileSto
     } catch (final IOException retrievalException) {
       throw new PartitionFetchException(retrievalException);
     }
-  }
-
-  /**
-   * Converts a partition id to the corresponding file path.
-   *
-   * @param partitionId of the partition
-   * @return the file path of the partition.
-   */
-  private String partitionIdToFilePath(final String partitionId) {
-    return fileDirectory + "/" + partitionId;
   }
 }

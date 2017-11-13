@@ -21,11 +21,8 @@ import edu.snu.onyx.runtime.executor.data.HashRange;
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.Optional;
 
 /**
  * This class represents a partition which is stored in local memory and not serialized.
@@ -49,36 +46,37 @@ public final class MemoryPartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public synchronized List<Long> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+  public synchronized Optional<List<Long>> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
     if (!committed) {
       blocksToWrite.forEach(blocks::add);
     } else {
       throw new IOException("Cannot append blocks to the committed partition");
     }
 
-    return Collections.emptyList();
+    return Optional.empty();
   }
 
   /**
-   * Retrieves the elements in a specific hash range and deserializes it from this partition.
+   * Retrieves the blocks in a specific hash range and deserializes it from this partition.
    * Constraint: This should not be invoked before this partition is committed.
    *
    * @param hashRange the hash range to retrieve.
-   * @return an iterable of deserialized elements.
+   * @return an iterable of deserialized blocks.
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable getElements(final HashRange hashRange) throws IOException {
+  public Iterable<Block> getBlocks(final HashRange hashRange) throws IOException {
     if (committed) {
       // Retrieves data in the hash range from the target partition
-      final List<Iterable> retrievedData = new ArrayList<>();
+      final List<Block> retrievedBlocks = new ArrayList<>();
       blocks.forEach(block -> {
-        if (hashRange.includes(block.getKey())) {
-          retrievedData.add(block.getData());
+        final int key = block.getKey();
+        if (hashRange.includes(key)) {
+          retrievedBlocks.add(new Block(key, block.getElements()));
         }
       });
 
-      return concatBlocks(retrievedData);
+      return retrievedBlocks;
     } else {
       throw new IOException("Cannot retrieve elements before a partition is committed");
     }
@@ -90,20 +88,5 @@ public final class MemoryPartition implements Partition {
   @Override
   public synchronized void commit() {
     committed = true;
-  }
-
-  /**
-   * concatenates an iterable of blocks into a single iterable of elements.
-   *
-   * @param blocksToConcat the iterable of blocks to concatenate.
-   * @return the concatenated iterable of all elements.
-   */
-  private Iterable concatBlocks(final Iterable<Iterable> blocksToConcat) {
-    final List concatStreamBase = new ArrayList<>();
-    Stream<Object> concatStream = concatStreamBase.stream();
-    for (final Iterable block : blocksToConcat) {
-      concatStream = Stream.concat(concatStream, StreamSupport.stream(block.spliterator(), false));
-    }
-    return concatStream.collect(Collectors.toList());
   }
 }

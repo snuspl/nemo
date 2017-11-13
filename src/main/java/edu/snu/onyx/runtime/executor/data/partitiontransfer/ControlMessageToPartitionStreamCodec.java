@@ -306,7 +306,7 @@ final class ControlMessageToPartitionStreamCodec
     switch (partitionStore.getSimpleName()) {
       case MemoryStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.MEMORY;
-      case SerializingMemoryStore.SIMPLE_NAME:
+      case SerializedMemoryStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.SER_MEMORY;
       case LocalFileStore.SIMPLE_NAME:
         return ControlMessage.PartitionStore.LOCAL_FILE;
@@ -323,7 +323,7 @@ final class ControlMessageToPartitionStreamCodec
       case MEMORY:
         return MemoryStore.class;
       case SER_MEMORY:
-        return SerializingMemoryStore.class;
+        return SerializedMemoryStore.class;
       case LOCAL_FILE:
         return LocalFileStore.class;
       case REMOTE_FILE:

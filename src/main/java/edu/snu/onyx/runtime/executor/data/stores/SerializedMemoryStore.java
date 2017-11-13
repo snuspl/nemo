@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.exception.PartitionFetchException;
-import edu.snu.onyx.runtime.executor.data.DataSerializationUtil;
+import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.executor.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.partition.SerializedMemoryPartition;
@@ -32,19 +32,19 @@ import java.util.Optional;
  * Serialize and store data in local memory.
  */
 @ThreadSafe
-public final class SerializingMemoryStore extends LocalPartitionStore {
-  public static final String SIMPLE_NAME = "SerializingMemoryStore";
+public final class SerializedMemoryStore extends LocalPartitionStore {
+  public static final String SIMPLE_NAME = "SerializedMemoryStore";
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
 
   @Inject
-  private SerializingMemoryStore(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+  private SerializedMemoryStore(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
     super();
     this.partitionManagerWorker = partitionManagerWorker;
   }
 
   @Override
   public void createPartition(final String partitionId) {
-    final Coder coder = DataSerializationUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
     getPartitionMap().put(partitionId, new SerializedMemoryPartition(coder));
   }
 

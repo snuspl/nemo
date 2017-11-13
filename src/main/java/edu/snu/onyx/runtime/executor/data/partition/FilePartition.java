@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.executor.data.Block;
-import edu.snu.onyx.runtime.executor.data.DataSerializationUtil;
+import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.executor.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.onyx.runtime.executor.data.metadata.FileMetadata;
@@ -94,12 +94,12 @@ public final class FilePartition implements Partition {
    * @throws IOException if fail to write.
    */
   @Override
-  public List<Long> putBlocks(final Iterable<Block> blocks) throws IOException {
+  public Optional<List<Long>> putBlocks(final Iterable<Block> blocks) throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
     // Serialize the given blocks
     try (final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream()) {
       for (final Block block : blocks) {
-        final long elementsTotal = DataSerializationUtil.serializeBlock(coder, block, bytesOutputStream);
+        final long elementsTotal = DataUtil.serializeBlock(coder, block, bytesOutputStream);
 
         // Write the serialized block.
         final byte[] serialized = bytesOutputStream.toByteArray();
@@ -109,14 +109,14 @@ public final class FilePartition implements Partition {
       }
       commitRemainderMetadata();
 
-      return blockSizeList;
+      return Optional.of(blockSizeList);
     }
   }
 
   /**
    * Commits the un-committed block metadata.
    */
-  public void commitRemainderMetadata() {
+  private void commitRemainderMetadata() {
     final List<BlockMetadata> metadataToCommit = new ArrayList<>();
     while (!blockMetadataToCommit.isEmpty()) {
       final BlockMetadata blockMetadata = blockMetadataToCommit.poll();
@@ -128,25 +128,26 @@ public final class FilePartition implements Partition {
   }
 
   /**
-   * Retrieves the elements of this partition from the file in a specific hash range and deserializes it.
+   * Retrieves the blocks of this partition from the file in a specific hash range and deserializes it.
    *
    * @param hashRange the hash range
-   * @return an iterable of deserialized elements.
+   * @return an iterable of deserialized blocks.
    * @throws IOException if failed to deserialize.
    */
   @Override
-  public Iterable getElements(final HashRange hashRange) throws IOException {
+  public Iterable<Block> getBlocks(final HashRange hashRange) throws IOException {
     // Deserialize the data
-    final ArrayList deserializedData = new ArrayList<>();
+    final List<Block> deserializedBlocks = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath);
          final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
-        // TODO #463: Support incremental read.
         final int hashVal = blockMetadata.getHashValue();
         if (hashRange.includes(hashVal)) {
+          final List deserializedData = new ArrayList<>();
           // The hash value of this block is in the range.
-          DataSerializationUtil.deserializeBlock(
+          DataUtil.deserializeBlock(
               blockMetadata.getElementsTotal(), coder, bufferedInputStream, deserializedData);
+          deserializedBlocks.add(new Block(hashVal, deserializedData));
         } else {
           // Have to skip this block.
           long bytesToSkip = blockMetadata.getBlockSize();
@@ -161,7 +162,7 @@ public final class FilePartition implements Partition {
       }
     }
 
-    return deserializedData;
+    return deserializedBlocks;
   }
 
   /**

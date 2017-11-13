@@ -5,13 +5,17 @@ import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
- * Utility methods for data (de)serialization.
+ * Utility methods for data handling (e.g., (de)serialization).
  */
-public final class DataSerializationUtil {
-  private DataSerializationUtil() {
+public final class DataUtil {
+  private DataUtil() {
     // Private constructor.
   }
 
@@ -27,7 +31,7 @@ public final class DataSerializationUtil {
                                     final Block block,
                                     final ByteArrayOutputStream bytesOutputStream) {
     long elementsCount = 0;
-    for (final Object element : block.getData()) {
+    for (final Object element : block.getElements()) {
       coder.encode(element, bytesOutputStream);
       elementsCount++;
     }
@@ -55,7 +59,7 @@ public final class DataSerializationUtil {
   /**
    * Gets data coder from the {@link PartitionManagerWorker}.
    *
-   * @param partitionId to get the coder.
+   * @param partitionId the ID of the partition to get the coder.
    * @param worker      the {@link PartitionManagerWorker} having coder.
    * @return the coder.
    */
@@ -63,5 +67,33 @@ public final class DataSerializationUtil {
                                          final PartitionManagerWorker worker) {
     final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromPartitionId(partitionId);
     return worker.getCoder(runtimeEdgeId);
+  }
+
+  /**
+   * Converts a partition id to the corresponding file path.
+   *
+   * @param partitionId   the ID of the partition.
+   * @param fileDirectory the directory of the target partition file.
+   * @return the file path of the partition.
+   */
+  public static String partitionIdToFilePath(final String partitionId,
+                                             final String fileDirectory) {
+    return fileDirectory + "/" + partitionId;
+  }
+
+  /**
+   * Concatenates an iterable of blocks into a single iterable of elements.
+   *
+   * @param blocksToConcat the blocks to concatenate.
+   * @return the concatenated iterable of all elements.
+   */
+  public static Iterable concatBlocks(final Iterable<Block> blocksToConcat) {
+    final List concatStreamBase = new ArrayList<>();
+    Stream<Object> concatStream = concatStreamBase.stream();
+    for (final Block block : blocksToConcat) {
+      final Iterable elementsInBlock = block.getElements();
+      concatStream = Stream.concat(concatStream, StreamSupport.stream(elementsInBlock.spliterator(), false));
+    }
+    return concatStream.collect(Collectors.toList());
   }
 }
