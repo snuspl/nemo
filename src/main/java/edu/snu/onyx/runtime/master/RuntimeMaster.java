@@ -19,8 +19,6 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.onyx.client.JobConf;
-import edu.snu.onyx.common.proxy.ClientEndpoint;
-import edu.snu.onyx.common.proxy.DriverEndpoint;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass;
@@ -116,16 +114,13 @@ public final class RuntimeMaster {
    * Submits the {@link PhysicalPlan} to Runtime.
    * @param plan to execute.
    * @param maxScheduleAttempt the max number of times this plan/sub-part of the plan should be attempted.
-   * @param clientEndpoint of this plan.
    */
   public void execute(final PhysicalPlan plan,
-                      final int maxScheduleAttempt,
-                      final ClientEndpoint clientEndpoint) {
+                      final int maxScheduleAttempt) {
     this.irVertices.addAll(plan.getTaskIRVertexMap().values());
     try {
       final JobStateManager jobStateManager =
           new JobStateManager(plan, partitionManagerMaster, metricMessageHandler, maxScheduleAttempt);
-      final DriverEndpoint driverEndpoint = new DriverEndpoint(jobStateManager, clientEndpoint);
 
       scheduler.scheduleJob(plan, jobStateManager);
 

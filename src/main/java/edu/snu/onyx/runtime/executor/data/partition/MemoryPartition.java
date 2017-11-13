@@ -16,55 +16,77 @@
 package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.HashRange;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 
 /**
  * This class represents a partition which is stored in local memory and not serialized.
  */
 @ThreadSafe
-public final class MemoryPartition {
+public final class MemoryPartition implements Partition {
 
   private final List<Block> blocks;
-  private volatile AtomicBoolean committed;
+  private volatile boolean committed;
 
   public MemoryPartition() {
-    blocks = Collections.synchronizedList(new ArrayList<>());
-    committed = new AtomicBoolean(false);
+    blocks = new ArrayList<>();
+    committed = false;
   }
 
   /**
-   * Appends all data in the block to this partition.
+   * Writes {@link Block}s to this partition.
+   * Invariant: This should not be invoked after this partition is committed.
    *
-   * @param blocksToAppend the blocks to append.
-   * @throws IOException if this partition is committed already.
+   * @param blocksToWrite the {@link Block}s to write.
+   * @throws IOException if fail to write.
    */
-  public void appendBlocks(final Iterable<Block> blocksToAppend) throws IOException {
-    if (!committed.get()) {
-      // TODO #463: Support incremental write.
-      blocksToAppend.forEach(blocks::add);
+  @Override
+  public synchronized Optional<List<Long>> putBlocks(final Iterable<Block> blocksToWrite) throws IOException {
+    if (!committed) {
+      blocksToWrite.forEach(blocks::add);
     } else {
       throw new IOException("Cannot append blocks to the committed partition");
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Retrieves the blocks in a specific hash range and deserializes it from this partition.
+   * Invariant: This should not be invoked before this partition is committed.
+   *
+   * @param hashRange the hash range to retrieve.
+   * @return an iterable of deserialized blocks.
+   * @throws IOException if failed to deserialize.
+   */
+  @Override
+  public Iterable<Block> getBlocks(final HashRange hashRange) throws IOException {
+    if (committed) {
+      // Retrieves data in the hash range from the target partition
+      final List<Block> retrievedBlocks = new ArrayList<>();
+      blocks.forEach(block -> {
+        final int key = block.getKey();
+        if (hashRange.includes(key)) {
+          retrievedBlocks.add(new Block(key, block.getElements()));
+        }
+      });
+
+      return retrievedBlocks;
+    } else {
+      throw new IOException("Cannot retrieve elements before a partition is committed");
     }
   }
 
   /**
-   * @return the list of the blocks in this partition.
-   */
-  public List<Block> getBlocks() {
-    return blocks;
-  }
-
-  /**
    * Commits this partition to prevent further write.
-   * If someone "subscribing" the data in this partition, it will be finished.
    */
-  public void commit() {
-    committed.set(true);
+  @Override
+  public synchronized void commit() {
+    committed = true;
   }
 }

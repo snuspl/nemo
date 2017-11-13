@@ -16,10 +16,11 @@
 package edu.snu.onyx.runtime.master;
 
 import edu.snu.onyx.client.JobConf;
+import edu.snu.onyx.compiler.ir.IdManager;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.ncs.NcsMessageEnvironment;
-import edu.snu.onyx.runtime.common.message.ncs.NcsParameters;
+import edu.snu.onyx.runtime.common.message.MessageParameters;
+import edu.snu.onyx.runtime.common.message.grpc.GrpcMessageEnvironment;
 import edu.snu.onyx.runtime.executor.OnyxContext;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
@@ -77,6 +78,7 @@ public final class OnyxDriver {
                      @Parameter(JobConf.JobId.class) final String jobId,
                      @Parameter(JobConf.FileDirectory.class) final String localDirectory,
                      @Parameter(JobConf.GlusterVolumeDirectory.class) final String glusterDirectory) {
+    IdManager.setInDriver();
     this.userApplicationRunner = userApplicationRunner;
     this.runtimeMaster = runtimeMaster;
     this.nameServer = nameServer;
@@ -191,8 +193,8 @@ public final class OnyxDriver {
 
   private Configuration getExecutorMessageConfiguration(final String executorId) {
     return Tang.Factory.getTang().newConfigurationBuilder()
-        .bindImplementation(MessageEnvironment.class, NcsMessageEnvironment.class)
-        .bindNamedParameter(NcsParameters.SenderId.class, executorId)
+        .bindImplementation(MessageEnvironment.class, GrpcMessageEnvironment.class)
+        .bindNamedParameter(MessageParameters.SenderId.class, executorId)
         .build();
   }
 }

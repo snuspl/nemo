@@ -16,7 +16,7 @@
 package edu.snu.onyx.compiler.ir.executionproperty.edge;
 
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.onyx.runtime.executor.data.PartitionStore;
+import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 
 /**
  * DataStore ExecutionProperty.

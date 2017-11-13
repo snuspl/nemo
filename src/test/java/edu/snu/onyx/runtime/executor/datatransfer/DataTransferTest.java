@@ -33,9 +33,9 @@ import edu.snu.onyx.compiler.ir.executionproperty.edge.PartitionerProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
+import edu.snu.onyx.runtime.common.message.MessageParameters;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.onyx.runtime.common.message.ncs.NcsParameters;
 import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
@@ -46,6 +46,7 @@ import edu.snu.onyx.runtime.executor.Executor;
 import edu.snu.onyx.runtime.executor.PersistentConnectionToMasterMap;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.MetricManagerWorker;
+import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.DataCommunicationPattern;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
@@ -103,6 +104,7 @@ public final class DataTransferTest {
   private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private static final int SCHEDULE_TIMEOUT = 1000;
   private static final Class<? extends PartitionStore> MEMORY_STORE = MemoryStore.class;
+  private static final Class<? extends PartitionStore> SER_MEMORY_STORE = SerializedMemoryStore.class;
   private static final Class<? extends PartitionStore> LOCAL_FILE_STORE = LocalFileStore.class;
   private static final Class<? extends PartitionStore> REMOTE_FILE_STORE = GlusterFileStore.class;
   private static final String TMP_LOCAL_FILE_DIRECTORY = "./tmpLocalFiles";
@@ -168,7 +170,7 @@ public final class DataTransferTest {
     final PersistentConnectionToMasterMap conToMaster = new PersistentConnectionToMasterMap(messageEnvironment);
     final Configuration executorConfiguration = TANG.newConfigurationBuilder()
         .bindNamedParameter(JobConf.ExecutorId.class, executorId)
-        .bindNamedParameter(NcsParameters.SenderId.class, executorId)
+        .bindNamedParameter(MessageParameters.SenderId.class, executorId)
         .build();
     final Injector injector = nameClientInjector.forkInjector(executorConfiguration);
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
@@ -235,6 +237,12 @@ public final class DataTransferTest {
 
     // test ManyToMany different worker
     writeAndRead(worker1, worker2, ScatterGather.class, MEMORY_STORE);
+
+    // test ManyToMany same worker
+    writeAndRead(worker1, worker1, ScatterGather.class, SER_MEMORY_STORE);
+
+    // test ManyToMany different worker
+    writeAndRead(worker1, worker2, ScatterGather.class, SER_MEMORY_STORE);
 
     // test ManyToMany same worker (local file)
     writeAndRead(worker1, worker1, ScatterGather.class, LOCAL_FILE_STORE);
