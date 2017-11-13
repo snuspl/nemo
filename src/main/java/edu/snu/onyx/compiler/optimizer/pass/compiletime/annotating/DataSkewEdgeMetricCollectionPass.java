@@ -24,7 +24,6 @@ import edu.snu.onyx.compiler.ir.executionproperty.edge.MetricCollectionProperty;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.DataSkewRuntimePass;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
-import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
