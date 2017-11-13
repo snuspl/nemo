@@ -136,16 +136,17 @@ public final class BatchSingleJobScheduler implements Scheduler {
                                       final List<String> tasksPutOnHold,
                                       final TaskGroupState.RecoverableFailureCause failureCause) {
     final TaskGroup taskGroup = getTaskGroupById(taskGroupId);
-    jobStateManager.onTaskGroupStateChanged(taskGroup, newState);
 
     switch (newState) {
     case COMPLETE:
+      jobStateManager.onTaskGroupStateChanged(taskGroup, newState);
       onTaskGroupExecutionComplete(executorId, taskGroup);
       break;
     case FAILED_RECOVERABLE:
       final int attemptIndexForStage =
           jobStateManager.getAttemptCountForStage(getTaskGroupById(taskGroupId).getStageId());
       if (attemptIdx == attemptIndexForStage || attemptIdx == SCHEDULE_ATTEMPT_ON_CONTAINER_FAILURE) {
+        jobStateManager.onTaskGroupStateChanged(taskGroup, newState);
         onTaskGroupExecutionFailedRecoverable(executorId, taskGroup, failureCause);
       } else if (attemptIdx < attemptIndexForStage) {
         // if attemptIdx < attemptIndexForStage, we can ignore this late arriving message.
@@ -155,6 +156,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
       }
       break;
     case ON_HOLD:
+      jobStateManager.onTaskGroupStateChanged(taskGroup, newState);
       onTaskGroupExecutionOnHold(executorId, taskGroup, tasksPutOnHold);
       break;
     case FAILED_UNRECOVERABLE:

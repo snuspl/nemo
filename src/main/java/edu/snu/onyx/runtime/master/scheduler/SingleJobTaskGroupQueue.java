@@ -126,6 +126,7 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
    * Removes a stage and its descendant stages from this PQ.
    * @param stageId for the stage to begin the removal recursively.
    */
+  @Override
   public void removeStageAndDescendantsFromQueue(final String stageId) {
     synchronized (stageIdToPendingTaskGroups) {
       removeStageAndChildren(stageId);
@@ -193,6 +194,18 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
   @Override
   public void onJobScheduled(final PhysicalPlan physicalPlanForJob) {
     this.physicalPlan = physicalPlanForJob;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    synchronized (stageIdToPendingTaskGroups) {
+      for (final String stageId : schedulableStages) {
+        if (!stageIdToPendingTaskGroups.get(stageId).isEmpty()) {
+          return false;
+        }
+      }
+      return true;
+    }
   }
 
   @Override

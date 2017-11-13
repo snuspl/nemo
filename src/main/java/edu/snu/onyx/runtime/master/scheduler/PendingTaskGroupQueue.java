@@ -58,6 +58,12 @@ public interface PendingTaskGroupQueue {
   void removeStageAndDescendantsFromQueue(final String stageId);
 
   /**
+   * Checks whether there are schedulable TaskGroups in the queue or not.
+   * @return true if there are schedulable TaskGroups in the queue, false otherwise.
+   */
+  boolean isEmpty();
+
+  /**
    * Closes and cleans up this queue.
    */
   void close();
