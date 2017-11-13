@@ -16,14 +16,11 @@
 package edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.CompilerTestUtil;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
+import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
-import edu.snu.onyx.compiler.ir.partitioner.HashPartitioner;
-import edu.snu.onyx.compiler.ir.partitioner.IntactPartitioner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,34 +30,27 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link DefaultPartitionerPass}.
+ * Test {@link DefaultParallelismPass}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public class DefaultPartitionerPassTest {
-  private AnnotatingPass partitionerPass;
-
+public class DefaultParallelismPassTest {
   @Before
   public void setUp() throws Exception {
-    partitionerPass = new DefaultPartitionerPass();
   }
 
   @Test
-  public void testAnnotatingProperty() {
-    assertEquals(ExecutionProperty.Key.Partitioner, partitionerPass.getExecutionPropertyToModify());
+  public void testAnnotatingPass() {
+    final AnnotatingPass parallelismPass = new DefaultParallelismPass();
+    assertEquals(ExecutionProperty.Key.Parallelism, parallelismPass.getExecutionPropertyToModify());
   }
 
   @Test
-  public void testAnnotation() throws Exception {
+  public void testParallelism() throws Exception {
     final DAG<IRVertex, IREdge> compiledDAG = CompilerTestUtil.compileALSDAG();
-    final DAG<IRVertex, IREdge> processedDAG = partitionerPass.apply(compiledDAG);
+    final DAG<IRVertex, IREdge> processedDAG = new DefaultParallelismPass().apply(compiledDAG);
 
-    processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> ScatterGather.class.equals(e.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
-        .forEach(e -> assertEquals(e.getProperty(ExecutionProperty.Key.Partitioner), HashPartitioner.class)));
-
-    processedDAG.getVertices().forEach(v -> processedDAG.getIncomingEdgesOf(v).stream()
-        .filter(e -> !ScatterGather.class.equals(e.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
-        .forEach(e -> assertEquals(e.getProperty(ExecutionProperty.Key.Partitioner), IntactPartitioner.class)));
+    processedDAG.getTopologicalSort().forEach(irVertex ->
+        assertEquals(1, irVertex.<Integer>getProperty(ExecutionProperty.Key.Parallelism).longValue()));
   }
 }

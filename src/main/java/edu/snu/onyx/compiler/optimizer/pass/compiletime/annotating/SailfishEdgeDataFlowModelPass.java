@@ -22,6 +22,7 @@ import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,10 +30,8 @@ import java.util.List;
  * This pass handles the DataFlowModel ExecutionProperty.
  */
 public final class SailfishEdgeDataFlowModelPass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "SailfishEdgeDataFlowModelPass";
-
   public SailfishEdgeDataFlowModelPass() {
-    super(ExecutionProperty.Key.DataFlowModel);
+    super(ExecutionProperty.Key.DataFlowModel, Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
   }
 
   @Override

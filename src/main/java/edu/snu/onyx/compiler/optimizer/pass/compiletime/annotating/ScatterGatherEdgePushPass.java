@@ -22,6 +22,7 @@ import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataFlowModelProperty;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,11 +33,8 @@ import java.util.stream.Stream;
  * It sets DataFlowModel ExecutionProperty as "push".
  */
 public final class ScatterGatherEdgePushPass extends AnnotatingPass {
-
   public ScatterGatherEdgePushPass() {
-    super(ExecutionProperty.Key.DataFlowModel, Stream.of(
-        ExecutionProperty.Key.DataCommunicationPattern
-    ).collect(Collectors.toSet()));
+    super(ExecutionProperty.Key.DataFlowModel, Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
   }
 
   @Override

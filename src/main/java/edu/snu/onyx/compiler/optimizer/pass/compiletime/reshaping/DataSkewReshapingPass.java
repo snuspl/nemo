@@ -26,6 +26,7 @@ import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,7 +38,9 @@ import java.util.List;
  * DAG at the end of each passes for metricCollectionVertices.
  */
 public final class DataSkewReshapingPass extends ReshapingPass {
-  public static final String SIMPLE_NAME = "DataSkewReshapingPass";
+  public DataSkewReshapingPass() {
+    super(Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
+  }
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
