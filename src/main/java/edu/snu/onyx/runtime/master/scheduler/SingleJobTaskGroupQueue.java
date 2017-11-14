@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
-import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
@@ -91,7 +90,7 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
    * @throws InterruptedException can be thrown while trying to take a pending stage ID.
    */
   @Override
-  public Optional<Pair<String, ScheduledTaskGroup>> dequeueNextTaskGroup() {
+  public Optional<ScheduledTaskGroup> dequeue() {
     ScheduledTaskGroup taskGroupToSchedule = null;
     final String stageId;
     try {
@@ -119,14 +118,14 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
     }
 
     return (taskGroupToSchedule == null) ? Optional.empty()
-        : Optional.of(Pair.of(physicalPlan.getId(), taskGroupToSchedule));
+        : Optional.of(taskGroupToSchedule);
   }
 
   /**
    * Removes a stage and its descendant stages from this PQ.
    * @param stageId for the stage to begin the removal recursively.
    */
-  public void removeStageAndDescendantsFromQueue(final String stageId) {
+  public void removeTaskGroupsAndDescendants(final String stageId) {
     synchronized (stageIdToPendingTaskGroups) {
       removeStageAndChildren(stageId);
     }

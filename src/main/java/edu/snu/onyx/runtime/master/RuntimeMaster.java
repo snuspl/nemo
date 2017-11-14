@@ -149,6 +149,8 @@ public final class RuntimeMaster {
 
       if (allExecutorsClosed.get()) {
         LOG.info("All executors were closed successfully!");
+      } else {
+        LOG.error("Failed to shutdown all executors. See log exceptions for details. Terminating RuntimeMaster.");
       }
     } catch (Exception e) {
       new ContainerException(new Throwable("An exception occurred while trying to terminate ContainerManager"));
