@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
-import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.onyx.runtime.common.state.JobState;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;

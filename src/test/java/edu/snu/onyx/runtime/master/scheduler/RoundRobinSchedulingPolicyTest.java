@@ -230,7 +230,7 @@ public final class RoundRobinSchedulingPolicyTest {
   }
 
   private ScheduledTaskGroup wrap(final TaskGroup taskGroup) {
-    return new ScheduledTaskGroup(taskGroup, Collections.emptyList(), Collections.emptyList(),
+    return new ScheduledTaskGroup("TestPlan", taskGroup, Collections.emptyList(), Collections.emptyList(),
         MAGIC_SCHEDULE_ATTEMPT_INDEX);
   }
 }
