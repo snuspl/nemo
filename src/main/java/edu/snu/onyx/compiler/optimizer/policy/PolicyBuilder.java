@@ -47,7 +47,6 @@ public final class PolicyBuilder {
     annotatedExecutionProperties.add(ExecutionProperty.Key.ExecutorPlacement);
     annotatedExecutionProperties.add(ExecutionProperty.Key.Parallelism);
     annotatedExecutionProperties.add(ExecutionProperty.Key.DataFlowModel);
-    annotatedExecutionProperties.add(ExecutionProperty.Key.DataStore);
     annotatedExecutionProperties.add(ExecutionProperty.Key.Partitioner);
   }
 
