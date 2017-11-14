@@ -38,7 +38,12 @@ public final class ScheduleGroupPass extends AnnotatingPass {
   public ScheduleGroupPass() {
     super(ExecutionProperty.Key.ScheduleGroupIndex, Stream.of(
         ExecutionProperty.Key.StageId,
-        ExecutionProperty.Key.DataFlowModel
+        ExecutionProperty.Key.DataCommunicationPattern,
+        ExecutionProperty.Key.ExecutorPlacement,
+        ExecutionProperty.Key.DataStore,
+        ExecutionProperty.Key.DataFlowModel,
+        ExecutionProperty.Key.Partitioner,
+        ExecutionProperty.Key.Parallelism
     ).collect(Collectors.toSet()));
   }
 

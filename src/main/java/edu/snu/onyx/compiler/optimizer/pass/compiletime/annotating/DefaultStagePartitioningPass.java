@@ -39,8 +39,10 @@ import java.util.stream.Stream;
 public final class DefaultStagePartitioningPass extends AnnotatingPass {
   public DefaultStagePartitioningPass() {
     super(ExecutionProperty.Key.StageId, Stream.of(
-        ExecutionProperty.Key.ExecutorPlacement,
         ExecutionProperty.Key.DataCommunicationPattern,
+        ExecutionProperty.Key.ExecutorPlacement,
+        ExecutionProperty.Key.DataFlowModel,
+        ExecutionProperty.Key.Partitioner,
         ExecutionProperty.Key.Parallelism
     ).collect(Collectors.toSet()));
   }
