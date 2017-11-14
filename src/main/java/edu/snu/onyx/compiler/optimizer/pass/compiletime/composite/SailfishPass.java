@@ -28,8 +28,8 @@ public final class SailfishPass extends CompositePass {
   public SailfishPass() {
     super(Arrays.asList(
         new SailfishReshapingPass(),
-        new SailfishEdgeDataStorePass(),
-        new SailfishEdgeDataFlowModelPass()
+        new SailfishEdgeDataFlowModelPass(),
+        new SailfishEdgeDataStorePass()
     ));
   }
 }

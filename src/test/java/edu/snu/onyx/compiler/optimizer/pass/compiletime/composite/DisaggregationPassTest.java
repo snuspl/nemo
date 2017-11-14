@@ -21,9 +21,10 @@ import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ReviseInterStageEdgeDataStorePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DisaggregationEdgeDataStorePass;
 import edu.snu.onyx.runtime.executor.data.stores.GlusterFileStore;
 import edu.snu.onyx.runtime.executor.data.stores.MemoryStore;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
@@ -36,7 +37,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test {@link DisaggregationPass}.
+ * Test {@link DisaggregationEdgeDataStorePass}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
@@ -51,8 +52,8 @@ public class DisaggregationPassTest {
   @Test
   public void testDisaggregation() throws Exception {
     final DAG<IRVertex, IREdge> processedDAG =
-        new DisaggregationPass().apply(
-            new DefaultEdgeDataStorePass().apply(
+        new DisaggregationEdgeDataStorePass().apply(
+            new ReviseInterStageEdgeDataStorePass().apply(
                 new DefaultStagePartitioningPass().apply(
                     new DefaultParallelismPass().apply(compiledDAG))));
 

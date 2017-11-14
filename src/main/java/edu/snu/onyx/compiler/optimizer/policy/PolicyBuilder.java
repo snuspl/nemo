@@ -47,6 +47,7 @@ public final class PolicyBuilder {
     annotatedExecutionProperties.add(ExecutionProperty.Key.ExecutorPlacement);
     annotatedExecutionProperties.add(ExecutionProperty.Key.Parallelism);
     annotatedExecutionProperties.add(ExecutionProperty.Key.DataFlowModel);
+    annotatedExecutionProperties.add(ExecutionProperty.Key.DataStore);
     annotatedExecutionProperties.add(ExecutionProperty.Key.Partitioner);
   }
 
@@ -89,11 +90,6 @@ public final class PolicyBuilder {
   }
 
   public Policy build() {
-    // see if required execution properties have been met
-//    if (!annotatedExecutionProperties.containsAll(requiredExecutionProperties)) {
-//      throw new CompileTimeOptimizationException("Required execution properties has not been met for the policy");
-//    }
-
     return new Policy() {
       @Override
       public List<CompileTimePass> getCompileTimePasses() {

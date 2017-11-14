@@ -22,6 +22,7 @@ import edu.snu.onyx.compiler.ir.SourceVertex;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
+import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -49,9 +50,9 @@ public final class DefaultParallelismPass extends AnnotatingPass {
           vertex.setProperty(ParallelismProperty.of(sourceVertex.getReaders(1).size()));
         } else if (!inEdges.isEmpty()) {
           final OptionalInt parallelism = inEdges.stream()
-              // No reason to propagate via sideInput edges, as the data streams that will use the broadcasted data
+              // No reason to propagate via Broadcast edges, as the data streams that will use the broadcasted data
               // as a sideInput will have their own number of parallelism
-              .filter(edge -> !edge.isSideInput())
+              .filter(edge -> !Broadcast.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
               .mapToInt(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.Parallelism))
               .max();
           if (parallelism.isPresent()) {

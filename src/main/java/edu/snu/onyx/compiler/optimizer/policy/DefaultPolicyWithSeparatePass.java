@@ -15,7 +15,7 @@
  */
 package edu.snu.onyx.compiler.optimizer.policy;
 
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ReviseInterStageEdgeDataStorePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
@@ -55,12 +55,10 @@ public final class DefaultPolicyWithSeparatePass implements Policy {
    * A simple custom pass consisted of the two passes at the end of the default pass.
    */
   public final class RefactoredPass extends CompositePass {
-    public static final String SIMPLE_NAME =  "RefactoredPass";
-
     RefactoredPass() {
       super(Arrays.asList(
           new DefaultStagePartitioningPass(),
-          new DefaultEdgeDataStorePass(),
+          new ReviseInterStageEdgeDataStorePass(), // after stage partitioning
           new ScheduleGroupPass()
       ));
     }

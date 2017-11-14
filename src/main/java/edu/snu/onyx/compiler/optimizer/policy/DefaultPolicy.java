@@ -15,7 +15,7 @@
  */
 package edu.snu.onyx.compiler.optimizer.policy;
 
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ReviseInterStageEdgeDataStorePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
@@ -34,7 +34,7 @@ public final class DefaultPolicy implements Policy {
     this.policy = new PolicyBuilder()
         .registerCompileTimePass(new DefaultParallelismPass())
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new DefaultEdgeDataStorePass())
+        .registerCompileTimePass(new ReviseInterStageEdgeDataStorePass()) // after stage partitioning
         .registerCompileTimePass(new ScheduleGroupPass())
         .build();
   }

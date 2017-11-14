@@ -16,11 +16,7 @@
 package edu.snu.onyx.compiler.optimizer.policy;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultEdgeDataStorePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DisaggregationPass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.*;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.SailfishPass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.RuntimePass;
@@ -37,12 +33,14 @@ public final class SailfishDisaggPolicy implements Policy {
   public SailfishDisaggPolicy() {
     this.policy = new PolicyBuilder()
         .registerCompileTimePass(new SailfishPass())
+
         .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new DefaultParallelismPass()) // after reshaping passes
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new DefaultEdgeDataStorePass())
-        .registerCompileTimePass(new DisaggregationPass())
+        .registerCompileTimePass(new ReviseInterStageEdgeDataStorePass()) // after stage partitioning
         .registerCompileTimePass(new ScheduleGroupPass())
+
+        .registerCompileTimePass(new DisaggregationEdgeDataStorePass())
         .build();
   }
 

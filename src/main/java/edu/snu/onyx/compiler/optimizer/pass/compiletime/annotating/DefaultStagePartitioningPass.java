@@ -20,6 +20,7 @@ import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.StageIdProperty;
+import edu.snu.onyx.runtime.executor.data.stores.MemoryStore;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 
 import java.util.ArrayList;
@@ -83,6 +84,8 @@ public final class DefaultStagePartitioningPass extends AnnotatingPass {
         final Optional<List<IREdge>> inEdgesForStage = inEdgeList.map(e -> e.stream()
             // One to one edges
             .filter(edge -> OneToOne.class.equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))
+            // MemoryStore placement
+            .filter(edge -> MemoryStore.class.equals(edge.getProperty(ExecutionProperty.Key.DataStore)))
             // if src and dst are placed on same container types
             .filter(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.ExecutorPlacement)
                 .equals(edge.getDst().getProperty(ExecutionProperty.Key.ExecutorPlacement)))

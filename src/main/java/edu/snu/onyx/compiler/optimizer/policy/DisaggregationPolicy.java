@@ -17,7 +17,6 @@ package edu.snu.onyx.compiler.optimizer.policy;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.*;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.*;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DisaggregationPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.runtime.RuntimePass;
 
@@ -32,11 +31,12 @@ public final class DisaggregationPolicy implements Policy {
   public DisaggregationPolicy() {
     this.policy = new PolicyBuilder()
         .registerCompileTimePass(new LoopOptimizationCompositePass())
-        .registerCompileTimePass(new DefaultParallelismPass()) // before stage partitioning
+        .registerCompileTimePass(new DefaultParallelismPass()) // before stage partitioning, after reshaping passes.
         .registerCompileTimePass(new DefaultStagePartitioningPass())
-        .registerCompileTimePass(new DefaultEdgeDataStorePass()) // after stage partitioning
-        .registerCompileTimePass(new DisaggregationPass())
+        .registerCompileTimePass(new ReviseInterStageEdgeDataStorePass()) // after stage partitioning
         .registerCompileTimePass(new ScheduleGroupPass())
+
+        .registerCompileTimePass(new DisaggregationEdgeDataStorePass())
         .build();
   }
 
