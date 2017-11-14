@@ -252,7 +252,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
       for (final PhysicalStage stage : physicalPlan.getStageDAG().getTopologicalSort()) {
         if (stage.getId().equals(taskGroup.getStageId())) {
           LOG.info("Removing TaskGroups for {} before they are scheduled to an executor", stage.getId());
-          pendingTaskGroupQueue.removeStageAndDescendantsFromQueue(stage.getId());
+          pendingTaskGroupQueue.removeTaskGroupsAndDescendants(stage.getId());
           stage.getTaskGroupList().forEach(tg -> {
             if (jobStateManager.getTaskGroupState(tg.getTaskGroupId()).getStateMachine().getCurrentState()
                 != TaskGroupState.State.COMPLETE) {
@@ -481,7 +481,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
       partitionManagerMaster.onProducerTaskGroupScheduled(taskGroup.getTaskGroupId());
       LOG.debug("Enquing {}", taskGroup.getTaskGroupId());
       pendingTaskGroupQueue.enqueue(
-          new ScheduledTaskGroup(taskGroup, stageIncomingEdges, stageOutgoingEdges, attemptIdx));
+          new ScheduledTaskGroup(physicalPlan.getId(), taskGroup, stageIncomingEdges, stageOutgoingEdges, attemptIdx));
     });
   }
 

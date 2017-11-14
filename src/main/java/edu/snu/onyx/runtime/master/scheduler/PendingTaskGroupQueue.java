@@ -15,9 +15,9 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
-import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
+
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
@@ -42,20 +42,24 @@ public interface PendingTaskGroupQueue {
 
   /**
    * Dequeues the next TaskGroup to be scheduled.
-   * @return an optional of the jobID and the next TaskGroup to be scheduled,
+   * @return an optional of the the next TaskGroup to be scheduled,
    * an empty optional if no such TaskGroup exists.
    */
-  Optional<Pair<String, ScheduledTaskGroup>> dequeueNextTaskGroup();
+  Optional<ScheduledTaskGroup> dequeue();
 
+  /**
+   * Registers a job to this queue in case the queue needs to understand the topology of the job DAG.
+   * @param physicalPlanForJob the job to schedule.
+   */
   void onJobScheduled(final PhysicalPlan physicalPlanForJob);
 
   /**
    * Removes a stage and its descendant stages from this queue.
    * This is to be used for fault tolerance purposes,
    * say when a stage fails and all affected TaskGroups must be removed.
-   * @param stageId for the stage to begin the removal recursively.
+   * @param stageIdOfTaskGroups for the stage to begin the removal recursively.
    */
-  void removeStageAndDescendantsFromQueue(final String stageId);
+  void removeTaskGroupsAndDescendants(final String stageIdOfTaskGroups);
 
   /**
    * Checks whether there are schedulable TaskGroups in the queue or not.

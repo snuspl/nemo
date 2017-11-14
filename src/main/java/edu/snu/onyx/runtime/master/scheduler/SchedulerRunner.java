@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
-import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.onyx.runtime.common.state.JobState;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
@@ -56,13 +55,15 @@ public final class SchedulerRunner {
   }
 
   public synchronized void scheduleJob(final JobStateManager jobStateManager) {
-    jobStateManagers.put(jobStateManager.getJobId(), jobStateManager);
+    if (!isTerminated) {
+      jobStateManagers.put(jobStateManager.getJobId(), jobStateManager);
 
-    if (!initialJobScheduled) {
-      initialJobScheduled = true;
-      schedulerThread.execute(new SchedulerThread());
-      schedulerThread.shutdown();
-    }
+      if (!initialJobScheduled) {
+        initialJobScheduled = true;
+        schedulerThread.execute(new SchedulerThread());
+        schedulerThread.shutdown();
+      }
+    } // else ignore new incoming jobs when terminated.
   }
 
   public synchronized void terminate() {
@@ -77,25 +78,25 @@ public final class SchedulerRunner {
     public void run() {
       while (!isTerminated) {
         try {
-          Optional<Pair<String, ScheduledTaskGroup>> nextTaskGroupToSchedule;
+          Optional<ScheduledTaskGroup> nextTaskGroupToSchedule;
           do {
-            nextTaskGroupToSchedule = pendingTaskGroupQueue.dequeueNextTaskGroup();
+            nextTaskGroupToSchedule = pendingTaskGroupQueue.dequeue();
           } while (!nextTaskGroupToSchedule.isPresent());
 
-          final Optional<String> executorId = schedulingPolicy.attemptSchedule(nextTaskGroupToSchedule.get().right());
+          final Optional<String> executorId = schedulingPolicy.attemptSchedule(nextTaskGroupToSchedule.get());
           if (!executorId.isPresent()) {
             LOG.info("Failed to assign an executor for {} before the timeout: {}",
-                new Object[] {nextTaskGroupToSchedule.get().right().getTaskGroup().getTaskGroupId(),
+                new Object[] {nextTaskGroupToSchedule.get().getTaskGroup().getTaskGroupId(),
                     schedulingPolicy.getScheduleTimeoutMs()});
 
             // Put this TaskGroup back to the queue since we failed to schedule it.
-            pendingTaskGroupQueue.enqueue(nextTaskGroupToSchedule.get().right());
+            pendingTaskGroupQueue.enqueue(nextTaskGroupToSchedule.get());
           } else {
             // Must send this scheduledTaskGroup to the destination executor.
-            final JobStateManager jobStateManager = jobStateManagers.get(nextTaskGroupToSchedule.get().left());
-            jobStateManager.onTaskGroupStateChanged(nextTaskGroupToSchedule.get().right().getTaskGroup(),
+            final JobStateManager jobStateManager = jobStateManagers.get(nextTaskGroupToSchedule.get().getJobId());
+            jobStateManager.onTaskGroupStateChanged(nextTaskGroupToSchedule.get().getTaskGroup(),
                 TaskGroupState.State.EXECUTING);
-            schedulingPolicy.onTaskGroupScheduled(executorId.get(), nextTaskGroupToSchedule.get().right());
+            schedulingPolicy.onTaskGroupScheduled(executorId.get(), nextTaskGroupToSchedule.get());
           }
         } catch (final Exception e) {
           e.printStackTrace(System.err);

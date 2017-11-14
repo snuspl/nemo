@@ -129,10 +129,10 @@ public final class RuntimeTestUtil {
                                          final SchedulingPolicy schedulingPolicy,
                                          final boolean isPartialSchedule) {
     while (!pendingTaskGroupQueue.isEmpty()) {
-      final Pair<String, ScheduledTaskGroup> taskGroupToSchedule = pendingTaskGroupQueue.dequeueNextTaskGroup().get();
+      final ScheduledTaskGroup taskGroupToSchedule = pendingTaskGroupQueue.dequeue().get();
 
-      final String executorId = schedulingPolicy.attemptSchedule(taskGroupToSchedule.right()).get();
-      schedulingPolicy.onTaskGroupScheduled(executorId, taskGroupToSchedule.right());
+      final String executorId = schedulingPolicy.attemptSchedule(taskGroupToSchedule).get();
+      schedulingPolicy.onTaskGroupScheduled(executorId, taskGroupToSchedule);
 
       // Schedule only the first task group.
       if (isPartialSchedule) {
