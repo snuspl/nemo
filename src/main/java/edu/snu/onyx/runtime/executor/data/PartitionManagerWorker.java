@@ -17,18 +17,18 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
+import edu.snu.onyx.runtime.common.grpc.CommonMessage;
+import edu.snu.onyx.runtime.common.grpc.MetricsMessage;
 import edu.snu.onyx.runtime.exception.PartitionFetchException;
 import edu.snu.onyx.runtime.exception.PartitionWriteException;
 import edu.snu.onyx.runtime.exception.UnsupportedPartitionStoreException;
-import edu.snu.onyx.runtime.executor.PersistentConnectionToMasterMap;
+import edu.snu.onyx.runtime.executor.RpcToMaster;
 import edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionInputStream;
 import edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionOutputStream;
 import edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
+import edu.snu.onyx.runtime.master.grpc.MasterPartitionMessage;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -52,7 +52,7 @@ public final class PartitionManagerWorker {
   private final SerializedMemoryStore serializedMemoryStore;
   private final LocalFileStore localFileStore;
   private final RemoteFileStore remoteFileStore;
-  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
+  private final RpcToMaster rpcToMaster;
   private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
   private final PartitionTransfer partitionTransfer;
   private final ExecutorService ioThreadExecutorService;
@@ -64,14 +64,14 @@ public final class PartitionManagerWorker {
                                  final SerializedMemoryStore serializedMemoryStore,
                                  final LocalFileStore localFileStore,
                                  final RemoteFileStore remoteFileStore,
-                                 final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
+                                 final RpcToMaster rpcToMaster,
                                  final PartitionTransfer partitionTransfer) {
     this.executorId = executorId;
     this.memoryStore = memoryStore;
     this.serializedMemoryStore = serializedMemoryStore;
     this.localFileStore = localFileStore;
     this.remoteFileStore = remoteFileStore;
-    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
+    this.rpcToMaster = rpcToMaster;
     this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
     this.partitionTransfer = partitionTransfer;
     this.ioThreadExecutorService = Executors.newFixedThreadPool(numThreads);
@@ -162,32 +162,25 @@ public final class PartitionManagerWorker {
       final String runtimeEdgeId,
       final Class<? extends PartitionStore> partitionStore,
       final HashRange hashRange) {
-    // Let's see if a remote worker has it
     // Ask Master for the location
-    final CompletableFuture<ControlMessage.Message> responseFromMasterFuture = persistentConnectionToMasterMap
-        .getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID).request(
-            ControlMessage.Message.newBuilder()
-                .setId(RuntimeIdGenerator.generateMessageId())
-                .setListenerId(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.RequestPartitionLocation)
-                .setRequestPartitionLocationMsg(
-                    ControlMessage.RequestPartitionLocationMsg.newBuilder()
-                        .setExecutorId(executorId)
-                        .setPartitionId(partitionId)
-                        .build())
-                .build());
+    final CompletableFuture<MasterPartitionMessage.PartitionLocationResponse> responseFuture =
+        new CompletableFuture<>();
+    rpcToMaster.newPartitionAsyncStub().askPartitionLocation(
+        MasterPartitionMessage.PartitionLocationRequest.newBuilder()
+            .setExecutorId(executorId)
+            .setPartitionId(partitionId)
+            .build(),
+        rpcToMaster.createObserverForCompletableFuture(responseFuture));
+
     // Using thenCompose so that fetching partition data starts after getting response from master.
-    return responseFromMasterFuture.thenCompose(responseFromMaster -> {
-      assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
-      final ControlMessage.PartitionLocationInfoMsg partitionLocationInfoMsg =
-          responseFromMaster.getPartitionLocationInfoMsg();
-      if (!partitionLocationInfoMsg.hasOwnerExecutorId()) {
+    return responseFuture.thenCompose(response -> {
+      if (!response.hasOwnerExecutorId()) {
         throw new PartitionFetchException(new Throwable(
             "Partition " + partitionId + " not found both in the local storage and the remote storage: The"
-                + "partition state is " + RuntimeMaster.convertPartitionState(partitionLocationInfoMsg.getState())));
+                + "partition state is " + RuntimeMaster.convertPartitionState(response.getState())));
       }
       // This is the executor id that we wanted to know
-      final String remoteWorkerId = partitionLocationInfoMsg.getOwnerExecutorId();
+      final String remoteWorkerId = response.getOwnerExecutorId();
       return partitionTransfer.initiatePull(remoteWorkerId, false, partitionStore, partitionId,
           runtimeEdgeId, hashRange).getCompleteFuture();
     });
@@ -234,41 +227,28 @@ public final class PartitionManagerWorker {
                               final List<Long> blockSizeInfo,
                               final String srcIRVertexId) {
     LOG.info("CommitPartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-    store.commitPartition(partitionId);
-    final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-        ControlMessage.PartitionStateChangedMsg.newBuilder()
+    getPartitionStore(partitionStore).commitPartition(partitionId);
+    final MasterPartitionMessage.NewPartitionState.Builder newPartitionState =
+        MasterPartitionMessage.NewPartitionState.newBuilder()
             .setExecutorId(executorId)
             .setPartitionId(partitionId)
-            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
-
+            .setState(CommonMessage.PartitionState.COMMITTED);
     if (partitionStore == GlusterFileStore.class) {
-      partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
+      newPartitionState.setLocation(REMOTE_FILE_STORE);
     } else {
-      partitionStateChangedMsgBuilder.setLocation(executorId);
+      newPartitionState.setLocation(executorId);
     }
-
-    persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-        .send(ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setListenerId(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder.build())
-            .build());
+    rpcToMaster.newPartitionSyncStub().partitionStateChanged(newPartitionState.build());
 
     if (!blockSizeInfo.isEmpty()) {
       // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
-      persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID)
-          .send(ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setListenerId(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID)
-              .setType(ControlMessage.MessageType.DataSizeMetric)
-              .setDataSizeMetricMsg(ControlMessage.DataSizeMetricMsg.newBuilder()
-                  .setPartitionId(partitionId)
-                  .setSrcIRVertexId(srcIRVertexId)
-                  .addAllBlockSizeInfo(blockSizeInfo)
-              )
-              .build());
+      rpcToMaster.newMetricSyncStub()
+          .reportDataSizeMetric(MetricsMessage.DataSizeMetric.newBuilder()
+              .setPartitionId(partitionId)
+              .setSrcIRVertexId(srcIRVertexId)
+              .addAllBlockSizeInfo(blockSizeInfo)
+              .build()
+          );
     }
   }
 
@@ -281,30 +261,17 @@ public final class PartitionManagerWorker {
   public void removePartition(final String partitionId,
                               final Class<? extends PartitionStore> partitionStore) {
     LOG.info("RemovePartition: {}", partitionId);
-    final PartitionStore store = getPartitionStore(partitionStore);
-    final boolean exist;
-    exist = store.removePartition(partitionId);
-
-    if (exist) {
-      final ControlMessage.PartitionStateChangedMsg.Builder partitionStateChangedMsgBuilder =
-          ControlMessage.PartitionStateChangedMsg.newBuilder()
-              .setExecutorId(executorId)
-              .setPartitionId(partitionId)
-              .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
-
+    if (getPartitionStore(partitionStore).removePartition(partitionId)) {
+      final MasterPartitionMessage.NewPartitionState.Builder newPartitionState =
+          MasterPartitionMessage.NewPartitionState.newBuilder()
+              .setExecutorId(executorId) .setPartitionId(partitionId)
+              .setState(CommonMessage.PartitionState.REMOVED);
       if (GlusterFileStore.class.equals(partitionStore)) {
-        partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
+        newPartitionState.setLocation(REMOTE_FILE_STORE);
       } else {
-        partitionStateChangedMsgBuilder.setLocation(executorId);
+        newPartitionState.setLocation(executorId);
       }
-
-      persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-          .send(ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setListenerId(MessageEnvironment.PARTITION_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-              .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(partitionStateChangedMsgBuilder)
-              .build());
+      rpcToMaster.newPartitionSyncStub().partitionStateChanged(newPartitionState.build());
     } else {
       throw new PartitionFetchException(new Throwable("Cannot find corresponding partition " + partitionId));
     }

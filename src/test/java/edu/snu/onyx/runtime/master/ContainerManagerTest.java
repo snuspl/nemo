@@ -16,40 +16,48 @@
 package edu.snu.onyx.runtime.master;
 
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
+import edu.snu.onyx.runtime.common.grpc.GrpcClient;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
+import io.grpc.ManagedChannel;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
 import org.apache.reef.driver.evaluator.EvaluatorRequestor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.concurrent.*;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link edu.snu.onyx.runtime.master.resource.ContainerManager}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(GrpcClient.class)
 public final class ContainerManagerTest {
   private ContainerManager containerManager;
   private int testIdNumber = 0;
-  private final ExecutorService containerAllocationPool = Executors.newFixedThreadPool(5);
-  private final BlockingDeque<ActiveContext> mockResourceAllocationQueue = new LinkedBlockingDeque<>();
 
   private final int DEFAULT_CAPACITY = 4;
   private final int DEFAULT_MEMORY = 10240;
 
   @Before
   public void setUp() {
-
-    final MessageEnvironment mockMsgEnv = mock(MessageEnvironment.class);
-    when(mockMsgEnv.asyncConnect(anyString(), anyString())).thenReturn(mock(Future.class));
-    containerManager = new ContainerManager(mock(EvaluatorRequestor.class), mockMsgEnv);
+    final GrpcClient mockedGrpcClient = mock(GrpcClient.class);
+    try {
+      Mockito.doReturn(mock(ManagedChannel.class)).when(mockedGrpcClient).openChannel(any());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    containerManager = new ContainerManager(mock(EvaluatorRequestor.class), mockedGrpcClient);
   }
 
   @Test(timeout=5000)

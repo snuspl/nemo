@@ -29,11 +29,10 @@ import edu.snu.onyx.compiler.optimizer.Optimizer;
 import edu.snu.onyx.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.onyx.compiler.optimizer.TestPolicy;
 import edu.snu.onyx.runtime.RuntimeTestUtil;
-import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.message.MessageSender;
 import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.StageState;
+import edu.snu.onyx.runtime.executor.Executor;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 import edu.snu.onyx.runtime.master.JobStateManager;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
@@ -43,9 +42,11 @@ import edu.snu.onyx.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
+import io.grpc.Server;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +56,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.junit.Assert.assertTrue;
@@ -65,8 +67,8 @@ import static org.mockito.Mockito.when;
  * Tests {@link BatchSingleJobScheduler}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class,
-    PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class, MetricMessageHandler.class})
+@PrepareForTest({ContainerManager.class, PartitionManagerMaster.class, PubSubEventHandlerWrapper.class,
+    UpdatePhysicalPlanEventHandler.class, MetricMessageHandler.class, Executor.ExecutorSchedulerMessageService.class})
 public final class BatchSingleJobSchedulerTest {
   private static final Logger LOG = LoggerFactory.getLogger(BatchSingleJobSchedulerTest.class.getName());
   private DAGBuilder<IRVertex, IREdge> irDAGBuilder;
@@ -79,8 +81,8 @@ public final class BatchSingleJobSchedulerTest {
   private PubSubEventHandlerWrapper pubSubEventHandler;
   private UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler;
   private PartitionManagerMaster partitionManagerMaster = mock(PartitionManagerMaster.class);
-  private final MessageSender<ControlMessage.Message> mockMsgSender = mock(MessageSender.class);
   private PhysicalPlanGenerator physicalPlanGenerator;
+  private MockedExecutorRepresenters mockedExecutorRepresenters;
 
   private static final int TEST_TIMEOUT_MS = 500;
 
@@ -108,14 +110,16 @@ public final class BatchSingleJobSchedulerTest {
     final ActiveContext activeContext = mock(ActiveContext.class);
     Mockito.doThrow(new RuntimeException()).when(activeContext).close();
 
+    mockedExecutorRepresenters = new MockedExecutorRepresenters(this.getClass().getName());
     final ResourceSpecification computeSpec = new ResourceSpecification(ExecutorPlacementProperty.COMPUTE, 1, 0);
-    final ExecutorRepresenter a3 = new ExecutorRepresenter("a3", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a2 = new ExecutorRepresenter("a2", computeSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter a1 = new ExecutorRepresenter("a1", computeSpec, mockMsgSender, activeContext);
+    final ExecutorRepresenter a3 = mockedExecutorRepresenters.newExecutorRepresenter("a3", computeSpec);
+    final ExecutorRepresenter a2 = mockedExecutorRepresenters.newExecutorRepresenter("a2", computeSpec);
+    final ExecutorRepresenter a1 = mockedExecutorRepresenters.newExecutorRepresenter("a1", computeSpec);
 
-    final ResourceSpecification storageSpec = new ResourceSpecification(ExecutorPlacementProperty.TRANSIENT, 1, 0);
-    final ExecutorRepresenter b2 = new ExecutorRepresenter("b2", storageSpec, mockMsgSender, activeContext);
-    final ExecutorRepresenter b1 = new ExecutorRepresenter("b1", storageSpec, mockMsgSender, activeContext);
+    final ResourceSpecification storageSpec =
+        new ResourceSpecification(ExecutorPlacementProperty.TRANSIENT, 1, 0);
+    final ExecutorRepresenter b2 = mockedExecutorRepresenters.newExecutorRepresenter("b2", storageSpec);
+    final ExecutorRepresenter b1 = mockedExecutorRepresenters.newExecutorRepresenter("b1", storageSpec);
 
     executorRepresenterMap.put(a1.getExecutorId(), a1);
     executorRepresenterMap.put(a2.getExecutorId(), a2);
@@ -133,6 +137,11 @@ public final class BatchSingleJobSchedulerTest {
     scheduler.onExecutorAdded(b2.getExecutorId());
 
     physicalPlanGenerator = Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
+  }
+
+  @After
+  public void cleanUp() {
+    mockedExecutorRepresenters.close();
   }
 
   /**

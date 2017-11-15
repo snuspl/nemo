@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+package protobuf;
+
+option java_package = "edu.snu.onyx.runtime.master.grpc";
+
+import "common_message.proto";
+
+service MasterPartitionMessageService {
+    rpc PartitionStateChanged(NewPartitionState) returns (Empty) {}
+    rpc AskPartitionLocation(PartitionLocationRequest) returns (PartitionLocationResponse) {}
+}
+
+message NewPartitionState {
+    required string executorId = 1;
+    required string partitionId = 2;
+    required PartitionState state = 3;
+    required string location = 4; // The location of the partition (e.g., executor id or remote store).
+}
+
+message PartitionLocationRequest {
+    required string executorId = 1;
+    required string partitionId = 2;
+}
+message PartitionLocationResponse {
+    required string partitionId = 1;
+    optional PartitionState state = 2;
+    optional string ownerExecutorId = 3;
+}

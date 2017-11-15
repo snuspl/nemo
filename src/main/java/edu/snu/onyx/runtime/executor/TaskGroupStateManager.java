@@ -15,9 +15,6 @@
  */
 package edu.snu.onyx.runtime.executor;
 
-import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.metric.MetricMessageSender;
 import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
@@ -29,6 +26,7 @@ import edu.snu.onyx.common.StateMachine;
 import java.util.*;
 
 import edu.snu.onyx.runtime.common.metric.MetricDataBuilder;
+import edu.snu.onyx.runtime.master.grpc.MasterSchedulerMessage;
 import org.apache.reef.annotations.audience.EvaluatorSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,18 +59,18 @@ public final class TaskGroupStateManager {
    */
   private Set<String> currentTaskGroupTaskIds;
 
-  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
+  private final RpcToMaster rpcToMaster;
 
 
   public TaskGroupStateManager(final TaskGroup taskGroup,
                                final int attemptIdx,
                                final String executorId,
-                               final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
+                               final RpcToMaster rpcToMaster,
                                final MetricMessageSender metricMessageSender) {
     this.taskGroupId = taskGroup.getTaskGroupId();
     this.attemptIdx = attemptIdx;
     this.executorId = executorId;
-    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
+    this.rpcToMaster = rpcToMaster;
     this.metricMessageSender = metricMessageSender;
     metricDataBuilderMap = new HashMap<>();
     idToTaskStates = new HashMap<>();
@@ -207,55 +205,49 @@ public final class TaskGroupStateManager {
       tasksPutOnHoldList = tasksPutOnHold;
     }
 
-    final ControlMessage.TaskGroupStateChangedMsg.Builder msgBuilder =
-        ControlMessage.TaskGroupStateChangedMsg.newBuilder()
+    final MasterSchedulerMessage.NewTaskGroupState.Builder newTaskGroupState =
+        MasterSchedulerMessage.NewTaskGroupState.newBuilder()
           .setExecutorId(executorId)
           .setTaskGroupId(taskGroupId)
           .setAttemptIdx(attemptIdx)
           .setState(convertState(newState))
           .addAllTasksPutOnHoldIds(tasksPutOnHoldList.get());
     if (cause.isPresent()) {
-      msgBuilder.setFailureCause(convertFailureCause(cause.get()));
+      newTaskGroupState.setFailureCause(convertFailureCause(cause.get()));
     }
 
     // Send taskGroupStateChangedMsg to master!
-    persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID).send(
-        ControlMessage.Message.newBuilder()
-            .setId(RuntimeIdGenerator.generateMessageId())
-            .setListenerId(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID)
-            .setType(ControlMessage.MessageType.TaskGroupStateChanged)
-            .setTaskGroupStateChangedMsg(msgBuilder.build())
-            .build());
+    rpcToMaster.newSchedulerSyncStub().taskGroupStateChanged(newTaskGroupState.build());
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private ControlMessage.TaskGroupStateFromExecutor convertState(final TaskGroupState.State state) {
+  private MasterSchedulerMessage.TaskGroupStateFromExecutor convertState(final TaskGroupState.State state) {
     switch (state) {
     case READY:
-      return ControlMessage.TaskGroupStateFromExecutor.READY;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.READY;
     case EXECUTING:
-      return ControlMessage.TaskGroupStateFromExecutor.EXECUTING;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.EXECUTING;
     case COMPLETE:
-      return ControlMessage.TaskGroupStateFromExecutor.COMPLETE;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.COMPLETE;
     case FAILED_RECOVERABLE:
-      return ControlMessage.TaskGroupStateFromExecutor.FAILED_RECOVERABLE;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.FAILED_RECOVERABLE;
     case FAILED_UNRECOVERABLE:
-      return ControlMessage.TaskGroupStateFromExecutor.FAILED_UNRECOVERABLE;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.FAILED_UNRECOVERABLE;
     case ON_HOLD:
-      return ControlMessage.TaskGroupStateFromExecutor.ON_HOLD;
+      return MasterSchedulerMessage.TaskGroupStateFromExecutor.ON_HOLD;
     default:
       throw new UnknownExecutionStateException(new Exception("This TaskGroupState is unknown: " + state));
     }
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private ControlMessage.RecoverableFailureCause convertFailureCause(
+  private MasterSchedulerMessage.RecoverableFailureCause convertFailureCause(
     final TaskGroupState.RecoverableFailureCause cause) {
     switch (cause) {
     case INPUT_READ_FAILURE:
-      return ControlMessage.RecoverableFailureCause.InputReadFailure;
+      return MasterSchedulerMessage.RecoverableFailureCause.InputReadFailure;
     case OUTPUT_WRITE_FAILURE:
-      return ControlMessage.RecoverableFailureCause.OutputWriteFailure;
+      return MasterSchedulerMessage.RecoverableFailureCause.OutputWriteFailure;
     default:
       throw new UnknownFailureCauseException(
           new Throwable("The failure cause for the recoverable failure is unknown"));

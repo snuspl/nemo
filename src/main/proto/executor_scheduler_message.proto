@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package protobuf;
+
+option java_package = "edu.snu.onyx.runtime.executor.grpc";
+
+import "common_message.proto";
+
+service ExecutorSchedulerMessageService {
+    rpc ExecuteTaskGroup(TaskGroupExecutionRequest) returns (Empty) {}
+}
+
+message TaskGroupExecutionRequest {
+    required bytes taskGroup = 1;
+}
+

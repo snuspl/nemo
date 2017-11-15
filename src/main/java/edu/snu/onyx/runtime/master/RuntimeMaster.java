@@ -22,10 +22,7 @@ import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.MetricCollectionBarrierVertex;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass;
-import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.message.MessageContext;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.MessageListener;
+import edu.snu.onyx.runtime.common.grpc.*;
 import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.state.PartitionState;
@@ -34,10 +31,13 @@ import edu.snu.onyx.runtime.exception.ContainerException;
 import edu.snu.onyx.runtime.exception.IllegalMessageException;
 import edu.snu.onyx.runtime.exception.UnknownExecutionStateException;
 import edu.snu.onyx.runtime.exception.UnknownFailureCauseException;
+import edu.snu.onyx.runtime.master.grpc.MasterSchedulerMessage;
+import edu.snu.onyx.runtime.master.grpc.MasterSchedulerMessageServiceGrpc;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
 import edu.snu.onyx.runtime.master.scheduler.Scheduler;
+import io.grpc.stub.StreamObserver;
 import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -64,7 +64,7 @@ import static edu.snu.onyx.runtime.common.state.TaskGroupState.State.ON_HOLD;
  *    a) Scheduling the job with {@link Scheduler}, {@link SchedulerRunner}, {@link PendingTaskGroupQueue}.
  *    b) Managing resources with {@link ContainerManager}.
  *    c) Managing partitions with {@link PartitionManagerMaster}.
- *    d) Receiving and sending control messages with {@link MessageEnvironment}.
+ *    d) Receiving rpcs with {@link GrpcServer}.
  *    e) Metric using {@link MetricMessageHandler}.
  */
 @DriverSide
@@ -78,7 +78,7 @@ public final class RuntimeMaster {
   private final ContainerManager containerManager;
   private final PartitionManagerMaster partitionManagerMaster;
   private final MetricMessageHandler metricMessageHandler;
-  private final MessageEnvironment masterMessageEnvironment;
+  private final GrpcServer grpcServer;
 
   // For converting json data. This is a thread safe.
   // TODO #420: Create a Singleton ObjectMapper
@@ -93,18 +93,25 @@ public final class RuntimeMaster {
                        final PendingTaskGroupQueue pendingTaskGroupQueue,
                        final ContainerManager containerManager,
                        final PartitionManagerMaster partitionManagerMaster,
+                       final GrpcServer grpcServer,
                        final MetricMessageHandler metricMessageHandler,
-                       final MessageEnvironment masterMessageEnvironment,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
     this.scheduler = scheduler;
     this.schedulerRunner = schedulerRunner;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
     this.containerManager = containerManager;
     this.partitionManagerMaster = partitionManagerMaster;
+    try {
+      grpcServer.start(GrpcServer.MASTER_GRPC_SERVER_ID,
+          new MasterSchedulerMessageService(),
+          partitionManagerMaster.new MasterPartitionMessageService(),
+          partitionManagerMaster.new MasterRemoteBlockMessageService(),
+          new MasterMetricService());
+      this.grpcServer = grpcServer;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     this.metricMessageHandler = metricMessageHandler;
-    this.masterMessageEnvironment = masterMessageEnvironment;
-    this.masterMessageEnvironment
-        .setupListener(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID, new MasterControlMessageReceiver());
     this.dagDirectory = dagDirectory;
     this.irVertices = new HashSet<>();
     this.objectMapper = new ObjectMapper();
@@ -139,12 +146,13 @@ public final class RuntimeMaster {
   }
 
   public void terminate() {
+    LOG.info("Terminating RuntimeMaster");
     try {
       scheduler.terminate();
       schedulerRunner.terminate();
       pendingTaskGroupQueue.close();
       partitionManagerMaster.terminate();
-      masterMessageEnvironment.close();
+      grpcServer.close();
       final Future<Boolean> allExecutorsClosed = containerManager.terminate();
 
       if (allExecutorsClosed.get()) {
@@ -233,67 +241,64 @@ public final class RuntimeMaster {
   }
 
   /**
-   * Handler for control messages received by Master.
+   * Grpc master scheduler service.
    */
-  public final class MasterControlMessageReceiver implements MessageListener<ControlMessage.Message> {
-    @Override
-    public void onMessage(final ControlMessage.Message message) {
-      try {
-        switch (message.getType()) {
-          case TaskGroupStateChanged:
-            final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg
-                = message.getTaskGroupStateChangedMsg();
+  private class MasterSchedulerMessageService
+      extends MasterSchedulerMessageServiceGrpc.MasterSchedulerMessageServiceImplBase {
 
-            scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
-                taskGroupStateChangedMsg.getTaskGroupId(),
-                convertTaskGroupState(taskGroupStateChangedMsg.getState()),
-                taskGroupStateChangedMsg.getAttemptIdx(),
-                taskGroupStateChangedMsg.getTasksPutOnHoldIdsList(),
-                convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
-            break;
-          case ExecutorFailed:
-            final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
-            final String failedExecutorId = executorFailedMsg.getExecutorId();
-            final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
-            LOG.error(failedExecutorId + " failed, Stack Trace: ", exception);
-            containerManager.onExecutorRemoved(failedExecutorId);
-            throw new RuntimeException(exception);
-          case ContainerFailed:
-            final ControlMessage.ContainerFailedMsg containerFailedMsg = message.getContainerFailedMsg();
-            LOG.error(containerFailedMsg.getExecutorId() + " failed");
-            break;
-          case DataSizeMetric:
-            final ControlMessage.DataSizeMetricMsg dataSizeMetricMsg = message.getDataSizeMetricMsg();
-            // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
-            accumulateBarrierMetric(dataSizeMetricMsg.getBlockSizeInfoList(),
-                dataSizeMetricMsg.getSrcIRVertexId(), dataSizeMetricMsg.getPartitionId());
-            break;
-          case MetricMessageReceived:
-            final List<ControlMessage.Metric> metricList = message.getMetricMsg().getMetricList();
-            metricList.forEach(metric ->
-                metricMessageHandler.onMetricMessageReceived(metric.getMetricKey(), metric.getMetricValue()));
-            break;
-          default:
-            throw new IllegalMessageException(
-                new Exception("This message should not be received by Master :" + message.getType()));
-        }
-      } catch (final Exception e) {
-        throw new RuntimeException(e);
-      }
+    @Override
+    public void taskGroupStateChanged(final MasterSchedulerMessage.NewTaskGroupState newState,
+                                      final StreamObserver<CommonMessage.Empty> observer) {
+      scheduler.onTaskGroupStateChanged(newState.getExecutorId(),
+          newState.getTaskGroupId(),
+          convertTaskGroupState(newState.getState()),
+          newState.getAttemptIdx(),
+          newState.getTasksPutOnHoldIdsList(),
+          convertFailureCause(newState.getFailureCause()));
+      observer.onNext(CommonMessage.Empty.newBuilder().build());
+      observer.onCompleted();
     }
 
     @Override
-    public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
-      switch (message.getType()) {
-      default:
-        throw new IllegalMessageException(
-            new Exception("This message should not be requested to Master :" + message.getType()));
-      }
+    public void executorFailed(final MasterSchedulerMessage.FailedExecutor failedExecutor,
+                               final StreamObserver<CommonMessage.Empty> observer) {
+      final String failedExecutorId = failedExecutor.getExecutorId();
+      final Exception exception = SerializationUtils.deserialize(failedExecutor.getException().toByteArray());
+      LOG.error(failedExecutorId + " failed, Stack Trace: ", exception);
+      containerManager.onExecutorRemoved(failedExecutorId);
+      observer.onNext(CommonMessage.Empty.newBuilder().build());
+      observer.onCompleted();
+      throw new RuntimeException(exception);
+    }
+  }
+
+  /**
+   * Grpc master metric service.
+   */
+  private class MasterMetricService extends MasterMetricMessageServiceGrpc.MasterMetricMessageServiceImplBase {
+
+    @Override
+    public void reportDataSizeMetric(final MetricsMessage.DataSizeMetric metric,
+                                     final StreamObserver<CommonMessage.Empty> observer) {
+      // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
+      accumulateBarrierMetric(metric.getBlockSizeInfoList(), metric.getSrcIRVertexId(), metric.getPartitionId());
+      observer.onNext(CommonMessage.Empty.newBuilder().build());
+      observer.onCompleted();
+    }
+
+    @Override
+    public void reportMetricsMessage(final MetricsMessage.MetricList metricList,
+                              final StreamObserver<CommonMessage.Empty> observer) {
+      metricList.getMetricList().forEach(metric ->
+          metricMessageHandler.onMetricMessageReceived(metric.getMetricKey(), metric.getMetricValue()));
+      observer.onNext(CommonMessage.Empty.newBuilder().build());
+      observer.onCompleted();
     }
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  private static TaskGroupState.State convertTaskGroupState(final ControlMessage.TaskGroupStateFromExecutor state) {
+  private static TaskGroupState.State convertTaskGroupState(
+      final MasterSchedulerMessage.TaskGroupStateFromExecutor state) {
     switch (state) {
       case READY:
         return TaskGroupState.State.READY;
@@ -313,7 +318,7 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  public static PartitionState.State convertPartitionState(final ControlMessage.PartitionStateFromExecutor state) {
+  public static PartitionState.State convertPartitionState(final CommonMessage.PartitionState state) {
     switch (state) {
     case PARTITION_READY:
       return PartitionState.State.READY;
@@ -333,20 +338,20 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  public static ControlMessage.PartitionStateFromExecutor convertPartitionState(final PartitionState.State state) {
+  public static CommonMessage.PartitionState convertPartitionState(final PartitionState.State state) {
     switch (state) {
       case READY:
-        return ControlMessage.PartitionStateFromExecutor.PARTITION_READY;
+        return CommonMessage.PartitionState.PARTITION_READY;
       case SCHEDULED:
-        return ControlMessage.PartitionStateFromExecutor.SCHEDULED;
+        return CommonMessage.PartitionState.SCHEDULED;
       case COMMITTED:
-        return ControlMessage.PartitionStateFromExecutor.COMMITTED;
+        return CommonMessage.PartitionState.COMMITTED;
       case LOST_BEFORE_COMMIT:
-        return ControlMessage.PartitionStateFromExecutor.LOST_BEFORE_COMMIT;
+        return CommonMessage.PartitionState.LOST_BEFORE_COMMIT;
       case LOST:
-        return ControlMessage.PartitionStateFromExecutor.LOST;
+        return CommonMessage.PartitionState.LOST;
       case REMOVED:
-        return ControlMessage.PartitionStateFromExecutor.REMOVED;
+        return CommonMessage.PartitionState.REMOVED;
       default:
         throw new UnknownExecutionStateException(new Exception("This PartitionState is unknown: " + state));
     }
@@ -354,7 +359,7 @@ public final class RuntimeMaster {
 
   // TODO #164: Cleanup Protobuf Usage
   private TaskGroupState.RecoverableFailureCause convertFailureCause(
-      final ControlMessage.RecoverableFailureCause cause) {
+      final MasterSchedulerMessage.RecoverableFailureCause cause) {
     switch (cause) {
       case InputReadFailure:
         return TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE;

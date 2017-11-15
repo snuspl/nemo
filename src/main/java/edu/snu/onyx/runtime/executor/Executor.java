@@ -17,17 +17,17 @@ package edu.snu.onyx.runtime.executor;
 
 import com.google.protobuf.ByteString;
 import edu.snu.onyx.client.JobConf;
-import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.message.MessageContext;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.MessageListener;
+import edu.snu.onyx.runtime.common.grpc.CommonMessage;
+import edu.snu.onyx.runtime.common.grpc.GrpcServer;
 import edu.snu.onyx.runtime.common.metric.MetricMessageSender;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
-import edu.snu.onyx.runtime.exception.IllegalMessageException;
 import edu.snu.onyx.runtime.exception.UnknownFailureCauseException;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.onyx.runtime.executor.grpc.ExecutorSchedulerMessage;
+import edu.snu.onyx.runtime.executor.grpc.ExecutorSchedulerMessageServiceGrpc;
+import edu.snu.onyx.runtime.master.grpc.MasterSchedulerMessage;
+import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -60,27 +60,32 @@ public final class Executor {
    */
   private final DataTransferFactory dataTransferFactory;
 
-  private TaskGroupStateManager taskGroupStateManager;
+  private final RpcToMaster rpcToMaster;
 
-  private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
+  private final GrpcServer grpcServer;
 
   private final MetricMessageSender metricMessageSender;
 
   @Inject
   public Executor(@Parameter(JobConf.ExecutorId.class) final String executorId,
                   @Parameter(JobConf.ExecutorCapacity.class) final int executorCapacity,
-                  final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
-                  final MessageEnvironment messageEnvironment,
+                  final RpcToMaster rpcToMaster,
+                  final GrpcServer grpcServer,
                   final PartitionManagerWorker partitionManagerWorker,
                   final DataTransferFactory dataTransferFactory,
                   final MetricManagerWorker metricMessageSender) {
     this.executorId = executorId;
     this.executorService = Executors.newFixedThreadPool(executorCapacity);
-    this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
+    this.rpcToMaster = rpcToMaster;
+    try {
+      grpcServer.start(executorId, new ExecutorSchedulerMessageService());
+      this.grpcServer = grpcServer;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     this.partitionManagerWorker = partitionManagerWorker;
     this.dataTransferFactory = dataTransferFactory;
     this.metricMessageSender = metricMessageSender;
-    messageEnvironment.setupListener(MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID, new ExecutorMessageReceiver());
   }
 
   public String getExecutorId() {
@@ -99,9 +104,9 @@ public final class Executor {
    */
   private void launchTaskGroup(final ScheduledTaskGroup scheduledTaskGroup) {
     try {
-      taskGroupStateManager =
+      final TaskGroupStateManager taskGroupStateManager =
           new TaskGroupStateManager(scheduledTaskGroup.getTaskGroup(), scheduledTaskGroup.getAttemptIdx(), executorId,
-              persistentConnectionToMasterMap,
+              rpcToMaster,
               metricMessageSender);
 
       scheduledTaskGroup.getTaskGroupIncomingEdges()
@@ -116,16 +121,11 @@ public final class Executor {
           dataTransferFactory,
           partitionManagerWorker).execute();
     } catch (final Exception e) {
-      persistentConnectionToMasterMap.getMessageSender(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID).send(
-          ControlMessage.Message.newBuilder()
-              .setId(RuntimeIdGenerator.generateMessageId())
-              .setListenerId(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID)
-              .setType(ControlMessage.MessageType.ExecutorFailed)
-              .setExecutorFailedMsg(ControlMessage.ExecutorFailedMsg.newBuilder()
-                  .setExecutorId(executorId)
-                  .setException(ByteString.copyFrom(SerializationUtils.serialize(e)))
-                  .build())
-              .build());
+      rpcToMaster.newSchedulerSyncStub().executorFailed(MasterSchedulerMessage.FailedExecutor.newBuilder()
+          .setExecutorId(executorId)
+          .setException(ByteString.copyFrom(SerializationUtils.serialize(e)))
+          .build()
+      );
       throw e;
     } finally {
       terminate();
@@ -142,32 +142,18 @@ public final class Executor {
   }
 
   /**
-   * MessageListener for Executor.
+   * Grpc executor scheduler service.
    */
-  private final class ExecutorMessageReceiver implements MessageListener<ControlMessage.Message> {
-
+  public final class ExecutorSchedulerMessageService
+      extends ExecutorSchedulerMessageServiceGrpc.ExecutorSchedulerMessageServiceImplBase {
     @Override
-    public void onMessage(final ControlMessage.Message message) {
-      switch (message.getType()) {
-      case ScheduleTaskGroup:
-        final ControlMessage.ScheduleTaskGroupMsg scheduleTaskGroupMsg = message.getScheduleTaskGroupMsg();
-        final ScheduledTaskGroup scheduledTaskGroup =
-            SerializationUtils.deserialize(scheduleTaskGroupMsg.getTaskGroup().toByteArray());
-        onTaskGroupReceived(scheduledTaskGroup);
-        break;
-      default:
-        throw new IllegalMessageException(
-            new Exception("This message should not be received by an executor :" + message.getType()));
-      }
-    }
-
-    @Override
-    public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
-      switch (message.getType()) {
-      default:
-        throw new IllegalMessageException(
-            new Exception("This message should not be requested to an executor :" + message.getType()));
-      }
+    public void executeTaskGroup(final ExecutorSchedulerMessage.TaskGroupExecutionRequest request,
+                                 final StreamObserver<CommonMessage.Empty> observer) {
+      final ScheduledTaskGroup scheduledTaskGroup =
+          SerializationUtils.deserialize(request.getTaskGroup().toByteArray());
+      onTaskGroupReceived(scheduledTaskGroup);
+      observer.onNext(CommonMessage.Empty.newBuilder().build());
+      observer.onCompleted();
     }
   }
 }

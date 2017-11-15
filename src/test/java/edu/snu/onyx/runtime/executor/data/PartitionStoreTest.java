@@ -19,13 +19,15 @@ import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.executor.RpcToMaster;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
+import edu.snu.onyx.runtime.master.grpc.MasterRemoteBlockMessageServiceGrpc;
+import io.grpc.Server;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.values.KV;
@@ -61,12 +63,11 @@ import static org.mockito.Mockito.when;
  * Tests write and read for {@link PartitionStore}s.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({PartitionManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class})
+@PrepareForTest({PartitionManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class, RpcToMaster.class})
 public final class PartitionStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   private PartitionManagerMaster partitionManagerMaster;
-  private LocalMessageDispatcher messageDispatcher;
   // Variables for scatter and gather test
   private static final int NUM_WRITE_TASKS = 3;
   private static final int NUM_READ_TASKS = 3;
@@ -93,12 +94,7 @@ public final class PartitionStoreTest {
    */
   @Before
   public void setUp() throws Exception {
-    messageDispatcher = new LocalMessageDispatcher();
-    final LocalMessageEnvironment messageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
-    partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
+    partitionManagerMaster = new PartitionManagerMaster();
 
     // Following part is for for the scatter and gather test.
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
@@ -260,28 +256,36 @@ public final class PartitionStoreTest {
     final PartitionManagerWorker pmw = mock(PartitionManagerWorker.class);
     when(pmw.getCoder(any())).thenReturn(CODER);
 
-    final RemoteFileStore writerSideRemoteFileStore =
-        createGlusterFileStore("writer", pmw);
-    final RemoteFileStore readerSideRemoteFileStore =
-        createGlusterFileStore("reader", pmw);
+    final String inProcessServerName = "gluster";
+    final Server server = InProcessServerBuilder.forName(inProcessServerName)
+        .addService(partitionManagerMaster.new MasterRemoteBlockMessageService())
+        .build();
+    server.start();
+
+    final RemoteFileStore writerSideRemoteFileStore = createGlusterFileStore("writer", pmw);
+    final RemoteFileStore readerSideRemoteFileStore = createGlusterFileStore("reader", pmw);
 
     scatterGather(writerSideRemoteFileStore, readerSideRemoteFileStore);
     concurrentRead(writerSideRemoteFileStore, readerSideRemoteFileStore);
     scatterGatherInHashRange(writerSideRemoteFileStore, readerSideRemoteFileStore);
     FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
+
+    server.shutdown();
+    server.awaitTermination();
   }
 
   private GlusterFileStore createGlusterFileStore(final String executorId,
                                                   final PartitionManagerWorker worker)
       throws InjectionException {
-    final LocalMessageEnvironment localMessageEnvironment =
-        new LocalMessageEnvironment(executorId, messageDispatcher);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.JobId.class, "GFS test");
     injector.bindVolatileParameter(JobConf.ExecutorId.class, executorId);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
-    injector.bindVolatileInstance(MessageEnvironment.class, localMessageEnvironment);
+    final RpcToMaster mockedRpcToMaster = mock(RpcToMaster.class);
+    when(mockedRpcToMaster.newRemoteBlockSyncStub())
+        .thenReturn(MasterRemoteBlockMessageServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("gluster").build()));
+    injector.bindVolatileInstance(RpcToMaster.class, mockedRpcToMaster);
     return injector.getInstance(GlusterFileStore.class);
   }
 

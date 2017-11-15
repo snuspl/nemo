@@ -32,10 +32,8 @@ import edu.snu.onyx.compiler.ir.executionproperty.edge.KeyExtractorProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.PartitionerProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.runtime.common.message.MessageParameters;
-import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.onyx.runtime.common.grpc.GrpcClient;
+import edu.snu.onyx.runtime.common.grpc.GrpcServer;
 import edu.snu.onyx.runtime.common.metric.MetricMessageHandler;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
@@ -43,7 +41,7 @@ import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.onyx.runtime.common.plan.physical.Task;
 import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.executor.Executor;
-import edu.snu.onyx.runtime.executor.PersistentConnectionToMasterMap;
+import edu.snu.onyx.runtime.executor.RpcToMaster;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.MetricManagerWorker;
 import edu.snu.onyx.runtime.executor.data.stores.*;
@@ -97,11 +95,11 @@ import static org.mockito.Mockito.mock;
  * to run the test with leakage reports for netty {@link io.netty.util.ReferenceCounted} objects.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class, MetricMessageHandler.class})
+@PrepareForTest({PubSubEventHandlerWrapper.class, UpdatePhysicalPlanEventHandler.class, MetricMessageHandler.class,
+    ContainerManager.class})
 public final class DataTransferTest {
   private static final String EXECUTOR_ID_PREFIX = "Executor";
   private static final int EXECUTOR_CAPACITY = 1;
-  private static final int MAX_SCHEDULE_ATTEMPT = 2;
   private static final int SCHEDULE_TIMEOUT = 1000;
   private static final Class<? extends PartitionStore> MEMORY_STORE = MemoryStore.class;
   private static final Class<? extends PartitionStore> SER_MEMORY_STORE = SerializedMemoryStore.class;
@@ -117,45 +115,35 @@ public final class DataTransferTest {
   private static final Tang TANG = Tang.Factory.getTang();
   private static final int HASH_RANGE_MULTIPLIER = 10;
 
+  private Injector grpcInjector;
+
   private PartitionManagerMaster master;
   private PartitionManagerWorker worker1;
   private PartitionManagerWorker worker2;
 
   @Before
   public void setUp() throws InjectionException {
-    final LocalMessageDispatcher messageDispatcher = new LocalMessageDispatcher();
-    final LocalMessageEnvironment messageEnvironment =
-        new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
-    final ContainerManager containerManager = new ContainerManager(null, messageEnvironment);
+    getGrpcConfiguration();
+
+    final ContainerManager containerManager = mock(ContainerManager.class);
     final MetricMessageHandler metricMessageHandler = mock(MetricMessageHandler.class);
     final PubSubEventHandlerWrapper pubSubEventHandler = mock(PubSubEventHandlerWrapper.class);
     final UpdatePhysicalPlanEventHandler updatePhysicalPlanEventHandler = mock(UpdatePhysicalPlanEventHandler.class);
     final SchedulingPolicy schedulingPolicy = new RoundRobinSchedulingPolicy(containerManager, SCHEDULE_TIMEOUT);
     final PendingTaskGroupQueue taskGroupQueue = new SingleJobTaskGroupQueue();
     final SchedulerRunner schedulerRunner = new SchedulerRunner(schedulingPolicy, taskGroupQueue);
-    final Scheduler scheduler =
-        new BatchSingleJobScheduler(schedulingPolicy, schedulerRunner, taskGroupQueue, master,
-            pubSubEventHandler, updatePhysicalPlanEventHandler);
-    final AtomicInteger executorCount = new AtomicInteger(0);
+    final Scheduler scheduler = new BatchSingleJobScheduler(schedulingPolicy, schedulerRunner, taskGroupQueue, master,
+        pubSubEventHandler, updatePhysicalPlanEventHandler);
+    final PartitionManagerMaster master = new PartitionManagerMaster();
 
-    // Necessary for wiring up the message environments
-    final RuntimeMaster runtimeMaster =
-        new RuntimeMaster(scheduler, schedulerRunner, taskGroupQueue,
-            containerManager, master, metricMessageHandler, messageEnvironment, EMPTY_DAG_DIRECTORY);
-
-    final Injector injector1 = Tang.Factory.getTang().newInjector();
-    injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
-    injector1.bindVolatileInstance(RuntimeMaster.class, runtimeMaster);
-    final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
-
-    final Injector injector2 = createNameClientInjector();
-    injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");
+    // Start the Master grpc server.
+    new RuntimeMaster(scheduler, schedulerRunner, taskGroupQueue, containerManager, master, newGrpcServer(),
+        metricMessageHandler, EMPTY_DAG_DIRECTORY);
 
     this.master = master;
-    this.worker1 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher,
-        injector2);
-    this.worker2 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement(), messageDispatcher,
-        injector2);
+    final AtomicInteger executorCount = new AtomicInteger(0);
+    this.worker1 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement());
+    this.worker2 = createWorker(EXECUTOR_ID_PREFIX + executorCount.getAndIncrement());
   }
 
   @After
@@ -164,17 +152,14 @@ public final class DataTransferTest {
     FileUtils.deleteDirectory(new File(TMP_REMOTE_FILE_DIRECTORY));
   }
 
-  private PartitionManagerWorker createWorker(final String executorId, final LocalMessageDispatcher messageDispatcher,
-                                              final Injector nameClientInjector) {
-    final LocalMessageEnvironment messageEnvironment = new LocalMessageEnvironment(executorId, messageDispatcher);
-    final PersistentConnectionToMasterMap conToMaster = new PersistentConnectionToMasterMap(messageEnvironment);
+  private PartitionManagerWorker createWorker(final String executorId) {
+    final RpcToMaster RpcToMaster = new RpcToMaster(newGrpcClient());
     final Configuration executorConfiguration = TANG.newConfigurationBuilder()
         .bindNamedParameter(JobConf.ExecutorId.class, executorId)
-        .bindNamedParameter(MessageParameters.SenderId.class, executorId)
         .build();
-    final Injector injector = nameClientInjector.forkInjector(executorConfiguration);
-    injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
-    injector.bindVolatileInstance(PersistentConnectionToMasterMap.class, conToMaster);
+    final Injector injector = grpcInjector.forkInjector(executorConfiguration);
+    injector.bindVolatileParameter(JobConf.JobId.class, "data transfer test");
+    injector.bindVolatileInstance(RpcToMaster.class, RpcToMaster);
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_LOCAL_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_REMOTE_FILE_DIRECTORY);
     final PartitionManagerWorker partitionManagerWorker;
@@ -186,21 +171,30 @@ public final class DataTransferTest {
       throw new RuntimeException(e);
     }
 
-    // Unused, but necessary for wiring up the message environments
-    final Executor executor = new Executor(
-        executorId,
-        EXECUTOR_CAPACITY,
-        conToMaster,
-        messageEnvironment,
-        partitionManagerWorker,
-        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker),
-        metricManagerWorker);
-    injector.bindVolatileInstance(Executor.class, executor);
+    // Start the Executor grpc server.
+    new Executor(executorId, EXECUTOR_CAPACITY, RpcToMaster, newGrpcServer(), partitionManagerWorker,
+        new DataTransferFactory(HASH_RANGE_MULTIPLIER, partitionManagerWorker), metricManagerWorker);
 
     return partitionManagerWorker;
   }
 
-  private Injector createNameClientInjector() {
+  private GrpcServer newGrpcServer() {
+    try {
+      return grpcInjector.getInstance(GrpcServer.class);
+    } catch (final InjectionException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private GrpcClient newGrpcClient() {
+    try {
+      return grpcInjector.getInstance(GrpcClient.class);
+    } catch (final InjectionException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void getGrpcConfiguration() {
     try {
       final Configuration configuration = TANG.newConfigurationBuilder()
           .bindImplementation(IdentifierFactory.class, StringIdentifierFactory.class)
@@ -212,7 +206,7 @@ public final class DataTransferTest {
           .set(NameResolverConfiguration.NAME_SERVER_HOSTNAME, localAddressProvider.getLocalAddress())
           .set(NameResolverConfiguration.NAME_SERVICE_PORT, nameServer.getPort())
           .build();
-      return injector.forkInjector(nameClientConfiguration);
+      this.grpcInjector = injector.forkInjector(nameClientConfiguration);
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
