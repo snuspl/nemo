@@ -17,6 +17,7 @@ package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.compiler.CompilerTestUtil;
+import edu.snu.onyx.compiler.optimizer.TestMultiParallelismPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,6 +64,13 @@ public final class MultinomialLogisticRegressionITCase {
     JobLauncher.main(builder
         .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_pado")
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
+        .build());
+  }
+
+  public void testMultiParallelism() throws Exception {
+    JobLauncher.main(builder
+        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName() + "_multiparallelism")
+        .addOptimizationPolicy(CompilerTestUtil.testMultiParallelismPolicy)
         .build());
   }
 }

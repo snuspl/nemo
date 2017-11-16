@@ -18,6 +18,7 @@ package edu.snu.onyx.compiler;
 import edu.snu.onyx.client.JobConf;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.compiler.ir.*;
+import edu.snu.onyx.compiler.optimizer.TestMultiParallelismPolicy;
 import edu.snu.onyx.compiler.optimizer.policy.*;
 import edu.snu.onyx.examples.beam.*;
 import edu.snu.onyx.common.dag.DAG;
@@ -38,6 +39,7 @@ public final class CompilerTestUtil {
   public static final String sailfishDisaggPolicy = SailfishDisaggPolicy.class.getCanonicalName();
   public static final String defaultPolicy = DefaultPolicy.class.getCanonicalName();
   public static final String dataSkewPolicy = DataSkewPolicy.class.getCanonicalName();
+  public static final String testMultiParallelismPolicy = TestMultiParallelismPolicy.class.getCanonicalName();
 
   private static DAG<IRVertex, IREdge> compileDAG(final String[] args) throws Exception {
     final String userMainClassName;
