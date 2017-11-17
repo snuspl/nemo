@@ -40,7 +40,6 @@ public final class ScheduleGroupPass extends AnnotatingPass {
         ExecutionProperty.Key.StageId,
         ExecutionProperty.Key.DataCommunicationPattern,
         ExecutionProperty.Key.ExecutorPlacement,
-        ExecutionProperty.Key.DataStore,
         ExecutionProperty.Key.DataFlowModel,
         ExecutionProperty.Key.Partitioner,
         ExecutionProperty.Key.Parallelism
