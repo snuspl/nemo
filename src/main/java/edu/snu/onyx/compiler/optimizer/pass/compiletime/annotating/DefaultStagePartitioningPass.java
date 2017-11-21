@@ -91,6 +91,9 @@ public final class DefaultStagePartitioningPass extends AnnotatingPass {
                 .equals(edge.getDst().getProperty(ExecutionProperty.Key.ExecutorPlacement)))
             // Src that is already included in a stage
             .filter(edge -> vertexStageNumHashMap.containsKey(edge.getSrc()))
+            // if src and dst have same parallelism
+            .filter(edge -> edge.getSrc().getProperty(ExecutionProperty.Key.Parallelism)
+                .equals(edge.getDst().getProperty(ExecutionProperty.Key.Parallelism)))
             // Others don't depend on the candidate stage.
             .filter(edge -> !dependentStagesList.contains(vertexStageNumHashMap.get(edge.getSrc())))
             .collect(Collectors.toList()));
