@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Default edge data store pass.
+ * Edge data store pass to process inter-stage memory store edges.
  */
 public final class ReviseInterStageEdgeDataStorePass extends AnnotatingPass {
   public ReviseInterStageEdgeDataStorePass() {

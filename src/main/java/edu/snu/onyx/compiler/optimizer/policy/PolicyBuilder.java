@@ -35,12 +35,18 @@ public final class PolicyBuilder {
   private final List<RuntimePass<?>> runtimePasses;
   private final Set<ExecutionProperty.Key> finalizedExecutionProperties;
   private final Set<ExecutionProperty.Key> annotatedExecutionProperties;
+  private Boolean strictPrerequisiteCheckingMode;
 
   public PolicyBuilder() {
+    this(false);
+  }
+
+  public PolicyBuilder(final Boolean strictPrerequisiteCheckingMode) {
     this.compileTimePasses = new ArrayList<>();
     this.runtimePasses = new ArrayList<>();
     this.finalizedExecutionProperties = new HashSet<>();
     this.annotatedExecutionProperties = new HashSet<>();
+    this.strictPrerequisiteCheckingMode = strictPrerequisiteCheckingMode;
     // DataCommunicationPattern is already set when creating the IREdge itself.
     annotatedExecutionProperties.add(ExecutionProperty.Key.DataCommunicationPattern);
     // Some default values are already annotated.
@@ -59,7 +65,6 @@ public final class PolicyBuilder {
       return this;
     }
 
-
     // Check prerequisite execution properties.
     if (!annotatedExecutionProperties.containsAll(compileTimePass.getPrerequisiteExecutionProperties())) {
       throw new CompileTimeOptimizationException("Prerequisite ExecutionProperty hasn't been met for "
@@ -71,8 +76,10 @@ public final class PolicyBuilder {
       final AnnotatingPass annotatingPass = (AnnotatingPass) compileTimePass;
       this.annotatedExecutionProperties.add(annotatingPass.getExecutionPropertyToModify());
       if (finalizedExecutionProperties.contains(annotatingPass.getExecutionPropertyToModify())) {
-        throw new CompileTimeOptimizationException(annotatingPass.getExecutionPropertyToModify()
-            + " should have already been finalized.");
+        if (strictPrerequisiteCheckingMode) {
+          throw new CompileTimeOptimizationException(annotatingPass.getExecutionPropertyToModify()
+              + " should have already been finalized.");
+        }
       }
     }
     finalizedExecutionProperties.addAll(compileTimePass.getPrerequisiteExecutionProperties());

@@ -35,7 +35,7 @@ public final class DefaultPolicyWithSeparatePass implements Policy {
   private final Policy policy;
 
   public DefaultPolicyWithSeparatePass() {
-    this.policy = new PolicyBuilder()
+    this.policy = new PolicyBuilder(true)
         .registerCompileTimePass(new DefaultParallelismPass())
         .registerCompileTimePass(new RefactoredPass())
         .build();
