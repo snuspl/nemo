@@ -19,8 +19,19 @@ import com.google.common.annotations.VisibleForTesting;
 import edu.snu.onyx.compiler.ir.IREdge;
 import edu.snu.onyx.compiler.ir.IRVertex;
 import edu.snu.onyx.compiler.ir.executionproperty.edge.DataCommunicationPatternProperty;
+import edu.snu.onyx.compiler.ir.executionproperty.edge.DataFlowModelProperty;
+import edu.snu.onyx.compiler.ir.executionproperty.edge.DataStoreProperty;
+import edu.snu.onyx.compiler.ir.executionproperty.edge.PartitionerProperty;
+import edu.snu.onyx.compiler.ir.executionproperty.vertex.ExecutorPlacementProperty;
 import edu.snu.onyx.compiler.ir.executionproperty.vertex.ParallelismProperty;
+import edu.snu.onyx.compiler.ir.partitioner.HashPartitioner;
+import edu.snu.onyx.compiler.ir.partitioner.IntactPartitioner;
+import edu.snu.onyx.runtime.executor.data.stores.LocalFileStore;
+import edu.snu.onyx.runtime.executor.data.stores.MemoryStore;
+import edu.snu.onyx.runtime.executor.datatransfer.communication.Broadcast;
 import edu.snu.onyx.runtime.executor.datatransfer.communication.DataCommunicationPattern;
+import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
+import edu.snu.onyx.runtime.executor.datatransfer.communication.ScatterGather;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -56,6 +67,24 @@ public final class ExecutionPropertyMap implements Serializable {
                                         final Class<? extends DataCommunicationPattern> commPattern) {
     final ExecutionPropertyMap map = new ExecutionPropertyMap(irEdge.getId());
     map.put(DataCommunicationPatternProperty.of(commPattern));
+    map.put(DataFlowModelProperty.of(DataFlowModelProperty.Value.Pull));
+    switch (commPattern.getSimpleName()) {
+      case ScatterGather.SIMPLE_NAME:
+        map.put(PartitionerProperty.of(HashPartitioner.class));
+        map.put(DataStoreProperty.of(LocalFileStore.class));
+        break;
+      case Broadcast.SIMPLE_NAME:
+        map.put(PartitionerProperty.of(IntactPartitioner.class));
+        map.put(DataStoreProperty.of(LocalFileStore.class));
+        break;
+      case OneToOne.SIMPLE_NAME:
+        map.put(PartitionerProperty.of(IntactPartitioner.class));
+        map.put(DataStoreProperty.of(MemoryStore.class));
+        break;
+      default:
+        map.put(PartitionerProperty.of(HashPartitioner.class));
+        map.put(DataStoreProperty.of(LocalFileStore.class));
+    }
     return map;
   }
   /**
@@ -66,6 +95,7 @@ public final class ExecutionPropertyMap implements Serializable {
   public static ExecutionPropertyMap of(final IRVertex irVertex) {
     final ExecutionPropertyMap map = new ExecutionPropertyMap(irVertex.getId());
     map.put(ParallelismProperty.of(1));
+    map.put(ExecutorPlacementProperty.of(ExecutorPlacementProperty.NONE));
     return map;
   }
 

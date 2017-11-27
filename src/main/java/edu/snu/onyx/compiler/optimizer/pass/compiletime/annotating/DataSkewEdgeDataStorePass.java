@@ -30,8 +30,6 @@ import edu.snu.onyx.runtime.executor.data.stores.MemoryStore;
  * as its DataStore ExecutionProperty.
  */
 public final class DataSkewEdgeDataStorePass extends AnnotatingPass {
-  public static final String SIMPLE_NAME = "DataSkewEdgeDataStorePass";
-
   public DataSkewEdgeDataStorePass() {
     super(ExecutionProperty.Key.DataStore);
   }
