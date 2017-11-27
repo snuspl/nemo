@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-java -cp target/onyx-0.1-SNAPSHOT-shaded.jar:`yarn classpath` edu.snu.onyx.client.JobLauncher "$@"
+java -cp target/onyx-project-0.1-SNAPSHOT.jar:`yarn classpath` edu.snu.onyx.client.JobLauncher "$@"

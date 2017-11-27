@@ -4,9 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.snu</groupId>
-    <artifactId>onyx</artifactId>
+    <groupId>edu.snu.onyx</groupId>
+    <artifactId>onyx-project</artifactId>
     <version>0.1-SNAPSHOT</version>
+    <name>Onyx Project</name>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -29,6 +30,22 @@
         <guava.version>19.0</guava.version>
     </properties>
 
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>conf</module>
+        <module>client</module>
+        <module>common</module>
+        <module>compiler/backend</module>
+        <module>compiler/frontend</module>
+        <module>compiler/optimizer</module>
+	    <module>examples</module>
+        <module>runtime/common</module>
+    	<module>runtime/executor</module>
+	    <module>runtime/master</module>
+        <module>unittests</module>
+    </modules>
+
     <repositories>
         <repository>
             <id>Bundled Maven Repository</id>
@@ -37,11 +54,6 @@
     </repositories>
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-aws</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -141,19 +153,6 @@
             <artifactId>commons-lang3</artifactId>
             <version>${commons.lang.version}</version>
         </dependency>
-        <!-- hadoop should come last to be 'overwritten'. If not, some very bad dependency conflicts occur -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>provided</scope>
-        </dependency>
         <!-- GRPC -->
         <dependency>
             <groupId>io.grpc</groupId>
@@ -176,6 +175,24 @@
             <version>${grpc.version}</version>
             <scope>test</scope>
         </dependency>
+	<!-- hadoop should come last to be 'overwritten'. If not, some very bad dependency conflicts occur -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency> 
     </dependencies>
 
     <dependencyManagement>
@@ -297,6 +314,22 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
             </plugin>
         </plugins>
     </build>
