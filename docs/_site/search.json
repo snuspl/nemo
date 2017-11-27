@@ -5,7 +5,7 @@
     
     {
       "title": "Welcome",
-      "url": "/onyx-web/docs/home/"
+      "url": "/onyx/docs/home/"
 
     },
   
@@ -13,7 +13,7 @@
     
     {
       "title": "Themes",
-      "url": "/onyx-web/docs/themes/"
+      "url": "/onyx/docs/themes/"
 
     },
   
@@ -21,7 +21,7 @@
     
     {
       "title": "Customization",
-      "url": "/onyx-web/docs/customization/"
+      "url": "/onyx/docs/customization/"
 
     },
   
@@ -31,7 +31,7 @@
     
     {
       "title": "Markdown Cheatsheet",
-      "url": "/onyx-web/docs/cheatsheet/"
+      "url": "/onyx/docs/cheatsheet/"
 
     },
   
@@ -39,7 +39,7 @@
     
     {
       "title": "Font Awesome Icon List",
-      "url": "/onyx-web/docs/font-awesome/"
+      "url": "/onyx/docs/font-awesome/"
 
     },
   
@@ -47,7 +47,7 @@
     
     {
       "title": "Bootstrap Features",
-      "url": "/onyx-web/docs/bootstrap/"
+      "url": "/onyx/docs/bootstrap/"
 
     },
   
@@ -56,12 +56,12 @@
   
   {
   "title": "Jekyll Doc Theme is published!",
-  "url": "/onyx-web/blog/2017/05/03/jekyll-doc-theme/"
+  "url": "/onyx/2017/05/03/jekyll-doc-theme.html"
   },
   
   {
   "title": "Welcome to Jekyll!",
-  "url": "/onyx-web/blog/2017/02/01/welcome-to-jekyll/"
+  "url": "/onyx/2017/02/01/welcome-to-jekyll.html"
   }
   
 ]

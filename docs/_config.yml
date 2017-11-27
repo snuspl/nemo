@@ -29,7 +29,7 @@ exclude:
   - .idea/
   - .gitignore
   - README.md
-timezone: Europe/Berlin
+timezone: Asia/Seoul
 defaults:
 - scope:
     path: _posts
