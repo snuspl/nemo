@@ -12,5 +12,12 @@
     </parent>
 
     <artifactId>onyx-conf</artifactId>
-    <name>Onyx Temporaries</name>
+    <name>Onyx Job Configuration</name>
+
+    <repositories>
+        <repository>
+            <id>Bundled Maven Repository</id>
+            <url>file://${basedir}/src/main/resources/repository</url>
+        </repository>
+    </repositories>
 </project>

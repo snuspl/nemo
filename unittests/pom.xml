@@ -14,40 +14,27 @@
     <artifactId>onyx-unittests</artifactId>
     <name>Onyx Unit Tests</name>
 
+    <repositories>
+        <repository>
+            <id>Bundled Maven Repository</id>
+            <url>file://${basedir}/src/main/resources/repository</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-common</artifactId>
+            <artifactId>onyx-client</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-compiler-frontend</artifactId>
+            <artifactId>onyx-conf</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-compiler-backend</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-compiler-optimizer</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-runtime-common</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-runtime-executor</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-runtime-master</artifactId>
+            <artifactId>onyx-examples</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

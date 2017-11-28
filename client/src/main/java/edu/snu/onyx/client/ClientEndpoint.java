@@ -45,7 +45,7 @@ public abstract class ClientEndpoint {
    */
   private final StateTranslator stateTranslator;
 
-  protected ClientEndpoint(final StateTranslator stateTranslator) {
+  public ClientEndpoint(final StateTranslator stateTranslator) {
     this.driverEndpoint = new AtomicReference<>();
     this.connectionLock = new ReentrantLock();
     this.driverConnected = connectionLock.newCondition();
@@ -120,7 +120,7 @@ public abstract class ClientEndpoint {
    *
    * @return the current state of the running job.
    */
-  protected final synchronized Enum getJobState() {
+  public final synchronized Enum getJobState() {
     if (driverEndpoint.get() != null) {
       return stateTranslator.translateState(driverEndpoint.get().getState());
     } else {
@@ -136,7 +136,7 @@ public abstract class ClientEndpoint {
    * @param unit    of the timeout.
    * @return the final state of this job.
    */
-  protected final Enum waitUntilJobFinish(final long timeout,
+  public final Enum waitUntilJobFinish(final long timeout,
                                           final TimeUnit unit) {
     if (driverEndpoint.get() != null) {
       return stateTranslator.translateState(driverEndpoint.get().waitUntilFinish(timeout, unit));
@@ -165,7 +165,7 @@ public abstract class ClientEndpoint {
    *
    * @return the final state of this job.
    */
-  protected final Enum waitUntilJobFinish() {
+  public final Enum waitUntilJobFinish() {
     if (driverEndpoint.get() != null) {
       return stateTranslator.translateState(driverEndpoint.get().waitUntilFinish());
     } else {
