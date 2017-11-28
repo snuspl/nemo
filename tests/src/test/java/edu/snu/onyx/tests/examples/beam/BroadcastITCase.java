@@ -31,8 +31,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class BroadcastITCase {
   private static final int TIMEOUT = 120000;
-  private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_mr";
-  private static final String output = CompilerTestUtil.rootDir + "/src/main/resources/sample_output";
+  private static final String input = CompilerTestUtil.rootDir + "/../examples/src/main/resources/sample_input_mr";
+  private static final String output = CompilerTestUtil.rootDir + "/../examples/src/main/resources/sample_output";
   private static final String dagDirectory = "./dag";
 
   private static ArgBuilder builder = new ArgBuilder()

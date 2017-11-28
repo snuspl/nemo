@@ -14,13 +14,6 @@
     <artifactId>onyx-examples</artifactId>
     <name>Onyx Examples</name>
 
-    <repositories>
-        <repository>
-            <id>Bundled Maven Repository</id>
-            <url>file://${basedir}/src/main/resources/repository</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>edu.snu.onyx</groupId>
@@ -28,4 +21,32 @@
             <version>0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>
+                                ${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar
+                            </outputFile>
+                            <transformers>
+                                <!-- Required for using beam-hadoop: See https://stackoverflow.com/questions/44365545
+                                -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

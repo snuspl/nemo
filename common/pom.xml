@@ -13,11 +13,4 @@
 
     <artifactId>onyx-common</artifactId>
     <name>Onyx Common</name>
-
-    <repositories>
-        <repository>
-            <id>Bundled Maven Repository</id>
-            <url>file://${basedir}/src/main/resources/repository</url>
-        </repository>
-    </repositories>
 </project>

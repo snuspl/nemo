@@ -31,7 +31,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class AlternatingLeastSquareITCase {
   private static final int TIMEOUT = 120000;
-  private static final String input = CompilerTestUtil.rootDir + "/src/main/resources/sample_input_als";
+  private static final String input = CompilerTestUtil.rootDir + "/../examples/src/main/resources/sample_input_als";
   private static final String numFeatures = "10";
   private static final String numIteration = "3";
   private static final String dagDirectory = "./dag";
