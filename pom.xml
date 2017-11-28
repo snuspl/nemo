@@ -48,7 +48,7 @@
     <repositories>
         <repository>
             <id>Bundled Maven Repository</id>
-            <url>file://${basedir}/src/main/resources/repository</url>
+            <url>file://${basedir}</url>
         </repository>
     </repositories>
 
