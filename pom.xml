@@ -42,7 +42,7 @@
         <module>runtime/common</module>
     	<module>runtime/executor</module>
 	    <module>runtime/master</module>
-        <module>unittests</module>
+        <module>tests</module>
     </modules>
 
     <repositories>
