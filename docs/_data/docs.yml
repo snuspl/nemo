@@ -1,6 +1,6 @@
 - title: Getting Started
   docs:
-  - overview
+  - home
   - getting_started
   
 - title: Optimizations
@@ -10,7 +10,7 @@
   
 - title: Detailed Explanations and Extending Onyx
   docs:
-  - exending_onyx
+  - extending_onyx
   - compiler_design
   - runtime_design
 

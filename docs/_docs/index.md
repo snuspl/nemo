@@ -1,6 +1,6 @@
 ---
 title: Overview
-permalink: /docs/overview/
+permalink: /docs/home/
 redirect_from: /docs/index.html
 ---
 
