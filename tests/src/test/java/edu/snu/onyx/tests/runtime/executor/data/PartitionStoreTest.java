@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PartitionManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class})
 public final class PartitionStoreTest {
-  private static final String conf_FILE_DIRECTORY = "./confFiles";
+  private static final String tmp_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   private PartitionManagerMaster partitionManagerMaster;
   private LocalMessageDispatcher messageDispatcher;
@@ -243,14 +243,14 @@ public final class PartitionStoreTest {
     final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
     when(worker.getCoder(any())).thenReturn(CODER);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileParameter(JobConf.FileDirectory.class, conf_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.FileDirectory.class, tmp_FILE_DIRECTORY);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
 
     final PartitionStore localFileStore = injector.getInstance(LocalFileStore.class);
     scatterGather(localFileStore, localFileStore);
     concurrentRead(localFileStore, localFileStore);
     scatterGatherInHashRange(localFileStore, localFileStore);
-    FileUtils.deleteDirectory(new File(conf_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(tmp_FILE_DIRECTORY));
   }
 
   /**
@@ -271,7 +271,7 @@ public final class PartitionStoreTest {
     scatterGather(writerSideRemoteFileStore, readerSideRemoteFileStore);
     concurrentRead(writerSideRemoteFileStore, readerSideRemoteFileStore);
     scatterGatherInHashRange(writerSideRemoteFileStore, readerSideRemoteFileStore);
-    FileUtils.deleteDirectory(new File(conf_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(tmp_FILE_DIRECTORY));
   }
 
   private GlusterFileStore createGlusterFileStore(final String executorId,
@@ -280,7 +280,7 @@ public final class PartitionStoreTest {
     final LocalMessageEnvironment localMessageEnvironment =
         new LocalMessageEnvironment(executorId, messageDispatcher);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, conf_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, tmp_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.JobId.class, "GFS test");
     injector.bindVolatileParameter(JobConf.ExecutorId.class, executorId);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);

@@ -16,7 +16,6 @@
 package edu.snu.onyx.runtime.executor.datatransfer;
 
 import com.google.common.annotations.VisibleForTesting;
-import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
@@ -29,7 +28,6 @@ import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.UnsupportedCommPatternException;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.onyx.runtime.executor.data.stores.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -71,20 +69,6 @@ public final class InputReader extends DataTransfer {
     this.partitionManagerWorker = partitionManagerWorker;
   }
 
-  public Class<? extends PartitionStore> dataStorePropertyToClass(final DataStoreProperty.Value value) {
-    if (value.equals(DataStoreProperty.Value.MemoryStore)) {
-      return MemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.SerializedMemoryStore)) {
-      return SerializedMemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.LocalFileStore)) {
-      return LocalFileStore.class;
-    } else if (value.equals(DataStoreProperty.Value.GlusterFileStore)) {
-      return GlusterFileStore.class;
-    } else {
-      throw new UnsupportedPartitionStoreException(new Exception(value + " is not supported."));
-    }
-  }
-
   /**
    * Reads input data depending on the communication pattern of the srcVertex.
    *
@@ -111,7 +95,7 @@ public final class InputReader extends DataTransfer {
   private CompletableFuture<Iterable> readOneToOne() {
     final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
     return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-        dataStorePropertyToClass((DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore)),
+        (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
         HashRange.all());
   }
 
@@ -122,7 +106,7 @@ public final class InputReader extends DataTransfer {
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-          dataStorePropertyToClass((DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore)),
+          (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
           HashRange.all()));
     }
 
@@ -150,8 +134,7 @@ public final class InputReader extends DataTransfer {
       final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
       futures.add(
           partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
-              dataStorePropertyToClass(
-                  (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore)),
+              (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }
 

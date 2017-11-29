@@ -27,7 +27,7 @@ import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import java.util.*;
 
 /**
- * Optimizer class.
+ * Compile time optimizer class.
  */
 public final class CompiletimeOptimizer {
   // Private constructor

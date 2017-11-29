@@ -15,6 +15,7 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
+import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.data.Block;
@@ -111,7 +112,7 @@ public final class PartitionManagerWorker {
    * @param partitionStore the store to place the partition.
    */
   public void createPartition(final String partitionId,
-                              final Class<? extends PartitionStore> partitionStore) {
+                              final DataStoreProperty.Value partitionStore) {
     final PartitionStore store = getPartitionStore(partitionStore);
     store.createPartition(partitionId);
   }
@@ -130,7 +131,7 @@ public final class PartitionManagerWorker {
   public CompletableFuture<Iterable> retrieveDataFromPartition(
       final String partitionId,
       final String runtimeEdgeId,
-      final Class<? extends PartitionStore> partitionStore,
+      final DataStoreProperty.Value partitionStore,
       final HashRange hashRange) {
     LOG.info("RetrieveDataFromPartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
@@ -141,7 +142,7 @@ public final class PartitionManagerWorker {
     if (optionalResultData.isPresent()) {
       // Partition resides in this evaluator!
       return CompletableFuture.completedFuture(optionalResultData.get());
-    } else if (partitionStore.equals(GlusterFileStore.class)) {
+    } else if (partitionStore.equals(DataStoreProperty.Value.GlusterFileStore)) {
       throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
     } else {
       // We don't have the partition here...
@@ -162,7 +163,7 @@ public final class PartitionManagerWorker {
   private CompletableFuture<Iterable> requestPartitionInRemoteWorker(
       final String partitionId,
       final String runtimeEdgeId,
-      final Class<? extends PartitionStore> partitionStore,
+      final DataStoreProperty.Value partitionStore,
       final HashRange hashRange) {
     // Let's see if a remote worker has it
     // Ask Master for the location
@@ -209,7 +210,7 @@ public final class PartitionManagerWorker {
    */
   public Optional<List<Long>> putBlocks(final String partitionId,
                                         final Iterable<Block> blocks,
-                                        final Class<? extends PartitionStore> partitionStore,
+                                        final DataStoreProperty.Value partitionStore,
                                         final boolean commitPerBlock) {
     LOG.info("PutBlocks: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
@@ -232,7 +233,7 @@ public final class PartitionManagerWorker {
    * @param srcIRVertexId  of the source task.
    */
   public void commitPartition(final String partitionId,
-                              final Class<? extends PartitionStore> partitionStore,
+                              final DataStoreProperty.Value partitionStore,
                               final List<Long> blockSizeInfo,
                               final String srcIRVertexId) {
     LOG.info("CommitPartition: {}", partitionId);
@@ -244,7 +245,7 @@ public final class PartitionManagerWorker {
             .setPartitionId(partitionId)
             .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
 
-    if (partitionStore == GlusterFileStore.class) {
+    if (partitionStore.equals(DataStoreProperty.Value.GlusterFileStore)) {
       partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
     } else {
       partitionStateChangedMsgBuilder.setLocation(executorId);
@@ -281,7 +282,7 @@ public final class PartitionManagerWorker {
    * @param partitionStore tha the partition is stored.
    */
   public void removePartition(final String partitionId,
-                              final Class<? extends PartitionStore> partitionStore) {
+                              final DataStoreProperty.Value partitionStore) {
     LOG.info("RemovePartition: {}", partitionId);
     final PartitionStore store = getPartitionStore(partitionStore);
     final boolean exist;
@@ -294,7 +295,7 @@ public final class PartitionManagerWorker {
               .setPartitionId(partitionId)
               .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
 
-      if (GlusterFileStore.class.equals(partitionStore)) {
+      if (DataStoreProperty.Value.GlusterFileStore.equals(partitionStore)) {
         partitionStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
       } else {
         partitionStateChangedMsgBuilder.setLocation(executorId);
@@ -312,15 +313,15 @@ public final class PartitionManagerWorker {
     }
   }
 
-  private PartitionStore getPartitionStore(final Class<? extends PartitionStore> partitionStore) {
-    switch (partitionStore.getSimpleName()) {
-      case MemoryStore.SIMPLE_NAME:
+  private PartitionStore getPartitionStore(final DataStoreProperty.Value partitionStore) {
+    switch (partitionStore) {
+      case MemoryStore:
         return memoryStore;
-      case SerializedMemoryStore.SIMPLE_NAME:
+      case SerializedMemoryStore:
         return serializedMemoryStore;
-      case LocalFileStore.SIMPLE_NAME:
+      case LocalFileStore:
         return localFileStore;
-      case GlusterFileStore.SIMPLE_NAME:
+      case GlusterFileStore:
         return remoteFileStore;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
@@ -337,19 +338,20 @@ public final class PartitionManagerWorker {
    */
   public void onPullRequest(final PartitionOutputStream<?> outputStream) {
     // We are getting the partition from local store!
-    final Optional<Class<? extends PartitionStore>> partitionStoreOptional = outputStream.getPartitionStore();
-    final Class<? extends PartitionStore> partitionStore = partitionStoreOptional.get();
+    final Optional<DataStoreProperty.Value> partitionStoreOptional = outputStream.getPartitionStore();
+    final DataStoreProperty.Value partitionStore = partitionStoreOptional.get();
 
     ioThreadExecutorService.submit(new Runnable() {
       @Override
       public void run() {
         try {
-          if (partitionStore.equals(LocalFileStore.class) || partitionStore.equals(GlusterFileStore.class)) {
+          if (partitionStore.equals(DataStoreProperty.Value.LocalFileStore)
+              || partitionStore.equals(DataStoreProperty.Value.GlusterFileStore)) {
             // TODO #492: Modularize the data communication pattern. Remove execution property value dependant code.
             final FileStore fileStore = (FileStore) getPartitionStore(partitionStore);
             outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
                 outputStream.getHashRange())).close();
-          } else if (SerializedMemoryStore.class.equals(partitionStore)) {
+          } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(partitionStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getPartitionStore(partitionStore);
             final Optional<Iterable<byte[]>> optionalResult = serMemoryStore.getSerializedBlocksFromPartition(
                 outputStream.getPartitionId(), outputStream.getHashRange());

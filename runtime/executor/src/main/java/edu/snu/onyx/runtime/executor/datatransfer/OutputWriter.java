@@ -28,7 +28,6 @@ import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.partitioner.*;
 import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.onyx.runtime.executor.data.stores.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -41,8 +40,8 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
   private final RuntimeEdge<?> runtimeEdge;
   private final String srcVertexId;
   private final IRVertex dstVertex;
-  private final Class<? extends PartitionStore> channelDataPlacement;
-  private final Map<Class<? extends Partitioner>, Partitioner> partitionerMap;
+  private final DataStoreProperty.Value channelDataPlacement;
+  private final Map<PartitionerProperty.Value, Partitioner> partitionerMap;
   private final List<Long> accumulatedBlockSizeInfo;
 
   /**
@@ -62,41 +61,16 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
     this.srcVertexId = srcRuntimeVertexId;
     this.dstVertex = dstRuntimeVertex;
     this.partitionManagerWorker = partitionManagerWorker;
-    this.channelDataPlacement = dataStorePropertyToClass(runtimeEdge.getProperty(ExecutionProperty.Key.DataStore));
+    this.channelDataPlacement = runtimeEdge.getProperty(ExecutionProperty.Key.DataStore);
     this.partitionerMap = new HashMap<>();
     // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
     this.accumulatedBlockSizeInfo = new ArrayList<>();
     // TODO #535: Enable user to create new implementation of each execution property.
-    partitionerMap.put(IntactPartitioner.class, new IntactPartitioner());
-    partitionerMap.put(HashPartitioner.class, new HashPartitioner());
-    partitionerMap.put(DataSkewHashPartitioner.class, new DataSkewHashPartitioner(hashRangeMultiplier));
+    partitionerMap.put(PartitionerProperty.Value.IntactPartitioner, new IntactPartitioner());
+    partitionerMap.put(PartitionerProperty.Value.HashPartitioner, new HashPartitioner());
+    partitionerMap.put(PartitionerProperty.Value.DataSkewHashPartitioner,
+        new DataSkewHashPartitioner(hashRangeMultiplier));
     partitionManagerWorker.createPartition(partitionId, channelDataPlacement);
-  }
-
-  public Class<? extends PartitionStore> dataStorePropertyToClass(final DataStoreProperty.Value value) {
-    if (value.equals(DataStoreProperty.Value.MemoryStore)) {
-      return MemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.SerializedMemoryStore)) {
-      return SerializedMemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.LocalFileStore)) {
-      return LocalFileStore.class;
-    } else if (value.equals(DataStoreProperty.Value.GlusterFileStore)) {
-      return GlusterFileStore.class;
-    } else {
-      throw new UnsupportedPartitionStoreException(new Exception(value + " is not supported."));
-    }
-  }
-
-  public Class<? extends Partitioner> partitionerPropertyToClass(final PartitionerProperty.Value value) {
-    if (value.equals(PartitionerProperty.Value.HashPartitioner)) {
-      return HashPartitioner.class;
-    } else if (value.equals(PartitionerProperty.Value.IntactPartitioner)) {
-      return IntactPartitioner.class;
-    } else if (value.equals(PartitionerProperty.Value.DataSkewHashPartitioner)) {
-      return DataSkewHashPartitioner.class;
-    } else {
-      throw new UnsupportedPartitionStoreException(new Exception(value + " is not supported."));
-    }
   }
 
   /**
@@ -113,7 +87,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
         runtimeEdge.getProperty(ExecutionProperty.Key.Partitioner);
     final int dstParallelism = getDstParallelism();
 
-    final Partitioner partitioner = partitionerMap.get(partitionerPropertyToClass(partitionerPropertyValue));
+    final Partitioner partitioner = partitionerMap.get(partitionerPropertyValue);
     if (partitioner == null) {
       // TODO #535: Enable user to create new implementation of each execution property.
       throw new UnsupportedPartitionerException(

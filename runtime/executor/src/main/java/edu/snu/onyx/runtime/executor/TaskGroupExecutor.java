@@ -20,10 +20,8 @@ import edu.snu.onyx.common.ContextImpl;
 import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
 import edu.snu.onyx.common.ir.Reader;
 import edu.snu.onyx.common.ir.Transform;
-import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
@@ -32,7 +30,6 @@ import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
 import edu.snu.onyx.runtime.common.state.TaskState;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.onyx.runtime.executor.datatransfer.InputReader;
 import edu.snu.onyx.runtime.executor.datatransfer.OutputCollectorImpl;
@@ -208,20 +205,6 @@ public final class TaskGroupExecutor {
     });
   }
 
-  public Class<? extends PartitionStore> dataStorePropertyToClass(final DataStoreProperty.Value value) {
-    if (value.equals(DataStoreProperty.Value.MemoryStore)) {
-      return MemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.SerializedMemoryStore)) {
-      return SerializedMemoryStore.class;
-    } else if (value.equals(DataStoreProperty.Value.LocalFileStore)) {
-      return LocalFileStore.class;
-    } else if (value.equals(DataStoreProperty.Value.GlusterFileStore)) {
-      return GlusterFileStore.class;
-    } else {
-      throw new UnsupportedPartitionStoreException(new Exception(value + " is not supported."));
-    }
-  }
-
   /**
    * Data on stage-internal edges can be garbage collected after they're consumed.
    * Without garbage collection, JVM will be filled with no-longer needed data, and will eventually crash with an OOM.
@@ -234,8 +217,7 @@ public final class TaskGroupExecutor {
         .forEach(edge -> {
           final String partitionId = RuntimeIdGenerator.generatePartitionId(edge.getId(), edge.getSrc().getIndex());
           partitionManagerWorker
-              .removePartition(partitionId,
-                  dataStorePropertyToClass(edge.getProperty(ExecutionProperty.Key.DataStore)));
+              .removePartition(partitionId, edge.getProperty(ExecutionProperty.Key.DataStore));
         });
   }
 

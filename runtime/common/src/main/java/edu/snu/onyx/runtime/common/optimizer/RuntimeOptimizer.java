@@ -24,7 +24,7 @@ import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import java.util.*;
 
 /**
- * Optimizer class.
+ * Runtime optimizer class.
  */
 public final class RuntimeOptimizer {
   // Private constructor

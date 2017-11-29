@@ -95,7 +95,6 @@ public final class ExecutionPropertyMap implements Serializable {
   public <T> T get(final ExecutionProperty.Key executionPropertyKey) {
     ExecutionProperty<T> property = (ExecutionProperty<T>) properties.getOrDefault(executionPropertyKey,
      ExecutionProperty.<T>emptyExecutionProperty());
-    //ExecutionProperty<T> property = (ExecutionProperty<T>) properties.get(executionPropertyKey);
     return property.getValue();
   }
 

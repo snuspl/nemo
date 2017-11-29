@@ -15,10 +15,10 @@
  */
 package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 
+import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -98,12 +98,11 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param partitionId             the id of the partition to transfer
    * @param runtimeEdgeId           the runtime edge id
    * @param hashRange               the hash range
-   * @return a {@link PartitionInputStream} from which the received
-   *         {@link edu.snu.onyx.common.ir.Element}s can be read
+   * @return a {@link PartitionInputStream} from which the received data can be read
    */
   public PartitionInputStream initiatePull(final String executorId,
                                            final boolean encodePartialPartition,
-                                           final Class<? extends PartitionStore> partitionStore,
+                                           final DataStoreProperty.Value partitionStore,
                                            final String partitionId,
                                            final String runtimeEdgeId,
                                            final HashRange hashRange) {
@@ -122,7 +121,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param partitionId             the id of the partition to transfer
    * @param runtimeEdgeId           the runtime edge id
    * @param hashRange               the hash range
-   * @return a {@link PartitionOutputStream} to which {@link edu.snu.onyx.common.ir.Element}s can be written
+   * @return a {@link PartitionOutputStream} to which data can be written
    */
   public PartitionOutputStream initiatePush(final String executorId,
                                             final boolean encodePartialPartition,

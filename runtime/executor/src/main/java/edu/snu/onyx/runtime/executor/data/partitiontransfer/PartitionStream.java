@@ -15,8 +15,8 @@
  */
 package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 
+import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 
 import java.util.Optional;
 
@@ -45,7 +45,7 @@ public interface PartitionStream {
    * @return an {@link Optional} with partition store type if this stream belongs to a pull-based transfer,
    *         an empty {@link Optional} otherwise.
    */
-  Optional<Class<? extends PartitionStore>> getPartitionStore();
+  Optional<DataStoreProperty.Value> getPartitionStore();
 
   /**
    * Gets the partition id.

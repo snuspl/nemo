@@ -15,11 +15,10 @@
  */
 package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 
+import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
-import edu.snu.onyx.runtime.executor.data.stores.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -303,32 +302,32 @@ final class ControlMessageToPartitionStreamCodec
   }
 
   private static ControlMessage.PartitionStore convertPartitionStore(
-      final Class<? extends PartitionStore> partitionStore) {
-    switch (partitionStore.getSimpleName()) {
-      case MemoryStore.SIMPLE_NAME:
+      final DataStoreProperty.Value partitionStore) {
+    switch (partitionStore) {
+      case MemoryStore:
         return ControlMessage.PartitionStore.MEMORY;
-      case SerializedMemoryStore.SIMPLE_NAME:
+      case SerializedMemoryStore:
         return ControlMessage.PartitionStore.SER_MEMORY;
-      case LocalFileStore.SIMPLE_NAME:
+      case LocalFileStore:
         return ControlMessage.PartitionStore.LOCAL_FILE;
-      case GlusterFileStore.SIMPLE_NAME:
+      case GlusterFileStore:
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
         throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
     }
   }
 
-  private static Class<? extends PartitionStore> convertPartitionStore(
+  private static DataStoreProperty.Value convertPartitionStore(
       final ControlMessage.PartitionStore partitionStoreType) {
     switch (partitionStoreType) {
       case MEMORY:
-        return MemoryStore.class;
+        return DataStoreProperty.Value.MemoryStore;
       case SER_MEMORY:
-        return SerializedMemoryStore.class;
+        return DataStoreProperty.Value.SerializedMemoryStore;
       case LOCAL_FILE:
-        return LocalFileStore.class;
+        return DataStoreProperty.Value.LocalFileStore;
       case REMOTE_FILE:
-        return GlusterFileStore.class;
+        return DataStoreProperty.Value.GlusterFileStore;
       default:
         throw new UnsupportedPartitionStoreException(new Exception("This partition store is not yet supported"));
     }

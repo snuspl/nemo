@@ -16,8 +16,8 @@
 package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 
 import edu.snu.onyx.common.coder.Coder;
+import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
 
   private final String senderExecutorId;
   private final boolean encodePartialPartition;
-  private final Optional<Class<? extends PartitionStore>> partitionStore;
+  private final Optional<DataStoreProperty.Value> partitionStore;
   private final String partitionId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
@@ -81,7 +81,7 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
    */
   PartitionInputStream(final String senderExecutorId,
                        final boolean encodePartialPartition,
-                       final Optional<Class<? extends PartitionStore>> partitionStore,
+                       final Optional<DataStoreProperty.Value> partitionStore,
                        final String partitionId,
                        final String runtimeEdgeId,
                        final HashRange hashRange) {
@@ -181,7 +181,7 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
   }
 
   @Override
-  public Optional<Class<? extends PartitionStore>> getPartitionStore() {
+  public Optional<DataStoreProperty.Value> getPartitionStore() {
     return partitionStore;
   }
 

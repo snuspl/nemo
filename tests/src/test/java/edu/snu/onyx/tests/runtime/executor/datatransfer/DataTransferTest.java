@@ -104,8 +104,8 @@ public final class DataTransferTest {
   private static final DataStoreProperty.Value SER_MEMORY_STORE = DataStoreProperty.Value.SerializedMemoryStore;
   private static final DataStoreProperty.Value LOCAL_FILE_STORE = DataStoreProperty.Value.LocalFileStore;
   private static final DataStoreProperty.Value REMOTE_FILE_STORE = DataStoreProperty.Value.GlusterFileStore;
-  private static final String conf_LOCAL_FILE_DIRECTORY = "./confLocalFiles";
-  private static final String conf_REMOTE_FILE_DIRECTORY = "./confRemoteFiles";
+  private static final String tmp_LOCAL_FILE_DIRECTORY = "./tmpLocalFiles";
+  private static final String tmp_REMOTE_FILE_DIRECTORY = "./tmpRemoteFiles";
   private static final int PARALLELISM_TEN = 10;
   private static final String EDGE_PREFIX_TEMPLATE = "Dummy(%d)";
   private static final AtomicInteger TEST_INDEX = new AtomicInteger(0);
@@ -157,8 +157,8 @@ public final class DataTransferTest {
 
   @After
   public void tearDown() throws IOException {
-    FileUtils.deleteDirectory(new File(conf_LOCAL_FILE_DIRECTORY));
-    FileUtils.deleteDirectory(new File(conf_REMOTE_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(tmp_LOCAL_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(tmp_REMOTE_FILE_DIRECTORY));
   }
 
   private PartitionManagerWorker createWorker(final String executorId, final LocalMessageDispatcher messageDispatcher,
@@ -172,8 +172,8 @@ public final class DataTransferTest {
     final Injector injector = nameClientInjector.forkInjector(executorConfiguration);
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
     injector.bindVolatileInstance(PersistentConnectionToMasterMap.class, conToMaster);
-    injector.bindVolatileParameter(JobConf.FileDirectory.class, conf_LOCAL_FILE_DIRECTORY);
-    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, conf_REMOTE_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.FileDirectory.class, tmp_LOCAL_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, tmp_REMOTE_FILE_DIRECTORY);
     final PartitionManagerWorker partitionManagerWorker;
     final MetricManagerWorker metricManagerWorker;
     try {

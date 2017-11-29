@@ -18,7 +18,6 @@ package edu.snu.onyx.client;
 import edu.snu.onyx.runtime.common.state.JobState;
 import edu.snu.onyx.runtime.master.JobStateManager;
 
-
 import java.util.concurrent.TimeUnit;
 
 /**

@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.client;
 
-
 import edu.snu.onyx.common.ir.IdManager;
 
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
