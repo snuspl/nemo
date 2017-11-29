@@ -8,7 +8,7 @@
   - ir
   - passes_and_policies
   
-- title: Detailed Explanations and Extending Onyx
+- title: Detailed Explanations
   docs:
   - extending_onyx
   - compiler_design
