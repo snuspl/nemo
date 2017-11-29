@@ -1,6 +1,18 @@
 - title: Getting Started
   docs:
-  - home
+  - overview
+  - getting_started
+  
+- title: Optimizations
+  docs:
+  - ir
+  - passes_and_policies
+  
+- title: Detailed Explanations and Extending Onyx
+  docs:
+  - exending_onyx
+  - compiler_design
+  - runtime_design
 
 - title: Jekyll stuff
   docs:
