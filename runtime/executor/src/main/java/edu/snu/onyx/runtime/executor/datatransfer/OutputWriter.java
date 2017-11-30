@@ -25,7 +25,7 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
-import edu.snu.onyx.runtime.common.partitioner.*;
+import edu.snu.onyx.runtime.executor.data.partitioner.*;
 import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 
@@ -102,11 +102,11 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
     DataCommunicationPatternProperty.Value comValue =
         runtimeEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern);
 
-    if (comValue.equals(DataCommunicationPatternProperty.Value.OneToOne)) {
+    if (DataCommunicationPatternProperty.Value.OneToOne.equals(comValue)) {
       writeOneToOne(blocksToWrite);
-    } else if (comValue.equals(DataCommunicationPatternProperty.Value.BroadCast)) {
+    } else if (DataCommunicationPatternProperty.Value.BroadCast.equals(comValue)) {
       writeBroadcast(blocksToWrite);
-    } else if (comValue.equals(DataCommunicationPatternProperty.Value.ScatterGather)) {
+    } else if (DataCommunicationPatternProperty.Value.ScatterGather.equals(comValue)) {
       // If the dynamic optimization which detects data skew is enabled, sort the data and write it.
       if (isDataSizeMetricCollectionEdge) {
         dataSkewWrite(blocksToWrite);
