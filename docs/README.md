@@ -21,6 +21,12 @@ bundle exec jekyll serve
 You can find the docs under `_docs` and the metadata under the `_data` folder.
 
 
+## Jekyll stuff
+
+You can find Jekyll introduction docs below:
+
+[Jekyll Docs](docs/_docs/jekyll_related)
+
 ## License
 
 Released under [the MIT license](LICENSE).
