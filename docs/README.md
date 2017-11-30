@@ -25,7 +25,7 @@ You can find the docs under `_docs` and the metadata under the `_data` folder.
 
 You can find Jekyll introduction docs below:
 
-[Jekyll Docs](docs/_docs/jekyll_related)
+[Jekyll Docs](_docs/jekyll_related)
 
 ## License
 
