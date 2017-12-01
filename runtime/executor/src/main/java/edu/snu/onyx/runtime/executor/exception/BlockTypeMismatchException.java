@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitioner;
+package edu.snu.onyx.runtime.executor.exception;
 
-import edu.snu.onyx.common.KeyExtractor;
-import edu.snu.onyx.runtime.executor.data.Block;
-
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
 
 /**
- * An implementation of {@link Partitioner} which makes an output data
- * from a source task to a single {@link Block}.
+ * An exception which represents a request for a {@link edu.snu.onyx.runtime.executor.data.Block}
+ * is illegal due to the type of the {@link edu.snu.onyx.runtime.executor.data.Block}.
  */
-public final class IntactPartitioner implements Partitioner {
+public final class BlockTypeMismatchException extends IOException {
 
-  @Override
-  public List<Block> partition(final Iterable elements,
-                               final int dstParallelism,
-                               final KeyExtractor keyExtractor) {
-    return Collections.singletonList(new Block(elements));
+  public BlockTypeMismatchException(final String message) {
+    super(message);
   }
 }

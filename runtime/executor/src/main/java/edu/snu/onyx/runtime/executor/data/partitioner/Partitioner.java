@@ -16,13 +16,13 @@
 package edu.snu.onyx.runtime.executor.data.partitioner;
 
 import edu.snu.onyx.common.KeyExtractor;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
+import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.List;
 
 /**
  * This interface represents the way of partitioning output data from a source task.
- * It takes an iterable of elements and divide the data into multiple {@link NonSerializedBlock}s,
+ * It takes an iterable of elements and divide the data into multiple {@link Block}s,
  * according to the number of destination tasks, the key of each element, etc.
  */
 public interface Partitioner {
@@ -35,5 +35,5 @@ public interface Partitioner {
    * @param keyExtractor   extracts keys from elements.
    * @return the list of partitioned blocks.
    */
-  List<NonSerializedBlock> partition(Iterable elements, int dstParallelism, KeyExtractor keyExtractor);
+  List<Block> partition(Iterable elements, int dstParallelism, KeyExtractor keyExtractor);
 }

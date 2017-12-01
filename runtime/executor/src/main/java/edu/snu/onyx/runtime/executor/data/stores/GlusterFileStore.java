@@ -94,7 +94,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
         final RemoteFileMetadata metadata =
             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        final Iterable<NonSerializedBlock> deserializedBlocks = partition.getBlocks(hashRange);
+        final Iterable<Block> deserializedBlocks = partition.getBlocks(hashRange, false);
         return Optional.of(DataUtil.concatBlocks(deserializedBlocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
@@ -109,7 +109,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
    */
   @Override
   public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<NonSerializedBlock> blocks,
+                                        final Iterable<Block> blocks,
                                         final boolean commitPerBlock) throws PartitionWriteException {
     final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);

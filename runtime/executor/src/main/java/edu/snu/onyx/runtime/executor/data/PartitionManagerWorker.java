@@ -208,7 +208,7 @@ public final class PartitionManagerWorker {
    * @return a {@link Optional} of the size of each written block.
    */
   public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<NonSerializedBlock> blocks,
+                                        final Iterable<Block> blocks,
                                         final DataStoreProperty.Value partitionStore,
                                         final boolean commitPerBlock) {
     LOG.info("PutBlocks: {}", partitionId);
@@ -352,10 +352,12 @@ public final class PartitionManagerWorker {
                 outputStream.getHashRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(partitionStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getPartitionStore(partitionStore);
-            final Optional<Iterable<SerializedBlock>> optionalResult = serMemoryStore.getSerializedBlocks(
+            final Optional<Iterable<Block>> optionalResult = serMemoryStore.getSerializedBlocks(
                 outputStream.getPartitionId(), outputStream.getHashRange());
             final List<byte[]> byteArrays = new ArrayList<>();
-            optionalResult.get().forEach(serializedBlock -> byteArrays.add(serializedBlock.getSerializedData()));
+            for (final Block serializedBlock  : optionalResult.get()) {
+              byteArrays.add(serializedBlock.getSerializedData());
+            }
             outputStream.writeByteArrays(byteArrays).close();
           } else {
             final Iterable partition =

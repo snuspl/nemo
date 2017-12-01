@@ -21,16 +21,16 @@ public final class DataUtil {
   }
 
   /**
-   * Serializes the elements in a nonSerializedBlock into an output stream.
+   * Serializes the elements in a non-serialized block into an output stream.
    *
    * @param coder              the coder to encode the elements.
-   * @param nonSerializedBlock the nonSerializedBlock to serialize.
+   * @param nonSerializedBlock the non-serialized block to serialize.
    * @param bytesOutputStream  the output stream to write.
-   * @return total number of elements in the nonSerializedBlock.
+   * @return total number of elements in the block.
    * @throws IOException if fail to serialize.
    */
   public static long serializeBlock(final Coder coder,
-                                    final NonSerializedBlock nonSerializedBlock,
+                                    final Block nonSerializedBlock,
                                     final ByteArrayOutputStream bytesOutputStream) throws IOException {
     long elementsCount = 0;
     for (final Object element : nonSerializedBlock.getElements()) {
@@ -61,48 +61,55 @@ public final class DataUtil {
   }
 
   /**
-   * Converts the {@link NonSerializedBlock}s in an iterable to {@link SerializedBlock}s.
+   * Converts the non-serialized {@link Block}s in an iterable to serialized {@link Block}s.
    *
-   * @param coder               the coder for serialization
-   * @param nonSerializedBlocks the blocks to convert
-   * @return the converted {@link SerializedBlock}s.
+   * @param coder           the coder for serialization.
+   * @param blocksToConvert the blocks to convert.
+   * @return the converted {@link Block}s.
    * @throws IOException if fail to convert.
    */
-  public static Iterable<SerializedBlock> convertToSerBlocks(final Coder coder,
-                                                             final Iterable<NonSerializedBlock> nonSerializedBlocks)
-      throws IOException {
-    final List<SerializedBlock> serializedBlocks = new ArrayList<>();
+  public static Iterable<Block> convertToSerBlocks(final Coder coder,
+                                                   final Iterable<Block> blocksToConvert) throws IOException {
+    final List<Block> serializedBlocks = new ArrayList<>();
     try (final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream()) {
-      for (NonSerializedBlock nonSerializedBlock : nonSerializedBlocks) {
-        final long elementsTotal = serializeBlock(coder, nonSerializedBlock, bytesOutputStream);
-        final byte[] serializedBytes = bytesOutputStream.toByteArray();
-        serializedBlocks.add(new SerializedBlock(nonSerializedBlock.getKey(), elementsTotal, serializedBytes));
-        bytesOutputStream.reset();
+      for (final Block blockToConvert : blocksToConvert) {
+        if (blockToConvert.isSerialized()) {
+          serializedBlocks.add(blockToConvert);
+        } else {
+          final long elementsTotal = serializeBlock(coder, blockToConvert, bytesOutputStream);
+          final byte[] serializedBytes = bytesOutputStream.toByteArray();
+          serializedBlocks.add(new Block(blockToConvert.getKey(), elementsTotal, serializedBytes));
+          bytesOutputStream.reset();
+        }
       }
     }
     return serializedBlocks;
   }
 
   /**
-   * Converts the {@link SerializedBlock}s in an iterable to {@link NonSerializedBlock}s.
+   * Converts the serialized {@link Block}s in an iterable to non-serialized {@link Block}s.
    *
-   * @param coder            the coder for deserialization
-   * @param serializedBlocks the blocks to convert
-   * @return the converted {@link NonSerializedBlock}s.
+   * @param coder           the coder for deserialization.
+   * @param blocksToConvert the blocks to convert.
+   * @return the converted {@link Block}s.
    * @throws IOException if fail to convert.
    */
-  public static Iterable<NonSerializedBlock> convertToNonSerBlocks(final Coder coder,
-                                                                   final Iterable<SerializedBlock> serializedBlocks)
+  public static Iterable<Block> convertToNonSerBlocks(final Coder coder,
+                                                      final Iterable<Block> blocksToConvert)
       throws IOException {
-    final List<NonSerializedBlock> nonSerializedBlocks = new ArrayList<>();
-    for (SerializedBlock serializedBlock : serializedBlocks) {
-      final int hashVal = serializedBlock.getKey();
-      final List deserializedData;
-      try (final ByteArrayInputStream byteArrayInputStream =
-               new ByteArrayInputStream(serializedBlock.getSerializedData())) {
-        deserializedData = deserializeBlock(serializedBlock.getElementsInBlock(), coder, byteArrayInputStream);
+    final List<Block> nonSerializedBlocks = new ArrayList<>();
+    for (final Block blockToConvert : blocksToConvert) {
+      if (blockToConvert.isSerialized()) {
+        final int hashVal = blockToConvert.getKey();
+        final List deserializedData;
+        try (final ByteArrayInputStream byteArrayInputStream =
+                 new ByteArrayInputStream(blockToConvert.getSerializedData())) {
+          deserializedData = deserializeBlock(blockToConvert.getElementsTotal(), coder, byteArrayInputStream);
+        }
+        nonSerializedBlocks.add(new Block(hashVal, deserializedData));
+      } else {
+        nonSerializedBlocks.add(blockToConvert);
       }
-      nonSerializedBlocks.add(new NonSerializedBlock(hashVal, deserializedData));
     }
     return nonSerializedBlocks;
   }
@@ -124,11 +131,12 @@ public final class DataUtil {
    *
    * @param blocksToConcat the blocks to concatenate.
    * @return the concatenated iterable of all elements.
+   * @throws IOException if fail to concatenate.
    */
-  public static Iterable concatBlocks(final Iterable<NonSerializedBlock> blocksToConcat) {
+  public static Iterable concatBlocks(final Iterable<Block> blocksToConcat) throws IOException {
     final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();
-    for (final NonSerializedBlock nonSerializedBlock : blocksToConcat) {
+    for (final Block nonSerializedBlock : blocksToConcat) {
       final Iterable elementsInBlock = nonSerializedBlock.getElements();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(elementsInBlock.spliterator(), false));
     }

@@ -18,7 +18,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
+import edu.snu.onyx.runtime.executor.data.Block;
 
 import java.util.List;
 import java.util.Optional;
@@ -73,7 +73,7 @@ public interface PartitionStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<List<Long>> putBlocks(String partitionId,
-                                 Iterable<NonSerializedBlock> blocks,
+                                 Iterable<Block> blocks,
                                  boolean commitPerBlock) throws PartitionWriteException;
 
   /**

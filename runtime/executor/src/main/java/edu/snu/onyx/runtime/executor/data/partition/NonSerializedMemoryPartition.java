@@ -16,12 +16,9 @@
 package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.common.coder.Coder;
+import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.executor.data.DataUtil;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.SerializedBlock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
@@ -35,8 +32,7 @@ import java.util.Optional;
 @ThreadSafe
 public final class NonSerializedMemoryPartition implements Partition {
 
-  private static final Logger LOG = LoggerFactory.getLogger(NonSerializedMemoryPartition.class.getName());
-  private final List<NonSerializedBlock> nonSerializedBlocks;
+  private final List<Block> nonSerializedBlocks;
   private final Coder coder;
   private volatile boolean committed;
 
@@ -47,17 +43,20 @@ public final class NonSerializedMemoryPartition implements Partition {
   }
 
   /**
-   * Stores {@link NonSerializedBlock}s to this partition.
+   * Stores {@link Block}s to this partition a non-serialized form.
    * Invariant: This should not be invoked after this partition is committed.
    *
-   * @param blocksToStore the {@link NonSerializedBlock}s to store.
+   * @param blocksToStore the {@link Block}s to store.
+   * @return the size of the data per block.
    * @throws IOException if fail to store.
    */
   @Override
-  public synchronized Optional<List<Long>> putBlocks(final Iterable<NonSerializedBlock> blocksToStore)
-      throws IOException {
+  public synchronized Optional<List<Long>> putBlocks(final Iterable<Block> blocksToStore) throws IOException {
     if (!committed) {
-      blocksToStore.forEach(nonSerializedBlocks::add);
+      // If there is any serialized block in the iterable, deserialize it.
+      final Iterable<Block> convertedBlocks = DataUtil.convertToNonSerBlocks(coder, blocksToStore);
+
+      convertedBlocks.forEach(nonSerializedBlocks::add);
     } else {
       throw new IOException("Cannot append block to the committed partition");
     }
@@ -66,68 +65,35 @@ public final class NonSerializedMemoryPartition implements Partition {
   }
 
   /**
-   * Stores {@link SerializedBlock}s to this partition.
-   * Because all data in this partition is stored in a non-serialized form,
-   * the data in these blocks have to be deserialized.
-   * Invariant: This should not be invoked after this partition is committed.
-   *
-   * @param blocksToStore the {@link SerializedBlock}s to store.
-   * @throws IOException if fail to store.
-   */
-  @Override
-  public synchronized List<Long> putSerializedBlocks(final Iterable<SerializedBlock> blocksToStore)
-      throws IOException {
-    LOG.warn("Putting serialized blocks to this partition is an unexpected behavior. It might be burdensome");
-    if (!committed) {
-      final Iterable<NonSerializedBlock> convertedBlocks = DataUtil.convertToNonSerBlocks(coder, blocksToStore);
-      final List<Long> dataSizePerBlock = new ArrayList<>();
-      blocksToStore.forEach(serializedBlock -> dataSizePerBlock.add((long) serializedBlock.getSerializedData().length));
-      putBlocks(convertedBlocks);
-
-      return dataSizePerBlock;
-    } else {
-      throw new IOException("Cannot append nonSerializedBlocks to the committed partition");
-    }
-  }
-
-  /**
-   * Retrieves the {@link NonSerializedBlock}s in a specific hash range from this partition.
+   * Retrieves the {@link Block}s in a specific hash range from this partition.
    * Invariant: This should not be invoked before this partition is committed.
    *
    * @param hashRange the hash range to retrieve.
-   * @return an iterable of {@link NonSerializedBlock}s.
+   * @param serialize whether to get the {@link Block}s in a serialized form or not.
+   * @return an iterable of {@link Block}s.
    * @throws IOException if failed to retrieve.
    */
   @Override
-  public Iterable<NonSerializedBlock> getBlocks(final HashRange hashRange) throws IOException {
+  public Iterable<Block> getBlocks(final HashRange hashRange,
+                                   final boolean serialize) throws IOException {
     if (committed) {
       // Retrieves data in the hash range from the target partition
-      final List<NonSerializedBlock> retrievedBlocks = new ArrayList<>();
+      final List<Block> blocksInRange = new ArrayList<>();
       nonSerializedBlocks.forEach(block -> {
-        final int key = block.getKey();
-        if (hashRange.includes(key)) {
-          retrievedBlocks.add(new NonSerializedBlock(key, block.getElements()));
+        if (hashRange.includes(block.getKey())) {
+          blocksInRange.add(block);
         }
       });
 
-      return retrievedBlocks;
+      if (serialize) {
+        // We have to serialize the stored blocks and return.
+        return DataUtil.convertToSerBlocks(coder, blocksInRange);
+      } else {
+        return blocksInRange;
+      }
     } else {
       throw new IOException("Cannot retrieve elements before a partition is committed");
     }
-  }
-
-  /**
-   * Retrieves the {@link SerializedBlock}s in a specific hash range.
-   * Because the data is stored in a non-serialized form, it have to be serialized.
-   * Invariant: This should not be invoked before this partition is committed.
-   *
-   * @param hashRange the hash range to retrieve.
-   * @return an iterable of {@link SerializedBlock}s.
-   * @throws IOException if failed to retrieve.
-   */
-  @Override
-  public Iterable<SerializedBlock> getSerializedBlocks(final HashRange hashRange) throws IOException {
-    return DataUtil.convertToSerBlocks(coder, getBlocks(hashRange));
   }
 
   /**

@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
+import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
@@ -53,7 +53,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
 
     if (partition != null) {
       try {
-        final Iterable<NonSerializedBlock> blocks = partition.getBlocks(hashRange);
+        final Iterable<Block> blocks = partition.getBlocks(hashRange, false);
         return Optional.of(DataUtil.concatBlocks(blocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
@@ -68,7 +68,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
    */
   @Override
   public final Optional<List<Long>> putBlocks(final String partitionId,
-                                              final Iterable<NonSerializedBlock> blocks,
+                                              final Iterable<Block> blocks,
                                               final boolean commitPerBlock) throws PartitionWriteException {
     try {
       final Partition partition = partitionMap.get(partitionId);

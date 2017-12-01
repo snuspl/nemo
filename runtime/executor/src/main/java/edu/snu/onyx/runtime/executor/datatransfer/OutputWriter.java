@@ -25,8 +25,8 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
+import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.executor.data.partitioner.*;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 
 import javax.annotation.Nullable;
@@ -45,7 +45,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
   private final List<Long> accumulatedBlockSizeInfo;
 
   /**
-   * The NonSerializedBlock Manager Worker.
+   * The Block Manager Worker.
    */
   private final PartitionManagerWorker partitionManagerWorker;
 
@@ -95,7 +95,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
     }
 
     final KeyExtractor keyExtractor = runtimeEdge.getProperty(ExecutionProperty.Key.KeyExtractor);
-    final List<NonSerializedBlock> blocksToWrite = partitioner.partition(dataToWrite, dstParallelism, keyExtractor);
+    final List<Block> blocksToWrite = partitioner.partition(dataToWrite, dstParallelism, keyExtractor);
 
     // Write the grouped blocks into partitions.
     // TODO #492: Modularize the data communication pattern.
@@ -129,17 +129,17 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
     partitionManagerWorker.commitPartition(partitionId, channelDataPlacement, accumulatedBlockSizeInfo, srcVertexId);
   }
 
-  private void writeOneToOne(final List<NonSerializedBlock> blocksToWrite) {
+  private void writeOneToOne(final List<Block> blocksToWrite) {
     // Write data.
     partitionManagerWorker.putBlocks(
         partitionId, blocksToWrite, channelDataPlacement, false);
   }
 
-  private void writeBroadcast(final List<NonSerializedBlock> blocksToWrite) {
+  private void writeBroadcast(final List<Block> blocksToWrite) {
     writeOneToOne(blocksToWrite);
   }
 
-  private void writeScatterGather(final List<NonSerializedBlock> blocksToWrite) {
+  private void writeScatterGather(final List<Block> blocksToWrite) {
     final int dstParallelism = getDstParallelism();
     if (blocksToWrite.size() != dstParallelism) {
       throw new PartitionWriteException(
@@ -165,7 +165,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
    *
    * @param blocksToWrite a list of the blocks to be written.
    */
-  private void dataSkewWrite(final List<NonSerializedBlock> blocksToWrite) {
+  private void dataSkewWrite(final List<Block> blocksToWrite) {
 
     // Write data.
     final Optional<List<Long>> blockSizeInfo =

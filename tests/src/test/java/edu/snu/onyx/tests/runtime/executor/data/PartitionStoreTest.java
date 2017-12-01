@@ -24,7 +24,7 @@ import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.onyx.runtime.common.state.PartitionState;
-import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
+import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
@@ -76,19 +76,19 @@ public final class PartitionStoreTest {
   private static final int NUM_READ_TASKS = 3;
   private static final int DATA_SIZE = 1000;
   private List<String> partitionIdList;
-  private List<List<NonSerializedBlock>> blocksPerPartition;
+  private List<List<Block>> blocksPerPartition;
   // Variables for concurrent read test
   private static final int NUM_CONC_READ_TASKS = 10;
   private static final int CONC_READ_DATA_SIZE = 1000;
   private String concPartitionId;
-  private NonSerializedBlock concPartitionBlock;
+  private Block concPartitionBlock;
   // Variables for scatter and gather in range test
   private static final int NUM_WRITE_HASH_TASKS = 2;
   private static final int NUM_READ_HASH_TASKS = 3;
   private static final int HASH_DATA_SIZE = 1000;
   private static final int HASH_RANGE = 4;
   private List<String> hashedPartitionIdList;
-  private List<List<NonSerializedBlock>> hashedPartitionBlockList;
+  private List<List<Block>> hashedPartitionBlockList;
   private List<HashRange> readHashRangeList;
   private List<List<Iterable>> expectedDataInRange;
 
@@ -128,12 +128,12 @@ public final class PartitionStoreTest {
           partitionId, PartitionState.State.SCHEDULED, null);
 
       // Create blocks for this partition.
-      final List<NonSerializedBlock> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
+      final List<Block> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
       blocksPerPartition.add(blocksForPartition);
       IntStream.range(0, NUM_READ_TASKS).forEach(readTaskIdx -> {
         final int blocksCount = writeTaskIdx * NUM_READ_TASKS + readTaskIdx;
         blocksForPartition.add(
-            new NonSerializedBlock(readTaskIdx, getRangedNumList(blocksCount * DATA_SIZE, (blocksCount + 1) * DATA_SIZE)));
+            new Block(readTaskIdx, getRangedNumList(blocksCount * DATA_SIZE, (blocksCount + 1) * DATA_SIZE)));
       });
     });
 
@@ -149,7 +149,7 @@ public final class PartitionStoreTest {
         concPartitionId, PartitionState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
-    concPartitionBlock = new NonSerializedBlock(getRangedNumList(0, CONC_READ_DATA_SIZE));
+    concPartitionBlock = new Block(getRangedNumList(0, CONC_READ_DATA_SIZE));
 
     // Following part is for the scatter and gather in hash range test
     final int numHashedPartitions = NUM_WRITE_HASH_TASKS;
@@ -175,10 +175,10 @@ public final class PartitionStoreTest {
       partitionManagerMaster.initializeState(partitionId, "Unused");
       partitionManagerMaster.onPartitionStateChanged(
           partitionId, PartitionState.State.SCHEDULED, null);
-      final List<NonSerializedBlock> hashedPartition = new ArrayList<>(HASH_RANGE);
+      final List<Block> hashedPartition = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
-        hashedPartition.add(new NonSerializedBlock(hashValue, getFixedKeyRangedNumList(
+        hashedPartition.add(new Block(hashValue, getFixedKeyRangedNumList(
             hashValue,
             writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
             writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + (hashValue + 1) * HASH_DATA_SIZE))));
@@ -193,22 +193,23 @@ public final class PartitionStoreTest {
     });
 
     // Generates the expected result of hash range retrieval for each read task.
-    IntStream.range(0, NUM_READ_HASH_TASKS).forEach(readTaskIdx -> {
+    for (int readTaskIdx = 0; readTaskIdx < NUM_READ_HASH_TASKS; readTaskIdx++) {
       final HashRange hashRange = readHashRangeList.get(readTaskIdx);
       final List<Iterable> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
-      IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
+      for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
         final List<Iterable> appendingList = new ArrayList<>();
-        IntStream.range(hashRange.rangeStartInclusive(), hashRange.rangeEndExclusive()).forEach(hashVal ->
-            appendingList.add(hashedPartitionBlockList.get(writeTaskIdx).get(hashVal).getElements()));
+        for (int hashVal = hashRange.rangeStartInclusive(); hashVal < hashRange.rangeEndExclusive(); hashVal++) {
+          appendingList.add(hashedPartitionBlockList.get(writeTaskIdx).get(hashVal).getElements());
+        }
         final List concatStreamBase = new ArrayList<>();
         Stream<Object> concatStream = concatStreamBase.stream();
         for (final Iterable data : appendingList) {
           concatStream = Stream.concat(concatStream, StreamSupport.stream(data.spliterator(), false));
         }
         expectedRangeBlocks.add(concatStream.collect(Collectors.toList()));
-      });
+      }
       expectedDataInRange.add(expectedRangeBlocks);
-    });
+    }
   }
 
   /**
@@ -339,7 +340,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskIdx -> {
+              for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_TASKS; writeTaskIdx++) {
                 final Optional<Iterable> optionalData = readerSideStore.getElements(
                     partitionIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1));
                 if (!optionalData.isPresent()) {
@@ -347,7 +348,7 @@ public final class PartitionStoreTest {
                       partitionIdList.get(writeTaskIdx) + ") is empty");
                 }
                 assertEquals(blocksPerPartition.get(writeTaskIdx).get(readTaskIdx).getElements(), optionalData.get());
-              });
+              }
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
