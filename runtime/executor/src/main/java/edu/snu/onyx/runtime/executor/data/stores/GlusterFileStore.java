@@ -19,7 +19,6 @@ import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.message.PersistentConnectionToMasterMap;
 import edu.snu.onyx.runtime.executor.data.*;
@@ -46,8 +45,7 @@ import java.util.Optional;
  * TODO #410: Implement metadata caching for the RemoteFileMetadata.
  */
 @ThreadSafe
-public final class GlusterFileStore implements RemoteFileStore {
-  public static final String SIMPLE_NAME = "GlusterFileStore";
+public final class GlusterFileStore extends AbstractPartitionStore implements RemoteFileStore {
   private final String fileDirectory;
   private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
@@ -59,6 +57,7 @@ public final class GlusterFileStore implements RemoteFileStore {
                            @Parameter(JobConf.ExecutorId.class) final String executorId,
                            final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
                            final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
+    super(partitionManagerWorker);
     this.fileDirectory = volumeDirectory + "/" + jobId;
     this.partitionManagerWorker = partitionManagerWorker;
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
@@ -90,12 +89,12 @@ public final class GlusterFileStore implements RemoteFileStore {
       return Optional.empty();
     } else {
       // Deserialize the target data in the corresponding file.
-      final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+      final Coder coder = getCoderFromWorker(partitionId);
       try {
         final RemoteFileMetadata metadata =
             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        final Iterable<Block> deserializedBlocks = partition.getBlocks(hashRange);
+        final Iterable<NonSerializedBlock> deserializedBlocks = partition.getBlocks(hashRange);
         return Optional.of(DataUtil.concatBlocks(deserializedBlocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
@@ -110,9 +109,9 @@ public final class GlusterFileStore implements RemoteFileStore {
    */
   @Override
   public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<Block> blocks,
+                                        final Iterable<NonSerializedBlock> blocks,
                                         final boolean commitPerBlock) throws PartitionWriteException {
-    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
@@ -131,7 +130,7 @@ public final class GlusterFileStore implements RemoteFileStore {
    */
   @Override
   public void commitPartition(final String partitionId) throws PartitionWriteException {
-    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     final RemoteFileMetadata metadata =
@@ -147,7 +146,7 @@ public final class GlusterFileStore implements RemoteFileStore {
    */
   @Override
   public Boolean removePartition(final String partitionId) throws PartitionFetchException {
-    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
@@ -171,7 +170,7 @@ public final class GlusterFileStore implements RemoteFileStore {
   @Override
   public List<FileArea> getFileAreas(final String partitionId,
                                      final HashRange hashRange) {
-    final Coder coder = DataUtil.getCoderFromWorker(partitionId, partitionManagerWorker.get());
+    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {

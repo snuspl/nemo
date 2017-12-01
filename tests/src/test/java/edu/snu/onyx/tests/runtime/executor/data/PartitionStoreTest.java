@@ -19,12 +19,12 @@ import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
@@ -66,8 +66,9 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PartitionManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class})
 public final class PartitionStoreTest {
-  private static final String tmp_FILE_DIRECTORY = "./tmpFiles";
+  private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
+  private static final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
   private PartitionManagerMaster partitionManagerMaster;
   private LocalMessageDispatcher messageDispatcher;
   // Variables for scatter and gather test
@@ -75,19 +76,19 @@ public final class PartitionStoreTest {
   private static final int NUM_READ_TASKS = 3;
   private static final int DATA_SIZE = 1000;
   private List<String> partitionIdList;
-  private List<List<Block>> blocksPerPartition;
+  private List<List<NonSerializedBlock>> blocksPerPartition;
   // Variables for concurrent read test
   private static final int NUM_CONC_READ_TASKS = 10;
   private static final int CONC_READ_DATA_SIZE = 1000;
   private String concPartitionId;
-  private Block concPartitionBlock;
+  private NonSerializedBlock concPartitionBlock;
   // Variables for scatter and gather in range test
   private static final int NUM_WRITE_HASH_TASKS = 2;
   private static final int NUM_READ_HASH_TASKS = 3;
   private static final int HASH_DATA_SIZE = 1000;
   private static final int HASH_RANGE = 4;
   private List<String> hashedPartitionIdList;
-  private List<List<Block>> hashedPartitionBlockList;
+  private List<List<NonSerializedBlock>> hashedPartitionBlockList;
   private List<HashRange> readHashRangeList;
   private List<List<Iterable>> expectedDataInRange;
 
@@ -102,6 +103,7 @@ public final class PartitionStoreTest {
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
     partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
+    when(worker.getCoder(any())).thenReturn(CODER);
 
     // Following part is for for the scatter and gather test.
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
@@ -126,12 +128,12 @@ public final class PartitionStoreTest {
           partitionId, PartitionState.State.SCHEDULED, null);
 
       // Create blocks for this partition.
-      final List<Block> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
+      final List<NonSerializedBlock> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
       blocksPerPartition.add(blocksForPartition);
       IntStream.range(0, NUM_READ_TASKS).forEach(readTaskIdx -> {
         final int blocksCount = writeTaskIdx * NUM_READ_TASKS + readTaskIdx;
         blocksForPartition.add(
-            new Block(readTaskIdx, getRangedNumList(blocksCount * DATA_SIZE, (blocksCount + 1) * DATA_SIZE)));
+            new NonSerializedBlock(readTaskIdx, getRangedNumList(blocksCount * DATA_SIZE, (blocksCount + 1) * DATA_SIZE)));
       });
     });
 
@@ -147,7 +149,7 @@ public final class PartitionStoreTest {
         concPartitionId, PartitionState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
-    concPartitionBlock = new Block(getRangedNumList(0, CONC_READ_DATA_SIZE));
+    concPartitionBlock = new NonSerializedBlock(getRangedNumList(0, CONC_READ_DATA_SIZE));
 
     // Following part is for the scatter and gather in hash range test
     final int numHashedPartitions = NUM_WRITE_HASH_TASKS;
@@ -173,10 +175,10 @@ public final class PartitionStoreTest {
       partitionManagerMaster.initializeState(partitionId, "Unused");
       partitionManagerMaster.onPartitionStateChanged(
           partitionId, PartitionState.State.SCHEDULED, null);
-      final List<Block> hashedPartition = new ArrayList<>(HASH_RANGE);
+      final List<NonSerializedBlock> hashedPartition = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
-        hashedPartition.add(new Block(hashValue, getFixedKeyRangedNumList(
+        hashedPartition.add(new NonSerializedBlock(hashValue, getFixedKeyRangedNumList(
             hashValue,
             writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
             writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + (hashValue + 1) * HASH_DATA_SIZE))));
@@ -214,7 +216,9 @@ public final class PartitionStoreTest {
    */
   @Test(timeout = 10000)
   public void testMemoryStore() throws Exception {
-    final PartitionStore memoryStore = Tang.Factory.getTang().newInjector().getInstance(MemoryStore.class);
+    final Injector injector = Tang.Factory.getTang().newInjector();
+    injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
+    final PartitionStore memoryStore = injector.getInstance(MemoryStore.class);
     scatterGather(memoryStore, memoryStore);
     concurrentRead(memoryStore, memoryStore);
     scatterGatherInHashRange(memoryStore, memoryStore);
@@ -225,8 +229,6 @@ public final class PartitionStoreTest {
    */
   @Test(timeout = 10000)
   public void testSerMemoryStore() throws Exception {
-    final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
-    when(worker.getCoder(any())).thenReturn(CODER);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
     final PartitionStore serMemoryStore = injector.getInstance(SerializedMemoryStore.class);
@@ -240,17 +242,15 @@ public final class PartitionStoreTest {
    */
   @Test(timeout = 10000)
   public void testLocalFileStore() throws Exception {
-    final PartitionManagerWorker worker = mock(PartitionManagerWorker.class);
-    when(worker.getCoder(any())).thenReturn(CODER);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileParameter(JobConf.FileDirectory.class, tmp_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_FILE_DIRECTORY);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);
 
     final PartitionStore localFileStore = injector.getInstance(LocalFileStore.class);
     scatterGather(localFileStore, localFileStore);
     concurrentRead(localFileStore, localFileStore);
     scatterGatherInHashRange(localFileStore, localFileStore);
-    FileUtils.deleteDirectory(new File(tmp_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
   /**
@@ -260,27 +260,23 @@ public final class PartitionStoreTest {
    */
   @Test(timeout = 10000)
   public void testGlusterFileStore() throws Exception {
-    final PartitionManagerWorker pmw = mock(PartitionManagerWorker.class);
-    when(pmw.getCoder(any())).thenReturn(CODER);
-
     final RemoteFileStore writerSideRemoteFileStore =
-        createGlusterFileStore("writer", pmw);
+        createGlusterFileStore("writer");
     final RemoteFileStore readerSideRemoteFileStore =
-        createGlusterFileStore("reader", pmw);
+        createGlusterFileStore("reader");
 
     scatterGather(writerSideRemoteFileStore, readerSideRemoteFileStore);
     concurrentRead(writerSideRemoteFileStore, readerSideRemoteFileStore);
     scatterGatherInHashRange(writerSideRemoteFileStore, readerSideRemoteFileStore);
-    FileUtils.deleteDirectory(new File(tmp_FILE_DIRECTORY));
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
   }
 
-  private GlusterFileStore createGlusterFileStore(final String executorId,
-                                                  final PartitionManagerWorker worker)
+  private GlusterFileStore createGlusterFileStore(final String executorId)
       throws InjectionException {
     final LocalMessageEnvironment localMessageEnvironment =
         new LocalMessageEnvironment(executorId, messageDispatcher);
     final Injector injector = Tang.Factory.getTang().newInjector();
-    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, tmp_FILE_DIRECTORY);
+    injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_FILE_DIRECTORY);
     injector.bindVolatileParameter(JobConf.JobId.class, "GFS test");
     injector.bindVolatileParameter(JobConf.ExecutorId.class, executorId);
     injector.bindVolatileInstance(PartitionManagerWorker.class, worker);

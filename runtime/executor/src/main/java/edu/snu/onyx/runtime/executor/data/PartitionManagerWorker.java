@@ -18,7 +18,6 @@ package edu.snu.onyx.runtime.executor.data;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.stores.PartitionStore;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
@@ -209,7 +208,7 @@ public final class PartitionManagerWorker {
    * @return a {@link Optional} of the size of each written block.
    */
   public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<Block> blocks,
+                                        final Iterable<NonSerializedBlock> blocks,
                                         final DataStoreProperty.Value partitionStore,
                                         final boolean commitPerBlock) {
     LOG.info("PutBlocks: {}", partitionId);
@@ -353,9 +352,11 @@ public final class PartitionManagerWorker {
                 outputStream.getHashRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(partitionStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getPartitionStore(partitionStore);
-            final Optional<Iterable<byte[]>> optionalResult = serMemoryStore.getSerializedBlocksFromPartition(
+            final Optional<Iterable<SerializedBlock>> optionalResult = serMemoryStore.getSerializedBlocks(
                 outputStream.getPartitionId(), outputStream.getHashRange());
-            outputStream.writeByteArrays(optionalResult.get()).close();
+            final List<byte[]> byteArrays = new ArrayList<>();
+            optionalResult.get().forEach(serializedBlock -> byteArrays.add(serializedBlock.getSerializedData()));
+            outputStream.writeByteArrays(byteArrays).close();
           } else {
             final Iterable partition =
                 retrieveDataFromPartition(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),

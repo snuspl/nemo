@@ -17,8 +17,8 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.runtime.common.data.Block;
 import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +33,7 @@ public interface PartitionStore {
    *
    * @param partitionId the ID of the partition to create.
    * @throws PartitionWriteException for any error occurred while trying to create a partition.
-   *         (This exception will be thrown to the {@link edu.snu.onyx.runtime.master.scheduler.Scheduler}
+   *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
@@ -45,10 +45,9 @@ public interface PartitionStore {
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range.
-   * TODO #463: Support incremental write. Consider returning Blocks in some "subscribable" data structure.
    * @return the result elements from the target partition (if the target partition exists).
    * @throws PartitionFetchException for any error occurred while trying to fetch a partition.
-   *         (This exception will be thrown to the {@link edu.snu.onyx.runtime.master.scheduler.Scheduler}
+   *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
@@ -69,12 +68,12 @@ public interface PartitionStore {
    * @param commitPerBlock whether commit every block write or not.
    * @return the size of the data per block (only when the data is serialized).
    * @throws PartitionWriteException for any error occurred while trying to write a partition.
-   *         (This exception will be thrown to the {@link edu.snu.onyx.runtime.master.scheduler.Scheduler}
+   *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<List<Long>> putBlocks(String partitionId,
-                                 Iterable<Block> blocks,
+                                 Iterable<NonSerializedBlock> blocks,
                                  boolean commitPerBlock) throws PartitionWriteException;
 
   /**
@@ -84,7 +83,7 @@ public interface PartitionStore {
    *
    * @param partitionId of the partition.
    * @throws PartitionWriteException if fail to commit.
-   *         (This exception will be thrown to the {@link edu.snu.onyx.runtime.master.scheduler.Scheduler}
+   *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
@@ -96,7 +95,7 @@ public interface PartitionStore {
    * @param partitionId of the partition.
    * @return whether the partition exists or not.
    * @throws PartitionFetchException for any error occurred while trying to remove a partition.
-   *         (This exception will be thrown to the {@link edu.snu.onyx.runtime.master.scheduler.Scheduler}
+   *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */

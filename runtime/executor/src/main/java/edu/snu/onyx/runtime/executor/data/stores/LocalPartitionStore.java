@@ -17,10 +17,12 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.runtime.common.data.Block;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.partition.Partition;
+import org.apache.reef.tang.InjectionFuture;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,11 +34,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * which contains the (meta)data of the {@link Partition}s in local.
  * Because of this, store can maintain all partitions in a single map (mapped with their IDs).
  */
-public abstract class LocalPartitionStore implements PartitionStore {
+public abstract class LocalPartitionStore extends AbstractPartitionStore {
   // A map between partition id and data blocks.
   private final ConcurrentHashMap<String, Partition> partitionMap;
 
-  protected LocalPartitionStore() {
+  protected LocalPartitionStore(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+    super(partitionManagerWorker);
     this.partitionMap = new ConcurrentHashMap<>();
   }
 
@@ -50,7 +53,7 @@ public abstract class LocalPartitionStore implements PartitionStore {
 
     if (partition != null) {
       try {
-        final Iterable<Block> blocks = partition.getBlocks(hashRange);
+        final Iterable<NonSerializedBlock> blocks = partition.getBlocks(hashRange);
         return Optional.of(DataUtil.concatBlocks(blocks));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
@@ -65,7 +68,7 @@ public abstract class LocalPartitionStore implements PartitionStore {
    */
   @Override
   public final Optional<List<Long>> putBlocks(final String partitionId,
-                                              final Iterable<Block> blocks,
+                                              final Iterable<NonSerializedBlock> blocks,
                                               final boolean commitPerBlock) throws PartitionWriteException {
     try {
       final Partition partition = partitionMap.get(partitionId);

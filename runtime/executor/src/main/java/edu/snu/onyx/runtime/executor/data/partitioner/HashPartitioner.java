@@ -16,7 +16,7 @@
 package edu.snu.onyx.runtime.executor.data.partitioner;
 
 import edu.snu.onyx.common.KeyExtractor;
-import edu.snu.onyx.runtime.common.data.Block;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +28,11 @@ import java.util.stream.IntStream;
  * The data will be hashed by their key, and applied "modulo" operation by the number of destination tasks.
  */
 public final class HashPartitioner implements Partitioner {
-  public static final String SIMPLE_NAME = "Hash";
 
   @Override
-  public List<Block> partition(final Iterable elements,
-                               final int dstParallelism,
-                               final KeyExtractor keyExtractor) {
+  public List<NonSerializedBlock> partition(final Iterable elements,
+                                            final int dstParallelism,
+                                            final KeyExtractor keyExtractor) {
     final List<List> elementsByKey = new ArrayList<>(dstParallelism);
     IntStream.range(0, dstParallelism).forEach(dstTaskIdx -> elementsByKey.add(new ArrayList<>()));
     elements.forEach(element -> {
@@ -42,10 +41,10 @@ public final class HashPartitioner implements Partitioner {
       elementsByKey.get(dstIdx).add(element);
     });
 
-    final List<Block> blocks = new ArrayList<>(dstParallelism);
+    final List<NonSerializedBlock> nonSerializedBlocks = new ArrayList<>(dstParallelism);
     for (int hashIdx = 0; hashIdx < dstParallelism; hashIdx++) {
-      blocks.add(new Block(hashIdx, elementsByKey.get(hashIdx)));
+      nonSerializedBlocks.add(new NonSerializedBlock(hashIdx, elementsByKey.get(hashIdx)));
     }
-    return blocks;
+    return nonSerializedBlocks;
   }
 }
