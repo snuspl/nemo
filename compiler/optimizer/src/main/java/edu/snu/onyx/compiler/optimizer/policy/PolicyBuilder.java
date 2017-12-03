@@ -20,8 +20,6 @@ import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
 import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.ArrayList;

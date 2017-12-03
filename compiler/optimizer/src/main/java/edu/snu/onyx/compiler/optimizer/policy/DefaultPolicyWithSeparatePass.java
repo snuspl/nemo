@@ -21,7 +21,6 @@ import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ReviseInterSt
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
 import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.Arrays;
