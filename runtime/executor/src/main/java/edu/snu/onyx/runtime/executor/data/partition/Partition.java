@@ -35,7 +35,7 @@ public interface Partition {
    * @return the size of the data per block (only when the data is serialized in this method).
    * @throws IOException if fail to store.
    */
-  Optional<List<Long>> putBlocks(final Iterable<Block> blocks) throws IOException;
+  Optional<List<Long>> putBlocks(Iterable<Block> blocks) throws IOException;
 
   /**
    * Retrieves the {@link Block}s in a specific hash range from this partition.
@@ -46,8 +46,8 @@ public interface Partition {
    * @return an iterable of {@link Block}s.
    * @throws IOException if failed to retrieve.
    */
-  Iterable<Block> getBlocks(final HashRange hashRange,
-                            final boolean serialize) throws IOException;
+  Iterable<Block> getBlocks(HashRange hashRange,
+                            boolean serialize) throws IOException;
 
   /**
    * Commits this partition to prevent further write.

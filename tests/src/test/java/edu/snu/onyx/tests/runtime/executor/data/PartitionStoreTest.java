@@ -25,6 +25,7 @@ import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
 import edu.snu.onyx.runtime.common.state.PartitionState;
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import edu.snu.onyx.runtime.master.PartitionManagerMaster;
@@ -43,6 +44,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -178,10 +180,10 @@ public final class PartitionStoreTest {
       final List<Block> hashedPartition = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
-        hashedPartition.add(new Block(hashValue, getFixedKeyRangedNumList(
-            hashValue,
-            writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
-            writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + (hashValue + 1) * HASH_DATA_SIZE))));
+          hashedPartition.add(new Block(hashValue, getFixedKeyRangedNumList(
+              hashValue,
+              writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
+              writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + (hashValue + 1) * HASH_DATA_SIZE))));
       hashedPartitionBlockList.add(hashedPartition);
     });
 
@@ -309,12 +311,12 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               IntStream.range(writeTaskIdx, writeTaskIdx + 1).forEach(partitionIdx -> {
-                  final String partitionId = partitionIdList.get(partitionIdx);
-                  writerSideStore.createPartition(partitionId);
-                  writerSideStore.putBlocks(partitionId, blocksPerPartition.get(partitionIdx), false);
-                  writerSideStore.commitPartition(partitionId);
-                  partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
-                      "Writer side of the scatter gather edge");
+                final String partitionId = partitionIdList.get(partitionIdx);
+                writerSideStore.createPartition(partitionId);
+                writerSideStore.putBlocks(partitionId, blocksPerPartition.get(partitionIdx), false);
+                writerSideStore.commitPartition(partitionId);
+                partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
+                    "Writer side of the scatter gather edge");
               });
               return true;
             } catch (final Exception e) {
@@ -341,13 +343,8 @@ public final class PartitionStoreTest {
           public Boolean call() {
             try {
               for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_TASKS; writeTaskIdx++) {
-                final Optional<Iterable> optionalData = readerSideStore.getElements(
-                    partitionIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1));
-                if (!optionalData.isPresent()) {
-                  throw new RuntimeException("The result of retrieveData(" +
-                      partitionIdList.get(writeTaskIdx) + ") is empty");
-                }
-                assertEquals(blocksPerPartition.get(writeTaskIdx).get(readTaskIdx).getElements(), optionalData.get());
+                readResultCheck(partitionIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1),
+                    readerSideStore, blocksPerPartition.get(writeTaskIdx).get(readTaskIdx).getElements());
               }
               return true;
             } catch (final Exception e) {
@@ -388,9 +385,9 @@ public final class PartitionStoreTest {
   /**
    * Tests concurrent read for {@link PartitionStore}s.
    * Assumes following circumstances:
-   *                                             -> Task 2
+   * -> Task 2
    * Task 1 (write)-> broadcast (concurrent read)-> ...
-   *                                             -> Task 11
+   * -> Task 11
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */
@@ -434,13 +431,7 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              final Optional<Iterable> optionalData =
-                  readerSideStore.getElements(concPartitionId, HashRange.all());
-              if (!optionalData.isPresent()) {
-                throw new RuntimeException("The result of retrieveData(" +
-                    concPartitionId + ") is empty");
-              }
-              assertEquals(concPartitionBlock.getElements(), optionalData.get());
+              readResultCheck(concPartitionId, HashRange.all(), readerSideStore, concPartitionBlock.getElements());
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -479,7 +470,7 @@ public final class PartitionStoreTest {
    * Assumes following circumstances:
    * Task 1 (write (hash 0~3))->         (read (hash 0~1))-> Task 3
    * Task 2 (write (hash 0~3))-> shuffle (read (hash 2))-> Task 4
-   *                                     (read (hash 3))-> Task 5
+   * (read (hash 3))-> Task 5
    * It checks that each writer and reader does not throw any exception
    * and the read data is identical with written data (including the order).
    */
@@ -528,18 +519,11 @@ public final class PartitionStoreTest {
           @Override
           public Boolean call() {
             try {
-              IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
+              for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
                 final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskIdx);
-                final Optional<Iterable> optionalData = readerSideStore.getElements(
-                    hashedPartitionIdList.get(writeTaskIdx), hashRangeToRetrieve);
-                if (!optionalData.isPresent()) {
-                  throw new RuntimeException("The result of get partition" +
-                      hashedPartitionIdList.get(writeTaskIdx) + " in range " + hashRangeToRetrieve.toString() +
-                      " is empty");
-                }
-                assertEquals(
-                    expectedDataInRange.get(readTaskIdx).get(writeTaskIdx), optionalData.get());
-              });
+                readResultCheck(hashedPartitionIdList.get(writeTaskIdx), hashRangeToRetrieve,
+                    readerSideStore, expectedDataInRange.get(readTaskIdx).get(writeTaskIdx));
+              }
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -578,10 +562,34 @@ public final class PartitionStoreTest {
   }
 
   private List getFixedKeyRangedNumList(final int key,
-                                                 final int start,
-                                                 final int end) {
+                                        final int start,
+                                        final int end) {
     final List numList = new ArrayList<>(end - start);
     IntStream.range(start, end).forEach(number -> numList.add(KV.of(key, number)));
     return numList;
+  }
+
+  /**
+   * Compares the expected iterable with the data read from a {@link PartitionStore}.
+   */
+  private void readResultCheck(final String partitionId,
+                               final HashRange hashRange,
+                               final PartitionStore partitionStore,
+                               final Iterable expectedResult) throws IOException {
+    final Optional<Iterable<Block>> optionalSerResult = partitionStore.getBlocks(partitionId, hashRange, true);
+    if (!optionalSerResult.isPresent()) {
+      throw new IOException("The (serialized) result of get partition" + partitionId + " in range " +
+          hashRange + " is empty.");
+    }
+    final Iterable<Block> serializedResult = optionalSerResult.get();
+    final Optional<Iterable<Block>> optionalNonSerResult = partitionStore.getBlocks(partitionId, hashRange, false);
+    if (!optionalSerResult.isPresent()) {
+      throw new IOException("The (non-serialized) result of get partition" + partitionId + " in range " +
+          hashRange + " is empty.");
+    }
+    final Iterable<Block> nonSerializedResult = optionalNonSerResult.get();
+
+    assertEquals(expectedResult, DataUtil.concatBlocks(nonSerializedResult));
+    assertEquals(expectedResult, DataUtil.concatBlocks(DataUtil.convertToNonSerBlocks(CODER, serializedResult)));
   }
 }

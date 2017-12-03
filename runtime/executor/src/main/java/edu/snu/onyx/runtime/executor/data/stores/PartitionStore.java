@@ -40,19 +40,20 @@ public interface PartitionStore {
   void createPartition(String partitionId) throws PartitionWriteException;
 
   /**
-   * Retrieves elements in a specific {@link HashRange} from a partition.
-   * If the target partition is not committed yet, the requester may "subscribe" the further data until it is committed.
+   * Retrieves {@link Block}s in a specific {@link HashRange} from a partition.
    *
    * @param partitionId of the target partition.
    * @param hashRange   the hash range.
+   * @param serialize   whether to get the {@link Block}s in a serialized form or not.
    * @return the result elements from the target partition (if the target partition exists).
    * @throws PartitionFetchException for any error occurred while trying to fetch a partition.
    *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable> getElements(String partitionId,
-                                 HashRange hashRange) throws PartitionFetchException;
+  Optional<Iterable<Block>> getBlocks(String partitionId,
+                                      HashRange hashRange,
+                                      boolean serialize) throws PartitionFetchException;
 
   /**
    * Saves an iterable of data blocks to a partition.

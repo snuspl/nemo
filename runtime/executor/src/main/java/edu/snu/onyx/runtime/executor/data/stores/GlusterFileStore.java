@@ -79,11 +79,12 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   /**
    * Retrieves a deserialized partition of elements through remote disks.
    *
-   * @see PartitionStore#getElements(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange, boolean).
    */
   @Override
-  public Optional<Iterable> getElements(final String partitionId,
-                                        final HashRange hashRange) throws PartitionFetchException {
+  public Optional<Iterable<Block>> getBlocks(final String partitionId,
+                                             final HashRange hashRange,
+                                             final boolean serialize) throws PartitionFetchException {
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
@@ -94,8 +95,8 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
         final RemoteFileMetadata metadata =
             new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
         final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        final Iterable<Block> deserializedBlocks = partition.getBlocks(hashRange, false);
-        return Optional.of(DataUtil.concatBlocks(deserializedBlocks));
+        final Iterable<Block> blocksInRange = partition.getBlocks(hashRange, serialize);
+        return Optional.of(blocksInRange);
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }

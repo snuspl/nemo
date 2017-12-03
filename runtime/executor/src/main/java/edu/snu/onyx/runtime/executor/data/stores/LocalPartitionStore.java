@@ -44,17 +44,18 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#getElements(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange, boolean).
    */
   @Override
-  public final Optional<Iterable> getElements(final String partitionId,
-                                              final HashRange hashRange) {
+  public final Optional<Iterable<Block>> getBlocks(final String partitionId,
+                                                   final HashRange hashRange,
+                                                   final boolean serialize) {
     final Partition partition = partitionMap.get(partitionId);
 
     if (partition != null) {
       try {
-        final Iterable<Block> blocks = partition.getBlocks(hashRange, false);
-        return Optional.of(DataUtil.concatBlocks(blocks));
+        final Iterable<Block> blocksInRange = partition.getBlocks(hashRange, serialize);
+        return Optional.of(blocksInRange);
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }

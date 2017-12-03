@@ -124,7 +124,7 @@ public final class PartitionManagerWorker {
    * @param partitionId    of the partition.
    * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
    * @param partitionStore for the data storage.
-   * @param hashRange      the hash range descriptor
+   * @param hashRange      the hash range descriptor.
    * @return the result data in the partition.
    */
   public CompletableFuture<Iterable> retrieveDataFromPartition(
@@ -136,11 +136,16 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    final Optional<Iterable> optionalResultData = store.getElements(partitionId, hashRange);
+    // TODO #?: Enable Non-serialized Read From Lower PartitionTransfer
+    final Optional<Iterable<Block>> optionalResultBlocks = store.getBlocks(partitionId, hashRange, false);
 
-    if (optionalResultData.isPresent()) {
+    if (optionalResultBlocks.isPresent()) {
       // Partition resides in this evaluator!
-      return CompletableFuture.completedFuture(optionalResultData.get());
+      try {
+        return CompletableFuture.completedFuture(DataUtil.concatBlocks(optionalResultBlocks.get()));
+      } catch (final IOException e) {
+        throw new PartitionFetchException(e);
+      }
     } else if (DataStoreProperty.Value.GlusterFileStore.equals(partitionStore)) {
       throw new PartitionFetchException(new Throwable("Cannot find a partition in remote store."));
     } else {
