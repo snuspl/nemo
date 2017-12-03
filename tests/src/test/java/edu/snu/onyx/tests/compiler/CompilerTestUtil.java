@@ -86,7 +86,7 @@ public final class CompilerTestUtil {
     final String input = rootDir + "/../examples/src/main/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
-    final String dagDirectory = "./dag";
+    final String dagDirectory = rootDir + "/../dag";
 
     final ArgBuilder alsArgBuilder = new ArgBuilder()
         .addJobId(AlternatingLeastSquareInefficient.class.getSimpleName())
