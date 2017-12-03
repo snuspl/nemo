@@ -136,7 +136,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    // TODO #?: Enable Non-serialized Read From Lower PartitionTransfer
+    // TODO #626: Enable Serialized Read From PartitionTransfer
     final Optional<Iterable<Block>> optionalResultBlocks = store.getBlocks(partitionId, hashRange, false);
 
     if (optionalResultBlocks.isPresent()) {
