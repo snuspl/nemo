@@ -18,7 +18,6 @@ package edu.snu.onyx.runtime.executor.data.stores;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
 import edu.snu.onyx.runtime.executor.data.Block;
-import edu.snu.onyx.runtime.executor.data.DataUtil;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.partition.Partition;

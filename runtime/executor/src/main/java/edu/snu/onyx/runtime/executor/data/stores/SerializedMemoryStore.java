@@ -16,17 +16,12 @@
 package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.common.exception.PartitionFetchException;
-import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
 import edu.snu.onyx.runtime.executor.data.partition.SerializedMemoryPartition;
 import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Serialize and store data in local memory.
