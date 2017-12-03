@@ -127,13 +127,13 @@ public final class DataUtil {
   }
 
   /**
-   * Concatenates an iterable of blocks into a single iterable of elements.
+   * Concatenates an iterable of non-serialized {@link Block}s into a single iterable of elements.
    *
    * @param blocksToConcat the blocks to concatenate.
    * @return the concatenated iterable of all elements.
    * @throws IOException if fail to concatenate.
    */
-  public static Iterable concatBlocks(final Iterable<Block> blocksToConcat) throws IOException {
+  public static Iterable concatNonSerBlocks(final Iterable<Block> blocksToConcat) throws IOException {
     final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();
     for (final Block nonSerializedBlock : blocksToConcat) {

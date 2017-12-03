@@ -142,7 +142,7 @@ public final class PartitionManagerWorker {
     if (optionalResultBlocks.isPresent()) {
       // Partition resides in this evaluator!
       try {
-        return CompletableFuture.completedFuture(DataUtil.concatBlocks(optionalResultBlocks.get()));
+        return CompletableFuture.completedFuture(DataUtil.concatNonSerBlocks(optionalResultBlocks.get()));
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
       }
@@ -357,10 +357,10 @@ public final class PartitionManagerWorker {
                 outputStream.getHashRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(partitionStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getPartitionStore(partitionStore);
-            final Optional<Iterable<Block>> optionalResult = serMemoryStore.getSerializedBlocks(
-                outputStream.getPartitionId(), outputStream.getHashRange());
+            final Optional<Iterable<Block>> optionalResult = serMemoryStore.getBlocks(
+                outputStream.getPartitionId(), outputStream.getHashRange(), true);
             final List<byte[]> byteArrays = new ArrayList<>();
-            for (final Block serializedBlock  : optionalResult.get()) {
+            for (final Block serializedBlock : optionalResult.get()) {
               byteArrays.add(serializedBlock.getSerializedData());
             }
             outputStream.writeByteArrays(byteArrays).close();

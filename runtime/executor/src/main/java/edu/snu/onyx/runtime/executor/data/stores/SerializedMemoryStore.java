@@ -46,30 +46,6 @@ public final class SerializedMemoryStore extends LocalPartitionStore {
   }
 
   /**
-   * Retrieves {@link Block}s in a specific {@link HashRange} from a partition.
-   *
-   * @param partitionId of the target partition.
-   * @param hashRange   the hash range.
-   * @return the result data from the target partition (if the target partition exists).
-   * @throws PartitionFetchException if fail to get data.
-   */
-  public Optional<Iterable<Block>> getSerializedBlocks(final String partitionId,
-                                                       final HashRange hashRange)
-      throws PartitionFetchException {
-    final SerializedMemoryPartition partition = (SerializedMemoryPartition) getPartitionMap().get(partitionId);
-
-    if (partition != null) {
-      try {
-        return Optional.of(partition.getBlocks(hashRange, true));
-      } catch (final IOException e) {
-        throw new PartitionFetchException(e);
-      }
-    } else {
-      return Optional.empty();
-    }
-  }
-
-  /**
    * @see PartitionStore#removePartition(String).
    */
   @Override

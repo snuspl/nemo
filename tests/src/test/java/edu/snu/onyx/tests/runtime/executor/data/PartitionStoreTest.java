@@ -589,7 +589,7 @@ public final class PartitionStoreTest {
     }
     final Iterable<Block> nonSerializedResult = optionalNonSerResult.get();
 
-    assertEquals(expectedResult, DataUtil.concatBlocks(nonSerializedResult));
-    assertEquals(expectedResult, DataUtil.concatBlocks(DataUtil.convertToNonSerBlocks(CODER, serializedResult)));
+    assertEquals(expectedResult, DataUtil.concatNonSerBlocks(nonSerializedResult));
+    assertEquals(expectedResult, DataUtil.concatNonSerBlocks(DataUtil.convertToNonSerBlocks(CODER, serializedResult)));
   }
 }
