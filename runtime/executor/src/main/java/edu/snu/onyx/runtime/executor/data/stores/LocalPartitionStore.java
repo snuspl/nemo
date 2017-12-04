@@ -17,9 +17,10 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
-import edu.snu.onyx.runtime.executor.data.Block;
 import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.onyx.runtime.executor.data.SerializedBlock;
 import edu.snu.onyx.runtime.executor.data.partition.Partition;
 import org.apache.reef.tang.InjectionFuture;
 
@@ -43,32 +44,11 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#getBlocks(String, HashRange, boolean).
-   */
-  @Override
-  public final Optional<Iterable<Block>> getBlocks(final String partitionId,
-                                                   final HashRange hashRange,
-                                                   final boolean serialize) {
-    final Partition partition = partitionMap.get(partitionId);
-
-    if (partition != null) {
-      try {
-        final Iterable<Block> blocksInRange = partition.getBlocks(hashRange, serialize);
-        return Optional.of(blocksInRange);
-      } catch (final IOException e) {
-        throw new PartitionFetchException(e);
-      }
-    } else {
-      return Optional.empty();
-    }
-  }
-
-  /**
    * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
   public final Optional<List<Long>> putBlocks(final String partitionId,
-                                              final Iterable<Block> blocks,
+                                              final Iterable<NonSerializedBlock> blocks,
                                               final boolean commitPerBlock) throws PartitionWriteException {
     try {
       final Partition partition = partitionMap.get(partitionId);
@@ -79,6 +59,65 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
     } catch (final IOException e) {
       // The partition is committed already.
       throw new PartitionWriteException(new Throwable("This partition is already committed."));
+    }
+  }
+
+  /**
+   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean).
+   */
+  @Override
+  public final List<Long> putSerializedBlocks(final String partitionId,
+                                              final Iterable<SerializedBlock> blocks,
+                                              final boolean commitPerBlock) {
+    try {
+      final Partition partition = partitionMap.get(partitionId);
+      if (partition == null) {
+        throw new PartitionWriteException(new Throwable("The partition " + partitionId + "is not created yet."));
+      }
+      return partition.putSerializedBlocks(blocks);
+    } catch (final IOException e) {
+      // The partition is committed already.
+      throw new PartitionWriteException(new Throwable("This partition is already committed."));
+    }
+  }
+
+  /**
+   * @see PartitionStore#getBlocks(String, HashRange).
+   */
+  @Override
+  public final Optional<Iterable<NonSerializedBlock>> getBlocks(final String partitionId,
+                                                                final HashRange hashRange) {
+    final Partition partition = partitionMap.get(partitionId);
+
+    if (partition != null) {
+      try {
+        final Iterable<NonSerializedBlock> blocksInRange = partition.getBlocks(hashRange);
+        return Optional.of(blocksInRange);
+      } catch (final IOException e) {
+        throw new PartitionFetchException(e);
+      }
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * @see PartitionStore#getSerializedBlocks(String, HashRange).
+   */
+  @Override
+  public final Optional<Iterable<SerializedBlock>> getSerializedBlocks(final String partitionId,
+                                                                       final HashRange hashRange) {
+    final Partition partition = partitionMap.get(partitionId);
+
+    if (partition != null) {
+      try {
+        final Iterable<SerializedBlock> blocksInRange = partition.getSerializedBlocks(hashRange);
+        return Optional.of(blocksInRange);
+      } catch (final IOException e) {
+        throw new PartitionFetchException(e);
+      }
+    } else {
+      return Optional.empty();
     }
   }
 

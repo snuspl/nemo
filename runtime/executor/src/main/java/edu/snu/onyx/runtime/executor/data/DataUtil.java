@@ -1,6 +1,7 @@
 package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.coder.Coder;
+import edu.snu.onyx.runtime.executor.exception.BlockTypeMismatchException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,10 +31,10 @@ public final class DataUtil {
    * @throws IOException if fail to serialize.
    */
   public static long serializeBlock(final Coder coder,
-                                    final Block nonSerializedBlock,
+                                    final NonSerializedBlock nonSerializedBlock,
                                     final ByteArrayOutputStream bytesOutputStream) throws IOException {
     long elementsCount = 0;
-    for (final Object element : nonSerializedBlock.getElements()) {
+    for (final Object element : nonSerializedBlock.getData()) {
       coder.encode(element, bytesOutputStream);
       elementsCount++;
     }
@@ -46,18 +47,20 @@ public final class DataUtil {
    *
    * @param elementsInBlock the number of elements in this block.
    * @param coder           the coder to decode the bytes.
+   * @param hashValue       the hash value of the result block.
    * @param inputStream     the input stream which will return the data in the block as bytes.
    * @return the list of deserialized elements.
    * @throws IOException if fail to deserialize.
    */
-  public static List deserializeBlock(final long elementsInBlock,
-                                      final Coder coder,
-                                      final InputStream inputStream) throws IOException {
+  public static NonSerializedBlock deserializeBlock(final long elementsInBlock,
+                                                    final Coder coder,
+                                                    final int hashValue,
+                                                    final InputStream inputStream) throws IOException {
     final List deserializedData = new ArrayList();
     for (int i = 0; i < elementsInBlock; i++) {
       deserializedData.add(coder.decode(inputStream));
     }
-    return deserializedData;
+    return new NonSerializedBlock(hashValue, deserializedData);
   }
 
   /**
@@ -65,22 +68,20 @@ public final class DataUtil {
    *
    * @param coder           the coder for serialization.
    * @param blocksToConvert the blocks to convert.
-   * @return the converted {@link Block}s.
+   * @return the converted {@link SerializedBlock}s.
    * @throws IOException if fail to convert.
    */
-  public static Iterable<Block> convertToSerBlocks(final Coder coder,
-                                                   final Iterable<Block> blocksToConvert) throws IOException {
-    final List<Block> serializedBlocks = new ArrayList<>();
+  public static Iterable<SerializedBlock> convertToSerBlocks(final Coder coder,
+                                                             final Iterable<NonSerializedBlock> blocksToConvert)
+      throws IOException {
+    // The blocks in this iterable seem to be not serialized yet.
+    final List<SerializedBlock> serializedBlocks = new ArrayList<>();
     try (final ByteArrayOutputStream bytesOutputStream = new ByteArrayOutputStream()) {
-      for (final Block blockToConvert : blocksToConvert) {
-        if (blockToConvert.isSerialized()) {
-          serializedBlocks.add(blockToConvert);
-        } else {
-          final long elementsTotal = serializeBlock(coder, blockToConvert, bytesOutputStream);
-          final byte[] serializedBytes = bytesOutputStream.toByteArray();
-          serializedBlocks.add(new Block(blockToConvert.getKey(), elementsTotal, serializedBytes));
-          bytesOutputStream.reset();
-        }
+      for (final NonSerializedBlock blockToConvert : blocksToConvert) {
+        final long elementsTotal = serializeBlock(coder, blockToConvert, bytesOutputStream);
+        final byte[] serializedBytes = bytesOutputStream.toByteArray();
+        serializedBlocks.add(new SerializedBlock(blockToConvert.getKey(), elementsTotal, serializedBytes));
+        bytesOutputStream.reset();
       }
     }
     return serializedBlocks;
@@ -91,27 +92,28 @@ public final class DataUtil {
    *
    * @param coder           the coder for deserialization.
    * @param blocksToConvert the blocks to convert.
-   * @return the converted {@link Block}s.
+   * @return the converted {@link NonSerializedBlock}s.
    * @throws IOException if fail to convert.
    */
-  public static Iterable<Block> convertToNonSerBlocks(final Coder coder,
-                                                      final Iterable<Block> blocksToConvert)
+  public static Iterable<NonSerializedBlock> convertToNonSerBlocks(final Coder coder,
+                                                                   final Iterable<SerializedBlock> blocksToConvert)
       throws IOException {
-    final List<Block> nonSerializedBlocks = new ArrayList<>();
-    for (final Block blockToConvert : blocksToConvert) {
-      if (blockToConvert.isSerialized()) {
-        final int hashVal = blockToConvert.getKey();
-        final List deserializedData;
-        try (final ByteArrayInputStream byteArrayInputStream =
-                 new ByteArrayInputStream(blockToConvert.getSerializedData())) {
-          deserializedData = deserializeBlock(blockToConvert.getElementsTotal(), coder, byteArrayInputStream);
+      // The blocks in this iterable seem to be serialized.
+      final List<NonSerializedBlock> nonSerializedBlocks = new ArrayList<>();
+      for (final Block blockToConvert : blocksToConvert) {
+        if (!(blockToConvert instanceof SerializedBlock)) {
+          throw new BlockTypeMismatchException("This block is not a serialized block!");
         }
-        nonSerializedBlocks.add(new Block(hashVal, deserializedData));
-      } else {
-        nonSerializedBlocks.add(blockToConvert);
+
+        final int hashVal = blockToConvert.getKey();
+        try (final ByteArrayInputStream byteArrayInputStream =
+                 new ByteArrayInputStream(((SerializedBlock) blockToConvert).getData())) {
+          final NonSerializedBlock deserializeBlock = deserializeBlock(
+              ((SerializedBlock) blockToConvert).getElementsTotal(), coder, hashVal, byteArrayInputStream);
+          nonSerializedBlocks.add(deserializeBlock);
+        }
       }
-    }
-    return nonSerializedBlocks;
+      return nonSerializedBlocks;
   }
 
   /**
@@ -133,11 +135,11 @@ public final class DataUtil {
    * @return the concatenated iterable of all elements.
    * @throws IOException if fail to concatenate.
    */
-  public static Iterable concatNonSerBlocks(final Iterable<Block> blocksToConcat) throws IOException {
+  public static Iterable concatNonSerBlocks(final Iterable<NonSerializedBlock> blocksToConcat) throws IOException {
     final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();
-    for (final Block nonSerializedBlock : blocksToConcat) {
-      final Iterable elementsInBlock = nonSerializedBlock.getElements();
+    for (final NonSerializedBlock nonSerializedBlock : blocksToConcat) {
+      final Iterable elementsInBlock = nonSerializedBlock.getData();
       concatStream = Stream.concat(concatStream, StreamSupport.stream(elementsInBlock.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());

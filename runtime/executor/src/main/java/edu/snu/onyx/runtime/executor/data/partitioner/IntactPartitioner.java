@@ -17,6 +17,7 @@ package edu.snu.onyx.runtime.executor.data.partitioner;
 
 import edu.snu.onyx.common.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,6 @@ public final class IntactPartitioner implements Partitioner {
   public List<Block> partition(final Iterable elements,
                                final int dstParallelism,
                                final KeyExtractor keyExtractor) {
-    return Collections.singletonList(new Block(elements));
+    return Collections.singletonList(new NonSerializedBlock(0, elements));
   }
 }

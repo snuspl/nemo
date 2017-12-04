@@ -16,24 +16,46 @@
 package edu.snu.onyx.runtime.executor.data;
 
 /**
- * A collection of data elements.
+ * A collection of data elements. The data is stored as an iterable of elements.
  * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.partition.Partition}s.
- * @param <T> the type of the data stored in this {@link Block}.
  */
-public interface Block<T> {
+public final class NonSerializedBlock implements Block<Iterable> {
+  private final int key;
+  private final Iterable nonSerializedData;
+
+  /**
+   * Creates a non-serialized {@link Block} having a specific key value.
+   *
+   * @param key  the key.
+   * @param data the non-serialized data.
+   */
+  public NonSerializedBlock(final int key,
+                            final Iterable data) {
+    this.key = key;
+    this.nonSerializedData = data;
+  }
 
   /**
    * @return the key value.
    */
-  int getKey();
+  @Override
+  public int getKey() {
+    return key;
+  }
 
   /**
    * @return whether the data in this {@link Block} is serialized or not.
    */
-  boolean isSerialized();
+  @Override
+  public boolean isSerialized() {
+    return false;
+  }
 
   /**
-   * @return the data in this {@link Block}.
+   * @return the non-serialized data.
    */
-  T getData();
+  @Override
+  public Iterable getData() {
+    return nonSerializedData;
+  }
 }

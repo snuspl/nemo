@@ -16,10 +16,8 @@
 package edu.snu.onyx.runtime.executor.data.partition;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.runtime.executor.data.Block;
-import edu.snu.onyx.runtime.executor.data.DataUtil;
+import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.FileArea;
 import edu.snu.onyx.runtime.executor.data.metadata.BlockMetadata;
 import edu.snu.onyx.runtime.executor.data.metadata.FileMetadata;
 
@@ -59,13 +57,13 @@ public final class FilePartition implements Partition {
    * @param serializedBlocks the iterable of the serialized blocks to write.
    * @throws IOException if fail to write.
    */
-  private void writeSerializedBlocks(final Iterable<Block> serializedBlocks) throws IOException {
+  private void writeSerializedBlocks(final Iterable<SerializedBlock> serializedBlocks) throws IOException {
     try (final FileOutputStream fileOutputStream = new FileOutputStream(filePath, true)) {
-      for (final Block serializedBlock : serializedBlocks) {
+      for (final SerializedBlock serializedBlock : serializedBlocks) {
         // Reserve a block write and get the metadata.
         final BlockMetadata blockMetadata = metadata.reserveBlock(
-            serializedBlock.getKey(), serializedBlock.getSerializedData().length, serializedBlock.getElementsTotal());
-        fileOutputStream.write(serializedBlock.getSerializedData());
+            serializedBlock.getKey(), serializedBlock.getData().length, serializedBlock.getElementsTotal());
+        fileOutputStream.write(serializedBlock.getData());
 
         // Commit if needed.
         if (commitPerBlock) {
@@ -78,24 +76,36 @@ public final class FilePartition implements Partition {
   }
 
   /**
-   * Writes {@link Block}s to this partition.
+   * Writes {@link NonSerializedBlock}s to this partition.
    *
-   * @param blocksToStore the {@link Block}s to write.
+   * @param blocksToStore the {@link NonSerializedBlock}s to write.
    * @throws IOException if fail to write.
    */
   @Override
-  public Optional<List<Long>> putBlocks(final Iterable<Block> blocksToStore) throws IOException {
-    // If there is any non-serialized block in the iterable, serialize it.
-    final Iterable<Block> convertedBlocks = DataUtil.convertToSerBlocks(coder, blocksToStore);
+  public Optional<List<Long>> putBlocks(final Iterable<NonSerializedBlock> blocksToStore) throws IOException {
+    final Iterable<SerializedBlock> convertedBlocks = DataUtil.convertToSerBlocks(coder, blocksToStore);
 
+    return Optional.of(putSerializedBlocks(convertedBlocks));
+  }
+
+
+  /**
+   * Writes {@link SerializedBlock}s to this partition.
+   *
+   * @param blocksToStore the {@link SerializedBlock}s to store.
+   * @throws IOException if fail to store.
+   */
+  @Override
+  public synchronized List<Long> putSerializedBlocks(final Iterable<SerializedBlock> blocksToStore)
+      throws IOException {
     final List<Long> blockSizeList = new ArrayList<>();
-    for (final Block convertedBlock : convertedBlocks) {
-      blockSizeList.add((long) convertedBlock.getSerializedData().length);
+    for (final SerializedBlock convertedBlock : blocksToStore) {
+      blockSizeList.add((long) convertedBlock.getData().length);
     }
-    writeSerializedBlocks(convertedBlocks);
+    writeSerializedBlocks(blocksToStore);
     commitRemainderMetadata();
 
-    return Optional.of(blockSizeList);
+    return blockSizeList;
   }
 
   /**
@@ -116,47 +126,81 @@ public final class FilePartition implements Partition {
    * Retrieves the blocks of this partition from the file in a specific hash range and deserializes it.
    *
    * @param hashRange the hash range
-   * @param serialize whether to get the {@link Block}s in a serialized form or not.
-   * @return an iterable of {@link Block}s.
+   * @return an iterable of {@link NonSerializedBlock}s.
    * @throws IOException if failed to retrieve.
    */
   @Override
-  public Iterable<Block> getBlocks(final HashRange hashRange,
-                                   final boolean serialize) throws IOException {
-    final List<Block> blocksInRange = new ArrayList<>();
-    try (final FileInputStream fileStream = new FileInputStream(filePath);
-         final BufferedInputStream bufferedInputStream = new BufferedInputStream(fileStream)) {
+  public Iterable<NonSerializedBlock> getBlocks(final HashRange hashRange) throws IOException {
+    // Deserialize the data
+    final List<NonSerializedBlock> deserializedBlocks = new ArrayList<>();
+    try (final FileInputStream fileStream = new FileInputStream(filePath)) {
       for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
         final int hashVal = blockMetadata.getHashValue();
         if (hashRange.includes(hashVal)) {
           // The hash value of this block is in the range.
-          if (serialize) {
-            final byte[] serializedData = new byte[blockMetadata.getBlockSize()];
-            final int readBytes = fileStream.read(serializedData);
-            if (readBytes != serializedData.length) {
-              throw new IOException("The read data size does not match with the block size.");
-            }
-            blocksInRange.add(new Block(hashVal, blockMetadata.getElementsTotal(), serializedData));
-          } else {
-            final List deserializedData =
-                DataUtil.deserializeBlock(blockMetadata.getElementsTotal(), coder, bufferedInputStream);
-            blocksInRange.add(new Block(hashVal, deserializedData));
-          }
+          final NonSerializedBlock deserializeBlock =
+              DataUtil.deserializeBlock(blockMetadata.getElementsTotal(), coder, hashVal, fileStream);
+          deserializedBlocks.add(deserializeBlock);
         } else {
           // Have to skip this block.
-          long bytesToSkip = blockMetadata.getBlockSize();
-          while (bytesToSkip > 0) {
-            final long skippedBytes = bufferedInputStream.skip(bytesToSkip);
-            bytesToSkip -= skippedBytes;
-            if (skippedBytes <= 0) {
-              throw new IOException("The file stream failed to skip to the next block.");
-            }
+          skipBytes(fileStream, blockMetadata.getBlockSize());
+        }
+      }
+    }
+
+    return deserializedBlocks;
+  }
+
+  /**
+   * Retrieves the {@link SerializedBlock}s in a specific hash range.
+   * Invariant: This should not be invoked before this partition is committed.
+   *
+   * @param hashRange the hash range to retrieve.
+   * @return an iterable of {@link SerializedBlock}s.
+   * @throws IOException if failed to retrieve.
+   */
+  @Override
+  public Iterable<SerializedBlock> getSerializedBlocks(final HashRange hashRange) throws IOException {
+    // Deserialize the data
+    final List<SerializedBlock> blocksInRange = new ArrayList<>();
+    try (final FileInputStream fileStream = new FileInputStream(filePath)) {
+      for (final BlockMetadata blockMetadata : metadata.getBlockMetadataIterable()) {
+        final int hashVal = blockMetadata.getHashValue();
+        if (hashRange.includes(hashVal)) {
+          // The hash value of this block is in the range.
+          final byte[] serializedData = new byte[blockMetadata.getBlockSize()];
+          final int readBytes = fileStream.read(serializedData);
+          if (readBytes != serializedData.length) {
+            throw new IOException("The read data size does not match with the block size.");
           }
+          blocksInRange.add(new SerializedBlock(hashVal, blockMetadata.getElementsTotal(), serializedData));
+        } else {
+          // Have to skip this block.
+          skipBytes(fileStream, blockMetadata.getBlockSize());
         }
       }
     }
 
     return blocksInRange;
+  }
+
+  /**
+   * Skips some bytes in a input stream.
+   *
+   * @param inputStream the stream to skip.
+   * @param bytesToSkip the number of bytes to skip.
+   * @throws IOException if fail to skip.
+   */
+  private void skipBytes(final InputStream inputStream,
+                         final long bytesToSkip) throws IOException {
+    long remainingBytesToSkip = bytesToSkip;
+    while (remainingBytesToSkip > 0) {
+      final long skippedBytes = inputStream.skip(bytesToSkip);
+      remainingBytesToSkip -= skippedBytes;
+      if (skippedBytes <= 0) {
+        throw new IOException("The file stream failed to skip to the next block.");
+      }
+    }
   }
 
   /**

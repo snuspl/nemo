@@ -17,6 +17,7 @@ package edu.snu.onyx.runtime.executor.data.partitioner;
 
 import edu.snu.onyx.common.KeyExtractor;
 import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ public final class HashPartitioner implements Partitioner {
 
     final List<Block> blocks = new ArrayList<>(dstParallelism);
     for (int hashIdx = 0; hashIdx < dstParallelism; hashIdx++) {
-      blocks.add(new Block(hashIdx, elementsByKey.get(hashIdx)));
+      blocks.add(new NonSerializedBlock(hashIdx, elementsByKey.get(hashIdx)));
     }
     return blocks;
   }

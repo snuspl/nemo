@@ -120,6 +120,7 @@ public final class PartitionManagerWorker {
    * Retrieves data from the stored partition. A specific hash value range can be designated.
    * This can be invoked multiple times per partitionId (maybe due to failures).
    * Here, we first check if we have the partition here, and then try to fetch the partition from a remote worker.
+   // TODO #626: Enable Serialized Read From PartitionTransfer - implement getBlocks
    *
    * @param partitionId    of the partition.
    * @param runtimeEdgeId  id of the runtime edge that corresponds to the partition.
@@ -136,8 +137,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     // First, try to fetch the partition from local PartitionStore.
-    // TODO #626: Enable Serialized Read From PartitionTransfer
-    final Optional<Iterable<Block>> optionalResultBlocks = store.getBlocks(partitionId, hashRange, false);
+    final Optional<Iterable<NonSerializedBlock>> optionalResultBlocks = store.getBlocks(partitionId, hashRange);
 
     if (optionalResultBlocks.isPresent()) {
       // Partition resides in this evaluator!
@@ -205,6 +205,7 @@ public final class PartitionManagerWorker {
    * Invariant: This should not be invoked after a partition is committed.
    * Invariant: This method may not support concurrent write for a single partition.
    *            Only one thread have to write at once.
+   * TODO #626: Enable Serialized Read From PartitionTransfer - implement putSerializedBlocks
    *
    * @param partitionId    of the partition.
    * @param blocks         to save to a partition.
@@ -220,7 +221,7 @@ public final class PartitionManagerWorker {
     final PartitionStore store = getPartitionStore(partitionStore);
 
     try {
-      return store.putBlocks(partitionId, blocks, commitPerBlock);
+      return store.putBlocks(partitionId, (Iterable) blocks, commitPerBlock);
     } catch (final Exception e) {
       throw new PartitionWriteException(e);
     }
@@ -357,11 +358,11 @@ public final class PartitionManagerWorker {
                 outputStream.getHashRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(partitionStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getPartitionStore(partitionStore);
-            final Optional<Iterable<Block>> optionalResult = serMemoryStore.getBlocks(
-                outputStream.getPartitionId(), outputStream.getHashRange(), true);
+            final Optional<Iterable<SerializedBlock>> optionalResult = serMemoryStore.getSerializedBlocks(
+                outputStream.getPartitionId(), outputStream.getHashRange());
             final List<byte[]> byteArrays = new ArrayList<>();
-            for (final Block serializedBlock : optionalResult.get()) {
-              byteArrays.add(serializedBlock.getSerializedData());
+            for (final SerializedBlock serializedBlock : optionalResult.get()) {
+              byteArrays.add(serializedBlock.getData());
             }
             outputStream.writeByteArrays(byteArrays).close();
           } else {

@@ -18,7 +18,8 @@ package edu.snu.onyx.runtime.executor.data.stores;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.Block;
+import edu.snu.onyx.runtime.executor.data.NonSerializedBlock;
+import edu.snu.onyx.runtime.executor.data.SerializedBlock;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,27 +41,8 @@ public interface PartitionStore {
   void createPartition(String partitionId) throws PartitionWriteException;
 
   /**
-   * Retrieves {@link Block}s in a specific {@link HashRange} from a partition.
-   *
-   * @param partitionId of the target partition.
-   * @param hashRange   the hash range.
-   * @param serialize   whether to get the {@link Block}s in a serialized form or not.
-   * @return the result elements from the target partition (if the target partition exists).
-   * @throws PartitionFetchException for any error occurred while trying to fetch a partition.
-   *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.onyx.runtime.executor.Executor} and
-   *          have to be handled by the scheduler with fault tolerance mechanism.)
-   */
-  Optional<Iterable<Block>> getBlocks(String partitionId,
-                                      HashRange hashRange,
-                                      boolean serialize) throws PartitionFetchException;
-
-  /**
-   * Saves an iterable of data blocks to a partition.
+   * Saves an iterable of {@link NonSerializedBlock}s to a partition.
    * If the partition exists already, appends the data to it.
-   * This method supports concurrent write.
-   * If the data is needed to be "incrementally" written (and read),
-   * each block can be committed right after being written by using {@code commitPerBlock}.
    * Invariant: This method may not support concurrent write for a single partition.
    *            Only one thread have to write at once.
    *
@@ -74,8 +56,55 @@ public interface PartitionStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<List<Long>> putBlocks(String partitionId,
-                                 Iterable<Block> blocks,
+                                 Iterable<NonSerializedBlock> blocks,
                                  boolean commitPerBlock) throws PartitionWriteException;
+
+  /**
+   * Saves an iterable of {@link SerializedBlock}s to a partition.
+   * If the partition exists already, appends the data to it.
+   * Invariant: This method may not support concurrent write for a single partition.
+   *            Only one thread have to write at once.
+   *
+   * @param partitionId    of the partition.
+   * @param blocks         to save to a partition.
+   * @param commitPerBlock whether commit every block write or not.
+   * @return the size of the data per block (only when the data is serialized).
+   * @throws PartitionWriteException for any error occurred while trying to write a partition.
+   *         (This exception will be thrown to the scheduler
+   *          through {@link edu.snu.onyx.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
+   */
+  List<Long> putSerializedBlocks(String partitionId,
+                                 Iterable<SerializedBlock> blocks,
+                                 boolean commitPerBlock) throws PartitionWriteException;
+
+  /**
+   * Retrieves {@link NonSerializedBlock}s in a specific {@link HashRange} from a partition.
+   *
+   * @param partitionId of the target partition.
+   * @param hashRange   the hash range.
+   * @return the result elements from the target partition (if the target partition exists).
+   * @throws PartitionFetchException for any error occurred while trying to fetch a partition.
+   *         (This exception will be thrown to the scheduler
+   *          through {@link edu.snu.onyx.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
+   */
+  Optional<Iterable<NonSerializedBlock>> getBlocks(String partitionId,
+                                                   HashRange hashRange) throws PartitionFetchException;
+
+  /**
+   * Retrieves {@link SerializedBlock}s in a specific {@link HashRange} from a partition.
+   *
+   * @param partitionId of the target partition.
+   * @param hashRange   the hash range.
+   * @return the result elements from the target partition (if the target partition exists).
+   * @throws PartitionFetchException for any error occurred while trying to fetch a partition.
+   *         (This exception will be thrown to the scheduler
+   *          through {@link edu.snu.onyx.runtime.executor.Executor} and
+   *          have to be handled by the scheduler with fault tolerance mechanism.)
+   */
+  Optional<Iterable<SerializedBlock>> getSerializedBlocks(String partitionId,
+                                                          HashRange hashRange) throws PartitionFetchException;
 
   /**
    * Notifies that all writes for a partition is end.

@@ -47,7 +47,6 @@ import java.util.Optional;
 @ThreadSafe
 public final class GlusterFileStore extends AbstractPartitionStore implements RemoteFileStore {
   private final String fileDirectory;
-  private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
   private final String executorId;
 
@@ -59,7 +58,6 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
                            final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
     super(partitionManagerWorker);
     this.fileDirectory = volumeDirectory + "/" + jobId;
-    this.partitionManagerWorker = partitionManagerWorker;
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
     this.executorId = executorId;
     new File(fileDirectory).mkdirs();
@@ -77,25 +75,55 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * Retrieves a deserialized partition of elements through remote disks.
+   * Saves an iterable of data blocks to a partition.
    *
-   * @see PartitionStore#getBlocks(String, HashRange, boolean).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean).
    */
   @Override
-  public Optional<Iterable<Block>> getBlocks(final String partitionId,
-                                             final HashRange hashRange,
-                                             final boolean serialize) throws PartitionFetchException {
+  public Optional<List<Long>> putBlocks(final String partitionId,
+                                        final Iterable<NonSerializedBlock> blocks,
+                                        final boolean commitPerBlock) throws PartitionWriteException {
+    try {
+      final FilePartition partition = createTmpPartition(commitPerBlock, partitionId);
+      // Serialize and write the given blocks.
+      return partition.putBlocks(blocks);
+    } catch (final IOException e) {
+      throw new PartitionWriteException(e);
+    }
+  }
+
+  /**
+   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean).
+   */
+  @Override
+  public List<Long> putSerializedBlocks(final String partitionId,
+                                        final Iterable<SerializedBlock> blocks,
+                                        final boolean commitPerBlock) throws PartitionWriteException {
+    try {
+      final FilePartition partition = createTmpPartition(commitPerBlock, partitionId);
+      // Write the given blocks.
+      return partition.putSerializedBlocks(blocks);
+    } catch (final IOException e) {
+      throw new PartitionWriteException(e);
+    }
+  }
+
+  /**
+   * Retrieves a deserialized partition of elements through remote disks.
+   *
+   * @see PartitionStore#getBlocks(String, HashRange).
+   */
+  @Override
+  public Optional<Iterable<NonSerializedBlock>> getBlocks(final String partitionId,
+                                                          final HashRange hashRange) throws PartitionFetchException {
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
       // Deserialize the target data in the corresponding file.
-      final Coder coder = getCoderFromWorker(partitionId);
       try {
-        final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata);
-        final Iterable<Block> blocksInRange = partition.getBlocks(hashRange, serialize);
+        final FilePartition partition = createTmpPartition(false, partitionId);
+        final Iterable<NonSerializedBlock> blocksInRange = partition.getBlocks(hashRange);
         return Optional.of(blocksInRange);
       } catch (final IOException e) {
         throw new PartitionFetchException(e);
@@ -104,25 +132,22 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * Saves an iterable of data blocks to a partition.
-   *
-   * @see PartitionStore#putBlocks(String, Iterable, boolean).
+   * @see PartitionStore#getSerializedBlocks(String, HashRange).
    */
   @Override
-  public Optional<List<Long>> putBlocks(final String partitionId,
-                                        final Iterable<Block> blocks,
-                                        final boolean commitPerBlock) throws PartitionWriteException {
-    final Coder coder = getCoderFromWorker(partitionId);
+  public Optional<Iterable<SerializedBlock>> getSerializedBlocks(final String partitionId,
+                                                                 final HashRange hashRange) {
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
-
-    try {
-      final RemoteFileMetadata metadata =
-          new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
-      final FilePartition partition = new FilePartition(coder, filePath, metadata);
-      // Serialize and write the given blocks.
-      return partition.putBlocks(blocks);
-    } catch (final IOException e) {
-      throw new PartitionWriteException(e);
+    if (!new File(filePath).isFile()) {
+      return Optional.empty();
+    } else {
+      try {
+        final FilePartition partition = createTmpPartition(false, partitionId);
+        final Iterable<SerializedBlock> blocksInRange = partition.getSerializedBlocks(hashRange);
+        return Optional.of(blocksInRange);
+      } catch (final IOException e) {
+        throw new PartitionFetchException(e);
+      }
     }
   }
 
@@ -147,14 +172,11 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
    */
   @Override
   public Boolean removePartition(final String partitionId) throws PartitionFetchException {
-    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
-        final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata);
+        final FilePartition partition = createTmpPartition(false, partitionId);
         partition.deleteFile();
         return true;
       } else {
@@ -171,14 +193,11 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   @Override
   public List<FileArea> getFileAreas(final String partitionId,
                                      final HashRange hashRange) {
-    final Coder coder = getCoderFromWorker(partitionId);
     final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
-        final RemoteFileMetadata metadata =
-            new RemoteFileMetadata(false, partitionId, executorId, persistentConnectionToMasterMap);
-        final FilePartition partition = new FilePartition(coder, filePath, metadata);
+        final FilePartition partition = createTmpPartition(false, partitionId);
         return partition.asFileAreas(hashRange);
       } else {
         throw new PartitionFetchException(new Throwable(String.format("%s does not exists", partitionId)));
@@ -186,5 +205,15 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
     } catch (final IOException e) {
       throw new PartitionFetchException(e);
     }
+  }
+
+  private FilePartition createTmpPartition(final boolean commitPerBlock,
+                                           final String partitionId) {
+    final Coder coder = getCoderFromWorker(partitionId);
+    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
+    final RemoteFileMetadata metadata =
+        new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
+    final FilePartition partition = new FilePartition(coder, filePath, metadata);
+    return partition;
   }
 }
