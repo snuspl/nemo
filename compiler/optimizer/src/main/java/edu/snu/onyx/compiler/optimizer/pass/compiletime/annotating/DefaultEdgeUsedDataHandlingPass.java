@@ -27,9 +27,9 @@ import java.util.Collections;
 /**
  * Pass for initiating IREdge UsedDataHandling ExecutionProperty with default values.
  */
-public final class DefaultUsedDataHandlingPass extends AnnotatingPass {
+public final class DefaultEdgeUsedDataHandlingPass extends AnnotatingPass {
 
-  public DefaultUsedDataHandlingPass() {
+  public DefaultEdgeUsedDataHandlingPass() {
     super(ExecutionProperty.Key.UsedDataHandling, Collections.singleton(ExecutionProperty.Key.DataStore));
   }
 

@@ -33,6 +33,7 @@ import java.util.Collections;
  * to merge the shuffled data in memory and write to the disk at once.
  */
 public final class SailfishReshapingPass extends ReshapingPass {
+
   public SailfishReshapingPass() {
     super(Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
   }
