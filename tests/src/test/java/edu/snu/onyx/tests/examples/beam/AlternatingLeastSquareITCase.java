@@ -34,7 +34,7 @@ public final class AlternatingLeastSquareITCase {
   private static final String input = CompilerTestUtil.rootDir + "/../examples/src/main/resources/sample_input_als";
   private static final String numFeatures = "10";
   private static final String numIteration = "3";
-  private static final String dagDirectory = CompilerTestUtil.dagDir;
+  private static final String dagDirectory = CompilerTestUtil.rootDir + "/dag";
 
   public static ArgBuilder builder = new ArgBuilder()
       .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
