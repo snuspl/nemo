@@ -15,16 +15,13 @@
  */
 package edu.snu.onyx.runtime.executor;
 
-import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.ContextImpl;
 import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
 import edu.snu.onyx.common.ir.Reader;
 import edu.snu.onyx.common.ir.Transform;
-import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
-import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
