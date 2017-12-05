@@ -1,7 +1,6 @@
 package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.runtime.executor.exception.BlockTypeMismatchException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -100,16 +99,12 @@ public final class DataUtil {
       throws IOException {
       // The blocks in this iterable seem to be serialized.
       final List<NonSerializedBlock> nonSerializedBlocks = new ArrayList<>();
-      for (final Block blockToConvert : blocksToConvert) {
-        if (!(blockToConvert instanceof SerializedBlock)) {
-          throw new BlockTypeMismatchException("This block is not a serialized block!");
-        }
-
+      for (final SerializedBlock blockToConvert : blocksToConvert) {
         final int hashVal = blockToConvert.getKey();
         try (final ByteArrayInputStream byteArrayInputStream =
-                 new ByteArrayInputStream(((SerializedBlock) blockToConvert).getData())) {
+                 new ByteArrayInputStream(blockToConvert.getData())) {
           final NonSerializedBlock deserializeBlock = deserializeBlock(
-              ((SerializedBlock) blockToConvert).getElementsTotal(), coder, hashVal, byteArrayInputStream);
+              blockToConvert.getElementsTotal(), coder, hashVal, byteArrayInputStream);
           nonSerializedBlocks.add(deserializeBlock);
         }
       }

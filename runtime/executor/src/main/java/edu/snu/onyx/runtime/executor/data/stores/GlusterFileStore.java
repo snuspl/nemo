@@ -38,8 +38,6 @@ import java.util.Optional;
  * Stores partitions in a mounted GlusterFS volume.
  * Because the data is stored in remote files and globally accessed by multiple nodes,
  * each access (write, read, or deletion) for a file needs one instance of {@link FilePartition}.
- * Concurrent write for a single file is supported, but each writer in different executor
- * has to have separate instance of {@link FilePartition}.
  * These accesses are judiciously synchronized by the metadata server in master.
  * TODO #485: Merge LocalFileStore and GlusterFileStore.
  * TODO #410: Implement metadata caching for the RemoteFileMetadata.
@@ -207,6 +205,15 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
     }
   }
 
+  /**
+   * Creates a temporary {@link FilePartition} for a single access.
+   * Because the data is stored in remote files and globally accessed by multiple nodes,
+   * each access (write, read, or deletion) for a file needs one instance of {@link FilePartition}.
+   *
+   * @param commitPerBlock whether commit every block write or not.
+   * @param partitionId    the ID of the partition to create.
+   * @return the {@link FilePartition} created.
+   */
   private FilePartition createTmpPartition(final boolean commitPerBlock,
                                            final String partitionId) {
     final Coder coder = getCoderFromWorker(partitionId);

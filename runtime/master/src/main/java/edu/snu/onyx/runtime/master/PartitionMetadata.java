@@ -40,7 +40,7 @@ final class PartitionMetadata {
   // TODO #446: Control the Point of Partition Fetch in Executor.
   private volatile CompletableFuture<String> locationFuture; // the future of the location of this block.
 
-  // NonSerializedBlock level metadata. These information will be managed only for remote partitions.
+  // Block level metadata. These information will be managed only for remote partitions.
   private volatile List<BlockMetadataInServer> blockMetadataList;
   private volatile long writtenBytesCursor; // How many bytes are (at least, logically) written in the file.
   private volatile int publishedBlockCursor; // Cursor dividing the published blocks and un-published blocks.
