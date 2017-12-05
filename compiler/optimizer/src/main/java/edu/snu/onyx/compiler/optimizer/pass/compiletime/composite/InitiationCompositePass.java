@@ -31,7 +31,8 @@ public final class InitiationCompositePass extends CompositePass {
         new DefaultVertexExecutorPlacementPass(),
         new DefaultPartitionerPass(),
         new DefaultEdgeDataFlowModelPass(),
-        new DefaultEdgeDataStorePass()
+        new DefaultEdgeDataStorePass(),
+        new DefaultUsedDataHandlingPass()
     ));
   }
 }

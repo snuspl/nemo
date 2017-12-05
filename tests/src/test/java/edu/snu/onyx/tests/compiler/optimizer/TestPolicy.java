@@ -44,6 +44,7 @@ public final class TestPolicy implements Policy {
     policy.add(new DefaultPartitionerPass());
     policy.add(new DefaultEdgeDataFlowModelPass());
     policy.add(new DefaultEdgeDataStorePass());
+    policy.add(new DefaultUsedDataHandlingPass());
     policy.add(new DefaultStagePartitioningPass());
     policy.add(new ScheduleGroupPass());
 
