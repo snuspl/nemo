@@ -47,9 +47,9 @@ public final class SailfishEdgeUsedDataHandlingPass extends AnnotatingPass {
           final DataStoreProperty.Value dataStore = irEdge.getProperty(ExecutionProperty.Key.DataStore);
           if (DataFlowModelProperty.Value.Push.equals(dataFlowModel)) {
             irEdge.setProperty(UsedDataHandlingProperty.of(UsedDataHandlingProperty.Value.Discard));
-          } else if (DataStoreProperty.Value.LocalFileStore.equals(dataStore)
-              || DataStoreProperty.Value.GlusterFileStore.equals(dataStore)) {
-            irEdge.setProperty(UsedDataHandlingProperty.of(UsedDataHandlingProperty.Value.Keep));
+          //} else if (DataStoreProperty.Value.LocalFileStore.equals(dataStore)
+           //   || DataStoreProperty.Value.GlusterFileStore.equals(dataStore)) {
+           // irEdge.setProperty(UsedDataHandlingProperty.of(UsedDataHandlingProperty.Value.Keep));
           }
         }));
     return dag;
