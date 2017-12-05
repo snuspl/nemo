@@ -90,7 +90,7 @@ public final class CompilerTestUtil {
     final ArgBuilder alsArgBuilder = new ArgBuilder()
         .addJobId(AlternatingLeastSquareInefficient.class.getSimpleName())
         .addUserMain(alsInefficient)
-        .addUserArgs(input, numFeatures, numIteration)
+        .addUserArgs(input, numFeatures, numIteration);
     return compileDAG(alsArgBuilder.build());
   }
 

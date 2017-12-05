@@ -257,5 +257,4 @@ public final class JobConf extends ConfigurationModuleBuilder {
       .bindNamedParameter(FileDirectory.class, LOCAL_DISK_DIRECTORY)
       .bindNamedParameter(GlusterVolumeDirectory.class, GLUSTER_DISK_DIRECTORY)
       .build();
-
 }

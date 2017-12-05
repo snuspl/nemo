@@ -69,6 +69,7 @@ public final class OnyxBackendTest<I, O> {
    */
   @Test
   public void testExecutionPlanGeneration() throws Exception {
+
     final Backend<PhysicalPlan> backend = new OnyxBackend();
     final PhysicalPlan executionPlan = backend.compile(dag);
 
