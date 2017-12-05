@@ -16,6 +16,7 @@
 package edu.snu.onyx.compiler.optimizer.pass.compiletime.composite;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataFlowModelPass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataStorePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.reshaping.SailfishReshapingPass;
 
 import java.util.Arrays;
@@ -27,7 +28,8 @@ public final class SailfishPass extends CompositePass {
   public SailfishPass() {
     super(Arrays.asList(
         new SailfishReshapingPass(),
-        new SailfishEdgeDataFlowModelPass()
+        new SailfishEdgeDataFlowModelPass(),
+        new SailfishEdgeDataStorePass()
     ));
   }
 }
