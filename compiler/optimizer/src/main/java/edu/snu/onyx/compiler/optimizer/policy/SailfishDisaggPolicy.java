@@ -17,6 +17,7 @@ package edu.snu.onyx.compiler.optimizer.policy;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DisaggregationEdgeDataStorePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataStorePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.SailfishPass;
@@ -36,6 +37,7 @@ public final class SailfishDisaggPolicy implements Policy {
         .registerCompileTimePass(new SailfishPass())
         .registerCompileTimePass(new LoopOptimizationCompositePass())
         .registerCompileTimePass(new PrimitiveCompositePass())
+        .registerCompileTimePass(new SailfishEdgeDataStorePass())
         .registerCompileTimePass(new DisaggregationEdgeDataStorePass())
         .build();
   }
