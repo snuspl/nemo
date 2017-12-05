@@ -61,7 +61,8 @@ public final class PartitionManagerWorker {
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
   private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
   private final PartitionTransfer partitionTransfer;
-  private final ExecutorService ioThreadExecutorService;
+  // Executor service to schedule I/O Runnable which can be done in background.
+  private final ExecutorService backgroundExecutorService;
   private final Map<String, AtomicInteger> partitionToRemainingRead;
 
   @Inject
@@ -81,7 +82,7 @@ public final class PartitionManagerWorker {
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
     this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
     this.partitionTransfer = partitionTransfer;
-    this.ioThreadExecutorService = Executors.newFixedThreadPool(numThreads);
+    this.backgroundExecutorService = Executors.newFixedThreadPool(numThreads);
     this.partitionToRemainingRead = new ConcurrentHashMap<>();
   }
 
@@ -354,14 +355,14 @@ public final class PartitionManagerWorker {
       if (remainingExpectedRead.decrementAndGet() == 0) {
         // This partition should be spilt.
         partitionToRemainingRead.remove(partitionId);
-        ioThreadExecutorService.submit(new Runnable() {
+        backgroundExecutorService.submit(new Runnable() {
           @Override
           public void run() {
             removePartition(partitionId, partitionStore);
           }
         });
       }
-    }
+    } // If null, just keep the data in the store.
   }
 
   private PartitionStore getPartitionStore(final DataStoreProperty.Value partitionStore) {
@@ -392,7 +393,7 @@ public final class PartitionManagerWorker {
     final Optional<DataStoreProperty.Value> partitionStoreOptional = outputStream.getPartitionStore();
     final DataStoreProperty.Value partitionStore = partitionStoreOptional.get();
 
-    ioThreadExecutorService.submit(new Runnable() {
+    backgroundExecutorService.submit(new Runnable() {
       @Override
       public void run() {
         try {
