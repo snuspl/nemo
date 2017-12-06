@@ -74,7 +74,6 @@ public final class DataUtil {
   public static Iterable<SerializedBlock> convertToSerBlocks(final Coder coder,
                                                              final Iterable<NonSerializedBlock> blocksToConvert)
       throws IOException {
-    // The blocks in this iterable seem to be not serialized yet.
     final List<SerializedBlock> serializedBlocks = new ArrayList<>();
     for (final NonSerializedBlock blockToConvert : blocksToConvert) {
       try (final DirectByteArrayOutputStream bytesOutputStream = new DirectByteArrayOutputStream()) {
@@ -99,7 +98,6 @@ public final class DataUtil {
   public static Iterable<NonSerializedBlock> convertToNonSerBlocks(final Coder coder,
                                                                    final Iterable<SerializedBlock> blocksToConvert)
       throws IOException {
-    // The blocks in this iterable seem to be serialized.
     final List<NonSerializedBlock> nonSerializedBlocks = new ArrayList<>();
     for (final SerializedBlock blockToConvert : blocksToConvert) {
       final int hashVal = blockToConvert.getKey();
