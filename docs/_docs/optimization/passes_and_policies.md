@@ -3,30 +3,53 @@ title: Passes and Policies
 permalink: /docs/passes_and_policies/
 ---
 
-### Overview
+### Optimization Passes
 
-% % optimization pass intro
-The \onyx IR can be flexibly modified, both in its logical structure and annotations, through an interface called \textit{\onyx optimization pass}.
-Simply put, an \textit{optimization pass} is a function that takes an \onyx IR and outputs an optimized \onyx IR.
-The modification during compile-time occurs in two representative ways: through \textit{reshaping passes} and \textit{annotating passes}.
-First, \textit{reshaping passes} modify the shape of the IR itself by inserting, regrouping, or deleting IR vertices and edges on an \onyx IR, like collecting repetitive vertices inside a single loop.
-Second, \textit{annotating passes} annotates IR vertices and edges with specific \textit{execution properties} with the given logic to adjust and run the workload in the fashion that the user wants.
-Such optimization passes can be grouped together as a \textit{composite pass} for convenience.
+The [Onyx IR](../ir) can be flexibly modified, both in its logical structure and annotations, through an interface called *Onyx optimization pass*.
+An *optimization pass* is basically a function that takes an *Onyx IR* and outputs an optimized *Onyx IR*.
 
-% Example passes
-Specifically, as shown in Table~\ref{table:passes} a reshaping pass can be utilized to perform various IR optimizations including common subexpression elimination (CSE), dead code elimination, and loop invariant code motion, by observing the structure of the IR and performing optimizations during compile-time.
-It can also detect repetitive patterns inside an IR, and extract and express that part of the IR as a loop.
-Furthermore, an annotating pass can determine computational parallelism of each vertices by observing the source data size and the parallelism information of previous vertices, and allocate different computations on specific types of resources.
+##### Compile-time passes
 
-% % Some more functionalities of optimization passes: flexibility
-Furthermore, an \textit{optimization pass} can also be performed during runtime to perform dynamic optimizations, such as data skew, using runtime statistics.
-This action occurs dynamically after the \onyx IR has been submitted to the execution runtime, after going through compile-time passes and being laid out as a physical execution plan.
-It receives and modifies the execution plan using the given metric data of runtime statistics, so that the execution is dynamically optimized during runtime using the provided optimization logic specified by the user.
+The modification during compile-time can be categorized in different ways:
 
-% % Optimization policy is composed of a combination of optimization passes: flexibility + extensibility
-Using a carefully chosen series of \textit{optimization passes}, we can optimize an application to exploit specific \textit{deployment characteristics}, by providing appropriate configurations for the execution runtime.
-A complete series of optimization passes is called a \textit{policy}, which together performs a specific goal.
-For example, in order to optimize an application to run on evictable transient resources, we can use a specialized executor placement pass, that places each computations appropriately on different types of resources, and data flow model pass, that determines the fashion in which each computation should fetch its input data, with a number of other passes for further optimization.
-This enables users to flexibly customize and perform data processing for different \textit{deployment characteristics} by simply plugging in different policies for specific goals.
+1. **Reshaping passes** modify the shape of the IR itself by inserting, regrouping, or deleting IR vertices and edges on an Onyx IR, such as collecting repetitive vertices inside a single loop or inserting metric vertices. This modifies the logical notion of data processing applications.
+2. **Annotating passes** annotate IR vertices and edges with *execution properties* with the provided logic to adjust and run the workload in the fashion that the user wants.
+3. **Composite passes** are collections of passes that are grouped together for convenience.
+
+##### Run-time passes
+
+After the compilation and compile-time optimizations, the *Onyx IR* gets laid out as a *physical execution plan* to be submitted to and executed by the *Onyx Execution Runtime*.
+While execution, an *run-time optimization pass* can be performed to perform dynamic optimizations, like solving data skew, using runtime statistics.
+It takes the old *Onyx IR* and metric data of runtime statistics, and sends the newly optimized Onyx IR to execution runtime for the physical plan to be updated accordingly.
+
+### Examples
+
+Below are some example optimization passes that are used for different use cases:
+
+#### Compile-time passes
+**Reshaping passes**:
+- Common subexpression elimination (CSE): to refactor the commonly occurring operation that unnecessarily computes multiple times.
+- Loop invariant code motion (LICM): to extract an operation that does not need to be repetitively done iteratively from a loop.
+- Loop Extraction: to observe the DAG structure and extract the repetitive workflow that can be refactored into a loop.
+- Data Skew - Metric vertex insertion: to insert a vertex that indicated where to collect metrics and trigger data skew runtime optimization.
+
+**Annotating passes**:
+- Parallelism: to determine computational parallelism of each vertices by observing source data size and parallelism information of previous vertices
+- Executor placement: to allocate different computations on specific types of resources.
+
+#### Run-time passes
+- Data-skew: to evenly re-distribute skewed data into a more evenly-distributed partitions of data.
+
+### Optimization Policies
+
+An **optimization policy** is composed of a specific combination of optimization passes.
+
+Using a carefully chosen series of *optimization passes*, we can optimize an application to exploit specific *deployement characteristics*, by providing appropriate configurations and plan for the execution runtime.
+A complete series of optimization passes is called a *policy*, which together performs a specific goal.
+
+For example, to optimize an application to run on evictable transient resources, we can use a specialized executor placement pass, that places computations appropriately on different types of resources, 
+and data flow model pass, that determines the fashion in which each computation should fetch its input data, with a number of other passes for further optimization.
+
+Using different optimization policies for specific goals enables users to flexibly customize and perform data processing for different deployment characteristics.
 This greatly simplifies the work by replacing the work of exploring and rewriting system internals for modifying runtime behaviors with a simple process of using pluggable policies.
-It also makes it possible for the system to promptly meet new requirements through easy extension of system capabilities.
+It also makes it possible for the system to promptly meet new requirements through [easy extension of system capabilities](../extending_onyx).
