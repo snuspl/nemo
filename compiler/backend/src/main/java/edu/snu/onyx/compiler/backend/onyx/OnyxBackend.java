@@ -45,6 +45,11 @@ public final class OnyxBackend implements Backend<PhysicalPlan> {
   public PhysicalPlan compile(final DAG<IRVertex, IREdge> irDAG) throws Exception {
     final PhysicalPlanGenerator physicalPlanGenerator =
         Tang.Factory.getTang().newInjector().getInstance(PhysicalPlanGenerator.class);
+    return compile(irDAG, physicalPlanGenerator);
+  }
+
+  public PhysicalPlan compile(final DAG<IRVertex, IREdge> irDAG,
+                              final PhysicalPlanGenerator physicalPlanGenerator) {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalStageDAG = irDAG.convert(physicalPlanGenerator);
     final PhysicalPlan physicalPlan = new PhysicalPlan(RuntimeIdGenerator.generatePhysicalPlanId(),
         physicalStageDAG, physicalPlanGenerator.getTaskIRVertexMap());
