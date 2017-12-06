@@ -48,6 +48,14 @@ public final class OnyxBackend implements Backend<PhysicalPlan> {
     return compile(irDAG, physicalPlanGenerator);
   }
 
+  /**
+   * Compiles an IR DAG into a {@link PhysicalPlan} to be submitted to Runtime.
+   * Receives {@link PhysicalPlanGenerator} with configured directory of DAG files.
+   * @param irDAG to compile.
+   * @param physicalPlanGenerator with custom DAG directory.
+   * @return the execution plan to be submitted to Runtime.
+   * @throws Exception any exception occurred during the compilation.
+   */
   public PhysicalPlan compile(final DAG<IRVertex, IREdge> irDAG,
                               final PhysicalPlanGenerator physicalPlanGenerator) {
     final DAG<PhysicalStage, PhysicalStageEdge> physicalStageDAG = irDAG.convert(physicalPlanGenerator);
