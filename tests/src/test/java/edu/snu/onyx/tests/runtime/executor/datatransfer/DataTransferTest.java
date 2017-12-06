@@ -215,7 +215,7 @@ public final class DataTransferTest {
   @Test
   public void testWriteAndRead() throws Exception {
     // test OneToOne same worker
-    /*writeAndRead(worker1, worker1, DataCommunicationPatternProperty.Value.OneToOne, MEMORY_STORE);
+    writeAndRead(worker1, worker1, DataCommunicationPatternProperty.Value.OneToOne, MEMORY_STORE);
 
     // test OneToOne different worker
     writeAndRead(worker1, worker2, DataCommunicationPatternProperty.Value.OneToOne, MEMORY_STORE);
@@ -234,10 +234,10 @@ public final class DataTransferTest {
 
     // test ManyToMany same worker
     writeAndRead(worker1, worker1, DataCommunicationPatternProperty.Value.ScatterGather, SER_MEMORY_STORE);
-*/
+
     // test ManyToMany different worker
     writeAndRead(worker1, worker2, DataCommunicationPatternProperty.Value.ScatterGather, SER_MEMORY_STORE);
-/*
+
     // test ManyToMany same worker (local file)
     writeAndRead(worker1, worker1, DataCommunicationPatternProperty.Value.ScatterGather, LOCAL_FILE_STORE);
 
@@ -248,7 +248,7 @@ public final class DataTransferTest {
     writeAndRead(worker1, worker1, DataCommunicationPatternProperty.Value.ScatterGather, REMOTE_FILE_STORE);
 
     // test ManyToMany different worker (remote file)
-    writeAndRead(worker1, worker2, DataCommunicationPatternProperty.Value.ScatterGather, REMOTE_FILE_STORE);*/
+    writeAndRead(worker1, worker2, DataCommunicationPatternProperty.Value.ScatterGather, REMOTE_FILE_STORE);
   }
 
   private void writeAndRead(final PartitionManagerWorker sender,
