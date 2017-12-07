@@ -15,46 +15,55 @@
  */
 package edu.snu.onyx.compiler.frontend.onyx.transform.transform;
 
+import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.Transform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
- * A {@link Transform} relays input data from upstream vertex to downstream vertex promptly.
- * This transform can be used for merging input data into the {@link OutputCollector}.
- * @param <T> input/output type.
+ * A {@link Transform} encodes input values into bytes and emits.
+ * Through this transform, the {@link RelayTransform} can receive data in a form of byte array in Sailfish optimization.
+ * @param <T> input type.
  */
-public final class RelayTransform<T> implements Transform<T, T> {
-  private OutputCollector<T> outputCollector;
-  private int count;
+public final class SailfishEncodingTransform<T> implements Transform<T, byte[]> {
+  private static final Logger LOG = LoggerFactory.getLogger(SailfishEncodingTransform.class.getName());
+  private OutputCollector<byte[]> outputCollector;
+  private final Coder<T> coder;
 
-  public RelayTransform() {
-    // Do nothing.
-    count = 0;
+  public SailfishEncodingTransform(final Coder<T> coder) {
+    this.coder = coder;
   }
 
   @Override
-  public void prepare(final Context context, final OutputCollector<T> oc) {
+  public void prepare(final Context context, final OutputCollector<byte[]> oc) {
     this.outputCollector = oc;
   }
 
   @Override
   public void onData(final Iterable<T> elements, final String srcVertexId) {
     elements.forEach(element -> {
-      outputCollector.emit(element);
-      count++;
+      try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        coder.encode(element, outputStream);
+        outputCollector.emit(outputStream.toByteArray());
+      } catch (final IOException e) {
+        LOG.error("Exception during SailfishEncodingTransform:", e);
+      }
     });
   }
 
   @Override
   public void close() {
     // Do nothing.
-    System.out.println("@@@@@@@@@@ relay count " + count);
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(RelayTransform.class);
+    sb.append(SailfishEncodingTransform.class);
     sb.append(":");
     sb.append(super.toString());
     return sb.toString();

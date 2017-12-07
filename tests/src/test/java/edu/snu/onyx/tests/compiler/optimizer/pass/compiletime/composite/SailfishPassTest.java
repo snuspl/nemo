@@ -63,7 +63,7 @@ public class SailfishPassTest {
                 edgeToMerger.getProperty(ExecutionProperty.Key.DataFlowModel));
             assertEquals(UsedDataHandlingProperty.Value.Discard,
                 edgeToMerger.getProperty(ExecutionProperty.Key.UsedDataHandling));
-            assertEquals(DataStoreProperty.Value.MemoryStore,
+            assertEquals(DataStoreProperty.Value.SerializedMemoryStore,
                 edgeToMerger.getProperty(ExecutionProperty.Key.DataStore));
           } else {
             assertEquals(DataFlowModelProperty.Value.Pull,

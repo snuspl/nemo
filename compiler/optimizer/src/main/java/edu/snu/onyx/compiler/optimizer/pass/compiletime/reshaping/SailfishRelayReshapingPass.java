@@ -32,9 +32,9 @@ import java.util.Collections;
  * receiving scatter-gather edges,
  * to merge the shuffled data in memory and write to the disk at once.
  */
-public final class SailfishReshapingPass extends ReshapingPass {
+public final class SailfishRelayReshapingPass extends ReshapingPass {
 
-  public SailfishReshapingPass() {
+  public SailfishRelayReshapingPass() {
     super(Collections.singleton(ExecutionProperty.Key.DataCommunicationPattern));
   }
 

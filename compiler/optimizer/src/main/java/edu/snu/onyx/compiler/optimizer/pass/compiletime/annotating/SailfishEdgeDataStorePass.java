@@ -44,7 +44,7 @@ public final class SailfishEdgeDataStorePass extends AnnotatingPass {
           if (DataCommunicationPatternProperty.Value.ScatterGather
           .equals(edgeToMerger.getProperty(ExecutionProperty.Key.DataCommunicationPattern))) {
             // Pass data through memory to the merger vertex.
-            edgeToMerger.setProperty(DataStoreProperty.of(DataStoreProperty.Value.MemoryStore));
+            edgeToMerger.setProperty(DataStoreProperty.of(DataStoreProperty.Value.SerializedMemoryStore));
           }
         });
         dag.getOutgoingEdgesOf(vertex).forEach(edgeFromMerger ->
