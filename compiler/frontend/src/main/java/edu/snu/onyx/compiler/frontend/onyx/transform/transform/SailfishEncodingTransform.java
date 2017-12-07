@@ -18,8 +18,6 @@ package edu.snu.onyx.compiler.frontend.onyx.transform.transform;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.Transform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,7 +28,6 @@ import java.io.IOException;
  * @param <T> input type.
  */
 public final class SailfishEncodingTransform<T> implements Transform<T, byte[]> {
-  private static final Logger LOG = LoggerFactory.getLogger(SailfishEncodingTransform.class.getName());
   private OutputCollector<byte[]> outputCollector;
   private final Coder<T> coder;
 
@@ -50,7 +47,7 @@ public final class SailfishEncodingTransform<T> implements Transform<T, byte[]> 
         coder.encode(element, outputStream);
         outputCollector.emit(outputStream.toByteArray());
       } catch (final IOException e) {
-        LOG.error("Exception during SailfishEncodingTransform:", e);
+        throw new RuntimeException(e);
       }
     });
   }

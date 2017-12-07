@@ -62,23 +62,26 @@ public final class SailfishCodecReshapingPass extends ReshapingPass {
               && !edge.isSideInput()) {
             final Coder valueCoder = edge.getCoder();
             final Coder bytesCoder = new BytesCoder();
+            final IRVertex shuffleSrc = edge.getSrc();
+            final IRVertex shuffleDst = v;
+
             // Insert a encoding vertex.
             final OperatorVertex encodingVertex = new OperatorVertex(new SailfishEncodingTransform<>(valueCoder));
             builder.addVertex(encodingVertex);
-            final IREdge edgeToEncoder = new IREdge(DataCommunicationPatternProperty.Value.OneToOne,
-                edge.getSrc(), encodingVertex, valueCoder);
+            final IREdge shuffleSrcToEncoder = new IREdge(DataCommunicationPatternProperty.Value.OneToOne,
+                shuffleSrc, encodingVertex, valueCoder);
 
             // Insert a decoding vertex.
             final OperatorVertex decodingVertex = new OperatorVertex(new SailfishDecodingTransform<>(valueCoder));
             builder.addVertex(decodingVertex);
-            final IREdge edgeToDecoder = new IREdge(DataCommunicationPatternProperty.Value.ScatterGather,
+            final IREdge encoderToDecoder = new IREdge(DataCommunicationPatternProperty.Value.ScatterGather,
                 encodingVertex, decodingVertex, bytesCoder);
-            final IREdge edgeFromDecoder = new IREdge(DataCommunicationPatternProperty.Value.OneToOne,
-                decodingVertex, v, valueCoder);
-            edge.copyExecutionPropertiesTo(edgeToDecoder);
-            builder.connectVertices(edgeToEncoder);
-            builder.connectVertices(edgeToDecoder);
-            builder.connectVertices(edgeFromDecoder);
+            final IREdge decoderToShuffleDst = new IREdge(DataCommunicationPatternProperty.Value.OneToOne,
+                decodingVertex, shuffleDst, valueCoder);
+            edge.copyExecutionPropertiesTo(encoderToDecoder);
+            builder.connectVertices(shuffleSrcToEncoder);
+            builder.connectVertices(encoderToDecoder);
+            builder.connectVertices(decoderToShuffleDst);
           } else {
             builder.connectVertices(edge);
           }

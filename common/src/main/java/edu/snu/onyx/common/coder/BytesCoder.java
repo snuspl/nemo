@@ -37,7 +37,7 @@ public final class BytesCoder implements Coder<byte[]> {
   public byte[] decode(final InputStream inStream) throws IOException {
     // If the inStream is closed well in upper level, it is okay to not close this stream
     // because the DataInputStream itself will not contain any extra information.
-    // (when we close this stream, the inStream will be closed together, which is not preferable.)
+    // (when we close this stream, the inStream will be closed together.)
     final DataInputStream dataInputStream = new DataInputStream(inStream);
     final int bytesToRead = dataInputStream.readInt();
     final byte[] bytes = new byte[bytesToRead]; // Read the size of this byte array.
