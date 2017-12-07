@@ -25,11 +25,9 @@ import edu.snu.onyx.common.ir.Transform;
  */
 public final class RelayTransform<T> implements Transform<T, T> {
   private OutputCollector<T> outputCollector;
-  private int count;
 
   public RelayTransform() {
     // Do nothing.
-    count = 0;
   }
 
   @Override
@@ -39,16 +37,12 @@ public final class RelayTransform<T> implements Transform<T, T> {
 
   @Override
   public void onData(final Iterable<T> elements, final String srcVertexId) {
-    elements.forEach(element -> {
-      outputCollector.emit(element);
-      count++;
-    });
+    elements.forEach(element -> outputCollector.emit(element));
   }
 
   @Override
   public void close() {
     // Do nothing.
-    System.out.println("@@@@@@@@@@ relay count " + count);
   }
 
   @Override
