@@ -32,13 +32,13 @@ import java.util.Collections;
 /**
  * Pass to modify the DAG for a job to batch the disk seek.
  * It adds two {@link OperatorVertex}s with {@link SailfishEncodingTransform}
- * and {@link SailfishDecodingTransform} before & after the scatter-gather edges,
+ * and {@link SailfishDecodingTransform} before & after the shuffle edges,
  * to enable the relaying vertex to receive and send data in arrays of bytes.
  *
  * If the DAG before this pass like below:
  * Map -(SG)- Reduce
  * The DAG will be processed like:
- * Map -(O2O)- SailfishEncoding -(SG)- SailfishDecoding -(O2O)- Reduce
+ * Map -(O2O)- SailfishEncoding -(Shuffle)- SailfishDecoding -(O2O)- Reduce
  */
 public final class SailfishCodecReshapingPass extends ReshapingPass {
 
@@ -52,12 +52,12 @@ public final class SailfishCodecReshapingPass extends ReshapingPass {
     dag.topologicalDo(v -> {
       builder.addVertex(v);
       // We care about OperatorVertices that have any incoming edge that
-      // has ScatterGather as data communication pattern.
+      // has Shuffle as data communication pattern.
       if (v instanceof OperatorVertex && dag.getIncomingEdgesOf(v).stream().anyMatch(irEdge ->
-              DataCommunicationPatternProperty.Value.ScatterGather
+              DataCommunicationPatternProperty.Value.Shuffle
           .equals(irEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern)))) {
         dag.getIncomingEdgesOf(v).forEach(edge -> {
-          if (DataCommunicationPatternProperty.Value.ScatterGather
+          if (DataCommunicationPatternProperty.Value.Shuffle
                 .equals(edge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))
               && !edge.isSideInput()) {
             final Coder valueCoder = edge.getCoder();
@@ -74,7 +74,7 @@ public final class SailfishCodecReshapingPass extends ReshapingPass {
             // Insert a decoding vertex.
             final OperatorVertex decodingVertex = new OperatorVertex(new SailfishDecodingTransform<>(valueCoder));
             builder.addVertex(decodingVertex);
-            final IREdge encoderToDecoder = new IREdge(DataCommunicationPatternProperty.Value.ScatterGather,
+            final IREdge encoderToDecoder = new IREdge(DataCommunicationPatternProperty.Value.Shuffle,
                 encodingVertex, decodingVertex, bytesCoder);
             final IREdge decoderToShuffleDst = new IREdge(DataCommunicationPatternProperty.Value.OneToOne,
                 decodingVertex, shuffleDst, valueCoder);
