@@ -21,11 +21,17 @@ import java.util.List;
 /**
  * PhysicalStageBuilder.
  */
-public final class PhysicalStageBuilder {
+public final class PhysicalStageBuilder {C
   private final String id;
   private final List<TaskGroup> taskGroupList;
   private final int scheduleGroupIndex;
 
+  /**
+   * Constructor.
+   * @param stageId id of the stage.
+   * @param parallelism parallelism of the stage.
+   * @param scheduleGroupIndex the schedule group index.
+   */
   public PhysicalStageBuilder(final String stageId,
                               final int parallelism,
                               final int scheduleGroupIndex) {
@@ -44,10 +50,17 @@ public final class PhysicalStageBuilder {
     return sb.toString();
   }
 
+  /**
+   * Add a taskGroup to the stage.
+   * @param taskGroup the taskGroup to add to the stage.
+   */
   public void addTaskGroup(final TaskGroup taskGroup) {
     taskGroupList.add(taskGroup);
   }
 
+  /**
+   * @return the built PhysicalStage.
+   */
   public PhysicalStage build() {
     return new PhysicalStage(id, taskGroupList, scheduleGroupIndex);
   }
