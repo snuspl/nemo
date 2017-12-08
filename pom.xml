@@ -18,8 +18,10 @@
         <reef.version>0.17.0-SNAPSHOT</reef.version>
         <protobuf.version>2.5.0</protobuf.version>
         <hadoop.version>2.7.2</hadoop.version>
+        <log4j.configuration>file://config/log4j.properties</log4j.configuration> <!-- TODO: issue#645 -->
         <netty.version>4.1.16.Final</netty.version>
         <guava.version>19.0</guava.version>
+        <grpc.version>1.7.0</grpc.version>
     </properties>
 
     <modules>
@@ -29,10 +31,10 @@
         <module>compiler/backend</module>
         <module>compiler/frontend</module>
         <module>compiler/optimizer</module>
-	    <module>examples</module>
+        <module>examples</module>
         <module>runtime/common</module>
-    	<module>runtime/executor</module>
-	    <module>runtime/master</module>
+        <module>runtime/executor</module>
+        <module>runtime/master</module>
         <module>tests</module>
     </modules>
 
