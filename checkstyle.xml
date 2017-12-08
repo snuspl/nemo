@@ -65,11 +65,7 @@
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <!-- TODO #119: uncomment JavdocMethod. -->
-        <!--<module name="JavadocMethod"/>-->
-        <module name="JavadocMethod">
-            <property name="allowMissingJavadoc" value="true"/>
-        </module>
+        <module name="JavadocMethod"/>
         <module name="JavadocType"/>
         <!--<module name="JavadocVariable"/>-->
         <module name="JavadocStyle"/>
