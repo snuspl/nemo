@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * PhysicalStageBuilder.
  */
-public final class PhysicalStageBuilder {C
+public final class PhysicalStageBuilder {
   private final String id;
   private final List<TaskGroup> taskGroupList;
   private final int scheduleGroupIndex;
