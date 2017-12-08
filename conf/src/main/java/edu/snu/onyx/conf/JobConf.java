@@ -155,7 +155,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * The number of threads in thread pool for inbound
-   * {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
+   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
    *
    * These threads are responsible for de-serializing bytes into partition.
    */
@@ -166,7 +166,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * The number of threads in thread pool for outbound
-   * {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
+   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
    *
    * These threads are responsible for serializing partition into bytes.
    */
@@ -176,7 +176,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * The size of outbound buffers for {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer},
+   * The size of outbound buffers for {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer},
    * in bytes.
    */
   @NamedParameter(doc = "Size of outbound buffers for partition transfer, in bytes",
@@ -186,7 +186,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * The TCP port to which local
-   * {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} binds. 0 means random port.
+   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} binds. 0 means random port.
    */
   @NamedParameter(doc = "Port to which PartitionTransport binds (0 means random port)",
       short_name = "partition_port", default_value = "0")
@@ -195,7 +195,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * The maximum length which the pending connection queue of
-   * {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} may grow to.
+   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} may grow to.
    */
   @NamedParameter(doc = "The maximum number of pending connections to PartitionTransport server",
       short_name = "partition_backlog", default_value = "128")
@@ -204,7 +204,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
 
   /**
    * The number of listening threads of
-   * {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} server.
+   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} server.
    */
   @NamedParameter(doc = "The number of listening threads of PartitionTransport server",
       short_name = "partition_threads_listening", default_value = "3")
@@ -212,7 +212,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * The number of {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} server threads
+   * The number of {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} server threads
    * which work on accepted connections.
    */
   @NamedParameter(doc = "The number of working threads of PartitionTransport server",
@@ -221,7 +221,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * The number of threads of {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} client.
+   * The number of threads of {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} client.
    */
   @NamedParameter(doc = "The number of threads of PartitionTransport client",
       short_name = "partition_threads_client", default_value = "10")
@@ -238,7 +238,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * Serialized {@link edu.snu.onyx.common.dag.DAG} from user main method.
+   * Serialized {edu.snu.onyx.common.dag.DAG} from user main method.
    */
   @NamedParameter(doc = "String serialized DAG")
   public final class SerializedDAG implements Name<String> {
