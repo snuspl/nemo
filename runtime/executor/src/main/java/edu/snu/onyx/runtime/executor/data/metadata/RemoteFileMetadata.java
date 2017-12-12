@@ -69,10 +69,10 @@ public final class RemoteFileMetadata extends FileMetadata {
                                                          final int partitionSize,
                                                          final long elementsTotal) throws IOException {
     // Convert the block metadata to a block metadata message (without offset).
-    final ControlMessage.BlockMetadataMsg partitionMetadataMsg =
-        ControlMessage.BlockMetadataMsg.newBuilder()
+    final ControlMessage.PartitionMetadataMsg partitionMetadataMsg =
+        ControlMessage.PartitionMetadataMsg.newBuilder()
             .setHashValue(hashValue)
-            .setBlockSize(partitionSize)
+            .setPartitionSize(partitionSize)
             .setNumElements(elementsTotal)
             .build();
 
@@ -82,12 +82,12 @@ public final class RemoteFileMetadata extends FileMetadata {
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
                 .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.ReserveBlock)
-                .setReserveBlockMsg(
-                    ControlMessage.ReserveBlockMsg.newBuilder()
+                .setType(ControlMessage.MessageType.ReservePartition)
+                .setReservePartitionMsg(
+                    ControlMessage.ReservePartitionMsg.newBuilder()
                         .setExecutorId(executorId)
-                        .setPartitionId(blockId)
-                        .setBlockMetadata(partitionMetadataMsg))
+                        .setBlockId(blockId)
+                        .setPartitionMetadata(partitionMetadataMsg))
                 .build());
 
     // Get the response from the metadata server.
@@ -98,13 +98,13 @@ public final class RemoteFileMetadata extends FileMetadata {
       throw new IOException(e);
     }
 
-    assert (responseFromMaster.getType() == ControlMessage.MessageType.ReserveBlockResponse);
-    final ControlMessage.ReserveBlockResponseMsg reservePartitionResponseMsg =
-        responseFromMaster.getReserveBlockResponseMsg();
+    assert (responseFromMaster.getType() == ControlMessage.MessageType.ReservePartitionResponse);
+    final ControlMessage.ReservePartitionResponseMsg reservePartitionResponseMsg =
+        responseFromMaster.getReservePartitionResponseMsg();
     if (!reservePartitionResponseMsg.hasPositionToWrite()) {
       throw new IOException("Cannot append the block metadata.");
     }
-    final int partitionIdx = reservePartitionResponseMsg.getBlockIdx();
+    final int partitionIdx = reservePartitionResponseMsg.getPartitionIdx();
     final long positionToWrite = reservePartitionResponseMsg.getPositionToWrite();
     return new PartitionMetadata(partitionIdx, hashValue, partitionSize, positionToWrite, elementsTotal);
   }
@@ -127,11 +127,11 @@ public final class RemoteFileMetadata extends FileMetadata {
         ControlMessage.Message.newBuilder()
             .setId(RuntimeIdGenerator.generateMessageId())
             .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-            .setType(ControlMessage.MessageType.CommitBlock)
-            .setCommitBlockMsg(
-                ControlMessage.CommitBlockMsg.newBuilder()
-                    .setPartitionId(blockId)
-                    .addAllBlockIdx(partitionIndices))
+            .setType(ControlMessage.MessageType.CommitPartition)
+            .setCommitPartitionMsg(
+                ControlMessage.CommitPartitionMsg.newBuilder()
+                    .setBlockId(blockId)
+                    .addAllPartitionIdx(partitionIndices))
             .build());
   }
 
@@ -157,10 +157,10 @@ public final class RemoteFileMetadata extends FileMetadata {
         ControlMessage.Message.newBuilder()
             .setId(RuntimeIdGenerator.generateMessageId())
             .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-            .setType(ControlMessage.MessageType.RemoveBlockMetadata)
-            .setRemoveBlockMetadataMsg(
-                ControlMessage.RemoveBlockMetadataMsg.newBuilder()
-                    .setPartitionId(blockId))
+            .setType(ControlMessage.MessageType.RemovePartitionMetadata)
+            .setRemovePartitionMetadataMsg(
+                ControlMessage.RemovePartitionMetadataMsg.newBuilder()
+                    .setBlockId(blockId))
             .build());
   }
 
@@ -187,11 +187,11 @@ public final class RemoteFileMetadata extends FileMetadata {
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
                 .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.RequestBlockMetadata)
-                .setRequestBlockMetadataMsg(
-                    ControlMessage.RequestBlockMetadataMsg.newBuilder()
+                .setType(ControlMessage.MessageType.RequestPartitionMetadata)
+                .setRequestPartitionMetadataMsg(
+                    ControlMessage.RequestPartitionMetadataMsg.newBuilder()
                         .setExecutorId(executorId)
-                        .setPartitionId(blockId)
+                        .setBlockId(blockId)
                         .build())
                 .build());
 
@@ -212,9 +212,10 @@ public final class RemoteFileMetadata extends FileMetadata {
     }
 
     // Construct the metadata from the response.
-    final List<ControlMessage.BlockMetadataMsg> partitionMetadataMsgList = metadataResponseMsg.getBlockMetadataList();
+    final List<ControlMessage.PartitionMetadataMsg> partitionMetadataMsgList =
+        metadataResponseMsg.getPartitionMetadataList();
     for (int partitionIdx = 0; partitionIdx < partitionMetadataMsgList.size(); partitionIdx++) {
-      final ControlMessage.BlockMetadataMsg partitionMetadataMsg = partitionMetadataMsgList.get(partitionIdx);
+      final ControlMessage.PartitionMetadataMsg partitionMetadataMsg = partitionMetadataMsgList.get(partitionIdx);
       if (!partitionMetadataMsg.hasOffset()) {
         throw new IOException(new Throwable(
             "The metadata of a partition in the " + blockId + " does not have offset value."));
@@ -222,7 +223,7 @@ public final class RemoteFileMetadata extends FileMetadata {
       partitionMetadataList.add(new PartitionMetadata(
           partitionIdx,
           partitionMetadataMsg.getHashValue(),
-          partitionMetadataMsg.getBlockSize(),
+          partitionMetadataMsg.getPartitionSize(),
           partitionMetadataMsg.getOffset(),
           partitionMetadataMsg.getNumElements()
       ));

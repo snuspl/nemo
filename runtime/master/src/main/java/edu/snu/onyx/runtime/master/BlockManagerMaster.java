@@ -294,19 +294,19 @@ public final class BlockManagerMaster {
    */
   void onRequestBlockLocation(final ControlMessage.Message message,
                               final MessageContext messageContext) {
-    assert (message.getType() == ControlMessage.MessageType.RequestPartitionLocation);
-    final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
-        message.getRequestPartitionLocationMsg();
+    assert (message.getType() == ControlMessage.MessageType.RequestBlockLocation);
+    final ControlMessage.RequestBlockLocationMsg requestPartitionLocationMsg =
+        message.getRequestBlockLocationMsg();
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
       final CompletableFuture<String> locationFuture
-          = getBlockLocationFuture(requestPartitionLocationMsg.getPartitionId());
+          = getBlockLocationFuture(requestPartitionLocationMsg.getBlockId());
       locationFuture.whenComplete((location, throwable) -> {
-        final ControlMessage.PartitionLocationInfoMsg.Builder infoMsgBuilder =
-            ControlMessage.PartitionLocationInfoMsg.newBuilder()
+        final ControlMessage.BlockLocationInfoMsg.Builder infoMsgBuilder =
+            ControlMessage.BlockLocationInfoMsg.newBuilder()
                 .setRequestId(message.getId())
-                .setPartitionId(requestPartitionLocationMsg.getPartitionId());
+                .setBlockId(requestPartitionLocationMsg.getBlockId());
         if (throwable == null) {
           infoMsgBuilder.setOwnerExecutorId(location);
         } else {
@@ -317,8 +317,8 @@ public final class BlockManagerMaster {
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
                 .setListenerId(MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.PartitionLocationInfo)
-                .setPartitionLocationInfoMsg(infoMsgBuilder.build())
+                .setType(ControlMessage.MessageType.BlockLocationInfo)
+                .setBlockLocationInfoMsg(infoMsgBuilder.build())
                 .build());
       });
     } finally {
@@ -336,11 +336,11 @@ public final class BlockManagerMaster {
   @VisibleForTesting
   public void onReservePartition(final ControlMessage.Message message,
                                  final MessageContext messageContext) {
-    assert (message.getType() == ControlMessage.MessageType.ReserveBlock);
-    final ControlMessage.ReserveBlockMsg reservePartitionMsg = message.getReserveBlockMsg();
-    final String blockId = reservePartitionMsg.getPartitionId();
-    final ControlMessage.ReserveBlockResponseMsg.Builder responseBuilder =
-        ControlMessage.ReserveBlockResponseMsg.newBuilder()
+    assert (message.getType() == ControlMessage.MessageType.ReservePartition);
+    final ControlMessage.ReservePartitionMsg reservePartitionMsg = message.getReservePartitionMsg();
+    final String blockId = reservePartitionMsg.getBlockId();
+    final ControlMessage.ReservePartitionResponseMsg.Builder responseBuilder =
+        ControlMessage.ReservePartitionResponseMsg.newBuilder()
             .setRequestId(message.getId());
 
     final Lock readLock = lock.readLock();
@@ -349,10 +349,10 @@ public final class BlockManagerMaster {
       final BlockMetadata metadata = blockIdToMetadata.get(blockId);
 
       // Reserve a region for this partition and append the metadata.
-      final Pair<Integer, Long> reserveResult = metadata.reservePartition(reservePartitionMsg.getBlockMetadata());
+      final Pair<Integer, Long> reserveResult = metadata.reservePartition(reservePartitionMsg.getPartitionMetadata());
       final int partitionIndex = reserveResult.left();
       final long positionToWrite = reserveResult.right();
-      responseBuilder.setBlockIdx(partitionIndex);
+      responseBuilder.setPartitionIdx(partitionIndex);
       responseBuilder.setPositionToWrite(positionToWrite);
 
       // Reply with the position to write in the file.
@@ -360,8 +360,8 @@ public final class BlockManagerMaster {
           ControlMessage.Message.newBuilder()
               .setId(RuntimeIdGenerator.generateMessageId())
               .setListenerId(MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID)
-              .setType(ControlMessage.MessageType.ReserveBlockResponse)
-              .setReserveBlockResponseMsg(responseBuilder.build())
+              .setType(ControlMessage.MessageType.ReservePartitionResponse)
+              .setReservePartitionResponseMsg(responseBuilder.build())
               .build());
     } finally {
       readLock.unlock();
@@ -375,10 +375,10 @@ public final class BlockManagerMaster {
    */
   @VisibleForTesting
   public void onCommitPartitions(final ControlMessage.Message message) {
-    assert (message.getType() == ControlMessage.MessageType.CommitBlock);
-    final ControlMessage.CommitBlockMsg commitMsg = message.getCommitBlockMsg();
-    final String blockId = commitMsg.getPartitionId();
-    final List<Integer> partitionIndices = commitMsg.getBlockIdxList();
+    assert (message.getType() == ControlMessage.MessageType.CommitPartition);
+    final ControlMessage.CommitPartitionMsg commitMsg = message.getCommitPartitionMsg();
+    final String blockId = commitMsg.getBlockId();
+    final List<Integer> partitionIndices = commitMsg.getPartitionIdxList();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
@@ -403,9 +403,9 @@ public final class BlockManagerMaster {
   @VisibleForTesting
   public void onRequestPartitionMetadata(final ControlMessage.Message message,
                                          final MessageContext messageContext) {
-    assert (message.getType() == ControlMessage.MessageType.RequestBlockMetadata);
-    final ControlMessage.RequestBlockMetadataMsg requestMsg = message.getRequestBlockMetadataMsg();
-    final String blockId = requestMsg.getPartitionId();
+    assert (message.getType() == ControlMessage.MessageType.RequestPartitionMetadata);
+    final ControlMessage.RequestPartitionMetadataMsg requestMsg = message.getRequestPartitionMetadataMsg();
+    final String blockId = requestMsg.getBlockId();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
@@ -422,7 +422,7 @@ public final class BlockManagerMaster {
           final BlockMetadata metadata = blockIdToMetadata.get(blockId);
           if (metadata != null) {
             metadata.getPartitionMetadataList().forEach(partitionMetadataInServer ->
-                responseBuilder.addBlockMetadata(partitionMetadataInServer.getPartitionMetadataMsg()));
+                responseBuilder.addPartitionMetadata(partitionMetadataInServer.getPartitionMetadataMsg()));
           } else {
             LOG.error("Metadata for {} dose not exist. Failed to get it.", blockId);
           }
@@ -451,9 +451,9 @@ public final class BlockManagerMaster {
    */
   @VisibleForTesting
   public void onRemovePartitionMetadata(final ControlMessage.Message message) {
-    assert (message.getType() == ControlMessage.MessageType.RemoveBlockMetadata);
-    final ControlMessage.RemoveBlockMetadataMsg removeMsg = message.getRemoveBlockMetadataMsg();
-    final String blockId = removeMsg.getPartitionId();
+    assert (message.getType() == ControlMessage.MessageType.RemovePartitionMetadata);
+    final ControlMessage.RemovePartitionMetadataMsg removeMsg = message.getRemovePartitionMetadataMsg();
+    final String blockId = removeMsg.getBlockId();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
@@ -476,17 +476,17 @@ public final class BlockManagerMaster {
     public void onMessage(final ControlMessage.Message message) {
       try {
         switch (message.getType()) {
-          case PartitionStateChanged:
-            final ControlMessage.PartitionStateChangedMsg blockStateChangedMsg =
-                message.getPartitionStateChangedMsg();
-            final String blockId = blockStateChangedMsg.getPartitionId();
+          case BlockStateChanged:
+            final ControlMessage.BlockStateChangedMsg blockStateChangedMsg =
+                message.getBlockStateChangedMsg();
+            final String blockId = blockStateChangedMsg.getBlockId();
             onBlockStateChanged(blockId, RuntimeMaster.convertBlockState(blockStateChangedMsg.getState()),
                 blockStateChangedMsg.getLocation());
             break;
-          case CommitBlock:
+          case CommitPartition:
             onCommitPartitions(message);
             break;
-          case RemoveBlockMetadata:
+          case RemovePartitionMetadata:
             onRemovePartitionMetadata(message);
             break;
           default:
@@ -502,13 +502,13 @@ public final class BlockManagerMaster {
     @Override
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
       switch (message.getType()) {
-        case RequestPartitionLocation:
+        case RequestBlockLocation:
           onRequestBlockLocation(message, messageContext);
           break;
-        case RequestBlockMetadata:
+        case RequestPartitionMetadata:
           onRequestPartitionMetadata(message, messageContext);
           break;
-        case ReserveBlock:
+        case ReservePartition:
           onReservePartition(message, messageContext);
           break;
         default:

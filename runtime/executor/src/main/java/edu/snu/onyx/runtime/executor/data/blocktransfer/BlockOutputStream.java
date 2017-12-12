@@ -58,7 +58,7 @@ public final class BlockOutputStream<T> implements AutoCloseable, BlockStream {
   private final String blockId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
-  private ControlMessage.PartitionTransferType transferType;
+  private ControlMessage.BlockTransferType transferType;
   private short transferId;
   private Channel channel;
   private Coder<T> coder;
@@ -109,7 +109,7 @@ public final class BlockOutputStream<T> implements AutoCloseable, BlockStream {
    * @param id   the transfer id
    * @param ch   the channel
    */
-  void setTransferIdAndChannel(final ControlMessage.PartitionTransferType type, final short id, final Channel ch) {
+  void setTransferIdAndChannel(final ControlMessage.BlockTransferType type, final short id, final Channel ch) {
     this.transferType = type;
     this.transferId = id;
     this.channel = ch;

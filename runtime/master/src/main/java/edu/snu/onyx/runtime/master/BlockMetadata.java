@@ -132,14 +132,14 @@ final class BlockMetadata {
    * @param partitionMetadata the partition metadata to append.
    * @return the pair of the index of reserved block and starting position of the block in the file.
    */
-  synchronized Pair<Integer, Long> reservePartition(final ControlMessage.BlockMetadataMsg partitionMetadata) {
-    final int partitionSize = partitionMetadata.getBlockSize();
+  synchronized Pair<Integer, Long> reservePartition(final ControlMessage.PartitionMetadataMsg partitionMetadata) {
+    final int partitionSize = partitionMetadata.getPartitionSize();
     final long currentPosition = writtenBytesCursor;
     final int partitionIdx = partitionMetadataList.size();
-    final ControlMessage.BlockMetadataMsg partitionMetadataToStore =
-        ControlMessage.BlockMetadataMsg.newBuilder()
+    final ControlMessage.PartitionMetadataMsg partitionMetadataToStore =
+        ControlMessage.PartitionMetadataMsg.newBuilder()
             .setHashValue(partitionMetadata.getHashValue())
-            .setBlockSize(partitionSize)
+            .setPartitionSize(partitionSize)
             .setOffset(currentPosition)
             .setNumElements(partitionMetadata.getNumElements())
             .build();
@@ -188,10 +188,10 @@ final class BlockMetadata {
    * These information will be managed only for remote blocks.
    */
   final class PartitionMetadataInServer {
-    private final ControlMessage.BlockMetadataMsg partitionMetadataMsg;
+    private final ControlMessage.PartitionMetadataMsg partitionMetadataMsg;
     private volatile boolean committed;
 
-    private PartitionMetadataInServer(final ControlMessage.BlockMetadataMsg partitionMetadataMsg) {
+    private PartitionMetadataInServer(final ControlMessage.PartitionMetadataMsg partitionMetadataMsg) {
       this.partitionMetadataMsg = partitionMetadataMsg;
       this.committed = false;
     }
@@ -204,7 +204,7 @@ final class BlockMetadata {
       committed = true;
     }
 
-    ControlMessage.BlockMetadataMsg getPartitionMetadataMsg() {
+    ControlMessage.PartitionMetadataMsg getPartitionMetadataMsg() {
       return partitionMetadataMsg;
     }
   }

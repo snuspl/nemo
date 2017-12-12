@@ -105,9 +105,9 @@ final class ControlMessageToBlockStreamCodec
                                      final BlockInputStream in,
                                      final List out) {
     final short transferId = nextOutboundPullTransferId++;
-    checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
+    checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.BlockTransferType.PULL, transferId);
     pullTransferIdToInputStream.put(transferId, in);
-    emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
+    emitControlMessage(ControlMessage.BlockTransferType.PULL, transferId, in, out);
     LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
             in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
@@ -125,10 +125,10 @@ final class ControlMessageToBlockStreamCodec
                                           final BlockOutputStream in,
                                           final List out) {
     final short transferId = nextOutboundPushTransferId++;
-    checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId);
+    checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.BlockTransferType.PUSH, transferId);
     pushTransferIdToOutputStream.put(transferId, in);
-    in.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PUSH, transferId, ctx.channel());
-    emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
+    in.setTransferIdAndChannel(ControlMessage.BlockTransferType.PUSH, transferId, ctx.channel());
+    emitControlMessage(ControlMessage.BlockTransferType.PUSH, transferId, in, out);
     LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
             in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
@@ -147,7 +147,7 @@ final class ControlMessageToBlockStreamCodec
   protected void decode(final ChannelHandlerContext ctx,
                         final ControlMessage.DataTransferControlMessage in,
                         final List out) {
-    if (in.getType() == ControlMessage.PartitionTransferType.PULL) {
+    if (in.getType() == ControlMessage.BlockTransferType.PULL) {
       onInboundPullRequest(ctx, in, out);
     } else {
       onInboundPushNotification(ctx, in, out);
@@ -168,14 +168,14 @@ final class ControlMessageToBlockStreamCodec
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final BlockOutputStream outputStream = new BlockOutputStream(in.getControlMessageSourceId(),
-        in.getEncodePartialPartition(), Optional.of(convertBlockStore(in.getPartitionStore())), in.getPartitionId(),
+        in.getEncodePartialBlock(), Optional.of(convertBlockStore(in.getBlockStore())), in.getBlockId(),
         in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
-    outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
+    outputStream.setTransferIdAndChannel(ControlMessage.BlockTransferType.PULL, transferId, ctx.channel());
     out.add(outputStream);
     LOG.debug("Received pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-            in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
+            in.getBlockId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
             outputStream.getBlockStore().get().toString()});
   }
 
@@ -193,12 +193,12 @@ final class ControlMessageToBlockStreamCodec
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final BlockInputStream inputStream = new BlockInputStream(in.getControlMessageSourceId(),
-        in.getEncodePartialPartition(), Optional.empty(), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
+        in.getEncodePartialBlock(), Optional.empty(), in.getBlockId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
     LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-            in.getPartitionId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
+            in.getBlockId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
   }
 
   /**
@@ -209,7 +209,7 @@ final class ControlMessageToBlockStreamCodec
    * @param transferId   the transfer id
    */
   private void checkTransferIdAvailability(final Map<Short, ?> map,
-                                           final ControlMessage.PartitionTransferType transferType,
+                                           final ControlMessage.BlockTransferType transferType,
                                            final short transferId) {
     if (map.get(transferId) != null) {
       LOG.error("Transfer id {}:{} to {} is still being used, ignoring",
@@ -225,7 +225,7 @@ final class ControlMessageToBlockStreamCodec
    * @param in           {@link BlockInputStream} or {@link BlockOutputStream}
    * @param out          the {@link List} into which the created control message is added
    */
-  private void emitControlMessage(final ControlMessage.PartitionTransferType transferType,
+  private void emitControlMessage(final ControlMessage.BlockTransferType transferType,
                                   final short transferId,
                                   final BlockStream in,
                                   final List out) {
@@ -234,11 +234,11 @@ final class ControlMessageToBlockStreamCodec
         .setControlMessageSourceId(localExecutorId)
         .setType(transferType)
         .setTransferId(transferId)
-        .setEncodePartialPartition(in.isEncodePartialBlockEnabled())
-        .setPartitionId(in.getBlockId())
+        .setEncodePartialBlock(in.isEncodePartialBlockEnabled())
+        .setBlockId(in.getBlockId())
         .setRuntimeEdgeId(in.getRuntimeEdgeId());
     if (in.getBlockStore().isPresent()) {
-      controlMessageBuilder.setPartitionStore(convertBlockStore(in.getBlockStore().get()));
+      controlMessageBuilder.setBlockStore(convertBlockStore(in.getBlockStore().get()));
     }
     if (!in.getHashRange().isAll()) {
       controlMessageBuilder
@@ -301,24 +301,24 @@ final class ControlMessageToBlockStreamCodec
     return pushTransferIdToOutputStream;
   }
 
-  private static ControlMessage.PartitionStore convertBlockStore(
+  private static ControlMessage.BlockStore convertBlockStore(
       final DataStoreProperty.Value blockStore) {
     switch (blockStore) {
       case MemoryStore:
-        return ControlMessage.PartitionStore.MEMORY;
+        return ControlMessage.BlockStore.MEMORY;
       case SerializedMemoryStore:
-        return ControlMessage.PartitionStore.SER_MEMORY;
+        return ControlMessage.BlockStore.SER_MEMORY;
       case LocalFileStore:
-        return ControlMessage.PartitionStore.LOCAL_FILE;
+        return ControlMessage.BlockStore.LOCAL_FILE;
       case GlusterFileStore:
-        return ControlMessage.PartitionStore.REMOTE_FILE;
+        return ControlMessage.BlockStore.REMOTE_FILE;
       default:
         throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
   }
 
   private static DataStoreProperty.Value convertBlockStore(
-      final ControlMessage.PartitionStore blockStoreType) {
+      final ControlMessage.BlockStore blockStoreType) {
     switch (blockStoreType) {
       case MEMORY:
         return DataStoreProperty.Value.MemoryStore;

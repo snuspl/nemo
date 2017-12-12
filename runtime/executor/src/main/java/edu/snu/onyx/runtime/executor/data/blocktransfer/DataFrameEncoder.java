@@ -55,7 +55,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     // encode header
     final ByteBuf header = ctx.alloc().ioBuffer(HEADER_LENGTH, HEADER_LENGTH);
     final short type;
-    final boolean isPull = in.type == ControlMessage.PartitionTransferType.PULL;
+    final boolean isPull = in.type == ControlMessage.BlockTransferType.PULL;
     if (isPull) {
       if (in.isLastFrame) {
         type = FrameDecoder.PULL_LASTFRAME;
@@ -120,7 +120,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
       this.handle = handle;
     }
 
-    private ControlMessage.PartitionTransferType type;
+    private ControlMessage.BlockTransferType type;
     private boolean isLastFrame;
     private short transferId;
     private long length;
@@ -137,7 +137,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
      * @param body        the body
      * @return the {@link DataFrame} object
      */
-    static DataFrame newInstance(final ControlMessage.PartitionTransferType type,
+    static DataFrame newInstance(final ControlMessage.BlockTransferType type,
                                  final boolean isLastFrame,
                                  final short transferId,
                                  final long length,

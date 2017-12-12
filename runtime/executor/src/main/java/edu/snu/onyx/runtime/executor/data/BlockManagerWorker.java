@@ -185,18 +185,18 @@ public final class BlockManagerWorker {
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
                 .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.RequestPartitionLocation)
-                .setRequestPartitionLocationMsg(
-                    ControlMessage.RequestPartitionLocationMsg.newBuilder()
+                .setType(ControlMessage.MessageType.RequestBlockLocation)
+                .setRequestBlockLocationMsg(
+                    ControlMessage.RequestBlockLocationMsg.newBuilder()
                         .setExecutorId(executorId)
-                        .setPartitionId(blockId)
+                        .setBlockId(blockId)
                         .build())
                 .build());
     // Using thenCompose so that fetching block data starts after getting response from master.
     return responseFromMasterFuture.thenCompose(responseFromMaster -> {
-      assert (responseFromMaster.getType() == ControlMessage.MessageType.PartitionLocationInfo);
-      final ControlMessage.PartitionLocationInfoMsg blockLocationInfoMsg =
-          responseFromMaster.getPartitionLocationInfoMsg();
+      assert (responseFromMaster.getType() == ControlMessage.MessageType.BlockLocationInfo);
+      final ControlMessage.BlockLocationInfoMsg blockLocationInfoMsg =
+          responseFromMaster.getBlockLocationInfoMsg();
       if (!blockLocationInfoMsg.hasOwnerExecutorId()) {
         throw new BlockFetchException(new Throwable(
             "Block " + blockId + " not found both in the local storage and the remote storage: The"
@@ -265,11 +265,11 @@ public final class BlockManagerWorker {
 
     final BlockStore store = getBlockStore(blockStore);
     store.commitBlock(blockId);
-    final ControlMessage.PartitionStateChangedMsg.Builder blockStateChangedMsgBuilder =
-        ControlMessage.PartitionStateChangedMsg.newBuilder()
+    final ControlMessage.BlockStateChangedMsg.Builder blockStateChangedMsgBuilder =
+        ControlMessage.BlockStateChangedMsg.newBuilder()
             .setExecutorId(executorId)
-            .setPartitionId(blockId)
-            .setState(ControlMessage.PartitionStateFromExecutor.COMMITTED);
+            .setBlockId(blockId)
+            .setState(ControlMessage.BlockStateFromExecutor.COMMITTED);
 
     if (DataStoreProperty.Value.GlusterFileStore.equals(blockStore)) {
       blockStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
@@ -281,8 +281,8 @@ public final class BlockManagerWorker {
         .send(ControlMessage.Message.newBuilder()
             .setId(RuntimeIdGenerator.generateMessageId())
             .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-            .setType(ControlMessage.MessageType.PartitionStateChanged)
-            .setPartitionStateChangedMsg(blockStateChangedMsgBuilder.build())
+            .setType(ControlMessage.MessageType.BlockStateChanged)
+            .setBlockStateChangedMsg(blockStateChangedMsgBuilder.build())
             .build());
 
     if (!partitionSizeInfo.isEmpty()) {
@@ -293,9 +293,9 @@ public final class BlockManagerWorker {
               .setListenerId(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID)
               .setType(ControlMessage.MessageType.DataSizeMetric)
               .setDataSizeMetricMsg(ControlMessage.DataSizeMetricMsg.newBuilder()
-                  .setPartitionId(blockId)
+                  .setBlockId(blockId)
                   .setSrcIRVertexId(srcIRVertexId)
-                  .addAllBlockSizeInfo(partitionSizeInfo)
+                  .addAllPartitionSizeInfo(partitionSizeInfo)
               )
               .build());
     }
@@ -315,11 +315,11 @@ public final class BlockManagerWorker {
     exist = store.removeBlock(blockId);
 
     if (exist) {
-      final ControlMessage.PartitionStateChangedMsg.Builder blockStateChangedMsgBuilder =
-          ControlMessage.PartitionStateChangedMsg.newBuilder()
+      final ControlMessage.BlockStateChangedMsg.Builder blockStateChangedMsgBuilder =
+          ControlMessage.BlockStateChangedMsg.newBuilder()
               .setExecutorId(executorId)
-              .setPartitionId(blockId)
-              .setState(ControlMessage.PartitionStateFromExecutor.REMOVED);
+              .setBlockId(blockId)
+              .setState(ControlMessage.BlockStateFromExecutor.REMOVED);
 
       if (DataStoreProperty.Value.GlusterFileStore.equals(blockStore)) {
         blockStateChangedMsgBuilder.setLocation(REMOTE_FILE_STORE);
@@ -331,8 +331,8 @@ public final class BlockManagerWorker {
           .send(ControlMessage.Message.newBuilder()
               .setId(RuntimeIdGenerator.generateMessageId())
               .setListenerId(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID)
-              .setType(ControlMessage.MessageType.PartitionStateChanged)
-              .setPartitionStateChangedMsg(blockStateChangedMsgBuilder)
+              .setType(ControlMessage.MessageType.BlockStateChanged)
+              .setBlockStateChangedMsg(blockStateChangedMsgBuilder)
               .build());
     } else {
       throw new BlockFetchException(new Throwable("Cannot find corresponding block " + blockId));

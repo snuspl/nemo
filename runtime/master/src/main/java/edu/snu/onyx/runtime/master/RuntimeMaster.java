@@ -262,8 +262,8 @@ public final class RuntimeMaster {
           case DataSizeMetric:
             final ControlMessage.DataSizeMetricMsg dataSizeMetricMsg = message.getDataSizeMetricMsg();
             // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
-            accumulateBarrierMetric(dataSizeMetricMsg.getBlockSizeInfoList(),
-                dataSizeMetricMsg.getSrcIRVertexId(), dataSizeMetricMsg.getPartitionId());
+            accumulateBarrierMetric(dataSizeMetricMsg.getPartitionSizeInfoList(),
+                dataSizeMetricMsg.getSrcIRVertexId(), dataSizeMetricMsg.getBlockId());
             break;
           case MetricMessageReceived:
             final List<ControlMessage.Metric> metricList = message.getMetricMsg().getMetricList();
@@ -310,9 +310,9 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  public static BlockState.State convertBlockState(final ControlMessage.PartitionStateFromExecutor state) {
+  public static BlockState.State convertBlockState(final ControlMessage.BlockStateFromExecutor state) {
     switch (state) {
-    case PARTITION_READY:
+    case BLOCK_READY:
       return BlockState.State.READY;
     case SCHEDULED:
       return BlockState.State.SCHEDULED;
@@ -330,20 +330,20 @@ public final class RuntimeMaster {
   }
 
   // TODO #164: Cleanup Protobuf Usage
-  public static ControlMessage.PartitionStateFromExecutor convertBlockState(final BlockState.State state) {
+  public static ControlMessage.BlockStateFromExecutor convertBlockState(final BlockState.State state) {
     switch (state) {
       case READY:
-        return ControlMessage.PartitionStateFromExecutor.PARTITION_READY;
+        return ControlMessage.BlockStateFromExecutor.BLOCK_READY;
       case SCHEDULED:
-        return ControlMessage.PartitionStateFromExecutor.SCHEDULED;
+        return ControlMessage.BlockStateFromExecutor.SCHEDULED;
       case COMMITTED:
-        return ControlMessage.PartitionStateFromExecutor.COMMITTED;
+        return ControlMessage.BlockStateFromExecutor.COMMITTED;
       case LOST_BEFORE_COMMIT:
-        return ControlMessage.PartitionStateFromExecutor.LOST_BEFORE_COMMIT;
+        return ControlMessage.BlockStateFromExecutor.LOST_BEFORE_COMMIT;
       case LOST:
-        return ControlMessage.PartitionStateFromExecutor.LOST;
+        return ControlMessage.BlockStateFromExecutor.LOST;
       case REMOVED:
-        return ControlMessage.PartitionStateFromExecutor.REMOVED;
+        return ControlMessage.BlockStateFromExecutor.REMOVED;
       default:
         throw new UnknownExecutionStateException(new Exception("This BlockState is unknown: " + state));
     }
