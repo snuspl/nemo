@@ -42,7 +42,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   private final String partitionId;
   private final String executorId;
   private final PersistentConnectionToMasterMap connectionToMaster;
-  private volatile Iterable<BlockMetadata> blockMetadataIterable;
+  private volatile Iterable<PartitionMetadata> blockMetadataIterable;
 
   /**
    * Opens a partition metadata.
@@ -69,9 +69,9 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @see FileMetadata#reserveBlock(int, int, long).
    */
   @Override
-  public synchronized BlockMetadata reserveBlock(final int hashValue,
-                                                 final int blockSize,
-                                                 final long elementsTotal) throws IOException {
+  public synchronized PartitionMetadata reserveBlock(final int hashValue,
+                                                     final int blockSize,
+                                                     final long elementsTotal) throws IOException {
     // Convert the block metadata to a block metadata message (without offset).
     final ControlMessage.BlockMetadataMsg blockMetadataMsg =
         ControlMessage.BlockMetadataMsg.newBuilder()
@@ -111,7 +111,7 @@ public final class RemoteFileMetadata extends FileMetadata {
     }
     final int blockIndex = reserveBlockResponseMsg.getBlockIdx();
     final long positionToWrite = reserveBlockResponseMsg.getPositionToWrite();
-    return new BlockMetadata(blockIndex, hashValue, blockSize, positionToWrite, elementsTotal);
+    return new PartitionMetadata(blockIndex, hashValue, blockSize, positionToWrite, elementsTotal);
   }
 
   /**
@@ -120,11 +120,11 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @see FileMetadata#commitBlocks(Iterable).
    */
   @Override
-  public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
+  public synchronized void commitBlocks(final Iterable<PartitionMetadata> blockMetadataToCommit) {
     final List<Integer> blockIndices = new ArrayList<>();
-    blockMetadataToCommit.forEach(blockMetadata -> {
-      blockMetadata.setCommitted();
-      blockIndices.add(blockMetadata.getBlockIdx());
+    blockMetadataToCommit.forEach(partitionMetadata -> {
+      partitionMetadata.setCommitted();
+      blockIndices.add(partitionMetadata.getPartitionIdx());
     });
 
     // Notify that these blocks are committed to the metadata server.
@@ -146,7 +146,7 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @see FileMetadata#getBlockMetadataIterable().
    */
   @Override
-  public synchronized Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException {
+  public synchronized Iterable<PartitionMetadata> getBlockMetadataIterable() throws IOException {
     if (blockMetadataIterable == null) {
       blockMetadataIterable = getBlockMetadataFromServer();
     }
@@ -186,8 +186,8 @@ public final class RemoteFileMetadata extends FileMetadata {
    * @return the received file metadata.
    * @throws IOException if fail to get the metadata.
    */
-  private Iterable<BlockMetadata> getBlockMetadataFromServer() throws IOException {
-    final List<BlockMetadata> blockMetadataList = new ArrayList<>();
+  private Iterable<PartitionMetadata> getBlockMetadataFromServer() throws IOException {
+    final List<PartitionMetadata> partitionMetadataList = new ArrayList<>();
 
     // Ask the metadata server in the master for the metadata
     final CompletableFuture<ControlMessage.Message> metadataResponseFuture =
@@ -227,7 +227,7 @@ public final class RemoteFileMetadata extends FileMetadata {
         throw new IOException(new Throwable(
             "The metadata of a block in the " + partitionId + " does not have offset value."));
       }
-      blockMetadataList.add(new BlockMetadata(
+      partitionMetadataList.add(new PartitionMetadata(
           blockIdx,
           blockMetadataMsg.getHashValue(),
           blockMetadataMsg.getBlockSize(),
@@ -237,6 +237,6 @@ public final class RemoteFileMetadata extends FileMetadata {
     }
 
     // TODO #463: Support incremental read. Return a "ClosableBlockingIterable".
-    return blockMetadataList;
+    return partitionMetadataList;
   }
 }

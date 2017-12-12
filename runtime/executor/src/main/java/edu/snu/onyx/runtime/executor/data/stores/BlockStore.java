@@ -20,12 +20,13 @@ import edu.snu.onyx.common.exception.BlockWriteException;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.NonSerializedPartition;
 import edu.snu.onyx.runtime.executor.data.SerializedPartition;
+import edu.snu.onyx.runtime.executor.data.partition.Block;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Interface for {@link edu.snu.onyx.runtime.executor.data.partition.TmpToBe} placement.
+ * Interface for {@link Block} placement.
  */
 public interface BlockStore {
   /**

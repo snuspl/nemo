@@ -15,11 +15,11 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
-import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.Block;
 
 /**
  * A collection of data elements. The data is stored as an array of bytes.
- * This is a unit of read / write towards {@link TmpToBe}s.
+ * This is a unit of read / write towards {@link Block}s.
  */
 public final class SerializedPartition implements Partition<byte[]> {
   private final int key;

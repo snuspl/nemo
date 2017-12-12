@@ -15,11 +15,11 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
-import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.Block;
 
 /**
  * A collection of data elements.
- * This is a unit of read / write towards {@link TmpToBe}s.
+ * This is a unit of read / write towards {@link Block}s.
  * @param <T> the type of the data stored in this {@link Partition}.
  */
 public interface Partition<T> {

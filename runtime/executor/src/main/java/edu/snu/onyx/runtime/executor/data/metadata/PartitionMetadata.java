@@ -16,24 +16,24 @@
 package edu.snu.onyx.runtime.executor.data.metadata;
 
 /**
- * This class represents a metadata for a block in a (local / remote) file partition.
+ * This class represents a metadata for a partition.
  */
-public final class BlockMetadata {
-  private final int blockIdx;
+public final class PartitionMetadata {
+  private final int partitionIdx;
   private final int hashValue;
-  private final int blockSize;
+  private final int partitionSize;
   private final long offset;
   private final long elementsTotal;
   private volatile boolean committed;
 
-  public BlockMetadata(final int blockIdx,
-                       final int hashValue,
-                       final int blockSize,
-                       final long offset,
-                       final long elementsTotal) {
-    this.blockIdx = blockIdx;
+  public PartitionMetadata(final int partitionIdx,
+                           final int hashValue,
+                           final int partitionSize,
+                           final long offset,
+                           final long elementsTotal) {
+    this.partitionIdx = partitionIdx;
     this.hashValue = hashValue;
-    this.blockSize = blockSize;
+    this.partitionSize = partitionSize;
     this.offset = offset;
     this.elementsTotal = elementsTotal;
     this.committed = false;
@@ -47,16 +47,16 @@ public final class BlockMetadata {
     this.committed = true;
   }
 
-  int getBlockIdx() {
-    return blockIdx;
+  int getPartitionIdx() {
+    return partitionIdx;
   }
 
   public int getHashValue() {
     return hashValue;
   }
 
-  public int getBlockSize() {
-    return blockSize;
+  public int getPartitionSize() {
+    return partitionSize;
   }
 
   public long getOffset() {

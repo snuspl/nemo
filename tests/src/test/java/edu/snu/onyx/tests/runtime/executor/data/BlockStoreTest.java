@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BlockManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class})
-public final class TmpToBeStoreTest {
+public final class BlockStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   private static final BlockManagerWorker worker = mock(BlockManagerWorker.class);

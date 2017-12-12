@@ -21,7 +21,7 @@ import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import edu.snu.onyx.runtime.executor.data.NonSerializedPartition;
 import edu.snu.onyx.runtime.executor.data.SerializedPartition;
-import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.Block;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.IOException;
@@ -31,16 +31,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This abstract class represents {@link BlockStore}
- * which contains the (meta)data of the {@link TmpToBe}s in local.
- * Because of this, store can maintain all partitions in a single map (mapped with their IDs).
+ * which contains the (meta)data of the {@link Block}s in local.
+ * Because of this, store can maintain all blocks in a single map (mapped with their IDs).
  */
 public abstract class LocalBlockStore extends AbstractBlockStore {
-  // A map between partition id and data blocks.
-  private final ConcurrentHashMap<String, TmpToBe> partitionMap;
+  // A map between block id and data blocks.
+  private final ConcurrentHashMap<String, Block> blockMap;
 
-  protected LocalBlockStore(final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
-    super(partitionManagerWorker);
-    this.partitionMap = new ConcurrentHashMap<>();
+  protected LocalBlockStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {
+    super(blockManagerWorker);
+    this.blockMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -51,14 +51,13 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
                                                   final Iterable<NonSerializedPartition> partitions,
                                                   final boolean commitPerPartition) throws BlockWriteException {
     try {
-      final TmpToBe tmpToBe = partitionMap.get(blockId);
-      if (tmpToBe == null) {
-        throw new BlockWriteException(new Throwable("The tmpToBe " + blockId + "is not created yet."));
+      final Block block = blockMap.get(blockId);
+      if (block == null) {
+        throw new BlockWriteException(new Throwable("The block " + blockId + "is not created yet."));
       }
-      return tmpToBe.putBlocks(partitions);
+      return block.putPartitions(partitions);
     } catch (final IOException e) {
-      // The partition is committed already.
-      throw new BlockWriteException(new Throwable("This partition is already committed."));
+      throw new BlockWriteException(new Throwable("Failed to store partitions to this block."));
     }
   }
 
@@ -70,14 +69,13 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
                                                   final Iterable<SerializedPartition> partitions,
                                                   final boolean commitPerPartition) {
     try {
-      final TmpToBe tmpToBe = partitionMap.get(blockId);
-      if (tmpToBe == null) {
-        throw new BlockWriteException(new Throwable("The tmpToBe " + blockId + "is not created yet."));
+      final Block block = blockMap.get(blockId);
+      if (block == null) {
+        throw new BlockWriteException(new Throwable("The block " + blockId + "is not created yet."));
       }
-      return tmpToBe.putSerializedBlocks(partitions);
+      return block.putSerializedPartitions(partitions);
     } catch (final IOException e) {
-      // The partition is committed already.
-      throw new BlockWriteException(new Throwable("This partition is already committed."));
+      throw new BlockWriteException(new Throwable("Failed to store partitions to this block."));
     }
   }
 
@@ -87,12 +85,12 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   @Override
   public final Optional<Iterable<NonSerializedPartition>> getPartitions(final String blockId,
                                                                         final HashRange hashRange) {
-    final TmpToBe tmpToBe = partitionMap.get(blockId);
+    final Block block = blockMap.get(blockId);
 
-    if (tmpToBe != null) {
+    if (block != null) {
       try {
-        final Iterable<NonSerializedPartition> blocksInRange = tmpToBe.getBlocks(hashRange);
-        return Optional.of(blocksInRange);
+        final Iterable<NonSerializedPartition> partitionsInRange = block.getPartitions(hashRange);
+        return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
       }
@@ -107,12 +105,12 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   @Override
   public final Optional<Iterable<SerializedPartition>> getSerializedPartitions(final String blockId,
                                                                                final HashRange hashRange) {
-    final TmpToBe tmpToBe = partitionMap.get(blockId);
+    final Block block = blockMap.get(blockId);
 
-    if (tmpToBe != null) {
+    if (block != null) {
       try {
-        final Iterable<SerializedPartition> blocksInRange = tmpToBe.getSerializedBlocks(hashRange);
-        return Optional.of(blocksInRange);
+        final Iterable<SerializedPartition> partitionsInRange = block.getSerializedPartitions(hashRange);
+        return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
       }
@@ -126,18 +124,18 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
    */
   @Override
   public final void commitBlock(final String blockId) {
-    final TmpToBe tmpToBe = partitionMap.get(blockId);
-    if (tmpToBe != null) {
-      tmpToBe.commit();
+    final Block block = blockMap.get(blockId);
+    if (block != null) {
+      block.commit();
     } else {
-      throw new BlockWriteException(new Throwable("There isn't any tmpToBe with id " + blockId));
+      throw new BlockWriteException(new Throwable("There isn't any block with id " + blockId));
     }
   }
 
   /**
-   * @return the map between the IDs and {@link TmpToBe}.
+   * @return the map between the IDs and {@link Block}.
    */
-  public final ConcurrentHashMap<String, TmpToBe> getPartitionMap() {
-    return partitionMap;
+  public final ConcurrentHashMap<String, Block> getBlockMap() {
+    return blockMap;
   }
 }

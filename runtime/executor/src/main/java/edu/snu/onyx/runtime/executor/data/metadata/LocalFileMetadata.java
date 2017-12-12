@@ -28,17 +28,17 @@ public final class LocalFileMetadata extends FileMetadata {
 
   // When a writer reserves a file region for a block to write, the metadata of the block is stored in this queue.
   // When a block in this queue is committed, the committed blocks are polled and go into the committed iterable.
-  private final Queue<BlockMetadata> reserveBlockMetadataQue;
+  private final Queue<PartitionMetadata> reservePartitionMetadataQue;
   // TODO #463: Support incremental read. Change this iterable to "ClosableBlockingIterable".
-  private final List<BlockMetadata> commitBlockMetadataIterable; // The list of committed block metadata.
+  private final List<PartitionMetadata> commitPartitionMetadataIterable; // The list of committed block metadata.
   private volatile long writtenBytesCursor; // Indicates how many bytes are (at least, logically) written in the file.
   private volatile int blockCount;
   private volatile boolean committed;
 
   public LocalFileMetadata(final boolean commitPerBlock) {
     super(commitPerBlock);
-    this.reserveBlockMetadataQue = new ArrayDeque<>();
-    this.commitBlockMetadataIterable = new ArrayList<>();
+    this.reservePartitionMetadataQue = new ArrayDeque<>();
+    this.commitPartitionMetadataIterable = new ArrayList<>();
     this.blockCount = 0;
     this.writtenBytesCursor = 0;
     this.committed = false;
@@ -49,19 +49,19 @@ public final class LocalFileMetadata extends FileMetadata {
    * @see FileMetadata#reserveBlock(int, int, long).
    */
   @Override
-  public synchronized BlockMetadata reserveBlock(final int hashValue,
-                                                 final int blockSize,
-                                                 final long elementsTotal) throws IOException {
+  public synchronized PartitionMetadata reserveBlock(final int hashValue,
+                                                     final int blockSize,
+                                                     final long elementsTotal) throws IOException {
     if (committed) {
       throw new IOException("Cannot write a new block to a closed partition.");
     }
 
-    final BlockMetadata blockMetadata =
-        new BlockMetadata(blockCount, hashValue, blockSize, writtenBytesCursor, elementsTotal);
-    reserveBlockMetadataQue.add(blockMetadata);
+    final PartitionMetadata partitionMetadata =
+        new PartitionMetadata(blockCount, hashValue, blockSize, writtenBytesCursor, elementsTotal);
+    reservePartitionMetadataQue.add(partitionMetadata);
     blockCount++;
     writtenBytesCursor += blockSize;
-    return blockMetadata;
+    return partitionMetadata;
   }
 
   /**
@@ -69,12 +69,12 @@ public final class LocalFileMetadata extends FileMetadata {
    * @see FileMetadata#commitBlocks(Iterable).
    */
   @Override
-  public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
-    blockMetadataToCommit.forEach(BlockMetadata::setCommitted);
+  public synchronized void commitBlocks(final Iterable<PartitionMetadata> blockMetadataToCommit) {
+    blockMetadataToCommit.forEach(PartitionMetadata::setCommitted);
 
-    while (!reserveBlockMetadataQue.isEmpty() && reserveBlockMetadataQue.peek().isCommitted()) {
+    while (!reservePartitionMetadataQue.isEmpty() && reservePartitionMetadataQue.peek().isCommitted()) {
       // If the metadata in the top of the reserved queue is committed, move it to the committed metadata iterable.
-      commitBlockMetadataIterable.add(reserveBlockMetadataQue.poll());
+      commitPartitionMetadataIterable.add(reservePartitionMetadataQue.poll());
     }
   }
 
@@ -83,8 +83,8 @@ public final class LocalFileMetadata extends FileMetadata {
    * @see FileMetadata#getBlockMetadataIterable().
    */
   @Override
-  public Iterable<BlockMetadata> getBlockMetadataIterable() {
-    return Collections.unmodifiableCollection(commitBlockMetadataIterable);
+  public Iterable<PartitionMetadata> getBlockMetadataIterable() {
+    return Collections.unmodifiableCollection(commitPartitionMetadataIterable);
   }
 
   /**

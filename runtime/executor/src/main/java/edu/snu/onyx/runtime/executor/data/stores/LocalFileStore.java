@@ -21,7 +21,7 @@ import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.data.metadata.LocalFileMetadata;
-import edu.snu.onyx.runtime.executor.data.partition.FileTmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.FileBlock;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -60,9 +60,9 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
     final Coder coder = getCoderFromWorker(blockId);
     final LocalFileMetadata metadata = new LocalFileMetadata(false);
 
-    final FileTmpToBe partition =
-        new FileTmpToBe(coder, DataUtil.partitionIdToFilePath(blockId, fileDirectory), metadata);
-    getPartitionMap().put(blockId, partition);
+    final FileBlock partition =
+        new FileBlock(coder, DataUtil.partitionIdToFilePath(blockId, fileDirectory), metadata);
+    getBlockMap().put(blockId, partition);
   }
 
   /**
@@ -73,7 +73,7 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
    */
   @Override
   public Boolean removeBlock(final String blockId) throws BlockFetchException {
-    final FileTmpToBe filePartition = (FileTmpToBe) getPartitionMap().remove(blockId);
+    final FileBlock filePartition = (FileBlock) getBlockMap().remove(blockId);
     if (filePartition == null) {
       return false;
     }
@@ -92,7 +92,7 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
   public List<FileArea> getFileAreas(final String partitionId,
                                      final HashRange hashRange) {
     try {
-      final FileTmpToBe partition = (FileTmpToBe) getPartitionMap().get(partitionId);
+      final FileBlock partition = (FileBlock) getBlockMap().get(partitionId);
       if (partition == null) {
         throw new IOException(String.format("%s does not exists", partitionId));
       }

@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
-import edu.snu.onyx.runtime.executor.data.partition.NonSerializedMemoryTmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.NonSerializedMemoryBlock;
 import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -37,7 +37,7 @@ public final class MemoryStore extends LocalBlockStore {
   @Override
   public void createBlock(final String blockId) {
     final Coder coder = getCoderFromWorker(blockId);
-    getPartitionMap().put(blockId, new NonSerializedMemoryTmpToBe(coder));
+    getBlockMap().put(blockId, new NonSerializedMemoryBlock(coder));
   }
 
   /**
@@ -45,6 +45,6 @@ public final class MemoryStore extends LocalBlockStore {
    */
   @Override
   public Boolean removeBlock(final String blockId) {
-    return getPartitionMap().remove(blockId) != null;
+    return getBlockMap().remove(blockId) != null;
   }
 }

@@ -25,20 +25,20 @@ import org.apache.reef.tang.InjectionFuture;
  * which contains other components used in each implementation of {@link BlockStore}.
  */
 public abstract class AbstractBlockStore implements BlockStore {
-  private final InjectionFuture<BlockManagerWorker> partitionManagerWorker;
+  private final InjectionFuture<BlockManagerWorker> blockManagerWorker;
 
-  protected AbstractBlockStore(final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
-    this.partitionManagerWorker = partitionManagerWorker;
+  protected AbstractBlockStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {
+    this.blockManagerWorker = blockManagerWorker;
   }
 
   /**
-   * Gets data coder for a partition from the {@link BlockManagerWorker}.
+   * Gets data coder for a block from the {@link BlockManagerWorker}.
    *
-   * @param partitionId the ID of the partition to get the coder.
+   * @param blockId the ID of the block to get the coder.
    * @return the coder.
    */
-  public final Coder getCoderFromWorker(final String partitionId) {
-    final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromBlockId(partitionId);
-    return partitionManagerWorker.get().getCoder(runtimeEdgeId);
+  public final Coder getCoderFromWorker(final String blockId) {
+    final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromBlockId(blockId);
+    return blockManagerWorker.get().getCoder(runtimeEdgeId);
   }
 }

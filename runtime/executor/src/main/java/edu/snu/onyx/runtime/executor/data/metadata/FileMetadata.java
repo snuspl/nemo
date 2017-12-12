@@ -39,19 +39,19 @@ public abstract class FileMetadata {
    * @param hashValue     the hash range of the block.
    * @param blockSize     the size of the block.
    * @param elementsTotal the number of elements in the block.
-   * @return the {@link BlockMetadata} having all given information, the block offset, and the index.
+   * @return the {@link PartitionMetadata} having all given information, the block offset, and the index.
    * @throws IOException if fail to append the block metadata.
    */
-  public abstract BlockMetadata reserveBlock(final int hashValue,
-                                             final int blockSize,
-                                             final long elementsTotal) throws IOException;
+  public abstract PartitionMetadata reserveBlock(final int hashValue,
+                                                 final int blockSize,
+                                                 final long elementsTotal) throws IOException;
 
   /**
    * Notifies that some blocks are written.
    *
    * @param blockMetadataToCommit the block metadata of the blocks to commit.
    */
-  public abstract void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit);
+  public abstract void commitBlocks(final Iterable<PartitionMetadata> blockMetadataToCommit);
 
   /**
    * Gets a iterable containing the block metadata of corresponding partition.
@@ -60,7 +60,7 @@ public abstract class FileMetadata {
    * @return the "blocking iterable" containing the block metadata.
    * @throws IOException if fail to get the iterable.
    */
-  public abstract Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException;
+  public abstract Iterable<PartitionMetadata> getBlockMetadataIterable() throws IOException;
 
   /**
    * Deletes the metadata.

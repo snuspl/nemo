@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test for {@link PartitionManagerMaster}.
  */
-public final class TmpToBeManagerMasterTest {
+public final class BlockManagerMasterTest {
   private PartitionManagerMaster partitionManagerMaster;
 
   @Before

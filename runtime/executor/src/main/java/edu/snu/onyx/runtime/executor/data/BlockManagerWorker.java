@@ -23,7 +23,7 @@ import edu.snu.onyx.common.ir.edge.executionproperty.UsedDataHandlingProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+import edu.snu.onyx.runtime.executor.data.partition.Block;
 import edu.snu.onyx.runtime.executor.data.partitiontransfer.BlockTransfer;
 import edu.snu.onyx.runtime.executor.data.stores.BlockStore;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
@@ -341,7 +341,7 @@ public final class BlockManagerWorker {
   }
 
   /**
-   * Handles used {@link TmpToBe}.
+   * Handles used {@link Block}.
    *
    * @param blockStore the store which contains the block.
    * @param blockId    the ID of the block.
