@@ -23,10 +23,10 @@ import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.common.state.BlockState;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.data.stores.*;
-import edu.snu.onyx.runtime.master.PartitionManagerMaster;
+import edu.snu.onyx.runtime.master.BlockManagerMaster;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
@@ -64,12 +64,12 @@ import static org.mockito.Mockito.when;
  * Tests write and read for {@link BlockStore}s.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({BlockManagerWorker.class, PartitionManagerMaster.class, RuntimeMaster.class})
+@PrepareForTest({BlockManagerWorker.class, BlockManagerMaster.class, RuntimeMaster.class})
 public final class BlockStoreTest {
   private static final String TMP_FILE_DIRECTORY = "./tmpFiles";
   private static final Coder CODER = new BeamCoder(KvCoder.of(VarIntCoder.of(), VarIntCoder.of()));
   private static final BlockManagerWorker worker = mock(BlockManagerWorker.class);
-  private PartitionManagerMaster partitionManagerMaster;
+  private BlockManagerMaster blockManagerMaster;
   private LocalMessageDispatcher messageDispatcher;
   // Variables for shuffle test
   private static final int NUM_WRITE_TASKS = 3;
@@ -102,7 +102,7 @@ public final class BlockStoreTest {
         new LocalMessageEnvironment(MessageEnvironment.MASTER_COMMUNICATION_ID, messageDispatcher);
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
-    partitionManagerMaster = injector.getInstance(PartitionManagerMaster.class);
+    blockManagerMaster = injector.getInstance(BlockManagerMaster.class);
     when(worker.getCoder(any())).thenReturn(CODER);
 
     // Following part is for for the shuffle test.
@@ -123,9 +123,9 @@ public final class BlockStoreTest {
       final String partitionId = RuntimeIdGenerator.generateBlockId(
           RuntimeIdGenerator.generateRuntimeEdgeId(String.valueOf(partitionIdList.size())), writeTaskIdx);
       partitionIdList.add(partitionId);
-      partitionManagerMaster.initializeState(partitionId, "Unused");
-      partitionManagerMaster.onPartitionStateChanged(
-          partitionId, PartitionState.State.SCHEDULED, null);
+      blockManagerMaster.initializeState(partitionId, "Unused");
+      blockManagerMaster.onBlockStateChanged(
+          partitionId, BlockState.State.SCHEDULED, null);
 
       // Create blocks for this partition.
       final List<NonSerializedPartition> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
@@ -144,9 +144,9 @@ public final class BlockStoreTest {
     // Generates the ids and the data to be used.
     concPartitionId = RuntimeIdGenerator.generateBlockId(
         RuntimeIdGenerator.generateRuntimeEdgeId("concurrent read"), NUM_WRITE_TASKS + NUM_READ_TASKS + 1);
-    partitionManagerMaster.initializeState(concPartitionId, "Unused");
-    partitionManagerMaster.onPartitionStateChanged(
-        concPartitionId, PartitionState.State.SCHEDULED, null);
+    blockManagerMaster.initializeState(concPartitionId, "Unused");
+    blockManagerMaster.onBlockStateChanged(
+        concPartitionId, BlockState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
     concPartitionBlock = new NonSerializedPartition(0, getRangedNumList(0, CONC_READ_DATA_SIZE));
@@ -172,9 +172,9 @@ public final class BlockStoreTest {
           RuntimeIdGenerator.generateRuntimeEdgeId("shuffle in range"),
           NUM_WRITE_TASKS + NUM_READ_TASKS + 1 + writeTaskIdx);
       hashedPartitionIdList.add(partitionId);
-      partitionManagerMaster.initializeState(partitionId, "Unused");
-      partitionManagerMaster.onPartitionStateChanged(
-          partitionId, PartitionState.State.SCHEDULED, null);
+      blockManagerMaster.initializeState(partitionId, "Unused");
+      blockManagerMaster.onBlockStateChanged(
+          partitionId, BlockState.State.SCHEDULED, null);
       final List<NonSerializedPartition> hashedPartition = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
@@ -313,7 +313,7 @@ public final class BlockStoreTest {
                 writerSideStore.createBlock(partitionId);
                 writerSideStore.putPartitions(partitionId, blocksPerPartition.get(partitionIdx), false);
                 writerSideStore.commitBlock(partitionId);
-                partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
+                blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED,
                     "Writer side of the shuffle edge");
               });
               return true;
@@ -405,8 +405,8 @@ public final class BlockStoreTest {
           writerSideStore.createBlock(concPartitionId);
           writerSideStore.putPartitions(concPartitionId, Collections.singleton(concPartitionBlock), false);
           writerSideStore.commitBlock(concPartitionId);
-          partitionManagerMaster.onPartitionStateChanged(
-              concPartitionId, PartitionState.State.COMMITTED, "Writer side of the concurrent read edge");
+          blockManagerMaster.onBlockStateChanged(
+              concPartitionId, BlockState.State.COMMITTED, "Writer side of the concurrent read edge");
           return true;
         } catch (final Exception e) {
           e.printStackTrace();
@@ -491,7 +491,7 @@ public final class BlockStoreTest {
               writerSideStore.putPartitions(partitionId,
                   hashedPartitionBlockList.get(writeTaskIdx), false);
               writerSideStore.commitBlock(partitionId);
-              partitionManagerMaster.onPartitionStateChanged(partitionId, PartitionState.State.COMMITTED,
+              blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED,
                   "Writer side of the shuffle in hash range edge");
               return true;
             } catch (final Exception e) {

@@ -15,20 +15,20 @@
  */
 package edu.snu.onyx.runtime.common.exception;
 
-import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.common.state.BlockState;
 
 /**
  * An exception which represents the requested partition is neither COMMITTED nor SCHEDULED.
  */
 public final class AbsentPartitionException extends Exception {
   private final String partitionId;
-  private final PartitionState.State state;
+  private final BlockState.State state;
 
   /**
    * @param partitionId id of the partition
    * @param state state of the partition
    */
-  public AbsentPartitionException(final String partitionId, final PartitionState.State state) {
+  public AbsentPartitionException(final String partitionId, final BlockState.State state) {
     this.partitionId = partitionId;
     this.state = state;
   }
@@ -43,7 +43,7 @@ public final class AbsentPartitionException extends Exception {
   /**
    * @return state of the partition
    */
-  public PartitionState.State getState() {
+  public BlockState.State getState() {
     return state;
   }
 }

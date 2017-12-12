@@ -20,38 +20,38 @@ import edu.snu.onyx.common.StateMachine;
 /**
  * Represents the states of a whole data(a task output).
  */
-public final class PartitionState {
+public final class BlockState {
   private final StateMachine stateMachine;
 
-  public PartitionState() {
-    stateMachine = buildPartitionStateMachine();
+  public BlockState() {
+    stateMachine = buildBlockStateMachine();
   }
 
-  private StateMachine buildPartitionStateMachine() {
+  private StateMachine buildBlockStateMachine() {
     final StateMachine.Builder stateMachineBuilder = StateMachine.newBuilder();
 
     // Add states
-    stateMachineBuilder.addState(State.READY, "The partition is ready to be created.");
-    stateMachineBuilder.addState(State.SCHEDULED, "The partition is scheduled for creation.");
-    stateMachineBuilder.addState(State.COMMITTED, "The partition has been committed.");
-    stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The task group that produces the partition is scheduled, "
+    stateMachineBuilder.addState(State.READY, "The block is ready to be created.");
+    stateMachineBuilder.addState(State.SCHEDULED, "The block is scheduled for creation.");
+    stateMachineBuilder.addState(State.COMMITTED, "The block has been committed.");
+    stateMachineBuilder.addState(State.LOST_BEFORE_COMMIT, "The task group that produces the block is scheduled, "
         + "but failed before committing");
-    stateMachineBuilder.addState(State.REMOVED, "The partition has been removed (e.g., GC-ed).");
-    stateMachineBuilder.addState(State.LOST, "Partition lost.");
+    stateMachineBuilder.addState(State.REMOVED, "The block has been removed (e.g., GC-ed).");
+    stateMachineBuilder.addState(State.LOST, "Block lost.");
 
     // Add transitions
     stateMachineBuilder.addTransition(State.READY, State.SCHEDULED,
-        "The task group that produces the partition is scheduled.");
+        "The task group that produces the block is scheduled.");
     stateMachineBuilder.addTransition(State.SCHEDULED, State.COMMITTED, "Successfully moved and committed");
-    stateMachineBuilder.addTransition(State.SCHEDULED, State.LOST_BEFORE_COMMIT, "The partition is lost before commit");
+    stateMachineBuilder.addTransition(State.SCHEDULED, State.LOST_BEFORE_COMMIT, "The block is lost before commit");
     stateMachineBuilder.addTransition(State.COMMITTED, State.LOST, "Lost after committed");
     stateMachineBuilder.addTransition(State.COMMITTED, State.REMOVED, "Removed after committed");
     stateMachineBuilder.addTransition(State.REMOVED, State.SCHEDULED,
         "Re-scheduled after removal due to fault tolerance");
 
-    stateMachineBuilder.addTransition(State.LOST, State.SCHEDULED, "The producer of the lost partition is rescheduled");
+    stateMachineBuilder.addTransition(State.LOST, State.SCHEDULED, "The producer of the lost block is rescheduled");
     stateMachineBuilder.addTransition(State.LOST_BEFORE_COMMIT, State.SCHEDULED,
-        "The producer of the lost partition is rescheduled");
+        "The producer of the lost block is rescheduled");
 
     stateMachineBuilder.setInitialState(State.READY);
 
@@ -63,7 +63,7 @@ public final class PartitionState {
   }
 
   /**
-   * PartitionState.
+   * BlockState.
    */
   public enum State {
     READY,

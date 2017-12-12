@@ -46,7 +46,7 @@ import edu.snu.onyx.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.onyx.runtime.executor.datatransfer.InputReader;
 import edu.snu.onyx.runtime.executor.datatransfer.OutputWriter;
 import edu.snu.onyx.runtime.master.MetricMessageHandler;
-import edu.snu.onyx.runtime.master.PartitionManagerMaster;
+import edu.snu.onyx.runtime.master.BlockManagerMaster;
 import edu.snu.onyx.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
@@ -111,7 +111,7 @@ public final class DataTransferTest {
   private static final Tang TANG = Tang.Factory.getTang();
   private static final int HASH_RANGE_MULTIPLIER = 10;
 
-  private PartitionManagerMaster master;
+  private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
 
@@ -140,7 +140,7 @@ public final class DataTransferTest {
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);
     injector1.bindVolatileInstance(RuntimeMaster.class, runtimeMaster);
-    final PartitionManagerMaster master = injector1.getInstance(PartitionManagerMaster.class);
+    final BlockManagerMaster master = injector1.getInstance(BlockManagerMaster.class);
 
     final Injector injector2 = createNameClientInjector();
     injector2.bindVolatileParameter(JobConf.JobId.class, "data transfer test");

@@ -19,11 +19,11 @@ import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.*;
-import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.common.state.BlockState;
 import edu.snu.onyx.runtime.common.state.StageState;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
 import edu.snu.onyx.runtime.master.JobStateManager;
-import edu.snu.onyx.runtime.master.PartitionManagerMaster;
+import edu.snu.onyx.runtime.master.BlockManagerMaster;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
@@ -145,17 +145,17 @@ public final class RuntimeTestUtil {
   /**
    * Sends partition state changes of a stage to PartitionManager.
    * This replaces executor's partition state messages for testing purposes.
-   * @param partitionManagerMaster used for testing purposes.
+   * @param blockManagerMaster used for testing purposes.
    * @param containerManager used for testing purposes.
    * @param stageOutgoingEdges to infer partition IDs.
    * @param physicalStage to change the state.
    * @param newState for the task group.
    */
-  public static void sendPartitionStateEventForAStage(final PartitionManagerMaster partitionManagerMaster,
+  public static void sendPartitionStateEventForAStage(final BlockManagerMaster blockManagerMaster,
                                                       final ContainerManager containerManager,
                                                       final List<PhysicalStageEdge> stageOutgoingEdges,
                                                       final PhysicalStage physicalStage,
-                                                      final PartitionState.State newState) {
+                                                      final BlockState.State newState) {
     eventRunnableQueue.add(new Runnable() {
       @Override
       public void run() {
@@ -167,7 +167,7 @@ public final class RuntimeTestUtil {
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             final String partitionId =
                 RuntimeIdGenerator.generateBlockId(physicalStageEdge.getId(), srcTaskIdx);
-              sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
+              sendPartitionStateEventToPartitionManager(blockManagerMaster, containerManager, partitionId, newState);
           });
         });
 
@@ -179,7 +179,7 @@ public final class RuntimeTestUtil {
             internalOutgoingEdges.forEach(taskRuntimeEdge -> {
               final String partitionId =
                   RuntimeIdGenerator.generateBlockId(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx());
-              sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
+              sendPartitionStateEventToPartitionManager(blockManagerMaster, containerManager, partitionId, newState);
             });
           });
         });
@@ -190,25 +190,25 @@ public final class RuntimeTestUtil {
   /**
    * Sends partition state change event to PartitionManager.
    * This replaces executor's partition state messages for testing purposes.
-   * @param partitionManagerMaster used for testing purposes.
+   * @param blockManagerMaster used for testing purposes.
    * @param containerManager used for testing purposes.
    * @param partitionId for the partition to change the state.
    * @param newState for the task group.
    */
-  public static void sendPartitionStateEventToPartitionManager(final PartitionManagerMaster partitionManagerMaster,
+  public static void sendPartitionStateEventToPartitionManager(final BlockManagerMaster blockManagerMaster,
                                                                final ContainerManager containerManager,
                                                                final String partitionId,
-                                                               final PartitionState.State newState) {
+                                                               final BlockState.State newState) {
     eventRunnableQueue.add(new Runnable() {
       @Override
       public void run() {
-        final Set<String> parentTaskGroupIds = partitionManagerMaster.getProducerTaskGroupIds(partitionId);
+        final Set<String> parentTaskGroupIds = blockManagerMaster.getProducerTaskGroupIds(partitionId);
         if (!parentTaskGroupIds.isEmpty()) {
           parentTaskGroupIds.forEach(taskGroupId -> {
             final ExecutorRepresenter scheduledExecutor = findExecutorForTaskGroup(containerManager, taskGroupId);
 
             if (scheduledExecutor != null) {
-              partitionManagerMaster.onPartitionStateChanged(
+              blockManagerMaster.onBlockStateChanged(
                   partitionId, newState, scheduledExecutor.getExecutorId());
             }
           });

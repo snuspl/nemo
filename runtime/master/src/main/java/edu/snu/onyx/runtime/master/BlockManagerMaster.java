@@ -23,7 +23,7 @@ import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageContext;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.MessageListener;
-import edu.snu.onyx.runtime.common.state.PartitionState;
+import edu.snu.onyx.runtime.common.state.BlockState;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -40,58 +40,56 @@ import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static edu.snu.onyx.runtime.common.state.PartitionState.State.SCHEDULED;
-import static edu.snu.onyx.runtime.master.RuntimeMaster.convertPartitionState;
+import static edu.snu.onyx.runtime.common.state.BlockState.State.SCHEDULED;
+import static edu.snu.onyx.runtime.master.RuntimeMaster.convertBlockState;
 
 /**
- * Master-side partition manager.
- * TODO #433: Reconsider fault tolerance for partitions in remote storage.
- * TODO #493: Detach partitioning from writing.
+ * Master-side block manager.
  */
 @ThreadSafe
 @DriverSide
-public final class PartitionManagerMaster {
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionManagerMaster.class.getName());
-  private final Map<String, PartitionMetadata> partitionIdToMetadata;
-  private final Map<String, Set<String>> producerTaskGroupIdToPartitionIds;
+public final class BlockManagerMaster {
+  private static final Logger LOG = LoggerFactory.getLogger(BlockManagerMaster.class.getName());
+  private final Map<String, BlockMetadata> blockIdToMetadata;
+  private final Map<String, Set<String>> producerTaskGroupIdToBlockIds;
   // A lock that can be acquired exclusively or not.
-  // Because the PartitionMetadata itself is sufficiently synchronized,
-  // operation that runs in a single partition can just acquire a (sharable) read lock.
-  // On the other hand, operation that deals with multiple partitions or
+  // Because the BlockMetadata itself is sufficiently synchronized,
+  // operation that runs in a single block can just acquire a (sharable) read lock.
+  // On the other hand, operation that deals with multiple blocks or
   // modifies global variables in this class have to acquire an (exclusive) write lock.
   private final ReadWriteLock lock;
 
   @Inject
-  private PartitionManagerMaster(final MessageEnvironment masterMessageEnvironment) {
+  private BlockManagerMaster(final MessageEnvironment masterMessageEnvironment) {
     masterMessageEnvironment.setupListener(MessageEnvironment.BLOCK_MANAGER_MASTER_MESSAGE_LISTENER_ID,
         new PartitionManagerMasterControlMessageReceiver());
-    this.partitionIdToMetadata = new HashMap<>();
-    this.producerTaskGroupIdToPartitionIds = new HashMap<>();
+    this.blockIdToMetadata = new HashMap<>();
+    this.producerTaskGroupIdToBlockIds = new HashMap<>();
     this.lock = new ReentrantReadWriteLock();
   }
 
   /**
-   * Initializes the states of a partition which will be produced by producer task(s).
+   * Initializes the states of a block which will be produced by producer task(s).
    *
-   * @param partitionId         the id of the partition to initialize.
+   * @param blockId         the id of the block to initialize.
    * @param producerTaskGroupId the id of the producer task group.
    */
   @VisibleForTesting
-  public void initializeState(final String partitionId,
+  public void initializeState(final String blockId,
                               final String producerTaskGroupId) {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
-      partitionIdToMetadata.put(partitionId, new PartitionMetadata(partitionId));
-      producerTaskGroupIdToPartitionIds.putIfAbsent(producerTaskGroupId, new HashSet<>());
-      producerTaskGroupIdToPartitionIds.get(producerTaskGroupId).add(partitionId);
+      blockIdToMetadata.put(blockId, new BlockMetadata(blockId));
+      producerTaskGroupIdToBlockIds.putIfAbsent(producerTaskGroupId, new HashSet<>());
+      producerTaskGroupIdToBlockIds.get(producerTaskGroupId).add(blockId);
     } finally {
       writeLock.unlock();
     }
   }
 
   /**
-   * Manages the partition information when a executor is removed.
+   * Manages the block information when a executor is removed.
    *
    * @param executorId the id of removed executor.
    * @return the set of task groups have to be recomputed.
@@ -103,11 +101,11 @@ public final class PartitionManagerMaster {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
-      // Set committed partition states to lost
-      getCommittedPartitionsByWorker(executorId).forEach(partitionId -> {
-        onPartitionStateChanged(partitionId, PartitionState.State.LOST, executorId);
+      // Set committed block states to lost
+      getCommittedBlocksByWorker(executorId).forEach(blockId -> {
+        onBlockStateChanged(blockId, BlockState.State.LOST, executorId);
         // producerTaskGroupForPartition should always be non-empty.
-        final Set<String> producerTaskGroupForPartition = getProducerTaskGroupIds(partitionId);
+        final Set<String> producerTaskGroupForPartition = getProducerTaskGroupIds(blockId);
         producerTaskGroupForPartition.forEach(taskGroupsToRecompute::add);
       });
 
@@ -118,29 +116,29 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Returns a {@link CompletableFuture} of partition location, which is not yet resolved in {@code SCHEDULED} state.
+   * Returns a {@link CompletableFuture} of block location, which is not yet resolved in {@code SCHEDULED} state.
    * TODO #446: Control the Point of Partition Fetch in Executor.
    *
-   * @param partitionId id of the specified partition.
-   * @return {@link CompletableFuture} of partition location, which completes exceptionally when the partition
+   * @param blockId id of the specified block.
+   * @return {@link CompletableFuture} of block location, which completes exceptionally when the block
    *         is not {@code SCHEDULED} or {@code COMMITTED}.
    */
-  public CompletableFuture<String> getPartitionLocationFuture(final String partitionId) {
+  public CompletableFuture<String> getBlockLocationFuture(final String blockId) {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final PartitionState.State state =
-          (PartitionState.State) getPartitionState(partitionId).getStateMachine().getCurrentState();
+      final BlockState.State state =
+          (BlockState.State) getBlockState(blockId).getStateMachine().getCurrentState();
       switch (state) {
         case SCHEDULED:
         case COMMITTED:
-          return partitionIdToMetadata.get(partitionId).getLocationFuture();
+          return blockIdToMetadata.get(blockId).getLocationFuture();
         case READY:
         case LOST_BEFORE_COMMIT:
         case LOST:
         case REMOVED:
           final CompletableFuture<String> future = new CompletableFuture<>();
-          future.completeExceptionally(new AbsentPartitionException(partitionId, state));
+          future.completeExceptionally(new AbsentPartitionException(blockId, state));
           return future;
         default:
           throw new UnsupportedOperationException(state.toString());
@@ -151,19 +149,19 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Gets the ids of the task groups which already produced or will produce data for a specific partition.
+   * Gets the ids of the task groups which already produced or will produce data for a specific block.
    *
-   * @param partitionId the id of the partition.
+   * @param blockId the id of the block.
    * @return the ids of the producer task groups.
    */
   @VisibleForTesting
-  public Set<String> getProducerTaskGroupIds(final String partitionId) {
+  public Set<String> getProducerTaskGroupIds(final String blockId) {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
       final Set<String> producerTaskGroupIds = new HashSet<>();
-      for (Map.Entry<String, Set<String>> entry : producerTaskGroupIdToPartitionIds.entrySet()) {
-        if (entry.getValue().contains(partitionId)) {
+      for (Map.Entry<String, Set<String>> entry : producerTaskGroupIdToBlockIds.entrySet()) {
+        if (entry.getValue().contains(blockId)) {
           producerTaskGroupIds.add(entry.getKey());
         }
       }
@@ -185,14 +183,14 @@ public final class PartitionManagerMaster {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
-      if (producerTaskGroupIdToPartitionIds.containsKey(scheduledTaskGroupId)) {
-        producerTaskGroupIdToPartitionIds.get(scheduledTaskGroupId).forEach(partitionId -> {
-          if (!partitionIdToMetadata.get(partitionId).getPartitionState()
+      if (producerTaskGroupIdToBlockIds.containsKey(scheduledTaskGroupId)) {
+        producerTaskGroupIdToBlockIds.get(scheduledTaskGroupId).forEach(blockId -> {
+          if (!blockIdToMetadata.get(blockId).getBlockState()
               .getStateMachine().getCurrentState().equals(SCHEDULED)) {
-            onPartitionStateChanged(partitionId, SCHEDULED, null);
+            onBlockStateChanged(blockId, SCHEDULED, null);
           }
         });
-      } // else this task group does not produce any partition
+      } // else this task group does not produce any block
     } finally {
       writeLock.unlock();
     }
@@ -200,7 +198,7 @@ public final class PartitionManagerMaster {
 
   /**
    * To be called when a potential producer task group fails.
-   * Only the TaskGroups that have not yet completed (i.e. partitions not yet committed) will call this method.
+   * Only the TaskGroups that have not yet completed (i.e. blocks not yet committed) will call this method.
    *
    * @param failedTaskGroupId the ID of the task group that failed.
    */
@@ -208,94 +206,94 @@ public final class PartitionManagerMaster {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
-      if (producerTaskGroupIdToPartitionIds.containsKey(failedTaskGroupId)) {
-        LOG.info("ProducerTaskGroup {} failed for a list of partitions:", failedTaskGroupId);
-        producerTaskGroupIdToPartitionIds.get(failedTaskGroupId).forEach(partitionId -> {
-          final PartitionState.State state = (PartitionState.State)
-              partitionIdToMetadata.get(partitionId).getPartitionState().getStateMachine().getCurrentState();
-          if (state == PartitionState.State.COMMITTED) {
-            LOG.info("Partition lost: {}", partitionId);
-            onPartitionStateChanged(partitionId, PartitionState.State.LOST, null);
+      if (producerTaskGroupIdToBlockIds.containsKey(failedTaskGroupId)) {
+        LOG.info("ProducerTaskGroup {} failed for a list of blocks:", failedTaskGroupId);
+        producerTaskGroupIdToBlockIds.get(failedTaskGroupId).forEach(blockId -> {
+          final BlockState.State state = (BlockState.State)
+              blockIdToMetadata.get(blockId).getBlockState().getStateMachine().getCurrentState();
+          if (state == BlockState.State.COMMITTED) {
+            LOG.info("Partition lost: {}", blockId);
+            onBlockStateChanged(blockId, BlockState.State.LOST, null);
           } else {
-            LOG.info("Partition lost_before_commit: {}", partitionId);
-            onPartitionStateChanged(partitionId, PartitionState.State.LOST_BEFORE_COMMIT, null);
+            LOG.info("Partition lost_before_commit: {}", blockId);
+            onBlockStateChanged(blockId, BlockState.State.LOST_BEFORE_COMMIT, null);
           }
         });
-      } // else this task group does not produce any partition
+      } // else this task group does not produce any block
     } finally {
       writeLock.unlock();
     }
   }
 
   /**
-   * Gets the committed partitions by an executor.
+   * Gets the committed blocks by an executor.
    *
    * @param executorId the id of the executor.
-   * @return the committed partitions by the executor.
+   * @return the committed blocks by the executor.
    */
   @VisibleForTesting
-  Set<String> getCommittedPartitionsByWorker(final String executorId) {
+  Set<String> getCommittedBlocksByWorker(final String executorId) {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final Set<String> partitionIds = new HashSet<>();
-      partitionIdToMetadata.values().forEach(partitionMetadata -> {
-        final String location = partitionMetadata.getLocationFuture().getNow("NOT_COMMITTED");
+      final Set<String> blockIds = new HashSet<>();
+      blockIdToMetadata.values().forEach(blockMetadata -> {
+        final String location = blockMetadata.getLocationFuture().getNow("NOT_COMMITTED");
         if (location.equals(executorId)) {
-          partitionIds.add(partitionMetadata.getPartitionId());
+          blockIds.add(blockMetadata.getBlockId());
         }
       });
-      return partitionIds;
+      return blockIds;
     } finally {
       readLock.unlock();
     }
   }
 
   /**
-   * @return the {@link PartitionState} of a partition.
+   * @return the {@link BlockState} of a block.
    *
-   * @param partitionId the id of the partition.
+   * @param blockId the id of the block.
    */
   @VisibleForTesting
-  PartitionState getPartitionState(final String partitionId) {
+  BlockState getBlockState(final String blockId) {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      return partitionIdToMetadata.get(partitionId).getPartitionState();
+      return blockIdToMetadata.get(blockId).getBlockState();
     } finally {
       readLock.unlock();
     }
   }
 
   /**
-   * Deals with state change of a partition.
+   * Deals with state change of a block.
    *
-   * @param partitionId     the id of the partition.
-   * @param newState        the new state of the partition.
-   * @param location        the location of the partition (e.g., worker id, remote store).
+   * @param blockId     the id of the block.
+   * @param newState        the new state of the block.
+   * @param location        the location of the block (e.g., worker id, remote store).
    *                        {@code null} if not committed or lost.
    */
   @VisibleForTesting
-  public void onPartitionStateChanged(final String partitionId,
-                                      final PartitionState.State newState,
-                                      @Nullable final String location) {
+  public void onBlockStateChanged(final String blockId,
+                                  final BlockState.State newState,
+                                  @Nullable final String location) {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      partitionIdToMetadata.get(partitionId).onStateChanged(newState, location);
+      blockIdToMetadata.get(blockId).onStateChanged(newState, location);
     } finally {
       readLock.unlock();
     }
   }
 
   /**
-   * Deals with a request for the location of a partition.
+   * Deals with a request for the location of a block.
    *
    * @param message        the request message.
    * @param messageContext the message context which will be used for response.
    */
-  void onRequestPartitionLocation(final ControlMessage.Message message,
-                                  final MessageContext messageContext) {
+  void onRequestBlockLocation(final ControlMessage.Message message,
+                              final MessageContext messageContext) {
     assert (message.getType() == ControlMessage.MessageType.RequestPartitionLocation);
     final ControlMessage.RequestPartitionLocationMsg requestPartitionLocationMsg =
         message.getRequestPartitionLocationMsg();
@@ -303,7 +301,7 @@ public final class PartitionManagerMaster {
     readLock.lock();
     try {
       final CompletableFuture<String> locationFuture
-          = getPartitionLocationFuture(requestPartitionLocationMsg.getPartitionId());
+          = getBlockLocationFuture(requestPartitionLocationMsg.getPartitionId());
       locationFuture.whenComplete((location, throwable) -> {
         final ControlMessage.PartitionLocationInfoMsg.Builder infoMsgBuilder =
             ControlMessage.PartitionLocationInfoMsg.newBuilder()
@@ -313,7 +311,7 @@ public final class PartitionManagerMaster {
           infoMsgBuilder.setOwnerExecutorId(location);
         } else {
           infoMsgBuilder.setState(
-              convertPartitionState(((AbsentPartitionException) throwable).getState()));
+              convertBlockState(((AbsentPartitionException) throwable).getState()));
         }
         messageContext.reply(
             ControlMessage.Message.newBuilder()
@@ -329,18 +327,18 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Reserves the region for a block in a partition, appends the block metadata,
+   * Reserves the region for a partition in a block, appends the partition metadata,
    * and replies with the starting point of the block in the file.
    *
-   * @param message        the message having the block metadata to append.
+   * @param message        the message having the partition metadata to append.
    * @param messageContext the context which will be used for response.
    */
   @VisibleForTesting
-  public void onReserveBlock(final ControlMessage.Message message,
-                             final MessageContext messageContext) {
+  public void onReservePartition(final ControlMessage.Message message,
+                                 final MessageContext messageContext) {
     assert (message.getType() == ControlMessage.MessageType.ReserveBlock);
-    final ControlMessage.ReserveBlockMsg reserveBlockMsg = message.getReserveBlockMsg();
-    final String partitionId = reserveBlockMsg.getPartitionId();
+    final ControlMessage.ReserveBlockMsg reservePartitionMsg = message.getReserveBlockMsg();
+    final String blockId = reservePartitionMsg.getPartitionId();
     final ControlMessage.ReserveBlockResponseMsg.Builder responseBuilder =
         ControlMessage.ReserveBlockResponseMsg.newBuilder()
             .setRequestId(message.getId());
@@ -348,13 +346,13 @@ public final class PartitionManagerMaster {
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
+      final BlockMetadata metadata = blockIdToMetadata.get(blockId);
 
-      // Reserve a region for this block and append the metadata.
-      final Pair<Integer, Long> reserveResult = metadata.reserveBlock(reserveBlockMsg.getBlockMetadata());
-      final int blockIndex = reserveResult.left();
+      // Reserve a region for this partition and append the metadata.
+      final Pair<Integer, Long> reserveResult = metadata.reservePartition(reservePartitionMsg.getBlockMetadata());
+      final int partitionIndex = reserveResult.left();
       final long positionToWrite = reserveResult.right();
-      responseBuilder.setBlockIdx(blockIndex);
+      responseBuilder.setBlockIdx(partitionIndex);
       responseBuilder.setPositionToWrite(positionToWrite);
 
       // Reply with the position to write in the file.
@@ -371,25 +369,25 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Commits the blocks for a remote partition.
+   * Commits the partitions for a remote block.
    *
    * @param message the message having metadata to commit.
    */
   @VisibleForTesting
-  public void onCommitBlocks(final ControlMessage.Message message) {
+  public void onCommitPartitions(final ControlMessage.Message message) {
     assert (message.getType() == ControlMessage.MessageType.CommitBlock);
     final ControlMessage.CommitBlockMsg commitMsg = message.getCommitBlockMsg();
-    final String partitionId = commitMsg.getPartitionId();
-    final List<Integer> blockIndices = commitMsg.getBlockIdxList();
+    final String blockId = commitMsg.getPartitionId();
+    final List<Integer> partitionIndices = commitMsg.getBlockIdxList();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
+      final BlockMetadata metadata = blockIdToMetadata.get(blockId);
       if (metadata != null) {
-        metadata.commitBlocks(blockIndices);
+        metadata.commitPartitions(partitionIndices);
       } else {
-        LOG.error("Metadata for {} already exists. It will be replaced.", partitionId);
+        LOG.error("Metadata for {} already exists. It will be replaced.", blockId);
       }
     } finally {
       readLock.unlock();
@@ -397,23 +395,23 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Accepts a request for the block metadata and replies with the metadata for a remote partition.
+   * Accepts a request for the partition metadata and replies with the metadata for a remote block.
    *
    * @param message        the message having metadata to store.
    * @param messageContext the context to reply.
    */
   @VisibleForTesting
-  public void onRequestBlockMetadata(final ControlMessage.Message message,
-                                     final MessageContext messageContext) {
+  public void onRequestPartitionMetadata(final ControlMessage.Message message,
+                                         final MessageContext messageContext) {
     assert (message.getType() == ControlMessage.MessageType.RequestBlockMetadata);
     final ControlMessage.RequestBlockMetadataMsg requestMsg = message.getRequestBlockMetadataMsg();
-    final String partitionId = requestMsg.getPartitionId();
+    final String blockId = requestMsg.getPartitionId();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      // Check whether the partition is committed. The actual location is not important.
-      final CompletableFuture<String> locationFuture = getPartitionLocationFuture(partitionId);
+      // Check whether the block is committed. The actual location is not important.
+      final CompletableFuture<String> locationFuture = getBlockLocationFuture(blockId);
 
       locationFuture.whenComplete((location, throwable) -> {
         final ControlMessage.MetadataResponseMsg.Builder responseBuilder =
@@ -421,16 +419,16 @@ public final class PartitionManagerMaster {
                 .setRequestId(message.getId());
         if (throwable == null) {
           // Well committed.
-          final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
+          final BlockMetadata metadata = blockIdToMetadata.get(blockId);
           if (metadata != null) {
-            metadata.getBlockMetadataList().forEach(blockMetadataInServer ->
-                responseBuilder.addBlockMetadata(blockMetadataInServer.getBlockMetadataMsg()));
+            metadata.getPartitionMetadataList().forEach(partitionMetadataInServer ->
+                responseBuilder.addBlockMetadata(partitionMetadataInServer.getPartitionMetadataMsg()));
           } else {
-            LOG.error("Metadata for {} dose not exist. Failed to get it.", partitionId);
+            LOG.error("Metadata for {} dose not exist. Failed to get it.", blockId);
           }
         } else {
           responseBuilder.setState(
-              convertPartitionState(((AbsentPartitionException) throwable).getState()));
+              convertBlockState(((AbsentPartitionException) throwable).getState()));
         }
         messageContext.reply(
             ControlMessage.Message.newBuilder()
@@ -446,24 +444,24 @@ public final class PartitionManagerMaster {
   }
 
   /**
-   * Removes the block metadata for a remote partition.
-   * If the target partition was not previously created, ignores this message.
+   * Removes the partition metadata for a remote block.
+   * If the target block was not previously created, ignores this message.
    *
    * @param message the message pointing the metadata to remove.
    */
   @VisibleForTesting
-  public void onRemoveBlockMetadata(final ControlMessage.Message message) {
+  public void onRemovePartitionMetadata(final ControlMessage.Message message) {
     assert (message.getType() == ControlMessage.MessageType.RemoveBlockMetadata);
     final ControlMessage.RemoveBlockMetadataMsg removeMsg = message.getRemoveBlockMetadataMsg();
-    final String partitionId = removeMsg.getPartitionId();
+    final String blockId = removeMsg.getPartitionId();
 
     final Lock readLock = lock.readLock();
     readLock.lock();
     try {
-      final PartitionMetadata metadata = partitionIdToMetadata.get(partitionId);
+      final BlockMetadata metadata = blockIdToMetadata.get(blockId);
       if (metadata != null) {
-        metadata.removeBlockMetadata();
-      } // if else, the partition was not previously created. Ignore it.
+        metadata.removePartitionMetadata();
+      } // if else, the block was not previously created. Ignore it.
     } finally {
       readLock.unlock();
     }
@@ -479,22 +477,22 @@ public final class PartitionManagerMaster {
       try {
         switch (message.getType()) {
           case PartitionStateChanged:
-            final ControlMessage.PartitionStateChangedMsg partitionStateChangedMsg =
+            final ControlMessage.PartitionStateChangedMsg blockStateChangedMsg =
                 message.getPartitionStateChangedMsg();
-            final String partitionId = partitionStateChangedMsg.getPartitionId();
-            onPartitionStateChanged(partitionId, convertPartitionState(partitionStateChangedMsg.getState()),
-                partitionStateChangedMsg.getLocation());
+            final String blockId = blockStateChangedMsg.getPartitionId();
+            onBlockStateChanged(blockId, RuntimeMaster.convertBlockState(blockStateChangedMsg.getState()),
+                blockStateChangedMsg.getLocation());
             break;
           case CommitBlock:
-            onCommitBlocks(message);
+            onCommitPartitions(message);
             break;
           case RemoveBlockMetadata:
-            onRemoveBlockMetadata(message);
+            onRemovePartitionMetadata(message);
             break;
           default:
             throw new IllegalMessageException(
                 new Exception("This message should not be received by "
-                    + PartitionManagerMaster.class.getName() + ":" + message.getType()));
+                    + BlockManagerMaster.class.getName() + ":" + message.getType()));
         }
       } catch (final Exception e) {
         throw new RuntimeException(e);
@@ -505,18 +503,18 @@ public final class PartitionManagerMaster {
     public void onMessageWithContext(final ControlMessage.Message message, final MessageContext messageContext) {
       switch (message.getType()) {
         case RequestPartitionLocation:
-          onRequestPartitionLocation(message, messageContext);
+          onRequestBlockLocation(message, messageContext);
           break;
         case RequestBlockMetadata:
-          onRequestBlockMetadata(message, messageContext);
+          onRequestPartitionMetadata(message, messageContext);
           break;
         case ReserveBlock:
-          onReserveBlock(message, messageContext);
+          onReservePartition(message, messageContext);
           break;
         default:
           throw new IllegalMessageException(
               new Exception("This message should not be received by "
-                  + PartitionManagerMaster.class.getName() + ":" + message.getType()));
+                  + BlockManagerMaster.class.getName() + ":" + message.getType()));
       }
     }
   }
