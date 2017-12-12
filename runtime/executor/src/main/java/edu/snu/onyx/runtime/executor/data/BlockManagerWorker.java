@@ -28,7 +28,7 @@ import edu.snu.onyx.runtime.executor.data.stores.BlockStore;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
-import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
+import edu.snu.onyx.common.exception.UnsupportedBlockStoreException;
 import edu.snu.onyx.runtime.common.message.PersistentConnectionToMasterMap;
 import edu.snu.onyx.runtime.executor.data.blocktransfer.BlockInputStream;
 import edu.snu.onyx.runtime.executor.data.blocktransfer.BlockOutputStream;
@@ -373,7 +373,7 @@ public final class BlockManagerWorker {
       case GlusterFileStore:
         return remoteFileStore;
       default:
-        throw new UnsupportedPartitionStoreException(new Exception(blockStore + " is not supported."));
+        throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
   }
 

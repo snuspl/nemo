@@ -16,15 +16,15 @@
 package edu.snu.onyx.common.exception;
 
 /**
- * UnsupportedPartitionStoreException.
+ * UnsupportedBlockStoreException.
  * Thrown when the data placement method is undefined in Runtime.
  */
-public final class UnsupportedPartitionStoreException extends RuntimeException {
+public final class UnsupportedBlockStoreException extends RuntimeException {
   /**
-   * UnsupportedPartitionStoreException.
+   * UnsupportedBlockStoreException.
    * @param cause cause
    */
-  public UnsupportedPartitionStoreException(final Throwable cause) {
+  public UnsupportedBlockStoreException(final Throwable cause) {
     super(cause);
   }
 }

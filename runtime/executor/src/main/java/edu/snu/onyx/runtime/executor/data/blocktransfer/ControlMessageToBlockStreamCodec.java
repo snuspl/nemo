@@ -15,10 +15,10 @@
  */
 package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
+import edu.snu.onyx.common.exception.UnsupportedBlockStoreException;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -313,7 +313,7 @@ final class ControlMessageToBlockStreamCodec
       case GlusterFileStore:
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
-        throw new UnsupportedPartitionStoreException(new Exception(blockStore + " is not supported."));
+        throw new UnsupportedBlockStoreException(new Exception(blockStore + " is not supported."));
     }
   }
 
@@ -329,7 +329,7 @@ final class ControlMessageToBlockStreamCodec
       case REMOTE_FILE:
         return DataStoreProperty.Value.GlusterFileStore;
       default:
-        throw new UnsupportedPartitionStoreException(new Exception("This block store is not yet supported"));
+        throw new UnsupportedBlockStoreException(new Exception("This block store is not yet supported"));
     }
   }
 }
