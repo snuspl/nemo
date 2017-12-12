@@ -75,25 +75,25 @@ public final class BlockStoreTest {
   private static final int NUM_WRITE_TASKS = 3;
   private static final int NUM_READ_TASKS = 3;
   private static final int DATA_SIZE = 1000;
-  private List<String> partitionIdList;
-  private List<List<NonSerializedPartition>> blocksPerPartition;
+  private List<String> blockIdList;
+  private List<List<NonSerializedPartition>> partitionsPerBlock;
   // Variables for concurrent read test
   private static final int NUM_CONC_READ_TASKS = 10;
   private static final int CONC_READ_DATA_SIZE = 1000;
-  private String concPartitionId;
-  private NonSerializedPartition concPartitionBlock;
+  private String concBlockId;
+  private NonSerializedPartition concBlockPartition;
   // Variables for shuffle in range test
   private static final int NUM_WRITE_HASH_TASKS = 2;
   private static final int NUM_READ_HASH_TASKS = 3;
   private static final int HASH_DATA_SIZE = 1000;
   private static final int HASH_RANGE = 4;
-  private List<String> hashedPartitionIdList;
-  private List<List<NonSerializedPartition>> hashedPartitionBlockList;
+  private List<String> hashedBlockIdList;
+  private List<List<NonSerializedPartition>> hashedBlockPartitionList;
   private List<HashRange> readHashRangeList;
   private List<List<Iterable>> expectedDataInRange;
 
   /**
-   * Generates the ids and the data which will be used for the partition store tests.
+   * Generates the ids and the data which will be used for the block store tests.
    */
   @Before
   public void setUp() throws Exception {
@@ -108,8 +108,8 @@ public final class BlockStoreTest {
     // Following part is for for the shuffle test.
     final List<String> writeTaskIdList = new ArrayList<>(NUM_WRITE_TASKS);
     final List<String> readTaskIdList = new ArrayList<>(NUM_READ_TASKS);
-    partitionIdList = new ArrayList<>(NUM_WRITE_TASKS);
-    blocksPerPartition = new ArrayList<>(NUM_WRITE_TASKS);
+    blockIdList = new ArrayList<>(NUM_WRITE_TASKS);
+    partitionsPerBlock = new ArrayList<>(NUM_WRITE_TASKS);
 
     // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(
@@ -117,23 +117,23 @@ public final class BlockStoreTest {
     IntStream.range(0, NUM_READ_TASKS).forEach(
         number -> readTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
 
-    // Generates the ids and the data of the partitions to be used.
+    // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskIdx -> {
-      // Create a partition for each writer task.
-      final String partitionId = RuntimeIdGenerator.generateBlockId(
-          RuntimeIdGenerator.generateRuntimeEdgeId(String.valueOf(partitionIdList.size())), writeTaskIdx);
-      partitionIdList.add(partitionId);
-      blockManagerMaster.initializeState(partitionId, "Unused");
+      // Create a block for each writer task.
+      final String blockId = RuntimeIdGenerator.generateBlockId(
+          RuntimeIdGenerator.generateRuntimeEdgeId(String.valueOf(blockIdList.size())), writeTaskIdx);
+      blockIdList.add(blockId);
+      blockManagerMaster.initializeState(blockId, "Unused");
       blockManagerMaster.onBlockStateChanged(
-          partitionId, BlockState.State.SCHEDULED, null);
+          blockId, BlockState.State.SCHEDULED, null);
 
-      // Create blocks for this partition.
-      final List<NonSerializedPartition> blocksForPartition = new ArrayList<>(NUM_READ_TASKS);
-      blocksPerPartition.add(blocksForPartition);
+      // Create blocks for this block.
+      final List<NonSerializedPartition> partitionsForBlock = new ArrayList<>(NUM_READ_TASKS);
+      partitionsPerBlock.add(partitionsForBlock);
       IntStream.range(0, NUM_READ_TASKS).forEach(readTaskIdx -> {
-        final int blocksCount = writeTaskIdx * NUM_READ_TASKS + readTaskIdx;
-        blocksForPartition.add(new NonSerializedPartition(
-            readTaskIdx, getRangedNumList(blocksCount * DATA_SIZE, (blocksCount + 1) * DATA_SIZE)));
+        final int partitionsCount = writeTaskIdx * NUM_READ_TASKS + readTaskIdx;
+        partitionsForBlock.add(new NonSerializedPartition(
+            readTaskIdx, getRangedNumList(partitionsCount * DATA_SIZE, (partitionsCount + 1) * DATA_SIZE)));
       });
     });
 
@@ -142,22 +142,22 @@ public final class BlockStoreTest {
     final List<String> concReadTaskIdList = new ArrayList<>(NUM_CONC_READ_TASKS);
 
     // Generates the ids and the data to be used.
-    concPartitionId = RuntimeIdGenerator.generateBlockId(
+    concBlockId = RuntimeIdGenerator.generateBlockId(
         RuntimeIdGenerator.generateRuntimeEdgeId("concurrent read"), NUM_WRITE_TASKS + NUM_READ_TASKS + 1);
-    blockManagerMaster.initializeState(concPartitionId, "Unused");
+    blockManagerMaster.initializeState(concBlockId, "Unused");
     blockManagerMaster.onBlockStateChanged(
-        concPartitionId, BlockState.State.SCHEDULED, null);
+        concBlockId, BlockState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
         number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
-    concPartitionBlock = new NonSerializedPartition(0, getRangedNumList(0, CONC_READ_DATA_SIZE));
+    concBlockPartition = new NonSerializedPartition(0, getRangedNumList(0, CONC_READ_DATA_SIZE));
 
     // Following part is for the shuffle in hash range test
-    final int numHashedPartitions = NUM_WRITE_HASH_TASKS;
+    final int numHashedBlocks = NUM_WRITE_HASH_TASKS;
     final List<String> writeHashTaskIdList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
     final List<String> readHashTaskIdList = new ArrayList<>(NUM_READ_HASH_TASKS);
     readHashRangeList = new ArrayList<>(NUM_READ_HASH_TASKS);
-    hashedPartitionIdList = new ArrayList<>(numHashedPartitions);
-    hashedPartitionBlockList = new ArrayList<>(numHashedPartitions);
+    hashedBlockIdList = new ArrayList<>(numHashedBlocks);
+    hashedBlockPartitionList = new ArrayList<>(numHashedBlocks);
     expectedDataInRange = new ArrayList<>(NUM_READ_HASH_TASKS);
 
     // Generates the ids of the tasks to be used.
@@ -166,23 +166,23 @@ public final class BlockStoreTest {
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(
         number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
 
-    // Generates the ids and the data of the partitions to be used.
+    // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
-      final String partitionId = RuntimeIdGenerator.generateBlockId(
+      final String blockId = RuntimeIdGenerator.generateBlockId(
           RuntimeIdGenerator.generateRuntimeEdgeId("shuffle in range"),
           NUM_WRITE_TASKS + NUM_READ_TASKS + 1 + writeTaskIdx);
-      hashedPartitionIdList.add(partitionId);
-      blockManagerMaster.initializeState(partitionId, "Unused");
+      hashedBlockIdList.add(blockId);
+      blockManagerMaster.initializeState(blockId, "Unused");
       blockManagerMaster.onBlockStateChanged(
-          partitionId, BlockState.State.SCHEDULED, null);
-      final List<NonSerializedPartition> hashedPartition = new ArrayList<>(HASH_RANGE);
+          blockId, BlockState.State.SCHEDULED, null);
+      final List<NonSerializedPartition> hashedBlock = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
-          hashedPartition.add(new NonSerializedPartition(hashValue, getFixedKeyRangedNumList(
+          hashedBlock.add(new NonSerializedPartition(hashValue, getFixedKeyRangedNumList(
               hashValue,
               writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + hashValue * HASH_DATA_SIZE,
               writeTaskIdx * HASH_DATA_SIZE * HASH_RANGE + (hashValue + 1) * HASH_DATA_SIZE))));
-      hashedPartitionBlockList.add(hashedPartition);
+      hashedBlockPartitionList.add(hashedBlock);
     });
 
     // Generates the range of hash value to read for each read task.
@@ -195,20 +195,20 @@ public final class BlockStoreTest {
     // Generates the expected result of hash range retrieval for each read task.
     for (int readTaskIdx = 0; readTaskIdx < NUM_READ_HASH_TASKS; readTaskIdx++) {
       final HashRange hashRange = readHashRangeList.get(readTaskIdx);
-      final List<Iterable> expectedRangeBlocks = new ArrayList<>(NUM_WRITE_HASH_TASKS);
+      final List<Iterable> expectedRangePartitions = new ArrayList<>(NUM_WRITE_HASH_TASKS);
       for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
         final List<Iterable> appendingList = new ArrayList<>();
         for (int hashVal = hashRange.rangeStartInclusive(); hashVal < hashRange.rangeEndExclusive(); hashVal++) {
-          appendingList.add(hashedPartitionBlockList.get(writeTaskIdx).get(hashVal).getData());
+          appendingList.add(hashedBlockPartitionList.get(writeTaskIdx).get(hashVal).getData());
         }
         final List concatStreamBase = new ArrayList<>();
         Stream<Object> concatStream = concatStreamBase.stream();
         for (final Iterable data : appendingList) {
           concatStream = Stream.concat(concatStream, StreamSupport.stream(data.spliterator(), false));
         }
-        expectedRangeBlocks.add(concatStream.collect(Collectors.toList()));
+        expectedRangePartitions.add(concatStream.collect(Collectors.toList()));
       }
-      expectedDataInRange.add(expectedRangeBlocks);
+      expectedDataInRange.add(expectedRangePartitions);
     }
   }
 
@@ -308,12 +308,12 @@ public final class BlockStoreTest {
           @Override
           public Boolean call() {
             try {
-              IntStream.range(writeTaskIdx, writeTaskIdx + 1).forEach(partitionIdx -> {
-                final String partitionId = partitionIdList.get(partitionIdx);
-                writerSideStore.createBlock(partitionId);
-                writerSideStore.putPartitions(partitionId, blocksPerPartition.get(partitionIdx), false);
-                writerSideStore.commitBlock(partitionId);
-                blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED,
+              IntStream.range(writeTaskIdx, writeTaskIdx + 1).forEach(blockIdx -> {
+                final String blockId = blockIdList.get(blockIdx);
+                writerSideStore.createBlock(blockId);
+                writerSideStore.putPartitions(blockId, partitionsPerBlock.get(blockIdx), false);
+                writerSideStore.commitBlock(blockId);
+                blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                     "Writer side of the shuffle edge");
               });
               return true;
@@ -341,8 +341,8 @@ public final class BlockStoreTest {
           public Boolean call() {
             try {
               for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_TASKS; writeTaskIdx++) {
-                readResultCheck(partitionIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1),
-                    readerSideStore, blocksPerPartition.get(writeTaskIdx).get(readTaskIdx).getData());
+                readResultCheck(blockIdList.get(writeTaskIdx), HashRange.of(readTaskIdx, readTaskIdx + 1),
+                    readerSideStore, partitionsPerBlock.get(writeTaskIdx).get(readTaskIdx).getData());
               }
               return true;
             } catch (final Exception e) {
@@ -361,11 +361,11 @@ public final class BlockStoreTest {
       }
     });
 
-    // Remove all partitions
-    partitionIdList.forEach(partitionId -> {
-      final boolean exist = readerSideStore.removeBlock(partitionId);
+    // Remove all blocks
+    blockIdList.forEach(blockId -> {
+      final boolean exist = readerSideStore.removeBlock(blockId);
       if (!exist) {
-        throw new RuntimeException("The result of removeBlock(" + partitionId + ") is false");
+        throw new RuntimeException("The result of removeBlock(" + blockId + ") is false");
       }
     });
 
@@ -397,16 +397,16 @@ public final class BlockStoreTest {
     final List<Future<Boolean>> readFutureList = new ArrayList<>(NUM_CONC_READ_TASKS);
     final long startNano = System.nanoTime();
 
-    // Write a partition
+    // Write a block
     writeFuture = writeExecutor.submit(new Callable<Boolean>() {
       @Override
       public Boolean call() {
         try {
-          writerSideStore.createBlock(concPartitionId);
-          writerSideStore.putPartitions(concPartitionId, Collections.singleton(concPartitionBlock), false);
-          writerSideStore.commitBlock(concPartitionId);
+          writerSideStore.createBlock(concBlockId);
+          writerSideStore.putPartitions(concBlockId, Collections.singleton(concBlockPartition), false);
+          writerSideStore.commitBlock(concBlockId);
           blockManagerMaster.onBlockStateChanged(
-              concPartitionId, BlockState.State.COMMITTED, "Writer side of the concurrent read edge");
+              concBlockId, BlockState.State.COMMITTED, "Writer side of the concurrent read edge");
           return true;
         } catch (final Exception e) {
           e.printStackTrace();
@@ -423,13 +423,13 @@ public final class BlockStoreTest {
     }
     final long writeEndNano = System.nanoTime();
 
-    // Read the single partition concurrently and check whether the result is equal to the input
+    // Read the single block concurrently and check whether the result is equal to the input
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(readTaskIdx ->
         readFutureList.add(readExecutor.submit(new Callable<Boolean>() {
           @Override
           public Boolean call() {
             try {
-              readResultCheck(concPartitionId, HashRange.all(), readerSideStore, concPartitionBlock.getData());
+              readResultCheck(concBlockId, HashRange.all(), readerSideStore, concBlockPartition.getData());
               return true;
             } catch (final Exception e) {
               e.printStackTrace();
@@ -447,10 +447,10 @@ public final class BlockStoreTest {
       }
     });
 
-    // Remove the partition
-    final boolean exist = writerSideStore.removeBlock(concPartitionId);
+    // Remove the block
+    final boolean exist = writerSideStore.removeBlock(concBlockId);
     if (!exist) {
-      throw new RuntimeException("The result of removeBlock(" + concPartitionId + ") is false");
+      throw new RuntimeException("The result of removeBlock(" + concBlockId + ") is false");
     }
     final long readEndNano = System.nanoTime();
 
@@ -486,12 +486,12 @@ public final class BlockStoreTest {
           @Override
           public Boolean call() {
             try {
-              final String partitionId = hashedPartitionIdList.get(writeTaskIdx);
-              writerSideStore.createBlock(partitionId);
-              writerSideStore.putPartitions(partitionId,
-                  hashedPartitionBlockList.get(writeTaskIdx), false);
-              writerSideStore.commitBlock(partitionId);
-              blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED,
+              final String blockId = hashedBlockIdList.get(writeTaskIdx);
+              writerSideStore.createBlock(blockId);
+              writerSideStore.putPartitions(blockId,
+                  hashedBlockPartitionList.get(writeTaskIdx), false);
+              writerSideStore.commitBlock(blockId);
+              blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                   "Writer side of the shuffle in hash range edge");
               return true;
             } catch (final Exception e) {
@@ -519,7 +519,7 @@ public final class BlockStoreTest {
             try {
               for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
                 final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskIdx);
-                readResultCheck(hashedPartitionIdList.get(writeTaskIdx), hashRangeToRetrieve,
+                readResultCheck(hashedBlockIdList.get(writeTaskIdx), hashRangeToRetrieve,
                     readerSideStore, expectedDataInRange.get(readTaskIdx).get(writeTaskIdx));
               }
               return true;
@@ -541,12 +541,12 @@ public final class BlockStoreTest {
     });
     final long readEndNano = System.nanoTime();
 
-    // Remove stored partitions
+    // Remove stored blocks
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writer -> {
-      final boolean exist = writerSideStore.removeBlock(hashedPartitionIdList.get(writer));
+      final boolean exist = writerSideStore.removeBlock(hashedBlockIdList.get(writer));
       if (!exist) {
         throw new RuntimeException("The result of removeBlock(" +
-            hashedPartitionIdList.get(writer) + ") is false");
+            hashedBlockIdList.get(writer) + ") is false");
       }
     });
 
@@ -570,21 +570,21 @@ public final class BlockStoreTest {
   /**
    * Compares the expected iterable with the data read from a {@link BlockStore}.
    */
-  private void readResultCheck(final String partitionId,
+  private void readResultCheck(final String blockId,
                                final HashRange hashRange,
                                final BlockStore blockStore,
                                final Iterable expectedResult) throws IOException {
     final Optional<Iterable<SerializedPartition>> optionalSerResult =
-        blockStore.getSerializedPartitions(partitionId, hashRange);
+        blockStore.getSerializedPartitions(blockId, hashRange);
     if (!optionalSerResult.isPresent()) {
-      throw new IOException("The (serialized) result of get partition" + partitionId + " in range " +
+      throw new IOException("The (serialized) result of get block" + blockId + " in range " +
           hashRange + " is empty.");
     }
     final Iterable<SerializedPartition> serializedResult = optionalSerResult.get();
     final Optional<Iterable<NonSerializedPartition>> optionalNonSerResult =
-        blockStore.getPartitions(partitionId, hashRange);
+        blockStore.getPartitions(blockId, hashRange);
     if (!optionalSerResult.isPresent()) {
-      throw new IOException("The (non-serialized) result of get partition" + partitionId + " in range " +
+      throw new IOException("The (non-serialized) result of get block" + blockId + " in range " +
           hashRange + " is empty.");
     }
     final Iterable<NonSerializedPartition> nonSerializedResult = optionalNonSerResult.get();

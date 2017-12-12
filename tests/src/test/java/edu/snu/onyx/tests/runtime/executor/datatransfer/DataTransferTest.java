@@ -286,8 +286,8 @@ public final class DataTransferTest {
 
     // Initialize states in Master
     IntStream.range(0, PARALLELISM_TEN).forEach(srcTaskIndex -> {
-      final String partitionId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
-      master.initializeState(partitionId, taskGroupPrefix + srcTaskIndex);
+      final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
+      master.initializeState(blockId, taskGroupPrefix + srcTaskIndex);
       master.onProducerTaskGroupScheduled(taskGroupPrefix + srcTaskIndex);
     });
 

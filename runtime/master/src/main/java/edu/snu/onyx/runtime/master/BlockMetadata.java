@@ -19,7 +19,7 @@ import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.StateMachine;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.state.BlockState;
-import edu.snu.onyx.runtime.common.exception.AbsentPartitionException;
+import edu.snu.onyx.runtime.common.exception.AbsentBlockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +82,7 @@ final class BlockMetadata {
       case LOST_BEFORE_COMMIT:
       case REMOVED:
         // Reset the block location and committer information.
-        locationFuture.completeExceptionally(new AbsentPartitionException(blockId, newState));
+        locationFuture.completeExceptionally(new AbsentBlockException(blockId, newState));
         locationFuture = new CompletableFuture<>();
         stateMachine.setState(newState);
         break;

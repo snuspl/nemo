@@ -18,30 +18,30 @@ package edu.snu.onyx.runtime.common.exception;
 import edu.snu.onyx.runtime.common.state.BlockState;
 
 /**
- * An exception which represents the requested partition is neither COMMITTED nor SCHEDULED.
+ * An exception which represents the requested block is neither COMMITTED nor SCHEDULED.
  */
-public final class AbsentPartitionException extends Exception {
-  private final String partitionId;
+public final class AbsentBlockException extends Exception {
+  private final String blockId;
   private final BlockState.State state;
 
   /**
-   * @param partitionId id of the partition
-   * @param state state of the partition
+   * @param blockId id of the block
+   * @param state  state of the block
    */
-  public AbsentPartitionException(final String partitionId, final BlockState.State state) {
-    this.partitionId = partitionId;
+  public AbsentBlockException(final String blockId, final BlockState.State state) {
+    this.blockId = blockId;
     this.state = state;
   }
 
   /**
-   * @return id of the partition
+   * @return id of the block
    */
-  public String getPartitionId() {
-    return partitionId;
+  public String getBlockId() {
+    return blockId;
   }
 
   /**
-   * @return state of the partition
+   * @return state of the block
    */
   public BlockState.State getState() {
     return state;

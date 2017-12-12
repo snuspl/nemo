@@ -16,7 +16,7 @@
 package edu.snu.onyx.tests.runtime.master;
 
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.exception.AbsentPartitionException;
+import edu.snu.onyx.runtime.common.exception.AbsentBlockException;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
@@ -50,24 +50,24 @@ public final class BlockManagerMasterTest {
     blockManagerMaster = injector.getInstance(BlockManagerMaster.class);
   }
 
-  private static void checkPartitionAbsentException(final CompletableFuture<String> future,
-                                                    final String expectedPartitionId,
-                                                    final BlockState.State expectedState)
+  private static void checkBlockAbsentException(final CompletableFuture<String> future,
+                                                final String expectedPartitionId,
+                                                final BlockState.State expectedState)
       throws IllegalStateException, InterruptedException {
     assertTrue(future.isCompletedExceptionally());
     try {
       future.get();
       throw new IllegalStateException("An ExecutionException was expected.");
     } catch (final ExecutionException executionException) {
-      final AbsentPartitionException absentPartitionException
-          = (AbsentPartitionException) executionException.getCause();
-      assertEquals(expectedPartitionId, absentPartitionException.getPartitionId());
-      assertEquals(expectedState, absentPartitionException.getState());
+      final AbsentBlockException absentBlockException
+          = (AbsentBlockException) executionException.getCause();
+      assertEquals(expectedPartitionId, absentBlockException.getBlockId());
+      assertEquals(expectedState, absentBlockException.getState());
     }
   }
 
-  private static void checkPartitionLocation(final CompletableFuture<String> future,
-                                             final String expectedLocation)
+  private static void checkBlockLocation(final CompletableFuture<String> future,
+                                         final String expectedLocation)
       throws InterruptedException, ExecutionException {
     assertTrue(future.isDone());
     assertFalse(future.isCompletedExceptionally());
@@ -79,7 +79,7 @@ public final class BlockManagerMasterTest {
   }
 
   /**
-   * Test scenario where partition becomes committed and then lost.
+   * Test scenario where block becomes committed and then lost.
    * @throws Exception
    */
   @Test
@@ -88,26 +88,26 @@ public final class BlockManagerMasterTest {
     final int srcTaskIndex = 0;
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String executorId = RuntimeIdGenerator.generateExecutorId();
-    final String partitionId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
+    final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
 
-    // Initially the partition state is READY.
-    blockManagerMaster.initializeState(partitionId, taskGroupId);
-    checkPartitionAbsentException(blockManagerMaster.getBlockLocationFuture(partitionId), partitionId,
+    // Initially the block state is READY.
+    blockManagerMaster.initializeState(blockId, taskGroupId);
+    checkBlockAbsentException(blockManagerMaster.getBlockLocationFuture(blockId), blockId,
         BlockState.State.READY);
 
-    // The partition is being SCHEDULED.
+    // The block is being SCHEDULED.
     blockManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
-    final CompletableFuture<String> future = blockManagerMaster.getBlockLocationFuture(partitionId);
+    final CompletableFuture<String> future = blockManagerMaster.getBlockLocationFuture(blockId);
     checkPendingFuture(future);
 
-    // The partition is COMMITTED
-    blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED, executorId);
-    checkPartitionLocation(future, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
-    checkPartitionLocation(blockManagerMaster.getBlockLocationFuture(partitionId), executorId);
+    // The block is COMMITTED
+    blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED, executorId);
+    checkBlockLocation(future, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
+    checkBlockLocation(blockManagerMaster.getBlockLocationFuture(blockId), executorId);
 
-    // We LOST the partition.
+    // We LOST the block.
     blockManagerMaster.removeWorker(executorId);
-    checkPartitionAbsentException(blockManagerMaster.getBlockLocationFuture(partitionId), partitionId,
+    checkBlockAbsentException(blockManagerMaster.getBlockLocationFuture(blockId), blockId,
         BlockState.State.LOST);
   }
 
@@ -121,35 +121,35 @@ public final class BlockManagerMasterTest {
     final int srcTaskIndex = 0;
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String executorId = RuntimeIdGenerator.generateExecutorId();
-    final String partitionId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
+    final String blockId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
 
-    // The partition is being scheduled.
-    blockManagerMaster.initializeState(partitionId, taskGroupId);
+    // The block is being scheduled.
+    blockManagerMaster.initializeState(blockId, taskGroupId);
     blockManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
-    final CompletableFuture<String> future0 = blockManagerMaster.getBlockLocationFuture(partitionId);
+    final CompletableFuture<String> future0 = blockManagerMaster.getBlockLocationFuture(blockId);
     checkPendingFuture(future0);
 
     // Producer task group fails.
     blockManagerMaster.onProducerTaskGroupFailed(taskGroupId);
 
     // A future, previously pending on SCHEDULED state, is now completed exceptionally.
-    checkPartitionAbsentException(future0, partitionId, BlockState.State.LOST_BEFORE_COMMIT);
-    checkPartitionAbsentException(blockManagerMaster.getBlockLocationFuture(partitionId), partitionId,
+    checkBlockAbsentException(future0, blockId, BlockState.State.LOST_BEFORE_COMMIT);
+    checkBlockAbsentException(blockManagerMaster.getBlockLocationFuture(blockId), blockId,
         BlockState.State.LOST_BEFORE_COMMIT);
 
     // Re-scheduling the taskGroup.
     blockManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
-    final CompletableFuture<String> future1 = blockManagerMaster.getBlockLocationFuture(partitionId);
+    final CompletableFuture<String> future1 = blockManagerMaster.getBlockLocationFuture(blockId);
     checkPendingFuture(future1);
 
     // Committed.
-    blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.COMMITTED, executorId);
-    checkPartitionLocation(future1, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
-    checkPartitionLocation(blockManagerMaster.getBlockLocationFuture(partitionId), executorId);
+    blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED, executorId);
+    checkBlockLocation(future1, executorId); // A future, previously pending on SCHEDULED state, is now resolved.
+    checkBlockLocation(blockManagerMaster.getBlockLocationFuture(blockId), executorId);
 
     // Then removed.
-    blockManagerMaster.onBlockStateChanged(partitionId, BlockState.State.REMOVED, executorId);
-    checkPartitionAbsentException(blockManagerMaster.getBlockLocationFuture(partitionId), partitionId,
+    blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.REMOVED, executorId);
+    checkBlockAbsentException(blockManagerMaster.getBlockLocationFuture(blockId), blockId,
         BlockState.State.REMOVED);
   }
 }

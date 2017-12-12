@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.master;
 
 import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.exception.IllegalMessageException;
-import edu.snu.onyx.runtime.common.exception.AbsentPartitionException;
+import edu.snu.onyx.runtime.common.exception.AbsentBlockException;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageContext;
@@ -138,7 +138,7 @@ public final class BlockManagerMaster {
         case LOST:
         case REMOVED:
           final CompletableFuture<String> future = new CompletableFuture<>();
-          future.completeExceptionally(new AbsentPartitionException(blockId, state));
+          future.completeExceptionally(new AbsentBlockException(blockId, state));
           return future;
         default:
           throw new UnsupportedOperationException(state.toString());
@@ -311,7 +311,7 @@ public final class BlockManagerMaster {
           infoMsgBuilder.setOwnerExecutorId(location);
         } else {
           infoMsgBuilder.setState(
-              convertBlockState(((AbsentPartitionException) throwable).getState()));
+              convertBlockState(((AbsentBlockException) throwable).getState()));
         }
         messageContext.reply(
             ControlMessage.Message.newBuilder()
@@ -428,7 +428,7 @@ public final class BlockManagerMaster {
           }
         } else {
           responseBuilder.setState(
-              convertBlockState(((AbsentPartitionException) throwable).getState()));
+              convertBlockState(((AbsentBlockException) throwable).getState()));
         }
         messageContext.reply(
             ControlMessage.Message.newBuilder()
