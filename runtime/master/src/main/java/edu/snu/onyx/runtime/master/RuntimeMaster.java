@@ -20,7 +20,6 @@ import edu.snu.onyx.common.exception.*;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.MetricCollectionBarrierVertex;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
-import edu.snu.onyx.runtime.common.control.ControlEvent;
 import edu.snu.onyx.runtime.common.message.MessageContext;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.MessageListener;
@@ -32,6 +31,7 @@ import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
 import edu.snu.onyx.runtime.master.scheduler.Scheduler;
 import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
+import edu.snu.onyx.runtime.master.control.ControlEvent;
 
 import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.DriverSide;

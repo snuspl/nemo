@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.common.control;
+package edu.snu.onyx.runtime.master.control;
 
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import org.apache.reef.driver.context.ActiveContext;
