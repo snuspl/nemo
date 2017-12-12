@@ -16,7 +16,7 @@
 package edu.snu.onyx.tests.runtime.common.plan;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.common.ir.Transform;
+import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataFlowModelProperty;

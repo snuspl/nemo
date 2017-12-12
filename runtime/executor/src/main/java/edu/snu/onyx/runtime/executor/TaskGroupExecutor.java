@@ -20,7 +20,7 @@ import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.common.exception.PartitionFetchException;
 import edu.snu.onyx.common.exception.PartitionWriteException;
 import edu.snu.onyx.common.ir.Reader;
-import edu.snu.onyx.common.ir.Transform;
+import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.*;
