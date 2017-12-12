@@ -20,15 +20,5 @@
             <artifactId>onyx-common</artifactId>
             <version>${version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.beam</groupId>
-            <artifactId>beam-sdks-java-core</artifactId>
-            <version>${beam.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.beam</groupId>
-            <artifactId>beam-sdks-java-io-hadoop-input-format</artifactId>
-            <version>${beam.version}</version>
-        </dependency>
     </dependencies>
 </project>
