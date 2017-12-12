@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
@@ -21,9 +21,9 @@ import edu.snu.onyx.runtime.common.data.HashRange;
 import java.util.Optional;
 
 /**
- * {@link PartitionInputStream} and {@link PartitionOutputStream}.
+ * {@link BlockInputStream} and {@link BlockOutputStream}.
  */
-public interface PartitionStream {
+public interface BlockStream {
 
   /**
    * Gets the id of the remote executor.
@@ -33,26 +33,26 @@ public interface PartitionStream {
   String getRemoteExecutorId();
 
   /**
-   * Gets whether the sender should start encoding even though the whole partition has not been written yet.
+   * Gets whether the sender should start encoding even though the whole block has not been written yet.
    *
-   * @return whether the sender should start encoding even though the whole partition has not been written yet
+   * @return whether the sender should start encoding even though the whole block has not been written yet
    */
-  boolean isEncodePartialPartitionEnabled();
+  boolean isEncodePartialBlockEnabled();
 
   /**
-   * Gets the partition store type.
+   * Gets the block store type.
    *
-   * @return an {@link Optional} with partition store type if this stream belongs to a pull-based transfer,
+   * @return an {@link Optional} with block store type if this stream belongs to a pull-based transfer,
    *         an empty {@link Optional} otherwise.
    */
-  Optional<DataStoreProperty.Value> getPartitionStore();
+  Optional<DataStoreProperty.Value> getBlockStore();
 
   /**
-   * Gets the partition id.
+   * Gets the block id.
    *
-   * @return the partition id
+   * @return the block id
    */
-  String getPartitionId();
+  String getBlockId();
 
   /**
    * Gets the runtime edge id.

@@ -23,16 +23,15 @@ import edu.snu.onyx.common.ir.edge.executionproperty.UsedDataHandlingProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.partition.Block;
-import edu.snu.onyx.runtime.executor.data.partitiontransfer.BlockTransfer;
+import edu.snu.onyx.runtime.executor.data.blocktransfer.BlockTransfer;
 import edu.snu.onyx.runtime.executor.data.stores.BlockStore;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.common.exception.UnsupportedPartitionStoreException;
 import edu.snu.onyx.runtime.common.message.PersistentConnectionToMasterMap;
-import edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionInputStream;
-import edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionOutputStream;
+import edu.snu.onyx.runtime.executor.data.blocktransfer.BlockInputStream;
+import edu.snu.onyx.runtime.executor.data.blocktransfer.BlockOutputStream;
 import edu.snu.onyx.runtime.executor.data.stores.*;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -129,10 +128,10 @@ public final class BlockManagerWorker {
    * This can be invoked multiple times per blockId (maybe due to failures).
    * Here, we first check if we have the block here, and then try to fetch the block from a remote worker.
    *
-   * @param blockId    of the block.
-   * @param runtimeEdgeId  id of the runtime edge that corresponds to the block.
-   * @param blockStore for the data storage.
-   * @param hashRange      the hash range descriptor.
+   * @param blockId       of the block.
+   * @param runtimeEdgeId id of the runtime edge that corresponds to the block.
+   * @param blockStore    for the data storage.
+   * @param hashRange     the hash range descriptor.
    * @return the result data in the block.
    */
   public CompletableFuture<Iterable> retrieveDataFromBlock(
@@ -169,9 +168,9 @@ public final class BlockManagerWorker {
    * If the hash value range is [0, int.max), it will retrieve the whole data from the block.
    *
    * @param blockId       of the block.
-   * @param runtimeEdgeId     id of the runtime edge that corresponds to the block.
+   * @param runtimeEdgeId id of the runtime edge that corresponds to the block.
    * @param blockStore    for the data storage.
-   * @param hashRange         the hash range descriptor
+   * @param hashRange     the hash range descriptor
    * @return the {@link CompletableFuture} of the block.
    */
   private CompletableFuture<Iterable> requestBlockInRemoteWorker(
@@ -214,7 +213,7 @@ public final class BlockManagerWorker {
    * Store an iterable of data partitions to a block in the target {@code BlockStore}.
    * Invariant: This should not be invoked after a block is committed.
    * Invariant: This method may not support concurrent write for a single block.
-   *            Only one thread have to write at once.
+   * Only one thread have to write at once.
    *
    * @param blockId            of the block.
    * @param partitions         to save to a block.
@@ -239,8 +238,8 @@ public final class BlockManagerWorker {
   /**
    * Notifies that all writes for a block is end.
    *
-   * @param blockId       the ID of the block.
-   * @param blockStore    the store to save the block.
+   * @param blockId           the ID of the block.
+   * @param blockStore        the store to save the block.
    * @param partitionSizeInfo the size metric of partitions.
    * @param srcIRVertexId     the IR vertex ID of the source task.
    * @param expectedReadTotal the expected number of read for this block.
@@ -341,7 +340,7 @@ public final class BlockManagerWorker {
   }
 
   /**
-   * Handles used {@link Block}.
+   * Handles used {@link edu.snu.onyx.runtime.executor.data.block.Block}.
    *
    * @param blockStore the store which contains the block.
    * @param blockId    the ID of the block.
@@ -380,15 +379,15 @@ public final class BlockManagerWorker {
 
   /**
    * Respond to a pull request by another executor.
+   * <p>
+   * This method is executed by {@link edu.snu.onyx.runtime.executor.data.blocktransfer.BlockTransport} thread. \
+   * Never execute a blocking call in this method!
    *
-   * This method is executed by {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport}
-   * thread. Never execute a blocking call in this method!
-   *
-   * @param outputStream {@link PartitionOutputStream}
+   * @param outputStream {@link BlockOutputStream}
    */
-  public void onPullRequest(final PartitionOutputStream<?> outputStream) {
+  public void onPullRequest(final BlockOutputStream<?> outputStream) {
     // We are getting the block from local store!
-    final Optional<DataStoreProperty.Value> blockStoreOptional = outputStream.getPartitionStore();
+    final Optional<DataStoreProperty.Value> blockStoreOptional = outputStream.getBlockStore();
     final DataStoreProperty.Value blockStore = blockStoreOptional.get();
 
     backgroundExecutorService.submit(new Runnable() {
@@ -398,16 +397,16 @@ public final class BlockManagerWorker {
           if (DataStoreProperty.Value.LocalFileStore.equals(blockStore)
               || DataStoreProperty.Value.GlusterFileStore.equals(blockStore)) {
             final FileStore fileStore = (FileStore) getBlockStore(blockStore);
-            outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getPartitionId(),
+            outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getBlockId(),
                 outputStream.getHashRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(blockStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getBlockStore(blockStore);
             final Optional<Iterable<SerializedPartition>> optionalResult = serMemoryStore.getSerializedPartitions(
-                outputStream.getPartitionId(), outputStream.getHashRange());
-            outputStream.writeSerializedBlocks(optionalResult.get()).close();
+                outputStream.getBlockId(), outputStream.getHashRange());
+            outputStream.writeSerializedPartitions(optionalResult.get()).close();
           } else {
             final Iterable block =
-                retrieveDataFromBlock(outputStream.getPartitionId(), outputStream.getRuntimeEdgeId(),
+                retrieveDataFromBlock(outputStream.getBlockId(), outputStream.getRuntimeEdgeId(),
                     blockStore, outputStream.getHashRange()).get();
             outputStream.writeElements(block).close();
           }
@@ -421,16 +420,16 @@ public final class BlockManagerWorker {
 
   /**
    * Respond to a push notification by another executor.
-   *
+   * <p>
    * A push notification is generated when a remote executor invokes {@link edu.snu.onyx.runtime.executor.data
-   * .partitiontransfer.BlockTransfer#initiateSend(String, boolean, String, String, HashRange)} to transfer
+   * .blocktransfer.BlockTransfer#initiatePush(String, boolean, String, String, HashRange)} to transfer
    * a block to another executor.
-   *
-   * This method is executed by {@link edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport}
+   * <p>
+   * This method is executed by {@link edu.snu.onyx.runtime.executor.data.blocktransfer.BlockTransport}
    * thread. Never execute a blocking call in this method!
    *
-   * @param inputStream {@link PartitionInputStream}
+   * @param inputStream {@link BlockInputStream}
    */
-  public void onPushNotification(final PartitionInputStream inputStream) {
+  public void onPushNotification(final BlockInputStream inputStream) {
   }
 }

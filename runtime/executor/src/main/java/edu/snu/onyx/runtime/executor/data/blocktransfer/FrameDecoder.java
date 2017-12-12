@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
@@ -35,8 +35,8 @@ import java.util.Map;
  *   <li>Recognizes the type of the frame, namely control or data.</li>
  *   <li>If the received bytes are a part of a control frame, waits until the full content of the frame becomes
  *   available and decode the frame to emit a control frame object.</li>
- *   <li>If the received bytes consists a data frame, supply the data to the corresponding {@link PartitionInputStream}.
- *   <li>If the end of a data message is recognized, closes the corresponding {@link PartitionInputStream}.</li>
+ *   <li>If the received bytes consists a data frame, supply the data to the corresponding {@link BlockInputStream}.
+ *   <li>If the end of a data message is recognized, closes the corresponding {@link BlockInputStream}.</li>
  * </ul>
  *
  * <h3>Control frame specification:</h3>
@@ -76,7 +76,7 @@ import java.util.Map;
  *   <li>Length: the number of bytes in the body, not the entire frame</li>
  * </ul>
  *
- * @see PartitionTransportChannelInitializer
+ * @see BlockTransportChannelInitializer
  */
 final class FrameDecoder extends ByteToMessageDecoder {
 
@@ -90,8 +90,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   static final int HEADER_LENGTH = ControlFrameEncoder.HEADER_LENGTH;
 
-  private Map<Short, PartitionInputStream> pullTransferIdToInputStream;
-  private Map<Short, PartitionInputStream> pushTransferIdToInputStream;
+  private Map<Short, BlockInputStream> pullTransferIdToInputStream;
+  private Map<Short, BlockInputStream> pushTransferIdToInputStream;
 
   /**
    * The number of bytes consisting body of a control frame to be read next.
@@ -104,9 +104,9 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private long dataBodyBytesToRead = 0;
 
   /**
-   * The {@link PartitionInputStream} to which received bytes are added.
+   * The {@link BlockInputStream} to which received bytes are added.
    */
-  private PartitionInputStream inputStream;
+  private BlockInputStream inputStream;
 
   /**
    * Whether or not the data frame currently being read is the last frame of a data message.
@@ -132,8 +132,8 @@ final class FrameDecoder extends ByteToMessageDecoder {
 
   @Override
   public void channelActive(final ChannelHandlerContext ctx) {
-    final ControlMessageToPartitionStreamCodec duplexHandler
-        = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
+    final ControlMessageToBlockStreamCodec duplexHandler
+        = ctx.channel().pipeline().get(ControlMessageToBlockStreamCodec.class);
     pullTransferIdToInputStream = duplexHandler.getPullTransferIdToInputStream();
     pushTransferIdToInputStream = duplexHandler.getPushTransferIdToInputStream();
     ctx.fireChannelActive();
@@ -247,7 +247,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
   }
 
   /**
-   * Supply byte stream to an existing {@link PartitionInputStream}.
+   * Supply byte stream to an existing {@link BlockInputStream}.
    *
    * @param ctx the channel handler context
    * @param in  the {@link ByteBuf} from which to read data
@@ -272,7 +272,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
   }
 
   /**
-   * Closes {@link PartitionInputStream} if necessary and resets the internal states of the decoder.
+   * Closes {@link BlockInputStream} if necessary and resets the internal states of the decoder.
    *
    * @param ctx the channel handler context
    * @throws InterruptedException when interrupted while marking the end of stream
@@ -280,7 +280,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
   private void onDataFrameEnd(final ChannelHandlerContext ctx) {
     inputStream.startDecodingThreadIfNeeded();
     if (isLastFrame) {
-      LOG.debug("Transport {}:{}, where the partition sender is {} and the receiver is {}, is now closed",
+      LOG.debug("Transport {}:{}, where the block sender is {} and the receiver is {}, is now closed",
           new Object[]{isPullTransfer ? "pull" : "push", transferId, ctx.channel().remoteAddress(),
               ctx.channel().localAddress()});
       inputStream.markAsEnded();

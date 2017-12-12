@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.datatransfer.communication;
-
 /**
- * An interface for different DataCommunicationPatterns.
+ * Responsible for transferring block content from one executor to another.
  */
-public interface DataCommunicationPattern {
-}
+package edu.snu.onyx.runtime.executor.data.blocktransfer;

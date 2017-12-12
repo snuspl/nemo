@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.runtime.common.NettyChannelImplementationSelector;
@@ -39,14 +39,14 @@ import java.util.function.Consumer;
 /**
  * Bootstraps the server and connects to other servers on demand.
  */
-final class PartitionTransport implements AutoCloseable {
+final class BlockTransport implements AutoCloseable {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionTransport.class);
-  private static final String SERVER_LISTENING = "partition:server:listening";
-  private static final String SERVER_WORKING = "partition:server:working";
-  private static final String CLIENT = "partition:client";
+  private static final Logger LOG = LoggerFactory.getLogger(BlockTransport.class);
+  private static final String SERVER_LISTENING = "block:server:listening";
+  private static final String SERVER_WORKING = "block:server:working";
+  private static final String CLIENT = "block:client";
 
-  private final InjectionFuture<BlockTransfer> partitionTransfer;
+  private final InjectionFuture<BlockTransfer> blockTransfer;
   private final NameResolver nameResolver;
 
   private final EventLoopGroup serverListeningGroup;
@@ -56,9 +56,9 @@ final class PartitionTransport implements AutoCloseable {
   private final Channel serverListeningChannel;
 
   /**
-   * Constructs a partition transport and starts listening.
+   * Constructs a block transport and starts listening.
    *
-   * @param partitionTransfer     provides handler for inbound control messages
+   * @param blockTransfer         provides handler for inbound control messages
    * @param nameResolver          provides naming registry
    * @param localExecutorId       the id of this executor
    * @param channelImplSelector   provides implementation for netty channel
@@ -72,12 +72,12 @@ final class PartitionTransport implements AutoCloseable {
    * @param numClientThreads      the number of client threads
    */
   @Inject
-  private PartitionTransport(
-      final InjectionFuture<BlockTransfer> partitionTransfer,
+  private BlockTransport(
+      final InjectionFuture<BlockTransfer> blockTransfer,
       final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final NettyChannelImplementationSelector channelImplSelector,
-      final PartitionTransportChannelInitializer channelInitializer,
+      final BlockTransportChannelInitializer channelInitializer,
       final TcpPortProvider tcpPortProvider,
       final LocalAddressProvider localAddressProvider,
       @Parameter(JobConf.PartitionTransportServerPort.class) final int port,
@@ -86,11 +86,11 @@ final class PartitionTransport implements AutoCloseable {
       @Parameter(JobConf.PartitionTransportServerNumWorkingThreads.class) final int numWorkingThreads,
       @Parameter(JobConf.PartitionTransportClientNumThreads.class) final int numClientThreads) {
 
-    this.partitionTransfer = partitionTransfer;
+    this.blockTransfer = blockTransfer;
     this.nameResolver = nameResolver;
 
     if (port < 0) {
-      throw new IllegalArgumentException(String.format("Invalid PartitionTransportPort: %d", port));
+      throw new IllegalArgumentException(String.format("Invalid BlockTransportPort: %d", port));
     }
 
     final String host = localAddressProvider.getLocalAddress();
@@ -162,14 +162,14 @@ final class PartitionTransport implements AutoCloseable {
     serverListeningChannel = listeningChannel;
 
     try {
-      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(localExecutorId);
+      final BlockTransportIdentifier identifier = new BlockTransportIdentifier(localExecutorId);
       nameResolver.register(identifier, (InetSocketAddress) listeningChannel.localAddress());
     } catch (final Exception e) {
-      LOG.error("Cannot register PartitionTransport listening address to the naming registry", e);
+      LOG.error("Cannot register BlockTransport listening address to the naming registry", e);
       throw new RuntimeException(e);
     }
 
-    LOG.info("PartitionTransport server in {} is listening at {}", localExecutorId, listeningChannel.localAddress());
+    LOG.info("BlockTransport server in {} is listening at {}", localExecutorId, listeningChannel.localAddress());
   }
 
   /**
@@ -180,7 +180,7 @@ final class PartitionTransport implements AutoCloseable {
     LOG.info("Stopping listening at {} and closing", serverListeningChannel.localAddress());
 
     final ChannelFuture closeListeningChannelFuture = serverListeningChannel.close();
-    final ChannelGroupFuture channelGroupCloseFuture = partitionTransfer.get().getChannelGroup().close();
+    final ChannelGroupFuture channelGroupCloseFuture = blockTransfer.get().getChannelGroup().close();
     final Future serverListeningGroupCloseFuture = serverListeningGroup.shutdownGracefully();
     final Future serverWorkingGroupCloseFuture = serverWorkingGroup.shutdownGracefully();
     final Future clientGroupCloseFuture = clientGroup.shutdownGracefully();
@@ -193,7 +193,7 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * Connect to the {@link PartitionTransport} server of the specified executor.
+   * Connect to the {@link BlockTransport} server of the specified executor.
    * @param remoteExecutorId  the id of the executor
    * @param onError           the {@link Consumer} to be invoked on an error on name resolving
    * @return a {@link ChannelFuture} for connecting
@@ -201,10 +201,10 @@ final class PartitionTransport implements AutoCloseable {
   ChannelFuture connectTo(final String remoteExecutorId, final Consumer<Throwable> onError) {
     final InetSocketAddress address;
     try {
-      final PartitionTransportIdentifier identifier = new PartitionTransportIdentifier(remoteExecutorId);
+      final BlockTransportIdentifier identifier = new BlockTransportIdentifier(remoteExecutorId);
       address = nameResolver.lookup(identifier);
     } catch (final Exception e) {
-      LOG.error(String.format("Cannot lookup PartitionTransport listening address of %s", remoteExecutorId), e);
+      LOG.error(String.format("Cannot lookup BlockTransport listening address of %s", remoteExecutorId), e);
       onError.accept(e);
       throw new RuntimeException(e);
     }
@@ -214,22 +214,22 @@ final class PartitionTransport implements AutoCloseable {
   /**
    * {@link Identifier} for {@link BlockTransfer}.
    */
-  private static final class PartitionTransportIdentifier implements Identifier {
+  private static final class BlockTransportIdentifier implements Identifier {
 
     private final String executorId;
 
     /**
-     * Creates a {@link PartitionTransportIdentifier}.
+     * Creates a {@link BlockTransportIdentifier}.
      *
      * @param executorId id of the {@link edu.snu.onyx.runtime.executor.Executor}
      */
-    private PartitionTransportIdentifier(final String executorId) {
+    private BlockTransportIdentifier(final String executorId) {
       this.executorId = executorId;
     }
 
     @Override
     public String toString() {
-      return "partition://" + executorId;
+      return "block://" + executorId;
     }
 
     @Override
@@ -240,7 +240,7 @@ final class PartitionTransport implements AutoCloseable {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final PartitionTransportIdentifier that = (PartitionTransportIdentifier) o;
+      final BlockTransportIdentifier that = (BlockTransportIdentifier) o;
       return executorId.equals(that.executorId);
     }
 

@@ -15,11 +15,9 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
-import edu.snu.onyx.runtime.executor.data.partition.Block;
-
 /**
  * A collection of data elements.
- * This is a unit of read / write towards {@link Block}s.
+ * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.block.Block}s.
  * @param <T> the type of the data stored in this {@link Partition}.
  */
 public interface Partition<T> {

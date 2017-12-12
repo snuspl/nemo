@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.conf.JobConf;
@@ -41,14 +41,14 @@ import java.util.function.Consumer;
  * Manages channels and exposes an interface for {@link BlockManagerWorker}.
  */
 @ChannelHandler.Sharable
-public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionStream> {
+public final class BlockTransfer extends SimpleChannelInboundHandler<BlockStream> {
 
   private static final Logger LOG = LoggerFactory.getLogger(BlockTransfer.class);
   private static final String INBOUND = "block:inbound";
   private static final String OUTBOUND = "block:outbound";
 
   private final InjectionFuture<BlockManagerWorker> blockManagerWorker;
-  private final PartitionTransport partitionTransport;
+  private final BlockTransport blockTransport;
   private final String localExecutorId;
   private final int bufferSize;
 
@@ -59,77 +59,77 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
   private final ExecutorService outboundExecutorService;
 
   /**
-   * Creates a partition transfer and registers this transfer to the name server.
+   * Creates a block transfer and registers this transfer to the name server.
    *
-   * @param blockManagerWorker  provides {@link edu.snu.onyx.common.coder.Coder}s
-   * @param partitionTransport      provides {@link io.netty.channel.Channel}
-   * @param localExecutorId         the id of this executor
-   * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
-   * @param outboundThreads         the number of threads in thread pool for outbound partition transfer
-   * @param bufferSize              the size of outbound buffers
+   * @param blockManagerWorker provides {@link edu.snu.onyx.common.coder.Coder}s
+   * @param blockTransport     provides {@link io.netty.channel.Channel}
+   * @param localExecutorId    the id of this executor
+   * @param inboundThreads     the number of threads in thread pool for inbound block transfer
+   * @param outboundThreads    the number of threads in thread pool for outbound block transfer
+   * @param bufferSize         the size of outbound buffers
    */
   @Inject
   private BlockTransfer(
       final InjectionFuture<BlockManagerWorker> blockManagerWorker,
-      final PartitionTransport partitionTransport,
+      final BlockTransport blockTransport,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       @Parameter(JobConf.PartitionTransferInboundNumThreads.class) final int inboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundBufferSize.class) final int bufferSize) {
 
     this.blockManagerWorker = blockManagerWorker;
-    this.partitionTransport = partitionTransport;
+    this.blockTransport = blockTransport;
     this.localExecutorId = localExecutorId;
     this.bufferSize = bufferSize;
 
-    // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialPartition option
+    // Inbound thread pool can be easily saturated with multiple data transfers with the encodePartialBlock option
     // enabled. We may consider other solutions than using fixed thread pool.
     this.inboundExecutorService = Executors.newFixedThreadPool(inboundThreads, new DefaultThreadFactory(INBOUND));
     this.outboundExecutorService = Executors.newFixedThreadPool(outboundThreads, new DefaultThreadFactory(OUTBOUND));
   }
 
   /**
-   * Initiate a pull-based partition transfer.
+   * Initiate a pull-based block transfer.
    *
-   * @param executorId              the id of the source executor
-   * @param encodePartialPartition  whether the sender should start encoding even though the whole partition
-   *                                has not been written yet
-   * @param partitionStore          the partition store
-   * @param partitionId             the id of the partition to transfer
-   * @param runtimeEdgeId           the runtime edge id
-   * @param hashRange               the hash range
-   * @return a {@link PartitionInputStream} from which the received data can be read
+   * @param executorId         the id of the source executor
+   * @param encodePartialBlock whether the sender should start encoding even though the whole block
+   *                           has not been written yet
+   * @param blockStoreValue    the block store
+   * @param blockId            the id of the block to transfer
+   * @param runtimeEdgeId      the runtime edge id
+   * @param hashRange          the hash range
+   * @return a {@link BlockInputStream} from which the received data can be read
    */
-  public PartitionInputStream initiatePull(final String executorId,
-                                           final boolean encodePartialPartition,
-                                           final DataStoreProperty.Value partitionStore,
-                                           final String partitionId,
-                                           final String runtimeEdgeId,
-                                           final HashRange hashRange) {
-    final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
-        Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
+  public BlockInputStream initiatePull(final String executorId,
+                                       final boolean encodePartialBlock,
+                                       final DataStoreProperty.Value blockStoreValue,
+                                       final String blockId,
+                                       final String runtimeEdgeId,
+                                       final HashRange hashRange) {
+    final BlockInputStream stream = new BlockInputStream(executorId, encodePartialBlock,
+        Optional.of(blockStoreValue), blockId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorService(blockManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     write(executorId, stream, stream::onExceptionCaught);
     return stream;
   }
 
   /**
-   * Initiate a push-based partition transfer.
+   * Initiate a push-based block transfer.
    *
-   * @param executorId              the id of the destination executor
-   * @param encodePartialPartition  whether to start encoding even though the whole partition has not been written yet
-   * @param partitionId             the id of the partition to transfer
-   * @param runtimeEdgeId           the runtime edge id
-   * @param hashRange               the hash range
-   * @return a {@link PartitionOutputStream} to which data can be written
+   * @param executorId         the id of the destination executor
+   * @param encodePartialBlock whether to start encoding even though the whole block has not been written yet
+   * @param blockId            the id of the block to transfer
+   * @param runtimeEdgeId      the runtime edge id
+   * @param hashRange          the hash range
+   * @return a {@link BlockOutputStream} to which data can be written
    */
-  public PartitionOutputStream initiatePush(final String executorId,
-                                            final boolean encodePartialPartition,
-                                            final String partitionId,
-                                            final String runtimeEdgeId,
-                                            final HashRange hashRange) {
-    final PartitionOutputStream stream = new PartitionOutputStream(executorId, encodePartialPartition, Optional.empty(),
-        partitionId, runtimeEdgeId, hashRange);
+  public BlockOutputStream initiatePush(final String executorId,
+                                        final boolean encodePartialBlock,
+                                        final String blockId,
+                                        final String runtimeEdgeId,
+                                        final HashRange hashRange) {
+    final BlockOutputStream stream = new BlockOutputStream(executorId, encodePartialBlock, Optional.empty(),
+        blockId, runtimeEdgeId, hashRange);
     stream.setCoderAndExecutorServiceAndBufferSize(blockManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
     write(executorId, stream, stream::onExceptionCaught);
@@ -137,17 +137,17 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
   }
 
   /**
-   * Gets a {@link ChannelFuture} for connecting to the {@link PartitionTransport} server of the specified executor.
+   * Gets a {@link ChannelFuture} for connecting to the {@link BlockTransport} server of the specified executor.
    *
-   * @param remoteExecutorId  the id of the remote executor
-   * @param stream            the partition stream object to write
-   * @param onError           the {@link Consumer} to be invoked on an error during setting up a channel
-   *                          or writing to the channel
+   * @param remoteExecutorId the id of the remote executor
+   * @param stream           the block stream object to write
+   * @param onError          the {@link Consumer} to be invoked on an error during setting up a channel
+   *                         or writing to the channel
    */
-  private void write(final String remoteExecutorId, final PartitionStream stream, final Consumer<Throwable> onError) {
+  private void write(final String remoteExecutorId, final BlockStream stream, final Consumer<Throwable> onError) {
     final ChannelFuture channelFuture = executorIdToChannelFutureMap.computeIfAbsent(remoteExecutorId, executorId -> {
       // No cached channel found
-      final ChannelFuture connectFuture = partitionTransport.connectTo(executorId, onError);
+      final ChannelFuture connectFuture = blockTransport.connectTo(executorId, onError);
       connectFuture.addListener(future -> {
         if (future.isSuccess()) {
           // Succeed to connect
@@ -178,7 +178,7 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
   }
 
   @Override
-  protected void channelRead0(final ChannelHandlerContext ctx, final PartitionStream stream) {
+  protected void channelRead0(final ChannelHandlerContext ctx, final BlockStream stream) {
     final Channel channel = ctx.channel();
     final String remoteExecutorId = stream.getRemoteExecutorId();
     channelToExecutorIdMap.put(channel, remoteExecutorId);
@@ -197,19 +197,19 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
     });
 
     // process the inbound control message
-    if (stream instanceof PartitionInputStream) {
-      onPushNotification((PartitionInputStream) stream);
+    if (stream instanceof BlockInputStream) {
+      onPushNotification((BlockInputStream) stream);
     } else {
-      onPullRequest((PartitionOutputStream) stream);
+      onPullRequest((BlockOutputStream) stream);
     }
   }
 
   /**
    * Respond to a new pull request.
    *
-   * @param stream  {@link PartitionOutputStream}
+   * @param stream {@link BlockOutputStream}
    */
-  private void onPullRequest(final PartitionOutputStream stream) {
+  private void onPullRequest(final BlockOutputStream stream) {
     stream.setCoderAndExecutorServiceAndBufferSize(blockManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         outboundExecutorService, bufferSize);
     blockManagerWorker.get().onPullRequest(stream);
@@ -218,9 +218,9 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
   /**
    * Respond to a new push notification.
    *
-   * @param stream  {@link PartitionInputStream}
+   * @param stream {@link BlockInputStream}
    */
-  private void onPushNotification(final PartitionInputStream stream) {
+  private void onPushNotification(final BlockInputStream stream) {
     stream.setCoderAndExecutorService(blockManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
     blockManagerWorker.get().onPushNotification(stream);
@@ -282,9 +282,9 @@ public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionSt
     /**
      * Creates a {@link ControlMessageWriteFutureListener}.
      *
-     * @param channelFuture     the channel future
-     * @param remoteExecutorId  the id of the remote executor
-     * @param onError           the {@link Consumer} to be invoked on an error during writing to the channel
+     * @param channelFuture    the channel future
+     * @param remoteExecutorId the id of the remote executor
+     * @param onError          the {@link Consumer} to be invoked on an error during writing to the channel
      */
     private ControlMessageWriteFutureListener(final ChannelFuture channelFuture,
                                               final String remoteExecutorId,

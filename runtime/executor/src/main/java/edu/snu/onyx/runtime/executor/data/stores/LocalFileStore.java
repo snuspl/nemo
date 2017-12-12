@@ -21,7 +21,7 @@ import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.data.metadata.LocalFileMetadata;
-import edu.snu.onyx.runtime.executor.data.partition.FileBlock;
+import edu.snu.onyx.runtime.executor.data.block.FileBlock;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -31,26 +31,24 @@ import java.io.*;
 import java.util.List;
 
 /**
- * Stores partitions in local files.
+ * Stores blocks in local files.
  */
 @ThreadSafe
 public final class LocalFileStore extends LocalBlockStore implements FileStore {
   private final String fileDirectory;
-  private final InjectionFuture<BlockManagerWorker> partitionManagerWorker;
 
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
-                         final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
-    super(partitionManagerWorker);
+                         final InjectionFuture<BlockManagerWorker> blockManagerWorker) {
+    super(blockManagerWorker);
     this.fileDirectory = fileDirectory;
-    this.partitionManagerWorker = partitionManagerWorker;
     new File(fileDirectory).mkdirs();
   }
 
   /**
-   * Creates a new partition.
+   * Creates a new block.
    *
-   * @param blockId the ID of the partition to create.
+   * @param blockId the ID of the block to create.
    * @see BlockStore#createBlock(String).
    */
   @Override
@@ -60,25 +58,25 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
     final Coder coder = getCoderFromWorker(blockId);
     final LocalFileMetadata metadata = new LocalFileMetadata(false);
 
-    final FileBlock partition =
-        new FileBlock(coder, DataUtil.partitionIdToFilePath(blockId, fileDirectory), metadata);
-    getBlockMap().put(blockId, partition);
+    final FileBlock block =
+        new FileBlock(coder, DataUtil.blockIdToFilePath(blockId, fileDirectory), metadata);
+    getBlockMap().put(blockId, block);
   }
 
   /**
-   * Removes the file that the target partition is stored.
+   * Removes the file that the target block is stored.
    *
-   * @param blockId of the partition.
-   * @return whether the partition exists or not.
+   * @param blockId of the block.
+   * @return whether the block exists or not.
    */
   @Override
   public Boolean removeBlock(final String blockId) throws BlockFetchException {
-    final FileBlock filePartition = (FileBlock) getBlockMap().remove(blockId);
-    if (filePartition == null) {
+    final FileBlock fileBlock = (FileBlock) getBlockMap().remove(blockId);
+    if (fileBlock == null) {
       return false;
     }
     try {
-      filePartition.deleteFile();
+      fileBlock.deleteFile();
     } catch (final IOException e) {
       throw new BlockFetchException(e);
     }
@@ -89,14 +87,14 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
    * @see FileStore#getFileAreas(String, HashRange).
    */
   @Override
-  public List<FileArea> getFileAreas(final String partitionId,
+  public List<FileArea> getFileAreas(final String blockId,
                                      final HashRange hashRange) {
     try {
-      final FileBlock partition = (FileBlock) getBlockMap().get(partitionId);
-      if (partition == null) {
-        throw new IOException(String.format("%s does not exists", partitionId));
+      final FileBlock block = (FileBlock) getBlockMap().get(blockId);
+      if (block == null) {
+        throw new IOException(String.format("%s does not exists", blockId));
       }
-      return partition.asFileAreas(hashRange);
+      return block.asFileAreas(hashRange);
     } catch (final IOException retrievalException) {
       throw new BlockFetchException(retrievalException);
     }

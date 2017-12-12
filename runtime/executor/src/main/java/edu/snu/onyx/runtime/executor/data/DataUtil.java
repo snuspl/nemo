@@ -112,15 +112,15 @@ public final class DataUtil {
   }
 
   /**
-   * Converts a partition id to the corresponding file path.
+   * Converts a block id to the corresponding file path.
    *
-   * @param partitionId   the ID of the partition.
-   * @param fileDirectory the directory of the target partition file.
+   * @param blockId       the ID of the block.
+   * @param fileDirectory the directory of the target block file.
    * @return the file path of the partition.
    */
-  public static String partitionIdToFilePath(final String partitionId,
-                                             final String fileDirectory) {
-    return fileDirectory + "/" + partitionId;
+  public static String blockIdToFilePath(final String blockId,
+                                         final String fileDirectory) {
+    return fileDirectory + "/" + blockId;
   }
 
   /**

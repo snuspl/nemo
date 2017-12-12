@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
@@ -31,7 +31,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 /**
- * Input stream for partition transfer.
+ * Input stream for block transfer.
  *
  * Decodes and stores inbound data elements from other executors. Three threads are involved.
  * <ul>
@@ -43,58 +43,58 @@ import java.util.function.Consumer;
  *
  * @param <T> the type of element
  */
-public final class PartitionInputStream<T> implements Iterable<T>, PartitionStream {
+public final class BlockInputStream<T> implements Iterable<T>, BlockStream {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionInputStream.class);
+  private static final Logger LOG = LoggerFactory.getLogger(BlockInputStream.class);
 
   private final String senderExecutorId;
-  private final boolean encodePartialPartition;
-  private final Optional<DataStoreProperty.Value> partitionStore;
-  private final String partitionId;
+  private final boolean encodePartialBlock;
+  private final Optional<DataStoreProperty.Value> blockStoreValue;
+  private final String blockId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
   private Coder<T> coder;
   private ExecutorService executorService;
 
-  private final CompletableFuture<PartitionInputStream<T>> completeFuture = new CompletableFuture<>();
+  private final CompletableFuture<BlockInputStream<T>> completeFuture = new CompletableFuture<>();
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
   private final ClosableBlockingIterable<T> elementQueue = new ClosableBlockingIterable<>();
   private volatile boolean started = false;
 
   @Override
   public String toString() {
-    return String.format("PartitionInputStream(%s of %s%s from %s, %s, encodePartial: %b)",
-        hashRange.toString(), partitionId, partitionStore.isPresent() ? " in " + partitionStore.get() : "",
-        senderExecutorId, runtimeEdgeId, encodePartialPartition);
+    return String.format("BlockInputStream(%s of %s%s from %s, %s, encodePartial: %b)",
+        hashRange.toString(), blockId, blockStoreValue.isPresent() ? " in " + blockStoreValue.get() : "",
+        senderExecutorId, runtimeEdgeId, encodePartialBlock);
   }
 
   /**
-   * Creates a partition input stream.
+   * Creates a block input stream.
    *
-   * @param senderExecutorId        the id of the remote executor
-   * @param encodePartialPartition  whether the sender should start encoding even when the whole partition has not
-   *                                been written yet
-   * @param partitionStore          the partition store
-   * @param partitionId             the partition id
-   * @param runtimeEdgeId           the runtime edge id
-   * @param hashRange               the hash range
+   * @param senderExecutorId   the id of the remote executor
+   * @param encodePartialBlock whether the sender should start encoding even when the whole block has not
+   *                           been written yet
+   * @param blockStoreValue    the block store
+   * @param blockId            the block id
+   * @param runtimeEdgeId      the runtime edge id
+   * @param hashRange          the hash range
    */
-  PartitionInputStream(final String senderExecutorId,
-                       final boolean encodePartialPartition,
-                       final Optional<DataStoreProperty.Value> partitionStore,
-                       final String partitionId,
-                       final String runtimeEdgeId,
-                       final HashRange hashRange) {
+  BlockInputStream(final String senderExecutorId,
+                   final boolean encodePartialBlock,
+                   final Optional<DataStoreProperty.Value> blockStoreValue,
+                   final String blockId,
+                   final String runtimeEdgeId,
+                   final HashRange hashRange) {
     this.senderExecutorId = senderExecutorId;
-    this.encodePartialPartition = encodePartialPartition;
-    this.partitionStore = partitionStore;
-    this.partitionId = partitionId;
+    this.encodePartialBlock = encodePartialBlock;
+    this.blockStoreValue = blockStoreValue;
+    this.blockId = blockId;
     this.runtimeEdgeId = runtimeEdgeId;
     this.hashRange = hashRange;
   }
 
   /**
-   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into partition.
+   * Sets {@link Coder} and {@link ExecutorService} to de-serialize bytes into block.
    *
    * @param cdr     the coder
    * @param service the executor service
@@ -143,7 +143,7 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
         elementQueue.close();
         if (!completeFuture.isCompletedExceptionally()) {
           completeFuture.complete(this);
-          // If encodePartialPartition option is on, the elapsed time is not only determined by the speed of decoder
+          // If encodePartialBlock option is on, the elapsed time is not only determined by the speed of decoder
           // but also by the rate of byte stream through the network.
           // Before investigating on low rate of decoding, check the rate of the byte stream.
           LOG.debug("Decoding task took {} ms to complete for {}", endTime - startTime, toString());
@@ -176,18 +176,18 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
   }
 
   @Override
-  public boolean isEncodePartialPartitionEnabled() {
-    return encodePartialPartition;
+  public boolean isEncodePartialBlockEnabled() {
+    return encodePartialBlock;
   }
 
   @Override
-  public Optional<DataStoreProperty.Value> getPartitionStore() {
-    return partitionStore;
+  public Optional<DataStoreProperty.Value> getBlockStore() {
+    return blockStoreValue;
   }
 
   @Override
-  public String getPartitionId() {
-    return partitionId;
+  public String getBlockId() {
+    return blockId;
   }
 
   @Override
@@ -202,7 +202,7 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
 
   /**
    * Returns an {@link Iterator} for this {@link Iterable}.
-   * The end of this {@link Iterable} can possibly mean an error during the partition transfer.
+   * The end of this {@link Iterable} can possibly mean an error during the block transfer.
    * Consider using {@link #completeFuture} and {@link CompletableFuture#isCompletedExceptionally()} to check it.
    *
    * @return an {@link Iterator} for this {@link Iterable}
@@ -223,13 +223,13 @@ public final class PartitionInputStream<T> implements Iterable<T>, PartitionStre
   }
 
   /**
-   * Gets a {@link CompletableFuture} that completes with the partition transfer being done.
+   * Gets a {@link CompletableFuture} that completes with the block transfer being done.
    * This future is completed by one of the decoding thread. Consider using separate {@link ExecutorService} when
    * chaining a task to this future.
    *
-   * @return a {@link CompletableFuture} that completes with the partition transfer being done
+   * @return a {@link CompletableFuture} that completes with the block transfer being done
    */
-  public CompletableFuture<PartitionInputStream<T>> getCompleteFuture() {
+  public CompletableFuture<BlockInputStream<T>> getCompleteFuture() {
     return completeFuture;
   }
 

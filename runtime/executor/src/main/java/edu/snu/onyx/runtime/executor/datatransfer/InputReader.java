@@ -46,7 +46,6 @@ import java.util.stream.StreamSupport;
 public final class InputReader extends DataTransfer {
   private final int dstTaskIndex;
   private final String taskGroupId;
-
   private final BlockManagerWorker blockManagerWorker;
 
   /**
@@ -93,8 +92,8 @@ public final class InputReader extends DataTransfer {
   }
 
   private CompletableFuture<Iterable> readOneToOne() {
-    final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), dstTaskIndex);
-    return blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
+    final String blockId = RuntimeIdGenerator.generateBlockId(getId(), dstTaskIndex);
+    return blockManagerWorker.retrieveDataFromBlock(blockId, getId(),
         (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
         HashRange.all());
   }
@@ -104,8 +103,8 @@ public final class InputReader extends DataTransfer {
 
     final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
-      futures.add(blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
+      final String blockId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
+      futures.add(blockManagerWorker.retrieveDataFromBlock(blockId, getId(),
           (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
           HashRange.all()));
     }
@@ -115,8 +114,8 @@ public final class InputReader extends DataTransfer {
 
   /**
    * Read data in the assigned range of hash value.
-   * Constraint: If a partition is written by {@link OutputWriter#dataSkewWrite(List)}
-   * or {@link OutputWriter#writeScatterGather(List)}, it must be read using this method.
+   * Constraint: If a block is written by {@link OutputWriter#dataSkewWrite(List)}
+   * or {@link OutputWriter#writeShuffle(List)}, it must be read using this method.
    *
    * @return the list of the completable future of the data.
    */
@@ -131,9 +130,9 @@ public final class InputReader extends DataTransfer {
     final int numSrcTasks = this.getSourceParallelism();
     final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
+      final String blockId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
       futures.add(
-          blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
+          blockManagerWorker.retrieveDataFromBlock(blockId, getId(),
               (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }

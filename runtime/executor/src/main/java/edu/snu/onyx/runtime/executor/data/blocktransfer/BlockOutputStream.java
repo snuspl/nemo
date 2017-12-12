@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
@@ -36,7 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Output stream for partition transfer. {@link #close()} must be called after finishing write.
+ * Output stream for block transfer. {@link #close()} must be called after finishing write.
  *
  * Encodes and flushes outbound data elements to other executors. Three threads are involved.
  * <ul>
@@ -48,14 +48,14 @@ import java.util.concurrent.ExecutorService;
  *
  * @param <T> the type of element
  */
-public final class PartitionOutputStream<T> implements AutoCloseable, PartitionStream {
+public final class BlockOutputStream<T> implements AutoCloseable, BlockStream {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionOutputStream.class);
+  private static final Logger LOG = LoggerFactory.getLogger(BlockOutputStream.class);
 
   private final String receiverExecutorId;
-  private final boolean encodePartialPartition;
-  private final Optional<DataStoreProperty.Value> partitionStore;
-  private final String partitionId;
+  private final boolean encodePartialBlock;
+  private final Optional<DataStoreProperty.Value> blockStoreValue;
+  private final String blockId;
   private final String runtimeEdgeId;
   private final HashRange hashRange;
   private ControlMessage.PartitionTransferType transferType;
@@ -73,31 +73,31 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
 
   @Override
   public String toString() {
-    return String.format("PartitionOutputStream(%s of %s%s to %s, %s, encodePartial: %b)",
-        hashRange.toString(), partitionId, partitionStore.isPresent() ? " in " + partitionStore.get() : "",
-        receiverExecutorId, runtimeEdgeId, encodePartialPartition);
+    return String.format("BlockOutputStream(%s of %s%s to %s, %s, encodePartial: %b)",
+        hashRange.toString(), blockId, blockStoreValue.isPresent() ? " in " + blockStoreValue.get() : "",
+        receiverExecutorId, runtimeEdgeId, encodePartialBlock);
   }
 
   /**
-   * Creates a partition output stream.
+   * Creates a block output stream.
    *
-   * @param receiverExecutorId      the id of the remote executor
-   * @param encodePartialPartition  whether to start encoding even when the whole partition has not been written
-   * @param partitionStore          the partition store
-   * @param partitionId             the partition id
-   * @param runtimeEdgeId           the runtime edge id
-   * @param hashRange               the hash range
+   * @param receiverExecutorId the id of the remote executor
+   * @param encodePartialBlock whether to start encoding even when the whole block has not been written
+   * @param blockStoreValue    the block store
+   * @param blockId            the block id
+   * @param runtimeEdgeId      the runtime edge id
+   * @param hashRange          the hash range
    */
-  PartitionOutputStream(final String receiverExecutorId,
-                        final boolean encodePartialPartition,
-                        final Optional<DataStoreProperty.Value> partitionStore,
-                        final String partitionId,
-                        final String runtimeEdgeId,
-                        final HashRange hashRange) {
+  BlockOutputStream(final String receiverExecutorId,
+                    final boolean encodePartialBlock,
+                    final Optional<DataStoreProperty.Value> blockStoreValue,
+                    final String blockId,
+                    final String runtimeEdgeId,
+                    final HashRange hashRange) {
     this.receiverExecutorId = receiverExecutorId;
-    this.encodePartialPartition = encodePartialPartition;
-    this.partitionStore = partitionStore;
-    this.partitionId = partitionId;
+    this.encodePartialBlock = encodePartialBlock;
+    this.blockStoreValue = blockStoreValue;
+    this.blockId = blockId;
     this.runtimeEdgeId = runtimeEdgeId;
     this.hashRange = hashRange;
   }
@@ -105,9 +105,9 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   /**
    * Sets transfer type, transfer id, and {@link io.netty.channel.Channel}.
    *
-   * @param type  the transfer type
-   * @param id    the transfer id
-   * @param ch    the channel
+   * @param type the transfer type
+   * @param id   the transfer id
+   * @param ch   the channel
    */
   void setTransferIdAndChannel(final ControlMessage.PartitionTransferType type, final short id, final Channel ch) {
     this.transferType = type;
@@ -116,7 +116,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   }
 
   /**
-   * Sets {@link Coder}, {@link ExecutorService} and sizes to serialize bytes into partition.
+   * Sets {@link Coder}, {@link ExecutorService} and sizes to serialize bytes into block.
    *
    * @param cdr     the coder
    * @param service the executor service
@@ -136,18 +136,18 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   }
 
   @Override
-  public boolean isEncodePartialPartitionEnabled() {
-    return encodePartialPartition;
+  public boolean isEncodePartialBlockEnabled() {
+    return encodePartialBlock;
   }
 
   @Override
-  public Optional<DataStoreProperty.Value> getPartitionStore() {
-    return partitionStore;
+  public Optional<DataStoreProperty.Value> getBlockStore() {
+    return blockStoreValue;
   }
 
   @Override
-  public String getPartitionId() {
-    return partitionId;
+  public String getBlockId() {
+    return blockId;
   }
 
   @Override
@@ -187,13 +187,14 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
           } else if (thing instanceof FileArea) {
             byteBufOutputStream.writeFileArea((FileArea) thing);
           } else if (thing instanceof SerializedPartition) {
-            byteBufOutputStream.write(((SerializedPartition) thing).getData(), 0, ((SerializedPartition) thing).getLength());
+            byteBufOutputStream.write(
+                ((SerializedPartition) thing).getData(), 0, ((SerializedPartition) thing).getLength());
           } else {
             coder.encode((T) thing, byteBufOutputStream);
           }
         }
         final long endTime = System.currentTimeMillis();
-        // If encodePartialPartition option is on, the elapsed time is not only determined by the speed of encoder
+        // If encodePartialBlock option is on, the elapsed time is not only determined by the speed of encoder
         // but also by the rate the user writes objects to this stream.
         // Before investigating on low rate of decoding, check the rate of the byte stream.
         LOG.debug("Encoding task took {} ms to complete for {} ({} bytes, buffer size: {})",
@@ -218,15 +219,15 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   /**
    * Writes a {@link Iterable} of elements.
    *
-   * @param iterable  the {@link Iterable} to write
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
+   * @param iterable the {@link Iterable} to write
+   * @return {@link BlockOutputStream} (i.e. {@code this})
+   * @throws IOException           if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeElements(final Iterable iterable) throws IOException {
+  public BlockOutputStream writeElements(final Iterable iterable) throws IOException {
     checkWritableCondition();
     elementQueue.put(iterable);
-    if (encodePartialPartition) {
+    if (encodePartialBlock) {
       startEncodingThreadIfNeeded();
     }
     return this;
@@ -236,16 +237,16 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
    * Writes a {@link Iterable} of {@link FileArea}s. Zero-copy transfer is used if possible.
    *
    * @param fileAreas the list of the file areas
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
+   * @return {@link BlockOutputStream} (i.e. {@code this})
+   * @throws IOException           if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeFileAreas(final Iterable<FileArea> fileAreas) throws IOException {
+  public BlockOutputStream writeFileAreas(final Iterable<FileArea> fileAreas) throws IOException {
     checkWritableCondition();
     for (final FileArea fileArea : fileAreas) {
       elementQueue.put(fileArea);
     }
-    if (encodePartialPartition) {
+    if (encodePartialBlock) {
       startEncodingThreadIfNeeded();
     }
     return this;
@@ -254,16 +255,16 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   /**
    * Writes a collection of {@link SerializedPartition}s.
    *
-   * @param serializedBlocks the collection of {@link SerializedPartition}
-   * @return {@link PartitionOutputStream} (i.e. {@code this})
-   * @throws IOException if an exception was set
+   * @param serializedPartitions the collection of {@link SerializedPartition}
+   * @return {@link BlockOutputStream} (i.e. {@code this})
+   * @throws IOException           if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeSerializedBlocks(final Iterable<SerializedPartition> serializedBlocks)
+  public BlockOutputStream writeSerializedPartitions(final Iterable<SerializedPartition> serializedPartitions)
       throws IOException {
     checkWritableCondition();
-    serializedBlocks.forEach(elementQueue::put);
-    if (encodePartialPartition) {
+    serializedPartitions.forEach(elementQueue::put);
+    if (encodePartialBlock) {
       startEncodingThreadIfNeeded();
     }
     return this;
@@ -272,7 +273,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   /**
    * Closes this stream.
    *
-   * @throws IOException if an exception was set
+   * @throws IOException           if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
   @Override
@@ -305,7 +306,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   /**
    * Throws an {@link IOException} if needed.
    *
-   * @throws IOException if an exception was set
+   * @throws IOException           if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
   private void checkWritableCondition() throws IOException {
@@ -362,7 +363,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
 
     @Override
     public void close() {
-      // should send a frame with "isLastFrame" on to indicate the end of the partition stream
+      // should send a frame with "isLastFrame" on to indicate the end of the block stream
       writeDataFrame(true);
       if (byteBuf != null) {
         byteBuf.release();
@@ -407,7 +408,7 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
     /**
      * Writes a data frame from {@link FileArea}.
      *
-     * @param fileArea    the {@link FileArea} to transfer
+     * @param fileArea the {@link FileArea} to transfer
      * @throws IOException when failed to open the file
      */
     private void writeFileArea(final FileArea fileArea) throws IOException {

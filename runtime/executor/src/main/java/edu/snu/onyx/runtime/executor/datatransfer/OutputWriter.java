@@ -25,7 +25,6 @@ import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import edu.snu.onyx.runtime.executor.data.Partition;
 import edu.snu.onyx.runtime.executor.data.partitioner.*;
-import edu.snu.onyx.runtime.executor.datatransfer.communication.OneToOne;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -103,7 +102,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
       if (isDataSizeMetricCollectionEdge) {
         dataSkewWrite(partitionsToWrite);
       } else {
-        writeShuffleGather(partitionsToWrite);
+        writeShuffle(partitionsToWrite);
       }
     } else {
       throw new UnsupportedCommPatternException(new Exception("Communication pattern not supported"));
@@ -134,7 +133,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
     writeOneToOne(partitionsToWrite);
   }
 
-  private void writeShuffleGather(final List<Partition> partitionsToWrite) {
+  private void writeShuffle(final List<Partition> partitionsToWrite) {
     final int dstParallelism = getDstParallelism();
     if (partitionsToWrite.size() != dstParallelism) {
       throw new BlockWriteException(
@@ -176,8 +175,8 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
    * @return the parallelism of the destination task.
    */
   private int getDstParallelism() {
-    return dstVertex == null
-        || OneToOne.class.equals(runtimeEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))
+    return dstVertex == null || DataCommunicationPatternProperty.Value.OneToOne.equals(
+        runtimeEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern))
         ? 1 : dstVertex.getProperty(ExecutionProperty.Key.Parallelism);
   }
 }

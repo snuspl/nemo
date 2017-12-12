@@ -21,7 +21,7 @@ import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import edu.snu.onyx.runtime.executor.data.NonSerializedPartition;
 import edu.snu.onyx.runtime.executor.data.SerializedPartition;
-import edu.snu.onyx.runtime.executor.data.partition.Block;
+import edu.snu.onyx.runtime.executor.data.block.Block;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.IOException;

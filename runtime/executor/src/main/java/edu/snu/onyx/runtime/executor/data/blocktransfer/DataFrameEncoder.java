@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import io.netty.buffer.ByteBuf;
@@ -88,11 +88,11 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
 
     // a transport context is closed. remove from map.
     if (in.isLastFrame) {
-      final ControlMessageToPartitionStreamCodec duplexHandler
-          = ctx.channel().pipeline().get(ControlMessageToPartitionStreamCodec.class);
+      final ControlMessageToBlockStreamCodec duplexHandler
+          = ctx.channel().pipeline().get(ControlMessageToBlockStreamCodec.class);
       (isPull ? duplexHandler.getPullTransferIdToOutputStream() : duplexHandler.getPushTransferIdToOutputStream())
           .remove(in.transferId);
-      LOG.debug("Closing transport {}:{}, where the partition sender is {} and the receiver is {}", new Object[]{
+      LOG.debug("Closing transport {}:{}, where the block sender is {} and the receiver is {}", new Object[]{
           isPull ? "pull" : "push", in.transferId, ctx.channel().localAddress(), ctx.channel().remoteAddress()});
     }
   }

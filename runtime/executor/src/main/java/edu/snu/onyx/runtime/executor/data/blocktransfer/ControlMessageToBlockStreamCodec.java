@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
@@ -31,26 +31,26 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Responses to control message by emitting a new {@link PartitionStream},
- * and responses to {@link PartitionStream} by emitting a new control message.
+ * Responses to control message by emitting a new {@link BlockStream},
+ * and responses to {@link BlockStream} by emitting a new control message.
  *
- * <h3>Type of partition transfer:</h3>
+ * <h3>Type of block transfer:</h3>
  * <ul>
- *   <li>In push-based transfer, the sender initiates partition transfer and issues transfer id.</li>
- *   <li>In pull-based transfer, the receiver initiates partition transfer and issues transfer id.</li>
+ *   <li>In push-based transfer, the sender initiates block transfer and issues transfer id.</li>
+ *   <li>In pull-based transfer, the receiver initiates block transfer and issues transfer id.</li>
  * </ul>
  *
- * @see PartitionTransportChannelInitializer
+ * @see BlockTransportChannelInitializer
  */
-final class ControlMessageToPartitionStreamCodec
-    extends MessageToMessageCodec<ControlMessage.DataTransferControlMessage, PartitionStream> {
+final class ControlMessageToBlockStreamCodec
+    extends MessageToMessageCodec<ControlMessage.DataTransferControlMessage, BlockStream> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ControlMessageToPartitionStreamCodec.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ControlMessageToBlockStreamCodec.class);
 
-  private final Map<Short, PartitionInputStream> pullTransferIdToInputStream = new HashMap<>();
-  private final Map<Short, PartitionInputStream> pushTransferIdToInputStream = new HashMap<>();
-  private final Map<Short, PartitionOutputStream> pullTransferIdToOutputStream = new HashMap<>();
-  private final Map<Short, PartitionOutputStream> pushTransferIdToOutputStream = new HashMap<>();
+  private final Map<Short, BlockInputStream> pullTransferIdToInputStream = new HashMap<>();
+  private final Map<Short, BlockInputStream> pushTransferIdToInputStream = new HashMap<>();
+  private final Map<Short, BlockOutputStream> pullTransferIdToOutputStream = new HashMap<>();
+  private final Map<Short, BlockOutputStream> pushTransferIdToOutputStream = new HashMap<>();
 
   private final String localExecutorId;
   private SocketAddress localAddress;
@@ -60,11 +60,11 @@ final class ControlMessageToPartitionStreamCodec
   private short nextOutboundPushTransferId = 0;
 
   /**
-   * Creates a {@link ControlMessageToPartitionStreamCodec}.
+   * Creates a {@link ControlMessageToBlockStreamCodec}.
    *
    * @param localExecutorId the id of this executor
    */
-  ControlMessageToPartitionStreamCodec(final String localExecutorId) {
+  ControlMessageToBlockStreamCodec(final String localExecutorId) {
     this.localExecutorId = localExecutorId;
   }
 
@@ -76,33 +76,33 @@ final class ControlMessageToPartitionStreamCodec
   }
 
   /**
-   * For an outbound {@link PartitionStream}, which means {@link BlockTransfer} initiated a new transport context,
+   * For an outbound {@link BlockStream}, which means {@link BlockTransfer} initiated a new transport context,
    * responds to it by emitting a new control message and registering the transport context to the internal map.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
-   * @param in  the {@link PartitionStream}
+   * @param in  the {@link BlockStream}
    * @param out the {@link List} into which the created control message is added
    */
   @Override
   protected void encode(final ChannelHandlerContext ctx,
-                        final PartitionStream in,
+                        final BlockStream in,
                         final List out) {
-    if (in instanceof PartitionInputStream) {
-      onOutboundPullRequest(ctx, (PartitionInputStream) in, out);
+    if (in instanceof BlockInputStream) {
+      onOutboundPullRequest(ctx, (BlockInputStream) in, out);
     } else {
-      onOutboundPushNotification(ctx, (PartitionOutputStream) in, out);
+      onOutboundPushNotification(ctx, (BlockOutputStream) in, out);
     }
   }
 
   /**
-   * Respond to {@link PartitionInputStream} by emitting outbound pull request.
+   * Respond to {@link BlockInputStream} by emitting outbound pull request.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
-   * @param in  the {@link PartitionInputStream}
+   * @param in  the {@link BlockInputStream}
    * @param out the {@link List} into which the created control message is added
    */
   private void onOutboundPullRequest(final ChannelHandlerContext ctx,
-                                     final PartitionInputStream in,
+                                     final BlockInputStream in,
                                      final List out) {
     final short transferId = nextOutboundPullTransferId++;
     checkTransferIdAvailability(pullTransferIdToInputStream, ControlMessage.PartitionTransferType.PULL, transferId);
@@ -110,19 +110,19 @@ final class ControlMessageToPartitionStreamCodec
     emitControlMessage(ControlMessage.PartitionTransferType.PULL, transferId, in, out);
     LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-            in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
-            in.getPartitionStore().get().toString()});
+            in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
+            in.getBlockStore().get().toString()});
   }
 
   /**
-   * Respond to {@link PartitionOutputStream} by emitting outbound push notification.
+   * Respond to {@link BlockOutputStream} by emitting outbound push notification.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
-   * @param in  the {@link PartitionOutputStream}
+   * @param in  the {@link BlockOutputStream}
    * @param out the {@link List} into which the created control message is added
    */
   private void onOutboundPushNotification(final ChannelHandlerContext ctx,
-                                          final PartitionOutputStream in,
+                                          final BlockOutputStream in,
                                           final List out) {
     final short transferId = nextOutboundPushTransferId++;
     checkTransferIdAvailability(pushTransferIdToOutputStream, ControlMessage.PartitionTransferType.PUSH, transferId);
@@ -131,17 +131,17 @@ final class ControlMessageToPartitionStreamCodec
     emitControlMessage(ControlMessage.PartitionTransferType.PUSH, transferId, in, out);
     LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-            in.getPartitionId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
+            in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
   }
 
   /**
    * For an inbound control message (pull request or push notification), which initiates a transport context, responds
-   * to it by registering the transport context to the internal mapping, and emitting a new {@link PartitionStream},
+   * to it by registering the transport context to the internal mapping, and emitting a new {@link BlockStream},
    * which will be handled by {@link BlockTransfer}.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
    * @param in  the inbound control message
-   * @param out the {@link List} into which the created {@link PartitionStream} is added
+   * @param out the {@link List} into which the created {@link BlockStream} is added
    */
   @Override
   protected void decode(final ChannelHandlerContext ctx,
@@ -155,11 +155,11 @@ final class ControlMessageToPartitionStreamCodec
   }
 
   /**
-   * Respond to pull request by other executors by emitting a new {@link PartitionOutputStream}.
+   * Respond to pull request by other executors by emitting a new {@link BlockOutputStream}.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
    * @param in  the control message
-   * @param out the {@link List} into which the created {@link PartitionOutputStream} is added
+   * @param out the {@link List} into which the created {@link BlockOutputStream} is added
    */
   private void onInboundPullRequest(final ChannelHandlerContext ctx,
                                     final ControlMessage.DataTransferControlMessage in,
@@ -167,8 +167,8 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionOutputStream outputStream = new PartitionOutputStream(in.getControlMessageSourceId(),
-        in.getEncodePartialPartition(), Optional.of(convertPartitionStore(in.getPartitionStore())), in.getPartitionId(),
+    final BlockOutputStream outputStream = new BlockOutputStream(in.getControlMessageSourceId(),
+        in.getEncodePartialPartition(), Optional.of(convertBlockStore(in.getPartitionStore())), in.getPartitionId(),
         in.getRuntimeEdgeId(), hashRange);
     pullTransferIdToOutputStream.put(transferId, outputStream);
     outputStream.setTransferIdAndChannel(ControlMessage.PartitionTransferType.PULL, transferId, ctx.channel());
@@ -176,15 +176,15 @@ final class ControlMessageToPartitionStreamCodec
     LOG.debug("Received pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
             in.getPartitionId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
-            outputStream.getPartitionStore().get().toString()});
+            outputStream.getBlockStore().get().toString()});
   }
 
   /**
-   * Respond to push notification by other executors by emitting a new {@link PartitionInputStream}.
+   * Respond to push notification by other executors by emitting a new {@link BlockInputStream}.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
    * @param in  the control message
-   * @param out the {@link List} into which the created {@link PartitionInputStream} is added
+   * @param out the {@link List} into which the created {@link BlockInputStream} is added
    */
   private void onInboundPushNotification(final ChannelHandlerContext ctx,
                                          final ControlMessage.DataTransferControlMessage in,
@@ -192,7 +192,7 @@ final class ControlMessageToPartitionStreamCodec
     final short transferId = (short) in.getTransferId();
     final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
-    final PartitionInputStream inputStream = new PartitionInputStream(in.getControlMessageSourceId(),
+    final BlockInputStream inputStream = new BlockInputStream(in.getControlMessageSourceId(),
         in.getEncodePartialPartition(), Optional.empty(), in.getPartitionId(), in.getRuntimeEdgeId(), hashRange);
     pushTransferIdToInputStream.put(transferId, inputStream);
     out.add(inputStream);
@@ -204,9 +204,9 @@ final class ControlMessageToPartitionStreamCodec
   /**
    * Check whether the transfer id is not being used.
    *
-   * @param map           the map with transfer id as key
-   * @param transferType  the transfer type
-   * @param transferId    the transfer id
+   * @param map          the map with transfer id as key
+   * @param transferType the transfer type
+   * @param transferId   the transfer id
    */
   private void checkTransferIdAvailability(final Map<Short, ?> map,
                                            final ControlMessage.PartitionTransferType transferType,
@@ -220,25 +220,25 @@ final class ControlMessageToPartitionStreamCodec
   /**
    * Builds and emits control message.
    *
-   * @param transferType  the transfer type
-   * @param transferId    the transfer id
-   * @param in            {@link PartitionInputStream} or {@link PartitionOutputStream}
-   * @param out           the {@link List} into which the created control message is added
+   * @param transferType the transfer type
+   * @param transferId   the transfer id
+   * @param in           {@link BlockInputStream} or {@link BlockOutputStream}
+   * @param out          the {@link List} into which the created control message is added
    */
   private void emitControlMessage(final ControlMessage.PartitionTransferType transferType,
                                   final short transferId,
-                                  final PartitionStream in,
+                                  final BlockStream in,
                                   final List out) {
     final ControlMessage.DataTransferControlMessage.Builder controlMessageBuilder
         = ControlMessage.DataTransferControlMessage.newBuilder()
         .setControlMessageSourceId(localExecutorId)
         .setType(transferType)
         .setTransferId(transferId)
-        .setEncodePartialPartition(in.isEncodePartialPartitionEnabled())
-        .setPartitionId(in.getPartitionId())
+        .setEncodePartialPartition(in.isEncodePartialBlockEnabled())
+        .setPartitionId(in.getBlockId())
         .setRuntimeEdgeId(in.getRuntimeEdgeId());
-    if (in.getPartitionStore().isPresent()) {
-      controlMessageBuilder.setPartitionStore(convertPartitionStore(in.getPartitionStore().get()));
+    if (in.getBlockStore().isPresent()) {
+      controlMessageBuilder.setPartitionStore(convertBlockStore(in.getBlockStore().get()));
     }
     if (!in.getHashRange().isAll()) {
       controlMessageBuilder
@@ -250,16 +250,16 @@ final class ControlMessageToPartitionStreamCodec
 
   @Override
   public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-    for (final PartitionInputStream stream : pullTransferIdToInputStream.values()) {
+    for (final BlockInputStream stream : pullTransferIdToInputStream.values()) {
       stream.onExceptionCaught(cause);
     }
-    for (final PartitionInputStream stream : pushTransferIdToInputStream.values()) {
+    for (final BlockInputStream stream : pushTransferIdToInputStream.values()) {
       stream.onExceptionCaught(cause);
     }
-    for (final PartitionOutputStream stream : pullTransferIdToOutputStream.values()) {
+    for (final BlockOutputStream stream : pullTransferIdToOutputStream.values()) {
       stream.onExceptionCaught(cause);
     }
-    for (final PartitionOutputStream stream : pushTransferIdToOutputStream.values()) {
+    for (final BlockOutputStream stream : pushTransferIdToOutputStream.values()) {
       stream.onExceptionCaught(cause);
     }
     ctx.fireExceptionCaught(cause);
@@ -270,7 +270,7 @@ final class ControlMessageToPartitionStreamCodec
    *
    * @return {@code pullTransferIdToInputStream}
    */
-  Map<Short, PartitionInputStream> getPullTransferIdToInputStream() {
+  Map<Short, BlockInputStream> getPullTransferIdToInputStream() {
     return pullTransferIdToInputStream;
   }
 
@@ -279,7 +279,7 @@ final class ControlMessageToPartitionStreamCodec
    *
    * @return {@code pushTransferIdToInputStream}
    */
-  Map<Short, PartitionInputStream> getPushTransferIdToInputStream() {
+  Map<Short, BlockInputStream> getPushTransferIdToInputStream() {
     return pushTransferIdToInputStream;
   }
 
@@ -288,7 +288,7 @@ final class ControlMessageToPartitionStreamCodec
    *
    * @return {@code pullTransferIdToOutputStream}
    */
-  Map<Short, PartitionOutputStream> getPullTransferIdToOutputStream() {
+  Map<Short, BlockOutputStream> getPullTransferIdToOutputStream() {
     return pullTransferIdToOutputStream;
   }
 
@@ -297,13 +297,13 @@ final class ControlMessageToPartitionStreamCodec
    *
    * @return {@code pushTransferIdToOutputStream}
    */
-  Map<Short, PartitionOutputStream> getPushTransferIdToOutputStream() {
+  Map<Short, BlockOutputStream> getPushTransferIdToOutputStream() {
     return pushTransferIdToOutputStream;
   }
 
-  private static ControlMessage.PartitionStore convertPartitionStore(
-      final DataStoreProperty.Value partitionStore) {
-    switch (partitionStore) {
+  private static ControlMessage.PartitionStore convertBlockStore(
+      final DataStoreProperty.Value blockStore) {
+    switch (blockStore) {
       case MemoryStore:
         return ControlMessage.PartitionStore.MEMORY;
       case SerializedMemoryStore:
@@ -313,13 +313,13 @@ final class ControlMessageToPartitionStreamCodec
       case GlusterFileStore:
         return ControlMessage.PartitionStore.REMOTE_FILE;
       default:
-        throw new UnsupportedPartitionStoreException(new Exception(partitionStore + " is not supported."));
+        throw new UnsupportedPartitionStoreException(new Exception(blockStore + " is not supported."));
     }
   }
 
-  private static DataStoreProperty.Value convertPartitionStore(
-      final ControlMessage.PartitionStore partitionStoreType) {
-    switch (partitionStoreType) {
+  private static DataStoreProperty.Value convertBlockStore(
+      final ControlMessage.PartitionStore blockStoreType) {
+    switch (blockStoreType) {
       case MEMORY:
         return DataStoreProperty.Value.MemoryStore;
       case SER_MEMORY:
@@ -329,7 +329,7 @@ final class ControlMessageToPartitionStreamCodec
       case REMOTE_FILE:
         return DataStoreProperty.Value.GlusterFileStore;
       default:
-        throw new UnsupportedPartitionStoreException(new Exception("This partition store is not yet supported"));
+        throw new UnsupportedPartitionStoreException(new Exception("This block store is not yet supported"));
     }
   }
 }

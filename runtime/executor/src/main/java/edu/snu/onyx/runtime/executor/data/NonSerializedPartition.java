@@ -15,11 +15,9 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
-import edu.snu.onyx.runtime.executor.data.partition.Block;
-
 /**
  * A collection of data elements. The data is stored as an iterable of elements.
- * This is a unit of read / write towards {@link Block}s.
+ * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.block.Block}s.
  */
 public final class NonSerializedPartition implements Partition<Iterable> {
   private final int key;

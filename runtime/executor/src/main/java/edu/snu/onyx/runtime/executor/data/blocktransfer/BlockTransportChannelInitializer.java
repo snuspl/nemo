@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partitiontransfer;
+package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.conf.JobConf;
 import io.netty.channel.ChannelInitializer;
@@ -24,20 +24,20 @@ import org.apache.reef.tang.annotations.Parameter;
 import javax.inject.Inject;
 
 /**
- * Sets up {@link io.netty.channel.ChannelPipeline} for {@link PartitionTransport}.
+ * Sets up {@link io.netty.channel.ChannelPipeline} for {@link BlockTransport}.
  *
  * <h3>Inbound pipeline:</h3>
  * <pre>
  * {@literal
  *                                         Pull       +--------------------------------------+    A new
- *                                    +== request ==> | ControlMessageToPartitionStreamCodec | => PartitionOutputStream
+ *                                    +== request ==> | ControlMessageToBlockStreamCodec | => BlockOutputStream
  *                                    |               +--------------------------------------+
  *                        += Control =|
  *      +--------------+  |           |               +--------------------------------------+
- *   => | FrameDecoder | =|           += Push      => | ControlMessageToPartitionStreamCodec | => A new
- *      +--------------+  |             notification  +--------------------------------------+    PartitionInputStream
+ *   => | FrameDecoder | =|           += Push      => | ControlMessageToBlockStreamCodec | => A new
+ *      +--------------+  |             notification  +--------------------------------------+    BlockInputStream
  *                        |
- *                        += Data ====================> Add data to an existing PartitionInputStream
+ *                        += Data ====================> Add data to an existing BlockInputStream
  * }
  * </pre>
  *
@@ -45,24 +45,24 @@ import javax.inject.Inject;
  * <pre>
  * {@literal
  *      +---------------------+                    +--------------------------------------+    Pull request with a
- *   <= | ControlFrameEncoder | <= Pull request == | ControlMessageToPartitionStreamCodec | <= new PartitionInputStream
+ *   <= | ControlFrameEncoder | <= Pull request == | ControlMessageToBlockStreamCodec | <= new BlockInputStream
  *      +---------------------+                    +--------------------------------------+
  *      +---------------------+     Push           +--------------------------------------+    Push notification with a
- *   <= | ControlFrameEncoder | <= notification == | ControlMessageToPartitionStreamCodec | <= new PartitionOutputStream
+ *   <= | ControlFrameEncoder | <= notification == | ControlMessageToBlockStreamCodec | <= new BlockOutputStream
  *      +---------------------+                    +--------------------------------------+
  *
  *      +------------------+
- *   <= | DataFrameEncoder | <=== ByteBuf === PartitionOutputStream buffer flush
+ *   <= | DataFrameEncoder | <=== ByteBuf === BlockOutputStream buffer flush
  *      +------------------+
  *      +------------------+
- *   <= | DataFrameEncoder | <== FileArea === A FileArea added to PartitionOutputStream
+ *   <= | DataFrameEncoder | <== FileArea === A FileArea added to BlockOutputStream
  *      +------------------+
  * }
  * </pre>
  */
-final class PartitionTransportChannelInitializer extends ChannelInitializer<SocketChannel> {
+final class BlockTransportChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-  private final InjectionFuture<BlockTransfer> partitionTransfer;
+  private final InjectionFuture<BlockTransfer> blockTransfer;
   private final ControlFrameEncoder controlFrameEncoder;
   private final DataFrameEncoder dataFrameEncoder;
   private final String localExecutorId;
@@ -70,17 +70,17 @@ final class PartitionTransportChannelInitializer extends ChannelInitializer<Sock
   /**
    * Creates a netty channel initializer.
    *
-   * @param partitionTransfer   provides handler for inbound control messages
+   * @param blockTransfer       provides handler for inbound control messages
    * @param controlFrameEncoder encodes control frames
    * @param dataFrameEncoder    encodes data frames
    * @param localExecutorId     the id of this executor
    */
   @Inject
-  private PartitionTransportChannelInitializer(final InjectionFuture<BlockTransfer> partitionTransfer,
-                                               final ControlFrameEncoder controlFrameEncoder,
-                                               final DataFrameEncoder dataFrameEncoder,
-                                               @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {
-    this.partitionTransfer = partitionTransfer;
+  private BlockTransportChannelInitializer(final InjectionFuture<BlockTransfer> blockTransfer,
+                                           final ControlFrameEncoder controlFrameEncoder,
+                                           final DataFrameEncoder dataFrameEncoder,
+                                           @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {
+    this.blockTransfer = blockTransfer;
     this.controlFrameEncoder = controlFrameEncoder;
     this.dataFrameEncoder = dataFrameEncoder;
     this.localExecutorId = localExecutorId;
@@ -95,8 +95,8 @@ final class PartitionTransportChannelInitializer extends ChannelInitializer<Sock
         .addLast(controlFrameEncoder)
         .addLast(dataFrameEncoder)
         // both
-        .addLast(new ControlMessageToPartitionStreamCodec(localExecutorId))
+        .addLast(new ControlMessageToBlockStreamCodec(localExecutorId))
         // inbound
-        .addLast(partitionTransfer.get());
+        .addLast(blockTransfer.get());
   }
 }

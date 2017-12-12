@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data.partition;
+package edu.snu.onyx.runtime.executor.data.block;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.executor.data.*;
@@ -45,7 +45,7 @@ public final class FileBlock implements Block {
     this.filePath = filePath;
     this.metadata = metadata;
     this.partitionMetadataToCommit = new ConcurrentLinkedQueue<>();
-    this.commitPerBlock = metadata.isBlockCommitPerWrite();
+    this.commitPerBlock = metadata.isPartitionCommitPerWrite();
   }
 
   /**
@@ -61,13 +61,13 @@ public final class FileBlock implements Block {
     try (final FileOutputStream fileOutputStream = new FileOutputStream(filePath, true)) {
       for (final SerializedPartition serializedPartition : serializedPartitions) {
         // Reserve a partition write and get the metadata.
-        final PartitionMetadata partitionMetadata = metadata.reserveBlock(
+        final PartitionMetadata partitionMetadata = metadata.reservePartition(
             serializedPartition.getKey(), serializedPartition.getLength(), serializedPartition.getElementsTotal());
         fileOutputStream.write(serializedPartition.getData(), 0, serializedPartition.getLength());
 
         // Commit if needed.
         if (commitPerBlock) {
-          metadata.commitBlocks(Collections.singleton(partitionMetadata));
+          metadata.commitPartitions(Collections.singleton(partitionMetadata));
         } else {
           partitionMetadataToCommit.add(partitionMetadata);
         }
@@ -119,7 +119,7 @@ public final class FileBlock implements Block {
         metadataToCommit.add(partitionMetadata);
       }
     }
-    metadata.commitBlocks(metadataToCommit);
+    metadata.commitPartitions(metadataToCommit);
   }
 
   /**
@@ -134,7 +134,7 @@ public final class FileBlock implements Block {
     // Deserialize the data
     final List<NonSerializedPartition> deserializedPartitions = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      for (final PartitionMetadata partitionMetadata : metadata.getBlockMetadataIterable()) {
+      for (final PartitionMetadata partitionMetadata : metadata.getPartitionMetadataIterable()) {
         final int hashVal = partitionMetadata.getHashValue();
         if (hashRange.includes(hashVal)) {
           // The hash value of this partition is in the range.
@@ -164,7 +164,7 @@ public final class FileBlock implements Block {
     // Deserialize the data
     final List<SerializedPartition> partitionsInRange = new ArrayList<>();
     try (final FileInputStream fileStream = new FileInputStream(filePath)) {
-      for (final PartitionMetadata partitionmetadata : metadata.getBlockMetadataIterable()) {
+      for (final PartitionMetadata partitionmetadata : metadata.getPartitionMetadataIterable()) {
         final int hashVal = partitionmetadata.getHashValue();
         if (hashRange.includes(hashVal)) {
           // The hash value of this partition is in the range.
@@ -173,8 +173,8 @@ public final class FileBlock implements Block {
           if (readBytes != serializedData.length) {
             throw new IOException("The read data size does not match with the partition size.");
           }
-          partitionsInRange.add(new SerializedPartition
-              (hashVal, partitionmetadata.getElementsTotal(), serializedData, serializedData.length));
+          partitionsInRange.add(new SerializedPartition(
+              hashVal, partitionmetadata.getElementsTotal(), serializedData, serializedData.length));
         } else {
           // Have to skip this partition.
           skipBytes(fileStream, partitionmetadata.getPartitionSize());
@@ -213,7 +213,7 @@ public final class FileBlock implements Block {
    */
   public List<FileArea> asFileAreas(final HashRange hashRange) throws IOException {
     final List<FileArea> fileAreas = new ArrayList<>();
-    for (final PartitionMetadata partitionMetadata : metadata.getBlockMetadataIterable()) {
+    for (final PartitionMetadata partitionMetadata : metadata.getPartitionMetadataIterable()) {
       if (hashRange.includes(partitionMetadata.getHashValue())) {
         fileAreas.add(new FileArea(filePath, partitionMetadata.getOffset(), partitionMetadata.getPartitionSize()));
       }
@@ -238,6 +238,6 @@ public final class FileBlock implements Block {
   @Override
   public void commit() {
     commitRemainderMetadata();
-    metadata.commitPartition();
+    metadata.commitBlock();
   }
 }

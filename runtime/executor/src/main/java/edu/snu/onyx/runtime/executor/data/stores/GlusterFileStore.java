@@ -23,7 +23,7 @@ import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.message.PersistentConnectionToMasterMap;
 import edu.snu.onyx.runtime.executor.data.*;
 import edu.snu.onyx.runtime.executor.data.metadata.RemoteFileMetadata;
-import edu.snu.onyx.runtime.executor.data.partition.FileBlock;
+import edu.snu.onyx.runtime.executor.data.block.FileBlock;
 import org.apache.reef.tang.InjectionFuture;
 import org.apache.reef.tang.annotations.Parameter;
 
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Stores partitions in a mounted GlusterFS volume.
+ * Stores blocks in a mounted GlusterFS volume.
  * Because the data is stored in remote files and globally accessed by multiple nodes,
  * each access (write, read, or deletion) for a file needs one instance of {@link FileBlock}.
  * These accesses are judiciously synchronized by the metadata server in master.
@@ -52,9 +52,9 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   private GlusterFileStore(@Parameter(JobConf.GlusterVolumeDirectory.class) final String volumeDirectory,
                            @Parameter(JobConf.JobId.class) final String jobId,
                            @Parameter(JobConf.ExecutorId.class) final String executorId,
-                           final InjectionFuture<BlockManagerWorker> partitionManagerWorker,
+                           final InjectionFuture<BlockManagerWorker> blockManagerWorker,
                            final PersistentConnectionToMasterMap persistentConnectionToMasterMap) {
-    super(partitionManagerWorker);
+    super(blockManagerWorker);
     this.fileDirectory = volumeDirectory + "/" + jobId;
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
     this.executorId = executorId;
@@ -62,9 +62,9 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   }
 
   /**
-   * Creates a new partition.
+   * Creates a new block.
    *
-   * @param blockId the ID of the partition to create.
+   * @param blockId the ID of the block to create.
    * @see BlockStore#createBlock(String).
    */
   @Override
@@ -73,7 +73,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   }
 
   /**
-   * Saves an iterable of data blocks to a partition.
+   * Saves an iterable of data partitions to a block.
    *
    * @see BlockStore#putPartitions(String, Iterable, boolean).
    */
@@ -82,9 +82,9 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
                                             final Iterable<NonSerializedPartition> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
-      final FileBlock partition = createTmpPartition(commitPerPartition, blockId);
+      final FileBlock block = createTmpBlock(commitPerPartition, blockId);
       // Serialize and write the given blocks.
-      return partition.putPartitions(partitions);
+      return block.putPartitions(partitions);
     } catch (final IOException e) {
       throw new BlockWriteException(e);
     }
@@ -98,31 +98,32 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
                                             final Iterable<SerializedPartition> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
-      final FileBlock partition = createTmpPartition(commitPerPartition, blockId);
+      final FileBlock block = createTmpBlock(commitPerPartition, blockId);
       // Write the given blocks.
-      return partition.putSerializedPartitions(partitions);
+      return block.putSerializedPartitions(partitions);
     } catch (final IOException e) {
       throw new BlockWriteException(e);
     }
   }
 
   /**
-   * Retrieves a deserialized partition of elements through remote disks.
+   * Retrieves {@link NonSerializedPartition}s in a specific {@link HashRange} from a block.
    *
    * @see BlockStore#getPartitions(String, HashRange).
    */
   @Override
   public Optional<Iterable<NonSerializedPartition>> getPartitions(final String blockId,
-                                                                  final HashRange hashRange) throws BlockFetchException {
-    final String filePath = DataUtil.partitionIdToFilePath(blockId, fileDirectory);
+                                                                  final HashRange hashRange)
+      throws BlockFetchException {
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
       // Deserialize the target data in the corresponding file.
       try {
-        final FileBlock partition = createTmpPartition(false, blockId);
-        final Iterable<NonSerializedPartition> blocksInRange = partition.getPartitions(hashRange);
-        return Optional.of(blocksInRange);
+        final FileBlock block = createTmpBlock(false, blockId);
+        final Iterable<NonSerializedPartition> partitionsInRange = block.getPartitions(hashRange);
+        return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
       }
@@ -135,14 +136,14 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   @Override
   public Optional<Iterable<SerializedPartition>> getSerializedPartitions(final String blockId,
                                                                          final HashRange hashRange) {
-    final String filePath = DataUtil.partitionIdToFilePath(blockId, fileDirectory);
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
       try {
-        final FileBlock partition = createTmpPartition(false, blockId);
-        final Iterable<SerializedPartition> blocksInRange = partition.getSerializedPartitions(hashRange);
-        return Optional.of(blocksInRange);
+        final FileBlock block = createTmpBlock(false, blockId);
+        final Iterable<SerializedPartition> partitionsInRange = block.getSerializedPartitions(hashRange);
+        return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
       }
@@ -155,7 +156,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   @Override
   public void commitBlock(final String blockId) throws BlockWriteException {
     final Coder coder = getCoderFromWorker(blockId);
-    final String filePath = DataUtil.partitionIdToFilePath(blockId, fileDirectory);
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
 
     final RemoteFileMetadata metadata =
         new RemoteFileMetadata(false, blockId, executorId, persistentConnectionToMasterMap);
@@ -163,19 +164,19 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   }
 
   /**
-   * Removes the file that the target partition is stored.
+   * Removes the file that the target block is stored.
    *
-   * @param blockId of the partition.
-   * @return whether the partition exists or not.
+   * @param blockId of the block.
+   * @return whether the block exists or not.
    */
   @Override
   public Boolean removeBlock(final String blockId) throws BlockFetchException {
-    final String filePath = DataUtil.partitionIdToFilePath(blockId, fileDirectory);
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock partition = createTmpPartition(false, blockId);
-        partition.deleteFile();
+        final FileBlock block = createTmpBlock(false, blockId);
+        block.deleteFile();
         return true;
       } else {
         return false;
@@ -189,16 +190,16 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
    * @see FileStore#getFileAreas(String, HashRange).
    */
   @Override
-  public List<FileArea> getFileAreas(final String partitionId,
+  public List<FileArea> getFileAreas(final String blockId,
                                      final HashRange hashRange) {
-    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock partition = createTmpPartition(false, partitionId);
-        return partition.asFileAreas(hashRange);
+        final FileBlock block = createTmpBlock(false, blockId);
+        return block.asFileAreas(hashRange);
       } else {
-        throw new BlockFetchException(new Throwable(String.format("%s does not exists", partitionId)));
+        throw new BlockFetchException(new Throwable(String.format("%s does not exists", blockId)));
       }
     } catch (final IOException e) {
       throw new BlockFetchException(e);
@@ -210,17 +211,17 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
    * Because the data is stored in remote files and globally accessed by multiple nodes,
    * each access (write, read, or deletion) for a file needs one instance of {@link FileBlock}.
    *
-   * @param commitPerBlock whether commit every block write or not.
-   * @param partitionId    the ID of the partition to create.
+   * @param commitPerPartition whether commit every partition write or not.
+   * @param blockId            the ID of the block to create.
    * @return the {@link FileBlock} created.
    */
-  private FileBlock createTmpPartition(final boolean commitPerBlock,
-                                       final String partitionId) {
-    final Coder coder = getCoderFromWorker(partitionId);
-    final String filePath = DataUtil.partitionIdToFilePath(partitionId, fileDirectory);
+  private FileBlock createTmpBlock(final boolean commitPerPartition,
+                                   final String blockId) {
+    final Coder coder = getCoderFromWorker(blockId);
+    final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     final RemoteFileMetadata metadata =
-        new RemoteFileMetadata(commitPerBlock, partitionId, executorId, persistentConnectionToMasterMap);
-    final FileBlock partition = new FileBlock(coder, filePath, metadata);
-    return partition;
+        new RemoteFileMetadata(commitPerPartition, blockId, executorId, persistentConnectionToMasterMap);
+    final FileBlock block = new FileBlock(coder, filePath, metadata);
+    return block;
   }
 }

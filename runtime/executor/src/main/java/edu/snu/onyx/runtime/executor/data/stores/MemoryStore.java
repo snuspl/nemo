@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
-import edu.snu.onyx.runtime.executor.data.partition.NonSerializedMemoryBlock;
+import edu.snu.onyx.runtime.executor.data.block.NonSerializedMemoryBlock;
 import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -30,8 +30,8 @@ import javax.inject.Inject;
 public final class MemoryStore extends LocalBlockStore {
 
   @Inject
-  private MemoryStore(final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
-    super(partitionManagerWorker);
+  private MemoryStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {
+    super(blockManagerWorker);
   }
 
   @Override
