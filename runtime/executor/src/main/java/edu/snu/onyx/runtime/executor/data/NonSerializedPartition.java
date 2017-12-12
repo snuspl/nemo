@@ -15,22 +15,24 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
+import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+
 /**
  * A collection of data elements. The data is stored as an iterable of elements.
- * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.partition.Partition}s.
+ * This is a unit of read / write towards {@link TmpToBe}s.
  */
-public final class NonSerializedBlock implements Block<Iterable> {
+public final class NonSerializedPartition implements Partition<Iterable> {
   private final int key;
   private final Iterable nonSerializedData;
 
   /**
-   * Creates a non-serialized {@link Block} having a specific key value.
+   * Creates a non-serialized {@link Partition} having a specific key value.
    *
    * @param key  the key.
    * @param data the non-serialized data.
    */
-  public NonSerializedBlock(final int key,
-                            final Iterable data) {
+  public NonSerializedPartition(final int key,
+                                final Iterable data) {
     this.key = key;
     this.nonSerializedData = data;
   }
@@ -44,7 +46,7 @@ public final class NonSerializedBlock implements Block<Iterable> {
   }
 
   /**
-   * @return whether the data in this {@link Block} is serialized or not.
+   * @return whether the data in this {@link Partition} is serialized or not.
    */
   @Override
   public boolean isSerialized() {

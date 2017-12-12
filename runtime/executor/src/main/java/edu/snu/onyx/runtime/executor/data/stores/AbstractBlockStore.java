@@ -17,28 +17,28 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import org.apache.reef.tang.InjectionFuture;
 
 /**
- * This abstract class represents a default {@link PartitionStore},
- * which contains other components used in each implementation of {@link PartitionStore}.
+ * This abstract class represents a default {@link BlockStore},
+ * which contains other components used in each implementation of {@link BlockStore}.
  */
-public abstract class AbstractPartitionStore implements PartitionStore {
-  private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
+public abstract class AbstractBlockStore implements BlockStore {
+  private final InjectionFuture<BlockManagerWorker> partitionManagerWorker;
 
-  protected AbstractPartitionStore(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+  protected AbstractBlockStore(final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
     this.partitionManagerWorker = partitionManagerWorker;
   }
 
   /**
-   * Gets data coder for a partition from the {@link PartitionManagerWorker}.
+   * Gets data coder for a partition from the {@link BlockManagerWorker}.
    *
    * @param partitionId the ID of the partition to get the coder.
    * @return the coder.
    */
   public final Coder getCoderFromWorker(final String partitionId) {
-    final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromPartitionId(partitionId);
+    final String runtimeEdgeId = RuntimeIdGenerator.getRuntimeEdgeIdFromBlockId(partitionId);
     return partitionManagerWorker.get().getCoder(runtimeEdgeId);
   }
 }

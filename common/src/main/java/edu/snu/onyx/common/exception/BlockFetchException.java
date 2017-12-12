@@ -16,15 +16,15 @@
 package edu.snu.onyx.common.exception;
 
 /**
- * PartitionFetchException.
+ * BlockFetchException.
  * Thrown when any exception occurs while trying to fetch a block for task execution.
  */
-public final class PartitionFetchException extends RuntimeException {
+public final class BlockFetchException extends RuntimeException {
   /**
-   * PartitionFetchException.
+   * BlockFetchException.
    * @param exception exception
    */
-  public PartitionFetchException(final Throwable exception) {
+  public BlockFetchException(final Throwable exception) {
     super(exception);
   }
 }

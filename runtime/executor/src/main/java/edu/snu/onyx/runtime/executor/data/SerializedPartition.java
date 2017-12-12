@@ -15,28 +15,30 @@
  */
 package edu.snu.onyx.runtime.executor.data;
 
+import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
+
 /**
  * A collection of data elements. The data is stored as an array of bytes.
- * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.partition.Partition}s.
+ * This is a unit of read / write towards {@link TmpToBe}s.
  */
-public final class SerializedBlock implements Block<byte[]> {
+public final class SerializedPartition implements Partition<byte[]> {
   private final int key;
   private final long elementsTotal;
   private final byte[] serializedData;
   private final int length;
 
   /**
-   * Creates a serialized {@link Block} having a specific key value.
+   * Creates a serialized {@link Partition} having a specific key value.
    *
    * @param key            the key.
    * @param elementsTotal  the total number of elements.
    * @param serializedData the serialized data.
    * @param length         the length of the actual serialized data. (It can be different with serializedData.length)
    */
-  public SerializedBlock(final int key,
-                         final long elementsTotal,
-                         final byte[] serializedData,
-                         final int length) {
+  public SerializedPartition(final int key,
+                             final long elementsTotal,
+                             final byte[] serializedData,
+                             final int length) {
     this.key = key;
     this.elementsTotal = elementsTotal;
     this.serializedData = serializedData;
@@ -52,7 +54,7 @@ public final class SerializedBlock implements Block<byte[]> {
   }
 
   /**
-   * @return whether the data in this {@link Block} is serialized or not.
+   * @return whether the data in this {@link Partition} is serialized or not.
    */
   @Override
   public boolean isSerialized() {

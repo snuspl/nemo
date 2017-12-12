@@ -18,7 +18,7 @@ package edu.snu.onyx.runtime.executor.data.partitiontransfer;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -38,16 +38,16 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
- * Manages channels and exposes an interface for {@link PartitionManagerWorker}.
+ * Manages channels and exposes an interface for {@link BlockManagerWorker}.
  */
 @ChannelHandler.Sharable
-public final class PartitionTransfer extends SimpleChannelInboundHandler<PartitionStream> {
+public final class BlockTransfer extends SimpleChannelInboundHandler<PartitionStream> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PartitionTransfer.class);
-  private static final String INBOUND = "partition:inbound";
-  private static final String OUTBOUND = "partition:outbound";
+  private static final Logger LOG = LoggerFactory.getLogger(BlockTransfer.class);
+  private static final String INBOUND = "block:inbound";
+  private static final String OUTBOUND = "block:outbound";
 
-  private final InjectionFuture<PartitionManagerWorker> partitionManagerWorker;
+  private final InjectionFuture<BlockManagerWorker> blockManagerWorker;
   private final PartitionTransport partitionTransport;
   private final String localExecutorId;
   private final int bufferSize;
@@ -61,7 +61,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
   /**
    * Creates a partition transfer and registers this transfer to the name server.
    *
-   * @param partitionManagerWorker  provides {@link edu.snu.onyx.common.coder.Coder}s
+   * @param blockManagerWorker  provides {@link edu.snu.onyx.common.coder.Coder}s
    * @param partitionTransport      provides {@link io.netty.channel.Channel}
    * @param localExecutorId         the id of this executor
    * @param inboundThreads          the number of threads in thread pool for inbound partition transfer
@@ -69,15 +69,15 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param bufferSize              the size of outbound buffers
    */
   @Inject
-  private PartitionTransfer(
-      final InjectionFuture<PartitionManagerWorker> partitionManagerWorker,
+  private BlockTransfer(
+      final InjectionFuture<BlockManagerWorker> blockManagerWorker,
       final PartitionTransport partitionTransport,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       @Parameter(JobConf.PartitionTransferInboundNumThreads.class) final int inboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundNumThreads.class) final int outboundThreads,
       @Parameter(JobConf.PartitionTransferOutboundBufferSize.class) final int bufferSize) {
 
-    this.partitionManagerWorker = partitionManagerWorker;
+    this.blockManagerWorker = blockManagerWorker;
     this.partitionTransport = partitionTransport;
     this.localExecutorId = localExecutorId;
     this.bufferSize = bufferSize;
@@ -108,7 +108,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
                                            final HashRange hashRange) {
     final PartitionInputStream stream = new PartitionInputStream(executorId, encodePartialPartition,
         Optional.of(partitionStore), partitionId, runtimeEdgeId, hashRange);
-    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
+    stream.setCoderAndExecutorService(blockManagerWorker.get().getCoder(runtimeEdgeId), inboundExecutorService);
     write(executorId, stream, stream::onExceptionCaught);
     return stream;
   }
@@ -130,7 +130,7 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
                                             final HashRange hashRange) {
     final PartitionOutputStream stream = new PartitionOutputStream(executorId, encodePartialPartition, Optional.empty(),
         partitionId, runtimeEdgeId, hashRange);
-    stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(runtimeEdgeId),
+    stream.setCoderAndExecutorServiceAndBufferSize(blockManagerWorker.get().getCoder(runtimeEdgeId),
         outboundExecutorService, bufferSize);
     write(executorId, stream, stream::onExceptionCaught);
     return stream;
@@ -210,9 +210,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param stream  {@link PartitionOutputStream}
    */
   private void onPullRequest(final PartitionOutputStream stream) {
-    stream.setCoderAndExecutorServiceAndBufferSize(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
+    stream.setCoderAndExecutorServiceAndBufferSize(blockManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         outboundExecutorService, bufferSize);
-    partitionManagerWorker.get().onPullRequest(stream);
+    blockManagerWorker.get().onPullRequest(stream);
   }
 
   /**
@@ -221,9 +221,9 @@ public final class PartitionTransfer extends SimpleChannelInboundHandler<Partiti
    * @param stream  {@link PartitionInputStream}
    */
   private void onPushNotification(final PartitionInputStream stream) {
-    stream.setCoderAndExecutorService(partitionManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
+    stream.setCoderAndExecutorService(blockManagerWorker.get().getCoder(stream.getRuntimeEdgeId()),
         inboundExecutorService);
-    partitionManagerWorker.get().onPushNotification(stream);
+    blockManagerWorker.get().onPushNotification(stream);
   }
 
   @Override

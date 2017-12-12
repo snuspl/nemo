@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test for {@link PartitionManagerMaster}.
  */
-public final class PartitionManagerMasterTest {
+public final class TmpToBeManagerMasterTest {
   private PartitionManagerMaster partitionManagerMaster;
 
   @Before
@@ -88,7 +88,7 @@ public final class PartitionManagerMasterTest {
     final int srcTaskIndex = 0;
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String executorId = RuntimeIdGenerator.generateExecutorId();
-    final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
+    final String partitionId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
 
     // Initially the partition state is READY.
     partitionManagerMaster.initializeState(partitionId, taskGroupId);
@@ -121,7 +121,7 @@ public final class PartitionManagerMasterTest {
     final int srcTaskIndex = 0;
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String executorId = RuntimeIdGenerator.generateExecutorId();
-    final String partitionId = RuntimeIdGenerator.generatePartitionId(edgeId, srcTaskIndex);
+    final String partitionId = RuntimeIdGenerator.generateBlockId(edgeId, srcTaskIndex);
 
     // The partition is being scheduled.
     partitionManagerMaster.initializeState(partitionId, taskGroupId);

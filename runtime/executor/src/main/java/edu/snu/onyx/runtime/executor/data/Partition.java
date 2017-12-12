@@ -13,18 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.common.exception;
+package edu.snu.onyx.runtime.executor.data;
+
+import edu.snu.onyx.runtime.executor.data.partition.TmpToBe;
 
 /**
- * PartitionWriteException.
- * Thrown when any exception occurs while trying to write a block/output of a task.
+ * A collection of data elements.
+ * This is a unit of read / write towards {@link TmpToBe}s.
+ * @param <T> the type of the data stored in this {@link Partition}.
  */
-public final class PartitionWriteException extends RuntimeException {
+public interface Partition<T> {
+
   /**
-   * PartitionWriteException.
-   * @param exception exception
+   * @return the key value.
    */
-  public PartitionWriteException(final Throwable exception) {
-    super(exception);
-  }
+  int getKey();
+
+  /**
+   * @return whether the data in this {@link Partition} is serialized or not.
+   */
+  boolean isSerialized();
+
+  /**
+   * @return the data in this {@link Partition}.
+   */
+  T getData();
 }

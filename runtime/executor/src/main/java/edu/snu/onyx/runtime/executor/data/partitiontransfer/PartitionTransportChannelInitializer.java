@@ -62,7 +62,7 @@ import javax.inject.Inject;
  */
 final class PartitionTransportChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-  private final InjectionFuture<PartitionTransfer> partitionTransfer;
+  private final InjectionFuture<BlockTransfer> partitionTransfer;
   private final ControlFrameEncoder controlFrameEncoder;
   private final DataFrameEncoder dataFrameEncoder;
   private final String localExecutorId;
@@ -76,7 +76,7 @@ final class PartitionTransportChannelInitializer extends ChannelInitializer<Sock
    * @param localExecutorId     the id of this executor
    */
   @Inject
-  private PartitionTransportChannelInitializer(final InjectionFuture<PartitionTransfer> partitionTransfer,
+  private PartitionTransportChannelInitializer(final InjectionFuture<BlockTransfer> partitionTransfer,
                                                final ControlFrameEncoder controlFrameEncoder,
                                                final DataFrameEncoder dataFrameEncoder,
                                                @Parameter(JobConf.ExecutorId.class) final String localExecutorId) {

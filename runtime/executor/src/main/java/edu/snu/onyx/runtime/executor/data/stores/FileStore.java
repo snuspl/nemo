@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Stores partitions in (local or remote) files.
  */
-public interface FileStore extends PartitionStore {
+public interface FileStore extends BlockStore {
 
   /**
    * Gets the list of {@link FileArea}s for the specified partition.

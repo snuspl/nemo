@@ -46,7 +46,7 @@ final class PartitionTransport implements AutoCloseable {
   private static final String SERVER_WORKING = "partition:server:working";
   private static final String CLIENT = "partition:client";
 
-  private final InjectionFuture<PartitionTransfer> partitionTransfer;
+  private final InjectionFuture<BlockTransfer> partitionTransfer;
   private final NameResolver nameResolver;
 
   private final EventLoopGroup serverListeningGroup;
@@ -73,7 +73,7 @@ final class PartitionTransport implements AutoCloseable {
    */
   @Inject
   private PartitionTransport(
-      final InjectionFuture<PartitionTransfer> partitionTransfer,
+      final InjectionFuture<BlockTransfer> partitionTransfer,
       final NameResolver nameResolver,
       @Parameter(JobConf.ExecutorId.class) final String localExecutorId,
       final NettyChannelImplementationSelector channelImplSelector,
@@ -212,7 +212,7 @@ final class PartitionTransport implements AutoCloseable {
   }
 
   /**
-   * {@link Identifier} for {@link PartitionTransfer}.
+   * {@link Identifier} for {@link BlockTransfer}.
    */
   private static final class PartitionTransportIdentifier implements Identifier {
 

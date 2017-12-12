@@ -24,10 +24,10 @@ import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.onyx.runtime.common.plan.physical.Task;
-import edu.snu.onyx.common.exception.PartitionFetchException;
+import edu.snu.onyx.common.exception.BlockFetchException;
 import edu.snu.onyx.common.exception.UnsupportedCommPatternException;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
+import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public final class InputReader extends DataTransfer {
   private final int dstTaskIndex;
   private final String taskGroupId;
 
-  private final PartitionManagerWorker partitionManagerWorker;
+  private final BlockManagerWorker blockManagerWorker;
 
   /**
    * Attributes that specify how we should read the input.
@@ -60,13 +60,13 @@ public final class InputReader extends DataTransfer {
                      final String taskGroupId,
                      final IRVertex srcVertex,
                      final RuntimeEdge runtimeEdge,
-                     final PartitionManagerWorker partitionManagerWorker) {
+                     final BlockManagerWorker blockManagerWorker) {
     super(runtimeEdge.getId());
     this.dstTaskIndex = dstTaskIndex;
     this.taskGroupId = taskGroupId;
     this.srcVertex = srcVertex;
     this.runtimeEdge = runtimeEdge;
-    this.partitionManagerWorker = partitionManagerWorker;
+    this.blockManagerWorker = blockManagerWorker;
   }
 
   /**
@@ -93,8 +93,8 @@ public final class InputReader extends DataTransfer {
   }
 
   private CompletableFuture<Iterable> readOneToOne() {
-    final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), dstTaskIndex);
-    return partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
+    final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), dstTaskIndex);
+    return blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
         (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
         HashRange.all());
   }
@@ -104,8 +104,8 @@ public final class InputReader extends DataTransfer {
 
     final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
-      futures.add(partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
+      final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
+      futures.add(blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
           (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
           HashRange.all()));
     }
@@ -125,15 +125,15 @@ public final class InputReader extends DataTransfer {
     final HashRange hashRangeToRead =
         ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdToHashRangeMap().get(taskGroupId);
     if (hashRangeToRead == null) {
-      throw new PartitionFetchException(new Throwable("The hash range to read is not assigned to " + taskGroupId));
+      throw new BlockFetchException(new Throwable("The hash range to read is not assigned to " + taskGroupId));
     }
 
     final int numSrcTasks = this.getSourceParallelism();
     final List<CompletableFuture<Iterable>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
-      final String partitionId = RuntimeIdGenerator.generatePartitionId(getId(), srcTaskIdx);
+      final String partitionId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
       futures.add(
-          partitionManagerWorker.retrieveDataFromPartition(partitionId, getId(),
+          blockManagerWorker.retrieveDataFromBlock(partitionId, getId(),
               (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
               hashRangeToRead));
     }

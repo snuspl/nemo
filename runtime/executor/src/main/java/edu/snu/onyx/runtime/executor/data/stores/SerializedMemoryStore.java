@@ -16,8 +16,8 @@
 package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.runtime.executor.data.PartitionManagerWorker;
-import edu.snu.onyx.runtime.executor.data.partition.SerializedMemoryPartition;
+import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
+import edu.snu.onyx.runtime.executor.data.partition.SerializedMemoryTmpToBe;
 import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -27,24 +27,24 @@ import javax.inject.Inject;
  * Serialize and store data in local memory.
  */
 @ThreadSafe
-public final class SerializedMemoryStore extends LocalPartitionStore {
+public final class SerializedMemoryStore extends LocalBlockStore {
 
   @Inject
-  private SerializedMemoryStore(final InjectionFuture<PartitionManagerWorker> partitionManagerWorker) {
+  private SerializedMemoryStore(final InjectionFuture<BlockManagerWorker> partitionManagerWorker) {
     super(partitionManagerWorker);
   }
 
   @Override
-  public void createPartition(final String partitionId) {
-    final Coder coder = getCoderFromWorker(partitionId);
-    getPartitionMap().put(partitionId, new SerializedMemoryPartition(coder));
+  public void createBlock(final String blockId) {
+    final Coder coder = getCoderFromWorker(blockId);
+    getPartitionMap().put(blockId, new SerializedMemoryTmpToBe(coder));
   }
 
   /**
-   * @see PartitionStore#removePartition(String).
+   * @see BlockStore#removeBlock(String).
    */
   @Override
-  public Boolean removePartition(final String partitionId) {
-    return getPartitionMap().remove(partitionId) != null;
+  public Boolean removeBlock(final String blockId) {
+    return getPartitionMap().remove(blockId) != null;
   }
 }

@@ -153,7 +153,7 @@ public final class JobStateManager {
       stageOutgoingEdges.forEach(physicalStageEdge -> {
         final int srcParallelism = taskGroupsForStage.size();
         IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
-          final String partitionId = RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx);
+          final String partitionId = RuntimeIdGenerator.generateBlockId(physicalStageEdge.getId(), srcTaskIdx);
           partitionManagerMaster.initializeState(partitionId, taskGroupsForStage.get(srcTaskIdx).getTaskGroupId());
         });
       });
@@ -165,7 +165,7 @@ public final class JobStateManager {
           final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
           internalOutgoingEdges.forEach(taskRuntimeEdge -> {
             final int srcTaskIdx = taskGroup.getTaskGroupIdx();
-            final String partitionId = RuntimeIdGenerator.generatePartitionId(taskRuntimeEdge.getId(), srcTaskIdx);
+            final String partitionId = RuntimeIdGenerator.generateBlockId(taskRuntimeEdge.getId(), srcTaskIdx);
             partitionManagerMaster.initializeState(partitionId, taskGroup.getTaskGroupId());
           });
         });

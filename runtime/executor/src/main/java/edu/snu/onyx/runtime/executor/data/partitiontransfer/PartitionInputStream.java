@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  * <ul>
  *   <li>Netty {@link io.netty.channel.EventLoopGroup} receives data from other executors and adds them
  *   by {@link #append(ByteBuf)}</li>
- *   <li>{@link PartitionTransfer#inboundExecutorService} decodes {@link ByteBuf}s into elements</li>
+ *   <li>{@link BlockTransfer#inboundExecutorService} decodes {@link ByteBuf}s into elements</li>
  *   <li>User thread may use {@link java.util.Iterator} to iterate over this object for their own work.</li>
  * </ul>
  *

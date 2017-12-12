@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.runtime.executor.data;
+package edu.snu.onyx.common.exception;
 
 /**
- * A collection of data elements.
- * This is a unit of read / write towards {@link edu.snu.onyx.runtime.executor.data.partition.Partition}s.
- * @param <T> the type of the data stored in this {@link Block}.
+ * BlockWriteException.
+ * Thrown when any exception occurs while trying to write a block.
  */
-public interface Block<T> {
-
+public final class BlockWriteException extends RuntimeException {
   /**
-   * @return the key value.
+   * BlockWriteException.
+   * @param exception exception
    */
-  int getKey();
-
-  /**
-   * @return whether the data in this {@link Block} is serialized or not.
-   */
-  boolean isSerialized();
-
-  /**
-   * @return the data in this {@link Block}.
-   */
-  T getData();
+  public BlockWriteException(final Throwable exception) {
+    super(exception);
+  }
 }

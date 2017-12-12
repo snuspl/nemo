@@ -166,7 +166,7 @@ public final class RuntimeTestUtil {
           final int srcParallelism = taskGroupsForStage.size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             final String partitionId =
-                RuntimeIdGenerator.generatePartitionId(physicalStageEdge.getId(), srcTaskIdx);
+                RuntimeIdGenerator.generateBlockId(physicalStageEdge.getId(), srcTaskIdx);
               sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
           });
         });
@@ -178,7 +178,7 @@ public final class RuntimeTestUtil {
             final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
             internalOutgoingEdges.forEach(taskRuntimeEdge -> {
               final String partitionId =
-                  RuntimeIdGenerator.generatePartitionId(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx());
+                  RuntimeIdGenerator.generateBlockId(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx());
               sendPartitionStateEventToPartitionManager(partitionManagerMaster, containerManager, partitionId, newState);
             });
           });

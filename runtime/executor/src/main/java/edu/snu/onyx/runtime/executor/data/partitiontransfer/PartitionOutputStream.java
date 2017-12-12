@@ -20,7 +20,7 @@ import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.executor.data.FileArea;
 import edu.snu.onyx.runtime.common.data.HashRange;
-import edu.snu.onyx.runtime.executor.data.SerializedBlock;
+import edu.snu.onyx.runtime.executor.data.SerializedPartition;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ import java.util.concurrent.ExecutorService;
  * Encodes and flushes outbound data elements to other executors. Three threads are involved.
  * <ul>
  *   <li>User thread writes elements or {@link FileArea}s to this object</li>
- *   <li>{@link PartitionTransfer#outboundExecutorService} encodes elements into {@link ByteBuf}s</li>
+ *   <li>{@link BlockTransfer#outboundExecutorService} encodes elements into {@link ByteBuf}s</li>
  *   <li>Netty {@link io.netty.channel.EventLoopGroup} responds to {@link Channel#writeAndFlush(Object)}
  *   by sending {@link ByteBuf}s or {@link FileRegion}s to the remote executor.</li>
  * </ul>
@@ -186,8 +186,8 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
             }
           } else if (thing instanceof FileArea) {
             byteBufOutputStream.writeFileArea((FileArea) thing);
-          } else if (thing instanceof SerializedBlock) {
-            byteBufOutputStream.write(((SerializedBlock) thing).getData(), 0, ((SerializedBlock) thing).getLength());
+          } else if (thing instanceof SerializedPartition) {
+            byteBufOutputStream.write(((SerializedPartition) thing).getData(), 0, ((SerializedPartition) thing).getLength());
           } else {
             coder.encode((T) thing, byteBufOutputStream);
           }
@@ -252,14 +252,14 @@ public final class PartitionOutputStream<T> implements AutoCloseable, PartitionS
   }
 
   /**
-   * Writes a collection of {@link SerializedBlock}s.
+   * Writes a collection of {@link SerializedPartition}s.
    *
-   * @param serializedBlocks the collection of {@link SerializedBlock}
+   * @param serializedBlocks the collection of {@link SerializedPartition}
    * @return {@link PartitionOutputStream} (i.e. {@code this})
    * @throws IOException if an exception was set
    * @throws IllegalStateException if this stream is closed already
    */
-  public PartitionOutputStream writeSerializedBlocks(final Iterable<SerializedBlock> serializedBlocks)
+  public PartitionOutputStream writeSerializedBlocks(final Iterable<SerializedPartition> serializedBlocks)
       throws IOException {
     checkWritableCondition();
     serializedBlocks.forEach(elementQueue::put);

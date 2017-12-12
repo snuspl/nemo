@@ -76,7 +76,7 @@ final class ControlMessageToPartitionStreamCodec
   }
 
   /**
-   * For an outbound {@link PartitionStream}, which means {@link PartitionTransfer} initiated a new transport context,
+   * For an outbound {@link PartitionStream}, which means {@link BlockTransfer} initiated a new transport context,
    * responds to it by emitting a new control message and registering the transport context to the internal map.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
@@ -137,7 +137,7 @@ final class ControlMessageToPartitionStreamCodec
   /**
    * For an inbound control message (pull request or push notification), which initiates a transport context, responds
    * to it by registering the transport context to the internal mapping, and emitting a new {@link PartitionStream},
-   * which will be handled by {@link PartitionTransfer}.
+   * which will be handled by {@link BlockTransfer}.
    *
    * @param ctx the {@link ChannelHandlerContext} which this handler belongs to
    * @param in  the inbound control message
