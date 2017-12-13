@@ -15,10 +15,12 @@
  */
 package edu.snu.onyx.runtime.common.data;
 
+import org.apache.commons.lang.SerializationUtils;
+
 /**
  * Descriptor for hash range.
  */
-public final class HashRange extends KeyRange<Integer> {
+public final class HashRange implements KeyRange<Integer> {
   private static final HashRange ALL = new HashRange(0, Integer.MAX_VALUE);
 
   private final int rangeBeginInclusive;
@@ -92,6 +94,28 @@ public final class HashRange extends KeyRange<Integer> {
   @Override
   public boolean includes(final Integer i) {
     return i >= rangeBeginInclusive && i < rangeEndExclusive;
+  }
+
+  /**
+   * Serializes this KeyRange for data transfer control messages.
+   * @return the serialized bytes.
+   */
+  @Override
+  public byte[] serialize() {
+    return SerializationUtils.serialize(this);
+  }
+
+  /**
+   * {@inheritDoc}
+   * This method should be overridden for a readable representation of KeyRange.
+   * The generic type K should override {@link Object}'s toString() as well.
+   */
+  @Override
+  public String toString() {
+    final StringBuilder printableKeyRange = new StringBuilder("[");
+    printableKeyRange.append(rangeBeginInclusive()).append(rangeEndExclusive()).append(")");
+
+    return printableKeyRange.toString();
   }
 
   @Override

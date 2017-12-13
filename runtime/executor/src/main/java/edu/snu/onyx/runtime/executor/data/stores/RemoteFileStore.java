@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 /**
  * Interface for remote block stores (e.g., GlusterFS, ...).
+ * @param <K> the type of key to assign for each partition.
  */
 @DefaultImplementation(GlusterFileStore.class)
 public interface RemoteFileStore<K extends Serializable> extends FileStore<K> {

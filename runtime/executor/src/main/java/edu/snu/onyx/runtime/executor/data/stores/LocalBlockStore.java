@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This abstract class represents {@link BlockStore}
  * which contains the (meta)data of the {@link Block}s in local.
  * Because of this, store can maintain all blocks in a single map (mapped with their IDs).
+ * @param <K> the type of key to assign for each partition.
  */
 public abstract class LocalBlockStore<K extends Serializable> extends AbstractBlockStore<K> {
   // A map between block id and data blocks.

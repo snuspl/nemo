@@ -26,6 +26,7 @@ import java.io.Serializable;
 
 /**
  * Serialize and store data in local memory.
+ * @param <K> the type of key to assign for each partition.
  */
 @ThreadSafe
 public final class SerializedMemoryStore<K extends Serializable> extends LocalBlockStore<K> {

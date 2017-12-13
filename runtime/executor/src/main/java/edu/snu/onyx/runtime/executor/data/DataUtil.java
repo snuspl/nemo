@@ -127,7 +127,7 @@ public final class DataUtil {
    * @return the concatenated iterable of all elements.
    * @throws IOException if fail to concatenate.
    */
-  public static Iterable concatNonSerPartitions(final Iterable<NonSerializedPartition<Integer>> partitionsToConcat)
+  public static Iterable concatNonSerPartitions(final Iterable<NonSerializedPartition> partitionsToConcat)
       throws IOException {
     final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();

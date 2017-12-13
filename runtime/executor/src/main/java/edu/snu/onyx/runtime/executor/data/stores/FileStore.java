@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * Stores blocks in (local or remote) files.
+ * @param <K> the type of key to assign for each partition.
  */
 public interface FileStore<K extends Serializable> extends BlockStore<K> {
 

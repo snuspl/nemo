@@ -236,12 +236,10 @@ final class ControlMessageToBlockStreamCodec
         .setTransferId(transferId)
         .setEncodePartialBlock(in.isEncodePartialBlockEnabled())
         .setBlockId(in.getBlockId())
-        .setRuntimeEdgeId(in.getRuntimeEdgeId());
+        .setRuntimeEdgeId(in.getRuntimeEdgeId())
+        .setKeyRange(ByteString.copyFrom(in.getKeyRange().serialize()));
     if (in.getBlockStore().isPresent()) {
       controlMessageBuilder.setBlockStore(convertBlockStore(in.getBlockStore().get()));
-    }
-    if (!in.getKeyRange().isAll()) {
-      controlMessageBuilder.setKeyRange(ByteString.copyFrom(in.getKeyRange().serialize()));
     }
     out.add(controlMessageBuilder.build());
   }

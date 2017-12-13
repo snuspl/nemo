@@ -32,6 +32,7 @@ import java.util.List;
 
 /**
  * Stores blocks in local files.
+ * @param <K> the type of key to assign for each partition.
  */
 @ThreadSafe
 public final class LocalFileStore<K extends Serializable> extends LocalBlockStore<K> implements FileStore<K> {

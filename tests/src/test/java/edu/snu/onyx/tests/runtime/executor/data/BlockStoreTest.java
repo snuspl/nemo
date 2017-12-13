@@ -582,16 +582,16 @@ public final class BlockStoreTest {
           hashRange + " is empty.");
     }
     final Iterable<SerializedPartition<Integer>> serializedResult = optionalSerResult.get();
-    final Optional<Iterable<NonSerializedPartition<Integer>>> optionalNonSerResult =
+    final Optional<Iterable<NonSerializedPartition>> optionalNonSerResult =
         blockStore.getPartitions(blockId, hashRange);
     if (!optionalSerResult.isPresent()) {
       throw new IOException("The (non-serialized) result of get block" + blockId + " in range " +
           hashRange + " is empty.");
     }
-    final Iterable<NonSerializedPartition<Integer>> nonSerializedResult = optionalNonSerResult.get();
+    final Iterable<NonSerializedPartition> nonSerializedResult = optionalNonSerResult.get();
+    final Iterable serToNonSerialized = DataUtil.convertToNonSerPartitions(CODER, serializedResult);
 
     assertEquals(expectedResult, DataUtil.concatNonSerPartitions(nonSerializedResult));
-    assertEquals(expectedResult,
-        DataUtil.<Integer>concatNonSerPartitions(DataUtil.<Integer>convertToNonSerPartitions(CODER, serializedResult)));
+    assertEquals(expectedResult, DataUtil.concatNonSerPartitions(serToNonSerialized));
   }
 }
