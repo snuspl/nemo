@@ -53,17 +53,17 @@ public abstract class KeyRange<K extends Serializable> implements Serializable {
   /**
    * @return the beginning of this range (inclusive).
    */
-  abstract K rangeBeginInclusive();
+  public abstract K rangeBeginInclusive();
 
   /**
    * @return the end of this range (exclusive).
    */
-  abstract K rangeEndExclusive();
+  public abstract K rangeEndExclusive();
 
   /**
    * @return the length of this range.
    */
-  abstract int length();
+  public abstract int length();
 
   /**
    * @param key the value to check

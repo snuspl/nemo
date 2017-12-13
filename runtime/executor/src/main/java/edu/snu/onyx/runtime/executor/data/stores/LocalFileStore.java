@@ -34,7 +34,7 @@ import java.util.List;
  * Stores blocks in local files.
  */
 @ThreadSafe
-public final class LocalFileStore extends LocalBlockStore implements FileStore {
+public final class LocalFileStore<K extends Serializable> extends LocalBlockStore<K> implements FileStore<K> {
   private final String fileDirectory;
 
   @Inject

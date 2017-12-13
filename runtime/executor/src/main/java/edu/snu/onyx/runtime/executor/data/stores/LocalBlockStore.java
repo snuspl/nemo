@@ -25,6 +25,7 @@ import edu.snu.onyx.runtime.executor.data.block.Block;
 import org.apache.reef.tang.InjectionFuture;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * which contains the (meta)data of the {@link Block}s in local.
  * Because of this, store can maintain all blocks in a single map (mapped with their IDs).
  */
-public abstract class LocalBlockStore extends AbstractBlockStore {
+public abstract class LocalBlockStore<K extends Serializable> extends AbstractBlockStore<K> {
   // A map between block id and data blocks.
   private final ConcurrentHashMap<String, Block> blockMap;
 
@@ -48,7 +49,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
    */
   @Override
   public final Optional<List<Long>> putPartitions(final String blockId,
-                                                  final Iterable<NonSerializedPartition> partitions,
+                                                  final Iterable<NonSerializedPartition<K>> partitions,
                                                   final boolean commitPerPartition) throws BlockWriteException {
     try {
       final Block block = blockMap.get(blockId);
@@ -66,7 +67,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
    */
   @Override
   public final List<Long> putSerializedPartitions(final String blockId,
-                                                  final Iterable<SerializedPartition> partitions,
+                                                  final Iterable<SerializedPartition<K>> partitions,
                                                   final boolean commitPerPartition) {
     try {
       final Block block = blockMap.get(blockId);

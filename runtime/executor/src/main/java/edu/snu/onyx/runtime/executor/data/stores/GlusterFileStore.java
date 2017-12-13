@@ -31,6 +31,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ import java.util.Optional;
  * TODO #410: Implement metadata caching for the RemoteFileMetadata.
  */
 @ThreadSafe
-public final class GlusterFileStore extends AbstractBlockStore implements RemoteFileStore {
+public final class GlusterFileStore<K extends Serializable> extends AbstractBlockStore<K> implements RemoteFileStore<K> {
   private final String fileDirectory;
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
   private final String executorId;
@@ -79,7 +80,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
    */
   @Override
   public Optional<List<Long>> putPartitions(final String blockId,
-                                            final Iterable<NonSerializedPartition> partitions,
+                                            final Iterable<NonSerializedPartition<K>> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
       final FileBlock block = createTmpBlock(commitPerPartition, blockId);
@@ -95,7 +96,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
    */
   @Override
   public List<Long> putSerializedPartitions(final String blockId,
-                                            final Iterable<SerializedPartition> partitions,
+                                            final Iterable<SerializedPartition<K>> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
       final FileBlock block = createTmpBlock(commitPerPartition, blockId);

@@ -20,6 +20,7 @@ import edu.snu.onyx.common.coder.BeamCoder;
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.common.data.KeyRange;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageDispatcher;
 import edu.snu.onyx.runtime.common.message.local.LocalMessageEnvironment;
@@ -89,7 +90,7 @@ public final class BlockStoreTest {
   private static final int HASH_RANGE = 4;
   private List<String> hashedBlockIdList;
   private List<List<NonSerializedPartition>> hashedBlockPartitionList;
-  private List<HashRange> readHashRangeList;
+  private List<KeyRange> readKeyRangeList;
   private List<List<Iterable>> expectedDataInRange;
 
   /**
@@ -155,7 +156,7 @@ public final class BlockStoreTest {
     final int numHashedBlocks = NUM_WRITE_HASH_TASKS;
     final List<String> writeHashTaskIdList = new ArrayList<>(NUM_WRITE_HASH_TASKS);
     final List<String> readHashTaskIdList = new ArrayList<>(NUM_READ_HASH_TASKS);
-    readHashRangeList = new ArrayList<>(NUM_READ_HASH_TASKS);
+    readKeyRangeList = new ArrayList<>(NUM_READ_HASH_TASKS);
     hashedBlockIdList = new ArrayList<>(numHashedBlocks);
     hashedBlockPartitionList = new ArrayList<>(numHashedBlocks);
     expectedDataInRange = new ArrayList<>(NUM_READ_HASH_TASKS);
@@ -187,18 +188,18 @@ public final class BlockStoreTest {
 
     // Generates the range of hash value to read for each read task.
     final int smallDataRangeEnd = 1 + NUM_READ_HASH_TASKS - NUM_WRITE_HASH_TASKS;
-    readHashRangeList.add(HashRange.of(0, smallDataRangeEnd));
+    readKeyRangeList.add(HashRange.of(0, smallDataRangeEnd));
     IntStream.range(0, NUM_READ_HASH_TASKS - 1).forEach(readTaskIdx -> {
-      readHashRangeList.add(HashRange.of(smallDataRangeEnd + readTaskIdx, smallDataRangeEnd + readTaskIdx + 1));
+      readKeyRangeList.add(HashRange.of(smallDataRangeEnd + readTaskIdx, smallDataRangeEnd + readTaskIdx + 1));
     });
 
     // Generates the expected result of hash range retrieval for each read task.
     for (int readTaskIdx = 0; readTaskIdx < NUM_READ_HASH_TASKS; readTaskIdx++) {
-      final HashRange hashRange = readHashRangeList.get(readTaskIdx);
+      final KeyRange<Integer> hashRange = readKeyRangeList.get(readTaskIdx);
       final List<Iterable> expectedRangePartitions = new ArrayList<>(NUM_WRITE_HASH_TASKS);
       for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
         final List<Iterable> appendingList = new ArrayList<>();
-        for (int hashVal = hashRange.rangeStartInclusive(); hashVal < hashRange.rangeEndExclusive(); hashVal++) {
+        for (int hashVal = hashRange.rangeBeginInclusive(); hashVal < hashRange.rangeEndExclusive(); hashVal++) {
           appendingList.add(hashedBlockPartitionList.get(writeTaskIdx).get(hashVal).getData());
         }
         final List concatStreamBase = new ArrayList<>();
@@ -518,7 +519,7 @@ public final class BlockStoreTest {
           public Boolean call() {
             try {
               for (int writeTaskIdx = 0; writeTaskIdx < NUM_WRITE_HASH_TASKS; writeTaskIdx++) {
-                final HashRange hashRangeToRetrieve = readHashRangeList.get(readTaskIdx);
+                final KeyRange<Integer> hashRangeToRetrieve = readKeyRangeList.get(readTaskIdx);
                 readResultCheck(hashedBlockIdList.get(writeTaskIdx), hashRangeToRetrieve,
                     readerSideStore, expectedDataInRange.get(readTaskIdx).get(writeTaskIdx));
               }
@@ -571,25 +572,26 @@ public final class BlockStoreTest {
    * Compares the expected iterable with the data read from a {@link BlockStore}.
    */
   private void readResultCheck(final String blockId,
-                               final HashRange hashRange,
+                               final KeyRange<Integer> hashRange,
                                final BlockStore blockStore,
                                final Iterable expectedResult) throws IOException {
-    final Optional<Iterable<SerializedPartition>> optionalSerResult =
+    final Optional<Iterable<SerializedPartition<Integer>>> optionalSerResult =
         blockStore.getSerializedPartitions(blockId, hashRange);
     if (!optionalSerResult.isPresent()) {
       throw new IOException("The (serialized) result of get block" + blockId + " in range " +
           hashRange + " is empty.");
     }
-    final Iterable<SerializedPartition> serializedResult = optionalSerResult.get();
-    final Optional<Iterable<NonSerializedPartition>> optionalNonSerResult =
+    final Iterable<SerializedPartition<Integer>> serializedResult = optionalSerResult.get();
+    final Optional<Iterable<NonSerializedPartition<Integer>>> optionalNonSerResult =
         blockStore.getPartitions(blockId, hashRange);
     if (!optionalSerResult.isPresent()) {
       throw new IOException("The (non-serialized) result of get block" + blockId + " in range " +
           hashRange + " is empty.");
     }
-    final Iterable<NonSerializedPartition> nonSerializedResult = optionalNonSerResult.get();
+    final Iterable<NonSerializedPartition<Integer>> nonSerializedResult = optionalNonSerResult.get();
 
     assertEquals(expectedResult, DataUtil.concatNonSerPartitions(nonSerializedResult));
-    assertEquals(expectedResult, DataUtil.concatNonSerPartitions(DataUtil.convertToNonSerPartitions(CODER, serializedResult)));
+    assertEquals(expectedResult,
+        DataUtil.<Integer>concatNonSerPartitions(DataUtil.<Integer>convertToNonSerPartitions(CODER, serializedResult)));
   }
 }

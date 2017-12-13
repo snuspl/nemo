@@ -22,12 +22,13 @@ import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import java.io.Serializable;
 
 /**
  * Serialize and store data in local memory.
  */
 @ThreadSafe
-public final class SerializedMemoryStore extends LocalBlockStore {
+public final class SerializedMemoryStore<K extends Serializable> extends LocalBlockStore<K> {
 
   @Inject
   private SerializedMemoryStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {

@@ -17,9 +17,11 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
+import java.io.Serializable;
+
 /**
  * Interface for remote block stores (e.g., GlusterFS, ...).
  */
 @DefaultImplementation(GlusterFileStore.class)
-public interface RemoteFileStore extends FileStore {
+public interface RemoteFileStore<K extends Serializable> extends FileStore<K> {
 }

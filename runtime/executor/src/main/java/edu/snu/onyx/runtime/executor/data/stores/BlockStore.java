@@ -21,13 +21,15 @@ import edu.snu.onyx.runtime.common.data.KeyRange;
 import edu.snu.onyx.runtime.executor.data.NonSerializedPartition;
 import edu.snu.onyx.runtime.executor.data.SerializedPartition;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Interface for {@link edu.snu.onyx.runtime.executor.data.block.Block} placement.
+ * @param <K> the key type of its partitions.
  */
-public interface BlockStore {
+public interface BlockStore<K extends Serializable> {
   /**
    * Creates a new block.
    * A stale data created by previous failed task should be handled during the creation of new block.
@@ -56,7 +58,7 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<List<Long>> putPartitions(String blockId,
-                                     Iterable<NonSerializedPartition> partitions,
+                                     Iterable<NonSerializedPartition<K>> partitions,
                                      boolean commitPerPartition) throws BlockWriteException;
 
   /**
@@ -75,7 +77,7 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   List<Long> putSerializedPartitions(String blockId,
-                                     Iterable<SerializedPartition> partitions,
+                                     Iterable<SerializedPartition<K>> partitions,
                                      boolean commitPerPartition) throws BlockWriteException;
 
   /**
@@ -90,8 +92,8 @@ public interface BlockStore {
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable<NonSerializedPartition>> getPartitions(String blockId,
-                                                           KeyRange keyRange) throws BlockFetchException;
+  Optional<Iterable<NonSerializedPartition<K>>> getPartitions(String blockId,
+                                                           KeyRange<K> keyRange) throws BlockFetchException;
 
   /**
    * Retrieves {@link SerializedPartition}s in a specific {@link KeyRange} from a block.
@@ -104,8 +106,8 @@ public interface BlockStore {
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable<SerializedPartition>> getSerializedPartitions(String blockId,
-                                                                  KeyRange keyRange) throws BlockFetchException;
+  Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(String blockId,
+                                                                     KeyRange<K> keyRange) throws BlockFetchException;
 
   /**
    * Notifies that all writes for a block is end.
