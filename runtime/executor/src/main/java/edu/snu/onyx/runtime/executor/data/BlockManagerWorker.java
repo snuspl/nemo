@@ -398,16 +398,16 @@ public final class BlockManagerWorker {
               || DataStoreProperty.Value.GlusterFileStore.equals(blockStore)) {
             final FileStore fileStore = (FileStore) getBlockStore(blockStore);
             outputStream.writeFileAreas(fileStore.getFileAreas(outputStream.getBlockId(),
-                outputStream.getHashRange())).close();
+                outputStream.getKeyRange())).close();
           } else if (DataStoreProperty.Value.SerializedMemoryStore.equals(blockStore)) {
             final SerializedMemoryStore serMemoryStore = (SerializedMemoryStore) getBlockStore(blockStore);
             final Optional<Iterable<SerializedPartition>> optionalResult = serMemoryStore.getSerializedPartitions(
-                outputStream.getBlockId(), outputStream.getHashRange());
+                outputStream.getBlockId(), outputStream.getKeyRange());
             outputStream.writeSerializedPartitions(optionalResult.get()).close();
           } else {
             final Iterable block =
                 retrieveDataFromBlock(outputStream.getBlockId(), outputStream.getRuntimeEdgeId(),
-                    blockStore, outputStream.getHashRange()).get();
+                    blockStore, outputStream.getKeyRange()).get();
             outputStream.writeElements(block).close();
           }
         } catch (final IOException | ExecutionException | InterruptedException | BlockFetchException e) {

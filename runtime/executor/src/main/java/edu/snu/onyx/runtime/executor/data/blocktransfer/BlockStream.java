@@ -17,6 +17,7 @@ package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.common.data.KeyRange;
 
 import java.util.Optional;
 
@@ -62,9 +63,9 @@ public interface BlockStream {
   String getRuntimeEdgeId();
 
   /**
-   * Gets the hash range.
+   * Gets the key range.
    *
-   * @return the {@link HashRange}
+   * @return the {@link edu.snu.onyx.runtime.common.data.KeyRange}
    */
-  HashRange getHashRange();
+  KeyRange getKeyRange();
 }

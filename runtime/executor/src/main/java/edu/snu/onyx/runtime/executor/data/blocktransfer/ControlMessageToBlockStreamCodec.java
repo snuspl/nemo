@@ -19,6 +19,7 @@ import edu.snu.onyx.common.exception.UnsupportedBlockStoreException;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
+import edu.snu.onyx.runtime.common.data.KeyRange;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.slf4j.Logger;
@@ -110,7 +111,7 @@ final class ControlMessageToBlockStreamCodec
     emitControlMessage(ControlMessage.BlockTransferType.PULL, transferId, in, out);
     LOG.debug("Sending pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-            in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString(),
+            in.getBlockId(), in.getRuntimeEdgeId(), in.getKeyRange().toString(),
             in.getBlockStore().get().toString()});
   }
 
@@ -131,7 +132,7 @@ final class ControlMessageToBlockStreamCodec
     emitControlMessage(ControlMessage.BlockTransferType.PUSH, transferId, in, out);
     LOG.debug("Sending push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, localExecutorId, localAddress, in.getRemoteExecutorId(), remoteAddress,
-            in.getBlockId(), in.getRuntimeEdgeId(), in.getHashRange().toString()});
+            in.getBlockId(), in.getRuntimeEdgeId(), in.getKeyRange().toString()});
   }
 
   /**
@@ -165,7 +166,7 @@ final class ControlMessageToBlockStreamCodec
                                     final ControlMessage.DataTransferControlMessage in,
                                     final List out) {
     final short transferId = (short) in.getTransferId();
-    final HashRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
+    final KeyRange hashRange = in.hasStartRangeInclusive() && in.hasEndRangeExclusive()
         ? HashRange.of(in.getStartRangeInclusive(), in.getEndRangeExclusive()) : HashRange.all();
     final BlockOutputStream outputStream = new BlockOutputStream(in.getControlMessageSourceId(),
         in.getEncodePartialBlock(), Optional.of(convertBlockStore(in.getBlockStore())), in.getBlockId(),
@@ -175,7 +176,7 @@ final class ControlMessageToBlockStreamCodec
     out.add(outputStream);
     LOG.debug("Received pull request {} from {}({}) to {}({}) for {} ({}, {} in {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-            in.getBlockId(), in.getRuntimeEdgeId(), outputStream.getHashRange().toString(),
+            in.getBlockId(), in.getRuntimeEdgeId(), outputStream.getKeyRange().toString(),
             outputStream.getBlockStore().get().toString()});
   }
 
@@ -198,7 +199,7 @@ final class ControlMessageToBlockStreamCodec
     out.add(inputStream);
     LOG.debug("Received push notification {} from {}({}) to {}({}) for {} ({}, {})",
         new Object[]{transferId, in.getControlMessageSourceId(), remoteAddress, localExecutorId, localAddress,
-            in.getBlockId(), in.getRuntimeEdgeId(), inputStream.getHashRange().toString()});
+            in.getBlockId(), in.getRuntimeEdgeId(), inputStream.getKeyRange().toString()});
   }
 
   /**
@@ -240,10 +241,10 @@ final class ControlMessageToBlockStreamCodec
     if (in.getBlockStore().isPresent()) {
       controlMessageBuilder.setBlockStore(convertBlockStore(in.getBlockStore().get()));
     }
-    if (!in.getHashRange().isAll()) {
+    if (!in.getKeyRange().isAll()) {
       controlMessageBuilder
-          .setStartRangeInclusive(in.getHashRange().rangeStartInclusive())
-          .setEndRangeExclusive(in.getHashRange().rangeEndExclusive());
+          .setStartRangeInclusive(in.getKeyRange().rangeBeginInclusive())
+          .setEndRangeExclusive(in.getKeyRange().rangeEndExclusive());
     }
     out.add(controlMessageBuilder.build());
   }
