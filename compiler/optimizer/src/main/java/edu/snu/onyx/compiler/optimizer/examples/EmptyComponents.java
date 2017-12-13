@@ -101,7 +101,7 @@ public class EmptyComponents {
     }
 
     public long getEstimatedSizeBytes() throws Exception {
-      return 1;
+      return 0;
     }
 
     public List<? extends Source> splitIntoBundles(final long desiredBundleSizeBytes) throws Exception {
