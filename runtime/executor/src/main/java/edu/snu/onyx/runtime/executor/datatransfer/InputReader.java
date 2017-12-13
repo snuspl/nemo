@@ -122,7 +122,7 @@ public final class InputReader extends DataTransfer {
   private List<CompletableFuture<Iterable>> readDataInRange() {
     assert (runtimeEdge instanceof PhysicalStageEdge);
     final HashRange hashRangeToRead =
-        ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdToHashRangeMap().get(taskGroupId);
+        ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdToKeyRangeMap().get(taskGroupId);
     if (hashRangeToRead == null) {
       throw new BlockFetchException(new Throwable("The hash range to read is not assigned to " + taskGroupId));
     }
