@@ -19,12 +19,16 @@ import org.apache.commons.lang.SerializationUtils;
 
 import java.io.Serializable;
 
-public abstract class KeyRange<K> implements Serializable {
+/**
+ * Represents the key range of data partitions within a block.
+ * @param <K> the type of key to assign for each partition.
+ */
+public abstract class KeyRange<K extends Serializable> implements Serializable {
   /**
    * Serializes this KeyRange for data transfer control messages.
    * @return the serialized bytes.
    */
-  public byte[] serialize() {
+  public final byte[] serialize() {
     return SerializationUtils.serialize(this);
   }
 
@@ -34,7 +38,7 @@ public abstract class KeyRange<K> implements Serializable {
    * The generic type K should override {@link Object}'s toString() as well.
    */
   @Override
-  public String toString() {
+  public final String toString() {
     final StringBuilder printableKeyRange = new StringBuilder("[");
     printableKeyRange.append(rangeBeginInclusive()).append(rangeEndExclusive()).append(")");
 
@@ -65,7 +69,7 @@ public abstract class KeyRange<K> implements Serializable {
    * @param key the value to check
    * @return {@code true} if this key range includes the specified value, {@code false} otherwise
    */
-  abstract boolean includes(final K key);
+  public abstract boolean includes(final K key);
 
   /**
    * {@inheritDoc}

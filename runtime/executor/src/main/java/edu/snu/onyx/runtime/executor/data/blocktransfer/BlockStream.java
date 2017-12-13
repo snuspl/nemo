@@ -16,7 +16,6 @@
 package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.data.KeyRange;
 
 import java.util.Optional;

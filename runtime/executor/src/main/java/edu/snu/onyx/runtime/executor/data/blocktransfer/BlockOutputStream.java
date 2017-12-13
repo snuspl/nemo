@@ -86,7 +86,7 @@ public final class BlockOutputStream<T> implements AutoCloseable, BlockStream {
    * @param blockStoreValue    the block store
    * @param blockId            the block id
    * @param runtimeEdgeId      the runtime edge id
-   * @param keyRange          the hash range
+   * @param keyRange          the key range
    */
   BlockOutputStream(final String receiverExecutorId,
                     final boolean encodePartialBlock,

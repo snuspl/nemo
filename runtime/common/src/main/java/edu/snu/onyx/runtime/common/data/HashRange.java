@@ -17,7 +17,6 @@ package edu.snu.onyx.runtime.common.data;
 
 /**
  * Descriptor for hash range.
- * TODO #494: Refactor HashRange to be general.
  */
 public final class HashRange extends KeyRange<Integer> {
   private static final HashRange ALL = new HashRange(0, Integer.MAX_VALUE);

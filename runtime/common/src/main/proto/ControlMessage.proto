@@ -120,8 +120,7 @@ message DataTransferControlMessage {
     required bool encodePartialBlock = 5;
     required string blockId = 6;
     required string runtimeEdgeId = 7;
-    optional int32 startRangeInclusive = 8;
-    optional int32 endRangeExclusive = 9;
+    optional bytes keyRange = 8;
 }
 
 message RequestBlockMsg {
@@ -195,7 +194,7 @@ message RequestPartitionMetadataMsg {
 
 // Common messages
 message PartitionMetadataMsg {
-    required int32 hashValue = 1;
+    required bytes key = 1;
     required int32 partitionSize = 2;
     optional int64 offset = 3;
     required int64 numElements = 4;

@@ -17,7 +17,6 @@ package edu.snu.onyx.runtime.executor.data.blocktransfer;
 
 import edu.snu.onyx.common.coder.Coder;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.data.KeyRange;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
@@ -53,7 +52,7 @@ public final class BlockInputStream<T> implements Iterable<T>, BlockStream {
   private final Optional<DataStoreProperty.Value> blockStoreValue;
   private final String blockId;
   private final String runtimeEdgeId;
-  private final HashRange keyRange;
+  private final KeyRange keyRange;
   private Coder<T> coder;
   private ExecutorService executorService;
 
@@ -78,14 +77,14 @@ public final class BlockInputStream<T> implements Iterable<T>, BlockStream {
    * @param blockStoreValue    the block store
    * @param blockId            the block id
    * @param runtimeEdgeId      the runtime edge id
-   * @param keyRange          the hash range
+   * @param keyRange          the key range
    */
   BlockInputStream(final String senderExecutorId,
                    final boolean encodePartialBlock,
                    final Optional<DataStoreProperty.Value> blockStoreValue,
                    final String blockId,
                    final String runtimeEdgeId,
-                   final HashRange keyRange) {
+                   final KeyRange keyRange) {
     this.senderExecutorId = senderExecutorId;
     this.encodePartialBlock = encodePartialBlock;
     this.blockStoreValue = blockStoreValue;

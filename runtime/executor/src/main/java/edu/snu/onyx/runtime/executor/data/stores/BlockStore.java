@@ -17,7 +17,7 @@ package edu.snu.onyx.runtime.executor.data.stores;
 
 import edu.snu.onyx.common.exception.BlockFetchException;
 import edu.snu.onyx.common.exception.BlockWriteException;
-import edu.snu.onyx.runtime.common.data.HashRange;
+import edu.snu.onyx.runtime.common.data.KeyRange;
 import edu.snu.onyx.runtime.executor.data.NonSerializedPartition;
 import edu.snu.onyx.runtime.executor.data.SerializedPartition;
 
@@ -79,10 +79,11 @@ public interface BlockStore {
                                      boolean commitPerPartition) throws BlockWriteException;
 
   /**
-   * Retrieves {@link NonSerializedPartition}s in a specific {@link HashRange} from a block.
+   * Retrieves {@link NonSerializedPartition}s.
+   * They belong to a specific {@link edu.snu.onyx.runtime.common.data.KeyRange} from a block.
    *
    * @param blockId   of the target partition.
-   * @param hashRange the hash range.
+   * @param keyRange the key range.
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a block.
    *         (This exception will be thrown to the scheduler
@@ -90,13 +91,13 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<Iterable<NonSerializedPartition>> getPartitions(String blockId,
-                                                           HashRange hashRange) throws BlockFetchException;
+                                                           KeyRange keyRange) throws BlockFetchException;
 
   /**
-   * Retrieves {@link SerializedPartition}s in a specific {@link HashRange} from a block.
+   * Retrieves {@link SerializedPartition}s in a specific {@link KeyRange} from a block.
    *
    * @param blockId   of the target block.
-   * @param hashRange the hash range.
+   * @param keyRange the key range.
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a partition.
    *         (This exception will be thrown to the scheduler
@@ -104,7 +105,7 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Optional<Iterable<SerializedPartition>> getSerializedPartitions(String blockId,
-                                                                  HashRange hashRange) throws BlockFetchException;
+                                                                  KeyRange keyRange) throws BlockFetchException;
 
   /**
    * Notifies that all writes for a block is end.
