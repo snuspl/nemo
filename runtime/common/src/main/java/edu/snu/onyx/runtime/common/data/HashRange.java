@@ -17,10 +17,12 @@ package edu.snu.onyx.runtime.common.data;
 
 import org.apache.commons.lang.SerializationUtils;
 
+import java.io.Serializable;
+
 /**
  * Descriptor for hash range.
  */
-public final class HashRange implements KeyRange<Integer> {
+public final class HashRange implements KeyRange<Integer>, Serializable{
   private static final HashRange ALL = new HashRange(0, Integer.MAX_VALUE);
 
   private final int rangeBeginInclusive;
@@ -103,6 +105,11 @@ public final class HashRange implements KeyRange<Integer> {
   @Override
   public byte[] serialize() {
     return SerializationUtils.serialize(this);
+  }
+
+  @Override
+  public KeyRange<Integer> deserialize() {
+    return null;
   }
 
   /**
