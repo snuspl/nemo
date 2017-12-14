@@ -31,6 +31,7 @@ import edu.snu.onyx.runtime.master.BlockManagerMaster;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
+import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.values.KV;
 import org.apache.commons.io.FileUtils;
 import org.apache.reef.tang.Injector;
@@ -77,19 +78,19 @@ public final class BlockStoreTest {
   private static final int NUM_READ_TASKS = 3;
   private static final int DATA_SIZE = 1000;
   private List<String> blockIdList;
-  private List<List<NonSerializedPartition>> partitionsPerBlock;
+  private List<List<NonSerializedPartition<Integer>>> partitionsPerBlock;
   // Variables for concurrent read test
   private static final int NUM_CONC_READ_TASKS = 10;
   private static final int CONC_READ_DATA_SIZE = 1000;
   private String concBlockId;
-  private NonSerializedPartition concBlockPartition;
+  private NonSerializedPartition<Integer> concBlockPartition;
   // Variables for shuffle in range test
   private static final int NUM_WRITE_HASH_TASKS = 2;
   private static final int NUM_READ_HASH_TASKS = 3;
   private static final int HASH_DATA_SIZE = 1000;
   private static final int HASH_RANGE = 4;
   private List<String> hashedBlockIdList;
-  private List<List<NonSerializedPartition>> hashedBlockPartitionList;
+  private List<List<NonSerializedPartition<Integer>>> hashedBlockPartitionList;
   private List<KeyRange> readKeyRangeList;
   private List<List<Iterable>> expectedDataInRange;
 
@@ -129,7 +130,7 @@ public final class BlockStoreTest {
           blockId, BlockState.State.SCHEDULED, null);
 
       // Create blocks for this block.
-      final List<NonSerializedPartition> partitionsForBlock = new ArrayList<>(NUM_READ_TASKS);
+      final List<NonSerializedPartition<Integer>> partitionsForBlock = new ArrayList<>(NUM_READ_TASKS);
       partitionsPerBlock.add(partitionsForBlock);
       IntStream.range(0, NUM_READ_TASKS).forEach(readTaskIdx -> {
         final int partitionsCount = writeTaskIdx * NUM_READ_TASKS + readTaskIdx;
@@ -176,7 +177,7 @@ public final class BlockStoreTest {
       blockManagerMaster.initializeState(blockId, "Unused");
       blockManagerMaster.onBlockStateChanged(
           blockId, BlockState.State.SCHEDULED, null);
-      final List<NonSerializedPartition> hashedBlock = new ArrayList<>(HASH_RANGE);
+      final List<NonSerializedPartition<Integer>> hashedBlock = new ArrayList<>(HASH_RANGE);
       // Generates the data having each hash value.
       IntStream.range(0, HASH_RANGE).forEach(hashValue ->
           hashedBlock.add(new NonSerializedPartition(hashValue, getFixedKeyRangedNumList(
@@ -572,7 +573,7 @@ public final class BlockStoreTest {
    * Compares the expected iterable with the data read from a {@link BlockStore}.
    */
   private void readResultCheck(final String blockId,
-                               final KeyRange<Integer> hashRange,
+                               final KeyRange hashRange,
                                final BlockStore blockStore,
                                final Iterable expectedResult) throws IOException {
     final Optional<Iterable<SerializedPartition<Integer>>> optionalSerResult =

@@ -27,9 +27,8 @@ import java.util.Optional;
 
 /**
  * Interface for {@link edu.snu.onyx.runtime.executor.data.block.Block} placement.
- * @param <K> the key type of its partitions.
  */
-public interface BlockStore<K extends Serializable> {
+public interface BlockStore {
   /**
    * Creates a new block.
    * A stale data created by previous failed task should be handled during the creation of new block.
@@ -51,13 +50,14 @@ public interface BlockStore<K extends Serializable> {
    * @param blockId            of the block.
    * @param partitions         to save to a block.
    * @param commitPerPartition whether commit every partition write or not.
+   * @param <K> the key type of the partitions.
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
    *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<List<Long>> putPartitions(String blockId,
+  <K extends Serializable> Optional<List<Long>> putPartitions(String blockId,
                                      Iterable<NonSerializedPartition<K>> partitions,
                                      boolean commitPerPartition) throws BlockWriteException;
 
@@ -70,13 +70,14 @@ public interface BlockStore<K extends Serializable> {
    * @param blockId            of the block.
    * @param partitions         to save to a block.
    * @param commitPerPartition whether commit every partition write or not.
+   * @param <K> the key type of the partitions.
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
    *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  List<Long> putSerializedPartitions(String blockId,
+  <K extends Serializable> List<Long> putSerializedPartitions(String blockId,
                                      Iterable<SerializedPartition<K>> partitions,
                                      boolean commitPerPartition) throws BlockWriteException;
 
@@ -86,13 +87,14 @@ public interface BlockStore<K extends Serializable> {
    *
    * @param blockId   of the target partition.
    * @param keyRange the key range.
+   * @param <K> the key type of the partitions.
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a block.
    *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable<NonSerializedPartition<K>>> getPartitions(String blockId,
+  <K extends Serializable> Optional<Iterable<NonSerializedPartition<K>>> getPartitions(String blockId,
                                                            KeyRange<K> keyRange) throws BlockFetchException;
 
   /**
@@ -100,13 +102,14 @@ public interface BlockStore<K extends Serializable> {
    *
    * @param blockId   of the target block.
    * @param keyRange the key range.
+   * @param <K> the key type of the partitions.
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a partition.
    *         (This exception will be thrown to the scheduler
    *          through {@link edu.snu.onyx.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
-  Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(String blockId,
+  <K extends Serializable> Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(String blockId,
                                                                      KeyRange<K> keyRange) throws BlockFetchException;
 
   /**

@@ -20,14 +20,12 @@ import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import org.apache.reef.tang.InjectionFuture;
 
-import java.io.Serializable;
 
 /**
  * This abstract class represents a default {@link BlockStore},
  * which contains other components used in each implementation of {@link BlockStore}.
- * @param <K> the type of key to assign for each partition.
  */
-public abstract class AbstractBlockStore<K extends Serializable> implements BlockStore<K> {
+public abstract class AbstractBlockStore implements BlockStore {
   private final InjectionFuture<BlockManagerWorker> blockManagerWorker;
 
   protected AbstractBlockStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {

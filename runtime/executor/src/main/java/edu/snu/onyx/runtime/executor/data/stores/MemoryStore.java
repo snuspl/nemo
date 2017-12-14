@@ -22,14 +22,12 @@ import org.apache.reef.tang.InjectionFuture;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
-import java.io.Serializable;
 
 /**
  * Store data in local memory.
- * @param <K> the type of key to assign for each partition.
  */
 @ThreadSafe
-public final class MemoryStore<K extends Serializable> extends LocalBlockStore<K> {
+public final class MemoryStore extends LocalBlockStore {
 
   @Inject
   private MemoryStore(final InjectionFuture<BlockManagerWorker> blockManagerWorker) {

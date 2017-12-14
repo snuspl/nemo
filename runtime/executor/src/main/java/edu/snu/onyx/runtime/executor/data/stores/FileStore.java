@@ -18,14 +18,12 @@ package edu.snu.onyx.runtime.executor.data.stores;
 import edu.snu.onyx.runtime.common.data.KeyRange;
 import edu.snu.onyx.runtime.executor.data.FileArea;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
  * Stores blocks in (local or remote) files.
- * @param <K> the type of key to assign for each partition.
  */
-public interface FileStore<K extends Serializable> extends BlockStore<K> {
+public interface FileStore extends BlockStore {
 
   /**
    * Gets the list of {@link FileArea}s for the specified block.

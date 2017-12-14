@@ -40,13 +40,11 @@ import java.util.Optional;
  * Because the data is stored in remote files and globally accessed by multiple nodes,
  * each access (write, read, or deletion) for a file needs one instance of {@link FileBlock}.
  * These accesses are judiciously synchronized by the metadata server in master.
- * @param <K> the type of key to assign for each partition.
  * TODO #485: Merge LocalFileStore and GlusterFileStore.
  * TODO #410: Implement metadata caching for the RemoteFileMetadata.
  */
 @ThreadSafe
-public final class GlusterFileStore<K extends Serializable> extends AbstractBlockStore<K>
-    implements RemoteFileStore<K> {
+public final class GlusterFileStore extends AbstractBlockStore implements RemoteFileStore {
   private final String fileDirectory;
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
   private final String executorId;
@@ -81,7 +79,7 @@ public final class GlusterFileStore<K extends Serializable> extends AbstractBloc
    * @see BlockStore#putPartitions(String, Iterable, boolean).
    */
   @Override
-  public Optional<List<Long>> putPartitions(final String blockId,
+  public <K extends Serializable> Optional<List<Long>> putPartitions(final String blockId,
                                             final Iterable<NonSerializedPartition<K>> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
@@ -97,7 +95,7 @@ public final class GlusterFileStore<K extends Serializable> extends AbstractBloc
    * @see BlockStore#putSerializedPartitions(String, Iterable, boolean).
    */
   @Override
-  public List<Long> putSerializedPartitions(final String blockId,
+  public <K extends Serializable> List<Long> putSerializedPartitions(final String blockId,
                                             final Iterable<SerializedPartition<K>> partitions,
                                             final boolean commitPerPartition) throws BlockWriteException {
     try {
@@ -115,8 +113,8 @@ public final class GlusterFileStore<K extends Serializable> extends AbstractBloc
    * @see BlockStore#getPartitions(String, KeyRange).
    */
   @Override
-  public Optional<Iterable<NonSerializedPartition>> getPartitions(final String blockId,
-                                                                  final KeyRange keyRange)
+  public <K extends Serializable> Optional<Iterable<NonSerializedPartition<K>>> getPartitions(final String blockId,
+                                                                  final KeyRange<K> keyRange)
       throws BlockFetchException {
     final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     if (!new File(filePath).isFile()) {
@@ -125,7 +123,7 @@ public final class GlusterFileStore<K extends Serializable> extends AbstractBloc
       // Deserialize the target data in the corresponding file.
       try {
         final FileBlock block = createTmpBlock(false, blockId);
-        final Iterable<NonSerializedPartition> partitionsInRange = block.getPartitions(keyRange);
+        final Iterable<NonSerializedPartition<K>> partitionsInRange = block.getPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
@@ -137,15 +135,15 @@ public final class GlusterFileStore<K extends Serializable> extends AbstractBloc
    * @see BlockStore#getSerializedPartitions(String, KeyRange).
    */
   @Override
-  public Optional<Iterable<SerializedPartition>> getSerializedPartitions(final String blockId,
-                                                                         final KeyRange keyRange) {
+  public <K extends Serializable>
+  Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(final String blockId, final KeyRange<K> keyRange) {
     final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     if (!new File(filePath).isFile()) {
       return Optional.empty();
     } else {
       try {
         final FileBlock block = createTmpBlock(false, blockId);
-        final Iterable<SerializedPartition> partitionsInRange = block.getSerializedPartitions(keyRange);
+        final Iterable<SerializedPartition<K>> partitionsInRange = block.getSerializedPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);

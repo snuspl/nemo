@@ -34,9 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * This abstract class represents {@link BlockStore}
  * which contains the (meta)data of the {@link Block}s in local.
  * Because of this, store can maintain all blocks in a single map (mapped with their IDs).
- * @param <K> the type of key to assign for each partition.
  */
-public abstract class LocalBlockStore<K extends Serializable> extends AbstractBlockStore<K> {
+public abstract class LocalBlockStore extends AbstractBlockStore {
   // A map between block id and data blocks.
   private final ConcurrentHashMap<String, Block> blockMap;
 
@@ -49,7 +48,7 @@ public abstract class LocalBlockStore<K extends Serializable> extends AbstractBl
    * @see BlockStore#putPartitions(String, Iterable, boolean).
    */
   @Override
-  public final Optional<List<Long>> putPartitions(final String blockId,
+  public final <K extends Serializable> Optional<List<Long>> putPartitions(final String blockId,
                                                   final Iterable<NonSerializedPartition<K>> partitions,
                                                   final boolean commitPerPartition) throws BlockWriteException {
     try {
@@ -67,7 +66,7 @@ public abstract class LocalBlockStore<K extends Serializable> extends AbstractBl
    * @see BlockStore#putSerializedPartitions(String, Iterable, boolean).
    */
   @Override
-  public final List<Long> putSerializedPartitions(final String blockId,
+  public final <K extends Serializable> List<Long> putSerializedPartitions(final String blockId,
                                                   final Iterable<SerializedPartition<K>> partitions,
                                                   final boolean commitPerPartition) {
     try {
@@ -85,13 +84,13 @@ public abstract class LocalBlockStore<K extends Serializable> extends AbstractBl
    * @see BlockStore#getPartitions(String, KeyRange).
    */
   @Override
-  public final Optional<Iterable<NonSerializedPartition>> getPartitions(final String blockId,
-                                                                        final KeyRange keyRange) {
+  public final <K extends Serializable>
+  Optional<Iterable<NonSerializedPartition<K>>> getPartitions(final String blockId, final KeyRange<K> keyRange) {
     final Block block = blockMap.get(blockId);
 
     if (block != null) {
       try {
-        final Iterable<NonSerializedPartition> partitionsInRange = block.getPartitions(keyRange);
+        final Iterable<NonSerializedPartition<K>> partitionsInRange = block.getPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
@@ -105,13 +104,13 @@ public abstract class LocalBlockStore<K extends Serializable> extends AbstractBl
    * @see BlockStore#getSerializedPartitions(String, edu.snu.onyx.runtime.common.data.KeyRange).
    */
   @Override
-  public final Optional<Iterable<SerializedPartition>> getSerializedPartitions(final String blockId,
-                                                                               final KeyRange keyRange) {
+  public final <K extends Serializable>
+  Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(final String blockId, final KeyRange<K> keyRange) {
     final Block block = blockMap.get(blockId);
 
     if (block != null) {
       try {
-        final Iterable<SerializedPartition> partitionsInRange = block.getSerializedPartitions(keyRange);
+        final Iterable<SerializedPartition<K>> partitionsInRange = block.getSerializedPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
         throw new BlockFetchException(e);
