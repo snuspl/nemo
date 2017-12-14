@@ -15,11 +15,13 @@
  */
 package edu.snu.onyx.runtime.common.data;
 
+import java.io.Serializable;
+
 /**
  * Represents the key range of data partitions within a block.
  * @param <K> the type of key to assign for each partition.
  */
-public interface KeyRange<K> {
+public interface KeyRange<K extends Serializable> extends Serializable {
 
  /**
    * @return whether this instance represents the entire range or not.
@@ -37,27 +39,10 @@ public interface KeyRange<K> {
   K rangeEndExclusive();
 
   /**
-   * @return the length of this range.
-   */
-  int length();
-
-  /**
    * @param key the value to check
    * @return {@code true} if this key range includes the specified value, {@code false} otherwise
    */
   boolean includes(final K key);
-
-  /**
-   * Serializes this KeyRange for data transfer control messages.
-   * @return the serialized bytes.
-   */
-  byte[] serialize();
-
-  /**
-   * Deserializes this KeyRange for data transfer control messages.
-   * @return the deserialized class.
-   */
-  KeyRange<K> deserialize(final byte[] );
 
   /**
    * {@inheritDoc}

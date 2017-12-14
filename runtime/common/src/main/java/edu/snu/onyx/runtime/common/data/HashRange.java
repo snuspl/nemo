@@ -15,14 +15,10 @@
  */
 package edu.snu.onyx.runtime.common.data;
 
-import org.apache.commons.lang.SerializationUtils;
-
-import java.io.Serializable;
-
 /**
  * Descriptor for hash range.
  */
-public final class HashRange implements KeyRange<Integer>, Serializable{
+public final class HashRange implements KeyRange<Integer> {
   private static final HashRange ALL = new HashRange(0, Integer.MAX_VALUE);
 
   private final int rangeBeginInclusive;
@@ -58,7 +54,7 @@ public final class HashRange implements KeyRange<Integer>, Serializable{
   }
 
   /**
-   * @return whether this hash range descriptor represents the whole data or not
+   * @return whether this hash range descriptor represents the whole data or not.
    */
   @Override
   public boolean isAll() {
@@ -82,34 +78,12 @@ public final class HashRange implements KeyRange<Integer>, Serializable{
   }
 
   /**
-   * @return the length of this range
-   */
-  @Override
-  public int length() {
-    return rangeEndExclusive - rangeBeginInclusive;
-  }
-
-  /**
    * @param i the value to test
    * @return {@code true} if this hash range includes the specified value, {@code false} otherwise
    */
   @Override
   public boolean includes(final Integer i) {
     return i >= rangeBeginInclusive && i < rangeEndExclusive;
-  }
-
-  /**
-   * Serializes this KeyRange for data transfer control messages.
-   * @return the serialized bytes.
-   */
-  @Override
-  public byte[] serialize() {
-    return SerializationUtils.serialize(this);
-  }
-
-  @Override
-  public KeyRange<Integer> deserialize() {
-    return null;
   }
 
   /**
