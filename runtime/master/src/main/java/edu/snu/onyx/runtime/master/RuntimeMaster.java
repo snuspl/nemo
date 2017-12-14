@@ -33,7 +33,7 @@ import edu.snu.onyx.runtime.master.scheduler.Scheduler;
 import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
 import edu.snu.onyx.runtime.master.control.ControlEvent;
 
-import org.apache.beam.sdk.repackaged.org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
