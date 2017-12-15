@@ -144,6 +144,11 @@ public final class JobLauncher {
     return jcb.build();
   }
 
+  /**
+   * Get driver ncs configuration.
+   * @return driver ncs configuration.
+   * @throws InjectionException exception while injection.
+   */
   private static Configuration getDriverNcsConf() throws InjectionException {
     return Configurations.merge(NameServerConfiguration.CONF.build(),
         LocalNameResolverConfiguration.CONF.build(),
@@ -152,6 +157,11 @@ public final class JobLauncher {
             .build());
   }
 
+  /**
+   * Get driver message configuration.
+   * @return driver message configuration.
+   * @throws InjectionException exception while injection.
+   */
   private static Configuration getDriverMessageConf() throws InjectionException {
     return TANG.newConfigurationBuilder()
         .bindImplementation(MessageEnvironment.class, GrpcMessageEnvironment.class)
@@ -159,6 +169,12 @@ public final class JobLauncher {
         .build();
   }
 
+  /**
+   * Get driver configuration.
+   * @param jobConf job Configuration to get job id and driver memory.
+   * @return driver configuration.
+   * @throws InjectionException exception while injection.
+   */
   private static Configuration getDriverConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = TANG.newInjector(jobConf);
     final String jobId = injector.getNamedInstance(JobConf.JobId.class);
@@ -176,6 +192,13 @@ public final class JobLauncher {
         .build();
   }
 
+  /**
+   * Get job configuration.
+   * @param args arguments to be processed as command line.
+   * @return job configuration.
+   * @throws IOException exception while processing command line.
+   * @throws InjectionException exception while injection.
+   */
   public static Configuration getJobConf(final String[] args) throws IOException, InjectionException {
     final JavaConfigurationBuilder confBuilder = TANG.newConfigurationBuilder();
     final CommandLine cl = new CommandLine(confBuilder);
@@ -205,6 +228,12 @@ public final class JobLauncher {
     return confBuilder.build();
   }
 
+  /**
+   * Get deploy mode configuration.
+   * @param jobConf job configuration to get deploy mode.
+   * @return deploy mode configuration.
+   * @throws InjectionException exception while injection.
+   */
   public static Configuration getDeployModeConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = TANG.newInjector(jobConf);
     final String deployMode = injector.getNamedInstance(JobConf.DeployMode.class);
@@ -222,6 +251,12 @@ public final class JobLauncher {
     }
   }
 
+  /**
+   * Get executor resource configuration.
+   * @param jobConf job configuration to get executor json path.
+   * @return executor resource configuration.
+   * @throws InjectionException exception while injection.
+   */
   public static Configuration getExecutorResourceConf(final Configuration jobConf) throws InjectionException {
     final Injector injector = TANG.newInjector(jobConf);
     try {
