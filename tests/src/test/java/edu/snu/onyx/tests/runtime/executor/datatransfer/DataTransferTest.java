@@ -43,6 +43,7 @@ import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.executor.Executor;
 import edu.snu.onyx.runtime.executor.MetricManagerWorker;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
+import edu.snu.onyx.runtime.executor.data.CoderManager;
 import edu.snu.onyx.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.onyx.runtime.executor.datatransfer.InputReader;
 import edu.snu.onyx.runtime.executor.datatransfer.OutputWriter;
@@ -174,9 +175,11 @@ public final class DataTransferTest {
     injector.bindVolatileParameter(JobConf.GlusterVolumeDirectory.class, TMP_REMOTE_FILE_DIRECTORY);
     final BlockManagerWorker blockManagerWorker;
     final MetricManagerWorker metricManagerWorker;
+    final CoderManager coderManager;
     try {
       blockManagerWorker = injector.getInstance(BlockManagerWorker.class);
       metricManagerWorker =  injector.getInstance(MetricManagerWorker.class);
+      coderManager = injector.getInstance(CoderManager.class);
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
@@ -187,7 +190,7 @@ public final class DataTransferTest {
         EXECUTOR_CAPACITY,
         conToMaster,
         messageEnvironment,
-        blockManagerWorker,
+        coderManager,
         new DataTransferFactory(HASH_RANGE_MULTIPLIER, blockManagerWorker),
         metricManagerWorker);
     injector.bindVolatileInstance(Executor.class, executor);

@@ -59,7 +59,7 @@ public final class BlockManagerWorker {
   private final LocalFileStore localFileStore;
   private final RemoteFileStore remoteFileStore;
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
-  private final ConcurrentMap<String, Coder> runtimeEdgeIdToCoder;
+  private final CoderManager coderManager;
   private final BlockTransfer blockTransfer;
   // Executor service to schedule I/O Runnable which can be done in background.
   private final ExecutorService backgroundExecutorService;
@@ -73,6 +73,7 @@ public final class BlockManagerWorker {
                              final LocalFileStore localFileStore,
                              final RemoteFileStore remoteFileStore,
                              final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
+                             final CoderManager coderManager,
                              final BlockTransfer blockTransfer) {
     this.executorId = executorId;
     this.memoryStore = memoryStore;
@@ -80,7 +81,7 @@ public final class BlockManagerWorker {
     this.localFileStore = localFileStore;
     this.remoteFileStore = remoteFileStore;
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
-    this.runtimeEdgeIdToCoder = new ConcurrentHashMap<>();
+    this.coderManager = coderManager;
     this.blockTransfer = blockTransfer;
     this.backgroundExecutorService = Executors.newFixedThreadPool(numThreads);
     this.blockToRemainingRead = new ConcurrentHashMap<>();
@@ -93,11 +94,7 @@ public final class BlockManagerWorker {
    * @return the corresponding coder.
    */
   public Coder getCoder(final String runtimeEdgeId) {
-    final Coder coder = runtimeEdgeIdToCoder.get(runtimeEdgeId);
-    if (coder == null) {
-      throw new RuntimeException("No coder is registered for " + runtimeEdgeId);
-    }
-    return coder;
+    return coderManager.getCoder(runtimeEdgeId);
   }
 
   /**
@@ -107,7 +104,7 @@ public final class BlockManagerWorker {
    * @param coder         the corresponding coder.
    */
   public void registerCoder(final String runtimeEdgeId, final Coder coder) {
-    runtimeEdgeIdToCoder.putIfAbsent(runtimeEdgeId, coder);
+    coderManager.registerCoder(runtimeEdgeId, coder);
   }
 
   /**
