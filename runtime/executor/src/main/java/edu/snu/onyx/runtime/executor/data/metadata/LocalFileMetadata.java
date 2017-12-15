@@ -47,13 +47,8 @@ public final class LocalFileMetadata<K extends Serializable> extends FileMetadat
   }
 
   /**
-<<<<<<< HEAD
-   * Reserves the region for a block and get the metadata for the block.
-   * @see FileMetadata#reserveBlock(int, int, long)
-=======
    * Reserves the region for a partition and get the metadata for the partition.
-   * @see FileMetadata#reservePartition(Serializable, int, long) .
->>>>>>> master
+   * @see FileMetadata#reservePartition(Serializable, int, long)
    */
   @Override
   public synchronized PartitionMetadata reservePartition(final K key,

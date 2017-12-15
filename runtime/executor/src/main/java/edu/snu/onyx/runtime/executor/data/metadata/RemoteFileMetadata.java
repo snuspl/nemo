@@ -65,7 +65,7 @@ public final class RemoteFileMetadata<K extends Serializable> extends FileMetada
   /**
    * Reserves the region for a partition and get the metadata for the partition.
    *
-   * @see FileMetadata#reservePartition(K, int, long)
+   * @see  FileMetadata#reservePartition(Serializable, int, long)
    */
   @Override
   public synchronized PartitionMetadata reservePartition(final K key,
