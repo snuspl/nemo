@@ -71,7 +71,8 @@ public final class OnyxDriver {
   private final String glusterDirectory;
 
   // Client for sending log messages
-  private JobMessageObserver client;
+  private final JobMessageObserver client;
+  private final RemoteClientMessageLoggingHandler handler;
 
   @Inject
   private OnyxDriver(final UserApplicationRunner userApplicationRunner,
@@ -93,6 +94,7 @@ public final class OnyxDriver {
     this.localDirectory = localDirectory;
     this.glusterDirectory = glusterDirectory;
     this.client = client;
+    this.handler = new RemoteClientMessageLoggingHandler(client);
   }
 
   /**
@@ -100,7 +102,7 @@ public final class OnyxDriver {
    */
   private void setUpLogger() {
     final java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
-    rootLogger.addHandler(new RemoteClientMessageLoggingHandler(client));
+    rootLogger.addHandler(handler);
   }
 
   /**
@@ -176,6 +178,7 @@ public final class OnyxDriver {
   public final class DriverStopHandler implements EventHandler<StopTime> {
     @Override
     public void onNext(final StopTime stopTime) {
+      handler.close();
     }
   }
 
