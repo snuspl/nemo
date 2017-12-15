@@ -14,7 +14,11 @@ brew install python
 ```
 * Flask 0.12.0 or higher
 ```
-pip install python
+pip install flask
+```
+* SQLAlchemy
+```
+pip install sqlalchemy
 ```
 * SQLite
 ```
