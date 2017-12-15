@@ -116,6 +116,7 @@ public final class DataTransferTest {
   private BlockManagerMaster master;
   private BlockManagerWorker worker1;
   private BlockManagerWorker worker2;
+  private HashMap<BlockManagerWorker, CoderManager> coderManagers = new HashMap<>();
 
   @Before
   public void setUp() throws InjectionException {
@@ -180,6 +181,7 @@ public final class DataTransferTest {
       blockManagerWorker = injector.getInstance(BlockManagerWorker.class);
       metricManagerWorker =  injector.getInstance(MetricManagerWorker.class);
       coderManager = injector.getInstance(CoderManager.class);
+      coderManagers.put(blockManagerWorker, coderManager);
     } catch (final InjectionException e) {
       throw new RuntimeException(e);
     }
@@ -344,8 +346,8 @@ public final class DataTransferTest {
   private Pair<IRVertex, IRVertex> setupVertices(final String edgeId,
                                                  final BlockManagerWorker sender,
                                                  final BlockManagerWorker receiver) {
-    sender.registerCoder(edgeId, CODER);
-    receiver.registerCoder(edgeId, CODER);
+    coderManagers.get(sender).registerCoder(edgeId, CODER);
+    coderManagers.get(receiver).registerCoder(edgeId, CODER);
 
     // Src setup
     final BeamBoundedSource s = mock(BeamBoundedSource.class);
