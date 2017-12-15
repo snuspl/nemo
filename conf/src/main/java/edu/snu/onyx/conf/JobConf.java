@@ -154,12 +154,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-<<<<<<< HEAD
-   * The number of threads in thread pool for inbound
-   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
-=======
    * The number of threads in thread pool for inbound block transfer.
->>>>>>> 7066f9a360d1db70827f7e09e0d4ccc0d33d92eb
    *
    * These threads are responsible for de-serializing bytes into block.
    */
@@ -169,12 +164,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-<<<<<<< HEAD
-   * The number of threads in thread pool for outbound
-   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer}.
-=======
    * The number of threads in thread pool for outbound block transfer..
->>>>>>> 7066f9a360d1db70827f7e09e0d4ccc0d33d92eb
    *
    * These threads are responsible for serializing block into bytes.
    */
@@ -184,12 +174,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-<<<<<<< HEAD
-   * The size of outbound buffers for {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransfer},
-   * in bytes.
-=======
    * The size of outbound buffers for block transfer in bytes.
->>>>>>> 7066f9a360d1db70827f7e09e0d4ccc0d33d92eb
    */
   @NamedParameter(doc = "Size of outbound buffers for block transfer, in bytes",
       short_name = "block_outbound_buffer", default_value = "10485760")
@@ -197,12 +182,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-<<<<<<< HEAD
-   * The TCP port to which local
-   * {edu.snu.onyx.runtime.executor.data.partitiontransfer.PartitionTransport} binds. 0 means random port.
-=======
    * The TCP port to which local block transfer binds. 0 means random port.
->>>>>>> 7066f9a360d1db70827f7e09e0d4ccc0d33d92eb
    */
   @NamedParameter(doc = "Port to which PartitionTransport binds (0 means random port)",
       short_name = "block_port", default_value = "0")
