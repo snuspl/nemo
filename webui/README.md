@@ -6,12 +6,10 @@ A stand-alone web server which provides RESTful API for tracking Onyx jobs.
 
 * Linux or MacOS
 * Python 2.7 or higher
-On Ubuntu
 ```
+# On Ubuntu
 sudo apt-get install python
-```
-On MacOS
-```
+# On MacOS
 brew install python
 ```
 * Flask 0.12.0 or higher
@@ -19,12 +17,10 @@ brew install python
 pip install python
 ```
 * SQLite
-On Ubuntu
 ```
+# On Ubuntu
 sudo apt-get install sqlite3 libsqlite3-dev
-```
-On MacOS
-```
+# On MacOS
 brew install sqlite
 ```
 
