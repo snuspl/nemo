@@ -46,7 +46,7 @@ public final class LocalFileMetadata extends FileMetadata {
 
   /**
    * Reserves the region for a block and get the metadata for the block.
-   * @see FileMetadata#reserveBlock(int, int, long).
+   * @see FileMetadata#reserveBlock(int, int, long)
    */
   @Override
   public synchronized BlockMetadata reserveBlock(final int hashValue,
@@ -66,7 +66,7 @@ public final class LocalFileMetadata extends FileMetadata {
 
   /**
    * Notifies that some blocks are written.
-   * @see FileMetadata#commitBlocks(Iterable).
+   * @see FileMetadata#commitBlocks(Iterable)
    */
   @Override
   public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
@@ -80,7 +80,7 @@ public final class LocalFileMetadata extends FileMetadata {
 
   /**
    * Gets a iterable containing the block metadata of corresponding partition.
-   * @see FileMetadata#getBlockMetadataIterable().
+   * @see FileMetadata#getBlockMetadataIterable()
    */
   @Override
   public Iterable<BlockMetadata> getBlockMetadataIterable() {
@@ -88,7 +88,7 @@ public final class LocalFileMetadata extends FileMetadata {
   }
 
   /**
-   * @see FileMetadata#deleteMetadata().
+   * @see FileMetadata#deleteMetadata()
    */
   @Override
   public void deleteMetadata() {

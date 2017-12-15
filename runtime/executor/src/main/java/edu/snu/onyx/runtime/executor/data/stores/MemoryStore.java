@@ -41,7 +41,7 @@ public final class MemoryStore extends LocalPartitionStore {
   }
 
   /**
-   * @see PartitionStore#removePartition(String).
+   * @see PartitionStore#removePartition(String)
    */
   @Override
   public Boolean removePartition(final String partitionId) {

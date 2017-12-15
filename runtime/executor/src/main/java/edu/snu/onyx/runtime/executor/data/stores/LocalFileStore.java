@@ -51,7 +51,7 @@ public final class LocalFileStore extends LocalPartitionStore implements FileSto
    * Creates a new partition.
    *
    * @param partitionId the ID of the partition to create.
-   * @see PartitionStore#createPartition(String).
+   * @see PartitionStore#createPartition(String)
    */
   @Override
   public void createPartition(final String partitionId) {
@@ -86,7 +86,7 @@ public final class LocalFileStore extends LocalPartitionStore implements FileSto
   }
 
   /**
-   * @see FileStore#getFileAreas(String, HashRange).
+   * @see FileStore#getFileAreas(String, HashRange)
    */
   @Override
   public List<FileArea> getFileAreas(final String partitionId,

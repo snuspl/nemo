@@ -66,7 +66,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   /**
    * Reserves the region for a block and get the metadata for the block.
    *
-   * @see FileMetadata#reserveBlock(int, int, long).
+   * @see FileMetadata#reserveBlock(int, int, long)
    */
   @Override
   public synchronized BlockMetadata reserveBlock(final int hashValue,
@@ -117,7 +117,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   /**
    * Notifies that some blocks are written.
    *
-   * @see FileMetadata#commitBlocks(Iterable).
+   * @see FileMetadata#commitBlocks(Iterable)
    */
   @Override
   public synchronized void commitBlocks(final Iterable<BlockMetadata> blockMetadataToCommit) {
@@ -143,7 +143,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   /**
    * Gets a iterable containing the block metadata of corresponding partition.
    *
-   * @see FileMetadata#getBlockMetadataIterable().
+   * @see FileMetadata#getBlockMetadataIterable()
    */
   @Override
   public synchronized Iterable<BlockMetadata> getBlockMetadataIterable() throws IOException {
@@ -154,7 +154,7 @@ public final class RemoteFileMetadata extends FileMetadata {
   }
 
   /**
-   * @see FileMetadata#deleteMetadata().
+   * @see FileMetadata#deleteMetadata()
    */
   @Override
   public void deleteMetadata() throws IOException {

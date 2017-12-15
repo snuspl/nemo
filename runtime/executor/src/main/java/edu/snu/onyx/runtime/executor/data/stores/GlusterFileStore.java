@@ -65,7 +65,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
    * Creates a new partition.
    *
    * @param partitionId the ID of the partition to create.
-   * @see PartitionStore#createPartition(String).
+   * @see PartitionStore#createPartition(String)
    */
   @Override
   public void createPartition(final String partitionId) {
@@ -75,7 +75,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   /**
    * Saves an iterable of data blocks to a partition.
    *
-   * @see PartitionStore#putBlocks(String, Iterable, boolean).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean)
    */
   @Override
   public Optional<List<Long>> putBlocks(final String partitionId,
@@ -91,7 +91,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean).
+   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean)
    */
   @Override
   public List<Long> putSerializedBlocks(final String partitionId,
@@ -109,7 +109,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   /**
    * Retrieves a deserialized partition of elements through remote disks.
    *
-   * @see PartitionStore#getBlocks(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange)
    */
   @Override
   public Optional<Iterable<NonSerializedBlock>> getBlocks(final String partitionId,
@@ -130,7 +130,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * @see PartitionStore#getSerializedBlocks(String, HashRange).
+   * @see PartitionStore#getSerializedBlocks(String, HashRange)
    */
   @Override
   public Optional<Iterable<SerializedBlock>> getSerializedBlocks(final String partitionId,
@@ -150,7 +150,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * @see PartitionStore#commitPartition(String).
+   * @see PartitionStore#commitPartition(String)
    */
   @Override
   public void commitPartition(final String partitionId) throws PartitionWriteException {
@@ -186,7 +186,7 @@ public final class GlusterFileStore extends AbstractPartitionStore implements Re
   }
 
   /**
-   * @see FileStore#getFileAreas(String, HashRange).
+   * @see FileStore#getFileAreas(String, HashRange)
    */
   @Override
   public List<FileArea> getFileAreas(final String partitionId,

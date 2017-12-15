@@ -44,7 +44,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#putBlocks(String, Iterable, boolean).
+   * @see PartitionStore#putBlocks(String, Iterable, boolean)
    */
   @Override
   public final Optional<List<Long>> putBlocks(final String partitionId,
@@ -63,7 +63,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean).
+   * @see PartitionStore#putSerializedBlocks(String, Iterable, boolean)
    */
   @Override
   public final List<Long> putSerializedBlocks(final String partitionId,
@@ -82,7 +82,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#getBlocks(String, HashRange).
+   * @see PartitionStore#getBlocks(String, HashRange)
    */
   @Override
   public final Optional<Iterable<NonSerializedBlock>> getBlocks(final String partitionId,
@@ -102,7 +102,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#getSerializedBlocks(String, HashRange).
+   * @see PartitionStore#getSerializedBlocks(String, HashRange)
    */
   @Override
   public final Optional<Iterable<SerializedBlock>> getSerializedBlocks(final String partitionId,
@@ -122,7 +122,7 @@ public abstract class LocalPartitionStore extends AbstractPartitionStore {
   }
 
   /**
-   * @see PartitionStore#commitPartition(String).
+   * @see PartitionStore#commitPartition(String)
    */
   @Override
   public final void commitPartition(final String partitionId) {

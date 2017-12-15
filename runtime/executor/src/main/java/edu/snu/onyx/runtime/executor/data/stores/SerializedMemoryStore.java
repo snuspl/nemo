@@ -41,7 +41,7 @@ public final class SerializedMemoryStore extends LocalPartitionStore {
   }
 
   /**
-   * @see PartitionStore#removePartition(String).
+   * @see PartitionStore#removePartition(String)
    */
   @Override
   public Boolean removePartition(final String partitionId) {
