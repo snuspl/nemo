@@ -92,6 +92,7 @@ public class EmptyComponents {
     }
 
     /**
+     * Do nothing.
      * @return throws exception.
      * @throws Exception throws UnsupportedOperationException
      */

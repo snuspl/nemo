@@ -186,6 +186,7 @@ public final class OnyxPipelineVisitor extends Pipeline.PipelineVisitor.Defaults
     return irVertex;
   }
 
+  // TODO #119: fill the below document.
   /**
    * @param builder the DAG builder to add the vertex to.
    * @param sideInputs side inputs.

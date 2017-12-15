@@ -39,7 +39,7 @@ public interface Source<T> extends Serializable {
    * This estimate is in terms of external storage size, before any decompression or other
    * processing done by the reader.
    * @return estimated total size in bytes.
-   * @throws Exception exception while estimating the total size.
+   * @throws Exception exception while estimating the total size of the data.
    */
   long getEstimatedSizeBytes() throws Exception;
 
