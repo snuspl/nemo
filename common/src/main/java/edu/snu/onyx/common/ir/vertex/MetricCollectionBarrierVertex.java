@@ -24,7 +24,7 @@ import java.util.*;
 /**
  * IRVertex that collects statistics to send them to the optimizer for dynamic optimization.
  * This class is generated in the DAG through
- * {edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass}.
+ * {@link edu.snu.onyx.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass}.
  * @param <T> type of the metric data.
  */
 public final class MetricCollectionBarrierVertex<T> extends IRVertex {
