@@ -31,7 +31,6 @@ import edu.snu.onyx.runtime.master.scheduler.PendingTaskGroupQueue;
 import edu.snu.onyx.runtime.master.resource.ResourceSpecification;
 import edu.snu.onyx.runtime.master.scheduler.Scheduler;
 import edu.snu.onyx.runtime.master.scheduler.SchedulerRunner;
-import edu.snu.onyx.runtime.master.control.ControlEvent;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -50,7 +49,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static edu.snu.onyx.runtime.common.state.TaskGroupState.State.COMPLETE;
@@ -72,8 +70,6 @@ public final class RuntimeMaster {
   private static final int DAG_LOGGING_PERIOD = 3000;
 
   private final ExecutorService masterControlEventExecutor;
-  private final BlockingQueue<ControlEvent> controlEventQueue;
-  private final AtomicBoolean isTerminated;
 
   private final Scheduler scheduler;
   private final SchedulerRunner schedulerRunner;
@@ -99,16 +95,11 @@ public final class RuntimeMaster {
                        final MetricMessageHandler metricMessageHandler,
                        final MessageEnvironment masterMessageEnvironment,
                        @Parameter(JobConf.DAGDirectory.class) final String dagDirectory) {
-    this.isTerminated = new AtomicBoolean(false);
-
     // We would like to keep the master event thread pool single threaded
     // since the processing logic in master takes a very short amount of time
     // compared to the job completion times of executed jobs
     // and keeping it single threaded removes the complexity of multi-thread synchronization.
     this.masterControlEventExecutor = Executors.newSingleThreadExecutor();
-    this.controlEventQueue = new LinkedBlockingQueue<>();
-    this.masterControlEventExecutor.execute(new ControlEventHandler());
-
     this.scheduler = scheduler;
     this.schedulerRunner = schedulerRunner;
     this.pendingTaskGroupQueue = pendingTaskGroupQueue;
@@ -153,8 +144,6 @@ public final class RuntimeMaster {
 
   public void terminate() {
     try {
-      isTerminated.set(true);
-      controlEventQueue.clear();
       masterControlEventExecutor.shutdown();
 
       scheduler.terminate();
@@ -203,9 +192,8 @@ public final class RuntimeMaster {
   public void onContainerAllocated(final String executorId,
                                    final AllocatedEvaluator allocatedEvaluator,
                                    final Configuration executorConfiguration) {
-    controlEventQueue.offer(
-        new ControlEvent(ControlEvent.ControlEventType.CONTAINER_ALLOCATED,
-            executorId, allocatedEvaluator, executorConfiguration));
+    masterControlEventExecutor.execute(() ->
+        containerManager.onContainerAllocated(executorId, allocatedEvaluator, executorConfiguration));
   }
 
   /**
@@ -213,8 +201,10 @@ public final class RuntimeMaster {
    * @param activeContext of the launched executor.
    */
   public void onExecutorLaunched(final ActiveContext activeContext) {
-    controlEventQueue.offer(
-        new ControlEvent(ControlEvent.ControlEventType.EXECUTOR_LAUNCHED, activeContext));
+    masterControlEventExecutor.execute(() -> {
+      containerManager.onExecutorLaunched(activeContext);
+      scheduler.onExecutorAdded(activeContext.getId());
+    });
   }
 
   /**
@@ -222,8 +212,10 @@ public final class RuntimeMaster {
    * @param failedExecutorId of the failed executor.
    */
   public void onExecutorFailed(final String failedExecutorId) {
-    controlEventQueue.offer(
-        new ControlEvent(ControlEvent.ControlEventType.EXECUTOR_FAILED, failedExecutorId));
+    masterControlEventExecutor.execute(() -> {
+      containerManager.onExecutorRemoved(failedExecutorId);
+      scheduler.onExecutorRemoved(failedExecutorId);
+    });
   }
 
   /**
@@ -232,8 +224,7 @@ public final class RuntimeMaster {
   public final class MasterControlMessageReceiver implements MessageListener<ControlMessage.Message> {
     @Override
     public void onMessage(final ControlMessage.Message message) {
-      controlEventQueue.offer(
-          new ControlEvent(ControlEvent.ControlEventType.CONTROL_MESSAGE_RECEIVED, message));
+      masterControlEventExecutor.execute(() -> handleControlMessage(message));
     }
 
     @Override
@@ -246,83 +237,47 @@ public final class RuntimeMaster {
     }
   }
 
-  /**
-   * A runnable that processes control events, consuming each from a blocking queue one at a time.
-   */
-  private final class ControlEventHandler implements Runnable {
-    @Override
-    public void run() {
-      while (!isTerminated.get()) {
-        try {
-          final ControlEvent controlEvent = controlEventQueue.take();
+  private void handleControlMessage(final ControlMessage.Message message) {
+    switch (message.getType()) {
+    case TaskGroupStateChanged:
+      final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg
+          = message.getTaskGroupStateChangedMsg();
 
-          switch (controlEvent.getControlEventType()) {
-          case CONTAINER_ALLOCATED:
-            containerManager.onContainerAllocated(controlEvent.getExecutorId(),
-                controlEvent.getAllocatedEvaluator(), controlEvent.getExecutorConfiguration());
-            break;
-          case EXECUTOR_LAUNCHED:
-            containerManager.onExecutorLaunched(controlEvent.getActiveContext());
-            scheduler.onExecutorAdded(controlEvent.getActiveContext().getId());
-            break;
-          case EXECUTOR_FAILED:
-            containerManager.onExecutorRemoved(controlEvent.getExecutorId());
-            scheduler.onExecutorRemoved(controlEvent.getExecutorId());
-            break;
-          case CONTROL_MESSAGE_RECEIVED:
-            handleControlMessage(controlEvent.getControlMessage());
-            break;
-          default:
-            throw new RuntimeException("Unsupported Control Event");
-          }
-        } catch (final Exception e) {
-          e.printStackTrace();
-          throw new RuntimeException(e);
-        }
-      }
-    }
-
-    private void handleControlMessage(final ControlMessage.Message message) {
-      switch (message.getType()) {
-      case TaskGroupStateChanged:
-        final ControlMessage.TaskGroupStateChangedMsg taskGroupStateChangedMsg
-            = message.getTaskGroupStateChangedMsg();
-
-        scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
-            taskGroupStateChangedMsg.getTaskGroupId(),
-            convertTaskGroupState(taskGroupStateChangedMsg.getState()),
-            taskGroupStateChangedMsg.getAttemptIdx(),
-            taskGroupStateChangedMsg.getTasksPutOnHoldIdsList(),
-            convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
-        break;
-      case ExecutorFailed:
-        final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
-        final String failedExecutorId = executorFailedMsg.getExecutorId();
-        final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
-        LOG.error(failedExecutorId + " failed, Stack Trace: ", exception);
-        containerManager.onExecutorRemoved(failedExecutorId);
-        throw new RuntimeException(exception);
-      case ContainerFailed:
-        final ControlMessage.ContainerFailedMsg containerFailedMsg = message.getContainerFailedMsg();
-        LOG.error(containerFailedMsg.getExecutorId() + " failed");
-        break;
-      case DataSizeMetric:
-        final ControlMessage.DataSizeMetricMsg dataSizeMetricMsg = message.getDataSizeMetricMsg();
-        // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
-        accumulateBarrierMetric(dataSizeMetricMsg.getPartitionSizeInfoList(),
-            dataSizeMetricMsg.getSrcIRVertexId(), dataSizeMetricMsg.getBlockId());
-        break;
-      case MetricMessageReceived:
-        final List<ControlMessage.Metric> metricList = message.getMetricMsg().getMetricList();
-        metricList.forEach(metric ->
-            metricMessageHandler.onMetricMessageReceived(metric.getMetricKey(), metric.getMetricValue()));
-        break;
-      default:
-        throw new IllegalMessageException(
-            new Exception("This message should not be received by Master :" + message.getType()));
-      }
+      scheduler.onTaskGroupStateChanged(taskGroupStateChangedMsg.getExecutorId(),
+          taskGroupStateChangedMsg.getTaskGroupId(),
+          convertTaskGroupState(taskGroupStateChangedMsg.getState()),
+          taskGroupStateChangedMsg.getAttemptIdx(),
+          taskGroupStateChangedMsg.getTasksPutOnHoldIdsList(),
+          convertFailureCause(taskGroupStateChangedMsg.getFailureCause()));
+      break;
+    case ExecutorFailed:
+      final ControlMessage.ExecutorFailedMsg executorFailedMsg = message.getExecutorFailedMsg();
+      final String failedExecutorId = executorFailedMsg.getExecutorId();
+      final Exception exception = SerializationUtils.deserialize(executorFailedMsg.getException().toByteArray());
+      LOG.error(failedExecutorId + " failed, Stack Trace: ", exception);
+      containerManager.onExecutorRemoved(failedExecutorId);
+      throw new RuntimeException(exception);
+    case ContainerFailed:
+      final ControlMessage.ContainerFailedMsg containerFailedMsg = message.getContainerFailedMsg();
+      LOG.error(containerFailedMsg.getExecutorId() + " failed");
+      break;
+    case DataSizeMetric:
+      final ControlMessage.DataSizeMetricMsg dataSizeMetricMsg = message.getDataSizeMetricMsg();
+      // TODO #511: Refactor metric aggregation for (general) run-rime optimization.
+      accumulateBarrierMetric(dataSizeMetricMsg.getPartitionSizeInfoList(),
+          dataSizeMetricMsg.getSrcIRVertexId(), dataSizeMetricMsg.getBlockId());
+      break;
+    case MetricMessageReceived:
+      final List<ControlMessage.Metric> metricList = message.getMetricMsg().getMetricList();
+      metricList.forEach(metric ->
+          metricMessageHandler.onMetricMessageReceived(metric.getMetricKey(), metric.getMetricValue()));
+      break;
+    default:
+      throw new IllegalMessageException(
+          new Exception("This message should not be received by Master :" + message.getType()));
     }
   }
+
 
   /**
    * Accumulates the metric data for a barrier vertex.
