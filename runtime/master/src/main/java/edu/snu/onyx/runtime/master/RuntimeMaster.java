@@ -84,7 +84,6 @@ public final class RuntimeMaster {
   private final MessageEnvironment masterMessageEnvironment;
 
   // For converting json data. This is a thread safe.
-  // TODO #420: Create a Singleton ObjectMapper
   private final ObjectMapper objectMapper;
 
   private final String dagDirectory;
@@ -370,7 +369,6 @@ public final class RuntimeMaster {
     }
   }
 
-  // TODO #164: Cleanup Protobuf Usage
   public static BlockState.State convertBlockState(final ControlMessage.BlockStateFromExecutor state) {
     switch (state) {
     case BLOCK_READY:
@@ -390,7 +388,6 @@ public final class RuntimeMaster {
     }
   }
 
-  // TODO #164: Cleanup Protobuf Usage
   public static ControlMessage.BlockStateFromExecutor convertBlockState(final BlockState.State state) {
     switch (state) {
       case READY:
@@ -410,7 +407,6 @@ public final class RuntimeMaster {
     }
   }
 
-  // TODO #164: Cleanup Protobuf Usage
   private TaskGroupState.RecoverableFailureCause convertFailureCause(
       final ControlMessage.RecoverableFailureCause cause) {
     switch (cause) {
