@@ -27,4 +27,12 @@ limitations under the License.
 
     <artifactId>onyx-conf</artifactId>
     <name>Onyx Job Configuration</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.reef</groupId>
+            <artifactId>reef-common</artifactId>
+            <version>${reef.version}</version>
+        </dependency>
+    </dependencies>
 </project>
