@@ -16,6 +16,10 @@
  */
 package edu.snu.onyx.examples.spark;
 
+import edu.snu.onyx.client.spark.JavaRDD;
+import edu.snu.onyx.client.spark.JavaSparkContext;
+import edu.snu.onyx.client.spark.SparkSession;
+
 import java.util.ArrayList;
 import java.util.List;
 
