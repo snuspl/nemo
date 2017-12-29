@@ -18,6 +18,7 @@ package edu.snu.onyx.tests.examples.beam;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.examples.beam.Broadcast;
 import edu.snu.onyx.tests.compiler.CompilerTestUtil;
+import edu.snu.onyx.tests.examples.ArgBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

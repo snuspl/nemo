@@ -23,7 +23,7 @@ import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.examples.beam.*;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.tests.examples.beam.AlternatingLeastSquareITCase;
-import edu.snu.onyx.tests.examples.beam.ArgBuilder;
+import edu.snu.onyx.tests.examples.ArgBuilder;
 import edu.snu.onyx.tests.examples.beam.MapReduceITCase;
 import edu.snu.onyx.tests.examples.beam.MultinomialLogisticRegressionITCase;
 import org.apache.reef.tang.Configuration;

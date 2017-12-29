@@ -71,6 +71,7 @@ public class JavaRDD<T> {
   public T reduce(final BinaryOperator<T> func) {
     final List<T> result = new ArrayList<>();
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, result));
+    builder.addVertex(reduceVertex, loopVertexStack);
     if (lastVertex != null) {
       final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceVertex),
           lastVertex, reduceVertex, new BytesCoder());
