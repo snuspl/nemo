@@ -16,7 +16,9 @@
  */
 package edu.snu.onyx.client.spark;
 
+import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.coder.BytesCoder;
+import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
@@ -25,19 +27,20 @@ import edu.snu.onyx.common.ir.vertex.LoopVertex;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
+import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator;
+import edu.snu.onyx.compiler.frontend.spark.transform.SerializableFunction;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
-public class JavaRDD<T> {
-  final SparkContext sparkContext;
-  final Integer parallelism;
+public class JavaRDD<T extends Serializable> {
+  private final SparkContext sparkContext;
+  private final Integer parallelism;
   private List initialData;
   private final Stack<LoopVertex> loopVertexStack;
-  final DAGBuilder<IRVertex, IREdge> builder;
+  private DAGBuilder<IRVertex, IREdge> builder;
   private final IRVertex lastVertex;
 
   JavaRDD(final SparkContext sparkContext, final Integer parallelism, final List initialData) {
@@ -55,7 +58,7 @@ public class JavaRDD<T> {
   }
 
   // TRANSFORMATIONS
-  public <O> JavaRDD<O> map(final Function<T, O> func) {
+  public <O extends Serializable> JavaRDD<O> map(final SerializableFunction<T, O> func) {
     final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
     builder.addVertex(mapVertex, loopVertexStack);
     if (lastVertex != null) {
@@ -68,7 +71,7 @@ public class JavaRDD<T> {
 
 
   // ACTIONS
-  public T reduce(final BinaryOperator<T> func) {
+  public T reduce(final SerializableBinaryOperator<T> func) {
     final List<T> result = new ArrayList<>();
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, result));
     builder.addVertex(reduceVertex, loopVertexStack);
@@ -77,6 +80,9 @@ public class JavaRDD<T> {
           lastVertex, reduceVertex, new BytesCoder());
       builder.connectVertices(newEdge);
     }
+    final DAG<IRVertex, IREdge> dag = this.builder.buildWithoutSourceSinkCheck();
+    this.builder = new DAGBuilder<>();
+    JobLauncher.launchDAG(dag);
     return result.iterator().next();
   }
 

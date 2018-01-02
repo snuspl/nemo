@@ -3,13 +3,13 @@ package edu.snu.onyx.compiler.frontend.spark.transform;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 
-import java.util.function.Function;
+import java.io.Serializable;
 
-public final class MapTransform<I, O> implements Transform<I, O> {
-  private final Function<I, O> func;
+public final class MapTransform<I extends Serializable, O extends Serializable> implements Transform<I, O> {
+  private final SerializableFunction<I, O> func;
   private OutputCollector<O> outputCollector;
 
-  public MapTransform(final Function<I, O> func) {
+  public MapTransform(final SerializableFunction<I, O> func) {
     this.func = func;
   }
 

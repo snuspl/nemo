@@ -16,6 +16,7 @@
  */
 package edu.snu.onyx.client.spark;
 
+import java.io.Serializable;
 import java.util.List;
 
 public final class JavaSparkContext {
@@ -25,7 +26,7 @@ public final class JavaSparkContext {
     this.sparkContext = sparkContext;
   }
 
-  public <T> JavaRDD<T> parallelize(final List<T> l, final Integer slices) {
+  public <T extends Serializable> JavaRDD<T> parallelize(final List<T> l, final Integer slices) {
     return new JavaRDD<>(this.sparkContext, slices, l);
   }
 }
