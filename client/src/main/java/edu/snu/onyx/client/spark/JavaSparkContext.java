@@ -41,6 +41,6 @@ public final class JavaSparkContext {
    * @return the newly initiated JavaRDD.
    */
   public <T extends Serializable> JavaRDD<T> parallelize(final List<T> l, final Integer slices) {
-    return new JavaRDD<>(this.sparkContext, slices, l);
+    return new JavaRDD<T>(this.sparkContext, slices).setSource(l);
   }
 }

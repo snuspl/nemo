@@ -14,6 +14,10 @@ public final class SparkContext {
     this.conf = conf;
   }
 
+  /**
+   * Configuration.
+   * @return the spark configuration.
+   */
   public SparkConf conf() {
     return this.conf;
   }
