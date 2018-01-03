@@ -25,6 +25,9 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+/**
+ * Test SparkPi program with JobLauncher.
+ */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class SparkPiITCase {

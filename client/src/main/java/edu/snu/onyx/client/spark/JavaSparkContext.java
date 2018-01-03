@@ -19,13 +19,27 @@ package edu.snu.onyx.client.spark;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Spark context wrapper for Java.
+ */
 public final class JavaSparkContext {
-  final private SparkContext sparkContext;
+  private final SparkContext sparkContext;
 
+  /**
+   * Constructor.
+   * @param sparkContext spark context to wrap.
+   */
   public JavaSparkContext(final SparkContext sparkContext) {
     this.sparkContext = sparkContext;
   }
 
+  /**
+   * Initiate a JavaRDD with the number of parallelism.
+   * @param l List of input data.
+   * @param slices number of slices for parallelism.
+   * @param <T> type of the initial element.
+   * @return the newly initiated JavaRDD.
+   */
   public <T extends Serializable> JavaRDD<T> parallelize(final List<T> l, final Integer slices) {
     return new JavaRDD<>(this.sparkContext, slices, l);
   }

@@ -151,7 +151,7 @@ final class HDFSWrite extends DoFn<String, Void> {
   /**
    * process element.
    * @param c          context {@link ProcessContext}
-   * @throws Exception
+   * @throws Exception exception.
    */
   @ProcessElement
   public void processElement(final ProcessContext c) throws Exception {

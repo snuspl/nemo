@@ -35,7 +35,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class JavaRDD<T extends Serializable> {
+/**
+ * Java RDD.
+ * @param <T> type of the final element.
+ */
+public final class JavaRDD<T extends Serializable> {
   private final SparkContext sparkContext;
   private final Integer parallelism;
   private List initialData;
@@ -43,10 +47,24 @@ public class JavaRDD<T extends Serializable> {
   private DAGBuilder<IRVertex, IREdge> builder;
   private final IRVertex lastVertex;
 
+  /**
+   * Constructor to start with.
+   * @param sparkContext spark context.
+   * @param parallelism parallelism information.
+   * @param initialData initial set of data.
+   */
   JavaRDD(final SparkContext sparkContext, final Integer parallelism, final List initialData) {
     this(sparkContext, parallelism, initialData, new DAGBuilder<>(), null);
   }
 
+  /**
+   * Constructor.
+   * @param sparkContext spark context.
+   * @param parallelism parallelism information.
+   * @param initialData initial set of data.
+   * @param builder the builder for the DAG.
+   * @param lastVertex last vertex added to the builder.
+   */
   JavaRDD(final SparkContext sparkContext, final Integer parallelism, final List initialData,
           final DAGBuilder<IRVertex, IREdge> builder, final IRVertex lastVertex) {
     this.loopVertexStack = new Stack<>();
@@ -57,7 +75,14 @@ public class JavaRDD<T extends Serializable> {
     this.lastVertex = lastVertex;
   }
 
-  // TRANSFORMATIONS
+  ///////////// TRANSFORMATIONS ////////////////
+
+  /**
+   * Map transform.
+   * @param func function to apply.
+   * @param <O> output type.
+   * @return the JavaRDD with the DAG.
+   */
   public <O extends Serializable> JavaRDD<O> map(final SerializableFunction<T, O> func) {
     final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
     builder.addVertex(mapVertex, loopVertexStack);
@@ -70,7 +95,13 @@ public class JavaRDD<T extends Serializable> {
   }
 
 
-  // ACTIONS
+  ////////////// ACTIONS ////////////////
+
+  /**
+   * Reduce action.
+   * @param func function to apply.
+   * @return the result of the reduce action.
+   */
   public T reduce(final SerializableBinaryOperator<T> func) {
     final List<T> result = new ArrayList<>();
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, result));
@@ -86,6 +117,12 @@ public class JavaRDD<T extends Serializable> {
     return result.iterator().next();
   }
 
+  /**
+   * Retrieve communication pattern of the edge.
+   * @param src source vertex.
+   * @param dst destination vertex.
+   * @return the communication pattern.
+   */
   private static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
                                                                                     final IRVertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof ReduceTransform) {

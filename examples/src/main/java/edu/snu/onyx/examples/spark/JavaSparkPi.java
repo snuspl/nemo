@@ -24,12 +24,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Computes an approximation to pi
+ * Computes an approximation to pi.
  * Usage: JavaSparkPi [partitions]
  */
 public final class JavaSparkPi {
 
-  public static void main(String[] args) throws Exception {
+  /**
+   * Private constructor.
+   */
+  private JavaSparkPi() {
+  }
+
+  /**
+   * Main method.
+   * @param args arguments.
+   * @throws Exception exceptions.
+   */
+  public static void main(final String[] args) throws Exception {
     SparkSession spark = SparkSession
         .builder()
         .appName("JavaSparkPi")
