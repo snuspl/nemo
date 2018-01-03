@@ -32,18 +32,18 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class SparkPiITCase {
   private static final int TIMEOUT = 60000;
-  private static final String numIteration = "10";
+  private static final String numParallelism = "1";
 
   public static ArgBuilder builder = new ArgBuilder()
       .addJobId(SparkPiITCase.class.getSimpleName())
       .addUserMain(JavaSparkPi.class.getCanonicalName())
-      .addUserArgs(numIteration);
+      .addUserArgs(numParallelism);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
         .addUserMain(JavaSparkPi.class.getCanonicalName())
-        .addUserArgs(numIteration);
+        .addUserArgs(numParallelism);
   }
 
   @Test(timeout = TIMEOUT)

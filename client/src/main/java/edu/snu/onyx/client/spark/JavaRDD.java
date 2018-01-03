@@ -22,6 +22,7 @@ import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.InitializedSourceVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
@@ -101,6 +102,7 @@ public final class JavaRDD<T extends Serializable> {
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapVertex),
         lastVertex, mapVertex, new BytesCoder());
+    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
     return new JavaRDD<>(this.sparkContext, this.parallelism, this.builder, mapVertex);
@@ -123,6 +125,7 @@ public final class JavaRDD<T extends Serializable> {
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceVertex),
         lastVertex, reduceVertex, new BytesCoder());
+    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
     final DAG<IRVertex, IREdge> dag = this.builder.build();
