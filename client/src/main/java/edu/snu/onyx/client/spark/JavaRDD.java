@@ -17,7 +17,6 @@
 package edu.snu.onyx.client.spark;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.common.coder.BytesCoder;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
@@ -32,6 +31,7 @@ import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator;
 import edu.snu.onyx.compiler.frontend.spark.transform.SerializableFunction;
+import org.apache.spark.serializer.KryoSerializer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -48,6 +48,7 @@ public final class JavaRDD<T extends Serializable> {
   private final Stack<LoopVertex> loopVertexStack;
   private DAGBuilder<IRVertex, IREdge> builder;
   private final IRVertex lastVertex;
+  private final KryoSerializer kryoSerializer;
 
   /**
    * Constructor to start with.
@@ -66,12 +67,13 @@ public final class JavaRDD<T extends Serializable> {
    * @param lastVertex last vertex added to the builder.
    */
   private JavaRDD(final SparkContext sparkContext, final Integer parallelism,
-          final DAGBuilder<IRVertex, IREdge> builder, final IRVertex lastVertex) {
+                  final DAGBuilder<IRVertex, IREdge> builder, final IRVertex lastVertex) {
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
     this.parallelism = parallelism;
     this.builder = builder;
     this.lastVertex = lastVertex;
+    this.kryoSerializer = new KryoSerializer(sparkContext.conf());
   }
 
   ///////////// TRANSFORMATIONS ////////////////
@@ -101,7 +103,7 @@ public final class JavaRDD<T extends Serializable> {
     builder.addVertex(mapVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapVertex),
-        lastVertex, mapVertex, new BytesCoder());
+        lastVertex, mapVertex, new SparkCoder(kryoSerializer));
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
@@ -124,7 +126,7 @@ public final class JavaRDD<T extends Serializable> {
     builder.addVertex(reduceVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceVertex),
-        lastVertex, reduceVertex, new BytesCoder());
+        lastVertex, reduceVertex, new SparkCoder(kryoSerializer));
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
