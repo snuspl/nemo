@@ -108,15 +108,20 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
 
       Optional<String> executorId = selectExecutorByRR(containerType);
       if (!executorId.isPresent()) { // If there is no available executor to schedule this task group now,
+        // TODO #696 Sleep Time Per Container Type in Scheduling Policy
         final boolean executorAvailable =
             conditionByContainerType.get(containerType).await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
         if (executorAvailable) { // if an executor has become available before scheduleTimeoutMs,
-          return scheduleTaskGroup(selectExecutorByRR(containerType), scheduledTaskGroup, jobStateManager);
-        } else {
-          return false;
+          executorId = selectExecutorByRR(containerType);
+          if (executorId.isPresent()) {
+            scheduleTaskGroup(selectExecutorByRR(containerType).get(), scheduledTaskGroup, jobStateManager);
+            return true;
+          }
         }
+        return false;
       } else {
-        return scheduleTaskGroup(executorId, scheduledTaskGroup, jobStateManager);
+        scheduleTaskGroup(executorId.get(), scheduledTaskGroup, jobStateManager);
+        return true;
       }
     } catch (final Exception e) {
       throw new SchedulingException(e);
@@ -136,16 +141,12 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
         ? getAllContainers() // all containers
         : executorIdByContainerType.get(containerType); // containers of a particular type
 
-    print("selectExecutorByRR", containerType);
-
     if (candidateExecutorIds != null && !candidateExecutorIds.isEmpty()) {
       final int numExecutors = candidateExecutorIds.size();
       int nextExecutorIndex = nextExecutorIndexByContainerType.get(containerType);
       for (int i = 0; i < numExecutors; i++) {
         final int index = (nextExecutorIndex + i) % numExecutors;
         final String selectedExecutorId = candidateExecutorIds.get(index);
-
-        LOG.info("Candidates: {}", candidateExecutorIds);
 
         final ExecutorRepresenter executor = executorRepresenterMap.get(selectedExecutorId);
         if (hasFreeSlot(executor)) {
@@ -166,20 +167,15 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * @param jobStateManager which the TaskGroup belongs to.
    * @return true if successfully scheduled, false otherwise.
    */
-  private boolean scheduleTaskGroup(final Optional<String> executorId,
-                                    final ScheduledTaskGroup scheduledTaskGroup,
-                                    final JobStateManager jobStateManager) {
-    if (!executorId.isPresent()) {
-      return false;
-    }
-
+  private void scheduleTaskGroup(final String executorId,
+                                 final ScheduledTaskGroup scheduledTaskGroup,
+                                 final JobStateManager jobStateManager) {
     jobStateManager.onTaskGroupStateChanged(scheduledTaskGroup.getTaskGroup(), TaskGroupState.State.EXECUTING);
 
-    final ExecutorRepresenter executor = executorRepresenterMap.get(executorId.get());
+    final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
     LOG.info("Scheduling {} to {}",
         new Object[]{scheduledTaskGroup.getTaskGroup().getTaskGroupId(), executorId});
     executor.onTaskGroupScheduled(scheduledTaskGroup);
-    return true;
   }
 
   private List<String> getAllContainers() {
@@ -231,8 +227,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
       final ExecutorRepresenter executor = containerManager.getFailedExecutorRepresenterMap().get(executorId);
       final String containerType = executor.getContainerType();
 
-      print("onExecutorRemoved Before", containerType);
-
       final List<String> executorIdList = executorIdByContainerType.get(containerType);
       int nextExecutorIndex = nextExecutorIndexByContainerType.get(containerType);
 
@@ -246,22 +240,10 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
 
       updateCachedExecutorRepresenterMap();
 
-      print("onExecutorRemoved After", containerType);
-
       return Collections.unmodifiableSet(executor.getRunningTaskGroups());
     } finally {
       lock.unlock();
     }
-  }
-
-  private void print(final String calledMethod, final String containerType) {
-    LOG.info(calledMethod);
-
-    final List<String> executorIdList = executorIdByContainerType.get(containerType);
-    LOG.info("ExecutorId By ContainerType: {}", executorIdList);
-
-
-    LOG.info("ExecutorRepresentorMap: {}", executorRepresenterMap);
   }
 
   private void updateCachedExecutorRepresenterMap() {
