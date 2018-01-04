@@ -400,8 +400,6 @@ public final class FaultToleranceTest {
         new JobStateManager(plan, blockManagerMaster, metricMessageHandler, MAX_SCHEDULE_ATTEMPT);
 
     scheduler.scheduleJob(plan, jobStateManager);
-
-    Thread.sleep(1000);
     scheduler.onExecutorRemoved("a2");
 
     final List<PhysicalStage> dagOf4Stages = plan.getStageDAG().getTopologicalSort();
