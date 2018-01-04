@@ -25,7 +25,6 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
-import edu.snu.onyx.compiler.frontend.beam.transform.DoTransform;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.compiler.optimizer.CompiletimeOptimizer;
 import edu.snu.onyx.compiler.optimizer.examples.EmptyComponents;
@@ -401,6 +400,8 @@ public final class FaultToleranceTest {
         new JobStateManager(plan, blockManagerMaster, metricMessageHandler, MAX_SCHEDULE_ATTEMPT);
 
     scheduler.scheduleJob(plan, jobStateManager);
+
+    Thread.sleep(1000);
     scheduler.onExecutorRemoved("a2");
 
     final List<PhysicalStage> dagOf4Stages = plan.getStageDAG().getTopologicalSort();
