@@ -15,6 +15,7 @@
  */
 package edu.snu.onyx.runtime.master.scheduler;
 
+import edu.snu.onyx.common.exception.SchedulingException;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.onyx.runtime.common.state.JobState;
 import edu.snu.onyx.runtime.master.JobStateManager;
@@ -96,7 +97,7 @@ public final class SchedulerRunner {
           }
         } catch (final Exception e) {
           e.printStackTrace();
-          // TODO #285 make SchedulerRunner failure reportable
+          throw e;
         }
       }
       jobStateManagers.values().forEach(jobStateManager -> {
