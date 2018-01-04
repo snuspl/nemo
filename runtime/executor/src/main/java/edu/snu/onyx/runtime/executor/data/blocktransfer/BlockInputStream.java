@@ -137,9 +137,13 @@ public final class BlockInputStream<T> implements Iterable<T>, BlockStream {
     executorService.submit(() -> {
       try {
         final long startTime = System.currentTimeMillis();
+        // In case of VoidCoder of Beam, its decode() function always returns null and input stream is
+        // already ended. But elementQueue should be non-empty to process latter task, so decode() should be
+        // invoked in spite of the end of stream.
         if (byteBufInputStream.isEnded()) {
           try {
             elementQueue.add(coder.decode(byteBufInputStream));
+            // In this case, exception raised in coder can be ignored
           } catch (final CoderException e) {
             LOG.warn("CoderException was thrown when invoke decode() on end of stream, but can be ignored");
           }
