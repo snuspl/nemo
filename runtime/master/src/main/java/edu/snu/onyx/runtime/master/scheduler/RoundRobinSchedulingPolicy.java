@@ -116,6 +116,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
           if (executorId.isPresent()) {
             scheduleTaskGroup(selectExecutorByRR(containerType).get(), scheduledTaskGroup, jobStateManager);
             return true;
+          } else {
+            throw new SchedulingException(new Throwable("An executor must be available at this point"));
           }
         }
         return false;
