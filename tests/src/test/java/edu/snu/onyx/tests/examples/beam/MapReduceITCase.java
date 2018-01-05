@@ -33,7 +33,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public final class MapReduceITCase {
   private static final int TIMEOUT = 60000;
   private static final String inputFileName = "sample_input_mr";
-  private static final String outputFileName = "sample_output";
+  private static final String outputFileName = "sample_output_mr";
   private static final String testResourceFileName = "test_output_mr_test";
   private static final String fileBasePath = CompilerTestUtil.rootDir + "/../examples/src/main/resources/";
   private static final String inputFilePath =  fileBasePath + inputFileName;
