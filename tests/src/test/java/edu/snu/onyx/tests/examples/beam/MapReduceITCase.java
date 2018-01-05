@@ -25,8 +25,6 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
-
 /**
  * Test MapReduce program with JobLauncher.
  */
@@ -53,11 +51,6 @@ public final class MapReduceITCase {
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
-  private void testOutput() throws AssertionError, IOException {
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName);
-    assert outputTestResult;
-  }
-
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
@@ -65,7 +58,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -75,7 +68,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.sailfishPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -85,7 +78,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.disaggPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -95,7 +88,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   /**
@@ -109,6 +102,6 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.dataSkewPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 }

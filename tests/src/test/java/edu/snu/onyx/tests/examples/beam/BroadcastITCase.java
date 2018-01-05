@@ -25,8 +25,6 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
-
 /**
  * Test Broadcast program with JobLauncher.
  */
@@ -53,11 +51,6 @@ public final class BroadcastITCase {
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
-  private void testOutput() throws AssertionError, IOException {
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName);
-    assert outputTestResult;
-  }
-
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
@@ -65,7 +58,7 @@ public final class BroadcastITCase {
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -75,6 +68,6 @@ public final class BroadcastITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
 
-    testOutput();
+    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 }
