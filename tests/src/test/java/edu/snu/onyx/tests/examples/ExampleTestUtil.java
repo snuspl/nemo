@@ -20,8 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public final class ExampleTestUtil {
-  public static boolean isOutputValid(String resourcePath, String outputFileName, String testResourceFileName) throws IOException {
-    String testOutput = Files.list(Paths.get(resourcePath))
+  public static boolean isOutputValid(final String resourcePath, final String outputFileName, final String testResourceFileName)
+  throws IOException {
+    final String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
         .filter(path -> path.getFileName().toString().startsWith(outputFileName))
         .flatMap(path -> {
@@ -34,7 +35,7 @@ public final class ExampleTestUtil {
         .sorted()
         .reduce("", (p, q) -> (p + "\n" + q));
 
-    String resourceOutput = Files.lines(Paths.get(resourcePath + testResourceFileName))
+    final String resourceOutput = Files.lines(Paths.get(resourcePath + testResourceFileName))
         .sorted()
         .reduce("", (p, q) -> (p + "\n" + q));
 
