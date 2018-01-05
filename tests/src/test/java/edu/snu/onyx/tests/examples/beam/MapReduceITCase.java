@@ -58,7 +58,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -68,7 +68,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.sailfishPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -78,7 +78,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.disaggPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   @Test (timeout = TIMEOUT)
@@ -88,7 +88,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 
   /**
@@ -102,6 +102,6 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.dataSkewPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
   }
 }

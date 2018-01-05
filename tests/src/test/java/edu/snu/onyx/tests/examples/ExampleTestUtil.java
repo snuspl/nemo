@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public final class ExampleTestUtil {
-  public static boolean isOutputSame(String resourcePath, String outputFileName, String testResourceFileName) throws IOException {
+  public static boolean isOutputValid(String resourcePath, String outputFileName, String testResourceFileName) throws IOException {
     String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
         .filter(path -> path.getFileName().toString().startsWith(outputFileName))
