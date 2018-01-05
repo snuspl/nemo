@@ -442,6 +442,8 @@ public final class BlockOutputStream<T> implements AutoCloseable, BlockStream {
       if (encodingThread != null) {
         encodingThread.cancel(true);
       }
+      closed = true;
+      elementQueue.close();
       channel.close();
       if (future.cause() == null) {
         LOG.error("Failed to write a data frame");
