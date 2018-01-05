@@ -41,6 +41,10 @@ limitations under the License.
         <jackson.version>2.8.8</jackson.version>
         <netlib.version>1.1.2</netlib.version>
         <netty.version>4.1.16.Final</netty.version>
+        <!-- Tests -->
+        <mockito.version>2.13.0</mockito.version>
+        <powermock.version>2.0.0-beta.5</powermock.version>
+        <junit.version>4.12</junit.version>
     </properties>
 
     <modules>
@@ -51,7 +55,8 @@ limitations under the License.
         <module>compiler/frontend-beam</module>
         <module>compiler/frontend-spark</module>
         <module>compiler/optimizer</module>
-        <module>examples</module>
+        <module>examples-beam</module>
+        <module>examples-spark</module>
         <module>runtime/common</module>
     	<module>runtime/executor</module>
 	    <module>runtime/master</module>

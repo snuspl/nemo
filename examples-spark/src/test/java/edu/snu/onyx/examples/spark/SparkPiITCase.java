@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.tests.examples.spark;
+package edu.snu.onyx.examples.spark;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.examples.spark.JavaSparkPi;
-import edu.snu.onyx.tests.compiler.CompilerTestUtil;
-import edu.snu.onyx.tests.examples.ArgBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,9 +45,9 @@ public final class SparkPiITCase {
 
   @Test(timeout = TIMEOUT)
   public void test() throws Exception {
-    JobLauncher.main(builder
-        .addJobId(SparkPiITCase.class.getSimpleName())
-        .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
-        .build());
+//    JobLauncher.main(builder
+//        .addJobId(SparkPiITCase.class.getSimpleName())
+//        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
+//        .build());
   }
 }

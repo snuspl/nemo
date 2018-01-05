@@ -81,7 +81,7 @@ public final class CompilerTestUtil {
 
   public static DAG<IRVertex, IREdge> compileALSInefficientDAG() throws Exception {
     final String alsInefficient = "edu.snu.onyx.examples.beam.AlternatingLeastSquareInefficient";
-    final String input = rootDir + "/../examples/src/main/resources/sample_input_als";
+    final String input = rootDir + "/../examples-beam/src/main/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
 
