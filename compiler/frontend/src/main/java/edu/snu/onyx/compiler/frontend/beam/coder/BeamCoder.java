@@ -41,7 +41,7 @@ public final class BeamCoder<T> implements Coder<T> {
   public void encode(final T value, final OutputStream outStream) throws IOException {
     try {
       beamCoder.encode(value, outStream);
-    } catch (CoderException e) {
+    } catch (final CoderException e) {
       throw new IOException(e);
     }
   }
@@ -50,7 +50,7 @@ public final class BeamCoder<T> implements Coder<T> {
   public T decode(final InputStream inStream) throws IOException {
     try {
       return beamCoder.decode(inStream);
-    } catch (CoderException e) {
+    } catch (final CoderException e) {
       throw new IOException(e);
     }
   }
