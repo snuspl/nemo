@@ -68,6 +68,7 @@ public final class Broadcast {
         }).withSideInputs(allCollection)
     );
 
+    GenericSourceSink.write(elemCollection, outputFilePath);
     p.run();
   }
 }
