@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public final class ExampleTestUtil {
-  public static boolean isOutputValid(final String resourcePath, final String outputFileName, final String testResourceFileName)
+  public static void ensureOutputValid(final String resourcePath, final String outputFileName, final String testResourceFileName)
   throws IOException {
     final String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
@@ -39,6 +39,8 @@ public final class ExampleTestUtil {
         .sorted()
         .reduce("", (p, q) -> (p + "\n" + q));
 
-    return testOutput.equals(resourceOutput);
+    if(!testOutput.equals(resourceOutput)) {
+      throw new RuntimeException("output mismatch");
+    }
   }
 }

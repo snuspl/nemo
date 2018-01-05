@@ -58,7 +58,7 @@ public final class BroadcastITCase {
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -68,6 +68,6 @@ public final class BroadcastITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
 
-    assert ExampleTestUtil.isOutputValid(fileBasePath, outputFileName, testResourceFileName) : "output mismatch";
+    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 }
