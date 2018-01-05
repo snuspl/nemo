@@ -25,8 +25,8 @@ limitations under the License.
         <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>onyx-compiler-frontend</artifactId>
-    <name>Onyx Compiler Frontend</name>
+    <artifactId>onyx-compiler-frontend-beam</artifactId>
+    <name>Onyx Compiler Frontend: Beam</name>
 
     <repositories>
         <repository>
@@ -42,19 +42,14 @@ limitations under the License.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>edu.snu.onyx</groupId>
+            <artifactId>onyx-client</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-core</artifactId>
+            <version>${beam.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
