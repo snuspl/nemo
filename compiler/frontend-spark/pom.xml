@@ -22,44 +22,44 @@ limitations under the License.
         <groupId>edu.snu.onyx</groupId>
         <artifactId>onyx-project</artifactId>
         <version>0.1-SNAPSHOT</version>
-        <relativePath>../</relativePath>
+        <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>onyx-client</artifactId>
-    <name>Onyx Client</name>
+    <artifactId>onyx-compiler-frontend-spark</artifactId>
+    <name>Onyx Compiler Frontend: Spark</name>
 
     <repositories>
         <repository>
             <id>Bundled Maven Repository</id>
-            <url>file://${basedir}/../common/src/main/resources/repository</url>
+            <url>file://${basedir}/../../common/src/main/resources/repository</url>
         </repository>
     </repositories>
 
     <dependencies>
-        <dependency>
+	    <dependency>
             <groupId>edu.snu.onyx</groupId>
             <artifactId>onyx-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-driver</artifactId>
+            <artifactId>onyx-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>edu.snu.onyx</groupId>
-            <artifactId>onyx-conf</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>${spark.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-runtime-local</artifactId>
-            <version>${reef.version}</version>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>${spark.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.reef</groupId>
-            <artifactId>reef-runtime-yarn</artifactId>
-            <version>${reef.version}</version>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
         </dependency>
     </dependencies>
 </project>

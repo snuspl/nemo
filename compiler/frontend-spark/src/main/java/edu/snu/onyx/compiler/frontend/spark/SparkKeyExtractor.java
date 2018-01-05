@@ -1,4 +1,4 @@
-package edu.snu.onyx.client.spark;
+package edu.snu.onyx.compiler.frontend.spark;
 
 import edu.snu.onyx.common.KeyExtractor;
 

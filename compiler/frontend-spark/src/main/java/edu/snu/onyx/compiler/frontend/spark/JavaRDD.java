@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.client.spark;
+package edu.snu.onyx.compiler.frontend.spark;
 
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
@@ -27,6 +27,7 @@ import edu.snu.onyx.common.ir.vertex.InitializedSourceVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator;

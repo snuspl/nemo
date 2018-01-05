@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.client.spark;
+package edu.snu.onyx.compiler.frontend.spark;
+
+import org.apache.spark.SparkConf;
 
 import java.util.HashMap;
 

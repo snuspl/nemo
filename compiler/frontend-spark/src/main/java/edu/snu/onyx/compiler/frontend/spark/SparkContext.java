@@ -1,4 +1,6 @@
-package edu.snu.onyx.client.spark;
+package edu.snu.onyx.compiler.frontend.spark;
+
+import org.apache.spark.SparkConf;
 
 /**
  * Spark context.

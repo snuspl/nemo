@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.client.spark;
+package edu.snu.onyx.compiler.frontend.spark;
 
 import java.io.Serializable;
 import java.util.List;

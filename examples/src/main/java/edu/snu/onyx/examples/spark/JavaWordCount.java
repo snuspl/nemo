@@ -16,8 +16,8 @@
 // */
 //package edu.snu.onyx.examples.spark;
 //
-//import edu.snu.onyx.client.spark.JavaRDD;
-//import edu.snu.onyx.client.spark.SparkSession;
+//import edu.snu.onyx.compiler.frontend.spark.JavaRDD;
+//import edu.snu.onyx.compiler.frontend.spark.SparkSession;
 //import edu.snu.onyx.common.Pair;
 //
 //import java.util.Arrays;
