@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.IOException;
+
 /**
  * Test MapReduce program with JobLauncher.
  */
@@ -34,6 +36,7 @@ public final class MapReduceITCase {
   private static final int TIMEOUT = 60000;
   private static final String inputFileName = "sample_input_mr";
   private static final String outputFileName = "sample_output";
+  private static final String testResourceFileName = "test_output_mr_test";
   private static final String fileBasePath = CompilerTestUtil.rootDir + "/../examples/src/main/resources/";
   private static final String inputFilePath =  fileBasePath + inputFileName;
   private static final String outputFilePath =  fileBasePath + outputFileName;
@@ -50,6 +53,11 @@ public final class MapReduceITCase {
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
+  private void testOutput() throws AssertionError, IOException {
+    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, testResourceFileName);
+    assert outputTestResult;
+  }
+
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
@@ -57,9 +65,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
 
-    final String resourceFileName = "test_output_mr_test";
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, resourceFileName);
-    assert outputTestResult;
+    testOutput();
   }
 
   @Test (timeout = TIMEOUT)
@@ -69,9 +75,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.sailfishPolicy)
         .build());
 
-    final String resourceFileName = "test_output_mr_test";
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, resourceFileName);
-    assert outputTestResult;
+    testOutput();
   }
 
   @Test (timeout = TIMEOUT)
@@ -81,9 +85,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.disaggPolicy)
         .build());
 
-    final String resourceFileName = "test_output_mr_test";
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, resourceFileName);
-    assert outputTestResult;
+    testOutput();
   }
 
   @Test (timeout = TIMEOUT)
@@ -93,9 +95,7 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
 
-    final String resourceFileName = "test_output_mr_test";
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, resourceFileName);
-    assert outputTestResult;
+    testOutput();
   }
 
   /**
@@ -109,8 +109,6 @@ public final class MapReduceITCase {
         .addOptimizationPolicy(CompilerTestUtil.dataSkewPolicy)
         .build());
 
-    final String resourceFileName = "test_output_mr_test";
-    boolean outputTestResult = ExampleTestUtil.isOutputSame(fileBasePath, outputFileName, resourceFileName);
-    assert outputTestResult;
+    testOutput();
   }
 }
