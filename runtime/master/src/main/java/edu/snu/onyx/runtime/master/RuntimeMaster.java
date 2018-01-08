@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static edu.snu.onyx.runtime.common.state.TaskGroupState.State.COMPLETE;
@@ -85,6 +86,8 @@ public final class RuntimeMaster {
   private final String dagDirectory;
   private final Set<IRVertex> irVertices;
 
+  private final AtomicInteger resourceRequestCount;
+
 
   @Inject
   public RuntimeMaster(final Scheduler scheduler,
@@ -111,6 +114,7 @@ public final class RuntimeMaster {
         .setupListener(MessageEnvironment.RUNTIME_MASTER_MESSAGE_LISTENER_ID, new MasterControlMessageReceiver());
     this.dagDirectory = dagDirectory;
     this.irVertices = new HashSet<>();
+    this.resourceRequestCount = new AtomicInteger(0);
     this.objectMapper = new ObjectMapper();
   }
 
@@ -175,6 +179,7 @@ public final class RuntimeMaster {
         builder.setMemory(resourceNode.get("memory_mb").traverse().getIntValue());
         builder.setCapacity(resourceNode.get("capacity").traverse().getIntValue());
         final int executorNum = resourceNode.path("num").traverse().nextIntValue(1);
+        resourceRequestCount.getAndAdd(executorNum);
         containerManager.requestContainer(executorNum, builder.build());
       }
     } catch (final IOException e) {
@@ -192,8 +197,9 @@ public final class RuntimeMaster {
   public void onContainerAllocated(final String executorId,
                                    final AllocatedEvaluator allocatedEvaluator,
                                    final Configuration executorConfiguration) {
-    masterControlEventExecutor.execute(() ->
-        containerManager.onContainerAllocated(executorId, allocatedEvaluator, executorConfiguration));
+    masterControlEventExecutor.execute(() -> {
+      containerManager.onContainerAllocated(executorId, allocatedEvaluator, executorConfiguration);
+    });
   }
 
   /**
@@ -204,6 +210,7 @@ public final class RuntimeMaster {
     masterControlEventExecutor.execute(() -> {
       containerManager.onExecutorLaunched(activeContext);
       scheduler.onExecutorAdded(activeContext.getId());
+      resourceRequestCount.getAndDecrement();
     });
   }
 
