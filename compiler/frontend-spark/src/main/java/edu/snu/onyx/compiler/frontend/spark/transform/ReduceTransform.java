@@ -1,8 +1,12 @@
 package edu.snu.onyx.compiler.frontend.spark.transform;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,16 +18,16 @@ import java.util.List;
 public final class ReduceTransform<T extends Serializable> implements Transform<T, T> {
   private final SerializableBinaryOperator<T> func;
   private OutputCollector<T> oc;
-  private final List<T> result;
+  private final String filename;
 
   /**
    * Constructor.
    * @param func function to run for the reduce transform.
-   * @param result list to keep the result in.
+   * @param filename file to keep the result in.
    */
-  public ReduceTransform(final SerializableBinaryOperator<T> func, final List<T> result) {
+  public ReduceTransform(final SerializableBinaryOperator<T> func, final String filename) {
     this.func = func;
-    this.result = result;
+    this.filename = filename;
   }
 
   @Override
@@ -37,7 +41,14 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
     elements.forEach(list::add);
     final T res = list.stream().reduce(func)
         .orElseThrow(() -> new RuntimeException("Something wrong with the provided reduce operator"));
-    this.result.add(res);
+    try {
+      final Kryo kryo = new Kryo();
+      final Output output = new Output(new FileOutputStream(filename));
+      kryo.writeClassAndObject(output, res);
+      output.close();
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    }
     oc.emit(res);
   }
 

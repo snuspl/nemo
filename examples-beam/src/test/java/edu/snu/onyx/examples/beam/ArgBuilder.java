@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+/**
+ * This class should later be refactored, to reference some package like test-utils.
+ */
 public class ArgBuilder {
   private List<List<String>> args = new ArrayList<>();
 

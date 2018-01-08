@@ -16,6 +16,8 @@
  */
 package edu.snu.onyx.compiler.frontend.spark;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
@@ -34,8 +36,10 @@ import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator
 import edu.snu.onyx.compiler.frontend.spark.transform.SerializableFunction;
 import org.apache.spark.serializer.KryoSerializer;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -120,9 +124,9 @@ public final class JavaRDD<T extends Serializable> {
    * @return the result of the reduce action.
    */
   public T reduce(final SerializableBinaryOperator<T> func) {
-    final List<T> result = new ArrayList<>();
+    final String resultFile = System.getProperty("user.dir") + "/reduceresult.bin";
 
-    final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, result));
+    final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, resultFile));
     reduceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(reduceVertex, loopVertexStack);
 
@@ -135,7 +139,16 @@ public final class JavaRDD<T extends Serializable> {
     this.builder = new DAGBuilder<>();
     JobLauncher.launchDAG(dag);
 
-    return result.iterator().next();
+    try {
+      final Kryo kryo = new Kryo();
+      final Input input = new Input(new FileInputStream(resultFile));
+      final T result = (T) kryo.readClassAndObject(input);
+      input.close();
+      new File(resultFile).delete();
+      return result;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -147,7 +160,8 @@ public final class JavaRDD<T extends Serializable> {
   private static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
                                                                                     final IRVertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof ReduceTransform) {
-      return DataCommunicationPatternProperty.Value.Shuffle;
+//      return DataCommunicationPatternProperty.Value.Shuffle;
+      return DataCommunicationPatternProperty.Value.OneToOne;
     } else {
       return DataCommunicationPatternProperty.Value.OneToOne;
     }

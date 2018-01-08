@@ -15,7 +15,6 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.coder;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import edu.snu.onyx.common.coder.Coder;
@@ -30,26 +29,26 @@ import java.io.OutputStream;
  * @param <T> type of the object to (de)serialize.
  */
 public final class SparkCoder<T> implements Coder<T> {
-  private final Kryo kryo;
+  private final KryoSerializer kryoSerializer;
 
   /**
    * Default constructor.
    */
   public SparkCoder(final KryoSerializer kryoSerializer) {
-    this.kryo = kryoSerializer.newKryo();
+    this.kryoSerializer = kryoSerializer;
   }
 
   @Override
   public void encode(final T element, final OutputStream outStream) throws IOException {
-    Output output = new Output(outStream);
-    kryo.writeObject(output, element);
+    final Output output = new Output(outStream);
+    kryoSerializer.newKryo().writeClassAndObject(output, element);
     output.close();
   }
 
   @Override
   public T decode(final InputStream inStream) throws IOException {
-    Input input = new Input(inStream);
-    T obj = kryo.readObject(input, (Class<T>) Object.class);
+    final Input input = new Input(inStream);
+    final T obj = (T) kryoSerializer.newKryo().readClassAndObject(input);
     input.close();
     return obj;
   }
