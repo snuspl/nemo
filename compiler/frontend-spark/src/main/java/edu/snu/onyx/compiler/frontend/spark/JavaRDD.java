@@ -160,8 +160,7 @@ public final class JavaRDD<T extends Serializable> {
   private static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
                                                                                     final IRVertex dst) {
     if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof ReduceTransform) {
-//      return DataCommunicationPatternProperty.Value.Shuffle;
-      return DataCommunicationPatternProperty.Value.OneToOne;
+      return DataCommunicationPatternProperty.Value.Shuffle;
     } else {
       return DataCommunicationPatternProperty.Value.OneToOne;
     }
