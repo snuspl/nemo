@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.tests.examples.beam;
+package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.examples.beam.Broadcast;
-import edu.snu.onyx.tests.compiler.CompilerTestUtil;
-import edu.snu.onyx.tests.examples.ArgBuilder;
+import edu.snu.onyx.compiler.optimizer.policy.DefaultPolicy;
+import edu.snu.onyx.compiler.optimizer.policy.PadoPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,8 +31,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class BroadcastITCase {
   private static final int TIMEOUT = 120000;
-  private static final String input = CompilerTestUtil.rootDir + "/../examples-beam/src/main/resources/sample_input_mr";
-  private static final String output = CompilerTestUtil.rootDir + "/../examples-beam/src/main/resources/sample_output";
+  private static final String input = System.getProperty("user.dir") + "/src/main/resources/sample_input_mr";
+  private static final String output = System.getProperty("user.dir") + "/src/main/resources/sample_output";
 
   private static ArgBuilder builder = new ArgBuilder()
       .addJobId(BroadcastITCase.class.getSimpleName())
@@ -51,7 +50,7 @@ public final class BroadcastITCase {
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName())
-        .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
+        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -59,7 +58,7 @@ public final class BroadcastITCase {
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName() + "_pado")
-        .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
+        .addOptimizationPolicy(PadoPolicy.class.getCanonicalName())
         .build());
   }
 }

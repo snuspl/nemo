@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.tests.examples.beam;
+package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.examples.beam.MapReduce;
-import edu.snu.onyx.tests.compiler.CompilerTestUtil;
-import edu.snu.onyx.tests.examples.ArgBuilder;
+import edu.snu.onyx.compiler.optimizer.policy.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,10 +30,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
   private static final int TIMEOUT = 60000;
-  private static final String input = CompilerTestUtil.rootDir + "/../examples-beam/src/main/resources/sample_input_mr";
-  private static final String output = CompilerTestUtil.rootDir + "/../examples-beam/src/main/resources/sample_output";
+  private static final String input = System.getProperty("user.dir") + "/src/main/resources/sample_input_mr";
+  private static final String output = System.getProperty("user.dir") + "/src/main/resources/sample_output";
 
-  public static ArgBuilder builder = new ArgBuilder()
+  private static ArgBuilder builder = new ArgBuilder()
       .addJobId(MapReduceITCase.class.getSimpleName())
       .addUserMain(MapReduce.class.getCanonicalName())
       .addUserArgs(input, output);
@@ -51,7 +49,7 @@ public final class MapReduceITCase {
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName())
-        .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
+        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -59,7 +57,7 @@ public final class MapReduceITCase {
   public void testSailfish() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_sailfish")
-        .addOptimizationPolicy(CompilerTestUtil.sailfishPolicy)
+        .addOptimizationPolicy(SailfishPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -67,7 +65,7 @@ public final class MapReduceITCase {
   public void testDisagg() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disagg")
-        .addOptimizationPolicy(CompilerTestUtil.disaggPolicy)
+        .addOptimizationPolicy(DisaggregationPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -75,7 +73,7 @@ public final class MapReduceITCase {
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
-        .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
+        .addOptimizationPolicy(PadoPolicy.class.getCanonicalName())
         .build());
   }
 
@@ -87,7 +85,7 @@ public final class MapReduceITCase {
   public void testDataSkew() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName() + "_dataskew")
-        .addOptimizationPolicy(CompilerTestUtil.dataSkewPolicy)
+        .addOptimizationPolicy(DataSkewPolicy.class.getCanonicalName())
         .build());
   }
 }

@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.tests.examples.beam;
+package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
-import edu.snu.onyx.examples.beam.AlternatingLeastSquare;
-import edu.snu.onyx.tests.compiler.CompilerTestUtil;
-import edu.snu.onyx.tests.examples.ArgBuilder;
+import edu.snu.onyx.compiler.optimizer.policy.PadoPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,11 +30,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class AlternatingLeastSquareITCase {
   private static final int TIMEOUT = 1200000;
-  private static final String input = CompilerTestUtil.rootDir + "/../examples-beam/src/main/resources/sample_input_als";
+  private static final String input = System.getProperty("user.dir") + "/src/main/resources/sample_input_als";
   private static final String numFeatures = "10";
   private static final String numIteration = "3";
 
-  public static ArgBuilder builder = new ArgBuilder()
+  private static ArgBuilder builder = new ArgBuilder()
       .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
       .addUserMain(AlternatingLeastSquare.class.getCanonicalName())
       .addUserArgs(input, numFeatures, numIteration);
@@ -59,7 +57,7 @@ public final class AlternatingLeastSquareITCase {
   public void testPado() throws Exception {
     JobLauncher.main(builder
         .addJobId(AlternatingLeastSquareITCase.class.getSimpleName() + "_pado")
-        .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
+        .addOptimizationPolicy(PadoPolicy.class.getCanonicalName())
         .build());
   }
 }

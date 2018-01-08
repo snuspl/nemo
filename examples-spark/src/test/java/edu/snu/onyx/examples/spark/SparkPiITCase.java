@@ -16,6 +16,7 @@
 package edu.snu.onyx.examples.spark;
 
 import edu.snu.onyx.client.JobLauncher;
+import edu.snu.onyx.compiler.optimizer.policy.DefaultPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +32,7 @@ public final class SparkPiITCase {
   private static final int TIMEOUT = 60000;
   private static final String numParallelism = "1";
 
-  public static ArgBuilder builder = new ArgBuilder()
+  private static ArgBuilder builder = new ArgBuilder()
       .addJobId(SparkPiITCase.class.getSimpleName())
       .addUserMain(JavaSparkPi.class.getCanonicalName())
       .addUserArgs(numParallelism);
@@ -45,9 +46,9 @@ public final class SparkPiITCase {
 
   @Test(timeout = TIMEOUT)
   public void test() throws Exception {
-//    JobLauncher.main(builder
-//        .addJobId(SparkPiITCase.class.getSimpleName())
-//        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
-//        .build());
+    JobLauncher.main(builder
+        .addJobId(SparkPiITCase.class.getSimpleName())
+        .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
+        .build());
   }
 }
