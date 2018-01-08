@@ -30,19 +30,23 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
   private static final int TIMEOUT = 60000;
-  private static final String input = System.getProperty("user.dir") + "/src/main/resources/sample_input_mr";
-  private static final String output = System.getProperty("user.dir") + "/src/main/resources/sample_output";
+  private static final String inputFileName = "sample_input_mr";
+  private static final String outputFileName = "sample_output_mr";
+  private static final String testResourceFileName = "test_output_mr_test";
+  private static final String fileBasePath = System.getProperty("user.dir") + "/src/main/resources/";
+  private static final String inputFilePath =  fileBasePath + inputFileName;
+  private static final String outputFilePath =  fileBasePath + outputFileName;
 
   private static ArgBuilder builder = new ArgBuilder()
       .addJobId(MapReduceITCase.class.getSimpleName())
       .addUserMain(MapReduce.class.getCanonicalName())
-      .addUserArgs(input, output);
+      .addUserArgs(inputFilePath, outputFilePath);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
         .addUserMain(MapReduce.class.getCanonicalName())
-        .addUserArgs(input, output);
+        .addUserArgs(inputFilePath, outputFilePath);
   }
 
   @Test (timeout = TIMEOUT)
@@ -51,6 +55,8 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName())
         .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
         .build());
+
+    ExampleTestUtil.ensureOutputValidity(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -59,6 +65,8 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_sailfish")
         .addOptimizationPolicy(SailfishPolicy.class.getCanonicalName())
         .build());
+
+    ExampleTestUtil.ensureOutputValidity(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -67,6 +75,8 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disagg")
         .addOptimizationPolicy(DisaggregationPolicy.class.getCanonicalName())
         .build());
+
+    ExampleTestUtil.ensureOutputValidity(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -75,6 +85,8 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
         .addOptimizationPolicy(PadoPolicy.class.getCanonicalName())
         .build());
+
+    ExampleTestUtil.ensureOutputValidity(fileBasePath, outputFileName, testResourceFileName);
   }
 
   /**
@@ -87,5 +99,7 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_dataskew")
         .addOptimizationPolicy(DataSkewPolicy.class.getCanonicalName())
         .build());
+
+    ExampleTestUtil.ensureOutputValidity(fileBasePath, outputFileName, testResourceFileName);
   }
 }
