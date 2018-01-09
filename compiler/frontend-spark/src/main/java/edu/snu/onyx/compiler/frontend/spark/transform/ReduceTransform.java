@@ -23,7 +23,7 @@ import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.Serializable;
-import java.util.List;
+import java.util.stream.StreamSupport;
 
 /**
  * Reduce Transform for Spark.
@@ -51,7 +51,7 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
 
   @Override
   public void onData(final Iterable<T> elements, final String srcVertexId) {
-    final T res = ((List<T>) elements).stream().reduce(func)
+    final T res = StreamSupport.stream(elements.spliterator(), true).reduce(func)
         .orElseThrow(() -> new RuntimeException("Something wrong with the provided reduce operator"));
     oc.emit(res);
 
