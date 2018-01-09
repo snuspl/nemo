@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Kryo Coder for serialization.
+ * Kryo Spark Coder for serialization.
  * @param <T> type of the object to (de)serialize.
  */
 public final class SparkCoder<T> implements Coder<T> {

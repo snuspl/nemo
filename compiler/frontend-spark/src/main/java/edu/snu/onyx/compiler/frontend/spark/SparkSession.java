@@ -19,9 +19,10 @@ package edu.snu.onyx.compiler.frontend.spark;
 import org.apache.spark.SparkConf;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
- * Spark session.
+ * A simple version of the Spark session, containing SparkContext that contains SparkConf.
  */
 public final class SparkSession {
   private final HashMap<String, String> initialSessionOptions;
@@ -93,14 +94,14 @@ public final class SparkSession {
 
     /**
      * Get or create the new Spark Session.
-     * @return the new Spark Session.
+     * @return the Spark Session.
      */
     public SparkSession getOrCreate() {
       final SparkConf sparkConf = new SparkConf();
       final SparkContext sparkContext = SparkContext.getOrCreate(sparkConf);
       options.forEach(sparkContext.conf()::set);
       if (!options.containsKey("spark.app.name")) {
-        sparkContext.conf().setAppName("TODO: random app name");
+        sparkContext.conf().setAppName("GeneratedAppName-" + UUID.randomUUID());
       }
 
       final SparkSession session = new SparkSession(sparkContext);

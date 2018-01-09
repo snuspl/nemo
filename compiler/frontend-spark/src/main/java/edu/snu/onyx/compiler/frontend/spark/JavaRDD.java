@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -57,7 +56,7 @@ public final class JavaRDD<T extends Serializable> {
 
   /**
    * Constructor to start with.
-   * @param sparkContext spark context.
+   * @param sparkContext spark context containing configurations.
    * @param parallelism parallelism information.
    */
   JavaRDD(final SparkContext sparkContext, final Integer parallelism) {
@@ -66,7 +65,7 @@ public final class JavaRDD<T extends Serializable> {
 
   /**
    * Constructor.
-   * @param sparkContext spark context.
+   * @param sparkContext spark context containing configurations.
    * @param parallelism parallelism information.
    * @param builder the builder for the DAG.
    * @param lastVertex last vertex added to the builder.
@@ -81,14 +80,14 @@ public final class JavaRDD<T extends Serializable> {
     this.kryoSerializer = new KryoSerializer(sparkContext.conf());
   }
 
-  ///////////// TRANSFORMATIONS ////////////////
+  /////////////// TRANSFORMATIONS ///////////////
 
   /**
    * Set initialized source.
    * @param initialData initial data.
    * @return the Java RDD with the initialized source vertex.
    */
-  JavaRDD<T> setSource(final List<T> initialData) {
+  JavaRDD<T> setSource(final Iterable<T> initialData) {
     final IRVertex initializedSourceVertex = new InitializedSourceVertex<>(initialData);
     initializedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(initializedSourceVertex, loopVertexStack);
@@ -116,14 +115,15 @@ public final class JavaRDD<T extends Serializable> {
   }
 
 
-  ////////////// ACTIONS ////////////////
+  /////////////// ACTIONS ///////////////
 
   /**
    * Reduce action.
-   * @param func function to apply.
+   * @param func function (binary operator) to apply.
    * @return the result of the reduce action.
    */
   public T reduce(final SerializableBinaryOperator<T> func) {
+    // save result in a temporary file
     final String resultFile = System.getProperty("user.dir") + "/reduceresult.bin";
 
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, resultFile));
@@ -135,21 +135,26 @@ public final class JavaRDD<T extends Serializable> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
+    // launch DAG
     final DAG<IRVertex, IREdge> dag = this.builder.build();
     this.builder = new DAGBuilder<>();
     JobLauncher.launchDAG(dag);
 
+    // Retrieve result data.
     try {
       final Kryo kryo = new Kryo();
       final Input input = new Input(new FileInputStream(resultFile));
       final T result = (T) kryo.readClassAndObject(input);
       input.close();
+      // Delete temporary file
       new File(resultFile).delete();
       return result;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
+
+  /////////////// MISC ///////////////
 
   /**
    * Retrieve communication pattern of the edge.
