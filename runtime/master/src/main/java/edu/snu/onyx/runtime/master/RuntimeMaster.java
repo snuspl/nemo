@@ -190,7 +190,7 @@ public final class RuntimeMaster {
     try {
       containerRequestEventResult.get();
     } catch (final Exception e) {
-      e.printStackTrace();
+      LOG.error("Exception while requesting for a container: ", e);
       throw new ContainerException(e);
     }
   }
