@@ -18,6 +18,7 @@ package edu.snu.onyx.common.ir.vertex;
 import edu.snu.onyx.common.ir.Reader;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -45,8 +46,21 @@ public final class InitializedSourceVertex<T> extends SourceVertex<T> {
   @Override
   public List<Reader<T>> getReaders(final int desiredNumOfSplits) throws Exception {
     final List<Reader<T>> readers = new ArrayList<>();
+    final long sliceSize = initializedSourceData.spliterator().getExactSizeIfKnown() / desiredNumOfSplits;
+    final Iterator<T> iterator = initializedSourceData.iterator();
+
     for (int i = 0; i < desiredNumOfSplits; i++) {
-      readers.add(new InitializedSourceReader<>(initializedSourceData));
+      final List<T> dataForReader = new ArrayList<>();
+
+      if (i == desiredNumOfSplits - 1) { // final iteration
+        iterator.forEachRemaining(dataForReader::add);
+      } else {
+        for (int j = 0; j < sliceSize && iterator.hasNext(); j++) {
+          dataForReader.add(iterator.next());
+        }
+      }
+
+      readers.add(new InitializedSourceReader<>(dataForReader));
     }
     return readers;
   }

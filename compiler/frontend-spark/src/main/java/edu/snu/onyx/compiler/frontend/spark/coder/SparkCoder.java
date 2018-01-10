@@ -33,6 +33,7 @@ public final class SparkCoder<T> implements Coder<T> {
 
   /**
    * Default constructor.
+   * @param kryoSerializer kryo serializer.
    */
   public SparkCoder(final KryoSerializer kryoSerializer) {
     this.kryoSerializer = kryoSerializer;

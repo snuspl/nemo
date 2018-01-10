@@ -50,32 +50,35 @@ public final class JavaRDD<T extends Serializable> {
   private final SparkContext sparkContext;
   private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
-  private DAGBuilder<IRVertex, IREdge> builder;
+  private final DAG<IRVertex, IREdge> dag;
   private final IRVertex lastVertex;
   private final KryoSerializer kryoSerializer;
 
   /**
-   * Constructor to start with.
+   * Static method to create a JavaRDD object.
    * @param sparkContext spark context containing configurations.
    * @param parallelism parallelism information.
+   * @param <T> type of the resulting object.
+   * @return the new JavaRDD object.
    */
-  JavaRDD(final SparkContext sparkContext, final Integer parallelism) {
-    this(sparkContext, parallelism, new DAGBuilder<>(), null);
+  static <T extends Serializable> JavaRDD<T> of(final SparkContext sparkContext, final Integer parallelism) {
+    return new JavaRDD<>(sparkContext, parallelism,
+        new DAGBuilder<IRVertex, IREdge>().buildWithoutSourceSinkCheck(), null);
   }
 
   /**
    * Constructor.
    * @param sparkContext spark context containing configurations.
    * @param parallelism parallelism information.
-   * @param builder the builder for the DAG.
+   * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
   private JavaRDD(final SparkContext sparkContext, final Integer parallelism,
-                  final DAGBuilder<IRVertex, IREdge> builder, final IRVertex lastVertex) {
+                  final DAG<IRVertex, IREdge> dag, final IRVertex lastVertex) {
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
     this.parallelism = parallelism;
-    this.builder = builder;
+    this.dag = dag;
     this.lastVertex = lastVertex;
     this.kryoSerializer = new KryoSerializer(sparkContext.conf());
   }
@@ -88,11 +91,14 @@ public final class JavaRDD<T extends Serializable> {
    * @return the Java RDD with the initialized source vertex.
    */
   JavaRDD<T> setSource(final Iterable<T> initialData) {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
+
     final IRVertex initializedSourceVertex = new InitializedSourceVertex<>(initialData);
     initializedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(initializedSourceVertex, loopVertexStack);
 
-    return new JavaRDD<>(this.sparkContext, this.parallelism, this.builder, initializedSourceVertex);
+    return new JavaRDD<>(this.sparkContext, this.parallelism,
+        builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
   }
 
   /**
@@ -102,6 +108,8 @@ public final class JavaRDD<T extends Serializable> {
    * @return the JavaRDD with the DAG.
    */
   public <O extends Serializable> JavaRDD<O> map(final SerializableFunction<T, O> func) {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
+
     final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
     mapVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(mapVertex, loopVertexStack);
@@ -111,9 +119,8 @@ public final class JavaRDD<T extends Serializable> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    return new JavaRDD<>(this.sparkContext, this.parallelism, this.builder, mapVertex);
+    return new JavaRDD<>(this.sparkContext, this.parallelism, builder.buildWithoutSourceSinkCheck(), mapVertex);
   }
-
 
   /////////////// ACTIONS ///////////////
 
@@ -125,6 +132,7 @@ public final class JavaRDD<T extends Serializable> {
   public T reduce(final SerializableBinaryOperator<T> func) {
     // save result in a temporary file
     final String resultFile = System.getProperty("user.dir") + "/reduceresult.bin";
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, resultFile));
     reduceVertex.setProperty(ParallelismProperty.of(parallelism));
@@ -136,9 +144,7 @@ public final class JavaRDD<T extends Serializable> {
     builder.connectVertices(newEdge);
 
     // launch DAG
-    final DAG<IRVertex, IREdge> dag = this.builder.build();
-    this.builder = new DAGBuilder<>();
-    JobLauncher.launchDAG(dag);
+    JobLauncher.launchDAG(builder.build());
 
     // Retrieve result data.
     try {
