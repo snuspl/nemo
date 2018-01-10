@@ -19,41 +19,24 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * This class represents a metadata for a {@link edu.snu.onyx.runtime.executor.data.block.Block}.
+ * This interface represents a metadata for a {@link edu.snu.onyx.runtime.executor.data.block.Block}.
  * The writer and reader determine the status of a file block
  * (such as accessibility, how many bytes are written, etc.) by using this metadata.
  * @param <K> the key type of its partitions.
  */
-public abstract class FileMetadata<K extends Serializable> {
-
-  private final boolean partitionCommitPerWrite; // Whether need to commit partition per every block write or not.
-
-  protected FileMetadata(final boolean partitionCommitPerWrite) {
-    this.partitionCommitPerWrite = partitionCommitPerWrite;
-  }
+public interface FileMetadata<K extends Serializable> {
 
   /**
-   * Reserves the region for a partition and get the metadata for the partition.
-   * When a writer reserves the region (or space) of a file for a data partition,
-   * other writers will write their data after the region.
-   * Also, the readers will judge a data partition available after the partition is committed.
+   * Writes the metadata for a partition.
    *
    * @param key     the key of the partition.
    * @param partitionSize the size of the partition.
    * @param elementsTotal the number of elements in the partition.
-   * @return the {@link PartitionMetadata} having all given information, the partition offset, and the index.
    * @throws IOException if fail to append the partition metadata.
    */
-  public abstract PartitionMetadata<K> reservePartition(final K key,
-                                                     final int partitionSize,
-                                                     final long elementsTotal) throws IOException;
-
-  /**
-   * Notifies that some partitions are written.
-   *
-   * @param partitionMetadataToCommit the metadata of the partitions to commit.
-   */
-  public abstract void commitPartitions(final Iterable<PartitionMetadata> partitionMetadataToCommit);
+  void writePartitionMetadata(final K key,
+                              final int partitionSize,
+                              final long elementsTotal) throws IOException;
 
   /**
    * Gets a iterable containing the partition metadata of corresponding block.
@@ -61,24 +44,17 @@ public abstract class FileMetadata<K extends Serializable> {
    * @return the iterable containing the partition metadata.
    * @throws IOException if fail to get the iterable.
    */
-  public abstract Iterable<PartitionMetadata<K>> getPartitionMetadataIterable() throws IOException;
+  Iterable<PartitionMetadata<K>> getPartitionMetadataIterable() throws IOException;
 
   /**
    * Deletes the metadata.
    *
    * @throws IOException if fail to delete.
    */
-  public abstract void deleteMetadata() throws IOException;
-
-  /**
-   * @return whether commit every partition write or not.
-   */
-  public final boolean isPartitionCommitPerWrite() {
-    return partitionCommitPerWrite;
-  }
+  void deleteMetadata() throws IOException;
 
   /**
    * Notifies that all writes are finished for the block corresponding to this metadata.
    */
-  public abstract void commitBlock();
+  void commitBlock();
 }

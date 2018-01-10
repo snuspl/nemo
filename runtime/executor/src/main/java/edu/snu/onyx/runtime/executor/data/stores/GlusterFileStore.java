@@ -73,14 +73,14 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   /**
    * Saves an iterable of data partitions to a block.
    *
-   * @see BlockStore#putPartitions(String, Iterable, boolean)
+   * @see BlockStore#putPartitions(String, Iterable)
    */
   @Override
   public <K extends Serializable> Optional<List<Long>> putPartitions(final String blockId,
-                                            final Iterable<NonSerializedPartition<K>> partitions,
-                                            final boolean commitPerPartition) throws BlockWriteException {
+                                            final Iterable<NonSerializedPartition<K>> partitions)
+      throws BlockWriteException {
     try {
-      final FileBlock block = createTmpBlock(commitPerPartition, blockId);
+      final FileBlock block = createTmpBlock(blockId);
       // Serialize and write the given blocks.
       return block.putPartitions(partitions);
     } catch (final IOException e) {
@@ -89,14 +89,14 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   }
 
   /**
-   * @see BlockStore#putSerializedPartitions(String, Iterable, boolean)
+   * @see BlockStore#putSerializedPartitions(String, Iterable)
    */
   @Override
   public <K extends Serializable> List<Long> putSerializedPartitions(final String blockId,
-                                            final Iterable<SerializedPartition<K>> partitions,
-                                            final boolean commitPerPartition) throws BlockWriteException {
+                                            final Iterable<SerializedPartition<K>> partitions)
+      throws BlockWriteException {
     try {
-      final FileBlock block = createTmpBlock(commitPerPartition, blockId);
+      final FileBlock block = createTmpBlock(blockId);
       // Write the given blocks.
       return block.putSerializedPartitions(partitions);
     } catch (final IOException e) {
@@ -119,7 +119,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
     } else {
       // Deserialize the target data in the corresponding file.
       try {
-        final FileBlock block = createTmpBlock(false, blockId);
+        final FileBlock block = createTmpBlock(blockId);
         final Iterable<NonSerializedPartition<K>> partitionsInRange = block.getPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
@@ -139,7 +139,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
       return Optional.empty();
     } else {
       try {
-        final FileBlock block = createTmpBlock(false, blockId);
+        final FileBlock block = createTmpBlock(blockId);
         final Iterable<SerializedPartition<K>> partitionsInRange = block.getSerializedPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
@@ -157,7 +157,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
     final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
 
     final RemoteFileMetadata metadata =
-        new RemoteFileMetadata(false, blockId, executorId, persistentConnectionToMasterMap);
+        new RemoteFileMetadata(blockId, executorId, persistentConnectionToMasterMap);
     new FileBlock(coder, filePath, metadata).commit();
   }
 
@@ -173,7 +173,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock block = createTmpBlock(false, blockId);
+        final FileBlock block = createTmpBlock(blockId);
         block.deleteFile();
         return true;
       } else {
@@ -194,7 +194,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock block = createTmpBlock(false, blockId);
+        final FileBlock block = createTmpBlock(blockId);
         return block.asFileAreas(keyRange);
       } else {
         throw new BlockFetchException(new Throwable(String.format("%s does not exists", blockId)));
@@ -209,16 +209,13 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
    * Because the data is stored in remote files and globally accessed by multiple nodes,
    * each access (write, read, or deletion) for a file needs one instance of {@link FileBlock}.
    *
-   * @param commitPerPartition whether commit every partition write or not.
    * @param blockId            the ID of the block to create.
    * @return the {@link FileBlock} created.
    */
-  private FileBlock createTmpBlock(final boolean commitPerPartition,
-                                   final String blockId) {
+  private FileBlock createTmpBlock(final String blockId) {
     final Coder coder = getCoderFromWorker(blockId);
     final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
-    final RemoteFileMetadata metadata =
-        new RemoteFileMetadata(commitPerPartition, blockId, executorId, persistentConnectionToMasterMap);
+    final RemoteFileMetadata metadata = new RemoteFileMetadata(blockId, executorId, persistentConnectionToMasterMap);
     final FileBlock block = new FileBlock(coder, filePath, metadata);
     return block;
   }

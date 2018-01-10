@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
  * @param <K> the key type of its partitions.
  */
 @ThreadSafe
-public final class RemoteFileMetadata<K extends Serializable> extends FileMetadata<K> {
+public final class RemoteFileMetadata<K extends Serializable> implements FileMetadata<K> {
 
   private final String blockId;
   private final String executorId;
@@ -47,16 +47,13 @@ public final class RemoteFileMetadata<K extends Serializable> extends FileMetada
   /**
    * Opens a block metadata.
    *
-   * @param commitPerBlock     whether commit every block write or not.
    * @param blockId            the id of the block.
    * @param executorId         the id of the executor.
    * @param connectionToMaster the connection for sending messages to master.
    */
-  public RemoteFileMetadata(final boolean commitPerBlock,
-                            final String blockId,
+  public RemoteFileMetadata(final String blockId,
                             final String executorId,
                             final PersistentConnectionToMasterMap connectionToMaster) {
-    super(commitPerBlock);
     this.blockId = blockId;
     this.executorId = executorId;
     this.connectionToMaster = connectionToMaster;
@@ -65,12 +62,12 @@ public final class RemoteFileMetadata<K extends Serializable> extends FileMetada
   /**
    * Reserves the region for a partition and get the metadata for the partition.
    *
-   * @see  FileMetadata#reservePartition(Serializable, int, long)
+   * @see  FileMetadata#writePartitionMetadata(Serializable, int, long)
    */
   @Override
-  public synchronized PartitionMetadata reservePartition(final K key,
-                                                         final int partitionSize,
-                                                         final long elementsTotal) throws IOException {
+  public synchronized void writePartitionMetadata(final K key,
+                                                  final int partitionSize,
+                                                  final long elementsTotal) throws IOException {
     // Convert the block metadata to a block metadata message (without offset).
     final ControlMessage.PartitionMetadataMsg partitionMetadataMsg =
         ControlMessage.PartitionMetadataMsg.newBuilder()

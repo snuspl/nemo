@@ -313,7 +313,7 @@ public final class BlockStoreTest {
               IntStream.range(writeTaskIdx, writeTaskIdx + 1).forEach(blockIdx -> {
                 final String blockId = blockIdList.get(blockIdx);
                 writerSideStore.createBlock(blockId);
-                writerSideStore.putPartitions(blockId, partitionsPerBlock.get(blockIdx), false);
+                writerSideStore.putPartitions(blockId, partitionsPerBlock.get(blockIdx));
                 writerSideStore.commitBlock(blockId);
                 blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                     "Writer side of the shuffle edge");
@@ -405,7 +405,7 @@ public final class BlockStoreTest {
       public Boolean call() {
         try {
           writerSideStore.createBlock(concBlockId);
-          writerSideStore.putPartitions(concBlockId, Collections.singleton(concBlockPartition), false);
+          writerSideStore.putPartitions(concBlockId, Collections.singleton(concBlockPartition));
           writerSideStore.commitBlock(concBlockId);
           blockManagerMaster.onBlockStateChanged(
               concBlockId, BlockState.State.COMMITTED, "Writer side of the concurrent read edge");
@@ -490,8 +490,7 @@ public final class BlockStoreTest {
             try {
               final String blockId = hashedBlockIdList.get(writeTaskIdx);
               writerSideStore.createBlock(blockId);
-              writerSideStore.putPartitions(blockId,
-                  hashedBlockPartitionList.get(writeTaskIdx), false);
+              writerSideStore.putPartitions(blockId, hashedBlockPartitionList.get(writeTaskIdx));
               writerSideStore.commitBlock(blockId);
               blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                   "Writer side of the shuffle in hash range edge");

@@ -49,7 +49,6 @@ public interface BlockStore {
    *
    * @param blockId            of the block.
    * @param partitions         to save to a block.
-   * @param commitPerPartition whether commit every partition write or not.
    * @param <K> the key type of the partitions.
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
@@ -58,8 +57,7 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> Optional<List<Long>> putPartitions(String blockId,
-                                     Iterable<NonSerializedPartition<K>> partitions,
-                                     boolean commitPerPartition) throws BlockWriteException;
+                                     Iterable<NonSerializedPartition<K>> partitions) throws BlockWriteException;
 
   /**
    * Saves an iterable of {@link SerializedPartition}s to a block.
@@ -69,7 +67,6 @@ public interface BlockStore {
    *
    * @param blockId            of the block.
    * @param partitions         to save to a block.
-   * @param commitPerPartition whether commit every partition write or not.
    * @param <K> the key type of the partitions.
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
@@ -78,8 +75,7 @@ public interface BlockStore {
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> List<Long> putSerializedPartitions(String blockId,
-                                     Iterable<SerializedPartition<K>> partitions,
-                                     boolean commitPerPartition) throws BlockWriteException;
+                                     Iterable<SerializedPartition<K>> partitions) throws BlockWriteException;
 
   /**
    * Retrieves {@link NonSerializedPartition}s.

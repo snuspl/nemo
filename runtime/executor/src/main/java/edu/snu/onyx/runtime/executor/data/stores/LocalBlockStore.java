@@ -44,12 +44,12 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   }
 
   /**
-   * @see BlockStore#putPartitions(String, Iterable, boolean)
+   * @see BlockStore#putPartitions(String, Iterable)
    */
   @Override
   public final <K extends Serializable> Optional<List<Long>> putPartitions(final String blockId,
-                                                  final Iterable<NonSerializedPartition<K>> partitions,
-                                                  final boolean commitPerPartition) throws BlockWriteException {
+                                                  final Iterable<NonSerializedPartition<K>> partitions)
+      throws BlockWriteException {
     try {
       final Block block = blockMap.get(blockId);
       if (block == null) {
@@ -62,12 +62,11 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   }
 
   /**
-   * @see BlockStore#putSerializedPartitions(String, Iterable, boolean)
+   * @see BlockStore#putSerializedPartitions(String, Iterable)
    */
   @Override
   public final <K extends Serializable> List<Long> putSerializedPartitions(final String blockId,
-                                                  final Iterable<SerializedPartition<K>> partitions,
-                                                  final boolean commitPerPartition) {
+                                                  final Iterable<SerializedPartition<K>> partitions) {
     try {
       final Block block = blockMap.get(blockId);
       if (block == null) {

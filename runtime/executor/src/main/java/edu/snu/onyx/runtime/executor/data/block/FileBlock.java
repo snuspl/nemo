@@ -36,8 +36,6 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
   private final Coder coder;
   private final String filePath;
   private final FileMetadata<K> metadata;
-  private final Queue<PartitionMetadata<K>> partitionMetadataToCommit;
-  private final boolean commitPerBlock;
 
   public FileBlock(final Coder coder,
                    final String filePath,
@@ -45,8 +43,6 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
     this.coder = coder;
     this.filePath = filePath;
     this.metadata = metadata;
-    this.partitionMetadataToCommit = new ConcurrentLinkedQueue<>();
-    this.commitPerBlock = metadata.isPartitionCommitPerWrite();
   }
 
   /**
@@ -63,16 +59,9 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
     try (final FileOutputStream fileOutputStream = new FileOutputStream(filePath, true)) {
       for (final SerializedPartition<K> serializedPartition : serializedPartitions) {
         // Reserve a partition write and get the metadata.
-        final PartitionMetadata partitionMetadata = metadata.reservePartition(
+        metadata.writePartitionMetadata(
             serializedPartition.getKey(), serializedPartition.getLength(), serializedPartition.getElementsTotal());
         fileOutputStream.write(serializedPartition.getData(), 0, serializedPartition.getLength());
-
-        // Commit if needed.
-        if (commitPerBlock) {
-          metadata.commitPartitions(Collections.singleton(partitionMetadata));
-        } else {
-          partitionMetadataToCommit.add(partitionMetadata);
-        }
       }
     }
   }
@@ -104,23 +93,8 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
       partitionSizeList.add((long) serializedPartition.getLength());
     }
     writeSerializedPartitions(partitions);
-    commitRemainderMetadata();
 
     return partitionSizeList;
-  }
-
-  /**
-   * Commits the un-committed partition metadata.
-   */
-  private void commitRemainderMetadata() {
-    final List<PartitionMetadata> metadataToCommit = new ArrayList<>();
-    while (!partitionMetadataToCommit.isEmpty()) {
-      final PartitionMetadata partitionMetadata = partitionMetadataToCommit.poll();
-      if (partitionMetadata != null) {
-        metadataToCommit.add(partitionMetadata);
-      }
-    }
-    metadata.commitPartitions(metadataToCommit);
   }
 
   /**
@@ -238,7 +212,7 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
    */
   @Override
   public void commit() {
-    commitRemainderMetadata();
+    final List<PartitionMetadata> metadataToCommit = new ArrayList<>();
     metadata.commitBlock();
   }
 }

@@ -55,7 +55,7 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
     removeBlock(blockId);
 
     final Coder coder = getCoderFromWorker(blockId);
-    final LocalFileMetadata metadata = new LocalFileMetadata(false);
+    final LocalFileMetadata metadata = new LocalFileMetadata();
 
     final FileBlock block =
         new FileBlock(coder, DataUtil.blockIdToFilePath(blockId, fileDirectory), metadata);
