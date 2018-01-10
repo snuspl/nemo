@@ -19,6 +19,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
+import edu.snu.onyx.compiler.frontend.spark.JavaRDD;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -32,7 +33,7 @@ import java.util.stream.StreamSupport;
 public final class ReduceTransform<T extends Serializable> implements Transform<T, T> {
   private final SerializableBinaryOperator<T> func;
   private OutputCollector<T> oc;
-  private final String filename;
+  private String filename;
 
   /**
    * Constructor.
@@ -47,6 +48,7 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
   @Override
   public void prepare(final Context context, final OutputCollector<T> outputCollector) {
     this.oc = outputCollector;
+    this.filename = filename + JavaRDD.getResultId();
   }
 
   @Override

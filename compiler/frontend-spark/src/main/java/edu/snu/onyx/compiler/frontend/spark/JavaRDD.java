@@ -40,7 +40,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Java RDD.
@@ -124,6 +127,16 @@ public final class JavaRDD<T extends Serializable> {
 
   /////////////// ACTIONS ///////////////
 
+  private static final AtomicInteger RESULT_ID = new AtomicInteger(0);
+
+  /**
+   * This method is to be removed after a result handler is implemented.
+   * @return a unique integer.
+   */
+  public static Integer getResultId() {
+    return RESULT_ID.getAndIncrement();
+  }
+
   /**
    * Reduce action.
    * @param func function (binary operator) to apply.
@@ -131,7 +144,7 @@ public final class JavaRDD<T extends Serializable> {
    */
   public T reduce(final SerializableBinaryOperator<T> func) {
     // save result in a temporary file
-    final String resultFile = System.getProperty("user.dir") + "/reduceresult.bin";
+    final String resultFile = System.getProperty("user.dir") + "/reduceresult";
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, resultFile));
@@ -146,15 +159,19 @@ public final class JavaRDD<T extends Serializable> {
     // launch DAG
     JobLauncher.launchDAG(builder.build());
 
-    // Retrieve result data.
+    // Retrieve result data from file.
     try {
       final Kryo kryo = new Kryo();
-      final Input input = new Input(new FileInputStream(resultFile));
-      final T result = (T) kryo.readClassAndObject(input);
-      input.close();
-      // Delete temporary file
-      new File(resultFile).delete();
-      return result;
+      final List<T> result = new ArrayList<>();
+      for (Integer i = 0; i < getResultId(); i++) {
+        final Input input = new Input(new FileInputStream(resultFile + i));
+        result.add((T) kryo.readClassAndObject(input));
+        input.close();
+        // Delete temporary file
+        new File(resultFile + i).delete();
+      }
+      System.out.println(result);
+      return result.stream().reduce(func).get();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
