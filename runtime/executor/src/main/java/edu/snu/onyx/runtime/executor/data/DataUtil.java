@@ -2,8 +2,6 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -15,7 +13,6 @@ import java.util.stream.StreamSupport;
  * Utility methods for data handling (e.g., (de)serialization).
  */
 public final class DataUtil {
-  private static final Logger LOG = LoggerFactory.getLogger(DataUtil.class);
   private DataUtil() {
     // Private constructor.
   }
