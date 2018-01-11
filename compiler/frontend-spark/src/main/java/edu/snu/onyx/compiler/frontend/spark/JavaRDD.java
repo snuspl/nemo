@@ -163,14 +163,17 @@ public final class JavaRDD<T extends Serializable> {
     try {
       final Kryo kryo = new Kryo();
       final List<T> result = new ArrayList<>();
-      for (Integer i = 0; i < getResultId(); i++) {
+      Integer i = 0;
+      File file;
+      while ((file = new File(resultFile + i)).exists()) {
         final Input input = new Input(new FileInputStream(resultFile + i));
         result.add((T) kryo.readClassAndObject(input));
         input.close();
+
         // Delete temporary file
-        new File(resultFile + i).delete();
+        file.delete();
+        i++;
       }
-      System.out.println(result);
       return result.stream().reduce(func).get();
     } catch (IOException e) {
       throw new RuntimeException(e);
