@@ -159,6 +159,14 @@ public final class DataUtil {
     return concatStream.collect(Collectors.toList());
   }
 
+  /**
+   * Creates new OutputStream which writes compressed data onto the stream.
+   *
+   * @param out the original {@link OutputStream}.
+   * @param compressor compress strategy for compressing stream data.
+   * @return {@link OutputStream} which writes compressed data.
+   * @throws IOException if fail to compress data.
+   */
   OutputStream createOutputStream(final OutputStream out, final Compressor compressor) throws IOException {
     switch (compressor) {
       case Raw:
@@ -166,12 +174,20 @@ public final class DataUtil {
       case Gzip:
         return new GZIPOutputStream(out);
       case LZ4:
-        return null; // TODO: add later (maybe adding dependency?)
+        return null; // add later (maybe adding dependency?)
       default:
         return null;
     }
   }
 
+  /**
+   * Creates new InputStream which reads compressed data from the stream.
+   *
+   * @param in the original {@link InputStream}.
+   * @param compressor compress strategy used to compress stream data.
+   * @return {@link InputStream} which reads compressed data.
+   * @throws IOException if fail to decompress data.
+   */
   InputStream createInputStream(final InputStream in, final Compressor compressor) throws IOException {
     switch (compressor) {
       case Raw:
@@ -179,7 +195,7 @@ public final class DataUtil {
       case Gzip:
         return new GZIPInputStream(in);
       case LZ4:
-        return null; // TODO: add later (maybe adding dependency?)
+        return null; // add later (maybe adding dependency?)
       default:
         return null;
     }
