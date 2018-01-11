@@ -27,7 +27,6 @@ import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.JobState;
 import edu.snu.onyx.runtime.common.state.StageState;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
-import edu.snu.onyx.runtime.common.state.TaskState;
 
 import java.io.File;
 import java.io.IOException;
