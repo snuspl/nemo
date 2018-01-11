@@ -36,6 +36,12 @@ import java.util.List;
 public final class LocalFileStore extends LocalBlockStore implements FileStore {
   private final String fileDirectory;
 
+  /**
+   * Constructor.
+   *
+   * @param fileDirectory the directory which will contain the files.
+   * @param coderManager  the coder manager.
+   */
   @Inject
   private LocalFileStore(@Parameter(JobConf.FileDirectory.class) final String fileDirectory,
                          final CoderManager coderManager) {

@@ -245,6 +245,7 @@ public final class BlockStoreTest {
    */
   @Test(timeout = 10000)
   public void testLocalFileStore() throws Exception {
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_FILE_DIRECTORY);
     injector.bindVolatileInstance(CoderManager.class, coderManager);
@@ -263,6 +264,7 @@ public final class BlockStoreTest {
    */
   @Test(timeout = 10000)
   public void testGlusterFileStore() throws Exception {
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
     final RemoteFileStore writerSideRemoteFileStore =
         createGlusterFileStore("writer");
     final RemoteFileStore readerSideRemoteFileStore =

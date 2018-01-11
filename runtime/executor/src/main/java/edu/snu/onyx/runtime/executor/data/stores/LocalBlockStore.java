@@ -26,6 +26,7 @@ import edu.snu.onyx.runtime.executor.data.block.Block;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,8 +37,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class LocalBlockStore extends AbstractBlockStore {
   // A map between block id and data blocks.
-  private final ConcurrentHashMap<String, Block> blockMap;
+  private final Map<String, Block> blockMap;
 
+  /**
+   * Constructor.
+   *
+   * @param coderManager the coder manager.
+   */
   protected LocalBlockStore(final CoderManager coderManager) {
     super(coderManager);
     this.blockMap = new ConcurrentHashMap<>();
@@ -47,11 +53,12 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
    * @see BlockStore#putPartitions(String, Iterable)
    */
   @Override
-  public final <K extends Serializable> Optional<List<Long>> putPartitions(final String blockId,
-                                                  final Iterable<NonSerializedPartition<K>> partitions)
+  public final <K extends Serializable>
+  Optional<List<Long>> putPartitions(final String blockId,
+                                     final Iterable<NonSerializedPartition<K>> partitions)
       throws BlockWriteException {
     try {
-      final Block block = blockMap.get(blockId);
+      final Block<K> block = blockMap.get(blockId);
       if (block == null) {
         throw new BlockWriteException(new Throwable("The block " + blockId + "is not created yet."));
       }
@@ -65,10 +72,11 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
    * @see BlockStore#putSerializedPartitions(String, Iterable)
    */
   @Override
-  public final <K extends Serializable> List<Long> putSerializedPartitions(final String blockId,
-                                                  final Iterable<SerializedPartition<K>> partitions) {
+  public final <K extends Serializable>
+  List<Long> putSerializedPartitions(final String blockId,
+                                     final Iterable<SerializedPartition<K>> partitions) {
     try {
-      final Block block = blockMap.get(blockId);
+      final Block<K> block = blockMap.get(blockId);
       if (block == null) {
         throw new BlockWriteException(new Throwable("The block " + blockId + "is not created yet."));
       }
@@ -84,7 +92,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   @Override
   public final <K extends Serializable>
   Optional<Iterable<NonSerializedPartition<K>>> getPartitions(final String blockId, final KeyRange<K> keyRange) {
-    final Block block = blockMap.get(blockId);
+    final Block<K> block = blockMap.get(blockId);
 
     if (block != null) {
       try {
@@ -104,7 +112,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   @Override
   public final <K extends Serializable>
   Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(final String blockId, final KeyRange<K> keyRange) {
-    final Block block = blockMap.get(blockId);
+    final Block<K> block = blockMap.get(blockId);
 
     if (block != null) {
       try {
@@ -125,7 +133,11 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   public final void commitBlock(final String blockId) {
     final Block block = blockMap.get(blockId);
     if (block != null) {
-      block.commit();
+      try {
+        block.commit();
+      } catch (final IOException e) {
+        throw new BlockWriteException(e);
+      }
     } else {
       throw new BlockWriteException(new Throwable("There isn't any block with id " + blockId));
     }
@@ -134,7 +146,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   /**
    * @return the map between the IDs and {@link Block}.
    */
-  public final ConcurrentHashMap<String, Block> getBlockMap() {
+  public final Map<String, Block> getBlockMap() {
     return blockMap;
   }
 }

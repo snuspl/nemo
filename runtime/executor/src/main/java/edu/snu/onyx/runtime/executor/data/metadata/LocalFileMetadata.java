@@ -16,58 +16,21 @@
 package edu.snu.onyx.runtime.executor.data.metadata;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
 
 /**
  * This class represents a metadata for a local file {@link edu.snu.onyx.runtime.executor.data.block.Block}.
- * It resides in local only, and does not synchronize with master.
+ * It resides in local only, and does not synchronize globally.
  * @param <K> the key type of its partitions.
  */
 @ThreadSafe
-public final class LocalFileMetadata<K extends Serializable> implements FileMetadata<K> {
+public final class LocalFileMetadata<K extends Serializable> extends FileMetadata<K> {
 
-  private final List<PartitionMetadata<K>> partitionMetadataList; // The list of partition metadata.
-  private volatile long writtenBytesCursor; // Indicates how many bytes are (at least, logically) written in the file.
-  private volatile boolean committed;
-
+  /**
+   * Constructor.
+   */
   public LocalFileMetadata() {
-    this.partitionMetadataList = new ArrayList<>();
-    this.writtenBytesCursor = 0;
-    this.committed = false;
-  }
-
-  /**
-   * Reserves the region for a partition and get the metadata for the partition.
-   * @see FileMetadata#writePartitionMetadata(Serializable, int, long)
-   */
-  @Override
-  public synchronized void writePartitionMetadata(final K key,
-                                                  final int partitionSize,
-                                                  final long elementsTotal) throws IOException {
-    if (committed) {
-      throw new IOException("Cannot write a new block to a closed partition.");
-    }
-
-    final PartitionMetadata partitionMetadata =
-        new PartitionMetadata(partitionMetadataList.size(), key, partitionSize, writtenBytesCursor, elementsTotal);
-    partitionMetadataList.add(partitionMetadata);
-    writtenBytesCursor += partitionSize;
-  }
-
-  /**
-   * Gets a iterable containing the partition metadata of corresponding block.
-   * @see FileMetadata#getPartitionMetadataIterable()
-   * @throws IOException if this block is not committed yet.
-   */
-  @Override
-  public Iterable<PartitionMetadata<K>> getPartitionMetadataIterable() throws IOException {
-    if (committed) {
-      return Collections.unmodifiableCollection(partitionMetadataList);
-    } else {
-      throw new IOException("This block is not committed yet.");
-    }
+    super();
   }
 
   /**
@@ -82,7 +45,7 @@ public final class LocalFileMetadata<K extends Serializable> implements FileMeta
    * Notifies that all writes are finished for the block corresponding to this metadata.
    */
   @Override
-  public synchronized void commitBlock() {
-    committed = true;
+  public void commitBlock() {
+    setCommitted(true);
   }
 }
