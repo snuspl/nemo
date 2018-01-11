@@ -2,13 +2,11 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -17,6 +15,7 @@ import java.util.stream.StreamSupport;
  * Utility methods for data handling (e.g., (de)serialization).
  */
 public final class DataUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(DataUtil.class);
   private DataUtil() {
     // Private constructor.
   }
@@ -57,7 +56,7 @@ public final class DataUtil {
                                                             final K key,
                                                             final InputStream inputStream) throws IOException {
     final List deserializedData = new ArrayList();
-    (new InputStreamIterator(inputStream, coder)).forEachRemaining(deserializedData::add);
+    (new InputStreamIterator(inputStream, coder, elementsInPartition)).forEachRemaining(deserializedData::add);
     return new NonSerializedPartition(key, deserializedData);
   }
 
@@ -147,10 +146,12 @@ public final class DataUtil {
 
     private final InputStream inputStream;
     private final Coder<T> coder;
+    private final Optional<Long> limit;
 
-    @Nullable
-    private volatile T next = null;
-    private volatile boolean cannotContinue = false;
+    private volatile boolean hasNext = false;
+    private volatile T next;
+    private volatile boolean cannotContinueDecoding = false;
+    private volatile long elementsDecoded = 0;
 
     /**
      * Construct {@link Iterator} from {@link InputStream} and {@link Coder}.
@@ -160,35 +161,53 @@ public final class DataUtil {
     public InputStreamIterator(final InputStream inputStream, final Coder<T> coder) {
       this.inputStream = inputStream;
       this.coder = coder;
+      this.limit = Optional.empty();
     }
 
-    private void decodeIfNeeded() {
-      if (cannotContinue || next != null) {
-        // not needed
-        return;
-      }
-      try {
-        next = coder.decode(inputStream);
-      } catch (final IOException e) {
-        cannotContinue = true;
-      }
+    /**
+     * Construct {@link Iterator} from {@link InputStream} and {@link Coder}.
+     * @param inputStream The stream to read data from.
+     * @param coder The coder to decode bytes into {@code T}.
+     * @param limit The number of elements from the {@link InputStream}.
+     */
+    public InputStreamIterator(final InputStream inputStream, final Coder<T> coder, final long limit) {
+      this.inputStream = inputStream;
+      this.coder = coder;
+      this.limit = Optional.of(limit);
     }
 
     @Override
     public boolean hasNext() {
-      decodeIfNeeded();
-      return !cannotContinue;
+      if (hasNext) {
+        return true;
+      }
+      if (cannotContinueDecoding) {
+        return false;
+      }
+      if (limit.isPresent() && limit.get().equals(elementsDecoded)) {
+        cannotContinueDecoding = true;
+        return false;
+      }
+      try {
+        next = coder.decode(inputStream);
+        hasNext = true;
+        elementsDecoded++;
+        return true;
+      } catch (final IOException e) {
+        cannotContinueDecoding = true;
+        return false;
+      }
     }
 
     @Override
     public T next() {
-      decodeIfNeeded();
-      if (cannotContinue) {
-        throw new NoSuchElementException();
-      } else {
+      if (hasNext()) {
         final T element = next;
         next = null;
+        hasNext = false;
         return element;
+      } else {
+        throw new NoSuchElementException();
       }
     }
   }
