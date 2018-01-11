@@ -19,6 +19,7 @@ import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 
 import java.io.Serializable;
+import java.util.Iterator;
 
 /**
  * Map Transform for Spark.
@@ -43,8 +44,8 @@ public final class MapTransform<I extends Serializable, O extends Serializable> 
   }
 
   @Override
-  public void onData(final Iterable<I> elements, final String srcVertexId) {
-    elements.forEach(element -> oc.emit(func.apply(element)));
+  public void onData(final Iterator<I> elements, final String srcVertexId) {
+    elements.forEachRemaining(element -> oc.emit(func.apply(element)));
   }
 
   @Override

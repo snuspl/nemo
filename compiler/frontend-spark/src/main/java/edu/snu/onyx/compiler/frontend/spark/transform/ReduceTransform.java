@@ -24,6 +24,7 @@ import edu.snu.onyx.compiler.frontend.spark.JavaRDD;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.stream.StreamSupport;
 
 /**
@@ -52,8 +53,10 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
   }
 
   @Override
-  public void onData(final Iterable<T> elements, final String srcVertexId) {
-    final T res = StreamSupport.stream(elements.spliterator(), true).reduce(func)
+  public void onData(final Iterator<T> elements, final String srcVertexId) {
+    final Iterable<T> iterable = () -> elements;
+    final T res = StreamSupport.stream(iterable.spliterator(), true)
+        .reduce(func)
         .orElseThrow(() -> new RuntimeException("Something wrong with the provided reduce operator"));
     oc.emit(res);
 

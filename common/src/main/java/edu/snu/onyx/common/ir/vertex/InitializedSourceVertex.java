@@ -81,8 +81,8 @@ public final class InitializedSourceVertex<T> extends SourceVertex<T> {
     }
 
     @Override
-    public final Iterable<T> read() throws Exception {
-      return this.initializedSourceData;
+    public final Iterator<T> read() throws Exception {
+      return this.initializedSourceData.iterator();
     }
   }
 }
