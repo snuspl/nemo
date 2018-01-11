@@ -102,7 +102,7 @@ public abstract class FileMetadata<K extends Serializable> {
    * Set the commit value.
    * @param committed whether this block is committed or not.
    */
-  public final void setCommitted(final boolean committed) {
+  protected final void setCommitted(final boolean committed) {
     this.committed.set(committed);
   }
 }

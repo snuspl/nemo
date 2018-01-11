@@ -134,7 +134,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
     } else {
       // Deserialize the target data in the corresponding file.
       try {
-        final FileBlock<K> block = openBlockFromFile(blockId);
+        final FileBlock<K> block = getBlockFromFile(blockId);
         final Iterable<NonSerializedPartition<K>> partitionsInRange = block.getPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
@@ -154,7 +154,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
       return Optional.empty();
     } else {
       try {
-        final FileBlock<K> block = openBlockFromFile(blockId);
+        final FileBlock<K> block = getBlockFromFile(blockId);
         final Iterable<SerializedPartition<K>> partitionsInRange = block.getSerializedPartitions(keyRange);
         return Optional.of(partitionsInRange);
       } catch (final IOException e) {
@@ -197,7 +197,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock block = openBlockFromFile(blockId);
+        final FileBlock block = getBlockFromFile(blockId);
         block.deleteFile();
         return true;
       } else {
@@ -218,7 +218,7 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
 
     try {
       if (new File(filePath).isFile()) {
-        final FileBlock block = openBlockFromFile(blockId);
+        final FileBlock block = getBlockFromFile(blockId);
         return block.asFileAreas(keyRange);
       } else {
         throw new BlockFetchException(new Throwable(String.format("%s does not exists", blockId)));
@@ -229,16 +229,17 @@ public final class GlusterFileStore extends AbstractBlockStore implements Remote
   }
 
   /**
-   * Opens a temporary {@link FileBlock} for a single access from the block and it's metadata file.
+   * Gets a {@link FileBlock} from the block and it's metadata file.
    * Because the data is stored in remote files and globally accessed by multiple nodes,
-   * each read, or deletion for a file needs one instance of {@link FileBlock}.
+   * each read, or deletion for a file needs one instance of {@link FileBlock},
+   * and the temporary block will not be maintained by this executor.
    *
-   * @param blockId the ID of the block to open.
+   * @param blockId the ID of the block to get.
    * @param <K>     the type of the key of the block.
-   * @return the {@link FileBlock} opened.
-   * @throws IOException if fail to open.
+   * @return the {@link FileBlock} gotten.
+   * @throws IOException if fail to get.
    */
-  private <K extends Serializable> FileBlock<K> openBlockFromFile(final String blockId) throws IOException {
+  private <K extends Serializable> FileBlock<K> getBlockFromFile(final String blockId) throws IOException {
     final Coder coder = getCoderFromWorker(blockId);
     final String filePath = DataUtil.blockIdToFilePath(blockId, fileDirectory);
     final RemoteFileMetadata<K> metadata =
