@@ -167,16 +167,16 @@ public final class DataUtil {
    * @return {@link OutputStream} which writes compressed data.
    * @throws IOException if fail to compress data.
    */
-  OutputStream createOutputStream(final OutputStream out, final Compressor compressor) throws IOException {
+  OutputStream createOutputStream(final OutputStream out, final Compressor compressor)
+      throws IOException, UnsupportedOperationException {
     switch (compressor) {
       case Raw:
         return new BufferedOutputStream(out);
       case Gzip:
         return new GZIPOutputStream(out);
       case LZ4:
-        return null; // add later (maybe adding dependency?)
       default:
-        return null;
+        throw new UnsupportedOperationException("Not supported compressor"); // add later (maybe adding dependency?)
     }
   }
 
@@ -188,16 +188,16 @@ public final class DataUtil {
    * @return {@link InputStream} which reads compressed data.
    * @throws IOException if fail to decompress data.
    */
-  InputStream createInputStream(final InputStream in, final Compressor compressor) throws IOException {
+  InputStream createInputStream(final InputStream in, final Compressor compressor)
+      throws IOException, UnsupportedOperationException {
     switch (compressor) {
       case Raw:
         return new BufferedInputStream(in);
       case Gzip:
         return new GZIPInputStream(in);
       case LZ4:
-        return null; // add later (maybe adding dependency?)
       default:
-        return null;
+        throw new UnsupportedOperationException("Not supported compressor"); // add later (maybe adding dependency?)
     }
   }
 }
