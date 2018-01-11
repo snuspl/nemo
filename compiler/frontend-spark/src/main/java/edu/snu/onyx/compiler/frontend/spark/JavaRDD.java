@@ -36,6 +36,7 @@ import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator
 import edu.snu.onyx.compiler.frontend.spark.transform.SerializableFunction;
 import org.apache.spark.serializer.KryoSerializer;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -54,7 +55,7 @@ public final class JavaRDD<T extends Serializable> {
   private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
-  private final IRVertex lastVertex;
+  @Nullable private final IRVertex lastVertex;
   private final KryoSerializer kryoSerializer;
 
   /**
@@ -77,7 +78,7 @@ public final class JavaRDD<T extends Serializable> {
    * @param lastVertex last vertex added to the builder.
    */
   private JavaRDD(final SparkContext sparkContext, final Integer parallelism,
-                  final DAG<IRVertex, IREdge> dag, final IRVertex lastVertex) {
+                  final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
     this.parallelism = parallelism;
