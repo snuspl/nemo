@@ -3,9 +3,12 @@ package edu.snu.onyx.runtime.executor.data;
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -54,9 +57,7 @@ public final class DataUtil {
                                                             final K key,
                                                             final InputStream inputStream) throws IOException {
     final List deserializedData = new ArrayList();
-    for (int i = 0; i < elementsInPartition; i++) {
-      deserializedData.add(coder.decode(inputStream));
-    }
+    (new InputStreamIterator(inputStream, coder)).forEachRemaining(deserializedData::add);
     return new NonSerializedPartition(key, deserializedData);
   }
 
@@ -136,5 +137,59 @@ public final class DataUtil {
       concatStream = Stream.concat(concatStream, StreamSupport.stream(elementsInPartition.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
+  }
+
+  /**
+   * An iterator that emits objects from {@link InputStream} using the corresponding {@link Coder}.
+   * @param <T> The type of elements.
+   */
+  public static final class InputStreamIterator<T> implements Iterator<T> {
+
+    private final InputStream inputStream;
+    private final Coder<T> coder;
+
+    @Nullable
+    private volatile T next = null;
+    private volatile boolean cannotContinue = false;
+
+    /**
+     * Construct {@link Iterator} from {@link InputStream} and {@link Coder}.
+     * @param inputStream The stream to read data from.
+     * @param coder The coder to decode bytes into {@code T}.
+     */
+    public InputStreamIterator(final InputStream inputStream, final Coder<T> coder) {
+      this.inputStream = inputStream;
+      this.coder = coder;
+    }
+
+    private void decodeIfNeeded() {
+      if (cannotContinue || next != null) {
+        // not needed
+        return;
+      }
+      try {
+        next = coder.decode(inputStream);
+      } catch (final IOException e) {
+        cannotContinue = true;
+      }
+    }
+
+    @Override
+    public boolean hasNext() {
+      decodeIfNeeded();
+      return !cannotContinue;
+    }
+
+    @Override
+    public T next() {
+      decodeIfNeeded();
+      if (cannotContinue) {
+        throw new NoSuchElementException();
+      } else {
+        final T element = next;
+        next = null;
+        return element;
+      }
+    }
   }
 }
