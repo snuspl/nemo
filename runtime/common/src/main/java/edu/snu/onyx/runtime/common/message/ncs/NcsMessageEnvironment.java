@@ -190,6 +190,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case RemovePartitionMetadata:
       case DataSizeMetric:
       case ContainerFailed:
+      case MetricMessageReceived:
         return MessageType.Send;
       case RequestBlockLocation:
       case RequestPartitionMetadata:
