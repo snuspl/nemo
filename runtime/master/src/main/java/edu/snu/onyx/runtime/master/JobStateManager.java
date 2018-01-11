@@ -65,7 +65,6 @@ public final class JobStateManager {
   private final JobState jobState;
   private final Map<String, StageState> idToStageStates;
   private final Map<String, TaskGroupState> idToTaskGroupStates;
-  private final Map<String, TaskState> idToTaskStates;
 
   /**
    * Keeps track of the number of schedule attempts for each stage.
@@ -113,7 +112,6 @@ public final class JobStateManager {
     this.jobState = new JobState();
     this.idToStageStates = new HashMap<>();
     this.idToTaskGroupStates = new HashMap<>();
-    this.idToTaskStates = new HashMap<>();
     this.scheduleAttemptIdxByStage = new HashMap<>();
     this.stageIdToRemainingTaskGroupSet = new HashMap<>();
     this.currentJobStageIds = new HashSet<>();
@@ -134,11 +132,8 @@ public final class JobStateManager {
     physicalPlan.getStageDAG().topologicalDo(physicalStage -> {
       currentJobStageIds.add(physicalStage.getId());
       idToStageStates.put(physicalStage.getId(), new StageState());
-      physicalStage.getTaskGroupList().forEach(taskGroup -> {
-        idToTaskGroupStates.put(taskGroup.getTaskGroupId(), new TaskGroupState());
-        taskGroup.getTaskDAG().getVertices().forEach(
-            task -> idToTaskStates.put(task.getId(), new TaskState()));
-      });
+      physicalStage.getTaskGroupList().forEach(taskGroup ->
+        idToTaskGroupStates.put(taskGroup.getTaskGroupId(), new TaskGroupState()));
     });
   }
 
@@ -428,10 +423,6 @@ public final class JobStateManager {
     return idToTaskGroupStates;
   }
 
-  public synchronized Map<String, TaskState> getIdToTaskStates() {
-    return idToTaskStates;
-  }
-
   /**
    * Begins recording the start time of this metric measurement, in addition to the metric given.
    * This method ensures thread-safety by synchronizing its callers.
@@ -516,20 +507,7 @@ public final class JobStateManager {
         isFirstTaskGroup = false;
         final TaskGroupState taskGroupState = idToTaskGroupStates.get(taskGroup.getTaskGroupId());
         sb.append("{\"id\": \"").append(taskGroup.getTaskGroupId()).append("\", ");
-        sb.append("\"state\": \"").append(taskGroupState.toString()).append("\", ");
-        sb.append("\"tasks\": [");
-
-        boolean isFirstTask = true;
-        for (final Task task : taskGroup.getTaskDAG().getVertices()) {
-          if (!isFirstTask) {
-            sb.append(", ");
-          }
-          isFirstTask = false;
-          final TaskState taskState = idToTaskStates.get(task.getId());
-          sb.append("{\"id\": \"").append(task.getId()).append("\", ");
-          sb.append("\"state\": \"").append(taskState.toString()).append("\"}");
-        }
-        sb.append("]}");
+        sb.append("\"state\": \"").append(taskGroupState.toString()).append("}");
       }
       sb.append("]}");
     }
