@@ -171,12 +171,13 @@ public final class DataUtil {
       throws IOException, UnsupportedOperationException {
     switch (compressor) {
       case Raw:
-        return new BufferedOutputStream(out);
+        return out;
       case Gzip:
         return new GZIPOutputStream(out);
       case LZ4:
       default:
-        throw new UnsupportedOperationException("Not supported compressor"); // add later (maybe adding dependency?)
+        throw new UnsupportedOperationException("Not supported compressor");
+        // TODO #567: add later (maybe adding dependency?)
     }
   }
 
@@ -192,12 +193,13 @@ public final class DataUtil {
       throws IOException, UnsupportedOperationException {
     switch (compressor) {
       case Raw:
-        return new BufferedInputStream(in);
+        return in;
       case Gzip:
         return new GZIPInputStream(in);
       case LZ4:
       default:
-        throw new UnsupportedOperationException("Not supported compressor"); // add later (maybe adding dependency?)
+        throw new UnsupportedOperationException("Not supported compressor");
+        // TODO #567: add later (maybe adding dependency?)
     }
   }
 }
