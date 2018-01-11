@@ -2,6 +2,7 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
+import edu.snu.onyx.common.ir.vertex.executionproperty.CompressionProperty.Compressor;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Utility methods for data handling (e.g., (de)serialization).
@@ -154,5 +157,31 @@ public final class DataUtil {
       concatStream = Stream.concat(concatStream, StreamSupport.stream(elementsInPartition.spliterator(), false));
     }
     return concatStream.collect(Collectors.toList());
+  }
+
+  OutputStream createOutputStream(final OutputStream out, final Compressor compressor) throws IOException {
+    switch (compressor) {
+      case Raw:
+        return new BufferedOutputStream(out);
+      case Gzip:
+        return new GZIPOutputStream(out);
+      case LZ4:
+        return null; // TODO: add later (maybe adding dependency?)
+      default:
+        return null;
+    }
+  }
+
+  InputStream createInputStream(final InputStream in, final Compressor compressor) throws IOException {
+    switch (compressor) {
+      case Raw:
+        return new BufferedInputStream(in);
+      case Gzip:
+        return new GZIPInputStream(in);
+      case LZ4:
+        return null; // TODO: add later (maybe adding dependency?)
+      default:
+        return null;
+    }
   }
 }
