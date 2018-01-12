@@ -445,6 +445,7 @@ public final class JobStateManager {
 
     // may be null when a TaskGroup fails without entering the executing state (due to an input read failure)
     if (metricDataBuilder != null) {
+      finalMetric.put("ContainerId", "Master");
       metricDataBuilder.endMeasurement(finalMetric);
       metricMessageHandler.onMetricMessageReceived(compUnitId, metricDataBuilder.build().toJson());
       metricDataBuilderMap.remove(compUnitId);

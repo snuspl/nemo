@@ -155,6 +155,7 @@ public final class RuntimeMaster {
       pendingTaskGroupQueue.close();
       blockManagerMaster.terminate();
       masterMessageEnvironment.close();
+      metricMessageHandler.terminate();
 
       final Future<Boolean> allExecutorsClosed = containerManager.terminate();
       if (allExecutorsClosed.get()) {

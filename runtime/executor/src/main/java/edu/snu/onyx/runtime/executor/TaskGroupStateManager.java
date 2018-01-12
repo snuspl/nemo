@@ -105,7 +105,7 @@ public final class TaskGroupStateManager {
     switch (newState) {
     case EXECUTING:
       LOG.debug("Executing TaskGroup ID {}...", this.taskGroupId);
-      metric.put("ExecutorId", executorId);
+      metric.put("ContainerId", executorId);
       metric.put("ScheduleAttempt", attemptIdx);
       metric.put("FromState", newState);
       beginMeasurement(taskGroupId, metric);
@@ -157,7 +157,7 @@ public final class TaskGroupStateManager {
     switch (newState) {
     case READY:
     case EXECUTING:
-      metric.put("ExecutorId", executorId);
+      metric.put("ContainerId", executorId);
       metric.put("ScheduleAttempt", attemptIdx);
       metric.put("FromState", newState);
       beginMeasurement(taskId, metric);
