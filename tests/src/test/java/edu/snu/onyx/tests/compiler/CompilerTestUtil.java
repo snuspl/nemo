@@ -15,6 +15,7 @@
  */
 package edu.snu.onyx.tests.compiler;
 
+import edu.snu.onyx.common.ArgBuilder;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
@@ -59,7 +60,7 @@ public final class CompilerTestUtil {
   }
 
   public static DAG<IRVertex, IREdge> compileMRDAG() throws Exception {
-    final String input = rootDir + "/../examples-beam/src/main/resources/sample_input_mr";
+    final String input = rootDir + "/../examples/resources/sample_input_mr";
     final String output = rootDir + "/../examples-beam/src/main/resources/sample_output";
     final String main = "edu.snu.onyx.examples.beam.MapReduce";
 
@@ -71,7 +72,7 @@ public final class CompilerTestUtil {
   }
 
   public static DAG<IRVertex, IREdge> compileALSDAG() throws Exception {
-    final String input = rootDir + "/../examples-beam/src/main/resources/sample_input_als";
+    final String input = rootDir + "/../examples/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
     final String main = "edu.snu.onyx.examples.beam.AlternatingLeastSquare";
@@ -84,7 +85,7 @@ public final class CompilerTestUtil {
   }
 
   public static DAG<IRVertex, IREdge> compileALSInefficientDAG() throws Exception {
-    final String input = rootDir + "/../examples-beam/src/main/resources/sample_input_als";
+    final String input = rootDir + "/../examples/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
     final String main = "edu.snu.onyx.examples.beam.AlternatingLeastSquareInefficient";
@@ -97,7 +98,7 @@ public final class CompilerTestUtil {
   }
 
   public static DAG<IRVertex, IREdge> compileMLRDAG() throws Exception {
-    final String input = rootDir + "/../examples-beam/src/main/resources/sample_input_mlr";
+    final String input = rootDir + "/../examples/resources/sample_input_mlr";
     final String numFeatures = "100";
     final String numClasses = "5";
     final String numIteration = "3";

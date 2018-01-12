@@ -20,19 +20,19 @@ import com.esotericsoftware.kryo.io.Output;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.compiler.frontend.spark.JavaRDD;
+import org.apache.spark.api.java.function.Function2;
 
+import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.Serializable;
 import java.util.Iterator;
-import java.util.stream.StreamSupport;
 
 /**
  * Reduce Transform for Spark.
  * @param <T> element type.
  */
-public final class ReduceTransform<T extends Serializable> implements Transform<T, T> {
-  private final SerializableBinaryOperator<T> func;
+public final class ReduceTransform<T> implements Transform<T, T> {
+  private final Function2<T, T, T> func;
   private OutputCollector<T> oc;
   private String filename;
 
@@ -41,7 +41,7 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
    * @param func function to run for the reduce transform.
    * @param filename file to keep the result in.
    */
-  public ReduceTransform(final SerializableBinaryOperator<T> func, final String filename) {
+  public ReduceTransform(final Function2<T, T, T> func, final String filename) {
     this.func = func;
     this.filename = filename;
   }
@@ -54,13 +54,15 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
 
   @Override
   public void onData(final Iterator<T> elements, final String srcVertexId) {
-    final Iterable<T> iterable = () -> elements;
-    final T res = StreamSupport.stream(iterable.spliterator(), true)
-        .reduce(func)
-        .orElseThrow(() -> new RuntimeException("Something wrong with the provided reduce operator"));
+    final T res = reduceIterator(elements, func);
+    if (res == null) { // nothing to be done.
+      return;
+    }
+
     oc.emit(res);
 
     // Write result to a temporary file.
+    // TODO #711: remove this part, and make it properly write to sink.
     try {
       final Kryo kryo = new Kryo();
       final Output output = new Output(new FileOutputStream(filename));
@@ -69,6 +71,30 @@ public final class ReduceTransform<T extends Serializable> implements Transform<
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Reduce the iterator elements into a single object.
+   * @param elements the iterator of elements.
+   * @param func function to apply for reduction.
+   * @param <T> type of the elements.
+   * @return the reduced element.
+   */
+  @Nullable
+  public static <T> T reduceIterator(final Iterator<T> elements, final Function2<T, T, T> func) {
+    if (!elements.hasNext()) { // nothing to be done
+      return null;
+    }
+
+    T res = elements.next();
+    while (elements.hasNext()) {
+      try {
+        res = func.call(res, elements.next());
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return res;
   }
 
   @Override

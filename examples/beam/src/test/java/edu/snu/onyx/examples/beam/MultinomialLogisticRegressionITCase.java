@@ -16,6 +16,7 @@
 package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
+import edu.snu.onyx.common.ArgBuilder;
 import edu.snu.onyx.compiler.optimizer.policy.PadoPolicy;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +31,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(JobLauncher.class)
 public final class MultinomialLogisticRegressionITCase {
   private static final int TIMEOUT = 120000;
-  private static final String input = System.getProperty("user.dir") + "/src/main/resources/sample_input_mlr";
+  private static final String input = System.getProperty("user.dir") + "/../resources/sample_input_mlr";
   private static final String numFeatures = "100";
   private static final String numClasses = "5";
   private static final String numIteration = "3";

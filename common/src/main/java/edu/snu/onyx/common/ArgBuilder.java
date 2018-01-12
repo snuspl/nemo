@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.examples.beam;
+package edu.snu.onyx.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,21 +22,33 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
- * TODO #620: This class should later be refactored, (maybe to reference some package like test-utils).
+ * Argument builder.
  */
-public class ArgBuilder {
+public final class ArgBuilder {
   private List<List<String>> args = new ArrayList<>();
 
+  /**
+   * @param jobId job id.
+   * @return builder with the job id.
+   */
   public ArgBuilder addJobId(final String jobId) {
     args.add(Arrays.asList("-job_id", jobId));
     return this;
   }
 
+  /**
+   * @param main user main class.
+   * @return builder with the user main class.
+   */
   public ArgBuilder addUserMain(final String main) {
     args.add(Arrays.asList("-user_main", main));
     return this;
   }
 
+  /**
+   * @param userArgs user arguments.
+   * @return builder with the user arguments.
+   */
   public ArgBuilder addUserArgs(final String... userArgs) {
     final StringJoiner joiner = new StringJoiner(" ");
     Arrays.stream(userArgs).forEach(joiner::add);
@@ -44,16 +56,27 @@ public class ArgBuilder {
     return this;
   }
 
+  /**
+   * @param policy optimization policy.
+   * @return builder with the optimization policy.
+   */
   public ArgBuilder addOptimizationPolicy(final String policy) {
     args.add(Arrays.asList("-optimization_policy", policy));
     return this;
   }
 
+  /**
+   * @param directory directory to save the DAG.
+   * @return builder with the DAG directory.
+   */
   public ArgBuilder addDAGDirectory(final String directory) {
     args.add(Arrays.asList("-dag_dir", directory));
     return this;
   }
 
+  /**
+   * @return the built arguments.
+   */
   public String[] build() {
     // new String[0] is good for performance
     // see http://stackoverflow.com/questions/4042434/converting-arrayliststring-to-string-in-java

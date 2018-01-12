@@ -32,15 +32,16 @@ import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
-import edu.snu.onyx.compiler.frontend.spark.transform.SerializableBinaryOperator;
-import edu.snu.onyx.compiler.frontend.spark.transform.SerializableFunction;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
+import org.apache.spark.serializer.Serializer;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -50,13 +51,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Java RDD.
  * @param <T> type of the final element.
  */
-public final class JavaRDD<T extends Serializable> {
+public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   private final SparkContext sparkContext;
   private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
   @Nullable private final IRVertex lastVertex;
-  private final KryoSerializer kryoSerializer;
+  private final Serializer serializer;
 
   /**
    * Static method to create a JavaRDD object.
@@ -65,7 +66,7 @@ public final class JavaRDD<T extends Serializable> {
    * @param <T> type of the resulting object.
    * @return the new JavaRDD object.
    */
-  static <T extends Serializable> JavaRDD<T> of(final SparkContext sparkContext, final Integer parallelism) {
+  static <T> JavaRDD<T> of(final SparkContext sparkContext, final Integer parallelism) {
     return new JavaRDD<>(sparkContext, parallelism,
         new DAGBuilder<IRVertex, IREdge>().buildWithoutSourceSinkCheck(), null);
   }
@@ -79,12 +80,20 @@ public final class JavaRDD<T extends Serializable> {
    */
   private JavaRDD(final SparkContext sparkContext, final Integer parallelism,
                   final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+    // TODO #366: resolve while implementing scala RDD.
+    super(null, null);
+
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
     this.parallelism = parallelism;
     this.dag = dag;
     this.lastVertex = lastVertex;
-    this.kryoSerializer = new KryoSerializer(sparkContext.conf());
+    if (sparkContext.conf().get("spark.serializer", "")
+        .equals("org.apache.spark.serializer.KryoSerializer")) {
+      this.serializer = new KryoSerializer(sparkContext.conf());
+    } else {
+      this.serializer = new JavaSerializer(sparkContext.conf());
+    }
   }
 
   /////////////// TRANSFORMATIONS ///////////////
@@ -111,7 +120,8 @@ public final class JavaRDD<T extends Serializable> {
    * @param <O> output type.
    * @return the JavaRDD with the DAG.
    */
-  public <O extends Serializable> JavaRDD<O> map(final SerializableFunction<T, O> func) {
+  @Override
+  public <O> JavaRDD<O> map(final Function<T, O> func) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
@@ -119,7 +129,7 @@ public final class JavaRDD<T extends Serializable> {
     builder.addVertex(mapVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapVertex),
-        lastVertex, mapVertex, new SparkCoder(kryoSerializer));
+        lastVertex, mapVertex, new SparkCoder(serializer));
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
@@ -143,7 +153,8 @@ public final class JavaRDD<T extends Serializable> {
    * @param func function (binary operator) to apply.
    * @return the result of the reduce action.
    */
-  public T reduce(final SerializableBinaryOperator<T> func) {
+  @Override
+  public T reduce(final Function2<T, T, T> func) {
     // save result in a temporary file
     final String resultFile = System.getProperty("user.dir") + "/reduceresult";
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
@@ -153,7 +164,7 @@ public final class JavaRDD<T extends Serializable> {
     builder.addVertex(reduceVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceVertex),
-        lastVertex, reduceVertex, new SparkCoder(kryoSerializer));
+        lastVertex, reduceVertex, new SparkCoder(serializer));
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
@@ -161,10 +172,12 @@ public final class JavaRDD<T extends Serializable> {
     JobLauncher.launchDAG(builder.build());
 
     // Retrieve result data from file.
+    // TODO #711: remove this part, and make it properly write to sink.
     try {
       final Kryo kryo = new Kryo();
       final List<T> result = new ArrayList<>();
       Integer i = 0;
+      // TODO #711: remove this part, and make it properly write to sink.
       File file = new File(resultFile + i);
       while (file.exists()) {
         final Input input = new Input(new FileInputStream(resultFile + i));
@@ -175,7 +188,7 @@ public final class JavaRDD<T extends Serializable> {
         file.delete();
         file = new File(resultFile + ++i);
       }
-      return result.stream().reduce(func).get();
+      return ReduceTransform.reduceIterator(result.iterator(), func);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

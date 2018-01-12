@@ -16,7 +16,7 @@
  */
 package edu.snu.onyx.compiler.frontend.spark;
 
-import java.io.Serializable;
+import java.util.List;
 
 /**
  * Spark context wrapper for Java.
@@ -39,7 +39,7 @@ public final class JavaSparkContext {
    * @param <T> type of the initial element.
    * @return the newly initiated JavaRDD.
    */
-  public <T extends Serializable> JavaRDD<T> parallelize(final Iterable<T> l, final Integer slices) {
+  public <T> JavaRDD<T> parallelize(final List<T> l, final int slices) {
     return JavaRDD.<T>of(this.sparkContext, slices).setSource(l);
   }
 }

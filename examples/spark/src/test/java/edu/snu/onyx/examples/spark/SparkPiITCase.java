@@ -16,6 +16,7 @@
 package edu.snu.onyx.examples.spark;
 
 import edu.snu.onyx.client.JobLauncher;
+import edu.snu.onyx.common.ArgBuilder;
 import edu.snu.onyx.compiler.optimizer.policy.DefaultPolicy;
 import org.junit.Before;
 import org.junit.Test;

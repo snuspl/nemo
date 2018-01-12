@@ -17,8 +17,8 @@ package edu.snu.onyx.compiler.frontend.spark.transform;
 
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
+import org.apache.spark.api.java.function.Function;
 
-import java.io.Serializable;
 import java.util.Iterator;
 
 /**
@@ -26,15 +26,15 @@ import java.util.Iterator;
  * @param <I> input type.
  * @param <O> output type.
  */
-public final class MapTransform<I extends Serializable, O extends Serializable> implements Transform<I, O> {
-  private final SerializableFunction<I, O> func;
+public final class MapTransform<I, O> implements Transform<I, O> {
+  private final Function<I, O> func;
   private OutputCollector<O> oc;
 
   /**
    * Constructor.
    * @param func the function to run map with.
    */
-  public MapTransform(final SerializableFunction<I, O> func) {
+  public MapTransform(final Function<I, O> func) {
     this.func = func;
   }
 
@@ -45,7 +45,13 @@ public final class MapTransform<I extends Serializable, O extends Serializable> 
 
   @Override
   public void onData(final Iterator<I> elements, final String srcVertexId) {
-    elements.forEachRemaining(element -> oc.emit(func.apply(element)));
+    elements.forEachRemaining(element -> {
+      try {
+        oc.emit(func.call(element));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   @Override

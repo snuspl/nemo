@@ -49,8 +49,8 @@ public final class SparkSession {
    * Get a builder for the session.
    * @return the session builder.
    */
-  public static SparkSessionBuilder builder() {
-    return new SparkSessionBuilder();
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
@@ -62,13 +62,13 @@ public final class SparkSession {
   /**
    * Spark Session Builder.
    */
-  public static final class SparkSessionBuilder {
+  public static final class Builder {
     private final HashMap<String, String> options;
 
     /**
      * Default constructor.
      */
-    private SparkSessionBuilder() {
+    private Builder() {
       this.options = new HashMap<>();
     }
 
@@ -77,7 +77,7 @@ public final class SparkSession {
      * @param name the name of the session.
      * @return the builder.
      */
-    public SparkSessionBuilder appName(final String name) {
+    public Builder appName(final String name) {
       return config("spark.app.name", name);
     }
 
@@ -87,7 +87,7 @@ public final class SparkSession {
      * @param value value of the configuration.
      * @return the builder with the configuration set.
      */
-    SparkSessionBuilder config(final String key, final String value) {
+    public Builder config(final String key, final String value) {
       this.options.put(key, value);
       return this;
     }
