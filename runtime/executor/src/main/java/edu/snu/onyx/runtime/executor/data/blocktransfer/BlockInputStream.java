@@ -32,8 +32,6 @@ import java.util.concurrent.*;
 /**
  * Input stream for block transfer.
  *
- * Decodes and stores inbound data elements from other executors.
- *
  * @param <T> the type of element
  */
 public final class BlockInputStream<T> implements BlockStream {
@@ -93,7 +91,6 @@ public final class BlockInputStream<T> implements BlockStream {
   void setCoder(final Coder<T> cdr) {
     this.coder = cdr;
     inputStreamIterator = new DataUtil.InputStreamIterator<>(byteBufInputStream, coder);
-    completeFuture.complete(inputStreamIterator);
   }
 
   /**
@@ -115,6 +112,7 @@ public final class BlockInputStream<T> implements BlockStream {
    */
   void markAsEnded() {
     byteBufInputStream.byteBufQueue.close();
+    completeFuture.complete(inputStreamIterator);
   }
 
   /**
@@ -124,7 +122,7 @@ public final class BlockInputStream<T> implements BlockStream {
    */
   void onExceptionCaught(final Throwable cause) {
     LOG.error(String.format("A channel exception closes %s", toString()), cause);
-    markAsEnded();
+    byteBufInputStream.byteBufQueue.close();
     completeFuture.completeExceptionally(cause);
   }
 
