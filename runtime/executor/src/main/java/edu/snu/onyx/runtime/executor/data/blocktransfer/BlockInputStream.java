@@ -46,12 +46,12 @@ public final class BlockInputStream<T> implements BlockStream {
   private final String blockId;
   private final String runtimeEdgeId;
   private final KeyRange keyRange;
-  private Coder<T> coder;
 
   private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
-  private final DataUtil.InputStreamIterator<T> inputStreamIterator
-      = new DataUtil.InputStreamIterator<>(byteBufInputStream, coder);
-  private final CompletableFuture<Iterator<T>> completeFuture = CompletableFuture.completedFuture(inputStreamIterator);
+  private final CompletableFuture<Iterator<T>> completeFuture = new CompletableFuture<>();
+
+  private Coder<T> coder;
+  private DataUtil.InputStreamIterator<T> inputStreamIterator;
 
   @Override
   public String toString() {
@@ -92,6 +92,8 @@ public final class BlockInputStream<T> implements BlockStream {
    */
   void setCoder(final Coder<T> cdr) {
     this.coder = cdr;
+    inputStreamIterator = new DataUtil.InputStreamIterator<>(byteBufInputStream, coder);
+    completeFuture.complete(inputStreamIterator);
   }
 
   /**
