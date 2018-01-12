@@ -47,8 +47,8 @@ public final class BlockInputStream<T> implements BlockStream {
   private final String runtimeEdgeId;
   private final KeyRange keyRange;
 
-  private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
   private final CompletableFuture<Iterator<T>> completeFuture = new CompletableFuture<>();
+  private final ByteBufInputStream byteBufInputStream = new ByteBufInputStream();
 
   private Coder<T> coder;
   private DataUtil.InputStreamIterator<T> inputStreamIterator;
