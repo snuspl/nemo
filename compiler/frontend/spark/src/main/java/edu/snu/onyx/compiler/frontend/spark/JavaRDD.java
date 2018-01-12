@@ -32,19 +32,27 @@ import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
+import org.apache.spark.Partition;
+import org.apache.spark.Partitioner;
+import org.apache.spark.TaskContext;
+import org.apache.spark.api.java.JavaFutureAction;
+import org.apache.spark.api.java.Optional;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.partial.BoundedDouble;
+import org.apache.spark.partial.PartialResult;
 import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.serializer.Serializer;
+import org.apache.spark.storage.StorageLevel;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -94,6 +102,13 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     } else {
       this.serializer = new JavaSerializer(sparkContext.conf());
     }
+  }
+
+  /**
+   * @return the spark context.
+   */
+  public SparkContext getSparkContext() {
+    return sparkContext;
   }
 
   /////////////// TRANSFORMATIONS ///////////////
@@ -204,6 +219,364 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    */
   private static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
                                                                                     final IRVertex dst) {
+    // TODO #711: add Shuffle for KV data.
     return DataCommunicationPatternProperty.Value.OneToOne;
+  }
+
+  @Override
+  public org.apache.spark.SparkContext context() {
+    throw new UnsupportedOperationException("Operation unsupported. use getContext() instead.");
+  }
+
+  /////////////// UNSUPPORTED TRANSFORMATIONS ///////////////
+
+  @Override
+  public JavaRDD<T> cache() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> coalesce(final int numPartitions) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> coalesce(final int numPartitions, final boolean shuffle) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> distinct() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> distinct(final int numPartitions) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> filter(final Function<T, Boolean> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <U> JavaRDD<U> flatMap(final FlatMapFunction<T, U> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<List<T>> glom() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <U> JavaRDD<U> mapPartitions(final FlatMapFunction<Iterator<T>, U> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <U> JavaRDD<U> mapPartitions(final FlatMapFunction<Iterator<T>, U> f, final boolean preservesPartitioning) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <R> JavaRDD<R> mapPartitionsWithIndex(final Function2<Integer, Iterator<T>, Iterator<R>> f,
+                                                final boolean preservesPartitioning) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> persist(final StorageLevel newLevel) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T>[] randomSplit(final double[] weights) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T>[] randomSplit(final double[] weights, final long seed) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> repartition(final int numPartitions) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> sample(final boolean withReplacement, final double fraction) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> sample(final boolean withReplacement, final double fraction, final long seed) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> setName(final String name) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <S> JavaRDD<T> sortBy(final Function<T, S> f, final boolean ascending, final int numPartitions) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> unpersist() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaRDD<T> unpersist(final boolean blocking) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  /////////////// UNSUPPORTED ACTIONS ///////////////
+
+  @Override
+  public <U> U aggregate(final U zeroValue, final Function2<U, T, U> seqOp, final Function2<U, U, U> combOp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void checkpoint() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> collect() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaFutureAction<List<T>> collectAsync()  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T>[] collectPartitions(final int[] partitionIds) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public long count() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public PartialResult<BoundedDouble> countApprox(final long timeout)  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public PartialResult<BoundedDouble> countApprox(final long timeout, final double confidence) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public long countApproxDistinct(final double relativeSD)  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaFutureAction<Long> countAsync()  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public Map<T, Long> countByValue() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public PartialResult<Map<T, BoundedDouble>> countByValueApprox(final long timeout) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public PartialResult<Map<T, BoundedDouble>> countByValueApprox(final long timeout, final double confidence) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T first() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T fold(final T zeroValue, final Function2<T, T, T> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void foreach(final VoidFunction<T> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaFutureAction<Void> foreachAsync(final VoidFunction<T> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void foreachPartition(final VoidFunction<Iterator<T>> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaFutureAction<Void> foreachPartitionAsync(final VoidFunction<Iterator<T>> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public Optional<String> getCheckpointFile() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public int getNumPartitions()  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public StorageLevel getStorageLevel() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public int id() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public boolean isCheckpointed() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public boolean isEmpty()  {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public Iterator<T> iterator(final Partition split, final TaskContext taskContext) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T max(final Comparator<T> comp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T min(final Comparator<T> comp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public String name() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public org.apache.spark.api.java.Optional<Partitioner> partitioner() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<Partition> partitions() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void saveAsObjectFile(final String path) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void saveAsTextFile(final String path) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public void saveAsTextFile(final String path,
+                              final Class<? extends org.apache.hadoop.io.compress.CompressionCodec> codec) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> take(final int num) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public JavaFutureAction<List<T>> takeAsync(final int num) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> takeOrdered(final int num) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> takeOrdered(final int num, final Comparator<T> comp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> takeSample(final boolean withReplacement, final int num) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> takeSample(final boolean withReplacement, final int num, final long seed) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public String toDebugString() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public Iterator<T> toLocalIterator() {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> top(final int num) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public List<T> top(final int num, final Comparator<T> comp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <U> U treeAggregate(final U zeroValue, final Function2<U, T, U> seqOp, final Function2<U, U, U> combOp) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public <U> U treeAggregate(final U zeroValue, final Function2<U, T, U> seqOp,
+                              final Function2<U, U, U> combOp, final int depth) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T treeReduce(final Function2<T, T, T> f) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
+  }
+
+  @Override
+  public T treeReduce(final Function2<T, T, T> f, final int depth) {
+    throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 }
