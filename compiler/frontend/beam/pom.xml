@@ -22,11 +22,11 @@ limitations under the License.
         <groupId>edu.snu.onyx</groupId>
         <artifactId>onyx-project</artifactId>
         <version>0.1-SNAPSHOT</version>
-        <relativePath>../../</relativePath>
+        <relativePath>../../../</relativePath>
     </parent>
 
-    <artifactId>onyx-compiler-frontend-spark</artifactId>
-    <name>Onyx Compiler Frontend: Spark</name>
+    <artifactId>onyx-compiler-frontend-beam</artifactId>
+    <name>Onyx Compiler Frontend: Beam</name>
 
     <repositories>
         <repository>
@@ -47,14 +47,9 @@ limitations under the License.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
-            <version>${spark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
-            <version>${spark.version}</version>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-core</artifactId>
+            <version>${beam.version}</version>
         </dependency>
     </dependencies>
 </project>

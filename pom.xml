@@ -53,8 +53,8 @@ limitations under the License.
         <module>client</module>
         <module>common</module>
         <module>compiler/backend</module>
-        <module>compiler/frontend-beam</module>
-        <module>compiler/frontend-spark</module>
+        <module>compiler/frontend/beam</module>
+        <module>compiler/frontend/spark</module>
         <module>compiler/optimizer</module>
         <module>examples/beam</module>
         <module>examples/spark</module>
