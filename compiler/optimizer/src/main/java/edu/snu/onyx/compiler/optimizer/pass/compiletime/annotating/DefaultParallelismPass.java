@@ -97,13 +97,14 @@ public final class DefaultParallelismPass extends AnnotatingPass {
         .map(IREdge::getSrc)
         .mapToInt(inVertex -> recursivelySynchronizeO2OParallelism(dag, inVertex, parallelism))
         .max().orElse(1);
+    final Integer maxParallelism = ancestorParallelism > parallelism ? ancestorParallelism : parallelism;
     final Integer myParallelism = vertex.getProperty(ExecutionProperty.Key.Parallelism);
+
     // update the vertex with the max value.
-    final Integer maxParallelism = ancestorParallelism > parallelism
-        ? (ancestorParallelism > myParallelism ? ancestorParallelism : myParallelism) : parallelism;
     if (maxParallelism > myParallelism) {
       vertex.setProperty(ParallelismProperty.of(maxParallelism));
+      return maxParallelism;
     }
-    return maxParallelism;
+    return myParallelism;
   }
 }
