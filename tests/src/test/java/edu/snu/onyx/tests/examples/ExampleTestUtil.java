@@ -17,11 +17,15 @@ package edu.snu.onyx.tests.examples;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ExampleTestUtil {
-  public static void ensureOutputValid(final String resourcePath, final String outputFileName, final String testResourceFileName)
-  throws IOException {
+  public static void ensureOutputValid(final String resourcePath,
+                                       final String outputFileName,
+                                       final String testResourceFileName) throws IOException {
     final String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
         .filter(path -> path.getFileName().toString().startsWith(outputFileName))
@@ -41,6 +45,24 @@ public final class ExampleTestUtil {
 
     if(!testOutput.equals(resourceOutput)) {
       throw new RuntimeException("output mismatch");
+    }
+  }
+
+  /**
+   * Delete output files.
+   *
+   * @param directory      the path of file directory.
+   * @param outputFileName the output file prefix.
+   * @throws IOException if fail to delete.
+   */
+  public static void deleteOutputFile(final String directory,
+                                      final String outputFileName) throws IOException {
+    final Set<Path> outputFilePaths = Files.list(Paths.get(directory))
+        .filter(Files::isRegularFile)
+        .filter(path -> path.getFileName().toString().startsWith(outputFileName))
+        .collect(Collectors.toSet());
+    for(final Path outputFilePath : outputFilePaths) {
+      Files.delete(outputFilePath);
     }
   }
 }

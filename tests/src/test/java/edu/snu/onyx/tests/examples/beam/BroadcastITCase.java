@@ -16,9 +16,15 @@
 package edu.snu.onyx.tests.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
+import edu.snu.onyx.common.dag.DAG;
+import edu.snu.onyx.common.ir.edge.IREdge;
+import edu.snu.onyx.common.ir.vertex.IRVertex;
+import edu.snu.onyx.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.examples.beam.Broadcast;
 import edu.snu.onyx.tests.compiler.CompilerTestUtil;
 import edu.snu.onyx.tests.examples.ExampleTestUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,14 +57,18 @@ public final class BroadcastITCase {
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
+  @After
+  public void tearDown() throws Exception {
+    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
+    ExampleTestUtil.deleteOutputFile(fileBasePath, outputFileName);
+  }
+
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(BroadcastITCase.class.getSimpleName())
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -67,7 +77,5 @@ public final class BroadcastITCase {
         .addJobId(BroadcastITCase.class.getSimpleName() + "_pado")
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 }

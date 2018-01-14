@@ -19,6 +19,7 @@ import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.examples.beam.MapReduce;
 import edu.snu.onyx.tests.compiler.CompilerTestUtil;
 import edu.snu.onyx.tests.examples.ExampleTestUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +32,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
 public final class MapReduceITCase {
-  private static final int TIMEOUT = 60000;
+  private static final int TIMEOUT = 600000;
   private static final String inputFileName = "sample_input_mr";
   private static final String outputFileName = "sample_output_mr";
   private static final String testResourceFileName = "test_output_mr_test";
@@ -51,14 +52,18 @@ public final class MapReduceITCase {
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
+  @After
+  public void tearDown() throws Exception {
+    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
+    ExampleTestUtil.deleteOutputFile(fileBasePath, outputFileName);
+  }
+
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
         .addJobId(MapReduceITCase.class.getSimpleName())
         .addOptimizationPolicy(CompilerTestUtil.defaultPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -67,8 +72,6 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_sailfish")
         .addOptimizationPolicy(CompilerTestUtil.sailfishPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -77,8 +80,6 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_disagg")
         .addOptimizationPolicy(CompilerTestUtil.disaggPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   @Test (timeout = TIMEOUT)
@@ -87,8 +88,6 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_pado")
         .addOptimizationPolicy(CompilerTestUtil.padoPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 
   /**
@@ -101,7 +100,5 @@ public final class MapReduceITCase {
         .addJobId(MapReduceITCase.class.getSimpleName() + "_dataskew")
         .addOptimizationPolicy(CompilerTestUtil.dataSkewPolicy)
         .build());
-
-    ExampleTestUtil.ensureOutputValid(fileBasePath, outputFileName, testResourceFileName);
   }
 }

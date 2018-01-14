@@ -13,45 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.tests.compiler.optimizer;
+package edu.snu.onyx.tests.compiler.optimizer.policy;
 
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.*;
+import edu.snu.onyx.compiler.optimizer.policy.DefaultPolicy;
 import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.onyx.tests.compiler.CompilerTestUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * A policy for tests.
  */
-public final class TestPolicy implements Policy {
-  private final boolean testPushPolicy;
+public final class DefaultPolicyParallelismThree implements Policy {
+  private final Policy policy;
 
-  public TestPolicy() {
-    this(false);
-  }
-
-  public TestPolicy(final boolean testPushPolicy) {
-    this.testPushPolicy = testPushPolicy;
+  public DefaultPolicyParallelismThree() {
+    this.policy = CompilerTestUtil.overwriteParallelism(3, DefaultPolicy.class.getCanonicalName());
   }
 
   @Override
   public List<CompileTimePass> getCompileTimePasses() {
-    List<CompileTimePass> policy = new ArrayList<>();
-    policy.add(new DefaultStagePartitioningPass());
-
-    if (testPushPolicy) {
-      policy.add(new ShuffleEdgePushPass());
-    }
-
-    policy.add(new ScheduleGroupPass());
-    return policy;
+    return this.policy.getCompileTimePasses();
   }
 
   @Override
   public List<RuntimePass<?>> getRuntimePasses() {
-    return new ArrayList<>();
+    return this.policy.getRuntimePasses();
   }
 }

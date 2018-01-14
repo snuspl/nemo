@@ -163,8 +163,28 @@ public final class InputReader extends DataTransfer {
     if (!isSideInputReader()) {
       throw new RuntimeException();
     }
-    final CompletableFuture<Iterator> future = this.read().get(0);
-    return future.thenApply(f -> f.next());
+    final List<CompletableFuture<Iterator>> futures = this.read();
+    System.err.println("@@@@@@@@@@@@ side input futures length: " + futures.size());
+    System.err.println("@@@@@@@@@@@@ side input futures: " + futures);
+    //final CompletableFuture<Iterator> future = this.read().get(0);
+    final CompletableFuture<Iterator> future = futures.get(0);
+    //return future.thenApply(f -> f.next());
+    return future.thenApply(f -> {
+      final List list = new ArrayList();
+      f.forEachRemaining(element -> {
+        System.err.println("@@@@@@@@@@@@ side input element: " + element);
+        if (element instanceof Iterable) {
+          ((Iterable) element).iterator().forEachRemaining(list::add);
+        } else {
+          list.add(element);
+        }
+        //list.add(element);
+      });
+      if (list.size() == 1) {
+        return list.get(0);
+      }
+      return list;
+    });
   }
 
   /**

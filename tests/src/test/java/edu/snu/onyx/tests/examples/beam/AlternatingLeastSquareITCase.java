@@ -47,12 +47,12 @@ public final class AlternatingLeastSquareITCase {
         .addUserArgs(input, numFeatures, numIteration);
   }
 
-//  @Test (timeout = TIMEOUT)
-//  public void test() throws Exception {
-//    JobLauncher.main(builder
-//        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
-//        .build());
-//  }
+  @Test (timeout = TIMEOUT)
+  public void test() throws Exception {
+    JobLauncher.main(builder
+        .addJobId(AlternatingLeastSquareITCase.class.getSimpleName())
+        .build());
+  }
 
   @Test (timeout = TIMEOUT)
   public void testPado() throws Exception {

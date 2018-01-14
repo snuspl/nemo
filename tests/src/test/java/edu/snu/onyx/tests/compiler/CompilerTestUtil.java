@@ -15,6 +15,8 @@
  */
 package edu.snu.onyx.tests.compiler;
 
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.policy.*;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.ir.edge.IREdge;
@@ -22,6 +24,8 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.examples.beam.*;
 import edu.snu.onyx.common.dag.DAG;
+import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.onyx.tests.compiler.optimizer.policy.DefaultPolicyParallelismThree;
 import edu.snu.onyx.tests.examples.beam.AlternatingLeastSquareITCase;
 import edu.snu.onyx.tests.examples.beam.ArgBuilder;
 import edu.snu.onyx.tests.examples.beam.MapReduceITCase;
@@ -33,6 +37,7 @@ import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Utility methods for tests.
@@ -42,7 +47,7 @@ public final class CompilerTestUtil {
   public static final String padoPolicy = PadoPolicy.class.getCanonicalName();
   public static final String sailfishPolicy = SailfishPolicy.class.getCanonicalName();
   public static final String disaggPolicy = DisaggregationPolicy.class.getCanonicalName();
-  public static final String defaultPolicy = DefaultPolicy.class.getCanonicalName();
+  public static final String defaultPolicy = DefaultPolicyParallelismThree.class.getCanonicalName();
   public static final String dataSkewPolicy = DataSkewPolicy.class.getCanonicalName();
 
   private static DAG<IRVertex, IREdge> compileDAG(final String[] args) throws Exception {
@@ -95,5 +100,38 @@ public final class CompilerTestUtil {
   public static DAG<IRVertex, IREdge> compileMLRDAG() throws Exception {
     final ArgBuilder mlrArgBuilder = MultinomialLogisticRegressionITCase.builder;
     return compileDAG(mlrArgBuilder.build());
+  }
+
+  /**
+   * Overwrite the parallelism of existing policy.
+   *
+   * @param desiredSourceParallelism   the desired source parallelism to set.
+   * @param policyToOverwriteClassName the name of the policy to overwrite parallelism.
+   * @return the overwritten policy.
+   */
+  public static Policy overwriteParallelism(final int desiredSourceParallelism,
+                                            final String policyToOverwriteClassName) {
+    final Policy policyToOverwrite;
+    try {
+      policyToOverwrite = (Policy) Class.forName(policyToOverwriteClassName).newInstance();
+    } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+    final List<CompileTimePass> compileTimePasses = policyToOverwrite.getCompileTimePasses();
+    final int parallelismPassIdx = compileTimePasses.indexOf(new DefaultParallelismPass());
+    compileTimePasses.set(parallelismPassIdx, new DefaultParallelismPass(desiredSourceParallelism));
+    final List<RuntimePass<?>> runtimePasses = policyToOverwrite.getRuntimePasses();
+
+    return new Policy() {
+      @Override
+      public List<CompileTimePass> getCompileTimePasses() {
+        return compileTimePasses;
+      }
+
+      @Override
+      public List<RuntimePass<?>> getRuntimePasses() {
+        return runtimePasses;
+      }
+    };
   }
 }

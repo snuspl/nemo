@@ -33,9 +33,7 @@ import org.apache.beam.sdk.values.TupleTag;
 import org.joda.time.Instant;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * DoFn transform implementation.
@@ -68,11 +66,51 @@ public final class DoTransform<I, O> implements Transform<I, O> {
   public void prepare(final Context context, final OutputCollector<O> oc) {
     this.outputCollector = oc;
     this.sideInputs = new HashMap<>();
-    context.getSideInputs().forEach((k, v) -> this.sideInputs.put(((BroadcastTransform) k).getTag(), v));
+    context.getSideInputs().forEach((k, v) -> {
+      this.sideInputs.put(((BroadcastTransform) k).getTag(), v);
+    });
   }
 
   @Override
   public void onData(final Iterator<I> elements, final String srcVertexId) {
+    /*final List<I> tmpElements = new ArrayList<>();
+    try {
+      elements.forEachRemaining(element -> {
+        tmpElements.add(element);
+        if (element != null) {
+          System.err.println("@@@@@@@@@@@@ class: " + element.getClass());*/
+          /*if (element instanceof Iterable) {
+            System.err.println("@@@@@@@@@@@@ element is iterable.");
+          } else {
+            final int bufSize;
+            final byte[] resultBuf;
+            if (element instanceof FileBasedSink.FileResult) {
+              final ResourceId resourceId = ((FileBasedSink.FileResult) element).getTempFilename();
+              final String tmpFile = resourceId.getCurrentDirectory() + resourceId.getFilename();
+              final byte[] buf = new byte[1000];
+              try (final FileInputStream fileInputStream = new FileInputStream(tmpFile)) {
+                bufSize = fileInputStream.read(buf);
+                resultBuf = new byte[bufSize];
+                System.arraycopy(buf, 0, resultBuf, 0, bufSize);
+                System.err.println("@@@@@@@@@@@@ output buf:" + new String(buf));
+              } catch (final Exception e) {
+                e.printStackTrace();
+                System.err.println("@@@@@@@@@@@@ exception" + e);
+              }
+            } else {
+              System.err.println("@@@@@@@@@@@@ class: " + element.getClass());
+            }
+          }*/
+        /*} else {
+          System.err.println("@@@@@@@@@@@@ element is null.");
+        }
+      });
+      System.err.println("@@@@@@@@@@@@ side input length: " + sideInputs.size());
+      System.err.println("@@@@@@@@@@@@ side input: " + sideInputs);
+    } catch (final Exception e) {
+      e.printStackTrace();
+    }*/
+
     final StartBundleContext startBundleContext = new StartBundleContext(doFn, serializedOptions);
     final FinishBundleContext finishBundleContext = new FinishBundleContext(doFn, outputCollector, serializedOptions);
     final ProcessContext processContext = new ProcessContext(doFn, outputCollector, sideInputs, serializedOptions);
@@ -80,6 +118,7 @@ public final class DoTransform<I, O> implements Transform<I, O> {
     invoker.invokeSetup();
     invoker.invokeStartBundle(startBundleContext);
     elements.forEachRemaining(element -> { // No need to check for input index, since it is always 0 for DoTransform
+    //tmpElements.iterator().forEachRemaining(element -> {
       processContext.setElement(element);
       invoker.invokeProcessElement(processContext);
     });

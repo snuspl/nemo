@@ -17,10 +17,13 @@ package edu.snu.onyx.compiler.frontend.beam.transform;
 
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
+import org.apache.beam.sdk.io.FileBasedSink;
+import org.apache.beam.sdk.io.fs.ResourceId;
 import org.apache.beam.sdk.transforms.ViewFn;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;
 
+import java.io.FileInputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +59,32 @@ public final class BroadcastTransform<I, O> implements Transform<I, O> {
         .map(element -> WindowedValue.valueInGlobalWindow(element))
         .collect(Collectors.toList());
     final ViewFn<Iterable<WindowedValue<I>>, O> viewFn = this.pCollectionView.getViewFn();
-    outputCollector.emit(viewFn.apply(windowed));
+
+    final O output = viewFn.apply(windowed);
+    if (output instanceof Iterable) {
+      ((Iterable) output).forEach(element -> {
+        final int bufSize;
+        final byte[] resultBuf;
+        if (element instanceof FileBasedSink.FileResult) {
+          final ResourceId resourceId = ((FileBasedSink.FileResult) element).getTempFilename();
+          final String tmpFile = resourceId.getCurrentDirectory() + resourceId.getFilename();
+          final byte[] buf = new byte[1000];
+          try (final FileInputStream fileInputStream = new FileInputStream(tmpFile)) {
+            bufSize = fileInputStream.read(buf);
+            resultBuf = new byte[bufSize];
+            System.arraycopy(buf, 0, resultBuf, 0, bufSize);
+            System.err.println("@@@@@@@@@@@@ output buf:" + new String(buf));
+          } catch (final Exception e) {
+            e.printStackTrace();
+            System.err.println("@@@@@@@@@@@@ exception" + e);
+          }
+        }
+      });
+    } else {
+      System.err.println("@@@@@@@@@@@@ class: " + output.getClass());
+    }
+    System.err.println("@@@@@@@@@@@@ " + output);
+    outputCollector.emit(output);
   }
 
   /**
