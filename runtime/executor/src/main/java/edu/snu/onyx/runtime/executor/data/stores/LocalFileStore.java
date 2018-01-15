@@ -76,11 +76,13 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
    */
   @Override
   public Boolean removeBlock(final String blockId) throws BlockFetchException {
+    System.err.println("Removing block " + blockId + ", block map " + getBlockMap());
     final FileBlock fileBlock = (FileBlock) getBlockMap().remove(blockId);
     if (fileBlock == null) {
       return false;
     }
     try {
+
       fileBlock.deleteFile();
     } catch (final IOException e) {
       throw new BlockFetchException(e);

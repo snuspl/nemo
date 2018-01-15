@@ -306,24 +306,24 @@ public final class BlockManagerMaster {
       final CompletableFuture<String> locationFuture
           = getBlockLocationFuture(blockId);
       locationFuture.whenComplete((location, throwable) -> {
-        final ControlMessage.BlockLocationInfoMsg.Builder infoMsgBuilder =
-            ControlMessage.BlockLocationInfoMsg.newBuilder()
-                .setRequestId(requestId)
-                .setBlockId(blockId);
-        if (throwable == null) {
-          infoMsgBuilder.setOwnerExecutorId(location);
-        } else {
-          infoMsgBuilder.setState(
-              convertBlockState(((AbsentBlockException) throwable).getState()));
-        }
-        messageContext.reply(
-            ControlMessage.Message.newBuilder()
-                .setId(RuntimeIdGenerator.generateMessageId())
-                .setListenerId(MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID)
-                .setType(ControlMessage.MessageType.BlockLocationInfo)
-                .setBlockLocationInfoMsg(infoMsgBuilder.build())
-                .build());
-      });
+      final ControlMessage.BlockLocationInfoMsg.Builder infoMsgBuilder =
+          ControlMessage.BlockLocationInfoMsg.newBuilder()
+              .setRequestId(requestId)
+              .setBlockId(blockId);
+      if (throwable == null) {
+        infoMsgBuilder.setOwnerExecutorId(location);
+      } else {
+        infoMsgBuilder.setState(
+            convertBlockState(((AbsentBlockException) throwable).getState()));
+      }
+      messageContext.reply(
+          ControlMessage.Message.newBuilder()
+              .setId(RuntimeIdGenerator.generateMessageId())
+              .setListenerId(MessageEnvironment.EXECUTOR_MESSAGE_LISTENER_ID)
+              .setType(ControlMessage.MessageType.BlockLocationInfo)
+              .setBlockLocationInfoMsg(infoMsgBuilder.build())
+              .build());
+    });
     } finally {
       readLock.unlock();
     }
