@@ -105,7 +105,7 @@ public final class BlockManagerWorker {
    * @param keyRange     the key range descriptor.
    * @return the result data in the block.
    */
-  private CompletableFuture<Iterator> retrieveDataFromLocalOrRemoteFileBlock(
+  private CompletableFuture<Iterator> retrieveDataFromBlock(
       final String blockId,
       final String runtimeEdgeId,
       final DataStoreProperty.Value blockStore,
@@ -144,7 +144,7 @@ public final class BlockManagerWorker {
    * @param keyRange     the key range descriptor
    * @return the {@link CompletableFuture} of the block.
    */
-  public CompletableFuture<Iterator> retrieveDataFromBlock(
+  public CompletableFuture<Iterator> queryBlock(
       final String blockId,
       final String runtimeEdgeId,
       final DataStoreProperty.Value blockStore,
@@ -177,7 +177,7 @@ public final class BlockManagerWorker {
       final String targetExecutorId = blockLocationInfoMsg.getOwnerExecutorId();
       if (targetExecutorId.equals(executorId) || targetExecutorId.equals(REMOTE_FILE_STORE)) {
         // Block resides in the evaluator
-        return retrieveDataFromLocalOrRemoteFileBlock(blockId, runtimeEdgeId, blockStore, keyRange);
+        return retrieveDataFromBlock(blockId, runtimeEdgeId, blockStore, keyRange);
       } else {
         return blockTransfer.initiatePull(targetExecutorId, false, blockStore, blockId,
             runtimeEdgeId, keyRange).getCompleteFuture();
@@ -382,7 +382,7 @@ public final class BlockManagerWorker {
             handleUsedData(blockStore, outputStream.getBlockId());
           } else {
             final Iterator block =
-                retrieveDataFromLocalOrRemoteFileBlock(outputStream.getBlockId(), outputStream.getRuntimeEdgeId(),
+                retrieveDataFromBlock(outputStream.getBlockId(), outputStream.getRuntimeEdgeId(),
                     blockStore, outputStream.getKeyRange()).get();
             outputStream.writeElements(block).close();
           }
