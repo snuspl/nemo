@@ -22,7 +22,7 @@ import edu.snu.onyx.common.KeyExtractor;
  * For non-KV elements, the elements themselves become the key.
  * TODO #711: support KV elements with WordCount example.
  */
-final class SparkKeyExtractor implements KeyExtractor {
+public final class SparkKeyExtractor implements KeyExtractor {
   @Override
   public Object extractKey(final Object element) {
     return element;

@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.compiler.frontend.spark;
+package edu.snu.onyx.compiler.frontend.spark.core.java;
+
+import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 
 import java.util.List;
 

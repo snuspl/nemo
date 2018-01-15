@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.compiler.frontend.spark;
+package edu.snu.onyx.compiler.frontend.spark.sql;
 
+import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import org.apache.spark.SparkConf;
 
 import java.util.HashMap;
@@ -57,6 +58,10 @@ public final class SparkSession {
    * stop the session.
    */
   public void stop() {
+  }
+
+  public DataFrameReader read() {
+    return new DataFrameReader(this);
   }
 
   /**
