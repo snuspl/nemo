@@ -65,7 +65,7 @@ public final class DefaultParallelismPass extends AnnotatingPass {
         if (inEdges.isEmpty() && vertex instanceof SourceVertex) {
           // For source vertices, we try to split the source reader by the desired source parallelism.
           // After that, we set the parallelism as the number of split readers.
-          // (It can be greater than the desired value.)
+          // (It can be more/less than the desired value.)
           final SourceVertex sourceVertex = (SourceVertex) vertex;
           vertex.setProperty(ParallelismProperty.of(sourceVertex.getReaders(desiredSourceParallelism).size()));
         } else if (!inEdges.isEmpty()) {
