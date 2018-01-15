@@ -323,7 +323,7 @@ public final class BlockManagerMaster {
               .setType(ControlMessage.MessageType.BlockLocationInfo)
               .setBlockLocationInfoMsg(infoMsgBuilder.build())
               .build());
-    });
+      });
     } finally {
       readLock.unlock();
     }
