@@ -16,15 +16,11 @@
 package edu.snu.onyx.tests.compiler;
 
 import edu.snu.onyx.common.ArgBuilder;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
-import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
-import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -32,13 +28,11 @@ import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 /**
  * Utility methods for tests.
  */
 public final class CompilerTestUtil {
-
   private static final String rootDir = System.getProperty("user.dir");
 
   private static DAG<IRVertex, IREdge> compileDAG(final String[] args) throws Exception {

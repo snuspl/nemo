@@ -81,7 +81,6 @@ public final class LocalFileStore extends LocalBlockStore implements FileStore {
       return false;
     }
     try {
-
       fileBlock.deleteFile();
     } catch (final IOException e) {
       throw new BlockFetchException(e);

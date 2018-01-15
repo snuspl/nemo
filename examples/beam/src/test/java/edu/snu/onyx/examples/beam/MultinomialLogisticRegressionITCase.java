@@ -17,7 +17,6 @@ package edu.snu.onyx.examples.beam;
 
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.ArgBuilder;
-import edu.snu.onyx.examples.beam.policy.DefaultPolicyParallelismFive;
 import edu.snu.onyx.examples.beam.policy.PadoPolicyParallelsimFive;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,13 +48,13 @@ public final class MultinomialLogisticRegressionITCase {
         .addUserArgs(input, numFeatures, numClasses, numIteration);
   }
 
-  @Test (timeout = TIMEOUT)
-  public void test() throws Exception {
-    JobLauncher.main(builder
-        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
-        .addOptimizationPolicy(DefaultPolicyParallelismFive.class.getCanonicalName())
-        .build());
-  }
+//  @Test (timeout = TIMEOUT)
+//  public void test() throws Exception {
+//    JobLauncher.main(builder
+//        .addJobId(MultinomialLogisticRegressionITCase.class.getSimpleName())
+//        .addOptimizationPolicy(DefaultPolicyParallelismFive.class.getCanonicalName())
+//        .build());
+//  }
 
   @Test (timeout = TIMEOUT)
   public void testPado() throws Exception {
