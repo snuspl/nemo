@@ -164,7 +164,7 @@ public final class DataUtil {
 
     private final InputStream inputStream;
     private final Coder<T> coder;
-    private final Optional<Long> limit;
+    private final long limit;
 
     private volatile boolean hasNext = false;
     private volatile T next;
@@ -180,7 +180,8 @@ public final class DataUtil {
     public InputStreamIterator(final InputStream inputStream, final Coder<T> coder) {
       this.inputStream = inputStream;
       this.coder = coder;
-      this.limit = Optional.empty();
+      // -1 means no limit.
+      this.limit = -1;
     }
 
     /**
@@ -191,9 +192,12 @@ public final class DataUtil {
      * @param limit       The number of elements from the {@link InputStream}.
      */
     public InputStreamIterator(final InputStream inputStream, final Coder<T> coder, final long limit) {
+      if (limit < 0) {
+        throw new IllegalArgumentException("Negative limit not allowed.");
+      }
       this.inputStream = inputStream;
       this.coder = coder;
-      this.limit = Optional.of(limit);
+      this.limit = limit;
     }
 
     @Override
@@ -204,7 +208,7 @@ public final class DataUtil {
       if (cannotContinueDecoding) {
         return false;
       }
-      if (limit.isPresent() && limit.get().equals(elementsDecoded)) {
+      if (limit != -1 && limit == elementsDecoded) {
         cannotContinueDecoding = true;
         return false;
       }
