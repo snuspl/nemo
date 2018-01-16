@@ -33,27 +33,29 @@ import static edu.snu.onyx.common.ir.executionproperty.ExecutionProperty.Key.Dat
  * Optimization pass for tagging parallelism execution property.
  */
 public final class DefaultParallelismPass extends AnnotatingPass {
-  final int desiredSourceParallelism;
+  private final int desiredSourceParallelism;
   // we decrease the number of parallelism by this number on each shuffle boundary.
-  private final Integer shuffleDecreaseFactor = 2;
+  private final int shuffleDecreaseFactor;
 
   /**
-   * Default constructor with desired number of source parallelism 1.
+   * Default constructor with desired number of source parallelism 1, shuffle decreasing factor 2.
    */
   public DefaultParallelismPass() {
-    this(1);
+    this(1, 2);
   }
 
   /**
    * Default constructor.
    *
    * @param desiredSourceParallelism the desired number of source parallelism.
+   * @param shuffleDecreaseFactor    the parallelism decrease factor for shuffle edge.
    */
-  public DefaultParallelismPass(final Integer desiredSourceParallelism) {
+  public DefaultParallelismPass(final int desiredSourceParallelism,
+                                final int shuffleDecreaseFactor) {
     super(ExecutionProperty.Key.Parallelism, Collections.singleton(DataCommunicationPattern));
     this.desiredSourceParallelism = desiredSourceParallelism;
+    this.shuffleDecreaseFactor = shuffleDecreaseFactor;
   }
-
 
   @Override
   public DAG<IRVertex, IREdge> apply(final DAG<IRVertex, IREdge> dag) {
@@ -140,13 +142,13 @@ public final class DefaultParallelismPass extends AnnotatingPass {
     if (desiredSourceParallelism != that.desiredSourceParallelism) {
       return false;
     }
-    return shuffleDecreaseFactor.equals(that.shuffleDecreaseFactor);
+    return shuffleDecreaseFactor == that.shuffleDecreaseFactor;
   }
 
   @Override
   public int hashCode() {
     int result = desiredSourceParallelism;
-    result = 31 * result + shuffleDecreaseFactor.hashCode();
+    result = 31 * result + shuffleDecreaseFactor;
     return result;
   }
 }

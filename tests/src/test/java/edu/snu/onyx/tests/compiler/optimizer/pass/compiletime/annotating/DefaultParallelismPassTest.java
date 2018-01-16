@@ -62,7 +62,7 @@ public class DefaultParallelismPassTest {
   @Test
   public void testParallelismTen() throws Exception {
     final int desiredSourceParallelism = 10;
-    final DAG<IRVertex, IREdge> processedDAG = new DefaultParallelismPass(desiredSourceParallelism).apply(compiledDAG);
+    final DAG<IRVertex, IREdge> processedDAG = new DefaultParallelismPass(desiredSourceParallelism, 2).apply(compiledDAG);
 
     processedDAG.getTopologicalSort().stream()
         .filter(irVertex -> irVertex instanceof SourceVertex)

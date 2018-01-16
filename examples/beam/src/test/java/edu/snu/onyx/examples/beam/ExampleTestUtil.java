@@ -76,21 +76,21 @@ public final class ExampleTestUtil {
   /**
    * Overwrite the parallelism of existing policy.
    *
-   * @param desiredSourceParallelism   the desired source parallelism to set.
-   * @param policyToOverwriteClassName the name of the policy to overwrite parallelism.
+   * @param desiredSourceParallelism       the desired source parallelism to set.
+   * @param policyToOverwriteCanonicalName the name of the policy to overwrite parallelism.
    * @return the overwritten policy.
    */
   public static Policy overwriteParallelism(final int desiredSourceParallelism,
-                                            final String policyToOverwriteClassName) {
+                                            final String policyToOverwriteCanonicalName) {
     final Policy policyToOverwrite;
     try {
-      policyToOverwrite = (Policy) Class.forName(policyToOverwriteClassName).newInstance();
+      policyToOverwrite = (Policy) Class.forName(policyToOverwriteCanonicalName).newInstance();
     } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
     final List<CompileTimePass> compileTimePasses = policyToOverwrite.getCompileTimePasses();
     final int parallelismPassIdx = compileTimePasses.indexOf(new DefaultParallelismPass());
-    compileTimePasses.set(parallelismPassIdx, new DefaultParallelismPass(desiredSourceParallelism));
+    compileTimePasses.set(parallelismPassIdx, new DefaultParallelismPass(desiredSourceParallelism, 2));
     final List<RuntimePass<?>> runtimePasses = policyToOverwrite.getRuntimePasses();
 
     return new Policy() {
