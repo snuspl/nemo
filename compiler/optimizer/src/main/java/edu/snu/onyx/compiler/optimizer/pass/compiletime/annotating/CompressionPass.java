@@ -28,7 +28,11 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
 public final class CompressionPass extends AnnotatingPass {
   private final CompressionProperty.Compressor compressor;
 
-  public CompressionPass(CompressionProperty.Compressor compressor) {
+  /**
+   * Default constructor.
+   * @param compressor Compressor to apply on edges.
+   */
+  public CompressionPass(final CompressionProperty.Compressor compressor) {
     super(ExecutionProperty.Key.Compressor);
     this.compressor = compressor;
   }
