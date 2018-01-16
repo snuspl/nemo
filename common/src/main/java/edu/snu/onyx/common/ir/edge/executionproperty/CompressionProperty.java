@@ -1,4 +1,4 @@
-package edu.snu.onyx.common.ir.vertex.executionproperty;
+package edu.snu.onyx.common.ir.edge.executionproperty;
 
 import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 

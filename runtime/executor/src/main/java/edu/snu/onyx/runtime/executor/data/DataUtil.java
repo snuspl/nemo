@@ -2,7 +2,7 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.common.ir.vertex.executionproperty.CompressionProperty.Compressor;
+import edu.snu.onyx.common.ir.edge.executionproperty.CompressionProperty.Compressor;
 
 import java.io.*;
 import java.util.*;
