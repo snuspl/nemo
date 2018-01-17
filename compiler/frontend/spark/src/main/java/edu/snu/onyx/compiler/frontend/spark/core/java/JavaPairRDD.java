@@ -16,11 +16,19 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
+import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
+import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
+import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
+import edu.snu.onyx.common.ir.vertex.OperatorVertex;
+import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
+import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
+import edu.snu.onyx.compiler.frontend.spark.transform.ReduceByKeyTransform;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
@@ -30,6 +38,8 @@ import scala.Tuple2;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Stack;
+
+import static edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD.getEdgeCommunicationPattern;
 
 public class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, V> {
   private final SparkContext sparkContext;
@@ -75,16 +85,29 @@ public class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, 
 
   @Override
   public JavaPairRDD<K, V> reduceByKey(Function2<V, V, V> func) {
-    // TODO
-    throw new UnsupportedOperationException("Operation not yet implemented.");
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
+
+    final IRVertex reduceByKeyVertex = new OperatorVertex(new ReduceByKeyTransform<K, V>(func));
+    reduceByKeyVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(reduceByKeyVertex, loopVertexStack);
+
+    final IREdge newEdge1 = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceByKeyVertex),
+        lastVertex, reduceByKeyVertex, new SparkCoder(serializer));
+    newEdge1.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
+    builder.connectVertices(newEdge1);
+
+    return new JavaPairRDD<>(this.sparkContext, this.parallelism,
+        builder.buildWithoutSourceSinkCheck(), reduceByKeyVertex);
   }
 
   /////////////// ACTIONS ///////////////
 
   @Override
   public List<Tuple2<K, V>> collect() {
-    // TODO
-    throw new UnsupportedOperationException("Operation not yet implemented.");
-  }
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
+    // launch DAG
+    JobLauncher.launchDAG(builder.build());
+
+  }
 }

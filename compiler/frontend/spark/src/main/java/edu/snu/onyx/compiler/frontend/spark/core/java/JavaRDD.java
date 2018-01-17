@@ -24,16 +24,13 @@ import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
 import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
-import edu.snu.onyx.common.ir.vertex.IRVertex;
-import edu.snu.onyx.common.ir.vertex.InitializedSourceVertex;
-import edu.snu.onyx.common.ir.vertex.LoopVertex;
-import edu.snu.onyx.common.ir.vertex.OperatorVertex;
+import edu.snu.onyx.common.ir.vertex.*;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
-import edu.snu.onyx.compiler.frontend.spark.transform.MapTransform;
-import edu.snu.onyx.compiler.frontend.spark.transform.ReduceTransform;
+import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSource;
+import edu.snu.onyx.compiler.frontend.spark.transform.*;
 import org.apache.spark.Partition;
 import org.apache.spark.Partitioner;
 import org.apache.spark.TaskContext;
@@ -128,8 +125,12 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
         builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
   }
 
-  public JavaRDD<T> setSource(final List<String> sources) {
+  public JavaRDD<T> setSource(final String sourcePath) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
+
+    final IRVertex sourceVertex = new BoundedSourceVertex<>(new SparkBoundedSource<>(sourcePath));
+    sourceVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(sourceVertex, loopVertexStack);
 
     return new JavaRDD<>(this.sparkContext, this.parallelism,
         builder.buildWithoutSourceSinkCheck(), sourceVertex);
@@ -161,7 +162,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   public <U> JavaRDD<U> flatMap(final FlatMapFunction<T, U> f) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
-    final IRVertex flatMapVertex = new OperatorVertex(new FlatmapTransform<>(f));
+    final IRVertex flatMapVertex = new OperatorVertex(new FlatMapTransform<>(f));
     flatMapVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(flatMapVertex, loopVertexStack);
 
@@ -258,10 +259,13 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    * @param dst destination vertex.
    * @return the communication pattern.
    */
-  private static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
-                                                                                    final IRVertex dst) {
-    // TODO #711: add Shuffle for KV data.
-    return DataCommunicationPatternProperty.Value.OneToOne;
+  public static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
+                                                                                   final IRVertex dst) {
+    if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof ReduceByKeyTransform) {
+      return DataCommunicationPatternProperty.Value.Shuffle;
+    } else {
+      return DataCommunicationPatternProperty.Value.OneToOne;
+    }
   }
 
   @Override

@@ -41,9 +41,13 @@ public class Dataset<T> {
 
   public <O> JavaRDD<O> javaRDD() {
     final Integer index = this.columnNames.indexOf("value");
-    final List<String> inputSources = this.data.stream().map(lst -> (String) lst.get(index))
+    final List<String> inputSourcePaths = this.data.stream().map(lst -> (String) lst.get(index))
         .collect(Collectors.toList());
-    return JavaRDD.<O>of(this.sparkContext, 1).setSource(inputSources);
+    JavaRDD<O> javaRDD = JavaRDD.of(this.sparkContext, 1);
+    for (final String inputSourcePath: inputSourcePaths) {
+      javaRDD = javaRDD.setSource(inputSourcePath);
+    }
+    return javaRDD;
   }
 
   public Dataset<T> select(final String key) {
