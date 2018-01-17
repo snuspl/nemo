@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 /**
- * Sample application that creates PCollectionView.
+ * Sample Broadcast application.
  */
 public final class Broadcast {
   /**
