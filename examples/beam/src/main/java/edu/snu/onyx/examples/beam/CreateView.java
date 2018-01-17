@@ -29,13 +29,13 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 /**
- * Sample broadcast application.
+ * Sample application that creates PCollectionView.
  */
-public final class Broadcast {
+public final class CreateView {
   /**
    * Private constructor.
    */
-  private Broadcast() {
+  private CreateView() {
   }
 
   /**

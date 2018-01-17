@@ -27,28 +27,28 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Test Broadcast program with JobLauncher.
+ * Test CreateView program with JobLauncher.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JobLauncher.class)
-public final class BroadcastITCase {
+public final class CreateViewITCase {
   private static final int TIMEOUT = 120000;
   private static final String inputFileName = "sample_input_mr";
-  private static final String outputFileName = "sample_output_broadcast";
-  private static final String testResourceFileName = "test_output_broadcast_test";
+  private static final String outputFileName = "sample_output_createview";
+  private static final String testResourceFileName = "test_output_createview_test";
   private static final String fileBasePath = System.getProperty("user.dir") + "/../resources/";
   private static final String inputFilePath =  fileBasePath + inputFileName;
   private static final String outputFilePath =  fileBasePath + outputFileName;
 
   private static ArgBuilder builder = new ArgBuilder()
-      .addJobId(BroadcastITCase.class.getSimpleName())
-      .addUserMain(Broadcast.class.getCanonicalName())
+      .addJobId(CreateViewITCase.class.getSimpleName())
+      .addUserMain(CreateView.class.getCanonicalName())
       .addUserArgs(inputFilePath, outputFilePath);
 
   @Before
   public void setUp() throws Exception {
     builder = new ArgBuilder()
-        .addUserMain(Broadcast.class.getCanonicalName())
+        .addUserMain(CreateView.class.getCanonicalName())
         .addUserArgs(inputFilePath, outputFilePath);
   }
 
@@ -61,7 +61,7 @@ public final class BroadcastITCase {
   @Test (timeout = TIMEOUT)
   public void test() throws Exception {
     JobLauncher.main(builder
-        .addJobId(BroadcastITCase.class.getSimpleName())
+        .addJobId(CreateViewITCase.class.getSimpleName())
         .addOptimizationPolicy(DefaultPolicyParallelismFive.class.getCanonicalName())
         .build());
   }
@@ -69,7 +69,7 @@ public final class BroadcastITCase {
   @Test (timeout = TIMEOUT)
   public void testPado() throws Exception {
     JobLauncher.main(builder
-        .addJobId(BroadcastITCase.class.getSimpleName() + "_pado")
+        .addJobId(CreateViewITCase.class.getSimpleName() + "_pado")
         .addOptimizationPolicy(PadoPolicyParallelsimFive.class.getCanonicalName())
         .build());
   }
