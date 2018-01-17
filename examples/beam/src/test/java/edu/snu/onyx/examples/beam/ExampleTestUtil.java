@@ -19,8 +19,6 @@ import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,7 +29,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class ExampleTestUtil {
-  private static final Logger LOG = LoggerFactory.getLogger(ExampleTestUtil.class.getName());
   public static void ensureOutputValidity(final String resourcePath,
                                           final String outputFileName,
                                           final String testResourceFileName)
