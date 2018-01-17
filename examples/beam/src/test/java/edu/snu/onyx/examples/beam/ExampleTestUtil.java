@@ -19,6 +19,8 @@ import edu.snu.onyx.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.onyx.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
 import edu.snu.onyx.compiler.optimizer.policy.Policy;
 import edu.snu.onyx.runtime.common.optimizer.pass.runtime.RuntimePass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,6 +35,9 @@ public final class ExampleTestUtil {
                                           final String outputFileName,
                                           final String testResourceFileName)
   throws IOException {
+    private static final Logger LOG = LoggerFactory.getLogger(ExampleTestUtil.class.getName());
+
+    long start = System.currentTimeMillis();
     final String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
         .filter(path -> path.getFileName().toString().startsWith(outputFileName))
@@ -50,6 +55,7 @@ public final class ExampleTestUtil {
         .sorted()
         .reduce("", (p, q) -> (p + "\n" + q));
 
+    LOG.info("log: ensureOutputValidity took {} (ms)", System.currentTimeMillis() - start);
     if(!testOutput.equals(resourceOutput)) {
       throw new RuntimeException("output mismatch");
     }
