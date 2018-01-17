@@ -31,13 +31,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class ExampleTestUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(ExampleTestUtil.class.getName());
   public static void ensureOutputValidity(final String resourcePath,
                                           final String outputFileName,
                                           final String testResourceFileName)
   throws IOException {
-    private static final Logger LOG = LoggerFactory.getLogger(ExampleTestUtil.class.getName());
-
-    long start = System.currentTimeMillis();
     final String testOutput = Files.list(Paths.get(resourcePath))
         .filter(Files::isRegularFile)
         .filter(path -> path.getFileName().toString().startsWith(outputFileName))
@@ -55,7 +53,6 @@ public final class ExampleTestUtil {
         .sorted()
         .reduce("", (p, q) -> (p + "\n" + q));
 
-    LOG.info("log: ensureOutputValidity took {} (ms)", System.currentTimeMillis() - start);
     if(!testOutput.equals(resourceOutput)) {
       throw new RuntimeException("output mismatch");
     }
