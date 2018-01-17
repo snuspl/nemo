@@ -31,11 +31,11 @@ import java.util.stream.StreamSupport;
 /**
  * Sample application that creates PCollectionView.
  */
-public final class CreateView {
+public final class Broadcast {
   /**
    * Private constructor.
    */
-  private CreateView() {
+  private Broadcast() {
   }
 
   /**
