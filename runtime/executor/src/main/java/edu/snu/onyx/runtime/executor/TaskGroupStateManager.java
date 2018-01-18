@@ -109,7 +109,11 @@ public final class TaskGroupStateManager {
       metric.put("ScheduleAttempt", attemptIdx);
       metric.put("FromState", newState);
       beginMeasurement(taskGroupId, metric);
-      idToTaskStates.forEach((taskId, state) -> state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR));
+      idToTaskStates.forEach((taskId, state) -> {
+        LOG.debug("Task State Transition: id {} from {} to {}",
+            taskId, state.getStateMachine().getCurrentState(), TaskState.State.PENDING_IN_EXECUTOR);
+        state.getStateMachine().setState(TaskState.State.PENDING_IN_EXECUTOR);
+      });
       break;
     case COMPLETE:
       LOG.debug("TaskGroup ID {} complete!", this.taskGroupId);
