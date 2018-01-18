@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.onyx.common.ir.vertex;
+package edu.snu.onyx.compiler.frontend.beam.source;
 
 import edu.snu.onyx.common.ir.Reader;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import edu.snu.onyx.common.ir.vertex.SourceVertex;
+import org.apache.beam.sdk.io.BoundedSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +30,21 @@ import org.slf4j.LoggerFactory;
  * SourceVertex implementation for BoundedSource.
  * @param <O> output type.
  */
-public final class BoundedSourceVertex<O> extends SourceVertex<O> {
-  private static final Logger LOG = LoggerFactory.getLogger(BoundedSourceVertex.class.getName());
-  private final Source<O> source;
+public final class BeamBoundedSourceVertex<O> extends SourceVertex<O> {
+  private static final Logger LOG = LoggerFactory.getLogger(BeamBoundedSourceVertex.class.getName());
+  private final BoundedSource<O> source;
 
   /**
-   * Constructor of BoundedSourceVertex.
+   * Constructor of BeamBoundedSourceVertex.
    * @param source BoundedSource to read from.
    */
-  public BoundedSourceVertex(final Source<O> source) {
+  public BeamBoundedSourceVertex(final BoundedSource<O> source) {
     this.source = source;
   }
 
   @Override
-  public BoundedSourceVertex getClone() {
-    final BoundedSourceVertex that = new BoundedSourceVertex<>(this.source);
+  public BeamBoundedSourceVertex getClone() {
+    final BeamBoundedSourceVertex that = new BeamBoundedSourceVertex<>(this.source);
     this.copyExecutionPropertiesTo(that);
     return that;
   }
@@ -49,10 +52,10 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
   @Override
   public List<Reader<O>> getReaders(final int desiredNumOfSplits) throws Exception {
     final List<Reader<O>> readers = new ArrayList<>();
-    LOG.info("estimate: {}", source.getEstimatedSizeBytes());
+    LOG.info("estimate: {}", source.getEstimatedSizeBytes(null));
     LOG.info("desired: {}", desiredNumOfSplits);
-    source.split(source.getEstimatedSizeBytes() / desiredNumOfSplits).forEach(boundedSource ->
-        readers.add(new BoundedSourceReader<>(boundedSource)));
+    source.split(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null)
+        .forEach(boundedSource -> readers.add(new BoundedSourceReader<>(boundedSource)));
     return readers;
   }
 
@@ -72,20 +75,20 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
    * @param <T> type.
    */
   public class BoundedSourceReader<T> implements Reader<T> {
-    private final Source<T> boundedSource;
+    private final BoundedSource<T> boundedSource;
 
     /**
      * Constructor of the BoundedSourceReader.
      * @param boundedSource the BoundedSource.
      */
-    BoundedSourceReader(final Source<T> boundedSource) {
+    BoundedSourceReader(final BoundedSource<T> boundedSource) {
       this.boundedSource = boundedSource;
     }
 
     @Override
     public final Iterator<T> read() throws Exception {
       final ArrayList<T> elements = new ArrayList<>();
-      try (Source.Reader<T> reader = boundedSource.createReader()) {
+      try (BoundedSource.BoundedReader<T> reader = boundedSource.createReader(null)) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
           elements.add(reader.getCurrent());
         }

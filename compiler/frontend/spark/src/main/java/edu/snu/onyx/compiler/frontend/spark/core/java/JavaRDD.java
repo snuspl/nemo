@@ -29,7 +29,7 @@ import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
-import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSource;
+import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSourceVertex;
 import edu.snu.onyx.compiler.frontend.spark.transform.*;
 import org.apache.spark.Partition;
 import org.apache.spark.Partitioner;
@@ -133,7 +133,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   public JavaRDD<T> setSource(final String sourcePath) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
-    final IRVertex sourceVertex = new BoundedSourceVertex<>(new SparkBoundedSource<>(sourcePath));
+    final IRVertex sourceVertex = new SparkBoundedSourceVertex<>(sourcePath);
     sourceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(sourceVertex, loopVertexStack);
 

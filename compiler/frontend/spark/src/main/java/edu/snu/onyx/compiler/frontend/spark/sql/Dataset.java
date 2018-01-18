@@ -82,6 +82,4 @@ public final class Dataset<T> {
         .collect(Collectors.toList());
     return new Dataset<>(sparkContext, Collections.singletonList(key), newData);
   }
-
-
 }

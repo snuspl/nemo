@@ -19,13 +19,12 @@ import edu.snu.onyx.compiler.frontend.beam.coder.BeamCoder;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.onyx.common.ir.vertex.BoundedSourceVertex;
+import edu.snu.onyx.compiler.frontend.beam.source.BeamBoundedSourceVertex;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
 
-import edu.snu.onyx.compiler.frontend.beam.source.BeamBoundedSource;
 import edu.snu.onyx.compiler.frontend.beam.transform.*;
 
 import org.apache.beam.sdk.Pipeline;
@@ -135,7 +134,7 @@ public final class OnyxPipelineVisitor extends Pipeline.PipelineVisitor.Defaults
     final IRVertex irVertex;
     if (beamTransform instanceof Read.Bounded) {
       final Read.Bounded<O> read = (Read.Bounded) beamTransform;
-      irVertex = new BoundedSourceVertex<>(new BeamBoundedSource<>(read.getSource()));
+      irVertex = new BeamBoundedSourceVertex<>(read.getSource());
       builder.addVertex(irVertex, loopVertexStack);
     } else if (beamTransform instanceof GroupByKey) {
       irVertex = new OperatorVertex(new GroupByKeyTransform());
