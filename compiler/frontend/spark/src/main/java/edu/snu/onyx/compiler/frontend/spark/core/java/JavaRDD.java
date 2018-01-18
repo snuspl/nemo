@@ -125,6 +125,11 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
         builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
   }
 
+  /**
+   * Set source.
+   * @param sourcePath source path to read from.
+   * @return the JavaRDD with the bounded source vertex.
+   */
   public JavaRDD<T> setSource(final String sourcePath) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
@@ -177,7 +182,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   /////////////// TRANSFORMATION TO PAIR RDD ///////////////
 
   @Override
-  public <K2, V2> JavaPairRDD<K2, V2>	mapToPair(PairFunction<T, K2, V2> f)  {
+  public <K2, V2> JavaPairRDD<K2, V2> mapToPair(final PairFunction<T, K2, V2> f)  {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex mapToPairVertex = new OperatorVertex(new MapToPairTransform<>(f));
@@ -212,11 +217,9 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    */
   @Override
   public T reduce(final Function2<T, T, T> func) {
-    // save result in a temporary file
-    final String resultFile = System.getProperty("user.dir") + "/reduceresult";
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
-    final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func, resultFile));
+    final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func));
     reduceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(reduceVertex, loopVertexStack);
 
@@ -225,16 +228,29 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
+    // save result in a temporary file
+    // TODO #740: remove this part, and make it properly transfer with executor.
+    final String resultFile = System.getProperty("user.dir") + "/reduceresult";
+
+    final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
+    collectVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(collectVertex, loopVertexStack);
+
+    final IREdge finalEdge = new IREdge(getEdgeCommunicationPattern(reduceVertex, collectVertex),
+        reduceVertex, collectVertex, new SparkCoder(serializer));
+    finalEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
+    builder.connectVertices(finalEdge);
+
     // launch DAG
     JobLauncher.launchDAG(builder.build());
 
     // Retrieve result data from file.
-    // TODO #711: remove this part, and make it properly write to sink.
+    // TODO #740: remove this part, and make it properly transfer with executor.
     try {
       final Kryo kryo = new Kryo();
       final List<T> result = new ArrayList<>();
       Integer i = 0;
-      // TODO #711: remove this part, and make it properly write to sink.
+      // TODO #740: remove this part, and make it properly transfer with executor.
       File file = new File(resultFile + i);
       while (file.exists()) {
         final Input input = new Input(new FileInputStream(resultFile + i));
@@ -259,9 +275,11 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    * @param dst destination vertex.
    * @return the communication pattern.
    */
-  public static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
-                                                                                   final IRVertex dst) {
-    if (dst instanceof OperatorVertex && ((OperatorVertex) dst).getTransform() instanceof ReduceByKeyTransform) {
+  static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
+                                                                            final IRVertex dst) {
+    if (dst instanceof OperatorVertex
+        && (((OperatorVertex) dst).getTransform() instanceof ReduceByKeyTransform
+        || ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform)) {
       return DataCommunicationPatternProperty.Value.Shuffle;
     } else {
       return DataCommunicationPatternProperty.Value.OneToOne;
@@ -379,33 +397,33 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   /////////////// UNSUPPORTED TRANSFORMATION TO PAIR RDD ///////////////
 
   @Override
-  public <K2, V2> JavaPairRDD<K2, V2> flatMapToPair(PairFlatMapFunction<T, K2, V2> f) {
+  public <K2, V2> JavaPairRDD<K2, V2> flatMapToPair(final PairFlatMapFunction<T, K2, V2> f) {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
   @Override
-  public <U> JavaPairRDD<U, Iterable<T>>	groupBy(Function<T, U> f) {
+  public <U> JavaPairRDD<U, Iterable<T>> groupBy(final Function<T, U> f) {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
   @Override
-  public <U> JavaPairRDD<U, Iterable<T>>	groupBy(Function<T, U> f, int numPartitions)  {
+  public <U> JavaPairRDD<U, Iterable<T>> groupBy(final Function<T, U> f, final int numPartitions)  {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
   @Override
-  public <U> JavaPairRDD<U, T> keyBy(Function<T, U> f) {
+  public <U> JavaPairRDD<U, T> keyBy(final Function<T, U> f) {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
   @Override
-  public <K2, V2> JavaPairRDD<K2, V2> mapPartitionsToPair(PairFlatMapFunction<Iterator<T>, K2, V2> f) {
+  public <K2, V2> JavaPairRDD<K2, V2> mapPartitionsToPair(final PairFlatMapFunction<Iterator<T>, K2, V2> f) {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
   @Override
-  public <K2, V2> JavaPairRDD<K2, V2> mapPartitionsToPair(PairFlatMapFunction<java.util.Iterator<T>, K2,V2> f,
-                                                         boolean preservesPartitioning)  {
+  public <K2, V2> JavaPairRDD<K2, V2> mapPartitionsToPair(final PairFlatMapFunction<java.util.Iterator<T>, K2, V2> f,
+                                                          final boolean preservesPartitioning)  {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 

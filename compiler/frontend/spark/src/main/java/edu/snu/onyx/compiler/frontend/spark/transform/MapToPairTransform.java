@@ -28,7 +28,7 @@ import java.util.Iterator;
  * @param <K> output key type.
  * @param <V> output value type.
  */
-public class MapToPairTransform<T, K, V> implements Transform<T, Tuple2<K, V>> {
+public final class MapToPairTransform<T, K, V> implements Transform<T, Tuple2<K, V>> {
   private final PairFunction<T, K, V> func;
   private OutputCollector<Tuple2<K, V>> oc;
 

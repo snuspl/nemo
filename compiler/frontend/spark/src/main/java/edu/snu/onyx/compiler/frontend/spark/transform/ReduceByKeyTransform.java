@@ -7,7 +7,12 @@ import scala.Tuple2;
 
 import java.util.*;
 
-public class ReduceByKeyTransform<K, V> implements Transform<Tuple2<K, V>, Tuple2<K, V>> {
+/**
+ * Transform for reduce by key transformation.
+ * @param <K> key type.
+ * @param <V> value type.
+ */
+public final class ReduceByKeyTransform<K, V> implements Transform<Tuple2<K, V>, Tuple2<K, V>> {
   private final Map<K, List<V>> keyToValues;
   private final Function2<V, V, V> func;
   private OutputCollector<Tuple2<K, V>> oc;

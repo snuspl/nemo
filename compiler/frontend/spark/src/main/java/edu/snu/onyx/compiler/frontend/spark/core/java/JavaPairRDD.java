@@ -16,6 +16,8 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
@@ -28,6 +30,7 @@ import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
+import edu.snu.onyx.compiler.frontend.spark.transform.CollectTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceByKeyTransform;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.serializer.JavaSerializer;
@@ -36,12 +39,21 @@ import org.apache.spark.serializer.Serializer;
 import scala.Tuple2;
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 import static edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD.getEdgeCommunicationPattern;
 
-public class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, V> {
+/**
+ * Java RDD for pairs.
+ * @param <K> key type.
+ * @param <V> value type.
+ */
+public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, V> {
   private final SparkContext sparkContext;
   private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
@@ -84,17 +96,17 @@ public class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, 
   /////////////// TRANSFORMATIONS ///////////////
 
   @Override
-  public JavaPairRDD<K, V> reduceByKey(Function2<V, V, V> func) {
+  public JavaPairRDD<K, V> reduceByKey(final Function2<V, V, V> func) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex reduceByKeyVertex = new OperatorVertex(new ReduceByKeyTransform<K, V>(func));
     reduceByKeyVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(reduceByKeyVertex, loopVertexStack);
 
-    final IREdge newEdge1 = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceByKeyVertex),
+    final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceByKeyVertex),
         lastVertex, reduceByKeyVertex, new SparkCoder(serializer));
-    newEdge1.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
-    builder.connectVertices(newEdge1);
+    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
+    builder.connectVertices(newEdge);
 
     return new JavaPairRDD<>(this.sparkContext, this.parallelism,
         builder.buildWithoutSourceSinkCheck(), reduceByKeyVertex);
@@ -106,8 +118,42 @@ public class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, 
   public List<Tuple2<K, V>> collect() {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
+    // save result in a temporary file
+    // TODO #740: remove this part, and make it properly transfer with executor.
+    final String resultFile = System.getProperty("user.dir") + "/collectresult";
+
+    final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
+    collectVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(collectVertex, loopVertexStack);
+
+    final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, collectVertex),
+        lastVertex, collectVertex, new SparkCoder(serializer));
+    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
+    builder.connectVertices(newEdge);
+
     // launch DAG
     JobLauncher.launchDAG(builder.build());
 
+    // Retrieve result data from file.
+    // TODO #740: remove this part, and make it properly transfer with executor.
+    try {
+      final Kryo kryo = new Kryo();
+      final List<Tuple2<K, V>> result = new ArrayList<>();
+      Integer i = 0;
+      // TODO #740: remove this part, and make it properly transfer with executor.
+      File file = new File(resultFile + i);
+      while (file.exists()) {
+        final Input input = new Input(new FileInputStream(resultFile + i));
+        result.add((Tuple2<K, V>) kryo.readClassAndObject(input));
+        input.close();
+
+        // Delete temporary file
+        file.delete();
+        file = new File(resultFile + ++i);
+      }
+      return result;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

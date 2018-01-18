@@ -60,6 +60,9 @@ public final class SparkSession {
   public void stop() {
   }
 
+  /**
+   * @return a data frame reader component.
+   */
   public DataFrameReader read() {
     return new DataFrameReader(this);
   }

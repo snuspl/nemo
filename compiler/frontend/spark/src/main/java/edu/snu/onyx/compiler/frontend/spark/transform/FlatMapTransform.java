@@ -11,7 +11,7 @@ import java.util.Iterator;
  * @param <T> input type.
  * @param <U> output type.
  */
-public class FlatMapTransform<T, U> implements Transform<T, U> {
+public final class FlatMapTransform<T, U> implements Transform<T, U> {
   private final FlatMapFunction<T, U> func;
   private OutputCollector<U> oc;
 

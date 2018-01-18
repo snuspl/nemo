@@ -25,9 +25,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Java Wordcount example.
+ */
 public final class JavaWordCount {
   private static final Pattern SPACE = Pattern.compile(" ");
 
+  /**
+   * Private constructor.
+   */
+  private JavaWordCount() {
+  }
+
+  /**
+   * Main method.
+   * @param args arguments.
+   * @throws Exception exceptions.
+   */
   public static void main(final String[] args) throws Exception {
 
     if (args.length < 1) {
