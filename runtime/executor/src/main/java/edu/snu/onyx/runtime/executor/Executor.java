@@ -134,14 +134,13 @@ public final class Executor {
                   .build())
               .build());
       throw e;
-    } finally {
-      terminate();
     }
   }
 
   public void terminate() {
     try {
       metricMessageSender.close();
+
     } catch (final UnknownFailureCauseException e) {
       throw new UnknownFailureCauseException(
           new Exception("Closing MetricManagerWorker failed in executor " + executorId));
