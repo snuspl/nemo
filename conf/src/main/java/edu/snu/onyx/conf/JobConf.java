@@ -154,34 +154,6 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * The number of threads in thread pool for inbound block transfer.
-   *
-   * These threads are responsible for de-serializing bytes into block.
-   */
-  @NamedParameter(doc = "Number of threads for inbound block transfer", short_name = "block_threads_inbound",
-      default_value = "5")
-  public final class PartitionTransferInboundNumThreads implements Name<Integer> {
-  }
-
-  /**
-   * The number of threads in thread pool for outbound block transfer..
-   *
-   * These threads are responsible for serializing block into bytes.
-   */
-  @NamedParameter(doc = "Number of threads for outbound block transfer", short_name = "block_threads_outbound",
-      default_value = "5")
-  public final class PartitionTransferOutboundNumThreads implements Name<Integer> {
-  }
-
-  /**
-   * The size of outbound buffers for block transfer in bytes.
-   */
-  @NamedParameter(doc = "Size of outbound buffers for block transfer, in bytes",
-      short_name = "block_outbound_buffer", default_value = "10485760")
-  public final class PartitionTransferOutboundBufferSize implements Name<Integer> {
-  }
-
-  /**
    * The TCP port to which local block transfer binds. 0 means random port.
    */
   @NamedParameter(doc = "Port to which PartitionTransport binds (0 means random port)",
