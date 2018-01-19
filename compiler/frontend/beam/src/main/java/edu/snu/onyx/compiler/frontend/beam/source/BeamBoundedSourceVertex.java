@@ -72,7 +72,7 @@ public final class BeamBoundedSourceVertex<O> extends SourceVertex<O> {
 
   /**
    * BoundedSourceReader class.
-   * @param <T> type.
+   * @param <T> type of data.
    */
   public class BoundedSourceReader<T> implements Reader<T> {
     private final BoundedSource<T> boundedSource;

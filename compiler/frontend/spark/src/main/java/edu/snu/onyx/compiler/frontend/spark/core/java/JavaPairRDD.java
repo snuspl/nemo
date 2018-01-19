@@ -29,6 +29,7 @@ import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
+import edu.snu.onyx.compiler.frontend.spark.core.RDD;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import edu.snu.onyx.compiler.frontend.spark.transform.CollectTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceByKeyTransform;
@@ -37,6 +38,7 @@ import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.serializer.Serializer;
 import scala.Tuple2;
+import scala.reflect.ClassTag$;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -71,7 +73,8 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
   JavaPairRDD(final SparkContext sparkContext, final Integer parallelism,
               final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     // TODO #366: resolve while implementing scala RDD.
-    super(null, null, null);
+    super(RDD.<Tuple2<K, V>>of(sparkContext, parallelism),
+        ClassTag$.MODULE$.apply((Class<K>) Object.class), ClassTag$.MODULE$.apply((Class<V>) Object.class));
 
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;

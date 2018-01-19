@@ -31,8 +31,18 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
    * @param logicalPlan spark logical plan.
    * @param encoder spark encoder.
    */
-  public Dataset(final SparkSession sparkSession, final LogicalPlan logicalPlan, final Encoder<T> encoder) {
+  private Dataset(final SparkSession sparkSession, final LogicalPlan logicalPlan, final Encoder<T> encoder) {
     super(sparkSession, logicalPlan, encoder);
+  }
+
+  /**
+   * Using the immutable property of datasets, we can downcast spark datasets to our class using this function.
+   * @param dataset the Spark dataset.
+   * @param <U> type of the dataset.
+   * @return our dataset class.
+   */
+  public static <U> Dataset<U> from(final org.apache.spark.sql.Dataset<U> dataset) {
+    return new Dataset<>((SparkSession) dataset.sparkSession(), dataset.logicalPlan(), dataset.exprEnc());
   }
 
   /**
@@ -41,7 +51,10 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
    */
   @Override
   public JavaRDD<T> javaRDD() {
-    JavaRDD<T> javaRDD = JavaRDD.of(((SparkSession) super.sparkSession()).sparkContext(), 1);
-    return javaRDD;
+    final org.apache.spark.rdd.RDD<T> rdd = super.rdd();
+    return JavaRDD.<T>of(((SparkSession) super.sparkSession()).sparkContext(), rdd.getNumPartitions())
+        .setSource(rdd);
+//    return new JavaRDD<>(RDD.<T>of(((SparkSession) super.sparkSession()).sparkContext(), rdd.getNumPartitions()))
+//        .setSource(rdd);
   }
 }

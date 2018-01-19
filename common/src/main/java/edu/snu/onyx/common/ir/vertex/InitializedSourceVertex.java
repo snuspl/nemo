@@ -69,7 +69,7 @@ public final class InitializedSourceVertex<T> extends SourceVertex<T> {
    * Reader for initialized source vertex. It simply returns the initialized data.
    * @param <T> type of the initial data.
    */
-  public class InitializedSourceReader<T> implements Reader<T> {
+  public static class InitializedSourceReader<T> implements Reader<T> {
     private final Iterable<T> initializedSourceData;
 
     /**

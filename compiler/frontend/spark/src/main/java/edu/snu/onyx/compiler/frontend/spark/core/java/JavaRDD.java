@@ -28,6 +28,7 @@ import edu.snu.onyx.common.ir.vertex.*;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
+import edu.snu.onyx.compiler.frontend.spark.core.RDD;
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSourceVertex;
 import edu.snu.onyx.compiler.frontend.spark.transform.*;
@@ -43,6 +44,7 @@ import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.serializer.Serializer;
 import org.apache.spark.storage.StorageLevel;
+import scala.reflect.ClassTag$;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -83,9 +85,9 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    * @param lastVertex last vertex added to the builder.
    */
   JavaRDD(final SparkContext sparkContext, final Integer parallelism,
-                  final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+          final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     // TODO #366: resolve while implementing scala RDD.
-    super(null, null);
+    super(RDD.<T>of(sparkContext, parallelism), ClassTag$.MODULE$.apply((Class<T>) Object.class));
 
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
@@ -127,18 +129,18 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
 
   /**
    * Set source.
-   * @param sourcePath source path to read from.
+   * @param rdd RDD to read data from.
    * @return the JavaRDD with the bounded source vertex.
    */
-  public JavaRDD<T> setSource(final String sourcePath) {
+  public JavaRDD<T> setSource(final org.apache.spark.rdd.RDD<T> rdd) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
-    final IRVertex sourceVertex = new SparkBoundedSourceVertex<>(sourcePath);
-    sourceVertex.setProperty(ParallelismProperty.of(parallelism));
-    builder.addVertex(sourceVertex, loopVertexStack);
+    final IRVertex sparkBoundedSourceVertex = new SparkBoundedSourceVertex<>(rdd);
+    sparkBoundedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(sparkBoundedSourceVertex, loopVertexStack);
 
     return new JavaRDD<>(this.sparkContext, this.parallelism,
-        builder.buildWithoutSourceSinkCheck(), sourceVertex);
+        builder.buildWithoutSourceSinkCheck(), sparkBoundedSourceVertex);
   }
 
   /**
