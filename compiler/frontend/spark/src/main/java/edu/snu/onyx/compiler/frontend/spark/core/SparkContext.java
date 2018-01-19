@@ -20,23 +20,13 @@ import org.apache.spark.SparkConf;
 /**
  * Spark context.
  */
-public final class SparkContext {
-  private final SparkConf conf;
-
+public final class SparkContext extends org.apache.spark.SparkContext {
   /**
    * Constructor.
    * @param conf configuration of the context.
    */
   private SparkContext(final SparkConf conf) {
-    this.conf = conf;
-  }
-
-  /**
-   * Configuration.
-   * @return the spark configuration.
-   */
-  public SparkConf conf() {
-    return this.conf;
+    super(conf);
   }
 
   /**

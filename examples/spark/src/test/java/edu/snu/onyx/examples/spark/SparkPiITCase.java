@@ -39,7 +39,7 @@ public final class SparkPiITCase {
       .addUserArgs(numParallelism);
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     builder = new ArgBuilder()
         .addUserMain(JavaSparkPi.class.getCanonicalName())
         .addUserArgs(numParallelism);

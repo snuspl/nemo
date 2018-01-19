@@ -17,7 +17,10 @@
 package edu.snu.onyx.compiler.frontend.spark.sql;
 
 import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
+import scala.Option;
+import scala.Tuple2;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -25,25 +28,23 @@ import java.util.UUID;
 /**
  * A simple version of the Spark session, containing SparkContext that contains SparkConf.
  */
-public final class SparkSession {
-  private final HashMap<String, String> initialSessionOptions;
-  private final SparkContext sparkContext;
-
+public final class SparkSession extends org.apache.spark.sql.SparkSession {
   /**
    * Constructor.
    * @param sparkContext the spark context for the session.
    */
   private SparkSession(final SparkContext sparkContext) {
-    this.initialSessionOptions = new HashMap<>();
-    this.sparkContext = sparkContext;
+    super(sparkContext);
   }
 
-  /**
-   * Get the spark context.
-   * @return the spark context of the session.
-   */
+  @Override
+  public DataFrameReader read() {
+    return new DataFrameReader(this);
+  }
+
+  @Override
   public SparkContext sparkContext() {
-    return sparkContext;
+    return (SparkContext) super.sparkContext();
   }
 
   /**
@@ -55,67 +56,76 @@ public final class SparkSession {
   }
 
   /**
-   * stop the session.
-   */
-  public void stop() {
-  }
-
-  /**
-   * @return a data frame reader component.
-   */
-  public DataFrameReader read() {
-    return new DataFrameReader(this);
-  }
-
-  /**
    * Spark Session Builder.
    */
-  public static final class Builder {
-    private final HashMap<String, String> options;
+  public static final class Builder extends org.apache.spark.sql.SparkSession.Builder {
+    private final HashMap<String, String> options = new HashMap<>();
 
-    /**
-     * Default constructor.
-     */
-    private Builder() {
-      this.options = new HashMap<>();
-    }
-
-    /**
-     * set the application name of the session.
-     * @param name the name of the session.
-     * @return the builder.
-     */
+    @Override
     public Builder appName(final String name) {
       return config("spark.app.name", name);
     }
 
-    /**
-     * Set a configuration to the session.
-     * @param key key of the configuration.
-     * @param value value of the configuration.
-     * @return the builder with the configuration set.
-     */
+    @Override
+    public Builder config(final SparkConf conf) {
+      for (Tuple2<String, String> entry: conf.getAll()) {
+        this.options.put(entry._1(), entry._2());
+      }
+      return this;
+    }
+
+    @Override
     public Builder config(final String key, final String value) {
       this.options.put(key, value);
       return this;
     }
 
-    /**
-     * Get or create the new Spark Session.
-     * @return the Spark Session.
-     */
+    @Override
+    public Builder master(final String master) {
+      return config("spark.master", master);
+    }
+
+    @Override
     public SparkSession getOrCreate() {
-      final SparkConf sparkConf = new SparkConf();
-      final SparkContext sparkContext = SparkContext.getOrCreate(sparkConf);
-      options.forEach(sparkContext.conf()::set);
-      if (!options.containsKey("spark.app.name")) {
-        sparkContext.conf().setAppName("GeneratedAppName-" + UUID.randomUUID());
+      UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("onyx_user"));
+
+      if (!options.containsKey("spark.master")) {
+        return master("local").getOrCreate();
       }
 
-      final SparkSession session = new SparkSession(sparkContext);
-      options.forEach(session.initialSessionOptions::put);
+      final Option<org.apache.spark.sql.SparkSession> activeSession = getActiveSession();
+      if (activeSession.isDefined() && activeSession.get() != null) {
+        final SparkSession session = (SparkSession) activeSession.get();
+        options.forEach((k, v) -> session.sessionState().conf().setConfString(k, v));
+        return session;
+      }
 
-      return session;
+      synchronized (SparkSession.class) {
+        final Option<org.apache.spark.sql.SparkSession> defaultSession = getDefaultSession();
+        if (defaultSession.isDefined() && defaultSession.get() != null) {
+          final SparkSession session = (SparkSession) defaultSession.get();
+          options.forEach((k, v) -> session.sessionState().conf().setConfString(k, v));
+          return session;
+        }
+
+        final String randomAppName = UUID.randomUUID().toString();
+        final SparkConf sparkConf = new SparkConf();
+        options.forEach(sparkConf::set);
+        if (!sparkConf.contains("spark.app.name")) {
+          sparkConf.setAppName(randomAppName);
+        }
+        final SparkContext sparkContext = SparkContext.getOrCreate(sparkConf);
+        options.forEach(sparkContext.conf()::set);
+        if (!sparkContext.conf().contains("spark.app.name")) {
+          sparkContext.conf().setAppName(randomAppName);
+        }
+
+        final SparkSession session = new SparkSession(sparkContext);
+        options.forEach(session.sessionState().conf()::setConfString);
+        setDefaultSession(session);
+
+        return session;
+      }
     }
   }
 }
