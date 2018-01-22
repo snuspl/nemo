@@ -33,7 +33,7 @@ public final class CompressionPass extends AnnotatingPass {
    * @param compression Compression to apply on edges.
    */
   public CompressionPass(final CompressionProperty.Compression compression) {
-    super(ExecutionProperty.Key.Compressor);
+    super(ExecutionProperty.Key.Compression);
     this.compression = compression;
   }
 

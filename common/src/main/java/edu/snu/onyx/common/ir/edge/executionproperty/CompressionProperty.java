@@ -11,7 +11,7 @@ public final class CompressionProperty extends ExecutionProperty<CompressionProp
    * @param value value of the execution property.
    */
   private CompressionProperty(final Compression value) {
-    super(Key.Compressor, value);
+    super(Key.Compression, value);
   }
 
   /**
