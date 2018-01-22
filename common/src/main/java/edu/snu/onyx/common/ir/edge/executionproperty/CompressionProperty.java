@@ -3,14 +3,14 @@ package edu.snu.onyx.common.ir.edge.executionproperty;
 import edu.snu.onyx.common.ir.executionproperty.ExecutionProperty;
 
 /**
- * Compressor ExecutionProperty.
+ * Compression ExecutionProperty.
  */
-public final class CompressionProperty extends ExecutionProperty<CompressionProperty.Compressor> {
+public final class CompressionProperty extends ExecutionProperty<CompressionProperty.Compression> {
   /**
    * Constructor.
    * @param value value of the execution property.
    */
-  private CompressionProperty(final Compressor value) {
+  private CompressionProperty(final Compression value) {
     super(Key.Compressor, value);
   }
 
@@ -19,15 +19,14 @@ public final class CompressionProperty extends ExecutionProperty<CompressionProp
    * @param value value of the new execution property.
    * @return the newly created execution property.
    */
-  public static CompressionProperty of(final Compressor value) {
+  public static CompressionProperty of(final Compression value) {
     return new CompressionProperty(value);
   }
 
   /**
-   * Possible values of Compressor ExecutionProperty.
+   * Possible values of Compression ExecutionProperty.
    */
-  public enum Compressor {
-    Raw,
+  public enum Compression {
     Gzip,
     LZ4,
   }

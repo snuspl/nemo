@@ -2,7 +2,7 @@ package edu.snu.onyx.runtime.executor.data;
 
 import edu.snu.onyx.common.DirectByteArrayOutputStream;
 import edu.snu.onyx.common.coder.Coder;
-import edu.snu.onyx.common.ir.edge.executionproperty.CompressionProperty.Compressor;
+import edu.snu.onyx.common.ir.edge.executionproperty.CompressionProperty.Compression;
 
 import java.io.*;
 import java.util.*;
@@ -240,20 +240,18 @@ public final class DataUtil {
    * Creates new OutputStream which writes compressed data onto the stream.
    *
    * @param out the original {@link OutputStream}.
-   * @param compressor compress strategy for compressing stream data.
+   * @param compression compress strategy for compressing stream data.
    * @return {@link OutputStream} which writes compressed data.
    * @throws IOException if fail to compress data.
    */
-  OutputStream createOutputStream(final OutputStream out, final Compressor compressor)
+  OutputStream createOutputStream(final OutputStream out, final Compression compression)
       throws IOException, UnsupportedOperationException {
-    switch (compressor) {
-      case Raw:
-        return out;
+    switch (compression) {
       case Gzip:
         return new GZIPOutputStream(out);
       case LZ4:
       default:
-        throw new UnsupportedOperationException("Not supported compressor");
+        throw new UnsupportedOperationException("Not supported compression");
         // TODO #567: add later (maybe adding dependency?)
     }
   }
@@ -262,20 +260,18 @@ public final class DataUtil {
    * Creates new InputStream which reads compressed data from the stream.
    *
    * @param in the original {@link InputStream}.
-   * @param compressor compress strategy used to compress stream data.
+   * @param compression compress strategy used to compress stream data.
    * @return {@link InputStream} which reads compressed data.
    * @throws IOException if fail to decompress data.
    */
-  InputStream createInputStream(final InputStream in, final Compressor compressor)
+  InputStream createInputStream(final InputStream in, final Compression compression)
       throws IOException, UnsupportedOperationException {
-    switch (compressor) {
-      case Raw:
-        return in;
+    switch (compression) {
       case Gzip:
         return new GZIPInputStream(in);
       case LZ4:
       default:
-        throw new UnsupportedOperationException("Not supported compressor");
+        throw new UnsupportedOperationException("Not supported compression");
         // TODO #567: add later (maybe adding dependency?)
     }
   }

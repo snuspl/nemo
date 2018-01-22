@@ -26,15 +26,15 @@ import edu.snu.onyx.common.ir.vertex.IRVertex;
  * A pass for applying compression algorithm for data flowing between vertices.
  */
 public final class CompressionPass extends AnnotatingPass {
-  private final CompressionProperty.Compressor compressor;
+  private final CompressionProperty.Compression compression;
 
   /**
    * Default constructor.
-   * @param compressor Compressor to apply on edges.
+   * @param compression Compression to apply on edges.
    */
-  public CompressionPass(final CompressionProperty.Compressor compressor) {
+  public CompressionPass(final CompressionProperty.Compression compression) {
     super(ExecutionProperty.Key.Compressor);
-    this.compressor = compressor;
+    this.compression = compression;
   }
 
   @Override
@@ -42,7 +42,7 @@ public final class CompressionPass extends AnnotatingPass {
     dag.topologicalDo(vertex -> dag.getIncomingEdgesOf(vertex).stream()
         .filter(e -> !vertex.getProperty(ExecutionProperty.Key.StageId)
             .equals(e.getSrc().getProperty(ExecutionProperty.Key.StageId)))
-        .forEach(edge -> edge.setProperty(CompressionProperty.of(compressor))));
+        .forEach(edge -> edge.setProperty(CompressionProperty.of(compression))));
 
     return dag;
   }
