@@ -172,7 +172,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   private void scheduleTaskGroup(final String executorId,
                                  final ScheduledTaskGroup scheduledTaskGroup,
                                  final JobStateManager jobStateManager) {
-    jobStateManager.onTaskGroupStateChanged(scheduledTaskGroup.getTaskGroup(), TaskGroupState.State.EXECUTING);
+    jobStateManager.onTaskGroupStateChanged(scheduledTaskGroup.getTaskGroupId(), TaskGroupState.State.EXECUTING);
 
     final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
     LOG.info("Scheduling {} to {}",

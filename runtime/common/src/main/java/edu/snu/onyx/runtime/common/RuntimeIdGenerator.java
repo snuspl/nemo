@@ -23,12 +23,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class RuntimeIdGenerator {
   private static AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
-  private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(0);
   private static AtomicInteger executorIdGenerator = new AtomicInteger(0);
   private static AtomicLong messageIdGenerator = new AtomicLong(1L);
   private static AtomicLong resourceSpecIdGenerator = new AtomicLong(0);
   private static String blockPrefix = "Block-";
   private static String blockIdSplitter = "_";
+  private static String taskGroupInfix = "-TaskGroup-";
+  private static String physicalTaskIdSplitter = "_";
 
   /**
    * Private constructor which will not be used.
@@ -80,17 +81,32 @@ public final class RuntimeIdGenerator {
    * @param irVertexId the ID of the IR vertex.
    * @return the generated ID
    */
-  public static String generateTaskId(final String irVertexId) {
+  public static String generateLogicalTaskId(final String irVertexId) {
     return "Task-" + irVertexId;
+  }
+
+  /**
+   * Generates the ID for {@link edu.snu.onyx.runtime.common.plan.physical.Task}.
+   *
+   * @param index         the index of the physical task.
+   * @param logicalTaskId the logical ID of the task.
+   * @return the generated ID
+   */
+  public static String generatePhysicalTaskId(final int index,
+                                              final String logicalTaskId) {
+    return logicalTaskId + physicalTaskIdSplitter + index;
   }
 
   /**
    * Generates the ID for {@link edu.snu.onyx.runtime.common.plan.physical.TaskGroup}.
    *
+   * @param index   the index of this task group.
+   * @param stageId the ID of the stage.
    * @return the generated ID
    */
-  public static String generateTaskGroupId() {
-    return "TaskGroup-" + taskGroupIdGenerator.getAndIncrement();
+  public static String generateTaskGroupId(final int index,
+                                           final String stageId) {
+    return stageId + taskGroupInfix + index;
   }
 
   /**
@@ -162,5 +178,46 @@ public final class RuntimeIdGenerator {
   private static String[] parseBlockId(final String blockId) {
     final String woPrefix = blockId.split(blockPrefix)[1];
     return woPrefix.split(blockIdSplitter);
+  }
+
+  /**
+   * Extracts stage ID from a task group ID.
+   *
+   * @param taskGroupId the task group ID to extract.
+   * @return the stage ID.
+   */
+  public static String getStageIdFromTaskGroupId(final String taskGroupId) {
+    return parseTaskGroupId(taskGroupId)[0];
+  }
+
+  /**
+   * Extracts task group index from a task group ID.
+   *
+   * @param taskGroupId the task group ID to extract.
+   * @return the index.
+   */
+  public static int getIndexFromTaskGroupId(final String taskGroupId) {
+    return Integer.valueOf(parseTaskGroupId(taskGroupId)[1]);
+  }
+
+  /**
+   * Parses a task group id.
+   * The result array will contain the stage id and the index of the task group in order.
+   *
+   * @param taskGroupId to parse.
+   * @return the array of parsed information.
+   */
+  private static String[] parseTaskGroupId(final String taskGroupId) {
+    return taskGroupId.split(taskGroupInfix);
+  }
+
+  /**
+   * Extracts logical task ID from a physical task ID.
+   *
+   * @param physicalTaskId the physical task ID to extract.
+   * @return the logical task ID.
+   */
+  public static String getLogicalTaskIdIdFromPhysicalTaskId(final String physicalTaskId) {
+    return physicalTaskId.split(physicalTaskIdSplitter)[0];
   }
 }

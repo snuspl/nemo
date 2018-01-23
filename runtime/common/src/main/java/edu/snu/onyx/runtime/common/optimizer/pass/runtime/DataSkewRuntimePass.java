@@ -75,21 +75,20 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
 
     // Get number of evaluators of the next stage (number of blocks).
     final Integer taskGroupListSize = optimizationEdges.stream().findFirst().orElseThrow(() ->
-        new RuntimeException("optimization edges is empty")).getDst().getTaskGroupList().size();
+        new RuntimeException("optimization edges is empty")).getDst().getTaskGroupIds().size();
 
     // Calculate keyRanges.
     final List<KeyRange> keyRanges = calculateHashRanges(metricData, taskGroupListSize);
 
     // Overwrite the previously assigned hash value range in the physical DAG with the new range.
     optimizationEdges.forEach(optimizationEdge -> {
-      final List<TaskGroup> taskGroups = optimizationEdge.getDst().getTaskGroupList();
-      final Map<String, KeyRange> taskGroupIdToHashRangeMap = optimizationEdge.getTaskGroupIdToKeyRangeMap();
-      taskGroupIdToHashRangeMap.clear();
+      // Update the information.
+      final List<KeyRange> taskGroupIdxToHashRange = new ArrayList<>();
       IntStream.range(0, taskGroupListSize).forEach(i -> {
-        // Update the information.
-        final String taskGroupId = taskGroups.get(i).getTaskGroupId();
-        taskGroupIdToHashRangeMap.put(taskGroupId, keyRanges.get(i));
+        taskGroupIdxToHashRange.add(keyRanges.get(i));
       });
+
+      optimizationEdge.setTaskGroupIdxToKeyRange(taskGroupIdxToHashRange);
     });
 
     return new PhysicalPlan(originalPlan.getId(), physicalDAGBuilder.build(), originalPlan.getTaskIRVertexMap());

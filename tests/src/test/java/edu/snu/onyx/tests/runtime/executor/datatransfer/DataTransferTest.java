@@ -312,7 +312,7 @@ public final class DataTransferTest {
     final List<List> dataReadList = new ArrayList<>();
     IntStream.range(0, PARALLELISM_TEN).forEach(dstTaskIndex -> {
       final InputReader reader =
-          new InputReader(dstTaskIndex, taskGroupPrefix + dstTaskIndex, srcVertex, dummyEdge, receiver);
+          new InputReader(dstTaskIndex, srcVertex, dummyEdge, receiver);
 
       if (DataCommunicationPatternProperty.Value.OneToOne.equals(commPattern)) {
         assertEquals(1, reader.getSourceParallelism());

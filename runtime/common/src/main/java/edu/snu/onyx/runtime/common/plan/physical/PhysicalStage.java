@@ -16,7 +16,9 @@
 package edu.snu.onyx.runtime.common.plan.physical;
 
 import edu.snu.onyx.common.dag.Vertex;
+import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,6 +26,7 @@ import java.util.List;
  */
 public final class PhysicalStage extends Vertex {
   private final List<TaskGroup> taskGroupList;
+  private final TaskGroup taskGroup;
   private final int scheduleGroupIndex;
 
   /**
@@ -37,6 +40,7 @@ public final class PhysicalStage extends Vertex {
                        final int scheduleGroupIndex) {
     super(stageId);
     this.taskGroupList = taskGroupList;
+    this.taskGroup = taskGroupList.get(0);
     this.scheduleGroupIndex = scheduleGroupIndex;
   }
 
@@ -45,6 +49,24 @@ public final class PhysicalStage extends Vertex {
    */
   public List<TaskGroup> getTaskGroupList() {
     return taskGroupList;
+  }
+
+  /**
+   * @return the task group.
+   */
+  public TaskGroup getTaskGroup() {
+    return taskGroup;
+  }
+
+  /**
+   * @return the list of the task group IDs in this stage.
+   */
+  public List<String> getTaskGroupIds() {
+    final List<String> taskGroupIds = new ArrayList<>();
+    for (int taskGroupIdx = 0; taskGroupIdx < taskGroupList.size(); taskGroupIdx++) {
+      taskGroupIds.add(RuntimeIdGenerator.generateTaskGroupId(taskGroupIdx, getId()));
+    }
+    return taskGroupIds;
   }
 
   /**

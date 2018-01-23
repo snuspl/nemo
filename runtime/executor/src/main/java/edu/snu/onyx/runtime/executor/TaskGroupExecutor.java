@@ -22,6 +22,7 @@ import edu.snu.onyx.common.exception.BlockWriteException;
 import edu.snu.onyx.common.ir.Readable;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
+import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.plan.RuntimeEdge;
 import edu.snu.onyx.runtime.common.plan.physical.*;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
@@ -50,6 +51,7 @@ public final class TaskGroupExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(TaskGroupExecutor.class.getName());
 
   private final TaskGroup taskGroup;
+  private final int taskGroupIdx;
   private final TaskGroupStateManager taskGroupStateManager;
   private final List<PhysicalStageEdge> stageIncomingEdges;
   private final List<PhysicalStageEdge> stageOutgoingEdges;
@@ -58,8 +60,8 @@ public final class TaskGroupExecutor {
   /**
    * Map of task IDs in this task group to their readers/writers.
    */
-  private final Map<String, List<InputReader>> taskIdToInputReaderMap;
-  private final Map<String, List<OutputWriter>> taskIdToOutputWriterMap;
+  private final Map<String, List<InputReader>> physicalTaskIdToInputReaderMap;
+  private final Map<String, List<OutputWriter>> physicalTaskIdToOutputWriterMap;
 
   private boolean isExecutionRequested;
 
@@ -69,13 +71,14 @@ public final class TaskGroupExecutor {
                            final List<PhysicalStageEdge> stageOutgoingEdges,
                            final DataTransferFactory channelFactory) {
     this.taskGroup = taskGroup;
+    this.taskGroupIdx = taskGroup.getTaskGroupIdx();
     this.taskGroupStateManager = taskGroupStateManager;
     this.stageIncomingEdges = stageIncomingEdges;
     this.stageOutgoingEdges = stageOutgoingEdges;
     this.channelFactory = channelFactory;
 
-    this.taskIdToInputReaderMap = new HashMap<>();
-    this.taskIdToOutputWriterMap = new HashMap<>();
+    this.physicalTaskIdToInputReaderMap = new HashMap<>();
+    this.physicalTaskIdToOutputWriterMap = new HashMap<>();
 
     this.isExecutionRequested = false;
 
@@ -87,15 +90,13 @@ public final class TaskGroupExecutor {
    * Note that there are edges that are cross-stage and stage-internal.
    */
   private void initializeDataTransfer() {
-    final int taskGroupIdx = taskGroup.getTaskGroupIdx();
-    final String taskGroupId = taskGroup.getTaskGroupId();
     taskGroup.getTaskDAG().topologicalDo((task -> {
       final Set<PhysicalStageEdge> inEdgesFromOtherStages = getInEdgesFromOtherStages(task);
       final Set<PhysicalStageEdge> outEdgesToOtherStages = getOutEdgesToOtherStages(task);
 
       inEdgesFromOtherStages.forEach(physicalStageEdge -> {
         final InputReader inputReader = channelFactory.createReader(
-            taskGroupIdx, taskGroupId, physicalStageEdge.getSrcVertex(), physicalStageEdge);
+            taskGroupIdx, physicalStageEdge.getSrcVertex(), physicalStageEdge);
         addInputReader(task, inputReader);
       });
 
@@ -106,7 +107,7 @@ public final class TaskGroupExecutor {
       });
 
       final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
-      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, taskGroupIdx, taskGroupId, internalEdge));
+      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, taskGroupIdx, internalEdge));
 
       final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroup.getTaskDAG().getOutgoingEdgesOf(task);
       outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, taskGroupIdx, internalEdge));
@@ -129,9 +130,8 @@ public final class TaskGroupExecutor {
   // Helper functions to initializes stage-internal edges.
   private void createLocalReader(final Task task,
                                  final int taskGroupIdx,
-                                 final String taskGroupId,
                                  final RuntimeEdge<Task> internalEdge) {
-    final InputReader inputReader = channelFactory.createLocalReader(taskGroupIdx, taskGroupId, internalEdge);
+    final InputReader inputReader = channelFactory.createLocalReader(taskGroupIdx, internalEdge);
     addInputReader(task, inputReader);
   }
 
@@ -142,13 +142,15 @@ public final class TaskGroupExecutor {
 
   // Helper functions to add the initialized reader/writer to the maintained map.
   private void addInputReader(final Task task, final InputReader inputReader) {
-    taskIdToInputReaderMap.computeIfAbsent(task.getId(), readerList -> new ArrayList<>());
-    taskIdToInputReaderMap.get(task.getId()).add(inputReader);
+    final String physicalTaskId = getPhysicalTaskId(task.getId());
+    physicalTaskIdToInputReaderMap.computeIfAbsent(physicalTaskId, readerList -> new ArrayList<>());
+    physicalTaskIdToInputReaderMap.get(physicalTaskId).add(inputReader);
   }
 
   private void addOutputWriter(final Task task, final OutputWriter outputWriter) {
-    taskIdToOutputWriterMap.computeIfAbsent(task.getId(), readerList -> new ArrayList<>());
-    taskIdToOutputWriterMap.get(task.getId()).add(outputWriter);
+    final String physicalTaskId = getPhysicalTaskId(task.getId());
+    physicalTaskIdToOutputWriterMap.computeIfAbsent(physicalTaskId, readerList -> new ArrayList<>());
+    physicalTaskIdToOutputWriterMap.get(physicalTaskId).add(outputWriter);
   }
 
   /**
@@ -162,38 +164,41 @@ public final class TaskGroupExecutor {
       isExecutionRequested = true;
     }
 
-    taskGroupStateManager.onTaskGroupStateChanged(TaskGroupState.State.EXECUTING, Optional.empty(), Optional.empty());
+    taskGroupStateManager.onTaskGroupStateChanged(
+        TaskGroupState.State.EXECUTING, Optional.empty(), Optional.empty());
 
     taskGroup.getTaskDAG().topologicalDo(task -> {
-      taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING, Optional.empty());
+      final String physicalTaskId = getPhysicalTaskId(task.getId());
+      taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.EXECUTING, Optional.empty());
       try {
         if (task instanceof BoundedSourceTask) {
           launchBoundedSourceTask((BoundedSourceTask) task, taskGroup.getTaskGroupIdx());
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
+          taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.COMPLETE, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof OperatorTask) {
           launchOperatorTask((OperatorTask) task);
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
+          taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.COMPLETE, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof MetricCollectionBarrierTask) {
           launchMetricCollectionBarrierTask((MetricCollectionBarrierTask) task);
-          taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.ON_HOLD, Optional.empty());
+          taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.ON_HOLD, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
       } catch (final BlockFetchException ex) {
-        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
+        taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
             new Object[] {taskGroup.getTaskGroupId(), ex.toString()});
       } catch (final BlockWriteException ex2) {
-        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_RECOVERABLE,
+        taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
             new Object[] {taskGroup.getTaskGroupId(), ex2.toString()});
       } catch (final Exception e) {
-        taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.FAILED_UNRECOVERABLE, Optional.empty());
+        taskGroupStateManager.onTaskStateChanged(
+            physicalTaskId, TaskState.State.FAILED_UNRECOVERABLE, Optional.empty());
         throw new RuntimeException(e);
       }
     });
@@ -210,7 +215,8 @@ public final class TaskGroupExecutor {
     final Readable readable = boundedSourceTask.getReadable(boundedSourceIdx);
     final Iterable readData = readable.read();
 
-    taskIdToOutputWriterMap.get(boundedSourceTask.getId()).forEach(outputWriter -> {
+    final String physicalTaskId = getPhysicalTaskId(boundedSourceTask.getId());
+    physicalTaskIdToOutputWriterMap.get(physicalTaskId).forEach(outputWriter -> {
       outputWriter.write(readData);
       outputWriter.close();
     });
@@ -224,7 +230,8 @@ public final class TaskGroupExecutor {
     final Map<Transform, Object> sideInputMap = new HashMap<>();
 
     // Check for side inputs
-    taskIdToInputReaderMap.get(operatorTask.getId()).stream().filter(InputReader::isSideInputReader)
+    final String physicalTaskId = getPhysicalTaskId(operatorTask.getId());
+    physicalTaskIdToInputReaderMap.get(physicalTaskId).stream().filter(InputReader::isSideInputReader)
         .forEach(inputReader -> {
           try {
             final Object sideInput = inputReader.getSideInput().get();
@@ -252,7 +259,7 @@ public final class TaskGroupExecutor {
     // This blocking queue contains the pairs having data and source vertex ids.
     final BlockingQueue<Pair<Iterator, String>> dataQueue = new LinkedBlockingQueue<>();
     final AtomicInteger sourceParallelism = new AtomicInteger(0);
-    taskIdToInputReaderMap.get(operatorTask.getId()).stream().filter(inputReader -> !inputReader.isSideInputReader())
+    physicalTaskIdToInputReaderMap.get(physicalTaskId).stream().filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
           final List<CompletableFuture<Iterator>> futures = inputReader.read();
           final String srcIrVtxId = inputReader.getSrcIrVertexId();
@@ -278,23 +285,23 @@ public final class TaskGroupExecutor {
 
       // Check whether there is any output data from the transform and write the output of this task to the writer.
       final List output = outputCollector.collectOutputList();
-      if (!output.isEmpty() && taskIdToOutputWriterMap.containsKey(operatorTask.getId())) {
-        taskIdToOutputWriterMap.get(operatorTask.getId()).forEach(outputWriter -> outputWriter.write(output));
+      if (!output.isEmpty() && physicalTaskIdToOutputWriterMap.containsKey(physicalTaskId)) {
+        physicalTaskIdToOutputWriterMap.get(physicalTaskId).forEach(outputWriter -> outputWriter.write(output));
       } // If else, this is a sink task.
     });
     transform.close();
 
     // Check whether there is any output data from the transform and write the output of this task to the writer.
     final List output = outputCollector.collectOutputList();
-    if (taskIdToOutputWriterMap.containsKey(operatorTask.getId())) {
-      taskIdToOutputWriterMap.get(operatorTask.getId()).forEach(outputWriter -> {
+    if (physicalTaskIdToOutputWriterMap.containsKey(physicalTaskId)) {
+      physicalTaskIdToOutputWriterMap.get(physicalTaskId).forEach(outputWriter -> {
         if (!output.isEmpty()) {
           outputWriter.write(output);
         }
         outputWriter.close();
       });
     } else {
-      LOG.info("This is a sink task: {}", operatorTask.getId());
+      LOG.info("This is a sink task: {}", physicalTaskId);
     }
   }
 
@@ -305,7 +312,8 @@ public final class TaskGroupExecutor {
   private void launchMetricCollectionBarrierTask(final MetricCollectionBarrierTask task) {
     final BlockingQueue<Iterator> dataQueue = new LinkedBlockingQueue<>();
     final AtomicInteger sourceParallelism = new AtomicInteger(0);
-    taskIdToInputReaderMap.get(task.getId()).stream().filter(inputReader -> !inputReader.isSideInputReader())
+    final String physicalTaskId = getPhysicalTaskId(task.getId());
+    physicalTaskIdToInputReaderMap.get(physicalTaskId).stream().filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
           sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           inputReader.read().forEach(compFuture -> compFuture.thenAccept(dataQueue::add));
@@ -320,9 +328,17 @@ public final class TaskGroupExecutor {
         throw new BlockFetchException(e);
       }
     });
-    taskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> {
+    physicalTaskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> {
       outputWriter.write(data);
       outputWriter.close();
     });
+  }
+
+  /**
+   * @param logicalTaskId the logical task id.
+   * @return the physical task id.
+   */
+  private String getPhysicalTaskId(final String logicalTaskId) {
+    return RuntimeIdGenerator.generatePhysicalTaskId(taskGroupIdx, logicalTaskId);
   }
 }

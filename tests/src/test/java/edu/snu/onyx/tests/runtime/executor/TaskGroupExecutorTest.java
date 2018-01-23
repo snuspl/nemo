@@ -98,8 +98,8 @@ public final class TaskGroupExecutorTest {
     // Mock a DataTransferFactory.
     taskIdToOutputData = new HashMap<>();
     dataTransferFactory = mock(DataTransferFactory.class);
-    when(dataTransferFactory.createLocalReader(anyInt(), any(), any())).then(new IntraStageReaderAnswer());
-    when(dataTransferFactory.createReader(anyInt(), any(), any(), any())).then(new InterStageReaderAnswer());
+    when(dataTransferFactory.createLocalReader(anyInt(), any())).then(new IntraStageReaderAnswer());
+    when(dataTransferFactory.createReader(anyInt(), any(), any())).then(new InterStageReaderAnswer());
     when(dataTransferFactory.createLocalWriter(any(), anyInt(), any())).then(new WriterAnswer());
     when(dataTransferFactory.createWriter(any(), anyInt(), any(), any())).then(new WriterAnswer());
   }
@@ -113,9 +113,9 @@ public final class TaskGroupExecutorTest {
     final IRVertex sourceIRVertex = new SimpleIRVertex();
     final String sourceIrVertexId = sourceIRVertex.getId();
 
-    final String sourceTaskId = RuntimeIdGenerator.generateTaskId("Source_IR_Vertex");
-    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
+    final String sourceTaskId = RuntimeIdGenerator.generateLogicalTaskId("Source_IR_Vertex");
     final String stageId = RuntimeIdGenerator.generateStageId(0);
+    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
 
     final ReadablesWrapper readablesWrapper = new ReadablesWrapper() {
       @Override
@@ -172,10 +172,10 @@ public final class TaskGroupExecutorTest {
     final String operatorIRVertexId2 = operatorIRVertex2.getId();
     final String runtimeIREdgeId = "Runtime edge between operator tasks";
 
-    final String operatorTaskId1 = RuntimeIdGenerator.generateTaskId("Operator_vertex_1");
-    final String operatorTaskId2 = RuntimeIdGenerator.generateTaskId("Operator_vertex_2");
-    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
+    final String operatorTaskId1 = RuntimeIdGenerator.generateLogicalTaskId("Operator_vertex_1");
+    final String operatorTaskId2 = RuntimeIdGenerator.generateLogicalTaskId("Operator_vertex_2");
     final String stageId = RuntimeIdGenerator.generateStageId(1);
+    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
 
     final OperatorTask operatorTask1 =
         new OperatorTask(operatorTaskId1, operatorIRVertexId1, new SimpleTransform());

@@ -208,7 +208,7 @@ public final class PhysicalPlanGenerator
             try {
               final ReadablesWrapper readables = sourceVertex.getReadableWrapper(stageParallelism);
               final String sourceVertexId = sourceVertex.getId();
-              newTaskToAdd = new BoundedSourceTask<>(RuntimeIdGenerator.generateTaskId(sourceVertexId),
+              newTaskToAdd = new BoundedSourceTask<>(RuntimeIdGenerator.generateLogicalTaskId(sourceVertexId),
                   sourceVertexId, readables);
             } catch (Exception e) {
               throw new PhysicalPlanGenerationException(e);
@@ -216,14 +216,14 @@ public final class PhysicalPlanGenerator
           } else if (irVertex instanceof OperatorVertex) {
             final OperatorVertex operatorVertex = (OperatorVertex) irVertex;
             final String operatorVertexId = operatorVertex.getId();
-            newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(operatorVertexId),
+            newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateLogicalTaskId(operatorVertexId),
                 operatorVertexId, operatorVertex.getTransform());
 
           } else if (irVertex instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) irVertex;
             final String metricVertexId = metricCollectionBarrierVertex.getId();
-            newTaskToAdd = new MetricCollectionBarrierTask(RuntimeIdGenerator.generateTaskId(metricVertexId),
+            newTaskToAdd = new MetricCollectionBarrierTask(RuntimeIdGenerator.generateLogicalTaskId(metricVertexId),
                 metricVertexId);
           } else {
             throw new IllegalVertexOperationException("This vertex type is not supported");
