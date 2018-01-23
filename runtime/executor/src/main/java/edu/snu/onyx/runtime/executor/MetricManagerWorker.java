@@ -79,7 +79,7 @@ public final class MetricManagerWorker implements MetricMessageSender {
 
   @Override
   public void send(final String metricKey, final String metricValue) {
-    LOG.error("Executor logged! {}", metricKey);
+    LOG.debug("Executor logged! {}", metricKey);
     metricMessageQueue.add(
         ControlMessage.Metric.newBuilder().setMetricKey(metricKey).setMetricValue(metricValue).build());
   }
