@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class RuntimeIdGenerator {
   private static AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
-  private static AtomicInteger taskIdGenerator = new AtomicInteger(0);
   private static AtomicInteger taskGroupIdGenerator = new AtomicInteger(0);
   private static AtomicInteger executorIdGenerator = new AtomicInteger(0);
   private static AtomicLong messageIdGenerator = new AtomicLong(1L);
@@ -78,10 +77,11 @@ public final class RuntimeIdGenerator {
   /**
    * Generates the ID for {@link edu.snu.onyx.runtime.common.plan.physical.Task}.
    *
+   * @param irVertexId the ID of the IR vertex.
    * @return the generated ID
    */
-  public static String generateTaskId() {
-    return "Task-" + taskIdGenerator.getAndIncrement();
+  public static String generateTaskId(final String irVertexId) {
+    return "Task-" + irVertexId;
   }
 
   /**

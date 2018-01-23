@@ -115,9 +115,9 @@ public final class BlockStoreTest {
 
     // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(
-        number -> writeTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> writeTaskIdList.add(RuntimeIdGenerator.generateTaskId("Write_IR_vertex")));
     IntStream.range(0, NUM_READ_TASKS).forEach(
-        number -> readTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> readTaskIdList.add(RuntimeIdGenerator.generateTaskId("Read_IR_vertex")));
 
     // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskIdx -> {
@@ -140,7 +140,7 @@ public final class BlockStoreTest {
     });
 
     // Following part is for the concurrent read test.
-    final String writeTaskId = RuntimeIdGenerator.generateTaskId();
+    final String writeTaskId = RuntimeIdGenerator.generateTaskId("Conc_write_IR_vertex");
     final List<String> concReadTaskIdList = new ArrayList<>(NUM_CONC_READ_TASKS);
 
     // Generates the ids and the data to be used.
@@ -150,7 +150,7 @@ public final class BlockStoreTest {
     blockManagerMaster.onBlockStateChanged(
         concBlockId, BlockState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
-        number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId("Conc_read_IR_vertex")));
     concBlockPartition = new NonSerializedPartition(0, getRangedNumList(0, CONC_READ_DATA_SIZE));
 
     // Following part is for the shuffle in hash range test
@@ -164,9 +164,9 @@ public final class BlockStoreTest {
 
     // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
-        number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateTaskId("Hash_write_IR_vertex")));
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(
-        number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId("Hash_read_IR_vertex")));
 
     // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {

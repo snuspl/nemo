@@ -50,6 +50,7 @@ import java.util.stream.StreamSupport;
 
 import static edu.snu.onyx.tests.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -97,10 +98,10 @@ public final class TaskGroupExecutorTest {
     // Mock a DataTransferFactory.
     taskIdToOutputData = new HashMap<>();
     dataTransferFactory = mock(DataTransferFactory.class);
-    when(dataTransferFactory.createLocalReader(any(), any())).then(new IntraStageReaderAnswer());
-    when(dataTransferFactory.createReader(any(), any(), any())).then(new InterStageReaderAnswer());
-    when(dataTransferFactory.createLocalWriter(any(), any())).then(new WriterAnswer());
-    when(dataTransferFactory.createWriter(any(), any(), any())).then(new WriterAnswer());
+    when(dataTransferFactory.createLocalReader(anyInt(), any(), any())).then(new IntraStageReaderAnswer());
+    when(dataTransferFactory.createReader(anyInt(), any(), any(), any())).then(new InterStageReaderAnswer());
+    when(dataTransferFactory.createLocalWriter(any(), anyInt(), any())).then(new WriterAnswer());
+    when(dataTransferFactory.createWriter(any(), anyInt(), any(), any())).then(new WriterAnswer());
   }
 
   /**
@@ -112,7 +113,7 @@ public final class TaskGroupExecutorTest {
     final IRVertex sourceIRVertex = new SimpleIRVertex();
     final String sourceIrVertexId = sourceIRVertex.getId();
 
-    final String sourceTaskId = RuntimeIdGenerator.generateTaskId();
+    final String sourceTaskId = RuntimeIdGenerator.generateTaskId("Source_IR_Vertex");
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String stageId = RuntimeIdGenerator.generateStageId(0);
 
@@ -130,7 +131,7 @@ public final class TaskGroupExecutorTest {
     };
 
     final BoundedSourceTask<Integer> boundedSourceTask =
-        new BoundedSourceTask<>(sourceTaskId, sourceIrVertexId, 0, readablesWrapper, taskGroupId);
+        new BoundedSourceTask<>(sourceTaskId, sourceIrVertexId, readablesWrapper);
 
     final DAG<Task, RuntimeEdge<Task>> taskDag =
         new DAGBuilder<Task, RuntimeEdge<Task>>().addVertex(boundedSourceTask).build();
@@ -171,16 +172,15 @@ public final class TaskGroupExecutorTest {
     final String operatorIRVertexId2 = operatorIRVertex2.getId();
     final String runtimeIREdgeId = "Runtime edge between operator tasks";
 
-    final String operatorTaskId1 = RuntimeIdGenerator.generateTaskId();
-    final String operatorTaskId2 = RuntimeIdGenerator.generateTaskId();
+    final String operatorTaskId1 = RuntimeIdGenerator.generateTaskId("Operator_vertex_1");
+    final String operatorTaskId2 = RuntimeIdGenerator.generateTaskId("Operator_vertex_2");
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId();
     final String stageId = RuntimeIdGenerator.generateStageId(1);
 
     final OperatorTask operatorTask1 =
-        new OperatorTask(operatorTaskId1, operatorIRVertexId1, 0, new SimpleTransform(), taskGroupId);
+        new OperatorTask(operatorTaskId1, operatorIRVertexId1, new SimpleTransform());
     final OperatorTask operatorTask2 =
-        new OperatorTask(operatorTaskId2, operatorIRVertexId2, 0, new SimpleTransform(), taskGroupId);
-
+        new OperatorTask(operatorTaskId2, operatorIRVertexId2, new SimpleTransform());
     final Coder coder = mock(Coder.class);
     ExecutionPropertyMap edgeProperties = new ExecutionPropertyMap(runtimeIREdgeId);
     edgeProperties.put(DataStoreProperty.of(DataStoreProperty.Value.MemoryStore));

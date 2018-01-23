@@ -87,51 +87,56 @@ public final class TaskGroupExecutor {
    * Note that there are edges that are cross-stage and stage-internal.
    */
   private void initializeDataTransfer() {
+    final int taskGroupIdx = taskGroup.getTaskGroupIdx();
+    final String taskGroupId = taskGroup.getTaskGroupId();
     taskGroup.getTaskDAG().topologicalDo((task -> {
       final Set<PhysicalStageEdge> inEdgesFromOtherStages = getInEdgesFromOtherStages(task);
       final Set<PhysicalStageEdge> outEdgesToOtherStages = getOutEdgesToOtherStages(task);
 
       inEdgesFromOtherStages.forEach(physicalStageEdge -> {
         final InputReader inputReader = channelFactory.createReader(
-            task, physicalStageEdge.getSrcVertex(), physicalStageEdge);
+            taskGroupIdx, taskGroupId, physicalStageEdge.getSrcVertex(), physicalStageEdge);
         addInputReader(task, inputReader);
       });
 
       outEdgesToOtherStages.forEach(physicalStageEdge -> {
         final OutputWriter outputWriter = channelFactory.createWriter(
-            task, physicalStageEdge.getDstVertex(), physicalStageEdge);
+            task, taskGroupIdx, physicalStageEdge.getDstVertex(), physicalStageEdge);
         addOutputWriter(task, outputWriter);
       });
 
       final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
-      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, internalEdge));
+      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, taskGroupIdx, taskGroupId, internalEdge));
 
       final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroup.getTaskDAG().getOutgoingEdgesOf(task);
-      outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, internalEdge));
+      outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, taskGroupIdx, internalEdge));
     }));
   }
 
   // Helper functions to initializes cross-stage edges.
   private Set<PhysicalStageEdge> getInEdgesFromOtherStages(final Task task) {
     return stageIncomingEdges.stream().filter(
-        stageInEdge -> stageInEdge.getDstVertex().getId().equals(task.getRuntimeVertexId()))
+        stageInEdge -> stageInEdge.getDstVertex().getId().equals(task.getIrVertexId()))
         .collect(Collectors.toSet());
   }
 
   private Set<PhysicalStageEdge> getOutEdgesToOtherStages(final Task task) {
     return stageOutgoingEdges.stream().filter(
-        stageInEdge -> stageInEdge.getSrcVertex().getId().equals(task.getRuntimeVertexId()))
+        stageInEdge -> stageInEdge.getSrcVertex().getId().equals(task.getIrVertexId()))
         .collect(Collectors.toSet());
   }
 
   // Helper functions to initializes stage-internal edges.
-  private void createLocalReader(final Task task, final RuntimeEdge<Task> internalEdge) {
-    final InputReader inputReader = channelFactory.createLocalReader(task, internalEdge);
+  private void createLocalReader(final Task task,
+                                 final int taskGroupIdx,
+                                 final String taskGroupId,
+                                 final RuntimeEdge<Task> internalEdge) {
+    final InputReader inputReader = channelFactory.createLocalReader(taskGroupIdx, taskGroupId, internalEdge);
     addInputReader(task, inputReader);
   }
 
-  private void createLocalWriter(final Task task, final RuntimeEdge<Task> internalEdge) {
-    final OutputWriter outputWriter = channelFactory.createLocalWriter(task, internalEdge);
+  private void createLocalWriter(final Task task, final int taskGroupIdx, final RuntimeEdge<Task> internalEdge) {
+    final OutputWriter outputWriter = channelFactory.createLocalWriter(task, taskGroupIdx, internalEdge);
     addOutputWriter(task, outputWriter);
   }
 
@@ -163,7 +168,7 @@ public final class TaskGroupExecutor {
       taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.EXECUTING, Optional.empty());
       try {
         if (task instanceof BoundedSourceTask) {
-          launchBoundedSourceTask((BoundedSourceTask) task);
+          launchBoundedSourceTask((BoundedSourceTask) task, taskGroup.getTaskGroupIdx());
           taskGroupStateManager.onTaskStateChanged(task.getId(), TaskState.State.COMPLETE, Optional.empty());
           LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
         } else if (task instanceof OperatorTask) {
@@ -196,11 +201,13 @@ public final class TaskGroupExecutor {
 
   /**
    * Processes a BoundedSourceTask.
-   * @param boundedSourceTask to execute
+   * @param boundedSourceTask the bounded source task to execute
+   * @param boundedSourceIdx  the idx of the bounded source to execute.
    * @throws Exception occurred during input read.
    */
-  private void launchBoundedSourceTask(final BoundedSourceTask boundedSourceTask) throws Exception {
-    final Readable readable = boundedSourceTask.getReadable();
+  private void launchBoundedSourceTask(final BoundedSourceTask boundedSourceTask,
+                                       final int boundedSourceIdx) throws Exception {
+    final Readable readable = boundedSourceTask.getReadable(boundedSourceIdx);
     final Iterable readData = readable.read();
 
     taskIdToOutputWriterMap.get(boundedSourceTask.getId()).forEach(outputWriter -> {
@@ -248,14 +255,14 @@ public final class TaskGroupExecutor {
     taskIdToInputReaderMap.get(operatorTask.getId()).stream().filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
           final List<CompletableFuture<Iterator>> futures = inputReader.read();
-          final String srcVtxId = inputReader.getSrcVertexId();
+          final String srcIrVtxId = inputReader.getSrcIrVertexId();
           sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           // Add consumers which will push the data to the data queue when it ready to the futures.
           futures.forEach(compFuture -> compFuture.whenComplete((data, exception) -> {
             if (exception != null) {
               throw new BlockFetchException(exception);
             }
-            dataQueue.add(Pair.of(data, srcVtxId));
+            dataQueue.add(Pair.of(data, srcIrVtxId));
           }));
         });
 

@@ -143,13 +143,13 @@ public final class InputReader extends DataTransfer {
     return runtimeEdge;
   }
 
-  public String getSrcVertexId() {
+  public String getSrcIrVertexId() {
     // this src vertex can be either a real vertex or a task. we must check!
     if (srcVertex != null) {
       return srcVertex.getId();
     }
 
-    return ((Task) runtimeEdge.getSrc()).getRuntimeVertexId();
+    return ((Task) runtimeEdge.getSrc()).getIrVertexId();
   }
 
   public boolean isSideInputReader() {

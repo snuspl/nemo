@@ -207,21 +207,24 @@ public final class PhysicalPlanGenerator
 
             try {
               final ReadablesWrapper readables = sourceVertex.getReadableWrapper(stageParallelism);
-              newTaskToAdd = new BoundedSourceTask<>(RuntimeIdGenerator.generateTaskId(), sourceVertex.getId(),
-                  taskGroupIndex, readables, taskGroupId);
+              final String sourceVertexId = sourceVertex.getId();
+              newTaskToAdd = new BoundedSourceTask<>(RuntimeIdGenerator.generateTaskId(sourceVertexId),
+                  sourceVertexId, readables);
             } catch (Exception e) {
               throw new PhysicalPlanGenerationException(e);
             }
           } else if (irVertex instanceof OperatorVertex) {
             final OperatorVertex operatorVertex = (OperatorVertex) irVertex;
-            newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(), operatorVertex.getId(),
-                taskGroupIndex, operatorVertex.getTransform(), taskGroupId);
+            final String operatorVertexId = operatorVertex.getId();
+            newTaskToAdd = new OperatorTask(RuntimeIdGenerator.generateTaskId(operatorVertexId),
+                operatorVertexId, operatorVertex.getTransform());
 
           } else if (irVertex instanceof MetricCollectionBarrierVertex) {
             final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
                 (MetricCollectionBarrierVertex) irVertex;
-            newTaskToAdd = new MetricCollectionBarrierTask(RuntimeIdGenerator.generateTaskId(),
-                metricCollectionBarrierVertex.getId(), taskGroupIndex, taskGroupId);
+            final String metricVertexId = metricCollectionBarrierVertex.getId();
+            newTaskToAdd = new MetricCollectionBarrierTask(RuntimeIdGenerator.generateTaskId(metricVertexId),
+                metricVertexId);
           } else {
             throw new IllegalVertexOperationException("This vertex type is not supported");
           }
