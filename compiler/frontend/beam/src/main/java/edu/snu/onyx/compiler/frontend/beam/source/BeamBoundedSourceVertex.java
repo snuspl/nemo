@@ -55,7 +55,7 @@ public final class BeamBoundedSourceVertex<O> extends SourceVertex<O> {
     LOG.info("estimate: {}", source.getEstimatedSizeBytes(null));
     LOG.info("desired: {}", desiredNumOfSplits);
     source.split(source.getEstimatedSizeBytes(null) / desiredNumOfSplits, null)
-        .forEach(boundedSource -> readers.add(new BoundedSourceReader<>(boundedSource)));
+        .forEach(boundedSource -> readers.add(new BeamBoundedSourceReader<>(boundedSource)));
     return readers;
   }
 
@@ -71,17 +71,17 @@ public final class BeamBoundedSourceVertex<O> extends SourceVertex<O> {
   }
 
   /**
-   * BoundedSourceReader class.
+   * BeamBoundedSourceReader class.
    * @param <T> type of data.
    */
-  public class BoundedSourceReader<T> implements Reader<T> {
+  public class BeamBoundedSourceReader<T> implements Reader<T> {
     private final BoundedSource<T> boundedSource;
 
     /**
-     * Constructor of the BoundedSourceReader.
+     * Constructor of the BeamBoundedSourceReader.
      * @param boundedSource the BoundedSource.
      */
-    BoundedSourceReader(final BoundedSource<T> boundedSource) {
+    BeamBoundedSourceReader(final BoundedSource<T> boundedSource) {
       this.boundedSource = boundedSource;
     }
 

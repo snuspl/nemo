@@ -16,14 +16,9 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.sql;
 
-import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
-import scala.Option;
-import scala.Tuple2;
-
-import java.util.HashMap;
-import java.util.UUID;
+import org.apache.spark.SparkContext;
 
 /**
  * A simple version of the Spark session, containing SparkContext that contains SparkConf.
@@ -42,9 +37,13 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
     return new DataFrameReader(this);
   }
 
-  @Override
-  public SparkContext sparkContext() {
-    return (SparkContext) super.sparkContext();
+  /**
+   * Method to downcast Spark's spark session to our spark session class.
+   * @param sparkSession spark's spark session.
+   * @return our spark session class.
+   */
+  public static SparkSession from(final org.apache.spark.sql.SparkSession sparkSession) {
+    return new SparkSession(sparkSession.sparkContext());
   }
 
   /**
@@ -52,80 +51,62 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
    * @return the session builder.
    */
   public static Builder builder() {
-    return new Builder();
+    return new Builder().master("local");
   }
 
   /**
    * Spark Session Builder.
    */
   public static final class Builder extends org.apache.spark.sql.SparkSession.Builder {
-    private final HashMap<String, String> options = new HashMap<>();
-
     @Override
     public Builder appName(final String name) {
-      return config("spark.app.name", name);
+      return (Builder) super.appName(name);
     }
 
     @Override
     public Builder config(final SparkConf conf) {
-      for (Tuple2<String, String> entry: conf.getAll()) {
-        this.options.put(entry._1(), entry._2());
-      }
-      return this;
+      return (Builder) super.config(conf);
     }
 
     @Override
     public Builder config(final String key, final String value) {
-      this.options.put(key, value);
-      return this;
+      return (Builder) super.config(key, value);
     }
 
     @Override
     public Builder master(final String master) {
-      return config("spark.master", master);
+      return (Builder) super.master(master);
     }
 
     @Override
     public SparkSession getOrCreate() {
       UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("onyx_user"));
+//      final Seq<String> emptyList = JavaConversions.asScalaBuffer(new ArrayList<String>()).toSeq();
 
-      if (!options.containsKey("spark.master")) {
-        return master("local").getOrCreate();
-      }
+//      final List<Tuple2<String, String>> tuples = System.getenv().entrySet().stream()
+//          .map(e -> new Tuple2<>(e.getKey(), e.getValue()))
+//          .collect(Collectors.toList());
+//      final Seq<Tuple2<String, String>> scalaSeq = JavaConversions.asScalaBuffer(tuples).toSeq();
+//      final Map<String, String> env = (Map<String, String>) Map$.MODULE$.apply(scalaSeq);
 
-      final Option<org.apache.spark.sql.SparkSession> activeSession = getActiveSession();
-      if (activeSession.isDefined() && activeSession.get() != null) {
-        final SparkSession session = (SparkSession) activeSession.get();
-        options.forEach((k, v) -> session.sessionState().conf().setConfString(k, v));
-        return session;
-      }
+//      try {
+//        final Constructor<?> ctor = SparkSubmitArguments.class.getDeclaredConstructors()[0];
+//        ctor.setAccessible(true);
+//        System.out.println(ctor);
+//        final Object args = ctor.newInstance(emptyList, env);
+//
+//        System.out.println("lall");
+//        final SparkSubmit o = SparkSubmit.class.newInstance();
+//        final Method m = SparkSubmit.class.getDeclaredMethod("prepareSubmitEnvironment", SparkSubmitArguments.class);
+//        System.out.println("asdfasdflall");
+//
+//        m.setAccessible(true);
+//        m.invoke(o, args);
+//      } catch (Exception e) {
+//        throw new RuntimeException(e);
+//      }
 
-      synchronized (SparkSession.class) {
-        final Option<org.apache.spark.sql.SparkSession> defaultSession = getDefaultSession();
-        if (defaultSession.isDefined() && defaultSession.get() != null) {
-          final SparkSession session = (SparkSession) defaultSession.get();
-          options.forEach((k, v) -> session.sessionState().conf().setConfString(k, v));
-          return session;
-        }
-
-        final String randomAppName = UUID.randomUUID().toString();
-        final SparkConf sparkConf = new SparkConf();
-        options.forEach(sparkConf::set);
-        if (!sparkConf.contains("spark.app.name")) {
-          sparkConf.setAppName(randomAppName);
-        }
-        final SparkContext sparkContext = SparkContext.getOrCreate(sparkConf);
-        options.forEach(sparkContext.conf()::set);
-        if (!sparkContext.conf().contains("spark.app.name")) {
-          sparkContext.conf().setAppName(randomAppName);
-        }
-
-        final SparkSession session = new SparkSession(sparkContext);
-        options.forEach(session.sessionState().conf()::setConfString);
-        setDefaultSession(session);
-
-        return session;
-      }
+      return SparkSession.from(super.getOrCreate());
     }
   }
 }

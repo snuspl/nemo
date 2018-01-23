@@ -6,6 +6,7 @@ import edu.snu.onyx.common.ir.edge.IREdge;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
 import org.apache.spark.Partition;
+import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
@@ -16,8 +17,11 @@ import scala.reflect.ClassTag$;
 import javax.annotation.Nullable;
 import java.util.Stack;
 
-public class RDD<T> extends org.apache.spark.rdd.RDD<T> {
-  private final Integer parallelism;
+/**
+ * RDD for Onyx.
+ * @param <T> type of data.
+ */
+public final class RDD<T> extends org.apache.spark.rdd.RDD<T> {
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
   @Nullable private final IRVertex lastVertex;
@@ -26,28 +30,23 @@ public class RDD<T> extends org.apache.spark.rdd.RDD<T> {
   /**
    * Static method to create a RDD object.
    * @param sparkContext spark context containing configurations.
-   * @param parallelism parallelism information.
    * @param <T> type of the resulting object.
    * @return the new JavaRDD object.
    */
-  public static <T> RDD<T> of(final SparkContext sparkContext, final Integer parallelism) {
-    return new RDD<>(sparkContext, parallelism,
-        new DAGBuilder<IRVertex, IREdge>().buildWithoutSourceSinkCheck(), null);
+  public static <T> RDD<T> of(final SparkContext sparkContext) {
+    return new RDD<>(sparkContext, new DAGBuilder<IRVertex, IREdge>().buildWithoutSourceSinkCheck(), null);
   }
 
   /**
    * Constructor.
    * @param sparkContext spark context containing configurations.
-   * @param parallelism parallelism information.
    * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
-  RDD(final SparkContext sparkContext, final Integer parallelism,
-      final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+  RDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     super(sparkContext, null, ClassTag$.MODULE$.apply((Class<T>) Object.class));
 
     this.loopVertexStack = new Stack<>();
-    this.parallelism = parallelism;
     this.dag = dag;
     this.lastVertex = lastVertex;
     if (sparkContext.conf().get("spark.serializer", "")

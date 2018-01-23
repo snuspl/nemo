@@ -16,8 +16,7 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
-import edu.snu.onyx.compiler.frontend.spark.core.RDD;
-import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
+import org.apache.spark.SparkContext;
 
 import java.util.List;
 
@@ -43,7 +42,6 @@ public final class JavaSparkContext {
    * @return the newly initiated JavaRDD.
    */
   public <T> JavaRDD<T> parallelize(final List<T> l, final int slices) {
-    return JavaRDD.<T>of(this.sparkContext, slices).setSource(l);
-//    return new JavaRDD<>(RDD.<T>of(this.sparkContext, slices)).setSource(l);
+    return JavaRDD.<T>of(this.sparkContext, l, slices);
   }
 }

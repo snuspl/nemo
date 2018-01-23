@@ -26,13 +26,12 @@ import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
 import edu.snu.onyx.common.ir.vertex.IRVertex;
 import edu.snu.onyx.common.ir.vertex.LoopVertex;
 import edu.snu.onyx.common.ir.vertex.OperatorVertex;
-import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.RDD;
-import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import edu.snu.onyx.compiler.frontend.spark.transform.CollectTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceByKeyTransform;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;
@@ -57,7 +56,6 @@ import static edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD.getEdgeComm
  */
 public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairRDD<K, V> {
   private final SparkContext sparkContext;
-  private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
   @Nullable private final IRVertex lastVertex;
@@ -66,19 +64,16 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
   /**
    * Constructor.
    * @param sparkContext spark context containing configurations.
-   * @param parallelism parallelism information.
    * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
-  JavaPairRDD(final SparkContext sparkContext, final Integer parallelism,
-              final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+  JavaPairRDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     // TODO #366: resolve while implementing scala RDD.
-    super(RDD.<Tuple2<K, V>>of(sparkContext, parallelism),
+    super(RDD.<Tuple2<K, V>>of(sparkContext),
         ClassTag$.MODULE$.apply((Class<K>) Object.class), ClassTag$.MODULE$.apply((Class<V>) Object.class));
 
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
-    this.parallelism = parallelism;
     this.dag = dag;
     this.lastVertex = lastVertex;
     if (sparkContext.conf().get("spark.serializer", "")
@@ -103,7 +98,6 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex reduceByKeyVertex = new OperatorVertex(new ReduceByKeyTransform<K, V>(func));
-    reduceByKeyVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(reduceByKeyVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceByKeyVertex),
@@ -111,8 +105,7 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    return new JavaPairRDD<>(this.sparkContext, this.parallelism,
-        builder.buildWithoutSourceSinkCheck(), reduceByKeyVertex);
+    return new JavaPairRDD<>(this.sparkContext, builder.buildWithoutSourceSinkCheck(), reduceByKeyVertex);
   }
 
   /////////////// ACTIONS ///////////////
@@ -126,7 +119,6 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
     final String resultFile = System.getProperty("user.dir") + "/collectresult";
 
     final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
-    collectVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(collectVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, collectVertex),

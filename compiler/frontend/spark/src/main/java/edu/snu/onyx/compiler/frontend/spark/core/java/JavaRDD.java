@@ -29,11 +29,12 @@ import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.RDD;
-import edu.snu.onyx.compiler.frontend.spark.core.SparkContext;
 import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSourceVertex;
+import edu.snu.onyx.compiler.frontend.spark.sql.Dataset;
 import edu.snu.onyx.compiler.frontend.spark.transform.*;
 import org.apache.spark.Partition;
 import org.apache.spark.Partitioner;
+import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.JavaFutureAction;
 import org.apache.spark.api.java.Optional;
@@ -46,7 +47,6 @@ import org.apache.spark.serializer.Serializer;
 import org.apache.spark.storage.StorageLevel;
 import scala.reflect.ClassTag$;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -59,39 +59,59 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   private final SparkContext sparkContext;
-  private final Integer parallelism;
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
-  @Nullable private final IRVertex lastVertex;
+  private final IRVertex lastVertex;
   private final Serializer serializer;
 
   /**
    * Static method to create a JavaRDD object.
    * @param sparkContext spark context containing configurations.
+   * @param initialData initial data.
    * @param parallelism parallelism information.
    * @param <T> type of the resulting object.
    * @return the new JavaRDD object.
    */
-  public static <T> JavaRDD<T> of(final SparkContext sparkContext, final Integer parallelism) {
-    return new JavaRDD<>(sparkContext, parallelism,
-        new DAGBuilder<IRVertex, IREdge>().buildWithoutSourceSinkCheck(), null);
+  public static <T> JavaRDD<T> of(final SparkContext sparkContext,
+                                  final Iterable<T> initialData, final Integer parallelism) {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+
+    final IRVertex initializedSourceVertex = new InitializedSourceVertex<>(initialData);
+    initializedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
+    builder.addVertex(initializedSourceVertex);
+
+    return new JavaRDD<>(sparkContext, builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
+  }
+
+  /**
+   * Static method to create a JavaRDD object.
+   * @param sparkContext spark context containing configurations.
+   * @param dataset dataset to read initial data from.
+   * @param <T> type of the resulting object.
+   * @return the new JavaRDD object.
+   */
+  public static <T> JavaRDD<T> of(final SparkContext sparkContext,
+                                  final Dataset<T> dataset) {
+    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
+
+    final IRVertex sparkBoundedSourceVertex = new SparkBoundedSourceVertex<>(dataset);
+    builder.addVertex(sparkBoundedSourceVertex);
+
+    return new JavaRDD<>(sparkContext, builder.buildWithoutSourceSinkCheck(), sparkBoundedSourceVertex);
   }
 
   /**
    * Constructor.
    * @param sparkContext spark context containing configurations.
-   * @param parallelism parallelism information.
    * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
-  JavaRDD(final SparkContext sparkContext, final Integer parallelism,
-          final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+  JavaRDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, final IRVertex lastVertex) {
     // TODO #366: resolve while implementing scala RDD.
-    super(RDD.<T>of(sparkContext, parallelism), ClassTag$.MODULE$.apply((Class<T>) Object.class));
+    super(RDD.of(sparkContext), ClassTag$.MODULE$.apply((Class<T>) Object.class));
 
     this.loopVertexStack = new Stack<>();
     this.sparkContext = sparkContext;
-    this.parallelism = parallelism;
     this.dag = dag;
     this.lastVertex = lastVertex;
     if (sparkContext.conf().get("spark.serializer", "")
@@ -112,38 +132,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   /////////////// TRANSFORMATIONS ///////////////
 
   /**
-   * Set initialized source.
-   * @param initialData initial data.
-   * @return the Java RDD with the initialized source vertex.
-   */
-  public JavaRDD<T> setSource(final Iterable<T> initialData) {
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-
-    final IRVertex initializedSourceVertex = new InitializedSourceVertex<>(initialData);
-    initializedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
-    builder.addVertex(initializedSourceVertex, loopVertexStack);
-
-    return new JavaRDD<>(this.sparkContext, this.parallelism,
-        builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
-  }
-
-  /**
-   * Set source.
-   * @param rdd RDD to read data from.
-   * @return the JavaRDD with the bounded source vertex.
-   */
-  public JavaRDD<T> setSource(final org.apache.spark.rdd.RDD<T> rdd) {
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-
-    final IRVertex sparkBoundedSourceVertex = new SparkBoundedSourceVertex<>(rdd);
-    sparkBoundedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
-    builder.addVertex(sparkBoundedSourceVertex, loopVertexStack);
-
-    return new JavaRDD<>(this.sparkContext, this.parallelism,
-        builder.buildWithoutSourceSinkCheck(), sparkBoundedSourceVertex);
-  }
-
-  /**
    * Map transform.
    * @param func function to apply.
    * @param <O> output type.
@@ -154,7 +142,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
-    mapVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(mapVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapVertex),
@@ -162,7 +149,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    return new JavaRDD<>(this.sparkContext, this.parallelism, builder.buildWithoutSourceSinkCheck(), mapVertex);
+    return new JavaRDD<>(this.sparkContext, builder.buildWithoutSourceSinkCheck(), mapVertex);
   }
 
   @Override
@@ -170,7 +157,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex flatMapVertex = new OperatorVertex(new FlatMapTransform<>(f));
-    flatMapVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(flatMapVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, flatMapVertex),
@@ -178,7 +164,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    return new JavaRDD<>(this.sparkContext, this.parallelism, builder.buildWithoutSourceSinkCheck(), flatMapVertex);
+    return new JavaRDD<>(this.sparkContext, builder.buildWithoutSourceSinkCheck(), flatMapVertex);
   }
 
   /////////////// TRANSFORMATION TO PAIR RDD ///////////////
@@ -188,7 +174,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex mapToPairVertex = new OperatorVertex(new MapToPairTransform<>(f));
-    mapToPairVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(mapToPairVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapToPairVertex),
@@ -196,8 +181,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    return new JavaPairRDD<>(this.sparkContext, this.parallelism,
-        builder.buildWithoutSourceSinkCheck(), mapToPairVertex);
+    return new JavaPairRDD<>(this.sparkContext, builder.buildWithoutSourceSinkCheck(), mapToPairVertex);
   }
 
   /////////////// ACTIONS ///////////////
@@ -222,7 +206,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
 
     final IRVertex reduceVertex = new OperatorVertex(new ReduceTransform<>(func));
-    reduceVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(reduceVertex, loopVertexStack);
 
     final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, reduceVertex),
@@ -235,7 +218,6 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     final String resultFile = System.getProperty("user.dir") + "/reduceresult";
 
     final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
-    collectVertex.setProperty(ParallelismProperty.of(parallelism));
     builder.addVertex(collectVertex, loopVertexStack);
 
     final IREdge finalEdge = new IREdge(getEdgeCommunicationPattern(reduceVertex, collectVertex),
