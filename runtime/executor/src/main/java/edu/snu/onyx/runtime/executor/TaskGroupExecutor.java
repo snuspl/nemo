@@ -201,12 +201,10 @@ public final class TaskGroupExecutor {
    */
   private void launchBoundedSourceTask(final BoundedSourceTask boundedSourceTask) throws Exception {
     final Readable readable = boundedSourceTask.getReadable();
-    final Iterator readData = readable.read();
-    final List iterable = new ArrayList<>();
-    readData.forEachRemaining(iterable::add);
+    final Iterable readData = readable.read();
 
     taskIdToOutputWriterMap.get(boundedSourceTask.getId()).forEach(outputWriter -> {
-      outputWriter.write(iterable);
+      outputWriter.write(readData);
       outputWriter.close();
     });
   }

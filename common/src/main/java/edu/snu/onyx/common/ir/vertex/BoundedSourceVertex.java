@@ -18,7 +18,6 @@ package edu.snu.onyx.common.ir.vertex;
 import edu.snu.onyx.common.ir.Readable;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import edu.snu.onyx.common.ir.ReadablesWrapper;
@@ -105,14 +104,14 @@ public final class BoundedSourceVertex<O> extends SourceVertex<O> {
     }
 
     @Override
-    public Iterator<T> read() throws Exception {
+    public Iterable<T> read() throws Exception {
       final ArrayList<T> elements = new ArrayList<>();
       try (Source.Reader<T> reader = boundedSource.createReader()) {
         for (boolean available = reader.start(); available; available = reader.advance()) {
           elements.add(reader.getCurrent());
         }
       }
-      return elements.iterator();
+      return elements;
     }
   }
 }
