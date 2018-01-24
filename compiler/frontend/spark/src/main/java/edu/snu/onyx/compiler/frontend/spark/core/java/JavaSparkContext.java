@@ -42,6 +42,6 @@ public final class JavaSparkContext {
    * @return the newly initiated JavaRDD.
    */
   public <T> JavaRDD<T> parallelize(final List<T> l, final int slices) {
-    return JavaRDD.<T>of(this.sparkContext, l, slices);
+    return JavaRDD.of(this.sparkContext, l, slices);
   }
 }

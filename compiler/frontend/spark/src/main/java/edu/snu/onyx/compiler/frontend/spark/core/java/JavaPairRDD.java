@@ -16,8 +16,6 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
@@ -40,9 +38,7 @@ import scala.Tuple2;
 import scala.reflect.ClassTag$;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -132,22 +128,23 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
     // Retrieve result data from file.
     // TODO #740: remove this part, and make it properly transfer with executor.
     try {
-      final Kryo kryo = new Kryo();
       final List<Tuple2<K, V>> result = new ArrayList<>();
       Integer i = 0;
+
       // TODO #740: remove this part, and make it properly transfer with executor.
       File file = new File(resultFile + i);
       while (file.exists()) {
-        final Input input = new Input(new FileInputStream(resultFile + i));
-        result.add((Tuple2<K, V>) kryo.readClassAndObject(input));
-        input.close();
+        final FileInputStream fin = new FileInputStream(file);
+        final ObjectInputStream ois = new ObjectInputStream(fin);
+        result.addAll((List<Tuple2<K, V>>) ois.readObject());
+        ois.close();
 
         // Delete temporary file
         file.delete();
         file = new File(resultFile + ++i);
       }
       return result;
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }

@@ -1,14 +1,14 @@
 package edu.snu.onyx.compiler.frontend.spark.transform;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
 import edu.snu.onyx.common.ir.OutputCollector;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 import edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Collect transform.
@@ -35,11 +35,13 @@ public final class CollectTransform<T> implements Transform<T, T> {
     // Write result to a temporary file.
     // TODO #740: remove this part, and make it properly transfer with executor.
     try {
-      final Kryo kryo = new Kryo();
-      final Output output = new Output(new FileOutputStream(filename));
-      elements.forEachRemaining(element -> kryo.writeClassAndObject(output, element));
-      output.close();
-    } catch (FileNotFoundException e) {
+      final FileOutputStream fos = new FileOutputStream(filename);
+      final ObjectOutputStream oos = new ObjectOutputStream(fos);
+      final List<T> list = new ArrayList<>();
+      elements.forEachRemaining(list::add);
+      oos.writeObject(list);
+      oos.close();
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }

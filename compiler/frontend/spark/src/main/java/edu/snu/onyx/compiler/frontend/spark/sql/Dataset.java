@@ -18,13 +18,9 @@ package edu.snu.onyx.compiler.frontend.spark.sql;
 
 import edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD;
 import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
-import org.apache.spark.sql.execution.datasources.LogicalRelation;
-import org.apache.spark.sql.sources.BaseRelation;
-import scala.Option;
 
-import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * A dataset component: it represents relational data.
@@ -57,6 +53,15 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
    */
   @Override
   public JavaRDD<T> javaRDD() {
-    return JavaRDD.of(super.sparkSession().sparkContext(), this);
+    System.out.println(super.sparkSession());
+    System.out.println(super.sparkSession().sessionState());
+    System.out.println(super.rdd());
+
+    final T[] list = (T[]) super.rdd().collect();
+    final Iterable<T> data = Arrays.asList(list);
+    final Integer parallelism = super.rdd().getNumPartitions();
+
+    return JavaRDD.of(super.sparkSession().sparkContext(), data, parallelism);
+//    return JavaRDD.of(super.sparkSession().sparkContext(), this);
   }
 }

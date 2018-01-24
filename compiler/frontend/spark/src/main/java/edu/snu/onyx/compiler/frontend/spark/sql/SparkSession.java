@@ -81,31 +81,6 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
     @Override
     public SparkSession getOrCreate() {
       UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("onyx_user"));
-//      final Seq<String> emptyList = JavaConversions.asScalaBuffer(new ArrayList<String>()).toSeq();
-
-//      final List<Tuple2<String, String>> tuples = System.getenv().entrySet().stream()
-//          .map(e -> new Tuple2<>(e.getKey(), e.getValue()))
-//          .collect(Collectors.toList());
-//      final Seq<Tuple2<String, String>> scalaSeq = JavaConversions.asScalaBuffer(tuples).toSeq();
-//      final Map<String, String> env = (Map<String, String>) Map$.MODULE$.apply(scalaSeq);
-
-//      try {
-//        final Constructor<?> ctor = SparkSubmitArguments.class.getDeclaredConstructors()[0];
-//        ctor.setAccessible(true);
-//        System.out.println(ctor);
-//        final Object args = ctor.newInstance(emptyList, env);
-//
-//        System.out.println("lall");
-//        final SparkSubmit o = SparkSubmit.class.newInstance();
-//        final Method m = SparkSubmit.class.getDeclaredMethod("prepareSubmitEnvironment", SparkSubmitArguments.class);
-//        System.out.println("asdfasdflall");
-//
-//        m.setAccessible(true);
-//        m.invoke(o, args);
-//      } catch (Exception e) {
-//        throw new RuntimeException(e);
-//      }
-
       return SparkSession.from(super.getOrCreate());
     }
   }
