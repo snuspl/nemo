@@ -26,7 +26,6 @@ import edu.snu.onyx.runtime.common.data.KeyRange;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.data.HashRange;
 import edu.snu.onyx.runtime.common.eventhandler.DynamicOptimizationEventHandler;
 

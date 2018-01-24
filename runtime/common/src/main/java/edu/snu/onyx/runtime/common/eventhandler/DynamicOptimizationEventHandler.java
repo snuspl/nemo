@@ -55,7 +55,7 @@ public final class DynamicOptimizationEventHandler implements RuntimeEventHandle
     final MetricCollectionBarrierVertex metricCollectionBarrierVertex =
             dynamicOptimizationEvent.getMetricCollectionBarrierVertex();
 
-    final Pair<String, TaskGroup> taskInfo = dynamicOptimizationEvent.getTaskInfo();
+    final Pair<String, String> taskInfo = dynamicOptimizationEvent.getTaskInfo();
 
     final PhysicalPlan newPlan = RuntimeOptimizer.dynamicOptimization(physicalPlan,
         metricCollectionBarrierVertex);

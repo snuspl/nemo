@@ -116,14 +116,11 @@ public final class SingleTaskGroupQueueTest {
 
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
-      // First schedule the children TaskGroups (since it is push).
+      // First schedule the child TaskGroups (since it is push).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
-
+      scheduleTaskGroupsInStage(dagOf2Stages.get(1));
       // Then, schedule the parent TaskGroups.
-      dagOf2Stages.get(0).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
+      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
 
       countDownLatch.countDown();
     });
@@ -206,9 +203,7 @@ public final class SingleTaskGroupQueueTest {
     executorService.execute(() -> {
       // First schedule the parent TaskGroups (since it is pull).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      dagOf2Stages.get(0).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
-
+      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
       countDownLatch.countDown();
     });
 
@@ -230,8 +225,7 @@ public final class SingleTaskGroupQueueTest {
             dagOf2Stages.get(0).getId());
 
         // Schedule the children TaskGroups.
-        dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
+        scheduleTaskGroupsInStage(dagOf2Stages.get(1));
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -318,14 +312,11 @@ public final class SingleTaskGroupQueueTest {
 
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
-      // First schedule the children TaskGroups (since it is push).
+      // First schedule the child TaskGroups (since it is push).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
-
+      scheduleTaskGroupsInStage(dagOf2Stages.get(1));
       // Then, schedule the parent TaskGroups.
-      dagOf2Stages.get(0).getTaskGroupList().forEach(taskGroup ->
-          pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
+      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
 
       countDownLatch.countDown();
     });
@@ -377,14 +368,11 @@ public final class SingleTaskGroupQueueTest {
 
     final CountDownLatch countDownLatch = new CountDownLatch(2);
 
-    // First schedule the children TaskGroups (since it is push).
+    // First schedule the child TaskGroups (since it is push).
     // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-    dagOf2Stages.get(1).getTaskGroupList().forEach(taskGroup ->
-        pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
-
+    scheduleTaskGroupsInStage(dagOf2Stages.get(1));
     // Then, schedule the parent TaskGroups.
-    dagOf2Stages.get(0).getTaskGroupList().forEach(taskGroup ->
-        pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup("TestPlan", taskGroup, null, null, 0)));
+    scheduleTaskGroupsInStage(dagOf2Stages.get(0));
 
     countDownLatch.countDown();
 
@@ -414,5 +402,15 @@ public final class SingleTaskGroupQueueTest {
     });
 
     countDownLatch.await();
+  }
+
+  /**
+   * Schedule the task groups in a physical stage.
+   * @param stage the stage to schedule.
+   */
+  private void scheduleTaskGroupsInStage(final PhysicalStage stage) {
+    final TaskGroup taskGroup = stage.getTaskGroup();
+    stage.getTaskGroupIds().forEach(taskGroupId -> pendingTaskGroupPriorityQueue.enqueue(
+        new ScheduledTaskGroup("TestPlan", taskGroup, taskGroupId, null, null, 0)));
   }
 }

@@ -30,6 +30,7 @@ import java.util.List;
 public final class ScheduledTaskGroup implements Serializable {
   private final String jobId;
   private final TaskGroup taskGroup;
+  private final String taskGroupId;
   private final int taskGroupIdx;
   private final List<PhysicalStageEdge> taskGroupIncomingEdges;
   private final List<PhysicalStageEdge> taskGroupOutgoingEdges;
@@ -40,20 +41,21 @@ public final class ScheduledTaskGroup implements Serializable {
    *
    * @param jobId                  the id of the job.
    * @param taskGroup              the scheduled task group.
-   * @param taskGroupIdx           the id of the scheduled task group.
+   * @param taskGroupId            the ID of the scheduled task group.
    * @param taskGroupIncomingEdges the incoming edges of the task group.
    * @param taskGroupOutgoingEdges the outgoing edges of the task group.
    * @param attemptIdx             the attempt index.
    */
   public ScheduledTaskGroup(final String jobId,
                             final TaskGroup taskGroup,
-                            final int taskGroupIdx,
+                            final String taskGroupId,
                             final List<PhysicalStageEdge> taskGroupIncomingEdges,
                             final List<PhysicalStageEdge> taskGroupOutgoingEdges,
                             final int attemptIdx) {
     this.jobId = jobId;
     this.taskGroup = taskGroup;
-    this.taskGroupIdx = taskGroupIdx;
+    this.taskGroupId = taskGroupId;
+    this.taskGroupIdx = RuntimeIdGenerator.getIndexFromTaskGroupId(taskGroupId);
     this.taskGroupIncomingEdges = taskGroupIncomingEdges;
     this.taskGroupOutgoingEdges = taskGroupOutgoingEdges;
     this.attemptIdx = attemptIdx;
@@ -77,7 +79,7 @@ public final class ScheduledTaskGroup implements Serializable {
    * @return the ID of the scheduled task group.
    */
   public String getTaskGroupId() {
-    return RuntimeIdGenerator.generateTaskGroupId(taskGroupIdx, taskGroup.getStageId());
+    return taskGroupId;
   }
 
 

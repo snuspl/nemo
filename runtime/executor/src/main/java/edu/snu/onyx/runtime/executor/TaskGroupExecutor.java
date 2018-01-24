@@ -17,6 +17,7 @@ package edu.snu.onyx.runtime.executor;
 
 import edu.snu.onyx.common.ContextImpl;
 import edu.snu.onyx.common.Pair;
+import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.exception.BlockFetchException;
 import edu.snu.onyx.common.exception.BlockWriteException;
 import edu.snu.onyx.common.ir.Readable;
@@ -50,7 +51,7 @@ public final class TaskGroupExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskGroupExecutor.class.getName());
 
-  private final TaskGroup taskGroup;
+  private final ScheduledTaskGroup scheduledTaskGroup;
   private final int taskGroupIdx;
   private final TaskGroupStateManager taskGroupStateManager;
   private final List<PhysicalStageEdge> stageIncomingEdges;
@@ -65,16 +66,14 @@ public final class TaskGroupExecutor {
 
   private boolean isExecutionRequested;
 
-  public TaskGroupExecutor(final TaskGroup taskGroup,
+  public TaskGroupExecutor(final ScheduledTaskGroup scheduledTaskGroup,
                            final TaskGroupStateManager taskGroupStateManager,
-                           final List<PhysicalStageEdge> stageIncomingEdges,
-                           final List<PhysicalStageEdge> stageOutgoingEdges,
                            final DataTransferFactory channelFactory) {
-    this.taskGroup = taskGroup;
-    this.taskGroupIdx = taskGroup.getTaskGroupIdx();
+    this.scheduledTaskGroup = scheduledTaskGroup;
+    this.taskGroupIdx = scheduledTaskGroup.getTaskGroupIdx();
     this.taskGroupStateManager = taskGroupStateManager;
-    this.stageIncomingEdges = stageIncomingEdges;
-    this.stageOutgoingEdges = stageOutgoingEdges;
+    this.stageIncomingEdges = scheduledTaskGroup.getTaskGroupIncomingEdges();
+    this.stageOutgoingEdges = scheduledTaskGroup.getTaskGroupOutgoingEdges();
     this.channelFactory = channelFactory;
 
     this.physicalTaskIdToInputReaderMap = new HashMap<>();
@@ -90,7 +89,8 @@ public final class TaskGroupExecutor {
    * Note that there are edges that are cross-stage and stage-internal.
    */
   private void initializeDataTransfer() {
-    taskGroup.getTaskDAG().topologicalDo((task -> {
+    final DAG<Task, RuntimeEdge<Task>> taskGroupDag = scheduledTaskGroup.getTaskGroup().getTaskDAG();
+    taskGroupDag.topologicalDo((task -> {
       final Set<PhysicalStageEdge> inEdgesFromOtherStages = getInEdgesFromOtherStages(task);
       final Set<PhysicalStageEdge> outEdgesToOtherStages = getOutEdgesToOtherStages(task);
 
@@ -106,10 +106,10 @@ public final class TaskGroupExecutor {
         addOutputWriter(task, outputWriter);
       });
 
-      final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroup.getTaskDAG().getIncomingEdgesOf(task);
+      final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroupDag.getIncomingEdgesOf(task);
       inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, taskGroupIdx, internalEdge));
 
-      final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroup.getTaskDAG().getOutgoingEdgesOf(task);
+      final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroupDag.getOutgoingEdgesOf(task);
       outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, taskGroupIdx, internalEdge));
     }));
   }
@@ -157,9 +157,9 @@ public final class TaskGroupExecutor {
    * Executes the task group.
    */
   public void execute() {
-    LOG.info("{} Execution Started!", taskGroup.getTaskGroupId());
+    LOG.info("{} Execution Started!", scheduledTaskGroup.getTaskGroupId());
     if (isExecutionRequested) {
-      throw new RuntimeException("TaskGroup {" + taskGroup.getTaskGroupId() + "} execution called again!");
+      throw new RuntimeException("TaskGroup {" + scheduledTaskGroup.getTaskGroupId() + "} execution called again!");
     } else {
       isExecutionRequested = true;
     }
@@ -167,22 +167,23 @@ public final class TaskGroupExecutor {
     taskGroupStateManager.onTaskGroupStateChanged(
         TaskGroupState.State.EXECUTING, Optional.empty(), Optional.empty());
 
-    taskGroup.getTaskDAG().topologicalDo(task -> {
+    final String taskGroupId = scheduledTaskGroup.getTaskGroupId();
+    scheduledTaskGroup.getTaskGroup().getTaskDAG().topologicalDo(task -> {
       final String physicalTaskId = getPhysicalTaskId(task.getId());
       taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.EXECUTING, Optional.empty());
       try {
         if (task instanceof BoundedSourceTask) {
-          launchBoundedSourceTask((BoundedSourceTask) task, taskGroup.getTaskGroupIdx());
+          launchBoundedSourceTask((BoundedSourceTask) task, scheduledTaskGroup.getTaskGroupIdx());
           taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.COMPLETE, Optional.empty());
-          LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
+          LOG.info("{} Execution Complete!", taskGroupId);
         } else if (task instanceof OperatorTask) {
           launchOperatorTask((OperatorTask) task);
           taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.COMPLETE, Optional.empty());
-          LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
+          LOG.info("{} Execution Complete!", taskGroupId);
         } else if (task instanceof MetricCollectionBarrierTask) {
           launchMetricCollectionBarrierTask((MetricCollectionBarrierTask) task);
           taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.ON_HOLD, Optional.empty());
-          LOG.info("{} Execution Complete!", taskGroup.getTaskGroupId());
+          LOG.info("{} Execution Complete!", taskGroupId);
         } else {
           throw new UnsupportedOperationException(task.toString());
         }
@@ -190,12 +191,12 @@ public final class TaskGroupExecutor {
         taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.INPUT_READ_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
-            new Object[] {taskGroup.getTaskGroupId(), ex.toString()});
+            new Object[] {taskGroupId, ex.toString()});
       } catch (final BlockWriteException ex2) {
         taskGroupStateManager.onTaskStateChanged(physicalTaskId, TaskState.State.FAILED_RECOVERABLE,
             Optional.of(TaskGroupState.RecoverableFailureCause.OUTPUT_WRITE_FAILURE));
         LOG.warn("{} Execution Failed (Recoverable)! Exception: {}",
-            new Object[] {taskGroup.getTaskGroupId(), ex2.toString()});
+            new Object[] {taskGroupId, ex2.toString()});
       } catch (final Exception e) {
         taskGroupStateManager.onTaskStateChanged(
             physicalTaskId, TaskState.State.FAILED_UNRECOVERABLE, Optional.empty());

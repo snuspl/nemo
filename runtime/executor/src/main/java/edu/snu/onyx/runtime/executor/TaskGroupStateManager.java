@@ -22,6 +22,7 @@ import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
 import edu.snu.onyx.runtime.common.comm.ControlMessage;
 import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.PersistentConnectionToMasterMap;
+import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
 import edu.snu.onyx.runtime.common.state.TaskState;
@@ -64,20 +65,19 @@ public final class TaskGroupStateManager {
   private final PersistentConnectionToMasterMap persistentConnectionToMasterMap;
 
 
-  public TaskGroupStateManager(final TaskGroup taskGroup,
-                               final int attemptIdx,
+  public TaskGroupStateManager(final ScheduledTaskGroup scheduledTaskGroup,
                                final String executorId,
                                final PersistentConnectionToMasterMap persistentConnectionToMasterMap,
                                final MetricMessageSender metricMessageSender) {
-    this.taskGroupId = taskGroup.getTaskGroupId();
-    this.attemptIdx = attemptIdx;
+    this.taskGroupId = scheduledTaskGroup.getTaskGroupId();
+    this.attemptIdx = scheduledTaskGroup.getAttemptIdx();
     this.executorId = executorId;
     this.persistentConnectionToMasterMap = persistentConnectionToMasterMap;
     this.metricMessageSender = metricMessageSender;
     metricDataBuilderMap = new HashMap<>();
     logicalIdToTaskStates = new HashMap<>();
     currentTaskGroupTaskIds = new HashSet<>();
-    initializeStates(taskGroup);
+    initializeStates(scheduledTaskGroup.getTaskGroup());
   }
 
   /**

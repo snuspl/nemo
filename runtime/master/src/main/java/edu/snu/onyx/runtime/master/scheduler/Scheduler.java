@@ -44,10 +44,10 @@ public interface Scheduler {
    * Receives and updates the scheduler with a new physical plan for a job.
    * @param jobId the ID of the job to change the physical plan.
    * @param newPhysicalPlan new physical plan for the job.
-   * @param taskInfo pair containing the information of the executor id and task group to mark as complete after the
+   * @param taskInfo pair containing the information of the executor id and task group id to mark as complete after the
    *                 update.
    */
-  void updateJob(String jobId, PhysicalPlan newPhysicalPlan, Pair<String, TaskGroup> taskInfo);
+  void updateJob(String jobId, PhysicalPlan newPhysicalPlan, Pair<String, String> taskInfo);
 
   /**
    * Called when an executor is added to Runtime, so that the extra resource can be used to execute the job.
