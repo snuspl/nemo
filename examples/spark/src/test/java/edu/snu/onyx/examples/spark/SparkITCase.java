@@ -45,7 +45,7 @@ public final class SparkITCase {
     final String input = System.getProperty("user.dir") + "/../resources/sample_input_wordcount";
 
     JobLauncher.main(builder
-        .addJobId(JavaWordCount.class.getSimpleName())
+        .addJobId(JavaWordCount.class.getSimpleName() + "_test")
         .addUserMain(JavaWordCount.class.getCanonicalName())
         .addUserArgs(input)
         .addOptimizationPolicy(DefaultPolicy.class.getCanonicalName())
@@ -54,7 +54,7 @@ public final class SparkITCase {
 
   @Test(timeout = TIMEOUT)
   public void testSparkPi() throws Exception {
-    final String numParallelism = "10";
+    final String numParallelism = "3";
 
     JobLauncher.main(builder
         .addJobId(JavaSparkPi.class.getSimpleName() + "_test")
