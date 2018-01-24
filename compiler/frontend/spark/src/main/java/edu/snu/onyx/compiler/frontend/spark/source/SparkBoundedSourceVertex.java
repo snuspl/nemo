@@ -1,7 +1,12 @@
 package edu.snu.onyx.compiler.frontend.spark.source;
 
 import edu.snu.onyx.common.ir.Reader;
+import edu.snu.onyx.common.ir.vertex.InitializedSourceVertex;
 import edu.snu.onyx.common.ir.vertex.SourceVertex;
+import edu.snu.onyx.compiler.frontend.spark.sql.Dataset;
+import org.apache.spark.Partition;
+import org.apache.spark.TaskContext$;
+import scala.collection.JavaConversions;
 
 import java.util.*;
 
@@ -14,25 +19,29 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
 
   /**
    * Constructor.
-   * @param dataset set of data.
+   * Note that we have to first create our iterators here and supply them to our readers.
+   * @param dataset Dataset to read data from.
    */
-  public SparkBoundedSourceVertex(final List<Iterator<T>> dataset) {
+  public SparkBoundedSourceVertex(final Dataset<T> dataset) {
     this.readers = new ArrayList<>();
-    dataset.forEach(data -> {
+
+    for (final Partition partition: dataset.rdd().getPartitions()) {
+      final Iterator<T> data = JavaConversions.seqAsJavaList(
+          dataset.rdd().compute(partition, TaskContext$.MODULE$.empty()).toSeq()
+      ).iterator();
       final List<T> dataForReader = new ArrayList<>();
       data.forEachRemaining(dataForReader::add);
-      readers.add(new SparkBoundedSourceReader<>(dataForReader));
-    });
+      readers.add(new InitializedSourceVertex.InitializedSourceReader<>(dataForReader));
+    }
   }
 
-  public SparkBoundedSourceVertex(final Set<Reader<T>> readers) {
-    this.readers = new ArrayList<>();
-    this.readers.addAll(readers);
+  public SparkBoundedSourceVertex(final List<Reader<T>> readers) {
+    this.readers = readers;
   }
 
   @Override
   public SparkBoundedSourceVertex getClone() {
-    final SparkBoundedSourceVertex<T> that = new SparkBoundedSourceVertex<>(new HashSet<>(this.readers));
+    final SparkBoundedSourceVertex<T> that = new SparkBoundedSourceVertex<>(this.readers);
     this.copyExecutionPropertiesTo(that);
     return that;
   }
@@ -40,26 +49,5 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
   @Override
   public List<Reader<T>> getReaders(final int desiredNumOfSplits) throws Exception {
     return this.readers;
-  }
-
-  /**
-   * SparkBoundedSourceReader class.
-   * @param <T> type of data.
-   */
-  public class SparkBoundedSourceReader<T> implements Reader<T> {
-    private final List<T> data;
-
-    /**
-     * Constructor of SparkBoundedSourceReader.
-     * @param data List of data.
-     */
-    SparkBoundedSourceReader(final List<T> data) {
-      this.data = data;
-    }
-
-    @Override
-    public final Iterator<T> read() {
-      return this.data.iterator();
-    }
   }
 }

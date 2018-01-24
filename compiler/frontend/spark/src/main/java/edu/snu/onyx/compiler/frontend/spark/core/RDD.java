@@ -43,7 +43,7 @@ public final class RDD<T> extends org.apache.spark.rdd.RDD<T> {
    * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
-  RDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+  private RDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
     super(sparkContext, null, ClassTag$.MODULE$.apply((Class<T>) Object.class));
 
     this.loopVertexStack = new Stack<>();
@@ -66,80 +66,4 @@ public final class RDD<T> extends org.apache.spark.rdd.RDD<T> {
   public Partition[] getPartitions() {
     throw new UnsupportedOperationException("Operation unsupported.");
   }
-//
-//  /////////////// TRANSFORMATIONS ///////////////
-//
-//  /**
-//   * Set initialized source.
-//   * @param initialData initial data.
-//   * @return the RDD with the initialized source vertex.
-//   */
-//  public RDD<T> setSource(final Iterable<T> initialData) {
-//    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-//
-//    final IRVertex initializedSourceVertex = new InitializedSourceVertex<>(initialData);
-//    initializedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
-//    builder.addVertex(initializedSourceVertex, loopVertexStack);
-//
-//    return new RDD<>((SparkContext) this.sparkContext(), this.parallelism,
-//        builder.buildWithoutSourceSinkCheck(), initializedSourceVertex);
-//  }
-//
-//  /**
-//   * Set source.
-//   * @param rdd RDD to read data from.
-//   * @return the RDD with the bounded source vertex.
-//   */
-//  public RDD<T> setSource(final org.apache.spark.rdd.RDD<T> rdd) {
-//    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-//
-//    final IRVertex sparkBoundedSourceVertex = new SparkBoundedSourceVertex<>(rdd);
-//    sparkBoundedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
-//    builder.addVertex(sparkBoundedSourceVertex, loopVertexStack);
-//
-//    return new RDD<>((SparkContext) this.sparkContext(), this.parallelism,
-//        builder.buildWithoutSourceSinkCheck(), sparkBoundedSourceVertex);
-//  }
-//
-//  /**
-//   * Map transform.
-//   * @param func function to apply.
-//   * @param <U> output type.
-//   * @return the JavaRDD with the DAG.
-//   */
-//  @Override
-//  public <U> RDD<U> map(scala.Function1<T, U> func, scala.reflect.ClassTag<U> evidence$3) {
-//    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-//
-//    final IRVertex mapVertex = new OperatorVertex(new MapTransform<>(func));
-//    mapVertex.setProperty(ParallelismProperty.of(parallelism));
-//    builder.addVertex(mapVertex, loopVertexStack);
-//
-//    final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, mapVertex),
-//        lastVertex, mapVertex, new SparkCoder(serializer));
-//    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
-//    builder.connectVertices(newEdge);
-//
-//    return new RDD<>((SparkContext) this.sparkContext(), this.parallelism,
-//        builder.buildWithoutSourceSinkCheck(), mapVertex);
-//  }
-//
-//  /////////////// MISC ///////////////
-//
-//  /**
-//   * Retrieve communication pattern of the edge.
-//   * @param src source vertex.
-//   * @param dst destination vertex.
-//   * @return the communication pattern.
-//   */
-//  static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
-//                                                                            final IRVertex dst) {
-//    if (dst instanceof OperatorVertex
-//        && (((OperatorVertex) dst).getTransform() instanceof ReduceByKeyTransform
-//        || ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform)) {
-//      return DataCommunicationPatternProperty.Value.Shuffle;
-//    } else {
-//      return DataCommunicationPatternProperty.Value.OneToOne;
-//    }
-//  }
 }

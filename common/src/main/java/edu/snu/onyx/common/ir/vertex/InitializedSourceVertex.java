@@ -76,12 +76,12 @@ public final class InitializedSourceVertex<T> extends SourceVertex<T> {
      * Constructor.
      * @param initializedSourceData the source data.
      */
-    InitializedSourceReader(final Iterable<T> initializedSourceData) {
+    public InitializedSourceReader(final Iterable<T> initializedSourceData) {
       this.initializedSourceData = initializedSourceData;
     }
 
     @Override
-    public final Iterator<T> read() throws Exception {
+    public final Iterator<T> read() {
       return this.initializedSourceData.iterator();
     }
   }

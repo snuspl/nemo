@@ -28,6 +28,7 @@ import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.RDD;
 import edu.snu.onyx.compiler.frontend.spark.source.SparkBoundedSourceVertex;
+import edu.snu.onyx.compiler.frontend.spark.sql.Dataset;
 import edu.snu.onyx.compiler.frontend.spark.transform.*;
 import org.apache.spark.Partition;
 import org.apache.spark.Partitioner;
@@ -84,16 +85,15 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
    * Static method to create a JavaRDD object.
    * @param sparkContext spark context containing configurations.
    * @param dataset dataset to read initial data from.
-   * @param parallelism parallelism information.
    * @param <T> type of the resulting object.
    * @return the new JavaRDD object.
    */
   public static <T> JavaRDD<T> of(final SparkContext sparkContext,
-                                  final List<Iterator<T>> dataset, final Integer parallelism) {
+                                  final Dataset<T> dataset) {
     final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>();
 
     final IRVertex sparkBoundedSourceVertex = new SparkBoundedSourceVertex<>(dataset);
-    sparkBoundedSourceVertex.setProperty(ParallelismProperty.of(parallelism));
+    sparkBoundedSourceVertex.setProperty(ParallelismProperty.of(dataset.rdd().getNumPartitions()));
     builder.addVertex(sparkBoundedSourceVertex);
 
     return new JavaRDD<>(sparkContext, builder.buildWithoutSourceSinkCheck(), sparkBoundedSourceVertex);

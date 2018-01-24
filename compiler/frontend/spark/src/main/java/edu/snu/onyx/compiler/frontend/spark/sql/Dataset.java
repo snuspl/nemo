@@ -17,15 +17,8 @@
 package edu.snu.onyx.compiler.frontend.spark.sql;
 
 import edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD;
-import org.apache.spark.Partition;
-import org.apache.spark.TaskContext$;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
-import scala.collection.JavaConversions;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * A dataset component: it represents relational data.
@@ -54,20 +47,10 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
 
   /**
    * Create a javaRDD component from this data set.
-   * Note that we have to first create our iterators here and supply them to our source vertex.
    * @return the new javaRDD component.
    */
   @Override
   public JavaRDD<T> javaRDD() {
-    final List<Iterator<T>> l = new ArrayList<>();
-    final Integer parallelism = super.rdd().getNumPartitions();
-    for (final Partition partition: super.rdd().getPartitions()) {
-      final Iterator<T> data = JavaConversions.seqAsJavaList(
-          super.rdd().compute(partition, TaskContext$.MODULE$.empty()).toSeq()
-      ).iterator();
-      l.add(data);
-    }
-
-    return JavaRDD.of(super.sparkSession().sparkContext(), l, parallelism);
+    return JavaRDD.of(super.sparkSession().sparkContext(), this);
   }
 }
