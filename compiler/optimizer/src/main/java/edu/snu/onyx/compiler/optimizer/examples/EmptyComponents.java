@@ -16,7 +16,8 @@
 package edu.snu.onyx.compiler.optimizer.examples;
 
 import edu.snu.onyx.common.ir.OutputCollector;
-import edu.snu.onyx.common.ir.Reader;
+import edu.snu.onyx.common.ir.Readable;
+import edu.snu.onyx.common.ir.ReadablesWrapper;
 import edu.snu.onyx.common.ir.vertex.SourceVertex;
 import edu.snu.onyx.common.ir.vertex.transform.Transform;
 
@@ -69,7 +70,7 @@ public class EmptyComponents {
   }
 
   /**
-   * Empty Source Vertex.
+   * An empty Source Vertex.
    * @param <T> type of the data.
    */
   public static final class EmptySourceVertex<T> extends SourceVertex<T> {
@@ -93,8 +94,8 @@ public class EmptyComponents {
     }
 
     @Override
-    public List<Reader<T>> getReaders(final int desirednumOfSplits) {
-      return Arrays.asList(new EmptyReader<>());
+    public ReadablesWrapper<T> getReadableWrapper(final int desirednumOfSplits) {
+      return new EmptyReadablesWrapper<>();
     }
 
     @Override
@@ -104,13 +105,24 @@ public class EmptyComponents {
   }
 
   /**
-   * Empty reader.
+   * An empty ReadablesWrapper.
    * @param <T> type of the data.
    */
-  static final class EmptyReader<T> implements Reader<T> {
+  static final class EmptyReadablesWrapper<T> implements ReadablesWrapper<T> {
     @Override
-    public Iterator<T> read() {
-      return new ArrayList<T>().iterator();
+    public List<Readable<T>> getReadables() {
+      return Arrays.asList(new EmptyReadable<>());
+    }
+  }
+
+  /**
+   * An empty reader.
+   * @param <T> type of the data.
+   */
+  static final class EmptyReadable<T> implements Readable<T> {
+    @Override
+    public Iterable<T> read() {
+      return new ArrayList<>();
     }
   }
 }
