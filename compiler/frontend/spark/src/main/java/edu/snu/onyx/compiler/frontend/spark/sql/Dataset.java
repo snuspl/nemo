@@ -17,10 +17,15 @@
 package edu.snu.onyx.compiler.frontend.spark.sql;
 
 import edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD;
+import org.apache.spark.Partition;
+import org.apache.spark.TaskContext$;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import scala.collection.JavaConversions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A dataset component: it represents relational data.
@@ -49,19 +54,87 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
 
   /**
    * Create a javaRDD component from this data set.
+   * Note that we have to first create our iterators here and supply them to our source vertex.
    * @return the new javaRDD component.
    */
   @Override
   public JavaRDD<T> javaRDD() {
-    System.out.println(super.sparkSession());
-    System.out.println(super.sparkSession().sessionState());
-    System.out.println(super.rdd());
-
-    final T[] list = (T[]) super.rdd().collect();
-    final Iterable<T> data = Arrays.asList(list);
+    final List<Iterator<T>> l = new ArrayList<>();
     final Integer parallelism = super.rdd().getNumPartitions();
+    for (final Partition partition: super.rdd().getPartitions()) {
+      final Iterator<T> data = JavaConversions.seqAsJavaList(
+          super.rdd().compute(partition, TaskContext$.MODULE$.empty()).toSeq()
+      ).iterator();
+      l.add(data);
+    }
 
-    return JavaRDD.of(super.sparkSession().sparkContext(), data, parallelism);
-//    return JavaRDD.of(super.sparkSession().sparkContext(), this);
+    ////////////////////////////OPTION2///////////////////////////
+//    final LogicalPlan logicalPlan = dataset.logicalPlan();
+//
+//    dataset.sparkSession().sessionState().planner().strategies();
+//
+//    final Seq<SparkPlan> fileSourceStrategy = FileSourceStrategy$.MODULE$.apply(logicalPlan);
+//
+//    JavaConversions.seqAsJavaList(fileSourceStrategy).forEach(sparkPlan -> {
+//      if (sparkPlan instanceof DataSourceScanExec) {
+//        final FileScanRDD fileScanRDD = (FileScanRDD) sparkPlan.execute();
+//        for (Partition partition: fileScanRDD.getPartitions()) {
+//          final List<InternalRow> internalRows = JavaConversions.seqAsJavaList(
+//              fileScanRDD.compute(partition, TaskContext$.MODULE$.empty()).toSeq());
+//          final Iterator<T> data = internalRows.stream()
+//              .map(row -> (T) row.get(0, dataset.exprEnc().deserializer().dataType()))
+//              .iterator();
+//          readers.add(new SparkBoundedSourceReader<>(data));
+//        }
+//      }
+//    });
+    //////////////////////////OPTION3////////////////////////////
+
+//    final Seq<Expression> filters = PhysicalOperation.unapply(logicalPlan).get()._2();
+//
+//    final ExpressionSet filterSet = new ExpressionSet(new HashSet<>(), new ArrayBuffer<>());
+//    JavaConversions.seqAsJavaList(filters).forEach(filterSet::add);
+//
+//    final Seq<Attribute> partitionColumns = logicalRelation.resolve(
+//        fsRelation.partitionSchema(),
+//        fsRelation.sparkSession().sessionState().analyzer().resolver());
+//    final AttributeSet partitionSet = AttributeSet.apply(partitionColumns);
+//    final ExpressionSet partitionKeyFilters = new ExpressionSet(new HashSet<>(), new ArrayBuffer<>());
+//    JavaConversions.seqAsJavaList(filters).stream()
+//        .filter(e -> e.references().subsetOf(partitionSet)).collect(Collectors.toList())
+//        .forEach(partitionKeyFilters::add);
+//
+//    final Seq<Attribute> dataColumns = logicalRelation
+//        .resolve(fsRelation.dataSchema(), fsRelation.sparkSession().sessionState().analyzer().resolver());
+//
+//    final Traversable<Expression> dataFilters = filters.filter(e -> e.references().intersect(partitionSet).isEmpty());
+//
+//    final Set<Expression> afterScanFilters = filterSet.filterNot(e ->
+//        partitionKeyFilters.filter(f -> f.references().nonEmpty()).contains(e));
+//
+//    final AttributeSet filterAttributes = AttributeSet.apply(afterScanFilters);
+//    final Seq<Attribute> requiredExpressions = filterAttributes.toSeq();
+//    final AttributeSet requiredAttributes = AttributeSet.apply(requiredExpressions);
+//
+//    final Traversable<Attribute> readDataColumns = dataColumns.filter(requiredAttributes::contains)
+//        .filterNot(partitionColumns::contains);
+//    final StructType outputSchema = readDataColumns.map((Function1) (a -> new StructField(((Attribute) a).name(), ((Attribute) a).dataType(), ((Attribute) a).nullable(), ((Attribute) a).metadata())))
+//
+//    final Traversable<Expression> dataFilters = filters.filter(e -> e.references().intersect(partitionSet).isEmpty());
+//
+//    final Seq<Filter> pushedDownFilters = dataFilters.flatMap(e -> DataSourceStrategy.translateFilter(e).get());
+//
+//    final Function1<PartitionedFile, scala.collection.Iterator<InternalRow>> readerWithPartitionValues =
+//        fsRelation.fileFormat().buildReaderWithPartitionValues(
+//            fsRelation.sparkSession(),
+//            fsRelation.dataSchema(),
+//            fsRelation.partitionSchema(),
+//            outputSchema,
+//            pushedDownFilters,
+//            fsRelation.options(),
+//            fsRelation.sparkSession().sessionState().newHadoopConfWithOptions(fsRelation.options()));
+
+
+    return JavaRDD.of(super.sparkSession().sparkContext(), l, parallelism);
   }
 }
