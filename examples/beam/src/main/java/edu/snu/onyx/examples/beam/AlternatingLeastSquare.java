@@ -99,28 +99,21 @@ public final class AlternatingLeastSquare {
   }
 
   /**
-   * Aggregate intermediate data.
+   * A DoFn that relays a single vector list.
    */
-  public static final class AggregateInterData
+  public static final class UngroupSingleVectorList
       extends DoFn<KV<Integer, Iterable<List<Double>>>, KV<Integer, List<Double>>> {
-    public AggregateInterData() {
-    }
-
     @ProcessElement
     public void processElement(final ProcessContext c) throws Exception {
-      int count = 0;
-      List<Double> accum = null;
       final KV<Integer, Iterable<List<Double>>> element = c.element();
-      for (final List<Double> list : element.getValue()) {
-        accum = list;
-        count++;
+      final List<List<Double>> listOfVectorLists = new ArrayList<>();
+      element.getValue().forEach(listOfVectorLists::add);
+      if (listOfVectorLists.size() != 1) {
+        throw new RuntimeException("Only a single vector list is expected");
       }
 
-      if (count != 1 || accum == null) {
-        throw new RuntimeException("Duplicate vector");
-      }
-
-      c.output(KV.of(element.getKey(), accum));
+      // Output the ungrouped single vector list
+      c.output(KV.of(element.getKey(), listOfVectorLists.get(0)));
     }
   }
 
@@ -310,12 +303,12 @@ public final class AlternatingLeastSquare {
     public PCollection<KV<Integer, List<Double>>> expand(final PCollection<KV<Integer, List<Double>>> itemMatrix) {
       // Make Item Matrix view.
       final PCollectionView<Map<Integer, List<Double>>> itemMatrixView =
-          itemMatrix.apply(GroupByKey.create()).apply(ParDo.of(new AggregateInterData())).apply(View.asMap());
+          itemMatrix.apply(GroupByKey.create()).apply(ParDo.of(new UngroupSingleVectorList())).apply(View.asMap());
 
       // Get new User Matrix
       final PCollectionView<Map<Integer, List<Double>>> userMatrixView = parsedUserData
           .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrixView)).withSideInputs(itemMatrixView))
-          .apply(GroupByKey.create()).apply(ParDo.of(new AggregateInterData())).apply(View.asMap());
+          .apply(GroupByKey.create()).apply(ParDo.of(new UngroupSingleVectorList())).apply(View.asMap());
       // return new Item Matrix
       return parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrixView))
           .withSideInputs(userMatrixView));
