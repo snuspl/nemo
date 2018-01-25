@@ -104,7 +104,7 @@ public final class RoundRobinSchedulingPolicyTest {
   public void testNoneContainerType() {
     final int slots = 5;
     final TaskGroup A = new TaskGroup("Stage A", null, ExecutorPlacementProperty.NONE);
-    final List<ScheduledTaskGroup> scheduledTaskGroups = wrap(slots + 1, A);
+    final List<ScheduledTaskGroup> scheduledTaskGroups = convertToScheduledTaskGroups(slots + 1, A);
 
     boolean isScheduled;
     for (int i = 0; i < slots; i++) {
@@ -121,8 +121,8 @@ public final class RoundRobinSchedulingPolicyTest {
   public void testSingleCoreTwoTypesOfExecutors() {
     final TaskGroup A = new TaskGroup("Stage A", null, ExecutorPlacementProperty.COMPUTE);
     final TaskGroup B = new TaskGroup("Stage B", null, ExecutorPlacementProperty.TRANSIENT);
-    final List<ScheduledTaskGroup> scheduledTaskGroupsA = wrap(5, A);
-    final List<ScheduledTaskGroup> scheduledTaskGroupsB = wrap(3, B);
+    final List<ScheduledTaskGroup> scheduledTaskGroupsA = convertToScheduledTaskGroups(5, A);
+    final List<ScheduledTaskGroup> scheduledTaskGroupsB = convertToScheduledTaskGroups(3, B);
 
 
     boolean a0 = schedulingPolicy.scheduleTaskGroup(scheduledTaskGroupsA.get(0), jobStateManager);
@@ -187,8 +187,8 @@ public final class RoundRobinSchedulingPolicyTest {
    * @param taskGroup   the task group to schedule.
    * @return the wrapped scheduled task groups.
    */
-  private List<ScheduledTaskGroup> wrap(final int parallelism,
-                                        final TaskGroup taskGroup) {
+  private List<ScheduledTaskGroup> convertToScheduledTaskGroups(final int parallelism,
+                                                                final TaskGroup taskGroup) {
     final List<ScheduledTaskGroup> scheduledTaskGroups = new ArrayList<>(parallelism);
     for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
       final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(taskGroupIdx, taskGroup.getStageId());

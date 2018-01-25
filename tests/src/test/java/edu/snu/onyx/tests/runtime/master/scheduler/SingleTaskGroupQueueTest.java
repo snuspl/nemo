@@ -117,11 +117,11 @@ public final class SingleTaskGroupQueueTest {
 
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
-      // First schedule the child TaskGroups (since it is push).
+      // First schedule the children TaskGroups (since it is push).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      scheduleTaskGroupsInStage(dagOf2Stages.get(1));
+      scheduleStage(dagOf2Stages.get(1));
       // Then, schedule the parent TaskGroups.
-      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
+      scheduleStage(dagOf2Stages.get(0));
 
       countDownLatch.countDown();
     });
@@ -204,7 +204,7 @@ public final class SingleTaskGroupQueueTest {
     executorService.execute(() -> {
       // First schedule the parent TaskGroups (since it is pull).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
+      scheduleStage(dagOf2Stages.get(0));
       countDownLatch.countDown();
     });
 
@@ -226,7 +226,7 @@ public final class SingleTaskGroupQueueTest {
             dagOf2Stages.get(0).getId());
 
         // Schedule the children TaskGroups.
-        scheduleTaskGroupsInStage(dagOf2Stages.get(1));
+        scheduleStage(dagOf2Stages.get(1));
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -313,11 +313,11 @@ public final class SingleTaskGroupQueueTest {
 
     // This mimics Batch Scheduler's behavior
     executorService.execute(() -> {
-      // First schedule the child TaskGroups (since it is push).
+      // First schedule the children TaskGroups (since it is push).
       // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-      scheduleTaskGroupsInStage(dagOf2Stages.get(1));
+      scheduleStage(dagOf2Stages.get(1));
       // Then, schedule the parent TaskGroups.
-      scheduleTaskGroupsInStage(dagOf2Stages.get(0));
+      scheduleStage(dagOf2Stages.get(0));
 
       countDownLatch.countDown();
     });
@@ -371,9 +371,9 @@ public final class SingleTaskGroupQueueTest {
 
     // First schedule the child TaskGroups (since it is push).
     // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
-    scheduleTaskGroupsInStage(dagOf2Stages.get(1));
+    scheduleStage(dagOf2Stages.get(1));
     // Then, schedule the parent TaskGroups.
-    scheduleTaskGroupsInStage(dagOf2Stages.get(0));
+    scheduleStage(dagOf2Stages.get(0));
 
     countDownLatch.countDown();
 
@@ -409,7 +409,7 @@ public final class SingleTaskGroupQueueTest {
    * Schedule the task groups in a physical stage.
    * @param stage the stage to schedule.
    */
-  private void scheduleTaskGroupsInStage(final PhysicalStage stage) {
+  private void scheduleStage(final PhysicalStage stage) {
     final TaskGroup taskGroup = stage.getTaskGroup();
     stage.getTaskGroupIds().forEach(taskGroupId ->
         pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(

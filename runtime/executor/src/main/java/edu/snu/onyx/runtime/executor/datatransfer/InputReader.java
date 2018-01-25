@@ -54,7 +54,9 @@ public final class InputReader extends DataTransfer {
   private final RuntimeEdge runtimeEdge;
 
   public InputReader(final int dstTaskIndex,
-                     final IRVertex srcVertex,
+                     // TODO #717: Remove nullable.
+                     // (If the source is not an IR vertex, do not make InputReader.)
+                     @Nullable final IRVertex srcVertex, // null if the source vertex is not an IR vertex.
                      final RuntimeEdge runtimeEdge,
                      final BlockManagerWorker blockManagerWorker) {
     super(runtimeEdge.getId());

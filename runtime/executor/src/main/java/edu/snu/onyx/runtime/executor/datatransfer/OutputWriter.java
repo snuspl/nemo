@@ -45,7 +45,8 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
   public OutputWriter(final int hashRangeMultiplier,
                       final int srcTaskIdx,
                       final String srcRuntimeVertexId,
-                      @Nullable final IRVertex dstIrVertex, // Null if it is not a IR vertex.
+                      // TODO #717: Remove nullable. (If the destination is not an IR vertex, do not make OutputWriter.)
+                      @Nullable final IRVertex dstIrVertex, // Null if it is not an IR vertex.
                       final RuntimeEdge<?> runtimeEdge,
                       final BlockManagerWorker blockManagerWorker) {
     super(runtimeEdge.getId());

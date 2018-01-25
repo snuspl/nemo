@@ -22,14 +22,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * ID Generator.
  */
 public final class RuntimeIdGenerator {
-  private static AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
-  private static AtomicInteger executorIdGenerator = new AtomicInteger(0);
-  private static AtomicLong messageIdGenerator = new AtomicLong(1L);
-  private static AtomicLong resourceSpecIdGenerator = new AtomicLong(0);
-  private static String blockPrefix = "Block-";
-  private static String blockIdSplitter = "_";
-  private static String taskGroupInfix = "-TaskGroup-";
-  private static String physicalTaskIdSplitter = "_";
+  private static final AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
+  private static final AtomicInteger executorIdGenerator = new AtomicInteger(0);
+  private static final AtomicLong messageIdGenerator = new AtomicLong(1L);
+  private static final AtomicLong resourceSpecIdGenerator = new AtomicLong(0);
+  private final static String blockPrefix = "Block-";
+  private final static String blockIdSplitter = "_";
+  private final static String taskGroupInfix = "-TaskGroup-";
+  private final static String physicalTaskIdSplitter = "_";
 
   /**
    * Private constructor which will not be used.

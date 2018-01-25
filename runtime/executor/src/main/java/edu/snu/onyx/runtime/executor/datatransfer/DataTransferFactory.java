@@ -7,6 +7,7 @@ import edu.snu.onyx.runtime.common.plan.physical.Task;
 import edu.snu.onyx.runtime.executor.data.BlockManagerWorker;
 import org.apache.reef.tang.annotations.Parameter;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -35,7 +36,9 @@ public final class DataTransferFactory {
    */
   public OutputWriter createWriter(final Task srcTask,
                                    final int srcTaskIdx,
-                                   final IRVertex dstIRVertex,
+                                   // TODO #717: Remove nullable.
+                                   // (If the destination is not an IR vertex, do not make OutputWriter.)
+                                   @Nullable final IRVertex dstIRVertex,
                                    final RuntimeEdge<?> runtimeEdge) {
     return new OutputWriter(hashRangeMultiplier, srcTaskIdx,
         srcTask.getIrVertexId(), dstIRVertex, runtimeEdge, blockManagerWorker);
@@ -64,7 +67,9 @@ public final class DataTransferFactory {
    * @return the {@link InputReader} created.
    */
   public InputReader createReader(final int dstTaskIdx,
-                                  final IRVertex srcIRVertex,
+                                  // TODO #717: Remove nullable.
+                                  // (If the source is not an IR vertex, do not make InputReader.)
+                                  @Nullable final IRVertex srcIRVertex,
                                   final RuntimeEdge runtimeEdge) {
     return new InputReader(dstTaskIdx, srcIRVertex, runtimeEdge, blockManagerWorker);
   }

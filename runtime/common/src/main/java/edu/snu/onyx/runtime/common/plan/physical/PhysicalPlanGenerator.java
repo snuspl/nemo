@@ -184,8 +184,8 @@ public final class PhysicalPlanGenerator
     final Map<String, PhysicalStage> runtimeStageIdToPhysicalStageMap = new HashMap<>();
     final DAGBuilder<PhysicalStage, PhysicalStageEdge> physicalDAGBuilder = new DAGBuilder<>();
 
-    final Map<IRVertex, Task> irVertexTaskMap = new HashMap<>();
     for (final Stage stage : dagOfStages.getVertices()) {
+      final Map<IRVertex, Task> irVertexTaskMap = new HashMap<>();
       final List<IRVertex> stageVertices = stage.getStageInternalDAG().getVertices();
 
       final ExecutionPropertyMap firstVertexProperties = stageVertices.iterator().next().getExecutionProperties();
@@ -244,7 +244,6 @@ public final class PhysicalPlanGenerator
       final PhysicalStage physicalStage =
           new PhysicalStage(stage.getId(), newTaskGroup, stageParallelism, stage.getScheduleGroupIndex());
 
-      irVertexTaskMap.clear();
       physicalDAGBuilder.addVertex(physicalStage);
       runtimeStageIdToPhysicalStageMap.put(stage.getId(), physicalStage);
     }
