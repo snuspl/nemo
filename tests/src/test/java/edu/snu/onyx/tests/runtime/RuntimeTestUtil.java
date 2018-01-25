@@ -123,7 +123,7 @@ public final class RuntimeTestUtil {
     } while (scheduledExecutor == null);
 
     scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
-        newState, attemptIdx, Collections.emptyList(), cause);
+        newState, attemptIdx, null, cause);
   }
 
   public static void sendTaskGroupStateEventToScheduler(final Scheduler scheduler,

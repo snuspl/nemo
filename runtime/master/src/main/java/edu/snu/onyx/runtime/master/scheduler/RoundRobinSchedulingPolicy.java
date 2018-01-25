@@ -169,7 +169,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
    * @param executorId         of the executor to execute the TaskGroup.
    * @param scheduledTaskGroup to assign.
    * @param jobStateManager    which the TaskGroup belongs to.
-   * @return true if successfully scheduled, false otherwise.
    */
   private void scheduleTaskGroup(final String executorId,
                                  final ScheduledTaskGroup scheduledTaskGroup,

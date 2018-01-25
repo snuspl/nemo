@@ -107,10 +107,10 @@ public final class TaskGroupExecutor {
       });
 
       final List<RuntimeEdge<Task>> inEdgesWithinStage = taskGroupDag.getIncomingEdgesOf(task);
-      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, taskGroupIdx, internalEdge));
+      inEdgesWithinStage.forEach(internalEdge -> createLocalReader(task, internalEdge));
 
       final List<RuntimeEdge<Task>> outEdgesWithinStage = taskGroupDag.getOutgoingEdgesOf(task);
-      outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, taskGroupIdx, internalEdge));
+      outEdgesWithinStage.forEach(internalEdge -> createLocalWriter(task, internalEdge));
     }));
   }
 
@@ -128,14 +128,12 @@ public final class TaskGroupExecutor {
   }
 
   // Helper functions to initializes stage-internal edges.
-  private void createLocalReader(final Task task,
-                                 final int taskGroupIdx,
-                                 final RuntimeEdge<Task> internalEdge) {
+  private void createLocalReader(final Task task, final RuntimeEdge<Task> internalEdge) {
     final InputReader inputReader = channelFactory.createLocalReader(taskGroupIdx, internalEdge);
     addInputReader(task, inputReader);
   }
 
-  private void createLocalWriter(final Task task, final int taskGroupIdx, final RuntimeEdge<Task> internalEdge) {
+  private void createLocalWriter(final Task task, final RuntimeEdge<Task> internalEdge) {
     final OutputWriter outputWriter = channelFactory.createLocalWriter(task, taskGroupIdx, internalEdge);
     addOutputWriter(task, outputWriter);
   }
@@ -329,10 +327,10 @@ public final class TaskGroupExecutor {
         throw new BlockFetchException(e);
       }
     });
-    physicalTaskIdToOutputWriterMap.get(task.getId()).forEach(outputWriter -> {
-      outputWriter.write(data);
-      outputWriter.close();
-    });
+    physicalTaskIdToOutputWriterMap.get(physicalTaskId).forEach(outputWriter -> {
+          outputWriter.write(data);
+          outputWriter.close();
+        });
   }
 
   /**

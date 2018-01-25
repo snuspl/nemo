@@ -24,7 +24,6 @@ import edu.snu.onyx.common.eventhandler.RuntimeEventHandler;
 import edu.snu.onyx.common.ir.vertex.MetricCollectionBarrierVertex;
 import edu.snu.onyx.runtime.common.optimizer.RuntimeOptimizer;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;

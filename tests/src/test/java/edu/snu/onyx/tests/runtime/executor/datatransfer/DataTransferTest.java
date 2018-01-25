@@ -279,8 +279,8 @@ public final class DataTransferTest {
 
     final IRVertex srcMockVertex = mock(IRVertex.class);
     final IRVertex dstMockVertex = mock(IRVertex.class);
-    final PhysicalStage srcStage = setupStages("srcStage");
-    final PhysicalStage dstStage = setupStages("dstStage");
+    final PhysicalStage srcStage = setupStages("srcStage-" + testIndex);
+    final PhysicalStage dstStage = setupStages("dstStage-" + testIndex);
     dummyEdge = new PhysicalStageEdge(edgeId, edgeProperties, srcMockVertex, dstMockVertex,
         srcStage, dstStage, CODER, false);
     // Initialize states in Master

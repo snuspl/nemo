@@ -115,7 +115,6 @@ public final class TaskGroupExecutorTest {
 
     final String sourceTaskId = RuntimeIdGenerator.generateLogicalTaskId("Source_IR_Vertex");
     final String stageId = RuntimeIdGenerator.generateStageId(0);
-    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
 
     final ReadablesWrapper readablesWrapper = new ReadablesWrapper() {
       @Override
@@ -135,14 +134,16 @@ public final class TaskGroupExecutorTest {
 
     final DAG<Task, RuntimeEdge<Task>> taskDag =
         new DAGBuilder<Task, RuntimeEdge<Task>>().addVertex(boundedSourceTask).build();
-    final TaskGroup sourceTaskGroup = new TaskGroup(taskGroupId, stageId, 0, taskDag, CONTAINER_TYPE);
     final PhysicalStageEdge stageOutEdge = mock(PhysicalStageEdge.class);
     when(stageOutEdge.getSrcVertex()).thenReturn(sourceIRVertex);
+    final TaskGroup sourceTaskGroup = new TaskGroup(stageId, taskDag, CONTAINER_TYPE);
+    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
+    final ScheduledTaskGroup scheduledTaskGroup = new ScheduledTaskGroup(
+        "testSourceTask", sourceTaskGroup, taskGroupId, Collections.emptyList(), Collections.singletonList(stageOutEdge), 0);
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
-        sourceTaskGroup, taskGroupStateManager, Collections.emptyList(), Collections.singletonList(stageOutEdge),
-        dataTransferFactory);
+        scheduledTaskGroup, taskGroupStateManager, dataTransferFactory);
     taskGroupExecutor.execute();
 
     // Check the output.
@@ -175,7 +176,6 @@ public final class TaskGroupExecutorTest {
     final String operatorTaskId1 = RuntimeIdGenerator.generateLogicalTaskId("Operator_vertex_1");
     final String operatorTaskId2 = RuntimeIdGenerator.generateLogicalTaskId("Operator_vertex_2");
     final String stageId = RuntimeIdGenerator.generateStageId(1);
-    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
 
     final OperatorTask operatorTask1 =
         new OperatorTask(operatorTaskId1, operatorIRVertexId1, new SimpleTransform());
@@ -190,16 +190,18 @@ public final class TaskGroupExecutorTest {
         .connectVertices(new RuntimeEdge<Task>(
             runtimeIREdgeId, edgeProperties, operatorTask1, operatorTask2, coder))
         .build();
-    final TaskGroup operatorTaskGroup = new TaskGroup(taskGroupId, stageId, 0, taskDag, CONTAINER_TYPE);
+    final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
+    final TaskGroup operatorTaskGroup = new TaskGroup(stageId, taskDag, CONTAINER_TYPE);
     final PhysicalStageEdge stageInEdge = mock(PhysicalStageEdge.class);
     when(stageInEdge.getDstVertex()).thenReturn(operatorIRVertex1);
     final PhysicalStageEdge stageOutEdge = mock(PhysicalStageEdge.class);
     when(stageOutEdge.getSrcVertex()).thenReturn(operatorIRVertex2);
+    final ScheduledTaskGroup scheduledTaskGroup = new ScheduledTaskGroup(
+        "testSourceTask", operatorTaskGroup, taskGroupId, Collections.singletonList(stageInEdge), Collections.singletonList(stageOutEdge), 0);
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
-        operatorTaskGroup, taskGroupStateManager, Collections.singletonList(stageInEdge),
-        Collections.singletonList(stageOutEdge), dataTransferFactory);
+        scheduledTaskGroup, taskGroupStateManager, dataTransferFactory);
     taskGroupExecutor.execute();
 
     // Check the output.

@@ -35,6 +35,7 @@ import org.apache.reef.tang.Tang;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -410,7 +411,8 @@ public final class SingleTaskGroupQueueTest {
    */
   private void scheduleTaskGroupsInStage(final PhysicalStage stage) {
     final TaskGroup taskGroup = stage.getTaskGroup();
-    stage.getTaskGroupIds().forEach(taskGroupId -> pendingTaskGroupPriorityQueue.enqueue(
-        new ScheduledTaskGroup("TestPlan", taskGroup, taskGroupId, null, null, 0)));
+    stage.getTaskGroupIds().forEach(taskGroupId ->
+        pendingTaskGroupPriorityQueue.enqueue(new ScheduledTaskGroup(
+            "TestPlan", taskGroup, taskGroupId, Collections.emptyList(), Collections.emptyList(), 0)));
   }
 }

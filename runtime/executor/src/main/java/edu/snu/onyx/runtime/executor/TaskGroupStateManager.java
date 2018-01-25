@@ -210,8 +210,10 @@ public final class TaskGroupStateManager {
           .setExecutorId(executorId)
           .setTaskGroupId(taskGroupId)
           .setAttemptIdx(attemptIdx)
-          .setState(convertState(newState))
-          .setTaskPutOnHoldId(taskPutOnHold);
+          .setState(convertState(newState));
+    if (taskPutOnHold.isPresent()) {
+          msgBuilder.setTaskPutOnHoldId(taskPutOnHold.get());
+    }
     if (cause.isPresent()) {
       msgBuilder.setFailureCause(convertFailureCause(cause.get()));
     }

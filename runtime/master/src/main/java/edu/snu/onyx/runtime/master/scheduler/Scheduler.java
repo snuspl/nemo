@@ -17,13 +17,12 @@ package edu.snu.onyx.runtime.master.scheduler;
 
 import edu.snu.onyx.common.Pair;
 import edu.snu.onyx.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.onyx.runtime.common.plan.physical.TaskGroup;
 import edu.snu.onyx.runtime.common.state.TaskGroupState;
 import edu.snu.onyx.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Receives jobs to execute and schedules {@link edu.snu.onyx.runtime.common.plan.physical.TaskGroup} to executors.
@@ -75,7 +74,7 @@ public interface Scheduler {
                                String taskGroupId,
                                TaskGroupState.State newState,
                                int attemptIdx,
-                               String taskPutOnHold,
+                               @Nullable String taskPutOnHold,
                                TaskGroupState.RecoverableFailureCause failureCause);
 
   /**
