@@ -22,17 +22,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * ID Generator.
  */
 public final class RuntimeIdGenerator {
-  private static final AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
-  private static final AtomicInteger executorIdGenerator = new AtomicInteger(0);
-  private static final AtomicLong messageIdGenerator = new AtomicLong(1L);
-  private static final AtomicLong resourceSpecIdGenerator = new AtomicLong(0);
-  private final static String blockPrefix = "Block-";
-  private final static String blockIdSplitter = "_";
-  private final static String taskGroupInfix = "-TaskGroup-";
-  private final static String physicalTaskIdSplitter = "_";
+  private static AtomicInteger physicalPlanIdGenerator = new AtomicInteger(0);
+  private static AtomicInteger executorIdGenerator = new AtomicInteger(0);
+  private static AtomicLong messageIdGenerator = new AtomicLong(1L);
+  private static AtomicLong resourceSpecIdGenerator = new AtomicLong(0);
+  private static final String BLOCK_PREFIX = "Block-";
+  private static final String BLOCK_ID_SPLITTER = "_";
+  private static final String TASK_GROUP_INFIX = "-TaskGroup-";
+  private static final String PHYSICAL_TASK_ID_SPLITTER = "_";
 
   /**
-   * Private constructor which will not be used.
+   * Private constructor which will not be used
    */
   private RuntimeIdGenerator() {
   }
@@ -94,7 +94,7 @@ public final class RuntimeIdGenerator {
    */
   public static String generatePhysicalTaskId(final int index,
                                               final String logicalTaskId) {
-    return logicalTaskId + physicalTaskIdSplitter + index;
+    return logicalTaskId + PHYSICAL_TASK_ID_SPLITTER + index;
   }
 
   /**
@@ -106,7 +106,7 @@ public final class RuntimeIdGenerator {
    */
   public static String generateTaskGroupId(final int index,
                                            final String stageId) {
-    return stageId + taskGroupInfix + index;
+    return stageId + TASK_GROUP_INFIX + index;
   }
 
   /**
@@ -127,7 +127,7 @@ public final class RuntimeIdGenerator {
    */
   public static String generateBlockId(final String runtimeEdgeId,
                                        final int taskIndex) {
-    return blockPrefix + runtimeEdgeId + blockIdSplitter + taskIndex;
+    return BLOCK_PREFIX + runtimeEdgeId + BLOCK_ID_SPLITTER + taskIndex;
   }
 
   /**
@@ -176,8 +176,8 @@ public final class RuntimeIdGenerator {
    * @return the array of parsed information.
    */
   private static String[] parseBlockId(final String blockId) {
-    final String woPrefix = blockId.split(blockPrefix)[1];
-    return woPrefix.split(blockIdSplitter);
+    final String woPrefix = blockId.split(BLOCK_PREFIX)[1];
+    return woPrefix.split(BLOCK_ID_SPLITTER);
   }
 
   /**
@@ -208,7 +208,7 @@ public final class RuntimeIdGenerator {
    * @return the array of parsed information.
    */
   private static String[] parseTaskGroupId(final String taskGroupId) {
-    return taskGroupId.split(taskGroupInfix);
+    return taskGroupId.split(TASK_GROUP_INFIX);
   }
 
   /**
@@ -218,6 +218,6 @@ public final class RuntimeIdGenerator {
    * @return the logical task ID.
    */
   public static String getLogicalTaskIdIdFromPhysicalTaskId(final String physicalTaskId) {
-    return physicalTaskId.split(physicalTaskIdSplitter)[0];
+    return physicalTaskId.split(PHYSICAL_TASK_ID_SPLITTER)[0];
   }
 }
