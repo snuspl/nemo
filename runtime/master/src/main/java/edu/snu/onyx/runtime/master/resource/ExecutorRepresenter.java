@@ -70,7 +70,7 @@ public final class ExecutorRepresenter {
   public void onTaskGroupScheduled(final ScheduledTaskGroup scheduledTaskGroup) {
     runningTaskGroups.add(scheduledTaskGroup.getTaskGroupId());
     failedTaskGroups.remove(scheduledTaskGroup.getTaskGroupId());
-    
+
     serializationExecutorService.submit(new Runnable() {
       @Override
       public void run() {
