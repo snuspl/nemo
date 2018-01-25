@@ -31,6 +31,10 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     this.readablesWrapper = new SparkBoundedSourceReadablesWrapper(dataset);
   }
 
+  /**
+   * Constructor.
+   * @param readablesWrapper readables wrapper.
+   */
   public SparkBoundedSourceVertex(final ReadablesWrapper<T> readablesWrapper) {
     this.readablesWrapper = readablesWrapper;
   }
@@ -55,6 +59,7 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
 
     /**
      * Constructor.
+     * @param dataset dataset to read data from.
      */
     private SparkBoundedSourceReadablesWrapper(final Dataset<T> dataset) {
       this.readables = new ArrayList<>();
@@ -73,11 +78,13 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
    * A Readable for SparkBoundedSourceReadablesWrapper.
    */
   private final class BoundedSourceReadable implements Readable<T> {
-    final SparkConf conf;
-    final Collection<T> collection;
+    private final SparkConf conf;
+    private final Collection<T> collection;
 
     /**
      * Constructor.
+     * @param partition partition for this readable.
+     * @param rdd rdd to read data from.
      */
     private BoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
       this.conf = rdd.sparkContext().conf();
