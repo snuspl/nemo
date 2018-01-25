@@ -6,11 +6,13 @@ import edu.snu.onyx.common.ir.vertex.SourceVertex;
 import edu.snu.onyx.compiler.frontend.spark.sql.Dataset;
 import org.apache.spark.Partition;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext$;
 import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -57,7 +59,7 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     private SparkBoundedSourceReadablesWrapper(final Dataset<T> dataset) {
       this.readables = new ArrayList<>();
       for (final Partition partition: dataset.rdd().getPartitions()) {
-        readables.add(new BoundedSourceReadable(dataset.rdd().sparkContext().conf(), partition, dataset.rdd()));
+        readables.add(new BoundedSourceReadable(partition, dataset.rdd()));
       }
     }
 
@@ -71,20 +73,23 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
    * A Readable for SparkBoundedSourceReadablesWrapper.
    */
   private final class BoundedSourceReadable implements Readable<T> {
-    final List<T> data;
+    final SparkConf conf;
+    final Collection<T> collection;
 
     /**
      * Constructor.
      */
-    private BoundedSourceReadable(final SparkConf conf, final Partition partition, final RDD<T> rdd) {
-      this.data = new ArrayList<>();
-      JavaConverters.asJavaIteratorConverter(rdd.compute(partition, TaskContext$.MODULE$.empty())).asJava()
-          .forEachRemaining(data::add);
+    private BoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
+      this.conf = rdd.sparkContext().conf();
+      this.collection = new ArrayList<>();
+      JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava()
+          .forEachRemaining(collection::add);
     }
 
     @Override
     public Iterable<T> read() {
-      return data;
+      new SparkContext(conf);
+      return collection;
     }
   }
 }
