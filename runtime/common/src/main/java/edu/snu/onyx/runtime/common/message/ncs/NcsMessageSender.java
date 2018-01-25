@@ -27,7 +27,8 @@ final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
 
   @Override
   public void send(final ControlMessage.Message message) {
-    LOG.debug("[SEND]: msg.id={}", message.getId());
+    LOG.debug("[SEND]: msg.id={}, msg.listenerId={}, msg.type={}",
+        message.getId(), message.getListenerId(), message.getType());
     connection.write(message);
   }
 
