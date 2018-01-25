@@ -16,7 +16,6 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
-import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
@@ -27,23 +26,17 @@ import edu.snu.onyx.common.ir.vertex.OperatorVertex;
 import edu.snu.onyx.compiler.frontend.spark.SparkKeyExtractor;
 import edu.snu.onyx.compiler.frontend.spark.coder.SparkCoder;
 import edu.snu.onyx.compiler.frontend.spark.core.RDD;
-import edu.snu.onyx.compiler.frontend.spark.transform.CollectTransform;
 import edu.snu.onyx.compiler.frontend.spark.transform.ReduceByKeyTransform;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.serializer.JavaSerializer;
-import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.serializer.Serializer;
 import scala.Tuple2;
 import scala.reflect.ClassTag$;
 
-import javax.annotation.Nullable;
-import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import static edu.snu.onyx.compiler.frontend.spark.core.java.JavaRDD.getEdgeCommunicationPattern;
+import static edu.snu.onyx.compiler.frontend.spark.core.java.SparkFrontendUtils.getEdgeCommunicationPattern;
 
 /**
  * Java RDD for pairs.
@@ -54,7 +47,7 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
   private final SparkContext sparkContext;
   private final Stack<LoopVertex> loopVertexStack;
   private final DAG<IRVertex, IREdge> dag;
-  @Nullable private final IRVertex lastVertex;
+  private final IRVertex lastVertex;
   private final Serializer serializer;
 
   /**
@@ -63,7 +56,7 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
    * @param dag the current DAG.
    * @param lastVertex last vertex added to the builder.
    */
-  JavaPairRDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, @Nullable final IRVertex lastVertex) {
+  JavaPairRDD(final SparkContext sparkContext, final DAG<IRVertex, IREdge> dag, final IRVertex lastVertex) {
     // TODO #366: resolve while implementing scala RDD.
     super(RDD.<Tuple2<K, V>>of(sparkContext),
         ClassTag$.MODULE$.apply((Class<K>) Object.class), ClassTag$.MODULE$.apply((Class<V>) Object.class));
@@ -72,12 +65,7 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
     this.sparkContext = sparkContext;
     this.dag = dag;
     this.lastVertex = lastVertex;
-    if (sparkContext.conf().get("spark.serializer", "")
-        .equals("org.apache.spark.serializer.KryoSerializer")) {
-      this.serializer = new KryoSerializer(sparkContext.conf());
-    } else {
-      this.serializer = new JavaSerializer(sparkContext.conf());
-    }
+    this.serializer = SparkFrontendUtils.deriveSerializerFrom(sparkContext);
   }
 
   /**
@@ -108,44 +96,6 @@ public final class JavaPairRDD<K, V> extends org.apache.spark.api.java.JavaPairR
 
   @Override
   public List<Tuple2<K, V>> collect() {
-    final DAGBuilder<IRVertex, IREdge> builder = new DAGBuilder<>(dag);
-
-    // save result in a temporary file
-    // TODO #740: remove this part, and make it properly transfer with executor.
-    final String resultFile = System.getProperty("user.dir") + "/collectresult";
-
-    final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
-    builder.addVertex(collectVertex, loopVertexStack);
-
-    final IREdge newEdge = new IREdge(getEdgeCommunicationPattern(lastVertex, collectVertex),
-        lastVertex, collectVertex, new SparkCoder(serializer));
-    newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
-    builder.connectVertices(newEdge);
-
-    // launch DAG
-    JobLauncher.launchDAG(builder.build());
-
-    // Retrieve result data from file.
-    // TODO #740: remove this part, and make it properly transfer with executor.
-    try {
-      final List<Tuple2<K, V>> result = new ArrayList<>();
-      Integer i = 0;
-
-      // TODO #740: remove this part, and make it properly transfer with executor.
-      File file = new File(resultFile + i);
-      while (file.exists()) {
-        final FileInputStream fin = new FileInputStream(file);
-        final ObjectInputStream ois = new ObjectInputStream(fin);
-        result.addAll((List<Tuple2<K, V>>) ois.readObject());
-        ois.close();
-
-        // Delete temporary file
-        file.delete();
-        file = new File(resultFile + ++i);
-      }
-      return result;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return SparkFrontendUtils.collect(dag, loopVertexStack, lastVertex, serializer);
   }
 }

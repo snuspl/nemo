@@ -69,7 +69,7 @@ public final class DefaultParallelismPass extends AnnotatingPass {
           // (It can be more/less than the desired value.)
           final SourceVertex sourceVertex = (SourceVertex) vertex;
           final Integer originalParallelism = vertex.getProperty(ExecutionProperty.Key.Parallelism);
-          // We manipulate them if it is set a.s default value of 1.
+          // We manipulate them if it is set as default value of 1.
           if (originalParallelism.equals(1)) {
             vertex.setProperty(ParallelismProperty.of(
                 sourceVertex.getReadableWrapper(desiredSourceParallelism).getReadables().size()));

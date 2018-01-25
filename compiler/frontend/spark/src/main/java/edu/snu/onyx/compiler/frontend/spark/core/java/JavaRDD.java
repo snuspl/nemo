@@ -16,11 +16,9 @@
  */
 package edu.snu.onyx.compiler.frontend.spark.core.java;
 
-import edu.snu.onyx.client.JobLauncher;
 import edu.snu.onyx.common.dag.DAG;
 import edu.snu.onyx.common.dag.DAGBuilder;
 import edu.snu.onyx.common.ir.edge.IREdge;
-import edu.snu.onyx.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
 import edu.snu.onyx.common.ir.edge.executionproperty.KeyExtractorProperty;
 import edu.snu.onyx.common.ir.vertex.*;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ParallelismProperty;
@@ -39,17 +37,14 @@ import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.function.*;
 import org.apache.spark.partial.BoundedDouble;
 import org.apache.spark.partial.PartialResult;
-import org.apache.spark.serializer.JavaSerializer;
-import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.serializer.Serializer;
 import org.apache.spark.storage.StorageLevel;
 import scala.reflect.ClassTag$;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static edu.snu.onyx.compiler.frontend.spark.core.java.SparkFrontendUtils.getEdgeCommunicationPattern;
 
 /**
  * Java RDD.
@@ -63,7 +58,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   private final Serializer serializer;
 
   /**
-   * Static method to create a JavaRDD object.
+   * Static method to create a JavaRDD object from an iterable object.
    * @param sparkContext spark context containing configurations.
    * @param initialData initial data.
    * @param parallelism parallelism information.
@@ -82,7 +77,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
   }
 
   /**
-   * Static method to create a JavaRDD object.
+   * Static method to create a JavaRDD object from a Dataset.
    * @param sparkContext spark context containing configurations.
    * @param dataset dataset to read initial data from.
    * @param <T> type of the resulting object.
@@ -113,12 +108,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     this.sparkContext = sparkContext;
     this.dag = dag;
     this.lastVertex = lastVertex;
-    if (sparkContext.conf().get("spark.serializer", "")
-        .equals("org.apache.spark.serializer.KryoSerializer")) {
-      this.serializer = new KryoSerializer(sparkContext.conf());
-    } else {
-      this.serializer = new JavaSerializer(sparkContext.conf());
-    }
+    this.serializer = SparkFrontendUtils.deriveSerializerFrom(sparkContext);
   }
 
   /**
@@ -212,67 +202,12 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     newEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
     builder.connectVertices(newEdge);
 
-    // save result in a temporary file
-    // TODO #740: remove this part, and make it properly transfer with executor.
-    final String resultFile = System.getProperty("user.dir") + "/reduceresult";
-
-    final IRVertex collectVertex = new OperatorVertex(new CollectTransform<>(resultFile));
-    builder.addVertex(collectVertex, loopVertexStack);
-
-    final IREdge finalEdge = new IREdge(getEdgeCommunicationPattern(reduceVertex, collectVertex),
-        reduceVertex, collectVertex, new SparkCoder(serializer));
-    finalEdge.setProperty(KeyExtractorProperty.of(new SparkKeyExtractor()));
-    builder.connectVertices(finalEdge);
-
-    // launch DAG
-    JobLauncher.launchDAG(builder.build());
-
-    // Retrieve result data from file.
-    // TODO #740: remove this part, and make it properly transfer with executor.
-    try {
-      final List<T> result = new ArrayList<>();
-      Integer i = 0;
-
-      // TODO #740: remove this part, and make it properly transfer with executor.
-      File file = new File(resultFile + i);
-      while (file.exists()) {
-        final FileInputStream fin = new FileInputStream(file);
-        final ObjectInputStream ois = new ObjectInputStream(fin);
-        result.addAll((List<T>) ois.readObject());
-        ois.close();
-
-        // Delete temporary file
-        file.delete();
-        file = new File(resultFile + ++i);
-      }
-      return ReduceTransform.reduceIterator(result.iterator(), func);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /////////////// MISC ///////////////
-
-  /**
-   * Retrieve communication pattern of the edge.
-   * @param src source vertex.
-   * @param dst destination vertex.
-   * @return the communication pattern.
-   */
-  static DataCommunicationPatternProperty.Value getEdgeCommunicationPattern(final IRVertex src,
-                                                                            final IRVertex dst) {
-    if (dst instanceof OperatorVertex
-        && (((OperatorVertex) dst).getTransform() instanceof ReduceByKeyTransform
-        || ((OperatorVertex) dst).getTransform() instanceof GroupByKeyTransform)) {
-      return DataCommunicationPatternProperty.Value.Shuffle;
-    } else {
-      return DataCommunicationPatternProperty.Value.OneToOne;
-    }
+    return ReduceTransform.reduceIterator(collect().iterator(), func);
   }
 
   @Override
-  public org.apache.spark.SparkContext context() {
-    throw new UnsupportedOperationException("Operation unsupported. use getContext() instead.");
+  public List<T> collect() {
+    return SparkFrontendUtils.collect(dag, loopVertexStack, lastVertex, serializer);
   }
 
   /////////////// UNSUPPORTED TRANSFORMATIONS ///////////////
@@ -433,10 +368,7 @@ public final class JavaRDD<T> extends org.apache.spark.api.java.JavaRDD<T> {
     throw new UnsupportedOperationException("Operation not yet implemented.");
   }
 
-  @Override
-  public List<T> collect() {
-    throw new UnsupportedOperationException("Operation not yet implemented.");
-  }
+
 
   @Override
   public JavaFutureAction<List<T>> collectAsync()  {
