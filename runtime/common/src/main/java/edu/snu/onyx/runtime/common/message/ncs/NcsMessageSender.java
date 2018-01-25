@@ -27,15 +27,13 @@ final class NcsMessageSender implements MessageSender<ControlMessage.Message> {
 
   @Override
   public void send(final ControlMessage.Message message) {
-    LOG.debug("[SEND] request msg.id={}, msg.listenerId={}, msg.type={}",
-        message.getId(), message.getListenerId(), message.getType());
+    LOG.debug("send: {}", message);
     connection.write(message);
   }
 
   @Override
   public CompletableFuture<ControlMessage.Message> request(final ControlMessage.Message message) {
-    LOG.debug("[REQUEST] request msg.id={}, msg.listenerId={}, msg.type={}",
-        message.getId(), message.getListenerId(), message.getType());
+    LOG.debug("request: {}", message);
     final CompletableFuture<ControlMessage.Message> future = replyFutureMap.beforeRequest(message.getId());
     connection.write(message);
     return future;
