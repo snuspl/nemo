@@ -1,5 +1,6 @@
 package edu.snu.onyx.compiler.frontend.spark.source;
 
+import com.google.common.collect.Lists;
 import edu.snu.onyx.common.ir.Readable;
 import edu.snu.onyx.common.ir.ReadablesWrapper;
 import edu.snu.onyx.common.ir.vertex.SourceVertex;
@@ -87,8 +88,8 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
      */
     private SparkBoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
       this.conf = rdd.sparkContext().conf();
-      this.iterable = () ->
-          JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava();
+      this.iterable = Lists.newArrayList(() ->
+          JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava());
     }
 
     @Override
