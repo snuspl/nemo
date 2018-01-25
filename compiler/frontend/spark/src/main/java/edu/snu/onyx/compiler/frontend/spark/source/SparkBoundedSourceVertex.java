@@ -12,7 +12,6 @@ import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -64,7 +63,7 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     private SparkBoundedSourceReadablesWrapper(final Dataset<T> dataset) {
       this.readables = new ArrayList<>();
       for (final Partition partition: dataset.rdd().getPartitions()) {
-        readables.add(new BoundedSourceReadable(partition, dataset.rdd()));
+        readables.add(new SparkBoundedSourceReadable(partition, dataset.rdd()));
       }
     }
 
@@ -77,26 +76,25 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
   /**
    * A Readable for SparkBoundedSourceReadablesWrapper.
    */
-  private final class BoundedSourceReadable implements Readable<T> {
+  private final class SparkBoundedSourceReadable implements Readable<T> {
     private final SparkConf conf;
-    private final Collection<T> collection;
+    private final Iterable<T> iterable;
 
     /**
      * Constructor.
      * @param partition partition for this readable.
      * @param rdd rdd to read data from.
      */
-    private BoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
+    private SparkBoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
       this.conf = rdd.sparkContext().conf();
-      this.collection = new ArrayList<>();
-      JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava()
-          .forEachRemaining(collection::add);
+      this.iterable = () ->
+          JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava();
     }
 
     @Override
     public Iterable<T> read() {
       new SparkContext(conf);
-      return collection;
+      return iterable;
     }
   }
 }
