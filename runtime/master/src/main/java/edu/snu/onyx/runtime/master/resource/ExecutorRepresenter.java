@@ -71,6 +71,7 @@ public final class ExecutorRepresenter {
     runningTaskGroups.add(scheduledTaskGroup.getTaskGroupId());
     failedTaskGroups.remove(scheduledTaskGroup.getTaskGroupId());
 
+    final byte[] serialized = SerializationUtils.serialize(scheduledTaskGroup);
     serializationExecutorService.submit(new Runnable() {
       @Override
       public void run() {
@@ -81,7 +82,7 @@ public final class ExecutorRepresenter {
                 .setType(ControlMessage.MessageType.ScheduleTaskGroup)
                 .setScheduleTaskGroupMsg(
                     ControlMessage.ScheduleTaskGroupMsg.newBuilder()
-                        .setTaskGroup(ByteString.copyFrom(SerializationUtils.serialize(scheduledTaskGroup)))
+                        .setTaskGroup(ByteString.copyFrom(serialized))
                         .build())
                 .build());
       }
