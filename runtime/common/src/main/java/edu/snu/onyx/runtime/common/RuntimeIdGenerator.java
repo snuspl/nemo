@@ -32,7 +32,7 @@ public final class RuntimeIdGenerator {
   private static final String PHYSICAL_TASK_ID_SPLITTER = "_";
 
   /**
-   * Private constructor which will not be used
+   * Private constructor which will not be used.
    */
   private RuntimeIdGenerator() {
   }
