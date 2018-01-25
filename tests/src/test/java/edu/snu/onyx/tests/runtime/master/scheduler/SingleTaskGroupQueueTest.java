@@ -369,7 +369,7 @@ public final class SingleTaskGroupQueueTest {
 
     final CountDownLatch countDownLatch = new CountDownLatch(2);
 
-    // First schedule the child TaskGroups (since it is push).
+    // First schedule the children TaskGroups (since it is push).
     // BatchSingleJobScheduler will schedule TaskGroups in this order as well.
     scheduleStage(dagOf2Stages.get(1));
     // Then, schedule the parent TaskGroups.
