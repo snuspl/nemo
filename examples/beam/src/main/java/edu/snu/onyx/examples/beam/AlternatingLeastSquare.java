@@ -23,10 +23,7 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.CoderProviders;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.transforms.Combine;
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.View;
+import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -102,6 +99,32 @@ public final class AlternatingLeastSquare {
   }
 
   /**
+   * Aggregate intermediate data.
+   */
+  public static final class AggregateInterData
+      extends DoFn<KV<Integer, Iterable<List<Double>>>, KV<Integer, List<Double>>> {
+    public AggregateInterData() {
+    }
+
+    @ProcessElement
+    public void processElement(final ProcessContext c) throws Exception {
+      int count = 0;
+      List<Double> accum = null;
+      final KV<Integer, Iterable<List<Double>>> element = c.element();
+      for (final List<Double> list : element.getValue()) {
+        accum = list;
+        count++;
+      }
+
+      if (count != 1 || accum == null) {
+        throw new RuntimeException("Duplicate vector");
+      }
+
+      c.output(KV.of(element.getKey(), accum));
+    }
+  }
+
+  /**
    * Combiner for the training data.
    */
   public static final class TrainingDataCombiner extends Combine.CombineFn<Pair<List<Integer>, List<Double>>,
@@ -114,7 +137,7 @@ public final class AlternatingLeastSquare {
 
     @Override
     public List<Pair<List<Integer>, List<Double>>> addInput(final List<Pair<List<Integer>, List<Double>>> accumulator,
-                                                           final Pair<List<Integer>, List<Double>> value) {
+                                                            final Pair<List<Integer>, List<Double>> value) {
       accumulator.add(value);
       return accumulator;
     }
@@ -286,11 +309,13 @@ public final class AlternatingLeastSquare {
     @Override
     public PCollection<KV<Integer, List<Double>>> expand(final PCollection<KV<Integer, List<Double>>> itemMatrix) {
       // Make Item Matrix view.
-      final PCollectionView<Map<Integer, List<Double>>> itemMatrixView = itemMatrix.apply(View.asMap());
+      final PCollectionView<Map<Integer, List<Double>>> itemMatrixView =
+          itemMatrix.apply(GroupByKey.create()).apply(ParDo.of(new AggregateInterData())).apply(View.asMap());
+
       // Get new User Matrix
       final PCollectionView<Map<Integer, List<Double>>> userMatrixView = parsedUserData
           .apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, itemMatrixView)).withSideInputs(itemMatrixView))
-          .apply(View.asMap());
+          .apply(GroupByKey.create()).apply(ParDo.of(new AggregateInterData())).apply(View.asMap());
       // return new Item Matrix
       return parsedItemData.apply(ParDo.of(new CalculateNextMatrix(numFeatures, lambda, userMatrixView))
           .withSideInputs(userMatrixView));
