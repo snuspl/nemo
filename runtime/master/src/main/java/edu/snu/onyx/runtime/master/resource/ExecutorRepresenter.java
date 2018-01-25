@@ -70,11 +70,11 @@ public final class ExecutorRepresenter {
   public void onTaskGroupScheduled(final ScheduledTaskGroup scheduledTaskGroup) {
     runningTaskGroups.add(scheduledTaskGroup.getTaskGroupId());
     failedTaskGroups.remove(scheduledTaskGroup.getTaskGroupId());
-
-    final byte[] serialized = SerializationUtils.serialize(scheduledTaskGroup);
+    
     serializationExecutorService.submit(new Runnable() {
       @Override
       public void run() {
+        final byte[] serialized = SerializationUtils.serialize(scheduledTaskGroup);
         sendControlMessage(
             ControlMessage.Message.newBuilder()
                 .setId(RuntimeIdGenerator.generateMessageId())
