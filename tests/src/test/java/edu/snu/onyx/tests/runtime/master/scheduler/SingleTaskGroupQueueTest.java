@@ -397,10 +397,9 @@ public final class SingleTaskGroupQueueTest {
    * @param stage the stage to schedule.
    */
   private void scheduleStage(final PhysicalStage stage) {
-    final TaskGroup taskGroup = stage.getTaskGroup();
     stage.getTaskGroupIds().forEach(taskGroupId ->
         pendingTaskGroupPriorityQueue.enqueue(
-            new ScheduledTaskGroup("TestPlan", taskGroup, taskGroupId,
+            new ScheduledTaskGroup("TestPlan", stage.getSerializedTaskGroupDag(), taskGroupId,
                 Collections.emptyList(), Collections.emptyList(), 0, stage.getContainerType())));
   }
 
