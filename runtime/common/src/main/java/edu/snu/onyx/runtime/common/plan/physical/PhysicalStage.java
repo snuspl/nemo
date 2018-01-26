@@ -28,6 +28,7 @@ public final class PhysicalStage extends Vertex {
   private final TaskGroup taskGroup;
   private final int parallelism;
   private final int scheduleGroupIndex;
+  private final String containerType;
 
   /**
    * Constructor.
@@ -36,15 +37,18 @@ public final class PhysicalStage extends Vertex {
    * @param taskGroup          the task group of this stage.
    * @param parallelism        how many task groups will be executed in this stage.
    * @param scheduleGroupIndex the schedule group index.
+   * @param containerType      the type of container to execute the task group on.
    */
   public PhysicalStage(final String stageId,
                        final TaskGroup taskGroup,
                        final int parallelism,
-                       final int scheduleGroupIndex) {
+                       final int scheduleGroupIndex,
+                       final String containerType) {
     super(stageId);
     this.taskGroup = taskGroup;
     this.parallelism = parallelism;
     this.scheduleGroupIndex = scheduleGroupIndex;
+    this.containerType = containerType;
   }
 
   /**
@@ -72,12 +76,20 @@ public final class PhysicalStage extends Vertex {
     return scheduleGroupIndex;
   }
 
+  /**
+   * @return the type of container to execute the task group on.
+   */
+  public String getContainerType() {
+    return containerType;
+  }
+
   @Override
   public String propertiesToJSON() {
     final StringBuilder sb = new StringBuilder();
     sb.append("{\"scheduleGroupIndex\": ").append(scheduleGroupIndex);
     sb.append(", \"taskGroup\": ").append(taskGroup);
     sb.append(", \"parallelism\": ").append(parallelism);
+    sb.append(", \"containerType\": ").append(containerType);
     sb.append('}');
     return sb.toString();
   }

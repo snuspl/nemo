@@ -359,8 +359,8 @@ public final class DataTransferTest {
 
   private PhysicalStage setupStages(final String stageId) {
     final DAG<Task, RuntimeEdge<Task>> emptyDag = new DAGBuilder<Task, RuntimeEdge<Task>>().build();
-    final TaskGroup taskGroup = new TaskGroup(stageId, emptyDag, "Not_used");
+    final TaskGroup taskGroup = new TaskGroup(emptyDag);
 
-    return new PhysicalStage(stageId, taskGroup, PARALLELISM_TEN, 0);
+    return new PhysicalStage(stageId, taskGroup, PARALLELISM_TEN, 0, "Not_used");
   }
 }

@@ -111,8 +111,10 @@ public final class RoundRobinSchedulingPolicyTest {
   @Test
   public void testNoneContainerType() {
     final int slots = 5;
-    final TaskGroup A = new TaskGroup("Stage A", null, ExecutorPlacementProperty.NONE);
-    final List<ScheduledTaskGroup> scheduledTaskGroups = convertToScheduledTaskGroups(slots + 1, A);
+    final String stageId = "Stage A";
+    final TaskGroup A = new TaskGroup(null);
+    final List<ScheduledTaskGroup> scheduledTaskGroups =
+        convertToScheduledTaskGroups(slots + 1, A, stageId, ExecutorPlacementProperty.NONE);
 
     boolean isScheduled;
     for (int i = 0; i < slots; i++) {
@@ -127,10 +129,14 @@ public final class RoundRobinSchedulingPolicyTest {
 
   @Test
   public void testSingleCoreTwoTypesOfExecutors() {
-    final TaskGroup A = new TaskGroup("Stage A", null, ExecutorPlacementProperty.COMPUTE);
-    final TaskGroup B = new TaskGroup("Stage B", null, ExecutorPlacementProperty.TRANSIENT);
-    final List<ScheduledTaskGroup> scheduledTaskGroupsA = convertToScheduledTaskGroups(5, A);
-    final List<ScheduledTaskGroup> scheduledTaskGroupsB = convertToScheduledTaskGroups(3, B);
+    final String stageIdA = "Stage A";
+    final String stageIdB = "Stage B";
+    final TaskGroup A = new TaskGroup(null);
+    final TaskGroup B = new TaskGroup(null);
+    final List<ScheduledTaskGroup> scheduledTaskGroupsA =
+        convertToScheduledTaskGroups(5, A, stageIdA, ExecutorPlacementProperty.COMPUTE);
+    final List<ScheduledTaskGroup> scheduledTaskGroupsB =
+        convertToScheduledTaskGroups(3, B, stageIdB, ExecutorPlacementProperty.TRANSIENT);
 
 
     boolean a0 = schedulingPolicy.scheduleTaskGroup(scheduledTaskGroupsA.get(0), jobStateManager);
@@ -191,17 +197,21 @@ public final class RoundRobinSchedulingPolicyTest {
   /**
    * Wrap a {@link TaskGroup} into {@link ScheduledTaskGroup}s.
    *
-   * @param parallelism how many scheduled task group will be generated.
-   * @param taskGroup   the task group to schedule.
+   * @param parallelism   how many scheduled task group will be generated.
+   * @param taskGroup     the task group to schedule.
+   * @param stageId       the ID of the stage.
+   * @param containerType the type of container to execute the task group on.
    * @return the wrapped scheduled task groups.
    */
   private List<ScheduledTaskGroup> convertToScheduledTaskGroups(final int parallelism,
-                                                                final TaskGroup taskGroup) {
+                                                                final TaskGroup taskGroup,
+                                                                final String stageId,
+                                                                final String containerType) {
     final List<ScheduledTaskGroup> scheduledTaskGroups = new ArrayList<>(parallelism);
     for (int taskGroupIdx = 0; taskGroupIdx < parallelism; taskGroupIdx++) {
-      final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(taskGroupIdx, taskGroup.getStageId());
-      scheduledTaskGroups.add(new ScheduledTaskGroup("TestPlan", taskGroup, taskGroupId, Collections.emptyList(),
-          Collections.emptyList(), MAGIC_SCHEDULE_ATTEMPT_INDEX));
+      final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(taskGroupIdx, stageId);
+      scheduledTaskGroups.add(new ScheduledTaskGroup("TestPlan", taskGroup, taskGroupId,
+          Collections.emptyList(), Collections.emptyList(), MAGIC_SCHEDULE_ATTEMPT_INDEX, containerType));
     }
     return scheduledTaskGroups;
   }

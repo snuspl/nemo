@@ -239,7 +239,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
 
     final String stageId = RuntimeIdGenerator.getStageIdFromTaskGroupId(taskGroupId);
     final int attemptIndexForStage =
-        jobStateManager.getAttemptCountForStage(getTaskGroupById(taskGroupId).getStageId());
+        jobStateManager.getAttemptCountForStage(RuntimeIdGenerator.getStageIdFromTaskGroupId(taskGroupId));
 
     switch (failureCause) {
     // Previous task group must be re-executed, and incomplete task groups of the belonging stage must be rescheduled.
@@ -314,7 +314,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
       // Schedule a stage after marking the necessary task groups to failed_recoverable.
       // The stage for one of the task groups that failed is a starting point to look
       // for the next stage to be scheduled.
-      scheduleNextStage(getTaskGroupById(taskGroupsToReExecute.iterator().next()).getStageId());
+      scheduleNextStage(RuntimeIdGenerator.getStageIdFromTaskGroupId(taskGroupsToReExecute.iterator().next()));
     }
   }
 
@@ -490,7 +490,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
       blockManagerMaster.onProducerTaskGroupScheduled(taskGroupId);
       LOG.debug("Enquing {}", taskGroupId);
       pendingTaskGroupQueue.enqueue(new ScheduledTaskGroup(physicalPlan.getId(), stageToSchedule.getTaskGroup(),
-          taskGroupId, stageIncomingEdges, stageOutgoingEdges, attemptIdx));
+          taskGroupId, stageIncomingEdges, stageOutgoingEdges, attemptIdx, stageToSchedule.getContainerType()));
     });
   }
 

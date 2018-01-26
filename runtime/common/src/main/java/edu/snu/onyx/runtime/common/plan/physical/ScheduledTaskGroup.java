@@ -35,6 +35,7 @@ public final class ScheduledTaskGroup implements Serializable {
   private final List<PhysicalStageEdge> taskGroupIncomingEdges;
   private final List<PhysicalStageEdge> taskGroupOutgoingEdges;
   private final int attemptIdx;
+  private final String containerType;
 
   /**
    * Constructor.
@@ -45,13 +46,15 @@ public final class ScheduledTaskGroup implements Serializable {
    * @param taskGroupIncomingEdges the incoming edges of the task group.
    * @param taskGroupOutgoingEdges the outgoing edges of the task group.
    * @param attemptIdx             the attempt index.
+   * @param containerType          the type of container to execute the task group on.
    */
   public ScheduledTaskGroup(final String jobId,
                             final TaskGroup taskGroup,
                             final String taskGroupId,
                             final List<PhysicalStageEdge> taskGroupIncomingEdges,
                             final List<PhysicalStageEdge> taskGroupOutgoingEdges,
-                            final int attemptIdx) {
+                            final int attemptIdx,
+                            final String containerType) {
     this.jobId = jobId;
     this.taskGroup = taskGroup;
     this.taskGroupId = taskGroupId;
@@ -59,6 +62,7 @@ public final class ScheduledTaskGroup implements Serializable {
     this.taskGroupIncomingEdges = taskGroupIncomingEdges;
     this.taskGroupOutgoingEdges = taskGroupOutgoingEdges;
     this.attemptIdx = attemptIdx;
+    this.containerType = containerType;
   }
 
   /**
@@ -81,7 +85,6 @@ public final class ScheduledTaskGroup implements Serializable {
   public String getTaskGroupId() {
     return taskGroupId;
   }
-
 
   /**
    * @return the idx of the scheduled task group.
@@ -109,5 +112,12 @@ public final class ScheduledTaskGroup implements Serializable {
    */
   public int getAttemptIdx() {
     return attemptIdx;
+  }
+
+  /**
+   * @return the type of container to execute the task group on.
+   */
+  public String getContainerType() {
+    return containerType;
   }
 }

@@ -136,10 +136,11 @@ public final class TaskGroupExecutorTest {
         new DAGBuilder<Task, RuntimeEdge<Task>>().addVertex(boundedSourceTask).build();
     final PhysicalStageEdge stageOutEdge = mock(PhysicalStageEdge.class);
     when(stageOutEdge.getSrcVertex()).thenReturn(sourceIRVertex);
-    final TaskGroup sourceTaskGroup = new TaskGroup(stageId, taskDag, CONTAINER_TYPE);
+    final TaskGroup sourceTaskGroup = new TaskGroup(taskDag);
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
-    final ScheduledTaskGroup scheduledTaskGroup = new ScheduledTaskGroup(
-        "testSourceTask", sourceTaskGroup, taskGroupId, Collections.emptyList(), Collections.singletonList(stageOutEdge), 0);
+    final ScheduledTaskGroup scheduledTaskGroup =
+        new ScheduledTaskGroup("testSourceTask", sourceTaskGroup, taskGroupId,
+            Collections.emptyList(), Collections.singletonList(stageOutEdge), 0, CONTAINER_TYPE);
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
@@ -191,13 +192,14 @@ public final class TaskGroupExecutorTest {
             runtimeIREdgeId, edgeProperties, operatorTask1, operatorTask2, coder))
         .build();
     final String taskGroupId = RuntimeIdGenerator.generateTaskGroupId(0, stageId);
-    final TaskGroup operatorTaskGroup = new TaskGroup(stageId, taskDag, CONTAINER_TYPE);
+    final TaskGroup operatorTaskGroup = new TaskGroup(taskDag);
     final PhysicalStageEdge stageInEdge = mock(PhysicalStageEdge.class);
     when(stageInEdge.getDstVertex()).thenReturn(operatorIRVertex1);
     final PhysicalStageEdge stageOutEdge = mock(PhysicalStageEdge.class);
     when(stageOutEdge.getSrcVertex()).thenReturn(operatorIRVertex2);
-    final ScheduledTaskGroup scheduledTaskGroup = new ScheduledTaskGroup(
-        "testSourceTask", operatorTaskGroup, taskGroupId, Collections.singletonList(stageInEdge), Collections.singletonList(stageOutEdge), 0);
+    final ScheduledTaskGroup scheduledTaskGroup =
+        new ScheduledTaskGroup("testSourceTask", operatorTaskGroup, taskGroupId,
+            Collections.singletonList(stageInEdge), Collections.singletonList(stageOutEdge), 0, CONTAINER_TYPE);
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
