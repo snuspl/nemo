@@ -88,6 +88,7 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
      */
     private SparkBoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
       this.conf = rdd.sparkContext().conf();
+      // TODO #756: make this bit distributed.
       this.iterable = Lists.newArrayList(() ->
           JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava());
     }
