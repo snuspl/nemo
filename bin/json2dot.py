@@ -79,22 +79,6 @@ class TaskGroupState:
     def __init__(self, data):
         self.id = data['id']
         self.state = data['state']
-        self.tasks = {}
-        for task in data['tasks']:
-            self.tasks[task['id']] = TaskState(task)
-    @classmethod
-    def empty(cls):
-        return cls({'id': None, 'state': None, 'tasks': []})
-    def get(self, id):
-        try:
-            return self.tasks[id]
-        except:
-            return TaskState.empty()
-
-class TaskState:
-    def __init__(self, data):
-        self.id = data['id']
-        self.state = data['state']
     @classmethod
     def empty(cls):
         return cls({'id': None, 'state': None})
@@ -167,7 +151,7 @@ class NormalVertex:
         except:
             pass
         try:
-            label += '\\n{}'.format(self.properties['irVertexId'])
+            label += '\\n{}'.format(self.properties['runtimeVertexId'])
         except:
             pass
         try:
@@ -257,39 +241,10 @@ class LoopVertex:
         vertexId = list(filter(lambda v: edgeId in self.incoming[v], self.incoming))[0]
         return self.dag.vertices[vertexId]
 
-class TaskGroup:
-    def __init__(self, properties, state):
-        self.taskGroupId = properties['taskGroupId']
-        self.taskGroupIdx = properties['taskGroupIdx']
-        self.dag = DAG(properties['taskDAG'], state)
-        self.containerType = properties['containerType']
-        self.idx = getIdx()
-        self.state = state.state
-    @property
-    def dot(self):
-        color = 'black'
-        if self.containerType == 'Transient':
-            color = 'orange'
-        if self.containerType == 'Reserved':
-            color = 'green'
-        if self.state is None:
-            state = ''
-        else:
-            state = ' ({})'.format(self.state)
-        dot = 'subgraph cluster_{} {{'.format(self.idx)
-        dot += 'label = "{} ({}){}";'.format(self.taskGroupId, self.taskGroupIdx, state)
-        dot += 'color={}; bgcolor="{}";'.format(color, stateToColor(self.state))
-        dot += self.dag.dot
-        dot += '}'
-        return dot
-    @property
-    def logicalEnd(self):
-        return 'cluster_{}'.format(self.idx)
-
 class PhysicalStage:
     def __init__(self, id, properties, state):
         self.id = id
-        self.taskGroups = [TaskGroup(x, state.get(x['taskGroupId'])) for x in properties['taskGroupList']]
+        self.taskGroup = DAG(properties['taskGroupDag'], JobState.empty())
         self.idx = getIdx()
         self.state = state.state
     @property
@@ -301,13 +256,12 @@ class PhysicalStage:
         dot = 'subgraph cluster_{} {{'.format(self.idx)
         dot += 'label = "{}{}";'.format(self.id, state)
         dot += 'color=red; bgcolor="{}";'.format(stateToColor(self.state))
-        for taskGroup in self.taskGroups:
-            dot += taskGroup.dot
+        dot += self.taskGroup.dot
         dot += '}'
         return dot
     @property
     def oneVertex(self):
-        return next(iter(self.taskGroups[0].dag.vertices.values())).oneVertex
+        return next(iter(self.taskGroup.vertices.values())).oneVertex
     @property
     def logicalEnd(self):
         return 'cluster_{}'.format(self.idx)
