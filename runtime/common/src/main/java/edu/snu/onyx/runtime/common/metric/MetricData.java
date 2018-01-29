@@ -15,8 +15,8 @@
  */
 package edu.snu.onyx.runtime.common.metric;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.snu.onyx.common.exception.JsonParseException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import java.util.Map;
 
@@ -62,7 +62,7 @@ public class MetricData {
    */
   public final String toJson() {
     try {
-      final String jsonStr = objectMapper.writeValueAsString(this);
+      final String jsonStr = objectMapper.writeValueAsString(metrics);
       return jsonStr;
     } catch (final Exception e) {
       throw new JsonParseException(e);

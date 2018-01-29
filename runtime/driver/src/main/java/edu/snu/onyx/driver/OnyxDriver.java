@@ -18,9 +18,7 @@ package edu.snu.onyx.driver;
 import edu.snu.onyx.common.ir.IdManager;
 import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.runtime.common.RuntimeIdGenerator;
-import edu.snu.onyx.runtime.common.message.MessageEnvironment;
 import edu.snu.onyx.runtime.common.message.MessageParameters;
-import edu.snu.onyx.runtime.common.message.grpc.GrpcMessageEnvironment;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.client.JobMessageObserver;
@@ -112,13 +110,7 @@ public final class OnyxDriver {
     @Override
     public void onNext(final StartTime startTime) {
       setUpLogger();
-
       runtimeMaster.requestContainer(resourceSpecificationString);
-
-      // Launch user application (with a new thread)
-      final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
-      userApplicationRunnerThread.execute(userApplicationRunner);
-      userApplicationRunnerThread.shutdown();
     }
   }
 
@@ -141,8 +133,19 @@ public final class OnyxDriver {
   public final class ActiveContextHandler implements EventHandler<ActiveContext> {
     @Override
     public void onNext(final ActiveContext activeContext) {
-      runtimeMaster.onExecutorLaunched(activeContext);
+      final boolean finalExecutorLaunched = runtimeMaster.onExecutorLaunched(activeContext);
+
+      if (finalExecutorLaunched) {
+        startSchedulingUserApplication();
+      }
     }
+  }
+
+  private void startSchedulingUserApplication() {
+    // Launch user application (with a new thread)
+    final ExecutorService userApplicationRunnerThread = Executors.newSingleThreadExecutor();
+    userApplicationRunnerThread.execute(userApplicationRunner);
+    userApplicationRunnerThread.shutdown();
   }
 
   /**
@@ -194,6 +197,7 @@ public final class OnyxDriver {
     final Configuration contextConfiguration = ContextConfiguration.CONF
         .set(ContextConfiguration.IDENTIFIER, executorId) // We set: contextId = executorId
         .set(ContextConfiguration.ON_CONTEXT_STARTED, OnyxContext.ContextStartHandler.class)
+        .set(ContextConfiguration.ON_CONTEXT_STOP, OnyxContext.ContextStopHandler.class)
         .build();
 
     final Configuration ncsConfiguration =  getExecutorNcsConfiguration();
@@ -212,7 +216,6 @@ public final class OnyxDriver {
 
   private Configuration getExecutorMessageConfiguration(final String executorId) {
     return Tang.Factory.getTang().newConfigurationBuilder()
-        .bindImplementation(MessageEnvironment.class, GrpcMessageEnvironment.class)
         .bindNamedParameter(MessageParameters.SenderId.class, executorId)
         .build();
   }

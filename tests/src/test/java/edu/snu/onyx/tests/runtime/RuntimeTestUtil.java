@@ -90,10 +90,10 @@ public final class RuntimeTestUtil {
       public void run() {
         while (jobStateManager.getStageState(physicalStage.getId()).getStateMachine().getCurrentState()
             == StageState.State.EXECUTING) {
-          physicalStage.getTaskGroupList().forEach(taskGroup -> {
-            if (jobStateManager.getTaskGroupState(taskGroup.getTaskGroupId()).getStateMachine().getCurrentState()
+          physicalStage.getTaskGroupIds().forEach(taskGroupId -> {
+            if (jobStateManager.getTaskGroupState(taskGroupId).getStateMachine().getCurrentState()
                 == TaskGroupState.State.EXECUTING) {
-              sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroup.getTaskGroupId(),
+              sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroupId,
                   TaskGroupState.State.COMPLETE, attemptIdx, null);
             }
           });
@@ -123,17 +123,25 @@ public final class RuntimeTestUtil {
     } while (scheduledExecutor == null);
 
     scheduler.onTaskGroupStateChanged(scheduledExecutor.getExecutorId(), taskGroupId,
-        newState, attemptIdx, Collections.emptyList(), cause);
+        newState, attemptIdx, null, cause);
+  }
+
+  public static void sendTaskGroupStateEventToScheduler(final Scheduler scheduler,
+                                                        final ContainerManager containerManager,
+                                                        final String taskGroupId,
+                                                        final TaskGroupState.State newState,
+                                                        final int attemptIdx) {
+    sendTaskGroupStateEventToScheduler(scheduler, containerManager, taskGroupId, newState, attemptIdx, null);
   }
 
   public static void mockSchedulerRunner(final PendingTaskGroupQueue pendingTaskGroupQueue,
                                          final SchedulingPolicy schedulingPolicy,
+                                         final JobStateManager jobStateManager,
                                          final boolean isPartialSchedule) {
     while (!pendingTaskGroupQueue.isEmpty()) {
       final ScheduledTaskGroup taskGroupToSchedule = pendingTaskGroupQueue.dequeue().get();
 
-      final String executorId = schedulingPolicy.attemptSchedule(taskGroupToSchedule).get();
-      schedulingPolicy.onTaskGroupScheduled(executorId, taskGroupToSchedule);
+      schedulingPolicy.scheduleTaskGroup(taskGroupToSchedule, jobStateManager);
 
       // Schedule only the first task group.
       if (isPartialSchedule) {
@@ -159,11 +167,9 @@ public final class RuntimeTestUtil {
     eventRunnableQueue.add(new Runnable() {
       @Override
       public void run() {
-        final List<TaskGroup> taskGroupsForStage = physicalStage.getTaskGroupList();
-
-        // Initialize states for blocks of inter-stage edges
+                // Initialize states for blocks of inter-stage edges
         stageOutgoingEdges.forEach(physicalStageEdge -> {
-          final int srcParallelism = taskGroupsForStage.size();
+          final int srcParallelism = physicalStage.getTaskGroupIds().size();
           IntStream.range(0, srcParallelism).forEach(srcTaskIdx -> {
             final String partitionId =
                 RuntimeIdGenerator.generateBlockId(physicalStageEdge.getId(), srcTaskIdx);
@@ -172,13 +178,14 @@ public final class RuntimeTestUtil {
         });
 
         // Initialize states for blocks of stage internal edges
-        taskGroupsForStage.forEach(taskGroup -> {
-          final DAG<Task, RuntimeEdge<Task>> taskGroupInternalDag = taskGroup.getTaskDAG();
+        physicalStage.getTaskGroupIds().forEach(taskGroupId -> {
+          final DAG<Task, RuntimeEdge<Task>> taskGroupInternalDag = physicalStage.getTaskGroupDag();
           taskGroupInternalDag.getVertices().forEach(task -> {
             final List<RuntimeEdge<Task>> internalOutgoingEdges = taskGroupInternalDag.getOutgoingEdgesOf(task);
             internalOutgoingEdges.forEach(taskRuntimeEdge -> {
               final String partitionId =
-                  RuntimeIdGenerator.generateBlockId(taskRuntimeEdge.getId(), taskGroup.getTaskGroupIdx());
+                  RuntimeIdGenerator.generateBlockId(taskRuntimeEdge.getId(),
+                      RuntimeIdGenerator.getIndexFromTaskGroupId(taskGroupId));
               sendPartitionStateEventToPartitionManager(blockManagerMaster, containerManager, partitionId, newState);
             });
           });

@@ -31,7 +31,6 @@ import edu.snu.onyx.runtime.master.BlockManagerMaster;
 import edu.snu.onyx.runtime.master.RuntimeMaster;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
-import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.values.KV;
 import org.apache.commons.io.FileUtils;
 import org.apache.reef.tang.Injector;
@@ -115,9 +114,9 @@ public final class BlockStoreTest {
 
     // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(
-        number -> writeTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> writeTaskIdList.add(RuntimeIdGenerator.generateLogicalTaskId("Write_IR_vertex")));
     IntStream.range(0, NUM_READ_TASKS).forEach(
-        number -> readTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> readTaskIdList.add(RuntimeIdGenerator.generateLogicalTaskId("Read_IR_vertex")));
 
     // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_TASKS).forEach(writeTaskIdx -> {
@@ -140,7 +139,7 @@ public final class BlockStoreTest {
     });
 
     // Following part is for the concurrent read test.
-    final String writeTaskId = RuntimeIdGenerator.generateTaskId();
+    final String writeTaskId = RuntimeIdGenerator.generateLogicalTaskId("Conc_write_IR_vertex");
     final List<String> concReadTaskIdList = new ArrayList<>(NUM_CONC_READ_TASKS);
 
     // Generates the ids and the data to be used.
@@ -150,7 +149,7 @@ public final class BlockStoreTest {
     blockManagerMaster.onBlockStateChanged(
         concBlockId, BlockState.State.SCHEDULED, null);
     IntStream.range(0, NUM_CONC_READ_TASKS).forEach(
-        number -> concReadTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> concReadTaskIdList.add(RuntimeIdGenerator.generateLogicalTaskId("Conc_read_IR_vertex")));
     concBlockPartition = new NonSerializedPartition(0, getRangedNumList(0, CONC_READ_DATA_SIZE));
 
     // Following part is for the shuffle in hash range test
@@ -164,9 +163,9 @@ public final class BlockStoreTest {
 
     // Generates the ids of the tasks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(
-        number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> writeHashTaskIdList.add(RuntimeIdGenerator.generateLogicalTaskId("Hash_write_IR_vertex")));
     IntStream.range(0, NUM_READ_HASH_TASKS).forEach(
-        number -> readHashTaskIdList.add(RuntimeIdGenerator.generateTaskId()));
+        number -> readHashTaskIdList.add(RuntimeIdGenerator.generateLogicalTaskId("Hash_read_IR_vertex")));
 
     // Generates the ids and the data of the blocks to be used.
     IntStream.range(0, NUM_WRITE_HASH_TASKS).forEach(writeTaskIdx -> {
@@ -245,6 +244,7 @@ public final class BlockStoreTest {
    */
   @Test(timeout = 10000)
   public void testLocalFileStore() throws Exception {
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
     final Injector injector = Tang.Factory.getTang().newInjector();
     injector.bindVolatileParameter(JobConf.FileDirectory.class, TMP_FILE_DIRECTORY);
     injector.bindVolatileInstance(CoderManager.class, coderManager);
@@ -263,6 +263,7 @@ public final class BlockStoreTest {
    */
   @Test(timeout = 10000)
   public void testGlusterFileStore() throws Exception {
+    FileUtils.deleteDirectory(new File(TMP_FILE_DIRECTORY));
     final RemoteFileStore writerSideRemoteFileStore =
         createGlusterFileStore("writer");
     final RemoteFileStore readerSideRemoteFileStore =
@@ -313,7 +314,7 @@ public final class BlockStoreTest {
               IntStream.range(writeTaskIdx, writeTaskIdx + 1).forEach(blockIdx -> {
                 final String blockId = blockIdList.get(blockIdx);
                 writerSideStore.createBlock(blockId);
-                writerSideStore.putPartitions(blockId, partitionsPerBlock.get(blockIdx), false);
+                writerSideStore.putPartitions(blockId, partitionsPerBlock.get(blockIdx));
                 writerSideStore.commitBlock(blockId);
                 blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                     "Writer side of the shuffle edge");
@@ -405,7 +406,7 @@ public final class BlockStoreTest {
       public Boolean call() {
         try {
           writerSideStore.createBlock(concBlockId);
-          writerSideStore.putPartitions(concBlockId, Collections.singleton(concBlockPartition), false);
+          writerSideStore.putPartitions(concBlockId, Collections.singleton(concBlockPartition));
           writerSideStore.commitBlock(concBlockId);
           blockManagerMaster.onBlockStateChanged(
               concBlockId, BlockState.State.COMMITTED, "Writer side of the concurrent read edge");
@@ -490,8 +491,7 @@ public final class BlockStoreTest {
             try {
               final String blockId = hashedBlockIdList.get(writeTaskIdx);
               writerSideStore.createBlock(blockId);
-              writerSideStore.putPartitions(blockId,
-                  hashedBlockPartitionList.get(writeTaskIdx), false);
+              writerSideStore.putPartitions(blockId, hashedBlockPartitionList.get(writeTaskIdx));
               writerSideStore.commitBlock(blockId);
               blockManagerMaster.onBlockStateChanged(blockId, BlockState.State.COMMITTED,
                   "Writer side of the shuffle in hash range edge");

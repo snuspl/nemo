@@ -19,6 +19,8 @@ import edu.snu.onyx.conf.JobConf;
 import edu.snu.onyx.common.exception.SchedulingException;
 import edu.snu.onyx.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
 import edu.snu.onyx.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.onyx.runtime.common.state.TaskGroupState;
+import edu.snu.onyx.runtime.master.JobStateManager;
 import edu.snu.onyx.runtime.master.resource.ContainerManager;
 import edu.snu.onyx.runtime.master.resource.ExecutorRepresenter;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -98,23 +100,31 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   }
 
   @Override
-  public Optional<String> attemptSchedule(final ScheduledTaskGroup scheduledTaskGroup) {
+  public boolean scheduleTaskGroup(final ScheduledTaskGroup scheduledTaskGroup,
+                                   final JobStateManager jobStateManager) {
     lock.lock();
     try {
-      final String containerType = scheduledTaskGroup.getTaskGroup().getContainerType();
+      final String containerType = scheduledTaskGroup.getContainerType();
       initializeContainerTypeIfAbsent(containerType);
 
-      final Optional<String> executorId = selectExecutorByRR(containerType);
+      Optional<String> executorId = selectExecutorByRR(containerType);
       if (!executorId.isPresent()) { // If there is no available executor to schedule this task group now,
+        // TODO #696 Sleep Time Per Container Type in Scheduling Policy
         final boolean executorAvailable =
             conditionByContainerType.get(containerType).await(scheduleTimeoutMs, TimeUnit.MILLISECONDS);
         if (executorAvailable) { // if an executor has become available before scheduleTimeoutMs,
-          return selectExecutorByRR(containerType);
-        } else {
-          return Optional.empty();
+          executorId = selectExecutorByRR(containerType);
+          if (executorId.isPresent()) {
+            scheduleTaskGroup(selectExecutorByRR(containerType).get(), scheduledTaskGroup, jobStateManager);
+            return true;
+          } else {
+            throw new SchedulingException(new Throwable("An executor must be available at this point"));
+          }
         }
+        return false;
       } else {
-        return executorId;
+        scheduleTaskGroup(executorId.get(), scheduledTaskGroup, jobStateManager);
+        return true;
       }
     } catch (final Exception e) {
       throw new SchedulingException(e);
@@ -126,6 +136,7 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   /**
    * Sticks to the RR policy to select an executor for the next task group.
    * It checks the task groups running (as compared to each executor's capacity).
+   *
    * @param containerType to select an executor for.
    * @return (optionally) the selected executor.
    */
@@ -153,6 +164,24 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
     return Optional.empty();
   }
 
+  /**
+   * Schedules and sends a TaskGroup to the given executor.
+   *
+   * @param executorId         of the executor to execute the TaskGroup.
+   * @param scheduledTaskGroup to assign.
+   * @param jobStateManager    which the TaskGroup belongs to.
+   */
+  private void scheduleTaskGroup(final String executorId,
+                                 final ScheduledTaskGroup scheduledTaskGroup,
+                                 final JobStateManager jobStateManager) {
+    jobStateManager.onTaskGroupStateChanged(scheduledTaskGroup.getTaskGroupId(), TaskGroupState.State.EXECUTING);
+
+    final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
+    LOG.info("Scheduling {} to {}",
+        new Object[]{scheduledTaskGroup.getTaskGroupId(), executorId});
+    executor.onTaskGroupScheduled(scheduledTaskGroup);
+  }
+
   private List<String> getAllContainers() {
     return executorIdByContainerType.values().stream()
         .flatMap(List::stream) // flatten the list of lists to a flat stream
@@ -160,6 +189,8 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   }
 
   private boolean hasFreeSlot(final ExecutorRepresenter executor) {
+    LOG.info("Has Free Slot: " + executor.getExecutorId());
+    LOG.info("Running TaskGroups: " + executor.getRunningTaskGroups());
     return executor.getRunningTaskGroups().size() < executor.getExecutorCapacity();
   }
 
@@ -222,19 +253,6 @@ public final class RoundRobinSchedulingPolicy implements SchedulingPolicy {
   private void updateCachedExecutorRepresenterMap() {
     executorRepresenterMap.clear();
     executorRepresenterMap.putAll(containerManager.getExecutorRepresenterMap());
-  }
-
-  @Override
-  public void onTaskGroupScheduled(final String executorId, final ScheduledTaskGroup scheduledTaskGroup) {
-    lock.lock();
-    try {
-      final ExecutorRepresenter executor = executorRepresenterMap.get(executorId);
-      LOG.info("Scheduling {} to {}",
-          new Object[]{scheduledTaskGroup.getTaskGroup().getTaskGroupId(), executorId});
-      executor.onTaskGroupScheduled(scheduledTaskGroup);
-    } finally {
-      lock.unlock();
-    }
   }
 
   @Override

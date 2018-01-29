@@ -109,7 +109,7 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
 
     public void onNext(final Message<ControlMessage.Message> messages) {
       final ControlMessage.Message controlMessage = extractSingleMessage(messages);
-      LOG.debug("received: {}", controlMessage);
+      LOG.debug("[RECEIVED]: msg={}", controlMessage);
       final MessageType messageType = getMsgType(controlMessage);
       switch (messageType) {
         case Send:
@@ -186,18 +186,13 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
       case ScheduleTaskGroup:
       case BlockStateChanged:
       case ExecutorFailed:
-      case CommitPartition:
-      case RemovePartitionMetadata:
       case DataSizeMetric:
       case ContainerFailed:
+      case MetricMessageReceived:
         return MessageType.Send;
       case RequestBlockLocation:
-      case RequestPartitionMetadata:
-      case ReservePartition:
         return MessageType.Request;
       case BlockLocationInfo:
-      case MetadataResponse:
-      case ReservePartitionResponse:
         return MessageType.Reply;
       default:
         throw new IllegalArgumentException(controlMessage.toString());
@@ -208,10 +203,6 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     switch (controlMessage.getType()) {
       case RequestBlockLocation:
         return controlMessage.getRequestBlockLocationMsg().getExecutorId();
-      case RequestPartitionMetadata:
-        return controlMessage.getRequestPartitionMetadataMsg().getExecutorId();
-      case ReservePartition:
-        return controlMessage.getReservePartitionMsg().getExecutorId();
       default:
         throw new IllegalArgumentException(controlMessage.toString());
     }
@@ -221,10 +212,6 @@ public final class NcsMessageEnvironment implements MessageEnvironment {
     switch (controlMessage.getType()) {
       case BlockLocationInfo:
         return controlMessage.getBlockLocationInfoMsg().getRequestId();
-      case MetadataResponse:
-        return controlMessage.getMetadataResponseMsg().getRequestId();
-      case ReservePartitionResponse:
-        return controlMessage.getReservePartitionResponseMsg().getRequestId();
       default:
         throw new IllegalArgumentException(controlMessage.toString());
     }
