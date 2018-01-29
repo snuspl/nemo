@@ -74,6 +74,14 @@ class PhysicalStageState:
             return self.taskGroups[id]
         except:
             return TaskGroupState.empty()
+    @property
+    def taskGroupStateSummary(self):
+        stateToNumTaskGroups = dict()
+        for taskGroupState in self.taskGroups.values():
+            before = stateToNumTaskGroups.get(taskGroupState.state, 0)
+            stateToNumTaskGroups[taskGroupState.state] = before + 1
+        return '\\n'.join(['{}: {}'.format(state, stateToNumTaskGroups[state])
+            for state in stateToNumTaskGroups.keys()])
 
 class TaskGroupState:
     def __init__(self, data):
@@ -246,16 +254,16 @@ class PhysicalStage:
         self.id = id
         self.taskGroup = DAG(properties['taskGroupDag'], JobState.empty())
         self.idx = getIdx()
-        self.state = state.state
+        self.state = state
     @property
     def dot(self):
-        if self.state is None:
+        if self.state.state is None:
             state = ''
         else:
-            state = ' ({})'.format(self.state)
+            state = ' ({})'.format(self.state.state)
         dot = 'subgraph cluster_{} {{'.format(self.idx)
-        dot += 'label = "{}{}";'.format(self.id, state)
-        dot += 'color=red; bgcolor="{}";'.format(stateToColor(self.state))
+        dot += 'label = "{}{}\\n{} TaskGroup(s):\\n{}";'.format(self.id, state, len(self.state.taskGroups), self.state.taskGroupStateSummary)
+        dot += 'color=red; bgcolor="{}";'.format(stateToColor(self.state.state))
         dot += self.taskGroup.dot
         dot += '}'
         return dot
