@@ -70,7 +70,7 @@ public final class UserApplicationRunner implements Runnable {
   @Override
   public void run() {
     try {
-      LOG.info("##### ONYX Compiler #####");
+      LOG.info("##### Coral Compiler #####");
 
       final DAG<IRVertex, IREdge> dag = SerializationUtils.deserialize(Base64.getDecoder().decode(dagString));
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");
