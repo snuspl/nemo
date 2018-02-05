@@ -51,7 +51,7 @@ final class DataFrameEncoder extends MessageToMessageEncoder<DataFrameEncoder.Da
     final ByteBuf header = ctx.alloc().ioBuffer(HEADER_LENGTH, HEADER_LENGTH);
     byte flags = (byte) 0;
     flags |= (byte) (1 << 3);
-    if (in.contextId.getDataDirection() == ControlMessage.ByteTransferDataDirection.PARTNER_TO_INITIATOR) {
+    if (in.contextId.getDataDirection() == ControlMessage.ByteTransferDataDirection.INITIATOR_RECEIVES_DATA) {
       flags |= (byte) (1 << 2);
     }
     if (in.opensSubStream) {

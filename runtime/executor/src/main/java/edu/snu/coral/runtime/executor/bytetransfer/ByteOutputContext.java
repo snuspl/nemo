@@ -29,6 +29,9 @@ import java.nio.file.Paths;
 
 /**
  * Container for multiple output streams. Represents a transfer context on sender-side.
+ *
+ * <p>Public methods are thread safe,
+ * although the execution order may not be linearized if they were called from different threads.</p>
  */
 public final class ByteOutputContext extends ByteTransferContext implements AutoCloseable {
 
@@ -111,6 +114,9 @@ public final class ByteOutputContext extends ByteTransferContext implements Auto
 
   /**
    * An {@link OutputStream} implementation which buffers data to {@link ByteBuf}s.
+   *
+   * <p>Public methods are thread safe,
+   * although the execution order may not be linearized if they were called from different threads.</p>
    */
   public final class ByteOutputStream extends OutputStream {
 
@@ -165,7 +171,7 @@ public final class ByteOutputContext extends ByteTransferContext implements Auto
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
       if (closed) {
         return;
       }
@@ -192,7 +198,7 @@ public final class ByteOutputContext extends ByteTransferContext implements Auto
      * @param length      the length of the body, in bytes
      * @throws IOException when an exception has been set or this stream was closed
      */
-    private void writeDataFrame(final Object body, final long length) throws IOException {
+    private synchronized void writeDataFrame(final Object body, final long length) throws IOException {
       ensureNoException();
       if (closed) {
         throw new IOException("Stream already closed.");

@@ -138,7 +138,7 @@ final class FrameDecoder extends ByteToMessageDecoder {
       // setup context for reading data frame body
       dataBodyBytesToRead = length;
       final ByteTransferDataDirection dataDirection = (flags & ((byte) (1 << 2))) == 0
-          ? ByteTransferDataDirection.INITIATOR_TO_PARTNER : ByteTransferDataDirection.PARTNER_TO_INITIATOR;
+          ? ByteTransferDataDirection.INITIATOR_SENDS_DATA : ByteTransferDataDirection.INITIATOR_RECEIVES_DATA;
       final boolean newSubStreamFlag = (flags & ((byte) (1 << 1))) != 0;
       isLastFrame = (flags & ((byte) (1 << 0))) != 0;
       inputContext = contextManager.getInputContext(dataDirection, transferIndex);

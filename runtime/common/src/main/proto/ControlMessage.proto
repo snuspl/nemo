@@ -95,8 +95,8 @@ message MetricMsg {
 // Messages between Executors
 
 enum ByteTransferDataDirection {
-    INITIATOR_TO_PARTNER = 0;
-    PARTNER_TO_INITIATOR = 1;
+    INITIATOR_SENDS_DATA = 0;
+    INITIATOR_RECEIVES_DATA = 1;
 }
 
 message ByteTransferContextSetupMessage {

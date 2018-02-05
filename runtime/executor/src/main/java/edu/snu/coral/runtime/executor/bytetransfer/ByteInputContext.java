@@ -25,6 +25,12 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Container for multiple input streams. Represents a transfer context on receiver-side.
+ *
+ * <h3>Thread safety:</h3>
+ * <p>Methods with default access modifier, namely {@link #onNewStream()}, {@link #onByteBuf(ByteBuf)},
+ * {@link #onContextClose()}, are not thread-safe, since they are called by a single Netty event loop.</p>
+ * <p>Public methods are thread safe,
+ * although the execution order may not be linearized if they were called from different threads.</p>
  */
 public final class ByteInputContext extends ByteTransferContext {
 
@@ -32,8 +38,28 @@ public final class ByteInputContext extends ByteTransferContext {
   private final ClosableBlockingQueue<ByteBufInputStream> byteBufInputStreams = new ClosableBlockingQueue<>();
   private volatile ByteBufInputStream currentByteBufInputStream = null;
 
+  private final Iterator<InputStream> inputStreams = new Iterator<InputStream>() {
+    @Override
+    public boolean hasNext() {
+      try {
+        return byteBufInputStreams.peek() != null;
+      } catch (final InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public InputStream next() {
+      try {
+        return byteBufInputStreams.take();
+      } catch (final InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  };
+
   /**
-   * Creates a input context.
+   * Creates an input context.
    * @param remoteExecutorId    id of the remote executor
    * @param contextId           identifier for this context
    * @param contextDescriptor   user-provided context descriptor
@@ -47,28 +73,12 @@ public final class ByteInputContext extends ByteTransferContext {
   }
 
   /**
+   * Returns {@link Iterator} of {@link InputStream}s.
+   * This method always returns the same {@link Iterator} instance.
    * @return {@link Iterator} of {@link InputStream}s.
    */
   public Iterator<InputStream> getInputStreams() {
-    return new Iterator<InputStream>() {
-      @Override
-      public boolean hasNext() {
-        try {
-          return byteBufInputStreams.peek() != null;
-        } catch (final InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-      @Override
-      public InputStream next() {
-        try {
-          return byteBufInputStreams.take();
-        } catch (final InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    };
+    return inputStreams;
   }
 
   /**
@@ -114,7 +124,7 @@ public final class ByteInputContext extends ByteTransferContext {
       currentByteBufInputStream.byteBufQueue.close();
     }
     byteBufInputStreams.close();
-    completedFuture.complete(getInputStreams());
+    completedFuture.complete(inputStreams);
     deregister();
   }
 
@@ -132,7 +142,7 @@ public final class ByteInputContext extends ByteTransferContext {
   /**
    * An {@link InputStream} implementation that reads data from a composition of {@link ByteBuf}s.
    */
-  public static final class ByteBufInputStream extends InputStream {
+  private static final class ByteBufInputStream extends InputStream {
 
     private final ClosableBlockingQueue<ByteBuf> byteBufQueue = new ClosableBlockingQueue<>();
 

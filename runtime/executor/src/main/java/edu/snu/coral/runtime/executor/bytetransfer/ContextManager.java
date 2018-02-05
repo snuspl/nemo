@@ -82,7 +82,7 @@ final class ContextManager extends SimpleChannelInboundHandler<ByteTransferConte
   ByteInputContext getInputContext(final ByteTransferDataDirection dataDirection,
                                    final int transferIndex) {
     final ConcurrentMap<Integer, ByteInputContext> contexts =
-        dataDirection == ByteTransferDataDirection.INITIATOR_TO_PARTNER
+        dataDirection == ByteTransferDataDirection.INITIATOR_SENDS_DATA
             ? inputContextsInitiatedByRemote : inputContextsInitiatedByLocal;
     return contexts.get(transferIndex);
   }
@@ -103,7 +103,7 @@ final class ContextManager extends SimpleChannelInboundHandler<ByteTransferConte
     final ContextId contextId = new ContextId(remoteExecutorId, localExecutorId, dataDirection, transferIndex);
     final byte[] contextDescriptor = message.getContextDescriptor().toByteArray();
 
-    if (dataDirection == ByteTransferDataDirection.INITIATOR_TO_PARTNER) {
+    if (dataDirection == ByteTransferDataDirection.INITIATOR_SENDS_DATA) {
       final ByteInputContext context = inputContextsInitiatedByRemote.compute(transferIndex, (index, existing) -> {
         if (existing != null) {
           throw new RuntimeException(String.format("Duplicate ContextId: %s", contextId));
@@ -129,9 +129,9 @@ final class ContextManager extends SimpleChannelInboundHandler<ByteTransferConte
   void onContextExpired(final ByteTransferContext context) {
     final ContextId contextId = context.getContextId();
     final ConcurrentMap<Integer, ? extends ByteTransferContext> contexts = context instanceof ByteInputContext
-        ? (contextId.getDataDirection() == ByteTransferDataDirection.INITIATOR_TO_PARTNER
+        ? (contextId.getDataDirection() == ByteTransferDataDirection.INITIATOR_SENDS_DATA
             ? inputContextsInitiatedByRemote : inputContextsInitiatedByLocal)
-        : (contextId.getDataDirection() == ByteTransferDataDirection.INITIATOR_TO_PARTNER
+        : (contextId.getDataDirection() == ByteTransferDataDirection.INITIATOR_SENDS_DATA
             ? outputContextsInitiatedByLocal : outputContextsInitiatedByRemote);
     contexts.remove(contextId.getTransferIndex(), context);
   }
@@ -172,7 +172,7 @@ final class ContextManager extends SimpleChannelInboundHandler<ByteTransferConte
    */
   ByteInputContext newInputContext(final String executorId, final byte[] contextDescriptor) {
     return newContext(inputContextsInitiatedByLocal, nextInputTransferIndex,
-        ByteTransferDataDirection.PARTNER_TO_INITIATOR,
+        ByteTransferDataDirection.INITIATOR_RECEIVES_DATA,
         contextId -> new ByteInputContext(executorId, contextId, contextDescriptor, this),
         executorId);
   }
@@ -185,7 +185,7 @@ final class ContextManager extends SimpleChannelInboundHandler<ByteTransferConte
    */
   ByteOutputContext newOutputContext(final String executorId, final byte[] contextDescriptor) {
     return newContext(outputContextsInitiatedByLocal, nextOutputTransferIndex,
-        ByteTransferDataDirection.INITIATOR_TO_PARTNER,
+        ByteTransferDataDirection.INITIATOR_SENDS_DATA,
         contextId -> new ByteOutputContext(executorId, contextId, contextDescriptor, this),
         executorId);
   }

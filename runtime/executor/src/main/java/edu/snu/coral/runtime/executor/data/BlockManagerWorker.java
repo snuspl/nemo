@@ -419,6 +419,11 @@ public final class BlockManagerWorker {
   public void onInputContext(final ByteInputContext inputContext) {
   }
 
+  /**
+   * Decodes BlockStore property from protocol buffer.
+   * @param blockStore property from protocol buffer
+   * @return the corresponding {@link DataStoreProperty} value
+   */
   private static ControlMessage.BlockStore convertBlockStore(
       final DataStoreProperty.Value blockStore) {
     switch (blockStore) {
@@ -435,6 +440,12 @@ public final class BlockManagerWorker {
     }
   }
 
+
+  /**
+   * Encodes {@link DataStoreProperty} value into protocol buffer property
+   * @param blockStoreType {@link DataStoreProperty} value
+   * @return the corresponding {@link ControlMessage.BlockStore} value
+   */
   private static DataStoreProperty.Value convertBlockStore(
       final ControlMessage.BlockStore blockStoreType) {
     switch (blockStoreType) {

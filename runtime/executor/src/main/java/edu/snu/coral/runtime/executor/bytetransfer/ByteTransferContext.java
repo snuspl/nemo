@@ -178,7 +178,7 @@ public abstract class ByteTransferContext {
 
     @Override
     public String toString() {
-      if (dataDirection == ByteTransferDataDirection.INITIATOR_TO_PARTNER) {
+      if (dataDirection == ByteTransferDataDirection.INITIATOR_SENDS_DATA) {
         return String.format("%s--%d->%s", initiatorExecutorId, transferIndex, partnerExecutorId);
       } else {
         return String.format("%s<-%d--%s", initiatorExecutorId, transferIndex, partnerExecutorId);
