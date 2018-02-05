@@ -21,12 +21,14 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Container for multiple input streams. Represents a transfer context on receiver-side.
  */
 public final class ByteInputContext extends ByteTransferContext {
 
+  private final CompletableFuture<Iterator<InputStream>> completedFuture = new CompletableFuture<>();
   private final ClosableBlockingQueue<ByteBufInputStream> byteBufInputStreams = new ClosableBlockingQueue<>();
   private volatile ByteBufInputStream currentByteBufInputStream = null;
 
@@ -70,6 +72,14 @@ public final class ByteInputContext extends ByteTransferContext {
   }
 
   /**
+   * Returns a future, which is completed when the corresponding transfer for this context gets done.
+   * @return a {@link CompletableFuture} for the same value that {@link #getInputStreams()} returns
+   */
+  public CompletableFuture<Iterator<InputStream>> getCompletedFuture() {
+    return completedFuture;
+  }
+
+  /**
    * Called when a punctuation for sub-stream incarnation is detected.
    */
   void onNewStream() {
@@ -104,12 +114,18 @@ public final class ByteInputContext extends ByteTransferContext {
       currentByteBufInputStream.byteBufQueue.close();
     }
     byteBufInputStreams.close();
+    completedFuture.complete(getInputStreams());
     deregister();
   }
 
   @Override
   public void onChannelError(@Nullable final Throwable cause) {
     setChannelError(cause);
+    if (cause == null) {
+      completedFuture.cancel(false);
+    } else {
+      completedFuture.completeExceptionally(cause);
+    }
     onContextClose();
   }
 
