@@ -442,7 +442,7 @@ public final class BlockManagerWorker {
 
 
   /**
-   * Encodes {@link DataStoreProperty} value into protocol buffer property
+   * Encodes {@link DataStoreProperty} value into protocol buffer property.
    * @param blockStoreType {@link DataStoreProperty} value
    * @return the corresponding {@link ControlMessage.BlockStore} value
    */
