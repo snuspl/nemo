@@ -31,6 +31,13 @@
       sudo apt install protobuf-compiler=2.5.0-9xenial1
       ```
 
+    * On macOS:
+
+      ```bash
+      brew tap homebrew/versions
+      brew install protobuf@2.5
+      ```
+
     * Or build from source:
 
       * Downloadable at https://github.com/google/protobuf/releases/tag/v2.5.0
@@ -92,9 +99,9 @@
 ### Configurable options
 * `num` (optional): Number of containers. Default value is 1
 * `type`:  Three container types are supported:
-	* `Transient` : Containers that store eviction-prone resources. When batch jobs use idle resources in `Transient` containers, they can be arbitrarily evicted when latency-critical jobs attempt to use the resources.
-	* `Reserved` : Containers that store eviction-free resources. `Reserved` containers are used to reliably store intermediate data which have high eviction cost.
-	* `Compute` : Containers that are mainly used for computation.
+  * `Transient` : Containers that store eviction-prone resources. When batch jobs use idle resources in `Transient` containers, they can be arbitrarily evicted when latency-critical jobs attempt to use the resources.
+  * `Reserved` : Containers that store eviction-free resources. `Reserved` containers are used to reliably store intermediate data which have high eviction cost.
+  * `Compute` : Containers that are mainly used for computation.
 * `memory_mb`: Memory size in MB
 * `capacity`: Number of `TaskGroup`s that can be run in an executor. Set this value to be the same as the number of CPU cores of the container.
 
@@ -122,7 +129,7 @@ This example configuration specifies
 ## Monitoring your job using web UI
 Coral Compiler and Engine can store JSON representation of intermediate DAGs.
 * `-dag_dir` command line option is used to specify the directory where the JSON files are stored. The default directory is `./dag`.
-Using our [online visualizer](https://service.jangho.io/coral-dag/), you can easily visualize a DAG. Just drop the JSON file of the DAG as an input to it.
+  Using our [online visualizer](https://service.jangho.io/coral-dag/), you can easily visualize a DAG. Just drop the JSON file of the DAG as an input to it.
 
 ### Examples
 ```bash
