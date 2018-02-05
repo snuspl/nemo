@@ -32,8 +32,6 @@ import edu.snu.coral.runtime.executor.data.BlockManagerWorker;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -158,13 +156,11 @@ public final class InputReader extends DataTransfer {
     return Boolean.TRUE.equals(runtimeEdge.isSideInput());
   }
 
-  public Object getSideInput() throws InterruptedException {
+  public Object getSideInput() throws InterruptedException, ExecutionException {
     if (!isSideInputReader()) {
       throw new RuntimeException();
     }
-    final BlockingQueue<Iterator> sideInputQueue = new ArrayBlockingQueue<>(1);
-    this.read().get(0).thenApply(iterator -> sideInputQueue.add(iterator));
-    final Iterator iterator = sideInputQueue.take();
+    final Iterator iterator = this.read().get(0).get();
 
     final List copy = new ArrayList();
     iterator.forEachRemaining(copy::add);
