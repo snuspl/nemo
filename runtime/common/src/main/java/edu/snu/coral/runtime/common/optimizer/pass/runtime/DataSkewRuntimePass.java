@@ -166,7 +166,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
         // assign appropriately
         keyRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
         startingHashValue = finishingHashValue;
-        LOG.info("resultig keyrange: {} ~ {}", startingHashValue, finishingHashValue);
+        LOG.info("resulting keyrange: {} ~ {}", startingHashValue, finishingHashValue);
       } else { // last one: we put the range of the rest.
         keyRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
       }
