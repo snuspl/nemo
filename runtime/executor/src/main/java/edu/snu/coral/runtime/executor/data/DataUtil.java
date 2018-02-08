@@ -25,23 +25,20 @@ public final class DataUtil {
   /**
    * Serializes the elements in a non-serialized partition into an output stream.
    *
-   * @param serializer             the serializer to encode the elements.
+   * @param coder                  the coder to encode the elements.
    * @param nonSerializedPartition the non-serialized partition to serialize.
    * @param bytesOutputStream      the output stream to write.
    * @return total number of elements in the partition.
    * @throws IOException if fail to serialize.
    */
-  public static long serializePartition(final Serializer serializer,
+  public static long serializePartition(final Coder coder,
                                         final NonSerializedPartition nonSerializedPartition,
-                                        final ByteArrayOutputStream bytesOutputStream) throws IOException {
+                                        final OutputStream bytesOutputStream) throws IOException {
     long elementsCount = 0;
-    final Coder coder = serializer.getCoder();
-    final OutputStream wrappedStream = buildOutputStream(bytesOutputStream, serializer.getStreamChainers());
     for (final Object element : nonSerializedPartition.getData()) {
-      coder.encode(element, wrappedStream);
+      coder.encode(element, bytesOutputStream);
       elementsCount++;
     }
-    wrappedStream.close();
 
     return elementsCount;
   }
@@ -81,8 +78,14 @@ public final class DataUtil {
       final Iterable<NonSerializedPartition<K>> partitionsToConvert) throws IOException {
     final List<SerializedPartition<K>> serializedPartitions = new ArrayList<>();
     for (final NonSerializedPartition<K> partitionToConvert : partitionsToConvert) {
-      try (final DirectByteArrayOutputStream bytesOutputStream = new DirectByteArrayOutputStream()) {
-        final long elementsTotal = serializePartition(serializer, partitionToConvert, bytesOutputStream);
+      try (
+          final DirectByteArrayOutputStream bytesOutputStream = new DirectByteArrayOutputStream();
+          final OutputStream wrappedStream = buildOutputStream(bytesOutputStream, serializer.getStreamChainers());
+      ) {
+        final long elementsTotal = serializePartition(serializer.getCoder(), partitionToConvert, wrappedStream);
+        // We need to close wrappedStream on here, because DirectByteArrayOutputStream:getBufDirectly() returns
+        // inner buffer directly, which can be an unfinished(not flushed) buffer.
+        wrappedStream.close();
         final byte[] serializedBytes = bytesOutputStream.getBufDirectly();
         final int actualLength = bytesOutputStream.getCount();
         serializedPartitions.add(
