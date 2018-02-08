@@ -33,15 +33,6 @@ public final class Serializer<T> {
   }
 
   /**
-   * method that sets {@link Coder}.
-   *
-   * @param coder {@link Coder}.
-   */
-  public void setCoder(final Coder<T> coder) {
-    this.coder = coder;
-  }
-
-  /**
    * method that returns list of {@link StreamChainer}.
    *
    * @return list of {@link StreamChainer}.

@@ -15,7 +15,6 @@
  */
 package edu.snu.coral.compiler.optimizer.policy;
 
-import edu.snu.coral.common.ir.edge.executionproperty.CompressionProperty;
 import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
 import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.CompressionPass;
 import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
