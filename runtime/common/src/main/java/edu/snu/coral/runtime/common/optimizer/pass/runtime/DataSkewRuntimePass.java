@@ -121,7 +121,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
 
     // Set an error rate for the ideal size calculated by math.
     // Actual size we distribute per TaskGroup will set to range from lowerBoundSize to upperBoundSize.
-    final double errorRangeFactor = 0.1;
+    final double errorRangeFactor = 0.0;
     final double errorRange = idealSizePerTaskGroup * errorRangeFactor;
     final long upperBoundSize = idealSizePerTaskGroup + (long) errorRange;
     final long lowerBoundSize = idealSizePerTaskGroup - (long) errorRange;
@@ -131,7 +131,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
     List<Long> sizePerTaskGroup = new ArrayList();
     int startingHashValue = 0;
     int finishingHashValue = 1; // initial values
-    Long currentAccumulatedSize = 0L;
+    Long currentAccumulatedSize = aggregatedMetricData.get(startingHashValue);
     for (int i = 1; i <= taskGroupListSize; i++) {
       if (i != taskGroupListSize) {
         final Long idealAccumulatedSize = idealSizePerTaskGroup * i; // where we should end
@@ -161,10 +161,12 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
         }
 
         sizePerTaskGroup.add(finalSize);
+        LOG.info("resulting size {}", finalSize);
 
         // assign appropriately
         keyRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
         startingHashValue = finishingHashValue;
+        LOG.info("resultig keyrange: {} ~ {}", startingHashValue, finishingHashValue);
       } else { // last one: we put the range of the rest.
         keyRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
       }
