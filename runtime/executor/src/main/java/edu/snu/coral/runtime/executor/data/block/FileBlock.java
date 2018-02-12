@@ -120,13 +120,12 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
         final K key = partitionMetadata.getKey();
         if (keyRange.includes(key)) {
           // The key value of this partition is in the range.
-          final byte[] serializedData = new byte[partitionMetadata.getPartitionSize()];
-          fileStream.read(serializedData);
-          final ByteArrayInputStream byteInputStream = new ByteArrayInputStream(serializedData);
+          final long availableBefore = fileStream.available();
           final NonSerializedPartition<K> deserializePartition =
               DataUtil.deserializePartition(
-                  partitionMetadata.getElementsTotal(), serializer, key, byteInputStream);
+                  partitionMetadata.getElementsTotal(), serializer, key, fileStream);
           deserializedPartitions.add(deserializePartition);
+          skipBytes(fileStream, partitionMetadata.getPartitionSize() - availableBefore + fileStream.available());
         } else {
           // Have to skip this partition.
           skipBytes(fileStream, partitionMetadata.getPartitionSize());
