@@ -22,6 +22,7 @@ import edu.snu.coral.runtime.executor.data.metadata.PartitionMetadata;
 import edu.snu.coral.runtime.executor.data.metadata.FileMetadata;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -125,7 +126,14 @@ public final class FileBlock<K extends Serializable> implements Block<K> {
               DataUtil.deserializePartition(
                   partitionMetadata.getElementsTotal(), serializer, key, fileStream);
           deserializedPartitions.add(deserializePartition);
-          skipBytes(fileStream, partitionMetadata.getPartitionSize() - availableBefore + fileStream.available());
+          // rearrange file pointer
+          final long toSkip = partitionMetadata.getPartitionSize() - availableBefore + fileStream.available();
+          if (toSkip > 0) {
+            skipBytes(fileStream, toSkip);
+          } else if (toSkip < 0) {
+            final FileChannel fc = fileStream.getChannel();
+            fc.position(fc.position() + toSkip);
+          }
         } else {
           // Have to skip this partition.
           skipBytes(fileStream, partitionMetadata.getPartitionSize());
