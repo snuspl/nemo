@@ -1,18 +1,18 @@
 package edu.snu.coral.compiler.frontend.spark.source;
 
-import com.google.common.collect.Lists;
 import edu.snu.coral.common.ir.Readable;
 import edu.snu.coral.common.ir.vertex.SourceVertex;
 import edu.snu.coral.compiler.frontend.spark.sql.Dataset;
+import edu.snu.coral.compiler.frontend.spark.sql.SparkSession;
 import org.apache.spark.Partition;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext$;
 import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bounded source vertex for Spark.
@@ -24,14 +24,16 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
   /**
    * Constructor.
    * Note that we have to first create our iterators here and supply them to our readables.
-   * TODO #756: make this bit distributed.
    *
+   * @param sparkSession sparkSession to recreate on each executor.
    * @param dataset Dataset to read data from.
    */
-  public SparkBoundedSourceVertex(final Dataset<T> dataset) {
+  public SparkBoundedSourceVertex(final SparkSession sparkSession, final Dataset<T> dataset) {
     this.readables = new ArrayList<>();
     for (final Partition partition: dataset.rdd().getPartitions()) {
-      readables.add(new SparkBoundedSourceReadable(partition, dataset.rdd()));
+      readables.add(new SparkBoundedSourceReadable(sparkSession.getDatasetCommandsList(),
+          sparkSession.getInitialConf(),
+          partition.index()));
     }
   }
 
@@ -60,25 +62,34 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
    * A Readable for SparkBoundedSourceReadablesWrapper.
    */
   private final class SparkBoundedSourceReadable implements Readable<T> {
-    private final SparkConf conf;
-    private final Iterable<T> iterable;
+    private final LinkedHashMap<String, Object[]> commands;
+    private final Map<String, String> sessionInitialConf;
+    private final int partitionIndex;
 
     /**
      * Constructor.
-     * @param partition partition for this readable.
-     * @param rdd rdd to read data from.
+     * @param commands list of commands needed to build the dataset.
+     * @param sessionInitialConf spark session's initial configuration.
+     * @param partitionIndex partition for this readable.
      */
-    private SparkBoundedSourceReadable(final Partition partition, final RDD<T> rdd) {
-      this.conf = rdd.sparkContext().conf();
-      // TODO #756: make this bit distributed.
-      this.iterable = Lists.newArrayList(() ->
-          JavaConverters.asJavaIteratorConverter(rdd.iterator(partition, TaskContext$.MODULE$.empty())).asJava());
+    private SparkBoundedSourceReadable(final LinkedHashMap<String, Object[]> commands,
+                                       final Map<String, String> sessionInitialConf,
+                                       final int partitionIndex) {
+      this.commands = commands;
+      this.sessionInitialConf = sessionInitialConf;
+      this.partitionIndex = partitionIndex;
     }
 
     @Override
-    public Iterable<T> read() {
-      new SparkContext(conf);
-      return iterable;
+    public Iterable<T> read() throws Exception {
+      final SparkSession spark = SparkSession.builder()
+          .config(sessionInitialConf)
+          .getOrCreate();
+      final Dataset<T> dataset = SparkSession.initializeDataset(spark, commands);
+
+      final RDD<T> rdd = dataset.rdd();
+      return () -> JavaConverters.asJavaIteratorConverter(
+          rdd.iterator(rdd.getPartitions()[partitionIndex], TaskContext$.MODULE$.empty())).asJava();
     }
   }
 }
