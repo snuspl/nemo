@@ -20,6 +20,8 @@ import java.io.InputStream;
 
 /**
  * This class provide functionality to limit bytes read from {@link InputStream}.
+ * You need to wrap chained compression stream with this stream to prevent overreading
+ * inner stream.
  */
 public final class LimitedInputStream extends InputStream {
   private final InputStream in;
