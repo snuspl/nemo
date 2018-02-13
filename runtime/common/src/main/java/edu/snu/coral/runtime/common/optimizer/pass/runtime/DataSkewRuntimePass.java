@@ -60,6 +60,18 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
     ).collect(Collectors.toSet());
   }
 
+  /**
+   * Default constructor.
+   *
+   * @param errorRangeFactor    the factor that caps upper and lower bound of per TaskGroup-distributed data.
+   */
+  public DataSkewRuntimePass(final double errorRangeFactor) {
+    this.errorRangeFactor = errorRangeFactor;
+    this.eventHandlers = Stream.of(
+        DynamicOptimizationEventHandler.class
+    ).collect(Collectors.toSet());
+  }
+
   @Override
   public Set<Class<? extends CommonEventHandler<?>>> getEventHandlers() {
     return eventHandlers;
