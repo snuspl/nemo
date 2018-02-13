@@ -54,16 +54,13 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
    * Constructor.
    */
   public DataSkewRuntimePass() {
-    this.errorRangeFactor = 0.0;
-    this.eventHandlers = Stream.of(
-        DynamicOptimizationEventHandler.class
-    ).collect(Collectors.toSet());
+    this(0.0);
   }
 
   /**
    * Default constructor.
    *
-   * @param errorRangeFactor    the factor that caps upper and lower bound of per TaskGroup-distributed data.
+   * @param errorRangeFactor  the factor that caps upper and lower bound of per TaskGroup-distributed data.
    */
   public DataSkewRuntimePass(final double errorRangeFactor) {
     this.errorRangeFactor = errorRangeFactor;
