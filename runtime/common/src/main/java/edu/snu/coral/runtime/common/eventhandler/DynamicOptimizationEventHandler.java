@@ -24,6 +24,8 @@ import edu.snu.coral.common.eventhandler.RuntimeEventHandler;
 import edu.snu.coral.common.ir.vertex.MetricCollectionBarrierVertex;
 import edu.snu.coral.runtime.common.optimizer.RuntimeOptimizer;
 import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
+import org.apache.reef.tang.formats.ConfigurationModule;
+import org.apache.reef.tang.formats.ConfigurationModuleBuilder;
 import org.apache.reef.wake.impl.PubSubEventHandler;
 
 import javax.inject.Inject;
@@ -42,6 +44,15 @@ public final class DynamicOptimizationEventHandler implements RuntimeEventHandle
   private DynamicOptimizationEventHandler(final PubSubEventHandlerWrapper pubSubEventHandlerWrapper) {
     this.pubSubEventHandler = pubSubEventHandlerWrapper.getPubSubEventHandler();
   }
+
+  /**
+   * Configuration for Tang.
+   */
+  private static class DynamicOptimizationEventHandlerConf extends ConfigurationModuleBuilder {
+  }
+  public static final ConfigurationModule CONF = new DynamicOptimizationEventHandlerConf()
+      .bindImplementation(RuntimeEventHandler.class, DynamicOptimizationEventHandler.class)
+      .build();
 
   @Override
   public Class<DynamicOptimizationEvent> getEventClass() {

@@ -16,9 +16,9 @@
 package edu.snu.coral.runtime.common.optimizer.pass.runtime;
 
 import com.google.common.annotations.VisibleForTesting;
-import edu.snu.coral.common.eventhandler.CommonEventHandler;
 import edu.snu.coral.common.dag.DAG;
 import edu.snu.coral.common.dag.DAGBuilder;
+import edu.snu.coral.common.eventhandler.RuntimeEventHandler;
 import edu.snu.coral.common.exception.DynamicOptimizationException;
 
 import edu.snu.coral.runtime.common.RuntimeIdGenerator;
@@ -28,32 +28,34 @@ import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.coral.runtime.common.data.HashRange;
 import edu.snu.coral.runtime.common.eventhandler.DynamicOptimizationEventHandler;
+import org.apache.reef.tang.Configuration;
+import org.apache.reef.tang.Tang;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Dynamic optimization pass for handling data skew.
  */
 public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<Long>>> {
-  private final Set<Class<? extends CommonEventHandler<?>>> eventHandlers;
+  private final Set<RuntimeEventHandler<?>> eventHandlers;
 
   /**
    * Constructor.
    */
   public DataSkewRuntimePass() {
-    this.eventHandlers = Stream.of(
-        DynamicOptimizationEventHandler.class
-    ).collect(Collectors.toSet());
+    final Configuration c = DynamicOptimizationEventHandler.CONF.build();
+    try {
+      final RuntimeEventHandler handler = Tang.Factory.getTang().newInjector(c).getInstance(RuntimeEventHandler.class);
+      this.eventHandlers = Collections.<RuntimeEventHandler<?>>singleton(handler);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
-  public Set<Class<? extends CommonEventHandler<?>>> getEventHandlers() {
+  public Set<RuntimeEventHandler<?>> getEventHandlers() {
     return eventHandlers;
   }
 
