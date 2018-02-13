@@ -4,7 +4,6 @@ import edu.snu.coral.common.ir.Readable;
 import edu.snu.coral.common.ir.vertex.SourceVertex;
 import edu.snu.coral.compiler.frontend.spark.sql.Dataset;
 import edu.snu.coral.compiler.frontend.spark.sql.SparkSession;
-import org.apache.spark.Partition;
 import org.apache.spark.TaskContext$;
 import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 /**
  * Bounded source vertex for Spark.
@@ -30,11 +30,11 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
    */
   public SparkBoundedSourceVertex(final SparkSession sparkSession, final Dataset<T> dataset) {
     this.readables = new ArrayList<>();
-    for (final Partition partition: dataset.rdd().getPartitions()) {
-      readables.add(new SparkBoundedSourceReadable(sparkSession.getDatasetCommandsList(),
-          sparkSession.getInitialConf(),
-          partition.index()));
-    }
+    IntStream.range(0, dataset.rdd().getNumPartitions()).forEach(partitionIndex ->
+        readables.add(new SparkBoundedSourceReadable(
+            sparkSession.getDatasetCommandsList(),
+            sparkSession.getInitialConf(),
+            partitionIndex)));
   }
 
   /**
@@ -82,11 +82,13 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
 
     @Override
     public Iterable<T> read() throws Exception {
+      // for setting up the same environment in the executors.
       final SparkSession spark = SparkSession.builder()
           .config(sessionInitialConf)
           .getOrCreate();
       final Dataset<T> dataset = SparkSession.initializeDataset(spark, commands);
 
+      // Spark does lazy evaluation: it doesn't load the full dataset, but only the partition it is asked for.
       final RDD<T> rdd = dataset.rdd();
       return () -> JavaConverters.asJavaIteratorConverter(
           rdd.iterator(rdd.getPartitions()[partitionIndex], TaskContext$.MODULE$.empty())).asJava();
