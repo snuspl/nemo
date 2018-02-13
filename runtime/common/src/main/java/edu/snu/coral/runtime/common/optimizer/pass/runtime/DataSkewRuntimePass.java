@@ -43,13 +43,18 @@ import java.util.stream.Stream;
  * Dynamic optimization pass for handling data skew.
  */
 public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<Long>>> {
-  private final Set<Class<? extends CommonEventHandler<?>>> eventHandlers;
   private static final Logger LOG = LoggerFactory.getLogger(DataSkewRuntimePass.class.getName());
+  private final Set<Class<? extends CommonEventHandler<?>>> eventHandlers;
+  // The scope of actual size of data distributed to each TaskGroup is determined by this factor.
+  // lower bound: ideal size per TaskGroup - errorRangeFactor
+  // upper bound: ideal size per TaskGroup + errorRangeFactor
+  private final double errorRangeFactor;
 
   /**
    * Constructor.
    */
   public DataSkewRuntimePass() {
+    this.errorRangeFactor = 0.0;
     this.eventHandlers = Stream.of(
         DynamicOptimizationEventHandler.class
     ).collect(Collectors.toSet());
@@ -121,7 +126,6 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
 
     // Set an error rate for the ideal size calculated by math.
     // Actual size we distribute per TaskGroup will set to range from lowerBoundSize to upperBoundSize.
-    final double errorRangeFactor = 0.0;
     final double errorRange = idealSizePerTaskGroup * errorRangeFactor;
     final long upperBoundSize = idealSizePerTaskGroup + (long) errorRange;
     final long lowerBoundSize = idealSizePerTaskGroup - (long) errorRange;
