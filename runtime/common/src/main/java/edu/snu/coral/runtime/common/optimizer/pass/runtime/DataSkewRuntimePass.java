@@ -45,25 +45,11 @@ import java.util.stream.Stream;
 public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<Long>>> {
   private static final Logger LOG = LoggerFactory.getLogger(DataSkewRuntimePass.class.getName());
   private final Set<Class<? extends CommonEventHandler<?>>> eventHandlers;
-  // The scope of actual size of data distributed to each TaskGroup is determined by this factor.
-  // lower bound: ideal size per TaskGroup - errorRangeFactor
-  // upper bound: ideal size per TaskGroup + errorRangeFactor
-  private final double errorRangeFactor;
 
   /**
    * Constructor.
    */
   public DataSkewRuntimePass() {
-    this(0.0);
-  }
-
-  /**
-   * Default constructor.
-   *
-   * @param errorRangeFactor  the factor that caps upper and lower bound of per TaskGroup-distributed data.
-   */
-  public DataSkewRuntimePass(final double errorRangeFactor) {
-    this.errorRangeFactor = errorRangeFactor;
     this.eventHandlers = Stream.of(
         DynamicOptimizationEventHandler.class
     ).collect(Collectors.toSet());
@@ -133,15 +119,8 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
     LOG.info("idealSizePerTaskgroup {} = {}(totalSize) / {}(taskGroupListSize)",
         idealSizePerTaskGroup, totalSize, taskGroupListSize);
 
-    // Set an error rate for the ideal size calculated by math.
-    // Actual size we distribute per TaskGroup will set to range from lowerBoundSize to upperBoundSize.
-    final double errorRange = idealSizePerTaskGroup * errorRangeFactor;
-    final long upperBoundSize = idealSizePerTaskGroup + (long) errorRange;
-    final long lowerBoundSize = idealSizePerTaskGroup - (long) errorRange;
-
     // find HashRanges to apply (for each blocks of each block).
     final List<KeyRange> keyRanges = new ArrayList<>(taskGroupListSize);
-    List<Long> sizePerTaskGroup = new ArrayList();
     int startingHashValue = 0;
     int finishingHashValue = 1; // initial values
     Long currentAccumulatedSize = aggregatedMetricData.get(startingHashValue);
@@ -154,32 +133,18 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
           finishingHashValue++;
         }
 
-        long finalSize;
-        if (i == 1) {
-          finalSize = currentAccumulatedSize;
-        } else {
-          long currentSize = currentAccumulatedSize - sizePerTaskGroup.stream().mapToLong(l -> l).sum();
-          long oneStepBack = currentSize - aggregatedMetricData.get(finishingHashValue - 1);
-
-          // If the accumulated size for this TaskGroup exceeds upperBoundSize
-          // and taking off for one hash range doesn't violate lowerBoundSize, go one step back.
-          if (!(currentSize >= lowerBoundSize && currentSize <= upperBoundSize)) {
-            if (oneStepBack >= lowerBoundSize) {
-              finishingHashValue--;
-              currentAccumulatedSize -= aggregatedMetricData.get(finishingHashValue);
-            }
-          }
-
-          finalSize = currentAccumulatedSize - sizePerTaskGroup.stream().mapToLong(l -> l).sum();
+        Long oneStepBack = currentAccumulatedSize - aggregatedMetricData.get(finishingHashValue - 1);
+        Long diffFromIdeal = currentAccumulatedSize - idealAccumulatedSize;
+        Long diffFromIdealOneStepBack = idealAccumulatedSize - oneStepBack;
+        // Go one step back if we came too far.
+        if (diffFromIdeal > diffFromIdealOneStepBack) {
+          finishingHashValue--;
+          currentAccumulatedSize -= aggregatedMetricData.get(finishingHashValue);
         }
-
-        sizePerTaskGroup.add(finalSize);
-        LOG.info("resulting size {}", finalSize);
 
         // assign appropriately
         keyRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
         startingHashValue = finishingHashValue;
-        LOG.info("resulting keyrange: {} ~ {}", startingHashValue, finishingHashValue);
       } else { // last one: we put the range of the rest.
         keyRanges.add(i - 1, HashRange.of(startingHashValue, hashRangeCount));
       }
