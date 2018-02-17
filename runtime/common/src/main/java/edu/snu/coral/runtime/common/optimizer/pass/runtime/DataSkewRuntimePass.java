@@ -30,6 +30,8 @@ import edu.snu.coral.runtime.common.data.HashRange;
 import edu.snu.coral.runtime.common.eventhandler.DynamicOptimizationEventHandler;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ import java.util.stream.IntStream;
  * Dynamic optimization pass for handling data skew.
  */
 public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<Long>>> {
+  private static final Logger LOG = LoggerFactory.getLogger(DataSkewRuntimePass.class.getName());
   private final Set<RuntimeEventHandler<?>> eventHandlers;
 
   /**
@@ -76,7 +79,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
 
     // Get number of evaluators of the next stage (number of blocks).
     final Integer taskGroupListSize = optimizationEdges.stream().findFirst().orElseThrow(() ->
-        new RuntimeException("optimization edges is empty")).getDst().getTaskGroupIds().size();
+        new RuntimeException("optimization edges are empty")).getDst().getTaskGroupIds().size();
 
     // Calculate keyRanges.
     final List<KeyRange> keyRanges = calculateHashRanges(metricData, taskGroupListSize);
@@ -85,10 +88,7 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
     optimizationEdges.forEach(optimizationEdge -> {
       // Update the information.
       final List<KeyRange> taskGroupIdxToHashRange = new ArrayList<>();
-      IntStream.range(0, taskGroupListSize).forEach(i -> {
-        taskGroupIdxToHashRange.add(keyRanges.get(i));
-      });
-
+      IntStream.range(0, taskGroupListSize).forEach(i -> taskGroupIdxToHashRange.add(keyRanges.get(i)));
       optimizationEdge.setTaskGroupIdxToKeyRange(taskGroupIdxToHashRange);
     });
 
@@ -118,12 +118,14 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
     // Do the optimization using the information derived above.
     final Long totalSize = aggregatedMetricData.stream().mapToLong(n -> n).sum(); // get total size
     final Long idealSizePerTaskGroup = totalSize / taskGroupListSize; // and derive the ideal size per task group
+    LOG.info("idealSizePerTaskgroup {} = {}(totalSize) / {}(taskGroupListSize)",
+        idealSizePerTaskGroup, totalSize, taskGroupListSize);
 
     // find HashRanges to apply (for each blocks of each block).
     final List<KeyRange> keyRanges = new ArrayList<>(taskGroupListSize);
     int startingHashValue = 0;
     int finishingHashValue = 1; // initial values
-    Long currentAccumulatedSize = aggregatedMetricData.get(0); // what we have up to now
+    Long currentAccumulatedSize = aggregatedMetricData.get(startingHashValue);
     for (int i = 1; i <= taskGroupListSize; i++) {
       if (i != taskGroupListSize) {
         final Long idealAccumulatedSize = idealSizePerTaskGroup * i; // where we should end
@@ -132,12 +134,16 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
           currentAccumulatedSize += aggregatedMetricData.get(finishingHashValue);
           finishingHashValue++;
         }
-        // Go back once if we came too far.
-        if (currentAccumulatedSize - idealAccumulatedSize
-            > idealAccumulatedSize - (currentAccumulatedSize - aggregatedMetricData.get(finishingHashValue - 1))) {
+
+        Long oneStepBack = currentAccumulatedSize - aggregatedMetricData.get(finishingHashValue - 1);
+        Long diffFromIdeal = currentAccumulatedSize - idealAccumulatedSize;
+        Long diffFromIdealOneStepBack = idealAccumulatedSize - oneStepBack;
+        // Go one step back if we came too far.
+        if (diffFromIdeal > diffFromIdealOneStepBack) {
           finishingHashValue--;
           currentAccumulatedSize -= aggregatedMetricData.get(finishingHashValue);
         }
+
         // assign appropriately
         keyRanges.add(i - 1, HashRange.of(startingHashValue, finishingHashValue));
         startingHashValue = finishingHashValue;
