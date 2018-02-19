@@ -33,7 +33,6 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<String> textFile(final String path) {
-    sparkSession.appendCommand("DataFrameReader#textFile", path);
     return Dataset.from(super.textFile(path));
   }
 }

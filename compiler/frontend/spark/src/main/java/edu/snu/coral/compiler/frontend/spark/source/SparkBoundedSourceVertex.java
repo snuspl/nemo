@@ -9,7 +9,6 @@ import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -32,7 +31,8 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     this.readables = new ArrayList<>();
     IntStream.range(0, dataset.rdd().getNumPartitions()).forEach(partitionIndex ->
         readables.add(new SparkBoundedSourceReadable(
-            sparkSession.getDatasetCommandsList(),
+//            sparkSession.getDatasetCommandsList(),
+            dataset,
             sparkSession.getInitialConf(),
             partitionIndex)));
   }
@@ -62,20 +62,20 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
    * A Readable for SparkBoundedSourceReadablesWrapper.
    */
   private final class SparkBoundedSourceReadable implements Readable<T> {
-    private final LinkedHashMap<String, Object[]> commands;
+    private final Dataset<T> dataset;
     private final Map<String, String> sessionInitialConf;
     private final int partitionIndex;
 
     /**
      * Constructor.
-     * @param commands list of commands needed to build the dataset.
+     * @param dataset list of commands needed to build the dataset.
      * @param sessionInitialConf spark session's initial configuration.
      * @param partitionIndex partition for this readable.
      */
-    private SparkBoundedSourceReadable(final LinkedHashMap<String, Object[]> commands,
+    private SparkBoundedSourceReadable(final Dataset<T> dataset,
                                        final Map<String, String> sessionInitialConf,
                                        final int partitionIndex) {
-      this.commands = commands;
+      this.dataset = dataset;
       this.sessionInitialConf = sessionInitialConf;
       this.partitionIndex = partitionIndex;
     }
@@ -86,7 +86,6 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
       final SparkSession spark = SparkSession.builder()
           .config(sessionInitialConf)
           .getOrCreate();
-      final Dataset<T> dataset = SparkSession.initializeDataset(spark, commands);
 
       // Spark does lazy evaluation: it doesn't load the full dataset, but only the partition it is asked for.
       final RDD<T> rdd = dataset.rdd();
