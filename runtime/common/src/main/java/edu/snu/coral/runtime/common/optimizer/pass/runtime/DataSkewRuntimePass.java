@@ -28,7 +28,6 @@ import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
 import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.coral.runtime.common.data.HashRange;
 import edu.snu.coral.runtime.common.eventhandler.DynamicOptimizationEventHandler;
-import org.apache.reef.tang.exceptions.InjectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +46,8 @@ public final class DataSkewRuntimePass implements RuntimePass<Map<String, List<L
    * Constructor.
    */
   public DataSkewRuntimePass() {
-    try {
-      this.eventHandlers = Collections.<RuntimeEventHandler<?>>singleton(
-          DynamicOptimizationEventHandler.getEventHandlerInstance());
-    } catch (InjectionException e) {
-      throw new RuntimeException(e);
-    }
+    this.eventHandlers = Collections.<RuntimeEventHandler<?>>singleton(
+        DynamicOptimizationEventHandler.getEventHandlerInstance());
   }
 
   @Override
