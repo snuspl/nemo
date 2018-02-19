@@ -81,7 +81,8 @@ public final class UserApplicationRunner implements Runnable {
 
       optimizationPolicy.getRuntimePasses().forEach(runtimePass ->
           runtimePass.getEventHandlers().forEach(runtimeEventHandler ->
-              pubSubWrapper.getPubSubEventHandler().subscribe(runtimeEventHandler.getClass(), runtimeEventHandler)));
+              pubSubWrapper.getPubSubEventHandler()
+                  .subscribe(runtimeEventHandler.getEventClass(), runtimeEventHandler)));
 
       final PhysicalPlan physicalPlan = backend.compile(optimizedDAG);
 
