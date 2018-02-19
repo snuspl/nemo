@@ -31,7 +31,6 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     this.readables = new ArrayList<>();
     IntStream.range(0, dataset.rdd().getNumPartitions()).forEach(partitionIndex ->
         readables.add(new SparkBoundedSourceReadable(
-//            sparkSession.getDatasetCommandsList(),
             dataset,
             sparkSession.getInitialConf(),
             partitionIndex)));
@@ -83,9 +82,7 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     @Override
     public Iterable<T> read() throws Exception {
       // for setting up the same environment in the executors.
-      final SparkSession spark = SparkSession.builder()
-          .config(sessionInitialConf)
-          .getOrCreate();
+      SparkSession.builder().config(sessionInitialConf).getOrCreate();
 
       // Spark does lazy evaluation: it doesn't load the full dataset, but only the partition it is asked for.
       final RDD<T> rdd = dataset.rdd();
