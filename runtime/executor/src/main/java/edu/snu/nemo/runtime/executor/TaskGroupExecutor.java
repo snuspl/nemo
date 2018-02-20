@@ -319,6 +319,7 @@ public final class TaskGroupExecutor {
         final Pair<DataUtil.IteratorWithNumBytes, String> availableData = dataQueue.take();
         final long blockedReadEndTime = System.currentTimeMillis();
         accumulatedBlockedReadTime += blockedReadEndTime - blockedReadStartTime;
+        transform.onData(availableData.left(), availableData.right());
         if (blockSizeAvailable) {
           try {
             accumulatedSerializedBlockSize += availableData.left().getNumSerializedBytes();
@@ -327,7 +328,6 @@ public final class TaskGroupExecutor {
             blockSizeAvailable = false;
           }
         }
-        transform.onData(availableData.left(), availableData.right());
       } catch (final InterruptedException e) {
         throw new BlockFetchException(e);
       }
