@@ -24,7 +24,10 @@ def main():
                    vertexIdSuffix = metricKey.split('Task-vertex-')[1]
                    if vertexIdSuffix.find('_') != -1: # physical level metric
                        vertexId = 'vertex-' + vertexIdSuffix.split('_')[0]
-                       for metricDict in metricDictionary[metricKey]:
+                       metricDictList = metricDictionary[metricKey]
+                       if isinstance(metricDictList, dict):
+                           metricDictList = [metricDictList]
+                       for metricDict in metricDictList:
                            for key, value in metricDict.items():
                                if (key != 'EndTime') & (key != 'StartTime'):
                                    vertexMetricDict = vertexToMetricDict.get(vertexId, dict())
