@@ -22,7 +22,11 @@ import edu.snu.coral.compiler.frontend.spark.sql.SparkSession
 
 import scala.math.random
 
-/** Computes an approximation to pi */
+/**
+  * Computes an approximation to pi.
+  *
+  * This code has been copied from the Apache Spark (https://github.com/apache/spark) to demonstrate a spark example.
+  */
 object SparkPi {
   def main(args: Array[String]) {
     val spark = SparkSession

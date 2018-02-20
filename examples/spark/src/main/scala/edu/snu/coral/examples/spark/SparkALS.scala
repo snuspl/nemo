@@ -26,6 +26,8 @@ import org.apache.commons.math3.linear._
   *
   * This is an example implementation for learning how to use Spark. For more conventional use,
   * please refer to org.apache.spark.ml.recommendation.ALS.
+  *
+  * This code has been copied from the Apache Spark (https://github.com/apache/spark) to demonstrate a spark example.
   */
 object SparkALS {
 
