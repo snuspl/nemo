@@ -2,7 +2,7 @@
 # For maven builds
 language: java
 install: true
-script: "mvn clean install -B -V"
+script: "mvn clean install -T 2C -B -V"
 
 notifications:
   slack: snuspl:owgt4d5uZwww5nGovPAMgvZB
