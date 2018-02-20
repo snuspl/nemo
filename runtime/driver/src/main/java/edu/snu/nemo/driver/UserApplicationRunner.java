@@ -90,7 +90,7 @@ public final class UserApplicationRunner implements Runnable {
               final RuntimeEventHandler runtimeEventHandler = injector.getInstance(runtimeEventHandlerClass);
               pubSubWrapper.getPubSubEventHandler()
                   .subscribe(runtimeEventHandler.getEventClass(), runtimeEventHandler);
-            } catch (Exception e) {
+            } catch (final Exception e) {
               throw new RuntimeException(e);
             }
           }));
@@ -100,7 +100,7 @@ public final class UserApplicationRunner implements Runnable {
       physicalPlan.getStageDAG().storeJSON(dagDirectory, "plan", "physical execution plan by compiler");
       runtimeMaster.execute(physicalPlan, maxScheduleAttempt);
       runtimeMaster.terminate();
-    } catch (Exception e) {
+    } catch (final Exception e) {
       throw new RuntimeException(e);
     }
   }
