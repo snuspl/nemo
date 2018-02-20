@@ -214,7 +214,7 @@ public final class InputReader extends DataTransfer {
    * @throws InterruptedException when interrupted during getting results from futures.
    */
   @VisibleForTesting
-  public static Iterator combineFutures(final List<CompletableFuture<Iterator>> futures)
+  public static Iterator combineFutures(final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> futures)
       throws ExecutionException, InterruptedException {
     final List concatStreamBase = new ArrayList<>();
     Stream<Object> concatStream = concatStreamBase.stream();
