@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.stores;
+package edu.snu.nemo.runtime.executor.data.stores;
 
-import edu.snu.coral.common.exception.BlockFetchException;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.exception.BlockWriteException;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.executor.data.*;
-import edu.snu.coral.runtime.executor.data.block.Block;
-import edu.snu.coral.runtime.executor.data.streamchainer.Serializer;
-import edu.snu.coral.runtime.executor.data.metadata.RemoteFileMetadata;
-import edu.snu.coral.runtime.executor.data.block.FileBlock;
+import edu.snu.nemo.common.exception.BlockFetchException;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.exception.BlockWriteException;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.executor.data.*;
+import edu.snu.nemo.runtime.executor.data.block.Block;
+import edu.snu.nemo.runtime.executor.data.streamchainer.Serializer;
+import edu.snu.nemo.runtime.executor.data.metadata.RemoteFileMetadata;
+import edu.snu.nemo.runtime.executor.data.block.FileBlock;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.concurrent.ThreadSafe;

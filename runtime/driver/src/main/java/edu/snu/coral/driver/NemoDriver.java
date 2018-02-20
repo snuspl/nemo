@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.driver;
+package edu.snu.nemo.driver;
 
-import edu.snu.coral.common.ir.IdManager;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.message.MessageParameters;
-import edu.snu.coral.runtime.master.RuntimeMaster;
+import edu.snu.nemo.common.ir.IdManager;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.message.MessageParameters;
+import edu.snu.nemo.runtime.master.RuntimeMaster;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.client.JobMessageObserver;
 import org.apache.reef.driver.context.ActiveContext;
@@ -50,12 +50,12 @@ import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 
 /**
- * REEF Driver for Coral.
+ * REEF Driver for Nemo.
  */
 @Unit
 @DriverSide
-public final class CoralDriver {
-  private static final Logger LOG = LoggerFactory.getLogger(CoralDriver.class.getName());
+public final class NemoDriver {
+  private static final Logger LOG = LoggerFactory.getLogger(NemoDriver.class.getName());
 
   private final NameServer nameServer;
   private final LocalAddressProvider localAddressProvider;
@@ -73,7 +73,7 @@ public final class CoralDriver {
   private final RemoteClientMessageLoggingHandler handler;
 
   @Inject
-  private CoralDriver(final UserApplicationRunner userApplicationRunner,
+  private NemoDriver(final UserApplicationRunner userApplicationRunner,
                      final RuntimeMaster runtimeMaster,
                      final NameServer nameServer,
                      final LocalAddressProvider localAddressProvider,
@@ -196,8 +196,8 @@ public final class CoralDriver {
 
     final Configuration contextConfiguration = ContextConfiguration.CONF
         .set(ContextConfiguration.IDENTIFIER, executorId) // We set: contextId = executorId
-        .set(ContextConfiguration.ON_CONTEXT_STARTED, CoralContext.ContextStartHandler.class)
-        .set(ContextConfiguration.ON_CONTEXT_STOP, CoralContext.ContextStopHandler.class)
+        .set(ContextConfiguration.ON_CONTEXT_STARTED, NemoContext.ContextStartHandler.class)
+        .set(ContextConfiguration.ON_CONTEXT_STOP, NemoContext.ContextStopHandler.class)
         .build();
 
     final Configuration ncsConfiguration =  getExecutorNcsConfiguration();

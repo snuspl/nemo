@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 from flask import request, jsonify
-from coralwebserver import app
-from coralwebserver.models import *
-from coralwebserver.database import db_session
+from nemowebserver import app
+from nemowebserver.models import *
+from nemowebserver.database import db_session
 
 
 def running_dags_to_json(running_dags):

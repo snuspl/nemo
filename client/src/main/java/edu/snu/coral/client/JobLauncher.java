@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.client;
+package edu.snu.nemo.client;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.driver.CoralDriver;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageParameters;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.driver.NemoDriver;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageParameters;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.client.DriverConfiguration;
 import org.apache.reef.client.DriverLauncher;
@@ -142,7 +142,7 @@ public final class JobLauncher {
    */
   private static Configuration getClientConf() {
     final JavaConfigurationBuilder jcb = Tang.Factory.getTang().newConfigurationBuilder();
-    jcb.bindNamedParameter(JobMessageHandler.class, CoralClient.JobMessageHandler.class);
+    jcb.bindNamedParameter(JobMessageHandler.class, NemoClient.JobMessageHandler.class);
     return jcb.build();
   }
 
@@ -181,13 +181,13 @@ public final class JobLauncher {
     final String jobId = injector.getNamedInstance(JobConf.JobId.class);
     final int driverMemory = injector.getNamedInstance(JobConf.DriverMemMb.class);
     return DriverConfiguration.CONF
-        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(CoralDriver.class))
-        .set(DriverConfiguration.ON_DRIVER_STARTED, CoralDriver.StartHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, CoralDriver.AllocatedEvaluatorHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, CoralDriver.ActiveContextHandler.class)
-        .set(DriverConfiguration.ON_EVALUATOR_FAILED, CoralDriver.FailedEvaluatorHandler.class)
-        .set(DriverConfiguration.ON_CONTEXT_FAILED, CoralDriver.FailedContextHandler.class)
-        .set(DriverConfiguration.ON_DRIVER_STOP, CoralDriver.DriverStopHandler.class)
+        .set(DriverConfiguration.GLOBAL_LIBRARIES, EnvironmentUtils.getClassLocation(NemoDriver.class))
+        .set(DriverConfiguration.ON_DRIVER_STARTED, NemoDriver.StartHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_ALLOCATED, NemoDriver.AllocatedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_ACTIVE, NemoDriver.ActiveContextHandler.class)
+        .set(DriverConfiguration.ON_EVALUATOR_FAILED, NemoDriver.FailedEvaluatorHandler.class)
+        .set(DriverConfiguration.ON_CONTEXT_FAILED, NemoDriver.FailedContextHandler.class)
+        .set(DriverConfiguration.ON_DRIVER_STOP, NemoDriver.DriverStopHandler.class)
         .set(DriverConfiguration.DRIVER_IDENTIFIER, jobId)
         .set(DriverConfiguration.DRIVER_MEMORY, driverMemory)
         .build();

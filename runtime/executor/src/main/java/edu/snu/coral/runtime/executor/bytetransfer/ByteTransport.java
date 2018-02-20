@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.bytetransfer;
+package edu.snu.nemo.runtime.executor.bytetransfer;
 
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.NettyChannelImplementationSelector;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.NettyChannelImplementationSelector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -235,7 +235,7 @@ final class ByteTransport implements AutoCloseable {
     /**
      * Creates a {@link ByteTransportIdentifier}.
      *
-     * @param executorId id of the {@link edu.snu.coral.runtime.executor.Executor}
+     * @param executorId id of the {@link edu.snu.nemo.runtime.executor.Executor}
      */
     private ByteTransportIdentifier(final String executorId) {
       this.executorId = executorId;

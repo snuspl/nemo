@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.executor.data;
+package edu.snu.nemo.tests.runtime.executor.data;
 
-import edu.snu.coral.common.ir.edge.executionproperty.CompressionProperty;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.compiler.frontend.beam.coder.BeamCoder;
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.data.HashRange;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.coral.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.coral.runtime.common.state.BlockState;
-import edu.snu.coral.runtime.executor.data.*;
-import edu.snu.coral.runtime.executor.data.streamchainer.CompressionStreamChainer;
-import edu.snu.coral.runtime.executor.data.streamchainer.Serializer;
-import edu.snu.coral.runtime.executor.data.stores.*;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
-import edu.snu.coral.runtime.master.RuntimeMaster;
+import edu.snu.nemo.common.ir.edge.executionproperty.CompressionProperty;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.compiler.frontend.beam.coder.BeamCoder;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.data.HashRange;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.nemo.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.executor.data.*;
+import edu.snu.nemo.runtime.executor.data.streamchainer.CompressionStreamChainer;
+import edu.snu.nemo.runtime.executor.data.streamchainer.Serializer;
+import edu.snu.nemo.runtime.executor.data.stores.*;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.runtime.master.RuntimeMaster;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.values.KV;
@@ -57,7 +57,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static edu.snu.coral.tests.runtime.RuntimeTestUtil.getRangedNumList;
+import static edu.snu.nemo.tests.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.bytetransfer;
+package edu.snu.nemo.runtime.executor.bytetransfer;
 
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.executor.data.BlockManagerWorker;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.executor.data.BlockManagerWorker;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import org.apache.reef.tang.InjectionFuture;

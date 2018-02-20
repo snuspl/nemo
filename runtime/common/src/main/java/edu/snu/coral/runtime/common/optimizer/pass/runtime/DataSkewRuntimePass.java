@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.optimizer.pass.runtime;
+package edu.snu.nemo.runtime.common.optimizer.pass.runtime;
 
 import com.google.common.annotations.VisibleForTesting;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.eventhandler.RuntimeEventHandler;
-import edu.snu.coral.common.exception.DynamicOptimizationException;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.eventhandler.RuntimeEventHandler;
+import edu.snu.nemo.common.exception.DynamicOptimizationException;
 
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.coral.runtime.common.data.HashRange;
-import edu.snu.coral.runtime.common.eventhandler.DynamicOptimizationEventHandler;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.nemo.runtime.common.data.HashRange;
+import edu.snu.nemo.runtime.common.eventhandler.DynamicOptimizationEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

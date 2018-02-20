@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.client;
+package edu.snu.nemo.client;
 
 import org.apache.reef.annotations.audience.ClientSide;
 import org.apache.reef.client.JobMessage;
@@ -28,13 +28,13 @@ import java.nio.charset.StandardCharsets;
  */
 @Unit
 @ClientSide
-public final class CoralClient {
+public final class NemoClient {
 
   /**
    * Empty Constructor.
    */
   @Inject
-  private CoralClient() {
+  private NemoClient() {
     // empty
   }
 

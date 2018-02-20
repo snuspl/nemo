@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor;
+package edu.snu.nemo.runtime.executor;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.exception.UnknownExecutionStateException;
-import edu.snu.coral.common.exception.UnknownFailureCauseException;
-import edu.snu.coral.common.StateMachine;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.PersistentConnectionToMasterMap;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup;
-import edu.snu.coral.runtime.common.plan.physical.Task;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.common.state.TaskState;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.exception.UnknownExecutionStateException;
+import edu.snu.nemo.common.exception.UnknownFailureCauseException;
+import edu.snu.nemo.common.StateMachine;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.PersistentConnectionToMasterMap;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.nemo.runtime.common.plan.physical.Task;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.common.state.TaskState;
 
 import java.util.*;
 
-import edu.snu.coral.runtime.common.metric.MetricDataBuilder;
+import edu.snu.nemo.runtime.common.metric.MetricDataBuilder;
 import org.apache.reef.annotations.audience.EvaluatorSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor;
+package edu.snu.nemo.runtime.executor;
 
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.common.exception.UnknownFailureCauseException;
-import edu.snu.coral.runtime.common.message.PersistentConnectionToMasterMap;
-import edu.snu.coral.runtime.common.metric.parameter.MetricFlushPeriod;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.common.exception.UnknownFailureCauseException;
+import edu.snu.nemo.runtime.common.message.PersistentConnectionToMasterMap;
+import edu.snu.nemo.runtime.common.metric.parameter.MetricFlushPeriod;
 import org.apache.reef.annotations.audience.EvaluatorSide;
 import org.apache.reef.tang.annotations.Parameter;
 

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master.resource;
+package edu.snu.nemo.runtime.master.resource;
 
-import edu.snu.coral.common.exception.ContainerException;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageSender;
-import edu.snu.coral.runtime.common.message.PersistentConnectionToMasterMap;
+import edu.snu.nemo.common.exception.ContainerException;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.message.PersistentConnectionToMasterMap;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
@@ -192,7 +192,7 @@ public final class ContainerManager {
    * @param activeContext for the launched executor.
    */
   public synchronized void onExecutorLaunched(final ActiveContext activeContext) {
-    // We set contextId = executorId in CoralDriver when we generate executor configuration.
+    // We set contextId = executorId in NemoDriver when we generate executor configuration.
     final String executorId = activeContext.getId();
 
     LOG.info("[" + executorId + "] is up and running");

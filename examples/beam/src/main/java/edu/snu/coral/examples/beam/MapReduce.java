@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.examples.beam;
+package edu.snu.nemo.examples.beam;
 
-import edu.snu.coral.compiler.frontend.beam.CoralPipelineOptions;
-import edu.snu.coral.compiler.frontend.beam.CoralPipelineRunner;
+import edu.snu.nemo.compiler.frontend.beam.NemoPipelineOptions;
+import edu.snu.nemo.compiler.frontend.beam.NemoPipelineRunner;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -41,8 +41,8 @@ public final class MapReduce {
   public static void main(final String[] args) {
     final String inputFilePath = args[0];
     final String outputFilePath = args[1];
-    final PipelineOptions options = PipelineOptionsFactory.create().as(CoralPipelineOptions.class);
-    options.setRunner(CoralPipelineRunner.class);
+    final PipelineOptions options = PipelineOptionsFactory.create().as(NemoPipelineOptions.class);
+    options.setRunner(NemoPipelineRunner.class);
     options.setJobName("MapReduce");
 
     final Pipeline p = Pipeline.create(options);

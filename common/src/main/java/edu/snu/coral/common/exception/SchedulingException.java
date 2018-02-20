@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.exception;
+package edu.snu.nemo.common.exception;
 
 /**
  * SchedulingException.
  * Thrown when any exception occurs while trying to schedule
- * a {edu.snu.coral.runtime.common.plan.physical.TaskGroup} to an executor.
+ * a {edu.snu.nemo.runtime.common.plan.physical.TaskGroup} to an executor.
  */
 public final class SchedulingException extends RuntimeException {
   /**

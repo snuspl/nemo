@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam;
+package edu.snu.nemo.compiler.frontend.beam;
 
-import edu.snu.coral.client.StateTranslator;
-import edu.snu.coral.runtime.common.state.JobState;
+import edu.snu.nemo.client.StateTranslator;
+import edu.snu.nemo.runtime.common.state.JobState;
 
 import static org.apache.beam.sdk.PipelineResult.State.*;
 
 /**
- * A {@link edu.snu.coral.client.StateTranslator} for Beam.
+ * A {@link edu.snu.nemo.client.StateTranslator} for Beam.
  * It provides the translation between the state of job and Beam pipeline.
  */
 public final class BeamStateTranslator implements StateTranslator {
 
   /**
-   * Translate a job state of coral to a corresponding Beam state.
+   * Translate a job state of nemo to a corresponding Beam state.
    *
    * @param jobState to translate.
    * @return the translated state.

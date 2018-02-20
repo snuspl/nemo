@@ -1,6 +1,6 @@
-package edu.snu.coral.runtime.executor.data.streamchainer;
+package edu.snu.nemo.runtime.executor.data.streamchainer;
 
-import edu.snu.coral.common.coder.Coder;
+import edu.snu.nemo.common.coder.Coder;
 
 import java.util.List;
 

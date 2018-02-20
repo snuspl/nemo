@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.stores;
+package edu.snu.nemo.runtime.executor.data.stores;
 
-import edu.snu.coral.runtime.executor.data.SerializerManager;
-import edu.snu.coral.runtime.executor.data.block.NonSerializedMemoryBlock;
-import edu.snu.coral.runtime.executor.data.streamchainer.Serializer;
+import edu.snu.nemo.runtime.executor.data.SerializerManager;
+import edu.snu.nemo.runtime.executor.data.block.NonSerializedMemoryBlock;
+import edu.snu.nemo.runtime.executor.data.streamchainer.Serializer;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;

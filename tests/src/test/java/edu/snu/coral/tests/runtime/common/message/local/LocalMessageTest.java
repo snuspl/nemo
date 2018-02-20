@@ -1,11 +1,11 @@
-package edu.snu.coral.tests.runtime.common.message.local;
+package edu.snu.nemo.tests.runtime.common.message.local;
 
-import edu.snu.coral.runtime.common.message.MessageContext;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.message.MessageSender;
-import edu.snu.coral.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.coral.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 

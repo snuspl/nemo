@@ -1,6 +1,6 @@
-package edu.snu.coral.runtime.common.message.ncs;
+package edu.snu.nemo.runtime.common.message.ncs;
 
-import edu.snu.coral.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageContext;
 import org.apache.reef.exception.evaluator.NetworkException;
 import org.apache.reef.io.network.Connection;
 import org.apache.reef.io.network.ConnectionFactory;

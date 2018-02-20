@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.optimizer;
+package edu.snu.nemo.runtime.common.optimizer;
 
-import edu.snu.coral.common.ir.vertex.MetricCollectionBarrierVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.vertex.executionproperty.DynamicOptimizationProperty;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.DataSkewRuntimePass;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.common.ir.vertex.MetricCollectionBarrierVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.vertex.executionproperty.DynamicOptimizationProperty;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.DataSkewRuntimePass;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
 
 import java.util.*;
 

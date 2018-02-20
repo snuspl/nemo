@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.metadata;
+package edu.snu.nemo.runtime.executor.data.metadata;
 
 import java.io.Serializable;
 

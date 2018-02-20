@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.stage;
+package edu.snu.nemo.runtime.common.plan.stage;
 
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
 
 /**
  * Stage Edge Builder.

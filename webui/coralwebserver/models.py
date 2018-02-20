@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 from sqlalchemy import Table, Column, Integer, String, Enum
-from coralwebserver.database import Base
+from nemowebserver.database import Base
 
 
 class RunningDAG(Base):

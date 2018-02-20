@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 from flask import Flask
-from coralwebserver.database import init_db, db_session
+from nemowebserver.database import init_db, db_session
 
 app = Flask(__name__)
 init_db()
@@ -25,4 +25,4 @@ init_db()
 def shutdown_session(exception=None):
     db_session.remove()
 
-import coralwebserver.views
+import nemowebserver.views

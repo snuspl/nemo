@@ -1,6 +1,6 @@
-package edu.snu.coral.runtime.master.resource;
+package edu.snu.nemo.runtime.master.resource;
 
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
 
 /**
  * Represents the specifications of a resource.

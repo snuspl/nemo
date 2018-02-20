@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam.source;
+package edu.snu.nemo.compiler.frontend.beam.source;
 
-import edu.snu.coral.common.ir.Readable;
+import edu.snu.nemo.common.ir.Readable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.snu.coral.common.ir.vertex.SourceVertex;
+import edu.snu.nemo.common.ir.vertex.SourceVertex;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

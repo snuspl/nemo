@@ -1,7 +1,7 @@
-package edu.snu.coral.compiler.frontend.spark.transform;
+package edu.snu.nemo.compiler.frontend.spark.transform;
 
-import edu.snu.coral.common.ir.OutputCollector;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 import scala.Tuple2;
 
 import java.util.*;

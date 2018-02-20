@@ -1,9 +1,9 @@
-package edu.snu.coral.runtime.common.message.grpc;
+package edu.snu.nemo.runtime.common.message.grpc;
 
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.comm.GrpcMessageService;
-import edu.snu.coral.runtime.common.comm.MessageServiceGrpc;
-import edu.snu.coral.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.comm.GrpcMessageService;
+import edu.snu.nemo.runtime.common.comm.MessageServiceGrpc;
+import edu.snu.nemo.runtime.common.message.MessageListener;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Represent the RPC server that is responsible for responding all messages from other clients. The server tries to
  * bind to a random port, and registers the bounded ip address to the name server with the localSenderId
- * (which is defined in {@link edu.snu.coral.runtime.common.message.MessageParameters.SenderId}).
+ * (which is defined in {@link edu.snu.nemo.runtime.common.message.MessageParameters.SenderId}).
  *
  * The listeners, implementations of {@link MessageListener}, should be setup on this class, and then the incoming
  * messages, which contain corresponding listener id as property, are properly dispatched to the registered
@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentMap;
  *
  * The currently implemented RPC methods are send and request.
  *
- * @see edu.snu.coral.runtime.common.message.MessageSender#send(Object)
- * @see edu.snu.coral.runtime.common.message.MessageSender#request(Object)
+ * @see edu.snu.nemo.runtime.common.message.MessageSender#send(Object)
+ * @see edu.snu.nemo.runtime.common.message.MessageSender#request(Object)
  */
 final class GrpcMessageServer {
 

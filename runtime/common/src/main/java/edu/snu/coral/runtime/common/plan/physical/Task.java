@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.physical;
+package edu.snu.nemo.runtime.common.plan.physical;
 
-import edu.snu.coral.common.dag.Vertex;
+import edu.snu.nemo.common.dag.Vertex;
 
 /**
  * Task.

@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.core.java;
+package edu.snu.nemo.compiler.frontend.spark.core.java;
 
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.KeyExtractorProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.compiler.frontend.spark.SparkKeyExtractor;
-import edu.snu.coral.compiler.frontend.spark.coder.SparkCoder;
-import edu.snu.coral.compiler.frontend.spark.transform.CollectTransform;
-import edu.snu.coral.compiler.frontend.spark.transform.GroupByKeyTransform;
-import edu.snu.coral.compiler.frontend.spark.transform.ReduceByKeyTransform;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.KeyExtractorProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.compiler.frontend.spark.SparkKeyExtractor;
+import edu.snu.nemo.compiler.frontend.spark.coder.SparkCoder;
+import edu.snu.nemo.compiler.frontend.spark.transform.CollectTransform;
+import edu.snu.nemo.compiler.frontend.spark.transform.GroupByKeyTransform;
+import edu.snu.nemo.compiler.frontend.spark.transform.ReduceByKeyTransform;
 import org.apache.spark.SparkContext;
 import org.apache.spark.serializer.JavaSerializer;
 import org.apache.spark.serializer.KryoSerializer;

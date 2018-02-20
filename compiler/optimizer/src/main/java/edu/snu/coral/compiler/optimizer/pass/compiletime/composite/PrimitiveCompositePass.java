@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.pass.compiletime.composite;
+package edu.snu.nemo.compiler.optimizer.pass.compiletime.composite;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.*;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.*;
 
 import java.util.Arrays;
 

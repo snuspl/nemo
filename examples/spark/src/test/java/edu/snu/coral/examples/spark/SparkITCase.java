@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.examples.spark;
+package edu.snu.nemo.examples.spark;
 
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.test.ArgBuilder;
-import edu.snu.coral.common.test.ExampleTestUtil;
-import edu.snu.coral.compiler.optimizer.policy.DefaultPolicy;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.test.ArgBuilder;
+import edu.snu.nemo.common.test.ExampleTestUtil;
+import edu.snu.nemo.compiler.optimizer.policy.DefaultPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

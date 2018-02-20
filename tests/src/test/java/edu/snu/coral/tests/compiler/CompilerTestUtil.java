@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.compiler;
+package edu.snu.nemo.tests.compiler;
 
-import edu.snu.coral.common.test.ArgBuilder;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.dag.DAG;
+import edu.snu.nemo.common.test.ArgBuilder;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.dag.DAG;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
@@ -62,7 +62,7 @@ public final class CompilerTestUtil {
   public static DAG<IRVertex, IREdge> compileMRDAG() throws Exception {
     final String input = rootDir + "/../examples/resources/sample_input_mr";
     final String output = rootDir + "/../examples-beam/src/main/resources/sample_output";
-    final String main = "edu.snu.coral.examples.beam.MapReduce";
+    final String main = "edu.snu.nemo.examples.beam.MapReduce";
 
     final ArgBuilder mrArgBuilder = new ArgBuilder()
         .addJobId("MapReduce")
@@ -75,7 +75,7 @@ public final class CompilerTestUtil {
     final String input = rootDir + "/../examples/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
-    final String main = "edu.snu.coral.examples.beam.AlternatingLeastSquare";
+    final String main = "edu.snu.nemo.examples.beam.AlternatingLeastSquare";
 
     final ArgBuilder alsArgBuilder = new ArgBuilder()
         .addJobId("AlternatingLeastSquare")
@@ -88,7 +88,7 @@ public final class CompilerTestUtil {
     final String input = rootDir + "/../examples/resources/sample_input_als";
     final String numFeatures = "10";
     final String numIteration = "3";
-    final String main = "edu.snu.coral.examples.beam.AlternatingLeastSquareInefficient";
+    final String main = "edu.snu.nemo.examples.beam.AlternatingLeastSquareInefficient";
 
     final ArgBuilder alsArgBuilder = new ArgBuilder()
         .addJobId("AlternatingLeastSquareInefficient")
@@ -102,7 +102,7 @@ public final class CompilerTestUtil {
     final String numFeatures = "100";
     final String numClasses = "5";
     final String numIteration = "3";
-    final String main = "edu.snu.coral.examples.beam.MultinomialLogisticRegression";
+    final String main = "edu.snu.nemo.examples.beam.MultinomialLogisticRegression";
 
     final ArgBuilder mlrArgBuilder = new ArgBuilder()
         .addJobId("MultinomialLogisticRegression")

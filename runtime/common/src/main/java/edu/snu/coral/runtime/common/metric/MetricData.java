@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.metric;
+package edu.snu.nemo.runtime.common.metric;
 
-import edu.snu.coral.common.exception.JsonParseException;
+import edu.snu.nemo.common.exception.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.util.Map;

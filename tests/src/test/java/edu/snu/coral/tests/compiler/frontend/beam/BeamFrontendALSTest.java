@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.compiler.frontend.beam;
+package edu.snu.nemo.tests.compiler.frontend.beam;
 
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.tests.compiler.CompilerTestUtil;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.tests.compiler.CompilerTestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;

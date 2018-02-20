@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.master.scheduler;
+package edu.snu.nemo.tests.runtime.master.scheduler;
 
-import edu.snu.coral.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageSender;
-import edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup;
-import edu.snu.coral.runtime.master.JobStateManager;
-import edu.snu.coral.runtime.master.resource.ContainerManager;
-import edu.snu.coral.runtime.master.resource.ExecutorRepresenter;
-import edu.snu.coral.runtime.master.resource.ResourceSpecification;
-import edu.snu.coral.runtime.master.scheduler.RoundRobinSchedulingPolicy;
-import edu.snu.coral.runtime.master.scheduler.SchedulingPolicy;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.nemo.runtime.master.JobStateManager;
+import edu.snu.nemo.runtime.master.resource.ContainerManager;
+import edu.snu.nemo.runtime.master.resource.ExecutorRepresenter;
+import edu.snu.nemo.runtime.master.resource.ResourceSpecification;
+import edu.snu.nemo.runtime.master.scheduler.RoundRobinSchedulingPolicy;
+import edu.snu.nemo.runtime.master.scheduler.SchedulingPolicy;
 import org.apache.reef.driver.context.ActiveContext;
 import org.junit.Before;
 import org.junit.Test;

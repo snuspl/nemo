@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.master;
+package edu.snu.nemo.tests.runtime.master;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.ir.vertex.executionproperty.ParallelismProperty;
-import edu.snu.coral.compiler.frontend.beam.transform.DoTransform;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.coral.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.JobState;
-import edu.snu.coral.runtime.common.state.StageState;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.runtime.master.JobStateManager;
-import edu.snu.coral.runtime.master.MetricMessageHandler;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
-import edu.snu.coral.tests.compiler.optimizer.policy.TestPolicy;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.nemo.compiler.frontend.beam.transform.DoTransform;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.JobState;
+import edu.snu.nemo.runtime.common.state.StageState;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.runtime.master.JobStateManager;
+import edu.snu.nemo.runtime.master.MetricMessageHandler;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.tests.compiler.optimizer.policy.TestPolicy;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;

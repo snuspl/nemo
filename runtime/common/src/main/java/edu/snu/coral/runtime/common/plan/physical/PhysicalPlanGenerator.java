@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.physical;
+package edu.snu.nemo.runtime.common.plan.physical;
 
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.common.ir.vertex.*;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.stage.*;
-import edu.snu.coral.common.exception.IllegalVertexOperationException;
-import edu.snu.coral.common.exception.PhysicalPlanGenerationException;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.common.ir.vertex.*;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.stage.*;
+import edu.snu.nemo.common.exception.IllegalVertexOperationException;
+import edu.snu.nemo.common.exception.PhysicalPlanGenerationException;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.inject.Inject;

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam;
+package edu.snu.nemo.compiler.frontend.beam;
 
-import edu.snu.coral.client.ClientEndpoint;
+import edu.snu.nemo.client.ClientEndpoint;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.metrics.MetricResults;
 import org.joda.time.Duration;
@@ -26,12 +26,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * Beam result.
  */
-public final class CoralPipelineResult extends ClientEndpoint implements PipelineResult {
+public final class NemoPipelineResult extends ClientEndpoint implements PipelineResult {
 
   /**
    * Default constructor.
    */
-  public CoralPipelineResult() {
+  public NemoPipelineResult() {
     super(new BeamStateTranslator());
   }
 
@@ -42,7 +42,7 @@ public final class CoralPipelineResult extends ClientEndpoint implements Pipelin
 
   @Override
   public State cancel() throws IOException {
-    throw new UnsupportedOperationException("cancel() in frontend.beam.CoralPipelineResult");
+    throw new UnsupportedOperationException("cancel() in frontend.beam.NemoPipelineResult");
   }
 
   @Override
@@ -57,6 +57,6 @@ public final class CoralPipelineResult extends ClientEndpoint implements Pipelin
 
   @Override
   public MetricResults metrics() {
-    throw new UnsupportedOperationException("metrics() in frontend.beam.CoralPipelineResult");
+    throw new UnsupportedOperationException("metrics() in frontend.beam.NemoPipelineResult");
   }
 }

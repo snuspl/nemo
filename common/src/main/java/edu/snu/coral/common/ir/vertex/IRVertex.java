@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.vertex;
+package edu.snu.nemo.common.ir.vertex;
 
-import edu.snu.coral.common.ir.IdManager;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.dag.Vertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.IdManager;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.dag.Vertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
 
 /**
  * The top-most wrapper for a user operation in the IR.

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam.transform;
+package edu.snu.nemo.compiler.frontend.beam.transform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.snu.coral.common.ir.OutputCollector;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.state.State;
 import org.apache.beam.sdk.state.Timer;

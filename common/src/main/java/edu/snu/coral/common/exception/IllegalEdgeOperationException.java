@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.exception;
+package edu.snu.nemo.common.exception;
 
 
 /**
  * IllegalEdgeOperationException.
- * Thrown when an operation is conducted with a {edu.snu.coral.runtime.common.plan.stage.StageEdge}
+ * Thrown when an operation is conducted with a {edu.snu.nemo.runtime.common.plan.stage.StageEdge}
  * that is unknown/invalid/out of scope.
  */
 public final class IllegalEdgeOperationException extends RuntimeException {

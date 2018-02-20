@@ -1,6 +1,6 @@
-package edu.snu.coral.runtime.common.message.local;
+package edu.snu.nemo.runtime.common.message.local;
 
-import edu.snu.coral.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageContext;
 
 import java.util.Optional;
 

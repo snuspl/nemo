@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.snu.coral.runtime.common.metric;
+package edu.snu.nemo.runtime.common.metric;
 
 import java.util.Map;
 

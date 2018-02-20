@@ -1,9 +1,9 @@
-package edu.snu.coral.compiler.frontend.spark.source;
+package edu.snu.nemo.compiler.frontend.spark.source;
 
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.common.ir.vertex.SourceVertex;
-import edu.snu.coral.compiler.frontend.spark.sql.Dataset;
-import edu.snu.coral.compiler.frontend.spark.sql.SparkSession;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.common.ir.vertex.SourceVertex;
+import edu.snu.nemo.compiler.frontend.spark.sql.Dataset;
+import edu.snu.nemo.compiler.frontend.spark.sql.SparkSession;
 import org.apache.spark.TaskContext$;
 import org.apache.spark.rdd.RDD;
 import scala.collection.JavaConverters;

@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master.scheduler;
+package edu.snu.nemo.runtime.master.scheduler;
 
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.eventhandler.PubSubEventHandlerWrapper;
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.eventhandler.DynamicOptimizationEvent;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
-import edu.snu.coral.common.exception.*;
-import edu.snu.coral.common.ir.vertex.MetricCollectionBarrierVertex;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.StageState;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
-import edu.snu.coral.runtime.master.JobStateManager;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.eventhandler.PubSubEventHandlerWrapper;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.eventhandler.DynamicOptimizationEvent;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
+import edu.snu.nemo.common.exception.*;
+import edu.snu.nemo.common.ir.vertex.MetricCollectionBarrierVertex;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.StageState;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 
-import static edu.snu.coral.runtime.common.state.TaskGroupState.State.ON_HOLD;
+import static edu.snu.nemo.runtime.common.state.TaskGroupState.State.ON_HOLD;
 
 /**
  * BatchSingleJobScheduler receives a single {@link PhysicalPlan} to execute and schedules the TaskGroups.
@@ -59,7 +59,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
   private final PendingTaskGroupQueue pendingTaskGroupQueue;
 
   /**
-   * Other necessary components of this {@link edu.snu.coral.runtime.master.RuntimeMaster}.
+   * Other necessary components of this {@link edu.snu.nemo.runtime.master.RuntimeMaster}.
    */
   private final BlockManagerMaster blockManagerMaster;
   private final PubSubEventHandlerWrapper pubSubEventHandlerWrapper;
@@ -126,7 +126,7 @@ public final class BatchSingleJobScheduler implements Scheduler {
   }
 
   /**
-   * Receives a {@link edu.snu.coral.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
+   * Receives a {@link edu.snu.nemo.runtime.common.comm.ControlMessage.TaskGroupStateChangedMsg} from an executor.
    * The message is received via communicator where this method is called.
    * @param executorId the id of the executor where the message was sent from.
    * @param taskGroupId whose state has changed

@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.dag;
+package edu.snu.nemo.common.dag;
 
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-//import edu.snu.coral.common.ir.edge.executionproperty.MetricCollectionProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.MetricCollectionProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.ir.vertex.SourceVertex;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataFlowModelProperty;
-import edu.snu.coral.common.exception.IllegalVertexOperationException;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+//import edu.snu.nemo.common.ir.edge.executionproperty.MetricCollectionProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.MetricCollectionProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.ir.vertex.SourceVertex;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataFlowModelProperty;
+import edu.snu.nemo.common.exception.IllegalVertexOperationException;
 
 import java.io.Serializable;
 import java.util.*;

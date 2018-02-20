@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common;
+package edu.snu.nemo.runtime.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,7 +38,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.physical.PhysicalPlan}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan}.
    *
    * @return the generated ID
    */
@@ -47,7 +47,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.stage.StageEdge}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.stage.StageEdge}.
    *
    * @param irEdgeId .
    * @return the generated ID
@@ -57,7 +57,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.RuntimeEdge}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.RuntimeEdge}.
    *
    * @param irEdgeId .
    * @return the generated ID
@@ -67,7 +67,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.stage.Stage}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.stage.Stage}.
    * @param stageId stage ID in numeric form.
    * @return the generated ID
    */
@@ -76,7 +76,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.physical.Task}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.physical.Task}.
    *
    * @param irVertexId the ID of the IR vertex.
    * @return the generated ID
@@ -86,7 +86,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.physical.Task}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.physical.Task}.
    *
    * @param index         the index of the physical task.
    * @param logicalTaskId the logical ID of the task.
@@ -98,7 +98,7 @@ public final class RuntimeIdGenerator {
   }
 
   /**
-   * Generates the ID for {@link edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup}.
+   * Generates the ID for {@link edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup}.
    *
    * @param index   the index of this task group.
    * @param stageId the ID of the stage.

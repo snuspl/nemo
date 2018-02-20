@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.executionproperty;
+package edu.snu.nemo.common.ir.executionproperty;
 
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataFlowModelProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.PartitionerProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
-import edu.snu.coral.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataFlowModelProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataStoreProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.PartitionerProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ParallelismProperty;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.builder.EqualsBuilder;

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data;
+package edu.snu.nemo.runtime.executor.data;
 
-import edu.snu.coral.runtime.executor.data.streamchainer.CompressionStreamChainer;
-import edu.snu.coral.runtime.executor.data.streamchainer.StreamChainer;
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.edge.executionproperty.CompressionProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.runtime.executor.data.streamchainer.Serializer;
+import edu.snu.nemo.runtime.executor.data.streamchainer.CompressionStreamChainer;
+import edu.snu.nemo.runtime.executor.data.streamchainer.StreamChainer;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.edge.executionproperty.CompressionProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.runtime.executor.data.streamchainer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package edu.snu.coral.common.exception;
+package edu.snu.nemo.common.exception;
 
 /**
  * UnsupportedCompressionException

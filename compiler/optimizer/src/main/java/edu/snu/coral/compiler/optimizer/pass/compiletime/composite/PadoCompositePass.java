@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.pass.compiletime.composite;
+package edu.snu.nemo.compiler.optimizer.pass.compiletime.composite;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataFlowModelPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.PadoVertexExecutorPlacementPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataFlowModelPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.PadoEdgeDataStorePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.PadoVertexExecutorPlacementPass;
 
 import java.util.Arrays;
 

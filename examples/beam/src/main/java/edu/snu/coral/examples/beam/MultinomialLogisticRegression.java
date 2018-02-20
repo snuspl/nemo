@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.examples.beam;
+package edu.snu.nemo.examples.beam;
 
-import edu.snu.coral.compiler.frontend.beam.transform.LoopCompositeTransform;
-import edu.snu.coral.compiler.frontend.beam.CoralPipelineRunner;
-import edu.snu.coral.common.Pair;
+import edu.snu.nemo.compiler.frontend.beam.transform.LoopCompositeTransform;
+import edu.snu.nemo.compiler.frontend.beam.NemoPipelineRunner;
+import edu.snu.nemo.common.Pair;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -418,7 +418,7 @@ public final class MultinomialLogisticRegression {
     }
 
     final PipelineOptions options = PipelineOptionsFactory.create();
-    options.setRunner(CoralPipelineRunner.class);
+    options.setRunner(NemoPipelineRunner.class);
     options.setJobName("MLR");
     options.setStableUniqueNames(PipelineOptions.CheckEnabled.OFF);
 

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.policy;
+package edu.snu.nemo.compiler.optimizer.policy;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.ReviseInterStageEdgeDataStorePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.DefaultParallelismPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.ReviseInterStageEdgeDataStorePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.CompositePass;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.Arrays;
 import java.util.List;

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master;
+package edu.snu.nemo.runtime.master;
 
-import edu.snu.coral.common.exception.IllegalStateTransitionException;
-import edu.snu.coral.common.exception.SchedulingException;
-import edu.snu.coral.common.exception.UnknownExecutionStateException;
-import edu.snu.coral.common.StateMachine;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.runtime.common.metric.MetricDataBuilder;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.JobState;
-import edu.snu.coral.runtime.common.state.StageState;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.common.exception.IllegalStateTransitionException;
+import edu.snu.nemo.common.exception.SchedulingException;
+import edu.snu.nemo.common.exception.UnknownExecutionStateException;
+import edu.snu.nemo.common.StateMachine;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.runtime.common.metric.MetricDataBuilder;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.JobState;
+import edu.snu.nemo.runtime.common.state.StageState;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static edu.snu.coral.common.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.nemo.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
 /**
  * Manages the states related to a job.
@@ -263,9 +263,9 @@ public final class JobStateManager {
    * Updates the state of a task group.
    * Task group state changes can occur both in master and executor.
    * State changes that occur in master are
-   * initiated in {@link edu.snu.coral.runtime.master.scheduler.BatchSingleJobScheduler}.
+   * initiated in {@link edu.snu.nemo.runtime.master.scheduler.BatchSingleJobScheduler}.
    * State changes that occur in executors are sent to master as a control message,
-   * and the call to this method is initiated in {@link edu.snu.coral.runtime.master.scheduler.BatchSingleJobScheduler}
+   * and the call to this method is initiated in {@link edu.snu.nemo.runtime.master.scheduler.BatchSingleJobScheduler}
    * when the message/event is received.
    * A task group completion implies completion of all its tasks.
    *

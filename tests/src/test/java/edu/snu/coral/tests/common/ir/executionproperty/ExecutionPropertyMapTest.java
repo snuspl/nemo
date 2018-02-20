@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.common.ir.executionproperty;
+package edu.snu.nemo.tests.common.ir.executionproperty;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataFlowModelProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.ir.vertex.executionproperty.ParallelismProperty;
-import edu.snu.coral.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataFlowModelProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataStoreProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
 import org.junit.Before;
 import org.junit.Test;
 

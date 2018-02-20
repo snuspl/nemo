@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.client;
+package edu.snu.nemo.tests.client;
 
-import edu.snu.coral.client.ClientEndpoint;
-import edu.snu.coral.client.DriverEndpoint;
-import edu.snu.coral.client.StateTranslator;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.coral.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlanGenerator;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.coral.runtime.common.state.JobState;
-import edu.snu.coral.runtime.master.MetricMessageHandler;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
-import edu.snu.coral.runtime.master.JobStateManager;
+import edu.snu.nemo.client.ClientEndpoint;
+import edu.snu.nemo.client.DriverEndpoint;
+import edu.snu.nemo.client.StateTranslator;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlanGenerator;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.nemo.runtime.common.state.JobState;
+import edu.snu.nemo.runtime.master.MetricMessageHandler;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.runtime.master.JobStateManager;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Test;

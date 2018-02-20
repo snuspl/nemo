@@ -1,6 +1,6 @@
-package edu.snu.coral.common.ir.vertex.executionproperty;
+package edu.snu.nemo.common.ir.vertex.executionproperty;
 
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
 
 /**
  * ScheduleGroupIndex ExecutionProperty.

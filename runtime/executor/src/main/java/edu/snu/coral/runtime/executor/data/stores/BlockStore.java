@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.stores;
+package edu.snu.nemo.runtime.executor.data.stores;
 
-import edu.snu.coral.common.exception.BlockFetchException;
-import edu.snu.coral.common.exception.BlockWriteException;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.executor.data.NonSerializedPartition;
-import edu.snu.coral.runtime.executor.data.SerializedPartition;
+import edu.snu.nemo.common.exception.BlockFetchException;
+import edu.snu.nemo.common.exception.BlockWriteException;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.executor.data.NonSerializedPartition;
+import edu.snu.nemo.runtime.executor.data.SerializedPartition;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Interface for {@link edu.snu.coral.runtime.executor.data.block.Block} placement.
+ * Interface for {@link edu.snu.nemo.runtime.executor.data.block.Block} placement.
  */
 public interface BlockStore {
   /**
@@ -36,7 +36,7 @@ public interface BlockStore {
    * @param blockId the ID of the block to create.
    * @throws BlockWriteException for any error occurred while trying to create a block.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   void createBlock(String blockId) throws BlockWriteException;
@@ -53,7 +53,7 @@ public interface BlockStore {
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> Optional<List<Long>> putPartitions(String blockId,
@@ -71,7 +71,7 @@ public interface BlockStore {
    * @return the size of the data per partition (only when the data is serialized).
    * @throws BlockWriteException for any error occurred while trying to write a block.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> List<Long> putSerializedPartitions(String blockId,
@@ -79,7 +79,7 @@ public interface BlockStore {
 
   /**
    * Retrieves {@link NonSerializedPartition}s.
-   * They belong to a specific {@link edu.snu.coral.runtime.common.data.KeyRange} from a block.
+   * They belong to a specific {@link edu.snu.nemo.runtime.common.data.KeyRange} from a block.
    *
    * @param blockId  of the target partition.
    * @param keyRange the key range.
@@ -87,7 +87,7 @@ public interface BlockStore {
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a block.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> Optional<Iterable<NonSerializedPartition<K>>> getPartitions(String blockId,
@@ -102,7 +102,7 @@ public interface BlockStore {
    * @return the result elements from the target block (if the target block exists).
    * @throws BlockFetchException for any error occurred while trying to fetch a partition.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   <K extends Serializable> Optional<Iterable<SerializedPartition<K>>> getSerializedPartitions(String blockId,
@@ -114,7 +114,7 @@ public interface BlockStore {
    * @param blockId of the block.
    * @throws BlockWriteException if fail to commit.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   void commitBlock(String blockId) throws BlockWriteException;
@@ -126,7 +126,7 @@ public interface BlockStore {
    * @return whether the partition exists or not.
    * @throws BlockFetchException for any error occurred while trying to remove a block.
    *         (This exception will be thrown to the scheduler
-   *          through {@link edu.snu.coral.runtime.executor.Executor} and
+   *          through {@link edu.snu.nemo.runtime.executor.Executor} and
    *          have to be handled by the scheduler with fault tolerance mechanism.)
    */
   Boolean removeBlock(String blockId);

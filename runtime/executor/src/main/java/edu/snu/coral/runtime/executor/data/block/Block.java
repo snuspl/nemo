@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.block;
+package edu.snu.nemo.runtime.executor.data.block;
 
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.executor.data.NonSerializedPartition;
-import edu.snu.coral.runtime.executor.data.SerializedPartition;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.executor.data.NonSerializedPartition;
+import edu.snu.nemo.runtime.executor.data.SerializedPartition;
 
 import java.io.IOException;
 import java.io.Serializable;

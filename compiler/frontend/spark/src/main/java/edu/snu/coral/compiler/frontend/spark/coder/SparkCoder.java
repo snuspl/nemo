@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.coder;
+package edu.snu.nemo.compiler.frontend.spark.coder;
 
-import edu.snu.coral.common.coder.Coder;
+import edu.snu.nemo.common.coder.Coder;
 import org.apache.spark.serializer.Serializer;
 import scala.reflect.ClassTag$;
 

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.vertex;
+package edu.snu.nemo.common.ir.vertex;
 
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 
 /**
  * IRVertex that transforms input data.

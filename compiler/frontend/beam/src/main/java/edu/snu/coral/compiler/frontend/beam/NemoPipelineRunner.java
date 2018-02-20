@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam;
+package edu.snu.nemo.compiler.frontend.beam;
 
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineRunner;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -26,15 +26,15 @@ import org.apache.beam.sdk.options.PipelineOptionsValidator;
 /**
  * Runner class for BEAM programs.
  */
-public final class CoralPipelineRunner extends PipelineRunner<CoralPipelineResult> {
-  private final CoralPipelineOptions coralPipelineOptions;
+public final class NemoPipelineRunner extends PipelineRunner<NemoPipelineResult> {
+  private final NemoPipelineOptions nemoPipelineOptions;
 
   /**
    * BEAM Pipeline Runner.
-   * @param coralPipelineOptions PipelineOptions.
+   * @param nemoPipelineOptions PipelineOptions.
    */
-  private CoralPipelineRunner(final CoralPipelineOptions coralPipelineOptions) {
-    this.coralPipelineOptions = coralPipelineOptions;
+  private NemoPipelineRunner(final NemoPipelineOptions nemoPipelineOptions) {
+    this.nemoPipelineOptions = nemoPipelineOptions;
   }
 
   /**
@@ -42,9 +42,9 @@ public final class CoralPipelineRunner extends PipelineRunner<CoralPipelineResul
    * @param options given PipelineOptions.
    * @return The created PipelineRunner.
    */
-  public static PipelineRunner<CoralPipelineResult> fromOptions(final PipelineOptions options) {
-    final CoralPipelineOptions coralOptions = PipelineOptionsValidator.validate(CoralPipelineOptions.class, options);
-    return new CoralPipelineRunner(coralOptions);
+  public static PipelineRunner<NemoPipelineResult> fromOptions(final PipelineOptions options) {
+    final NemoPipelineOptions nemoOptions = PipelineOptionsValidator.validate(NemoPipelineOptions.class, options);
+    return new NemoPipelineRunner(nemoOptions);
   }
 
   /**
@@ -52,13 +52,13 @@ public final class CoralPipelineRunner extends PipelineRunner<CoralPipelineResul
    * @param pipeline the Pipeline to run.
    * @return The result of the pipeline.
    */
-  public CoralPipelineResult run(final Pipeline pipeline) {
+  public NemoPipelineResult run(final Pipeline pipeline) {
     final DAGBuilder builder = new DAGBuilder<>();
-    final CoralPipelineVisitor coralPipelineVisitor = new CoralPipelineVisitor(builder, coralPipelineOptions);
-    pipeline.traverseTopologically(coralPipelineVisitor);
+    final NemoPipelineVisitor nemoPipelineVisitor = new NemoPipelineVisitor(builder, nemoPipelineOptions);
+    pipeline.traverseTopologically(nemoPipelineVisitor);
     final DAG dag = builder.build();
-    final CoralPipelineResult coralPipelineResult = new CoralPipelineResult();
+    final NemoPipelineResult nemoPipelineResult = new NemoPipelineResult();
     JobLauncher.launchDAG(dag);
-    return coralPipelineResult;
+    return nemoPipelineResult;
   }
 }

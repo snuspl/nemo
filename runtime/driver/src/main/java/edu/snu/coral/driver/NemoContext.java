@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.driver;
+package edu.snu.nemo.driver;
 
-import edu.snu.coral.runtime.executor.Executor;
+import edu.snu.nemo.runtime.executor.Executor;
 import org.apache.reef.annotations.audience.EvaluatorSide;
 import org.apache.reef.evaluator.context.events.ContextStart;
 import org.apache.reef.evaluator.context.events.ContextStop;
@@ -31,13 +31,13 @@ import javax.inject.Inject;
  */
 @EvaluatorSide
 @Unit
-public final class CoralContext {
+public final class NemoContext {
 
-  private static final Logger LOG = LoggerFactory.getLogger(CoralContext.class.getName());
+  private static final Logger LOG = LoggerFactory.getLogger(NemoContext.class.getName());
   private final Executor executor;
 
   @Inject
-  private CoralContext(final Executor executor) {
+  private NemoContext(final Executor executor) {
     this.executor = executor; // To make Tang instantiate Executor
   }
 

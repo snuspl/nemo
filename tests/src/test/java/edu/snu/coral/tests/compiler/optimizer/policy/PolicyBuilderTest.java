@@ -1,10 +1,10 @@
-package edu.snu.coral.tests.compiler.optimizer.policy;
+package edu.snu.nemo.tests.compiler.optimizer.policy;
 
-import edu.snu.coral.common.exception.CompileTimeOptimizationException;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.PadoCompositePass;
-import edu.snu.coral.compiler.optimizer.policy.*;
+import edu.snu.nemo.common.exception.CompileTimeOptimizationException;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.DefaultStagePartitioningPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.PadoCompositePass;
+import edu.snu.nemo.compiler.optimizer.policy.*;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

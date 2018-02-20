@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.coral.runtime.master.eventhandler;
+package edu.snu.nemo.runtime.master.eventhandler;
 
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.eventhandler.CompilerEventHandler;
-import edu.snu.coral.runtime.common.eventhandler.UpdatePhysicalPlanEvent;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.master.scheduler.Scheduler;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.eventhandler.CompilerEventHandler;
+import edu.snu.nemo.runtime.common.eventhandler.UpdatePhysicalPlanEvent;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.master.scheduler.Scheduler;
 
 import javax.inject.Inject;
 

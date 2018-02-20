@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.eventhandler;
+package edu.snu.nemo.runtime.common.eventhandler;
 
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.eventhandler.CompilerEvent;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.eventhandler.CompilerEvent;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
 
 /**
  * An event for updating the physical plan in the scheduler.

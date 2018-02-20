@@ -1,7 +1,7 @@
-package edu.snu.coral.runtime.common.message.grpc;
+package edu.snu.nemo.runtime.common.message.grpc;
 
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageSender;
 
 import java.util.concurrent.CompletableFuture;
 

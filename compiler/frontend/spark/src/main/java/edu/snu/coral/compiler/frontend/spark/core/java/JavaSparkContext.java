@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.core.java;
+package edu.snu.nemo.compiler.frontend.spark.core.java;
 
 import org.apache.spark.SparkContext;
 

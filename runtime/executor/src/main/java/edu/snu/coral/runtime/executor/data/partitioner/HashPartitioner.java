@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.partitioner;
+package edu.snu.nemo.runtime.executor.data.partitioner;
 
-import edu.snu.coral.common.KeyExtractor;
-import edu.snu.coral.runtime.executor.data.NonSerializedPartition;
-import edu.snu.coral.runtime.executor.data.Partition;
+import edu.snu.nemo.common.KeyExtractor;
+import edu.snu.nemo.runtime.executor.data.NonSerializedPartition;
+import edu.snu.nemo.runtime.executor.data.Partition;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.compiler.optimizer.pass.compiletime.annotating;
+package edu.snu.nemo.tests.compiler.optimizer.pass.compiletime.annotating;
 
-import edu.snu.coral.client.JobLauncher;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
-import edu.snu.coral.tests.compiler.optimizer.policy.TestPolicy;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
-import edu.snu.coral.tests.compiler.CompilerTestUtil;
+import edu.snu.nemo.client.JobLauncher;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.tests.compiler.optimizer.policy.TestPolicy;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.ScheduleGroupPass;
+import edu.snu.nemo.tests.compiler.CompilerTestUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

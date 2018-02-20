@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.sql;
+package edu.snu.nemo.compiler.frontend.spark.sql;
 
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
@@ -169,7 +169,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
 
     @Override
     public SparkSession getOrCreate() {
-      UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("coral_user"));
+      UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("nemo_user"));
       return SparkSession.from(super.getOrCreate(), this.options);
     }
   }

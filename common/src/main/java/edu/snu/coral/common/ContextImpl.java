@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common;
+package edu.snu.nemo.common;
 
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 
 import java.util.Map;
 

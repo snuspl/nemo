@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master;
+package edu.snu.nemo.runtime.master;
 
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.exception.*;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.MetricCollectionBarrierVertex;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageContext;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.state.BlockState;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.master.resource.ContainerManager;
-import edu.snu.coral.runtime.master.scheduler.PendingTaskGroupQueue;
-import edu.snu.coral.runtime.master.resource.ResourceSpecification;
-import edu.snu.coral.runtime.master.scheduler.Scheduler;
-import edu.snu.coral.runtime.master.scheduler.SchedulerRunner;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.exception.*;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.MetricCollectionBarrierVertex;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.master.resource.ContainerManager;
+import edu.snu.nemo.runtime.master.scheduler.PendingTaskGroupQueue;
+import edu.snu.nemo.runtime.master.resource.ResourceSpecification;
+import edu.snu.nemo.runtime.master.scheduler.Scheduler;
+import edu.snu.nemo.runtime.master.scheduler.SchedulerRunner;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.annotations.audience.DriverSide;
@@ -52,8 +52,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static edu.snu.coral.runtime.common.state.TaskGroupState.State.COMPLETE;
-import static edu.snu.coral.runtime.common.state.TaskGroupState.State.ON_HOLD;
+import static edu.snu.nemo.runtime.common.state.TaskGroupState.State.COMPLETE;
+import static edu.snu.nemo.runtime.common.state.TaskGroupState.State.ON_HOLD;
 
 /**
  * Runtime Master is the central controller of Runtime.

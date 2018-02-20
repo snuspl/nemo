@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.client;
+package edu.snu.nemo.client;
 
-import edu.snu.coral.runtime.common.state.JobState;
+import edu.snu.nemo.runtime.common.state.JobState;
 
 /**
  * A class provides the translation between the state of job and corresponding
@@ -24,7 +24,7 @@ import edu.snu.coral.runtime.common.state.JobState;
 public interface StateTranslator {
 
   /**
-   * Translate a job state of coral to a corresponding client endpoint state.
+   * Translate a job state of nemo to a corresponding client endpoint state.
    *
    * @param jobState to translate.
    * @return the translated state.

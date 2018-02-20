@@ -1,7 +1,7 @@
-package edu.snu.coral.runtime.common.message.ncs;
+package edu.snu.nemo.runtime.common.message.ncs;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
 import org.apache.reef.io.serialization.Codec;
 
 /**

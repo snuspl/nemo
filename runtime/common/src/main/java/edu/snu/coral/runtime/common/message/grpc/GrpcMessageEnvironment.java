@@ -1,10 +1,10 @@
-package edu.snu.coral.runtime.common.message.grpc;
+package edu.snu.nemo.runtime.common.message.grpc;
 
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.message.MessageParameters;
-import edu.snu.coral.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.message.MessageParameters;
+import edu.snu.nemo.runtime.common.message.MessageSender;
 import org.apache.reef.io.network.naming.NameResolver;
 import org.apache.reef.tang.annotations.Parameter;
 import org.apache.reef.wake.IdentifierFactory;
@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
 
 /**
  * This class is installed when every node, containing both driver and evaluator, has been started, and setup
- * grpc environment to implement RPC semantics defined in {@link edu.snu.coral.runtime.common.message} package.
+ * grpc environment to implement RPC semantics defined in {@link edu.snu.nemo.runtime.common.message} package.
  * For each GrpcMessageEnvironment, there are a single {@link GrpcMessageServer} and multiple {@link GrpcMessageClient},
  * which are responsible for responding replies for messages from other clients, and for transferring messages
  * to other servers, respectively.

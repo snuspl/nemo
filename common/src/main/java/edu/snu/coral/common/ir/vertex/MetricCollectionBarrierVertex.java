@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.vertex;
+package edu.snu.nemo.common.ir.vertex;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.exception.DynamicOptimizationException;
-import edu.snu.coral.common.ir.edge.IREdge;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.exception.DynamicOptimizationException;
+import edu.snu.nemo.common.ir.edge.IREdge;
 
 import java.util.*;
 
 /**
  * IRVertex that collects statistics to send them to the optimizer for dynamic optimization.
  * This class is generated in the DAG through
- * {edu.snu.coral.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass}.
+ * {edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.DataSkewCompositePass}.
  * @param <T> type of the metric data.
  */
 public final class MetricCollectionBarrierVertex<T> extends IRVertex {

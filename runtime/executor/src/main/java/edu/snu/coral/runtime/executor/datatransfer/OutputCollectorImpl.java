@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.datatransfer;
+package edu.snu.nemo.runtime.executor.datatransfer;
 
-import edu.snu.coral.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.OutputCollector;
 
 import java.util.ArrayList;
 import java.util.List;

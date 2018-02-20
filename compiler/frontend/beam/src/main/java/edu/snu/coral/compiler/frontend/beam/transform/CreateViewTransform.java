@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam.transform;
+package edu.snu.nemo.compiler.frontend.beam.transform;
 
-import edu.snu.coral.common.ir.OutputCollector;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 import org.apache.beam.sdk.transforms.ViewFn;
 import org.apache.beam.sdk.util.WindowedValue;
 import org.apache.beam.sdk.values.PCollectionView;

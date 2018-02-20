@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.datatransfer;
+package edu.snu.nemo.runtime.executor.datatransfer;
 
-import edu.snu.coral.common.KeyExtractor;
-import edu.snu.coral.common.exception.*;
-import edu.snu.coral.common.ir.edge.executionproperty.*;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.executor.data.BlockManagerWorker;
-import edu.snu.coral.runtime.executor.data.Partition;
-import edu.snu.coral.runtime.executor.data.partitioner.*;
+import edu.snu.nemo.common.KeyExtractor;
+import edu.snu.nemo.common.exception.*;
+import edu.snu.nemo.common.ir.edge.executionproperty.*;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.executor.data.BlockManagerWorker;
+import edu.snu.nemo.runtime.executor.data.Partition;
+import edu.snu.nemo.runtime.executor.data.partitioner.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -148,7 +148,7 @@ public final class OutputWriter extends DataTransfer implements AutoCloseable {
    * Writes partitions in a single block and collects the size of each partition.
    * This function will be called only when we need to split or recombine an output data from a task after it is stored
    * (e.g., dynamic data skew handling).
-   * We extend the hash range with the factor {@link edu.snu.coral.conf.JobConf.HashRangeMultiplier} in advance
+   * We extend the hash range with the factor {@link edu.snu.nemo.conf.JobConf.HashRangeMultiplier} in advance
    * to prevent the extra deserialize - rehash - serialize process.
    * Each data of this block having same key hash value will be collected as a single partition.
    * This partition will be the unit of retrieval and recombination of this block.

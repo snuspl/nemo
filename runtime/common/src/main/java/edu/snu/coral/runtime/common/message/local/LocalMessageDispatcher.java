@@ -1,7 +1,7 @@
-package edu.snu.coral.runtime.common.message.local;
+package edu.snu.nemo.runtime.common.message.local;
 
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.message.MessageSender;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;

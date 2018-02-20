@@ -16,4 +16,4 @@
 /**
  * Responsible for transferring block content from one executor to another.
  */
-package edu.snu.coral.runtime.executor.bytetransfer;
+package edu.snu.nemo.runtime.executor.bytetransfer;

@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime;
+package edu.snu.nemo.tests.runtime;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.BlockState;
-import edu.snu.coral.runtime.common.state.StageState;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.master.JobStateManager;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
-import edu.snu.coral.runtime.master.resource.ContainerManager;
-import edu.snu.coral.runtime.master.resource.ExecutorRepresenter;
-import edu.snu.coral.runtime.master.scheduler.PendingTaskGroupQueue;
-import edu.snu.coral.runtime.master.scheduler.Scheduler;
-import edu.snu.coral.runtime.master.scheduler.SchedulingPolicy;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.common.state.StageState;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.master.JobStateManager;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.runtime.master.resource.ContainerManager;
+import edu.snu.nemo.runtime.master.resource.ExecutorRepresenter;
+import edu.snu.nemo.runtime.master.scheduler.PendingTaskGroupQueue;
+import edu.snu.nemo.runtime.master.scheduler.Scheduler;
+import edu.snu.nemo.runtime.master.scheduler.SchedulingPolicy;
 import org.apache.beam.sdk.values.KV;
 
 import java.util.*;

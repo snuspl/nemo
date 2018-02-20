@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.stage;
+package edu.snu.nemo.runtime.common.plan.stage;
 
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.Vertex;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.Vertex;
 
 /**
  * Represents a stage in Runtime's execution of a job.
  * Each stage contains a part of a whole execution plan.
- * Stage partitioning is determined by {edu.snu.coral.compiler.backend.coral.CoralBackend}.
+ * Stage partitioning is determined by {edu.snu.nemo.compiler.backend.nemo.NemoBackend}.
  */
 public final class Stage extends Vertex {
   private final DAG<IRVertex, IREdge> stageInternalDAG;

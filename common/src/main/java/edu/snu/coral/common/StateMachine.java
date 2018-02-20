@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common;
+package edu.snu.nemo.common;
 
-import edu.snu.coral.common.exception.IllegalStateTransitionException;
+import edu.snu.nemo.common.exception.IllegalStateTransitionException;
 
 import java.util.*;
 import org.slf4j.Logger;

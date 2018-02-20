@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.pass.compiletime.composite;
+package edu.snu.nemo.compiler.optimizer.pass.compiletime.composite;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataFlowModelPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataStorePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeUsedDataHandlingPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.reshaping.SailfishRelayReshapingPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataFlowModelPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeDataStorePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.SailfishEdgeUsedDataHandlingPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.reshaping.SailfishRelayReshapingPass;
 
 import java.util.Arrays;
 

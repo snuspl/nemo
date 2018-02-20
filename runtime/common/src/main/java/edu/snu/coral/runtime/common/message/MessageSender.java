@@ -1,4 +1,4 @@
-package edu.snu.coral.runtime.common.message;
+package edu.snu.nemo.runtime.common.message;
 
 import java.util.concurrent.CompletableFuture;
 

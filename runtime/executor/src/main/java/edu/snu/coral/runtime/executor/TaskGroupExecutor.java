@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor;
+package edu.snu.nemo.runtime.executor;
 
-import edu.snu.coral.common.ContextImpl;
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.exception.BlockFetchException;
-import edu.snu.coral.common.exception.BlockWriteException;
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.common.state.TaskState;
-import edu.snu.coral.runtime.executor.datatransfer.DataTransferFactory;
-import edu.snu.coral.runtime.executor.datatransfer.InputReader;
-import edu.snu.coral.runtime.executor.datatransfer.OutputCollectorImpl;
-import edu.snu.coral.runtime.executor.datatransfer.OutputWriter;
+import edu.snu.nemo.common.ContextImpl;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.exception.BlockFetchException;
+import edu.snu.nemo.common.exception.BlockWriteException;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.common.state.TaskState;
+import edu.snu.nemo.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.nemo.runtime.executor.datatransfer.InputReader;
+import edu.snu.nemo.runtime.executor.datatransfer.OutputCollectorImpl;
+import edu.snu.nemo.runtime.executor.datatransfer.OutputWriter;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -89,7 +89,7 @@ public final class TaskGroupExecutor {
   }
 
   /**
-   * Initializes data read of {@link edu.snu.coral.common.ir.vertex.SourceVertex}.
+   * Initializes data read of {@link edu.snu.nemo.common.ir.vertex.SourceVertex}.
    *
    * @param logicalTaskIdToReadable the map between logical task id to {@link Readable}.
    */

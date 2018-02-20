@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.common.ir;
+package edu.snu.nemo.tests.common.ir;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
 import org.junit.Before;
 import org.junit.Test;
 

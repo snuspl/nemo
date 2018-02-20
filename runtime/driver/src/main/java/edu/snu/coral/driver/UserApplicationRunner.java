@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.driver;
+package edu.snu.nemo.driver;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.eventhandler.PubSubEventHandlerWrapper;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.compiler.backend.Backend;
-import edu.snu.coral.compiler.backend.coral.CoralBackend;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
-import edu.snu.coral.compiler.optimizer.policy.Policy;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.master.RuntimeMaster;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.eventhandler.PubSubEventHandlerWrapper;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.compiler.backend.Backend;
+import edu.snu.nemo.compiler.backend.nemo.NemoBackend;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.compiler.optimizer.policy.Policy;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.master.RuntimeMaster;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 import org.slf4j.Logger;
@@ -62,14 +62,14 @@ public final class UserApplicationRunner implements Runnable {
     this.optimizationPolicyCanonicalName = optimizationPolicy;
     this.maxScheduleAttempt = maxScheduleAttempt;
     this.runtimeMaster = runtimeMaster;
-    this.backend = new CoralBackend();
+    this.backend = new NemoBackend();
     this.pubSubWrapper = pubSubEventHandlerWrapper;
   }
 
   @Override
   public void run() {
     try {
-      LOG.info("##### Coral Compiler #####");
+      LOG.info("##### Nemo Compiler #####");
 
       final DAG<IRVertex, IREdge> dag = SerializationUtils.deserialize(Base64.getDecoder().decode(dagString));
       dag.storeJSON(dagDirectory, "ir", "IR before optimization");

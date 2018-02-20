@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.pass.compiletime.reshaping;
+package edu.snu.nemo.compiler.optimizer.pass.compiletime.reshaping;
 
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.CompileTimePass;
 
 import java.util.HashSet;
 import java.util.Set;

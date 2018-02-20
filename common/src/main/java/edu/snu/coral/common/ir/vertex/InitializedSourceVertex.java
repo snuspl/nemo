@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.vertex;
+package edu.snu.nemo.common.ir.vertex;
 
-import edu.snu.coral.common.ir.Readable;
+import edu.snu.nemo.common.ir.Readable;
 
 import java.util.ArrayList;
 import java.util.Iterator;

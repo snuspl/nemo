@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.common;
+package edu.snu.nemo.tests.common;
 
-import edu.snu.coral.common.StateMachine;
+import edu.snu.nemo.common.StateMachine;
 import org.junit.Before;
 import org.junit.Test;
 

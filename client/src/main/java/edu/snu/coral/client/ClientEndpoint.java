@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.client;
+package edu.snu.nemo.client;
 
-import edu.snu.coral.runtime.common.state.JobState;
+import edu.snu.nemo.runtime.common.state.JobState;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;

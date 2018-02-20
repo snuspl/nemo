@@ -1,4 +1,4 @@
-package edu.snu.coral.common;
+package edu.snu.nemo.common;
 
 import java.io.ByteArrayOutputStream;
 

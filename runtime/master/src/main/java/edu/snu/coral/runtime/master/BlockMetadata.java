@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master;
+package edu.snu.nemo.runtime.master;
 
-import edu.snu.coral.common.StateMachine;
-import edu.snu.coral.runtime.common.state.BlockState;
-import edu.snu.coral.runtime.common.exception.AbsentBlockException;
+import edu.snu.nemo.common.StateMachine;
+import edu.snu.nemo.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.common.exception.AbsentBlockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

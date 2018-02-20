@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam.coder;
+package edu.snu.nemo.compiler.frontend.beam.coder;
 
-import edu.snu.coral.common.coder.Coder;
+import edu.snu.nemo.common.coder.Coder;
 import org.apache.beam.sdk.coders.CoderException;
 import org.apache.beam.sdk.coders.VoidCoder;
 

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.exception;
+package edu.snu.nemo.common.exception;
 
 /**
  * IllegalVertexOperationException.
- * Thrown when an operation is conducted with a {edu.snu.coral.common.ir.IRVertex}
+ * Thrown when an operation is conducted with a {edu.snu.nemo.common.ir.IRVertex}
  * that is unknown/invalid/out of scope.
  */
 public final class IllegalVertexOperationException extends RuntimeException {

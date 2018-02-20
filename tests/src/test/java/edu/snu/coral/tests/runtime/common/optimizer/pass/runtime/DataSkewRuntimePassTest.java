@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.common.optimizer.pass.runtime;
+package edu.snu.nemo.tests.runtime.common.optimizer.pass.runtime;
 
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.DataSkewRuntimePass;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.DataSkewRuntimePass;
 import org.junit.Before;
 import org.junit.Test;
 

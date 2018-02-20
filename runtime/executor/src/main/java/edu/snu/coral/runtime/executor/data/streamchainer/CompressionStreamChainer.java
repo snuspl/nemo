@@ -1,7 +1,7 @@
-package edu.snu.coral.runtime.executor.data.streamchainer;
+package edu.snu.nemo.runtime.executor.data.streamchainer;
 
-import edu.snu.coral.common.exception.UnsupportedCompressionException;
-import edu.snu.coral.common.ir.edge.executionproperty.CompressionProperty;
+import edu.snu.nemo.common.exception.UnsupportedCompressionException;
+import edu.snu.nemo.common.ir.edge.executionproperty.CompressionProperty;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 

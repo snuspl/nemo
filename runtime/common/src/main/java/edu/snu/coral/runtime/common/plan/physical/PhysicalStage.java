@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.physical;
+package edu.snu.nemo.runtime.common.plan.physical;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.Vertex;
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.Vertex;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.ArrayList;

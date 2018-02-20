@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.examples;
+package edu.snu.nemo.compiler.optimizer.examples;
 
-import edu.snu.coral.common.ir.OutputCollector;
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.common.ir.vertex.SourceVertex;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.common.ir.vertex.SourceVertex;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 
 import java.util.ArrayList;
 import java.util.Arrays;

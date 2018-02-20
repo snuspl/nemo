@@ -1,4 +1,4 @@
-package edu.snu.coral.runtime.executor.data.streamchainer;
+package edu.snu.nemo.runtime.executor.data.streamchainer;
 
 import java.io.IOException;
 import java.io.InputStream;

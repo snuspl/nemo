@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master.scheduler;
+package edu.snu.nemo.runtime.master.scheduler;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.exception.SchedulingException;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.exception.SchedulingException;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
 

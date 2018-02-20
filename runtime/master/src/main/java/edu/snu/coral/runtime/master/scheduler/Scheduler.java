@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master.scheduler;
+package edu.snu.nemo.runtime.master.scheduler;
 
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.state.TaskGroupState;
-import edu.snu.coral.runtime.master.JobStateManager;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.state.TaskGroupState;
+import edu.snu.nemo.runtime.master.JobStateManager;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 
 /**
  * Receives jobs to execute and schedules
- * {@link edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup} to executors.
+ * {@link edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup} to executors.
  */
 @DriverSide
 @DefaultImplementation(BatchSingleJobScheduler.class)

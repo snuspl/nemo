@@ -1,10 +1,10 @@
-package edu.snu.coral.runtime.executor.datatransfer;
+package edu.snu.nemo.runtime.executor.datatransfer;
 
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.Task;
-import edu.snu.coral.runtime.executor.data.BlockManagerWorker;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.Task;
+import edu.snu.nemo.runtime.executor.data.BlockManagerWorker;
 import org.apache.reef.tang.annotations.Parameter;
 
 import javax.annotation.Nullable;

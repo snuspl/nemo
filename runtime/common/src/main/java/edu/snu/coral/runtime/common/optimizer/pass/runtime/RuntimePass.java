@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.optimizer.pass.runtime;
+package edu.snu.nemo.runtime.common.optimizer.pass.runtime;
 
-import edu.snu.coral.common.eventhandler.RuntimeEventHandler;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.common.eventhandler.RuntimeEventHandler;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
 
 import java.io.Serializable;
 import java.util.Set;

@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.executor;
+package edu.snu.nemo.tests.runtime.executor;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.OutputCollector;
-import edu.snu.coral.common.ir.Readable;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
-import edu.snu.coral.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.*;
-import edu.snu.coral.runtime.common.state.TaskState;
-import edu.snu.coral.runtime.executor.TaskGroupExecutor;
-import edu.snu.coral.runtime.executor.TaskGroupStateManager;
-import edu.snu.coral.runtime.executor.datatransfer.DataTransferFactory;
-import edu.snu.coral.runtime.executor.datatransfer.InputReader;
-import edu.snu.coral.runtime.executor.datatransfer.OutputWriter;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.OutputCollector;
+import edu.snu.nemo.common.ir.Readable;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataStoreProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.*;
+import edu.snu.nemo.runtime.common.state.TaskState;
+import edu.snu.nemo.runtime.executor.TaskGroupExecutor;
+import edu.snu.nemo.runtime.executor.TaskGroupStateManager;
+import edu.snu.nemo.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.nemo.runtime.executor.datatransfer.InputReader;
+import edu.snu.nemo.runtime.executor.datatransfer.OutputWriter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static edu.snu.coral.tests.runtime.RuntimeTestUtil.getRangedNumList;
+import static edu.snu.nemo.tests.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;

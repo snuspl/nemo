@@ -1,4 +1,4 @@
-package edu.snu.coral.runtime.common;
+package edu.snu.nemo.runtime.common;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;

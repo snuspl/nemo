@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.backend.coral;
+package edu.snu.nemo.compiler.backend.nemo;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.compiler.backend.Backend;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlanGenerator;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.compiler.backend.Backend;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlanGenerator;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
 import org.apache.reef.tang.Tang;
 
 /**
- * Backend component for Coral Runtime.
+ * Backend component for Nemo Runtime.
  */
-public final class CoralBackend implements Backend<PhysicalPlan> {
+public final class NemoBackend implements Backend<PhysicalPlan> {
   /**
    * Constructor.
    */
-  public CoralBackend() {
+  public NemoBackend() {
   }
 
   /**

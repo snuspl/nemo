@@ -1,7 +1,7 @@
-package edu.snu.coral.runtime.common.message;
+package edu.snu.nemo.runtime.common.message;
 
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.common.exception.NodeConnectionException;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.common.exception.NodeConnectionException;
 
 import javax.inject.Inject;
 import java.util.HashMap;

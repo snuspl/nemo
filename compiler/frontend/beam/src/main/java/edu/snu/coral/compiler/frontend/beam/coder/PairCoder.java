@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam.coder;
+package edu.snu.nemo.compiler.frontend.beam.coder;
 
-import edu.snu.coral.common.Pair;
+import edu.snu.nemo.common.Pair;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.CoderException;
 import org.apache.beam.sdk.coders.StructuredCoder;
@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * BEAM Coder for {@link edu.snu.coral.common.Pair}. Reference: KvCoder in BEAM.
+ * BEAM Coder for {@link edu.snu.nemo.common.Pair}. Reference: KvCoder in BEAM.
  * @param <A> type for the left coder.
  * @param <B> type for the right coder.
  */

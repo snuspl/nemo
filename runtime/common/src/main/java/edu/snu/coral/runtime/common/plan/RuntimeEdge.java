@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan;
+package edu.snu.nemo.runtime.common.plan;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.dag.Edge;
-import edu.snu.coral.common.dag.Vertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.dag.Edge;
+import edu.snu.nemo.common.dag.Vertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
 
 /**
  * Represents the edge between vertices in a logical/physical plan in runtime.

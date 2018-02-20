@@ -1,8 +1,8 @@
-package edu.snu.coral.runtime.common.message.ncs;
+package edu.snu.nemo.runtime.common.message.ncs;
 
-import edu.snu.coral.runtime.common.ReplyFutureMap;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageSender;
+import edu.snu.nemo.runtime.common.ReplyFutureMap;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageSender;
 import org.apache.reef.io.network.Connection;
 
 import java.util.concurrent.CompletableFuture;

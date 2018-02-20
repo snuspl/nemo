@@ -1,4 +1,4 @@
-package edu.snu.coral.conf;
+package edu.snu.nemo.conf;
 
 import org.apache.reef.tang.annotations.Name;
 import org.apache.reef.tang.annotations.NamedParameter;
@@ -64,7 +64,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
    * The name of the optimization policy.
    */
   @NamedParameter(doc = "The canonical name of the optimization policy", short_name = "optimization_policy",
-      default_value = "edu.snu.coral.compiler.optimizer.policy.DefaultPolicy")
+      default_value = "edu.snu.nemo.compiler.optimizer.policy.DefaultPolicy")
   public final class OptimizationPolicy implements Name<String> {
   }
 
@@ -78,9 +78,9 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * Coral driver memory.
+   * Nemo driver memory.
    */
-  @NamedParameter(doc = "Coral driver memory", short_name = "driver_mem_mb", default_value = "1024")
+  @NamedParameter(doc = "Nemo driver memory", short_name = "driver_mem_mb", default_value = "1024")
   public final class DriverMemMb implements Name<Integer> {
   }
 
@@ -212,7 +212,7 @@ public final class JobConf extends ConfigurationModuleBuilder {
   }
 
   /**
-   * Serialized {edu.snu.coral.common.dag.DAG} from user main method.
+   * Serialized {edu.snu.nemo.common.dag.DAG} from user main method.
    */
   @NamedParameter(doc = "String serialized DAG")
   public final class SerializedDAG implements Name<String> {

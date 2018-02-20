@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.master;
+package edu.snu.nemo.tests.runtime.master;
 
-import edu.snu.coral.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.master.resource.ContainerManager;
-import edu.snu.coral.runtime.master.resource.ResourceSpecification;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.master.resource.ContainerManager;
+import edu.snu.nemo.runtime.master.resource.ResourceSpecification;
 import org.apache.reef.driver.context.ActiveContext;
 import org.apache.reef.driver.evaluator.AllocatedEvaluator;
 import org.apache.reef.driver.evaluator.EvaluatorRequestor;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests {@link edu.snu.coral.runtime.master.resource.ContainerManager}.
+ * Tests {@link edu.snu.nemo.runtime.master.resource.ContainerManager}.
  */
 public final class ContainerManagerTest {
   private ContainerManager containerManager;

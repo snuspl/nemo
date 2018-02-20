@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.examples.beam.policy;
+package edu.snu.nemo.examples.beam.policy;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.coral.compiler.optimizer.policy.DataSkewPolicy;
-import edu.snu.coral.compiler.optimizer.policy.Policy;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.nemo.compiler.optimizer.policy.DataSkewPolicy;
+import edu.snu.nemo.compiler.optimizer.policy.Policy;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.List;
 

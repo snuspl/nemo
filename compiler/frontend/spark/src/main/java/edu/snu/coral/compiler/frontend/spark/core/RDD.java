@@ -1,10 +1,10 @@
-package edu.snu.coral.compiler.frontend.spark.core;
+package edu.snu.nemo.compiler.frontend.spark.core;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
 import org.apache.spark.Partition;
 import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
@@ -14,7 +14,7 @@ import scala.reflect.ClassTag$;
 import java.util.Stack;
 
 /**
- * RDD for Coral.
+ * RDD for Nemo.
  * @param <T> type of data.
  */
 public final class RDD<T> extends org.apache.spark.rdd.RDD<T> {

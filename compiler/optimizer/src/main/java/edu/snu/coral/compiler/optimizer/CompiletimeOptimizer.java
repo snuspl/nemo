@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer;
+package edu.snu.nemo.compiler.optimizer;
 
-import edu.snu.coral.common.exception.CompileTimeOptimizationException;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
-import edu.snu.coral.compiler.optimizer.policy.Policy;
+import edu.snu.nemo.common.exception.CompileTimeOptimizationException;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.reshaping.ReshapingPass;
+import edu.snu.nemo.compiler.optimizer.policy.Policy;
 
 import java.util.*;
 

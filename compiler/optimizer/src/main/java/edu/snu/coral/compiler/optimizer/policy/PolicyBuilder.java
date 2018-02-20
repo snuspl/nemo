@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.policy;
+package edu.snu.nemo.compiler.optimizer.policy;
 
-import edu.snu.coral.common.exception.CompileTimeOptimizationException;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.CompileTimePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.CompositePass;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.nemo.common.exception.CompileTimeOptimizationException;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.CompileTimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating.AnnotatingPass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.CompositePass;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.ArrayList;
 import java.util.HashSet;

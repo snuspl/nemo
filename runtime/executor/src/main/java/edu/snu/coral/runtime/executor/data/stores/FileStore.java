@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.stores;
+package edu.snu.nemo.runtime.executor.data.stores;
 
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.executor.data.FileArea;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.executor.data.FileArea;
 
 import java.util.List;
 

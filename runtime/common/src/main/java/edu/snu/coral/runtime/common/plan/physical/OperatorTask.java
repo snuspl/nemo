@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.physical;
+package edu.snu.nemo.runtime.common.plan.physical;
 
-import edu.snu.coral.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
 
 /**
  * OperatorTask.

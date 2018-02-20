@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.beam;
+package edu.snu.nemo.compiler.frontend.beam;
 
-import edu.snu.coral.compiler.frontend.beam.coder.BeamCoder;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.compiler.frontend.beam.source.BeamBoundedSourceVertex;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.ir.edge.executionproperty.KeyExtractorProperty;
+import edu.snu.nemo.compiler.frontend.beam.coder.BeamCoder;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.compiler.frontend.beam.source.BeamBoundedSourceVertex;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.ir.edge.executionproperty.KeyExtractorProperty;
 
-import edu.snu.coral.compiler.frontend.beam.transform.*;
+import edu.snu.nemo.compiler.frontend.beam.transform.*;
 
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.*;
@@ -48,7 +48,7 @@ import java.util.Stack;
 /**
  * Visits every node in the beam dag to translate the BEAM program to the IR.
  */
-public final class CoralPipelineVisitor extends Pipeline.PipelineVisitor.Defaults {
+public final class NemoPipelineVisitor extends Pipeline.PipelineVisitor.Defaults {
   private final DAGBuilder<IRVertex, IREdge> builder;
   private final Map<PValue, IRVertex> pValueToVertex;
   private final PipelineOptions options;
@@ -61,7 +61,7 @@ public final class CoralPipelineVisitor extends Pipeline.PipelineVisitor.Default
    * @param builder DAGBuilder to build the DAG with.
    * @param options Pipeline options.
    */
-  public CoralPipelineVisitor(final DAGBuilder<IRVertex, IREdge> builder, final PipelineOptions options) {
+  public NemoPipelineVisitor(final DAGBuilder<IRVertex, IREdge> builder, final PipelineOptions options) {
     this.builder = builder;
     this.pValueToVertex = new HashMap<>();
     this.options = options;

@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.sql;
+package edu.snu.nemo.compiler.frontend.spark.sql;
 
-import edu.snu.coral.compiler.frontend.spark.core.java.JavaRDD;
+import edu.snu.nemo.compiler.frontend.spark.core.java.JavaRDD;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 

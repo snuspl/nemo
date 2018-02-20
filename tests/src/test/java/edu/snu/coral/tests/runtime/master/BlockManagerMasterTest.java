@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.master;
+package edu.snu.nemo.tests.runtime.master;
 
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.exception.AbsentBlockException;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.local.LocalMessageDispatcher;
-import edu.snu.coral.runtime.common.message.local.LocalMessageEnvironment;
-import edu.snu.coral.runtime.common.state.BlockState;
-import edu.snu.coral.runtime.master.BlockManagerMaster;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.exception.AbsentBlockException;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageDispatcher;
+import edu.snu.nemo.runtime.common.message.local.LocalMessageEnvironment;
+import edu.snu.nemo.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.master.BlockManagerMaster;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;

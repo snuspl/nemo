@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.bytetransfer;
+package edu.snu.nemo.runtime.executor.bytetransfer;
 
 import io.netty.channel.*;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Manages channels and exposes interface for {@link edu.snu.coral.runtime.executor.data.BlockManagerWorker}.
+ * Manages channels and exposes interface for {@link edu.snu.nemo.runtime.executor.data.BlockManagerWorker}.
  */
 @ThreadSafe
 public final class ByteTransfer {

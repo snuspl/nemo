@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.master;
+package edu.snu.nemo.runtime.master;
 
-import edu.snu.coral.common.exception.IllegalMessageException;
-import edu.snu.coral.runtime.common.exception.AbsentBlockException;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageContext;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.state.BlockState;
+import edu.snu.nemo.common.exception.IllegalMessageException;
+import edu.snu.nemo.runtime.common.exception.AbsentBlockException;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.state.BlockState;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -39,8 +39,8 @@ import org.apache.reef.annotations.audience.DriverSide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static edu.snu.coral.runtime.common.state.BlockState.State.SCHEDULED;
-import static edu.snu.coral.runtime.master.RuntimeMaster.convertBlockState;
+import static edu.snu.nemo.runtime.common.state.BlockState.State.SCHEDULED;
+import static edu.snu.nemo.runtime.master.RuntimeMaster.convertBlockState;
 
 /**
  * Master-side block manager.
@@ -178,7 +178,7 @@ public final class BlockManagerMaster {
   /**
    * To be called when a potential producer task group is scheduled.
    * To be precise, it is called when the task group is enqueued to
-   * {@link edu.snu.coral.runtime.master.scheduler.PendingTaskGroupQueue}.
+   * {@link edu.snu.nemo.runtime.master.scheduler.PendingTaskGroupQueue}.
    *
    * @param scheduledTaskGroupId the ID of the scheduled task group.
    */

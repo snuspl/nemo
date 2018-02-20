@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.exception;
+package edu.snu.nemo.runtime.common.exception;
 
-import edu.snu.coral.runtime.common.state.BlockState;
+import edu.snu.nemo.runtime.common.state.BlockState;
 
 /**
  * An exception which represents the requested block is neither COMMITTED nor SCHEDULED.

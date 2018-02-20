@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.runtime.common.plan;
+package edu.snu.nemo.tests.runtime.common.plan;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataFlowModelProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataStoreProperty;
-import edu.snu.coral.common.ir.vertex.SourceVertex;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
-import edu.snu.coral.common.ir.vertex.executionproperty.ParallelismProperty;
-import edu.snu.coral.common.ir.vertex.transform.Transform;
-import edu.snu.coral.compiler.frontend.beam.transform.DoTransform;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
-import edu.snu.coral.compiler.optimizer.examples.EmptyComponents;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlanGenerator;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStage;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalStageEdge;
-import edu.snu.coral.runtime.common.plan.stage.Stage;
-import edu.snu.coral.runtime.common.plan.stage.StageEdge;
-import edu.snu.coral.tests.compiler.optimizer.policy.TestPolicy;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataFlowModelProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataStoreProperty;
+import edu.snu.nemo.common.ir.vertex.SourceVertex;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ExecutorPlacementProperty;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.nemo.common.ir.vertex.transform.Transform;
+import edu.snu.nemo.compiler.frontend.beam.transform.DoTransform;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlanGenerator;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStage;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
+import edu.snu.nemo.runtime.common.plan.stage.Stage;
+import edu.snu.nemo.runtime.common.plan.stage.StageEdge;
+import edu.snu.nemo.tests.compiler.optimizer.policy.TestPolicy;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
@@ -224,7 +224,7 @@ public final class DAGConverterTest {
     final Stage stage4 = sortedLogicalDAG.get(3);
     final Stage stage5 = sortedLogicalDAG.get(3);
 
-    // TODO #148: Optimize Stage Partitioner Algorithm in CoralBackend
+    // TODO #148: Optimize Stage Partitioner Algorithm in NemoBackend
     // The following asserts depend on how stage partitioning is defined; test must be rewritten accordingly.
 //    assertEquals(logicalDAG.getVertices().size(), 5);
 //    assertEquals(logicalDAG.getIncomingEdgesOf(stage1).size(), 0);

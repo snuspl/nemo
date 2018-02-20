@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.coral.common.eventhandler;
+package edu.snu.nemo.common.eventhandler;
 
 /**
  * Class for handling events sent from Runtime.

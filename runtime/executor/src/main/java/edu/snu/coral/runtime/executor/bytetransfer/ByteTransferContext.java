@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.bytetransfer;
+package edu.snu.nemo.runtime.executor.bytetransfer;
 
-import edu.snu.coral.runtime.common.comm.ControlMessage.ByteTransferDataDirection;
+import edu.snu.nemo.runtime.common.comm.ControlMessage.ByteTransferDataDirection;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;

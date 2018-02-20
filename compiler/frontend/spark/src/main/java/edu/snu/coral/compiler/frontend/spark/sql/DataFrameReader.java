@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.sql;
+package edu.snu.nemo.compiler.frontend.spark.sql;
 
 /**
  * A data frame reader to create the initial dataset.

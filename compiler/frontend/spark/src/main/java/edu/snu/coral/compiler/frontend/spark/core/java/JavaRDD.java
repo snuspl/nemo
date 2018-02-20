@@ -14,21 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.frontend.spark.core.java;
+package edu.snu.nemo.compiler.frontend.spark.core.java;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.KeyExtractorProperty;
-import edu.snu.coral.common.ir.vertex.*;
-import edu.snu.coral.common.ir.vertex.executionproperty.ParallelismProperty;
-import edu.snu.coral.compiler.frontend.spark.SparkKeyExtractor;
-import edu.snu.coral.compiler.frontend.spark.coder.SparkCoder;
-import edu.snu.coral.compiler.frontend.spark.core.RDD;
-import edu.snu.coral.compiler.frontend.spark.source.SparkBoundedSourceVertex;
-import edu.snu.coral.compiler.frontend.spark.sql.Dataset;
-import edu.snu.coral.compiler.frontend.spark.sql.SparkSession;
-import edu.snu.coral.compiler.frontend.spark.transform.*;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.KeyExtractorProperty;
+import edu.snu.nemo.common.ir.vertex.*;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ParallelismProperty;
+import edu.snu.nemo.compiler.frontend.spark.SparkKeyExtractor;
+import edu.snu.nemo.compiler.frontend.spark.coder.SparkCoder;
+import edu.snu.nemo.compiler.frontend.spark.core.RDD;
+import edu.snu.nemo.compiler.frontend.spark.source.SparkBoundedSourceVertex;
+import edu.snu.nemo.compiler.frontend.spark.sql.Dataset;
+import edu.snu.nemo.compiler.frontend.spark.sql.SparkSession;
+import edu.snu.nemo.compiler.frontend.spark.transform.*;
 import org.apache.spark.Partition;
 import org.apache.spark.Partitioner;
 import org.apache.spark.SparkContext;
@@ -45,7 +45,7 @@ import scala.reflect.ClassTag$;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static edu.snu.coral.compiler.frontend.spark.core.java.SparkFrontendUtils.getEdgeCommunicationPattern;
+import static edu.snu.nemo.compiler.frontend.spark.core.java.SparkFrontendUtils.getEdgeCommunicationPattern;
 
 /**
  * Java RDD.

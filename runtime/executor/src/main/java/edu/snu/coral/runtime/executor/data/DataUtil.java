@@ -1,9 +1,9 @@
-package edu.snu.coral.runtime.executor.data;
+package edu.snu.nemo.runtime.executor.data;
 
-import edu.snu.coral.common.DirectByteArrayOutputStream;
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.runtime.executor.data.streamchainer.StreamChainer;
-import edu.snu.coral.runtime.executor.data.streamchainer.Serializer;
+import edu.snu.nemo.common.DirectByteArrayOutputStream;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.runtime.executor.data.streamchainer.StreamChainer;
+import edu.snu.nemo.runtime.executor.data.streamchainer.Serializer;
 
 import java.io.*;
 import java.util.*;

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.policy;
+package edu.snu.nemo.compiler.optimizer.policy;
 
-import edu.snu.coral.compiler.optimizer.pass.compiletime.*;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
-import edu.snu.coral.compiler.optimizer.pass.compiletime.composite.PadoCompositePass;
-import edu.snu.coral.runtime.common.optimizer.pass.runtime.RuntimePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.*;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.PrimitiveCompositePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.LoopOptimizationCompositePass;
+import edu.snu.nemo.compiler.optimizer.pass.compiletime.composite.PadoCompositePass;
+import edu.snu.nemo.runtime.common.optimizer.pass.runtime.RuntimePass;
 
 import java.util.List;
 

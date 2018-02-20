@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package edu.snu.coral.runtime.common.eventhandler;
+package edu.snu.nemo.runtime.common.eventhandler;
 
-import edu.snu.coral.common.Pair;
-import edu.snu.coral.common.eventhandler.PubSubEventHandlerWrapper;
-import edu.snu.coral.common.eventhandler.RuntimeEventHandler;
-import edu.snu.coral.common.ir.vertex.MetricCollectionBarrierVertex;
-import edu.snu.coral.runtime.common.optimizer.RuntimeOptimizer;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.common.Pair;
+import edu.snu.nemo.common.eventhandler.PubSubEventHandlerWrapper;
+import edu.snu.nemo.common.eventhandler.RuntimeEventHandler;
+import edu.snu.nemo.common.ir.vertex.MetricCollectionBarrierVertex;
+import edu.snu.nemo.runtime.common.optimizer.RuntimeOptimizer;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
 import org.apache.reef.tang.Configuration;
 import org.apache.reef.tang.Tang;
 import org.apache.reef.tang.exceptions.InjectionException;

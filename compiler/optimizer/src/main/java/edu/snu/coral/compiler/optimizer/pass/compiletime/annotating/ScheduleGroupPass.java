@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.pass.compiletime.annotating;
+package edu.snu.nemo.compiler.optimizer.pass.compiletime.annotating;
 
 import com.google.common.collect.Lists;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.edge.executionproperty.DataFlowModelProperty;
-import edu.snu.coral.common.ir.vertex.executionproperty.ScheduleGroupIndexProperty;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataFlowModelProperty;
+import edu.snu.nemo.common.ir.vertex.executionproperty.ScheduleGroupIndexProperty;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static edu.snu.coral.common.ir.executionproperty.ExecutionProperty.Key.DataFlowModel;
-import static edu.snu.coral.common.ir.executionproperty.ExecutionProperty.Key.StageId;
+import static edu.snu.nemo.common.ir.executionproperty.ExecutionProperty.Key.DataFlowModel;
+import static edu.snu.nemo.common.ir.executionproperty.ExecutionProperty.Key.StageId;
 
 /**
  * A pass for assigning each stages in schedule groups.

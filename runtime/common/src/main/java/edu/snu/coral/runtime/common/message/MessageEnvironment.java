@@ -1,6 +1,6 @@
-package edu.snu.coral.runtime.common.message;
+package edu.snu.nemo.runtime.common.message;
 
-import edu.snu.coral.runtime.common.message.ncs.NcsMessageEnvironment;
+import edu.snu.nemo.runtime.common.message.ncs.NcsMessageEnvironment;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import java.util.concurrent.Future;

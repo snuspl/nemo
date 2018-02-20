@@ -1,6 +1,6 @@
-package edu.snu.coral.common.ir.edge.executionproperty;
+package edu.snu.nemo.common.ir.edge.executionproperty;
 
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
 
 /**
  * Compression ExecutionProperty.

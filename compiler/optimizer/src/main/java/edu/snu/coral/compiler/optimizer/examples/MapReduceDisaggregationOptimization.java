@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.compiler.optimizer.examples;
+package edu.snu.nemo.compiler.optimizer.examples;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.compiler.optimizer.policy.DisaggregationPolicy;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.compiler.optimizer.policy.DisaggregationPolicy;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static edu.snu.coral.common.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.nemo.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 
 /**
  * A sample MapReduceDisaggregationOptimization application.

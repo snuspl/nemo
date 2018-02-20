@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.state;
+package edu.snu.nemo.runtime.common.state;
 
-import edu.snu.coral.common.StateMachine;
+import edu.snu.nemo.common.StateMachine;
 
 /**
- * Represents the states and their transitions of a {@link edu.snu.coral.runtime.common.plan.physical.Task}.
+ * Represents the states and their transitions of a {@link edu.snu.nemo.runtime.common.plan.physical.Task}.
  */
 public final class TaskState {
   private final StateMachine stateMachine;

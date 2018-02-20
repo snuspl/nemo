@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data.stores;
+package edu.snu.nemo.runtime.executor.data.stores;
 
-import edu.snu.coral.common.exception.BlockFetchException;
-import edu.snu.coral.common.exception.BlockWriteException;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.executor.data.SerializerManager;
-import edu.snu.coral.runtime.executor.data.NonSerializedPartition;
-import edu.snu.coral.runtime.executor.data.SerializedPartition;
-import edu.snu.coral.runtime.executor.data.block.Block;
+import edu.snu.nemo.common.exception.BlockFetchException;
+import edu.snu.nemo.common.exception.BlockWriteException;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.executor.data.SerializerManager;
+import edu.snu.nemo.runtime.executor.data.NonSerializedPartition;
+import edu.snu.nemo.runtime.executor.data.SerializedPartition;
+import edu.snu.nemo.runtime.executor.data.block.Block;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -107,7 +107,7 @@ public abstract class LocalBlockStore extends AbstractBlockStore {
   }
 
   /**
-   * @see BlockStore#getSerializedPartitions(String, edu.snu.coral.runtime.common.data.KeyRange)
+   * @see BlockStore#getSerializedPartitions(String, edu.snu.nemo.runtime.common.data.KeyRange)
    */
   @Override
   public final <K extends Serializable>

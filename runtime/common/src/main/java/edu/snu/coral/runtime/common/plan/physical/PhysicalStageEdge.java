@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.common.plan.physical;
+package edu.snu.nemo.runtime.common.plan.physical;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.runtime.common.data.KeyRange;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.data.HashRange;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.runtime.common.data.KeyRange;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.data.HashRange;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contains information stage boundary {@link edu.snu.coral.runtime.common.plan.stage.StageEdge}.
+ * Contains information stage boundary {@link edu.snu.nemo.runtime.common.plan.stage.StageEdge}.
  */
 public final class PhysicalStageEdge extends RuntimeEdge<PhysicalStage> {
   /**

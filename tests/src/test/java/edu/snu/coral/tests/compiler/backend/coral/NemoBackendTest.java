@@ -13,34 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.tests.compiler.backend.coral;
+package edu.snu.nemo.tests.compiler.backend.nemo;
 
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.common.ir.edge.IREdge;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
-import edu.snu.coral.common.ir.vertex.OperatorVertex;
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.compiler.backend.coral.CoralBackend;
-import edu.snu.coral.common.dag.DAGBuilder;
-import edu.snu.coral.compiler.optimizer.CompiletimeOptimizer;
-import edu.snu.coral.compiler.optimizer.examples.EmptyComponents;
-import edu.snu.coral.compiler.optimizer.policy.PadoPolicy;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlan;
-import edu.snu.coral.runtime.common.plan.physical.PhysicalPlanGenerator;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.common.ir.edge.IREdge;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.ir.vertex.OperatorVertex;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.compiler.backend.nemo.NemoBackend;
+import edu.snu.nemo.common.dag.DAGBuilder;
+import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
+import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
+import edu.snu.nemo.compiler.optimizer.policy.PadoPolicy;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
+import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlanGenerator;
 import org.apache.reef.tang.Injector;
 import org.apache.reef.tang.Tang;
 import org.junit.Before;
 import org.junit.Test;
 
-import static edu.snu.coral.common.dag.DAG.EMPTY_DAG_DIRECTORY;
+import static edu.snu.nemo.common.dag.DAG.EMPTY_DAG_DIRECTORY;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test CoralBackend.
+ * Test NemoBackend.
  */
-public final class CoralBackendTest<I, O> {
+public final class NemoBackendTest<I, O> {
   private final IRVertex source = new EmptyComponents.EmptySourceVertex<>("Source");
   private final IRVertex map1 = new OperatorVertex(new EmptyComponents.EmptyTransform("MapElements"));
   private final IRVertex groupByKey = new OperatorVertex(new EmptyComponents.EmptyTransform("GroupByKey"));
@@ -70,12 +70,12 @@ public final class CoralBackendTest<I, O> {
   }
 
   /**
-   * This method uses an IR DAG and tests whether CoralBackend successfully generates an Execution Plan.
+   * This method uses an IR DAG and tests whether NemoBackend successfully generates an Execution Plan.
    * @throws Exception during the Execution Plan generation.
    */
   @Test
   public void testExecutionPlanGeneration() {
-    final CoralBackend backend = new CoralBackend();
+    final NemoBackend backend = new NemoBackend();
     final PhysicalPlan executionPlan = backend.compile(dag, physicalPlanGenerator);
 
     assertEquals(2, executionPlan.getStageDAG().getVertices().size());

@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor;
+package edu.snu.nemo.runtime.executor;
 
 import com.google.protobuf.ByteString;
-import edu.snu.coral.common.dag.DAG;
-import edu.snu.coral.conf.JobConf;
-import edu.snu.coral.common.exception.IllegalMessageException;
-import edu.snu.coral.common.exception.UnknownFailureCauseException;
-import edu.snu.coral.runtime.common.RuntimeIdGenerator;
-import edu.snu.coral.runtime.common.comm.ControlMessage;
-import edu.snu.coral.runtime.common.message.MessageContext;
-import edu.snu.coral.runtime.common.message.MessageEnvironment;
-import edu.snu.coral.runtime.common.message.MessageListener;
-import edu.snu.coral.runtime.common.message.PersistentConnectionToMasterMap;
-import edu.snu.coral.runtime.common.plan.RuntimeEdge;
-import edu.snu.coral.runtime.common.plan.physical.ScheduledTaskGroup;
-import edu.snu.coral.runtime.common.plan.physical.Task;
-import edu.snu.coral.runtime.executor.data.SerializerManager;
-import edu.snu.coral.runtime.executor.datatransfer.DataTransferFactory;
+import edu.snu.nemo.common.dag.DAG;
+import edu.snu.nemo.conf.JobConf;
+import edu.snu.nemo.common.exception.IllegalMessageException;
+import edu.snu.nemo.common.exception.UnknownFailureCauseException;
+import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
+import edu.snu.nemo.runtime.common.comm.ControlMessage;
+import edu.snu.nemo.runtime.common.message.MessageContext;
+import edu.snu.nemo.runtime.common.message.MessageEnvironment;
+import edu.snu.nemo.runtime.common.message.MessageListener;
+import edu.snu.nemo.runtime.common.message.PersistentConnectionToMasterMap;
+import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
+import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
+import edu.snu.nemo.runtime.common.plan.physical.Task;
+import edu.snu.nemo.runtime.executor.data.SerializerManager;
+import edu.snu.nemo.runtime.executor.datatransfer.DataTransferFactory;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.reef.tang.annotations.Parameter;
 

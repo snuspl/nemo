@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.runtime.executor.data;
+package edu.snu.nemo.runtime.executor.data;
 
 /**
  * A collection of data elements. The data is stored as an iterable of elements.
- * This is a unit of read / write towards {@link edu.snu.coral.runtime.executor.data.block.Block}s.
+ * This is a unit of read / write towards {@link edu.snu.nemo.runtime.executor.data.block.Block}s.
  * @param <K> the key type of its partitions.
  */
 public final class NonSerializedPartition<K> implements Partition<Iterable, K> {

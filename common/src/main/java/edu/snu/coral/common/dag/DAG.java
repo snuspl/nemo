@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.dag;
+package edu.snu.nemo.common.dag;
 
-import edu.snu.coral.common.exception.IllegalEdgeOperationException;
-import edu.snu.coral.common.exception.IllegalVertexOperationException;
-import edu.snu.coral.common.ir.vertex.LoopVertex;
+import edu.snu.nemo.common.exception.IllegalEdgeOperationException;
+import edu.snu.nemo.common.exception.IllegalVertexOperationException;
+import edu.snu.nemo.common.ir.vertex.LoopVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -413,7 +413,7 @@ public final class DAG<V extends Vertex, E extends Edge<V>> implements Serializa
       printWriter.println(toString());
       printWriter.close();
       LOG.info(String.format("DAG JSON for %s is saved at %s"
-          + " (Use https://service.jangho.kr/coral-dag/ to visualize it.)", description, file.getPath()));
+          + " (Use https://service.jangho.kr/nemo-dag/ to visualize it.)", description, file.getPath()));
     } catch (IOException e) {
       LOG.warn(String.format("Cannot store JSON representation of %s to %s: %s",
           description, file.getPath(), e.toString()));

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.snu.coral.common.ir.edge;
+package edu.snu.nemo.common.ir.edge;
 
-import edu.snu.coral.common.coder.Coder;
-import edu.snu.coral.common.dag.Edge;
-import edu.snu.coral.common.ir.IdManager;
-import edu.snu.coral.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
-import edu.snu.coral.common.ir.executionproperty.ExecutionPropertyMap;
-import edu.snu.coral.common.ir.executionproperty.ExecutionProperty;
-import edu.snu.coral.common.ir.vertex.IRVertex;
+import edu.snu.nemo.common.coder.Coder;
+import edu.snu.nemo.common.dag.Edge;
+import edu.snu.nemo.common.ir.IdManager;
+import edu.snu.nemo.common.ir.edge.executionproperty.DataCommunicationPatternProperty;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionPropertyMap;
+import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
+import edu.snu.nemo.common.ir.vertex.IRVertex;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
