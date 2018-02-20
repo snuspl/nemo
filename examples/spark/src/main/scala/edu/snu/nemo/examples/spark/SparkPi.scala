@@ -16,7 +16,7 @@
  */
 
 // scalastyle:off println
-package edu.snu.vortex.examples.spark;
+package edu.snu.nemo.examples.spark;
 
 import edu.snu.coral.compiler.frontend.spark.sql.SparkSession
 
