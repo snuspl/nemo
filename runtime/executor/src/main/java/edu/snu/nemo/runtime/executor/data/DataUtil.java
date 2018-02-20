@@ -271,7 +271,7 @@ public final class DataUtil {
 
     @Override
     public long getNumSerializedBytes() {
-      if (!cannotContinueDecoding) {
+      if (hasNext()) {
         throw new IllegalStateException("Iteration not completed.");
       }
       return numSerializedBytes;
@@ -279,7 +279,7 @@ public final class DataUtil {
 
     @Override
     public long getNumEncodedBytes() {
-      if (!cannotContinueDecoding) {
+      if (hasNext()) {
         throw new IllegalStateException("Iteration not completed.");
       }
       return numEncodedBytes;
