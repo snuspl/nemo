@@ -28,6 +28,7 @@ import edu.snu.coral.runtime.common.plan.RuntimeEdge;
 import edu.snu.coral.runtime.common.plan.physical.*;
 import edu.snu.coral.runtime.common.state.TaskGroupState;
 import edu.snu.coral.runtime.common.state.TaskState;
+import edu.snu.coral.runtime.executor.data.DataUtil;
 import edu.snu.coral.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.coral.runtime.executor.datatransfer.InputReader;
 import edu.snu.coral.runtime.executor.datatransfer.OutputCollectorImpl;
@@ -286,11 +287,11 @@ public final class TaskGroupExecutor {
 
     // Check for non-side inputs
     // This blocking queue contains the pairs having data and source vertex ids.
-    final BlockingQueue<Pair<Iterator, String>> dataQueue = new LinkedBlockingQueue<>();
+    final BlockingQueue<Pair<DataUtil.IteratorWithNumBytes, String>> dataQueue = new LinkedBlockingQueue<>();
     final AtomicInteger sourceParallelism = new AtomicInteger(0);
     physicalTaskIdToInputReaderMap.get(physicalTaskId).stream().filter(inputReader -> !inputReader.isSideInputReader())
         .forEach(inputReader -> {
-          final List<CompletableFuture<Iterator>> futures = inputReader.read();
+          final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> futures = inputReader.read();
           final String srcIrVtxId = inputReader.getSrcIrVertexId();
           sourceParallelism.getAndAdd(inputReader.getSourceParallelism());
           // Add consumers which will push the data to the data queue when it ready to the futures.
@@ -305,14 +306,25 @@ public final class TaskGroupExecutor {
 
     long accumulatedBlockedReadTime = 0;
     long accumulatedWriteTime = 0;
+    long accumulatedSerializedBlockSize = 0;
+    long accumulatedEncodedBlockSize = 0;
+    boolean blockSizeAvailable = true;
     // Consumes all of the partitions from incoming edges.
     for (int srcTaskNum = 0; srcTaskNum < sourceParallelism.get(); srcTaskNum++) {
       try {
         // Because the data queue is a blocking queue, we may need to wait some available data to be pushed.
         final long blockedReadStartTime = System.currentTimeMillis();
-        final Pair<Iterator, String> availableData = dataQueue.take();
+        final Pair<DataUtil.IteratorWithNumBytes, String> availableData = dataQueue.take();
         final long blockedReadEndTime = System.currentTimeMillis();
         accumulatedBlockedReadTime += blockedReadEndTime - blockedReadStartTime;
+        if (blockSizeAvailable) {
+          try {
+            accumulatedSerializedBlockSize += availableData.left().getNumSerializedBytes();
+            accumulatedEncodedBlockSize += availableData.left().getNumEncodedBytes();
+          } catch (final UnsupportedOperationException e) {
+            blockSizeAvailable = false;
+          }
+        }
         transform.onData(availableData.left(), availableData.right());
       } catch (final InterruptedException e) {
         throw new BlockFetchException(e);
@@ -350,7 +362,10 @@ public final class TaskGroupExecutor {
     final long writeEndTime = System.currentTimeMillis();
     metric.put("OutputTime(ms)", writeEndTime - transformEndTime + accumulatedWriteTime);
     metric.put("WrittenBytes", writtenBytes);
-
+    if (blockSizeAvailable) {
+      metric.put("ReadSerializedBytes", accumulatedSerializedBlockSize);
+      metric.put("ReadEncodedBytes", accumulatedEncodedBlockSize);
+    }
     metricCollector.endMeasurement(physicalTaskId, metric);
   }
 

@@ -29,6 +29,7 @@ import edu.snu.coral.common.exception.BlockFetchException;
 import edu.snu.coral.common.exception.UnsupportedCommPatternException;
 import edu.snu.coral.runtime.common.data.HashRange;
 import edu.snu.coral.runtime.executor.data.BlockManagerWorker;
+import edu.snu.coral.runtime.executor.data.DataUtil;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -71,7 +72,7 @@ public final class InputReader extends DataTransfer {
    *
    * @return the read data.
    */
-  public List<CompletableFuture<Iterator>> read() {
+  public List<CompletableFuture<DataUtil.IteratorWithNumBytes>> read() {
     DataCommunicationPatternProperty.Value comValue =
         (DataCommunicationPatternProperty.Value)
             runtimeEdge.getProperty(ExecutionProperty.Key.DataCommunicationPattern);
@@ -89,17 +90,17 @@ public final class InputReader extends DataTransfer {
     }
   }
 
-  private CompletableFuture<Iterator> readOneToOne() {
+  private CompletableFuture<DataUtil.IteratorWithNumBytes> readOneToOne() {
     final String blockId = RuntimeIdGenerator.generateBlockId(getId(), dstTaskIndex);
     return blockManagerWorker.queryBlock(blockId, getId(),
         (DataStoreProperty.Value) runtimeEdge.getProperty(ExecutionProperty.Key.DataStore),
         HashRange.all());
   }
 
-  private List<CompletableFuture<Iterator>> readBroadcast() {
+  private List<CompletableFuture<DataUtil.IteratorWithNumBytes>> readBroadcast() {
     final int numSrcTasks = this.getSourceParallelism();
 
-    final List<CompletableFuture<Iterator>> futures = new ArrayList<>();
+    final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
       futures.add(blockManagerWorker.queryBlock(blockId, getId(),
@@ -117,7 +118,7 @@ public final class InputReader extends DataTransfer {
    *
    * @return the list of the completable future of the data.
    */
-  private List<CompletableFuture<Iterator>> readDataInRange() {
+  private List<CompletableFuture<DataUtil.IteratorWithNumBytes>> readDataInRange() {
     assert (runtimeEdge instanceof PhysicalStageEdge);
     final KeyRange hashRangeToRead =
         ((PhysicalStageEdge) runtimeEdge).getTaskGroupIdxToKeyRange().get(dstTaskIndex);
@@ -127,7 +128,7 @@ public final class InputReader extends DataTransfer {
     }
 
     final int numSrcTasks = this.getSourceParallelism();
-    final List<CompletableFuture<Iterator>> futures = new ArrayList<>();
+    final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> futures = new ArrayList<>();
     for (int srcTaskIdx = 0; srcTaskIdx < numSrcTasks; srcTaskIdx++) {
       final String blockId = RuntimeIdGenerator.generateBlockId(getId(), srcTaskIdx);
       futures.add(

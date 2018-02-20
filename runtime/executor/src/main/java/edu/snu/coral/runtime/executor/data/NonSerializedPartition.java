@@ -23,6 +23,8 @@ package edu.snu.coral.runtime.executor.data;
 public final class NonSerializedPartition<K> implements Partition<Iterable, K> {
   private final K key;
   private final Iterable nonSerializedData;
+  private final long numSerializedBytes;
+  private final long numEncodedBytes;
 
   /**
    * Creates a non-serialized {@link Partition} having a specific key value.
@@ -32,8 +34,47 @@ public final class NonSerializedPartition<K> implements Partition<Iterable, K> {
    */
   public NonSerializedPartition(final K key,
                                 final Iterable data) {
+    this(key, data, -1, -1);
+  }
+
+  /**
+   * Creates a non-serialized {@link Partition} having a specific key value.
+   *
+   * @param key  the key.
+   * @param data the non-serialized data.
+   * @param numSerializedBytes the number of bytes in serialized form (which is, for example, encoded and compressed)
+   * @param numEncodedBytes the number of bytes in encoded form (which is ready to be decoded)
+   */
+  public NonSerializedPartition(final K key,
+                                final Iterable data,
+                                final long numSerializedBytes,
+                                final long numEncodedBytes) {
     this.key = key;
     this.nonSerializedData = data;
+    this.numSerializedBytes = numSerializedBytes;
+    this.numEncodedBytes = numEncodedBytes;
+  }
+
+  /**
+   * @return the number of bytes in serialized form (which is, for example, encoded and compressed)
+   * @throws UnsupportedOperationException when then information is not available
+   */
+  public long getNumSerializedBytes() {
+    if (numSerializedBytes == -1) {
+      throw new UnsupportedOperationException();
+    }
+    return numSerializedBytes;
+  }
+
+  /**
+   * @return the number of bytes in encoded form (which is ready to be decoded)
+   * @throws UnsupportedOperationException when then information is not available
+   */
+  public long getNumEncodedBytes() {
+    if (numEncodedBytes == -1) {
+      throw new UnsupportedOperationException();
+    }
+    return numEncodedBytes;
   }
 
   /**
