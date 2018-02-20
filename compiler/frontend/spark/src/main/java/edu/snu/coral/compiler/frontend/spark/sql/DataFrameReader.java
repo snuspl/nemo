@@ -19,6 +19,7 @@ package edu.snu.coral.compiler.frontend.spark.sql;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.types.StructType;
 
 /**
  * A data frame reader to create the initial dataset.
@@ -45,6 +46,12 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   @Override
   public Dataset<Row> csv(final String path) {
     return Dataset.from(super.csv(path));
+  }
+
+  @Override
+  public DataFrameReader format(String source) {
+    super.format(source);
+    return this;
   }
 
   @Override
@@ -112,6 +119,42 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
+  public DataFrameReader option(String key, boolean value) {
+    super.option(key, value);
+    return this;
+  }
+
+  @Override
+  public DataFrameReader option(String key, double value) {
+    super.option(key, value);
+    return this;
+  }
+
+  @Override
+  public DataFrameReader option(String key, long value) {
+    super.option(key, value);
+    return this;
+  }
+
+  @Override
+  public DataFrameReader option(String key, String value) {
+    super.option(key, value);
+    return this;
+  }
+
+  @Override
+  public DataFrameReader options(scala.collection.Map<String,String> options) {
+    super.options(options);
+    return this;
+  }
+
+  @Override
+  public DataFrameReader options(java.util.Map<String,String> options) {
+    super.options(options);
+    return this;
+  }
+
+  @Override
   public Dataset<Row> orc(final scala.collection.Seq<String> paths) {
     return Dataset.from(super.orc(paths));
   }
@@ -139,6 +182,12 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   @Override
   public Dataset<Row> parquet(final String path) {
     return Dataset.from(super.parquet(path));
+  }
+
+  @Override
+  public DataFrameReader schema(StructType schema) {
+    super.schema(schema);
+    return this;
   }
 
   @Override
