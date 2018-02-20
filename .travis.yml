@@ -6,3 +6,7 @@ script: "mvn clean install -B -V"
 
 notifications:
   slack: snuspl:owgt4d5uZwww5nGovPAMgvZB
+
+cache:
+  directories:
+  - $HOME/.m2
