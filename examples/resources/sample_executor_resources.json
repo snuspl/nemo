@@ -1,16 +1,11 @@
 [
   {
     "type": "Transient",
-    "memory_mb": 256,
+    "memory_mb": 450,
     "capacity": 6
   },
   {
     "type": "Reserved",
-    "memory_mb": 256,
-    "capacity": 6
-  },
-  {
-    "type": "Compute",
     "memory_mb": 450,
     "capacity": 6
   }
