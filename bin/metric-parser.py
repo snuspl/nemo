@@ -44,7 +44,6 @@ def main():
                for metric in metricDictionary[computationUnitId]:
                    print(metric)
            elif user_input == "2":
-               print ('The "WrittenBytes" metric can be 0 if the data is not serialized and just handled on memory')
                for vertexId, metricDict in sorted(vertexToMetricDict.items()):
                    print(vertexId)
                    metricKeys, valuesMin, valuesMedian, valuesMax, valuesMean, valuesSum = ['Metric'], ['Min'], ['Median'], ['Max'], ['Mean'], ['Total']
