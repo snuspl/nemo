@@ -273,6 +273,8 @@ public final class TaskGroupExecutor {
         .forEach(inputReader -> {
           try {
             if (!inputReader.isSideInputReader()) {
+              // Trying to get sideInput from a reader that does not handle sideInput.
+              // This is probably a bug. We're not trying to recover but ensure a hard fail.
               throw new RuntimeException();
             }
             final DataUtil.IteratorWithNumBytes sideInputIterator = inputReader.read().get(0).get();
