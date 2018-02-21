@@ -21,23 +21,44 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import scala.Tuple2;
 
+import javax.naming.OperationNotSupportedException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * A simple version of the Spark session, containing SparkContext that contains SparkConf.
  */
 public final class SparkSession extends org.apache.spark.sql.SparkSession {
+  private final LinkedHashMap<String, Object[]> datasetCommandsList;
   private final Map<String, String> initialConf;
 
   /**
    * Constructor.
    * @param sparkContext the spark context for the session.
-   * @param initialConf initial configuration.
    */
   private SparkSession(final SparkContext sparkContext, final Map<String, String> initialConf) {
     super(sparkContext);
+    this.datasetCommandsList = new LinkedHashMap<>();
     this.initialConf = initialConf;
+  }
+
+  /**
+   * Append the command to the list of dataset commands.
+   * @param cmd the name of the command to apply. e.g. "SparkSession#read"
+   * @param args arguments required for the command.
+   */
+  public void appendCommand(final String cmd, final Object... args) {
+    this.datasetCommandsList.put(cmd, args);
+  }
+
+  /**
+   * @return the commands list required to recreate the dataset on separate machines.
+   */
+  public LinkedHashMap<String, Object[]> getDatasetCommandsList() {
+    return datasetCommandsList;
   }
 
   /**
@@ -47,8 +68,65 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
     return initialConf;
   }
 
+  /**
+   * Method to reproduce the initial Dataset on separate evaluators when reading from sources.
+   * @param spark sparkSession to start from.
+   * @param commandList commands required to setup the dataset.
+   * @param <T> type of the resulting dataset's data.
+   * @return the initialized dataset.
+   * @throws OperationNotSupportedException exception when the command is not yet supported.
+   */
+  public static <T> Dataset<T> initializeDataset(final SparkSession spark,
+                                                 final LinkedHashMap<String, Object[]> commandList)
+      throws OperationNotSupportedException {
+    Object result = spark;
+
+    for (Map.Entry<String, Object[]> command: commandList.entrySet()) {
+      final String[] cmd = command.getKey().split("#");
+      final String clazz = cmd[0];
+      final String methodName = cmd[1];
+      final Object[] args = command.getValue();
+      final Class<?>[] argTypes = Stream.of(args).map(o -> o.getClass()).toArray(Class[]::new);
+
+      switch (clazz) {
+        case "SparkSession":
+          final SparkSession sparkSession = ((SparkSession) result);
+          try {
+            final Method method = sparkSession.getClass().getMethod(methodName, argTypes);
+            result = method.invoke(sparkSession, args);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+          break;
+        case "DataFrameReader":
+          final DataFrameReader dataFrameReader = ((DataFrameReader) result);
+          try {
+            final Method method = dataFrameReader.getClass().getMethod(methodName, argTypes);
+            result = method.invoke(dataFrameReader, args);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+          break;
+        case "Dataset":
+          final Dataset dataset = ((Dataset) result);
+          try {
+            final Method method = dataset.getClass().getMethod(methodName, argTypes);
+            result = method.invoke(dataset, args);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+          break;
+        default:
+          throw new OperationNotSupportedException(cmd + " is not yet supported.");
+      }
+    }
+
+    return (Dataset<T>) result;
+  }
+
   @Override
   public DataFrameReader read() {
+    appendCommand("SparkSession#read");
     return new DataFrameReader(this);
   }
 
