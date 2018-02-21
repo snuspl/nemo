@@ -34,6 +34,11 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
+  public Dataset<Row>	csv(final org.apache.spark.sql.Dataset<String> csvDataset) {
+    return Dataset.from(super.csv(csvDataset));
+  }
+
+  @Override
   public Dataset<Row> csv(final scala.collection.Seq<String> paths) {
     return Dataset.from(super.csv(paths));
   }
@@ -49,7 +54,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
-  public DataFrameReader format(String source) {
+  public DataFrameReader format(final String source) {
     super.format(source);
     return this;
   }
@@ -61,16 +66,21 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> jdbc(final String url, final String table,
-                           final String[] predicates, final java.util.Properties connectionProperties) {
+                            final String[] predicates, final java.util.Properties connectionProperties) {
     return Dataset.from(super.jdbc(url, table, predicates, connectionProperties));
   }
 
   @Override
   public Dataset<Row> jdbc(final String url, final String table, final String columnName,
-                           final long lowerBound, final long upperBound, final int numPartitions,
-                           final java.util.Properties connectionProperties) {
+                            final long lowerBound, final long upperBound, final int numPartitions,
+                            final java.util.Properties connectionProperties) {
     return Dataset.from(super.jdbc(
         url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties));
+  }
+
+  @Override
+  public Dataset<Row>	json(final org.apache.spark.sql.Dataset<String> jsonDataset) {
+    return Dataset.from(super.json(jsonDataset));
   }
 
   @Override
@@ -119,37 +129,37 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
-  public DataFrameReader option(String key, boolean value) {
+  public DataFrameReader option(final String key, final boolean value) {
     super.option(key, value);
     return this;
   }
 
   @Override
-  public DataFrameReader option(String key, double value) {
+  public DataFrameReader option(final String key, final double value) {
     super.option(key, value);
     return this;
   }
 
   @Override
-  public DataFrameReader option(String key, long value) {
+  public DataFrameReader option(final String key, final long value) {
     super.option(key, value);
     return this;
   }
 
   @Override
-  public DataFrameReader option(String key, String value) {
+  public DataFrameReader option(final String key, final String value) {
     super.option(key, value);
     return this;
   }
 
   @Override
-  public DataFrameReader options(scala.collection.Map<String,String> options) {
+  public DataFrameReader options(final scala.collection.Map<String, String> options) {
     super.options(options);
     return this;
   }
 
   @Override
-  public DataFrameReader options(java.util.Map<String,String> options) {
+  public DataFrameReader options(final java.util.Map<String, String> options) {
     super.options(options);
     return this;
   }
@@ -185,7 +195,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
-  public DataFrameReader schema(StructType schema) {
+  public DataFrameReader schema(final StructType schema) {
     super.schema(schema);
     return this;
   }

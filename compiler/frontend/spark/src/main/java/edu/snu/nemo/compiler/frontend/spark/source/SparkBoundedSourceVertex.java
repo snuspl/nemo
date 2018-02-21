@@ -82,10 +82,10 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
     @Override
     public Iterable<T> read() throws Exception {
       // for setting up the same environment in the executors.
-      SparkSession.builder().config(sessionInitialConf).getOrCreate();
+      final SparkSession spark = SparkSession.builder().config(sessionInitialConf).getOrCreate();
 
       // Spark does lazy evaluation: it doesn't load the full dataset, but only the partition it is asked for.
-      final RDD<T> rdd = dataset.rdd();
+      final RDD<T> rdd = Dataset.from(spark, dataset).rdd();
       return () -> JavaConverters.asJavaIteratorConverter(
           rdd.iterator(rdd.getPartitions()[partitionIndex], TaskContext$.MODULE$.empty())).asJava();
     }

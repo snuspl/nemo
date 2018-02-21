@@ -21,6 +21,9 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.apache.spark.storage.StorageLevel;
+
+import java.util.stream.Stream;
 
 /**
  * A dataset component: it represents relational data.
@@ -39,12 +42,23 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
 
   /**
    * Using the immutable property of datasets, we can downcast spark datasets to our class using this function.
+   * @param sparkSession the Spark Session to run this dataset with.
+   * @param dataset the Spark dataset.
+   * @param <U> type of the dataset.
+   * @return our dataset class.
+   */
+  public static <U> Dataset<U> from(final SparkSession sparkSession, final org.apache.spark.sql.Dataset<U> dataset) {
+    return new Dataset<>(sparkSession, dataset.logicalPlan(), dataset.exprEnc());
+  }
+
+  /**
+   * Using the immutable property of datasets, we can downcast spark datasets to our class using this function.
    * @param dataset the Spark dataset.
    * @param <U> type of the dataset.
    * @return our dataset class.
    */
   public static <U> Dataset<U> from(final org.apache.spark.sql.Dataset<U> dataset) {
-    return new Dataset<>((SparkSession) dataset.sparkSession(), dataset.logicalPlan(), dataset.exprEnc());
+    return Dataset.from((SparkSession) dataset.sparkSession(), dataset);
   }
 
   /**
@@ -57,417 +71,427 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> {
   }
 
   @Override
-  public Dataset<Row>	agg(Column expr, Column... exprs) {
-    return from(super.);
+  public Dataset<Row> agg(final Column expr, final Column... exprs) {
+    return from(super.agg(expr, exprs));
   }
 
   @Override
-  public Dataset<Row>	agg(Column expr, scala.collection.Seq<Column> exprs) {
-    return from(super.);
+  public Dataset<Row> agg(final Column expr, final scala.collection.Seq<Column> exprs) {
+    return from(super.agg(expr, exprs));
   }
 
   @Override
-  public Dataset<Row>	agg(scala.collection.immutable.Map<String,String> exprs) {
-    return from(super.);
+  public Dataset<Row> agg(final scala.collection.immutable.Map<String, String> exprs) {
+    return from(super.agg(exprs));
   }
 
   @Override
-  public Dataset<Row>	agg(java.util.Map<String,String> exprs) {
-    return from(super.);
+  public Dataset<Row> agg(final java.util.Map<String, String> exprs) {
+    return from(super.agg(exprs));
   }
 
   @Override
-  public Dataset<Row>	agg(scala.Tuple2<String,String> aggExpr, scala.collection.Seq<scala.Tuple2<String,String>> aggExprs) {
-    return from(super.);
+  public Dataset<Row> agg(final scala.Tuple2<String, String> aggExpr,
+                          final scala.collection.Seq<scala.Tuple2<String, String>> aggExprs) {
+    return from(super.agg(aggExpr, aggExprs));
   }
 
   @Override
-  public Dataset<T>	alias(String alias) {
-    return from(super.);
+  public Dataset<T> alias(final String alias) {
+    return from(super.alias(alias));
   }
 
   @Override
-  public Dataset<T>	alias(scala.Symbol alias) {
-    return from(super.);
+  public Dataset<T> alias(final scala.Symbol alias) {
+    return from(super.alias(alias));
   }
 
   @Override
-  public Dataset<T>	as(String alias) {
-    return from(super.);
+  public Dataset<T> as(final String alias) {
+    return from(super.as(alias));
   }
 
   @Override
-  public Dataset<T>	as(scala.Symbol alias) {
-    return from(super.);
+  public Dataset<T> as(final scala.Symbol alias) {
+    return from(super.as(alias));
   }
 
   @Override
-  public Dataset<T>	cache() {
-    return from(super.);
+  public Dataset<T> cache() {
+    return from(super.cache());
   }
 
   @Override
-  public Dataset<T>	checkpoint() {
-    return from(super.);
+  public Dataset<T> checkpoint() {
+    return from(super.checkpoint());
   }
 
   @Override
-  public Dataset<T>	checkpoint(boolean eager) {
-    return from(super.);
+  public Dataset<T> checkpoint(final boolean eager) {
+    return from(super.checkpoint(eager));
   }
 
   @Override
-  public Dataset<T>	coalesce(int numPartitions) {
-    return from(super.);
+  public Dataset<T> coalesce(final int numPartitions) {
+    return from(super.coalesce(numPartitions));
   }
 
   @Override
-  public Dataset<Row>	crossJoin(Dataset<?> right) {
-    return from(super.);
+  public Dataset<Row> crossJoin(final org.apache.spark.sql.Dataset<?> right) {
+    return from(super.crossJoin(right));
   }
 
   @Override
-  public Dataset<Row>	describe(scala.collection.Seq<String> cols) {
-    return from(super.);
+  public Dataset<Row> describe(final scala.collection.Seq<String> cols) {
+    return from(super.describe(cols));
   }
 
   @Override
-  public Dataset<Row>	describe(String... cols) {
-    return from(super.);
+  public Dataset<Row> describe(final String... cols) {
+    return from(super.describe(cols));
   }
 
   @Override
-  public Dataset<T>	distinct() {
-    return from(super.);
+  public Dataset<T> distinct() {
+    return from(super.distinct());
   }
 
   @Override
-  public Dataset<Row>	drop(Column col) {
-    return from(super.);
+  public Dataset<Row> drop(final Column col) {
+    return from(super.drop(col));
   }
 
   @Override
-  public Dataset<Row>	drop(scala.collection.Seq<String> colNames) {
-    return from(super.);
+  public Dataset<Row> drop(final scala.collection.Seq<String> colNames) {
+    return from(super.drop(colNames));
   }
 
   @Override
-  public Dataset<Row>	drop(String... colNames) {
-    return from(super.);
+  public Dataset<Row> drop(final String... colNames) {
+    return from(super.drop(colNames));
   }
 
   @Override
-  public Dataset<Row>	drop(String colName) {
-    return from(super.);
+  public Dataset<Row> drop(final String colName) {
+    return from(super.drop(colName));
   }
 
   @Override
-  public Dataset<T>	dropDuplicates() {
-    return from(super.);
+  public Dataset<T> dropDuplicates() {
+    return from(super.dropDuplicates());
   }
 
   @Override
-  public Dataset<T>	dropDuplicates(scala.collection.Seq<String> colNames) {
-    return from(super.);
+  public Dataset<T> dropDuplicates(final scala.collection.Seq<String> colNames) {
+    return from(super.dropDuplicates(colNames));
   }
 
   @Override
-  public Dataset<T>	dropDuplicates(String[] colNames) {
-    return from(super.);
+  public Dataset<T> dropDuplicates(final String[] colNames) {
+    return from(super.dropDuplicates(colNames));
   }
 
   @Override
-  public Dataset<T>	dropDuplicates(String col1, scala.collection.Seq<String> cols) {
-    return from(super.);
+  public Dataset<T> dropDuplicates(final String col1, final scala.collection.Seq<String> cols) {
+    return from(super.dropDuplicates(col1, cols));
   }
 
   @Override
-  public Dataset<T>	dropDuplicates(String col1, String... cols) {
-    return from(super.);
+  public Dataset<T> dropDuplicates(final String col1, final String... cols) {
+    return from(super.dropDuplicates(col1, cols));
   }
 
   @Override
-  public Dataset<T>	except(Dataset<T> other) {
-    return from(super.);
+  public Dataset<T> except(final org.apache.spark.sql.Dataset<T> other) {
+    return from(super.except(other));
   }
 
   @Override
-  public Dataset<T>	filter(Column condition) {
-    return from(super.);
+  public Dataset<T> filter(final Column condition) {
+    return from(super.filter(condition));
   }
 
   @Override
-  public Dataset<T>	filter(String conditionExpr) {
-    return from(super.);
+  public Dataset<T> filter(final String conditionExpr) {
+    return from(super.filter(conditionExpr));
   }
 
   @Override
-  public Dataset<T>	hint(String name, Object... parameters) {
-    return from(super.);
+  public Dataset<T> hint(final String name, final Object... parameters) {
+    return from(super.hint(name, parameters));
   }
 
   @Override
-  public Dataset<T>	hint(String name, scala.collection.Seq<Object> parameters) {
-    return from(super.);
+  public Dataset<T> hint(final String name, final scala.collection.Seq<Object> parameters) {
+    return from(super.hint(name, parameters));
   }
 
   @Override
-  public Dataset<T>	intersect(Dataset<T> other) {
-    return from(super.);
+  public Dataset<T> intersect(final org.apache.spark.sql.Dataset<T> other) {
+    return from(super.intersect(other));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right) {
+    return from(super.join(right));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right, Column joinExprs) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs) {
+    return from(super.join(right, joinExprs));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right, Column joinExprs, String joinType) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs, final String joinType) {
+    return from(super.join(right, joinExprs, joinType));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right, scala.collection.Seq<String> usingColumns) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right,
+                           final scala.collection.Seq<String> usingColumns) {
+    return from(super.join(right, usingColumns));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right, scala.collection.Seq<String> usingColumns, String joinType) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final scala.collection.Seq<String> usingColumns,
+                           final String joinType) {
+    return from(super.join(right, usingColumns, joinType));
   }
 
   @Override
-  public Dataset<Row>	join(Dataset<?> right, String usingColumn) {
-    return from(super.);
+  public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final String usingColumn) {
+    return from(super.join(right, usingColumn));
   }
 
   @Override
-  public Dataset<T>	limit(int n) {
-    return from(super.);
+  public Dataset<T> limit(final int n) {
+    return from(super.limit(n));
   }
 
-  @Override
-  public static Dataset<Row>	ofRows(SparkSession sparkSession, org.apache.spark.sql.catalyst.plans.logical.LogicalPlan logicalPlan) {
-    return from(super.);
+  /**
+   * Overrides super.ofRows.
+   * @param sparkSession Spark Session.
+   * @param logicalPlan Spark logical plan.
+   * @return Dataset of the given rows.
+   */
+  public static Dataset<Row> ofRows(final org.apache.spark.sql.SparkSession sparkSession,
+                                    final org.apache.spark.sql.catalyst.plans.logical.LogicalPlan logicalPlan) {
+    return from(org.apache.spark.sql.Dataset.ofRows(sparkSession, logicalPlan));
   }
 
   @Override
-  public Dataset<T>	orderBy(Column... sortExprs) {
-    return from(super.);
+  public Dataset<T> orderBy(final Column... sortExprs) {
+    return from(super.orderBy(sortExprs));
   }
 
   @Override
-  public Dataset<T>	orderBy(scala.collection.Seq<Column> sortExprs) {
-    return from(super.);
+  public Dataset<T> orderBy(final scala.collection.Seq<Column> sortExprs) {
+    return from(super.orderBy(sortExprs));
   }
 
   @Override
-  public Dataset<T>	orderBy(String sortCol, scala.collection.Seq<String> sortCols) {
-    return from(super.);
+  public Dataset<T> orderBy(final String sortCol, final scala.collection.Seq<String> sortCols) {
+    return from(super.orderBy(sortCol, sortCols));
   }
 
   @Override
-  public Dataset<T>	orderBy(String sortCol, String... sortCols) {
-    return from(super.);
+  public Dataset<T> orderBy(final String sortCol, final String... sortCols) {
+    return from(super.orderBy(sortCol, sortCols));
   }
 
   @Override
-  public Dataset<T>	persist() {
-    return from(super.);
+  public Dataset<T> persist() {
+    return from(super.persist());
   }
 
   @Override
-  public Dataset<T>	persist(StorageLevel newLevel) {
-    return from(super.);
+  public Dataset<T> persist(final StorageLevel newLevel) {
+    return from(super.persist(newLevel));
   }
 
   @Override
-  public Dataset<T>[]	randomSplit(double[] weights) {
-    return from(super.);
+  public Dataset<T>[] randomSplit(final double[] weights) {
+    return Stream.of(super.randomSplit(weights)).map(ds -> from(ds)).toArray(Dataset[]::new);
   }
 
   @Override
-  public Dataset<T>[]	randomSplit(double[] weights, long seed) {
-    return from(super.);
+  public Dataset<T>[] randomSplit(final double[] weights, final long seed) {
+    return Stream.of(super.randomSplit(weights, seed)).map(ds -> from(ds)).toArray(Dataset[]::new);
   }
 
-  @Override
-  public java.util.List<Dataset<T>>	randomSplitAsList(double[] weights, long seed) {
-    return from(super.);
-  }
+//  @Override
+//  public java.util.List<Dataset<T>> randomSplitAsList(double[] weights, long seed) {
+//    return super.randomSplitAsList(weights, seed).stream().map(ds -> from(ds)).collect(Collectors.toList());
+//  }
 
   @Override
-  public Dataset<T>	repartition(Column... partitionExprs) {
-    return from(super.);
+  public Dataset<T> repartition(final Column... partitionExprs) {
+    return from(super.repartition(partitionExprs));
   }
 
   @Override
-  public Dataset<T>	repartition(int numPartitions) {
-    return from(super.);
+  public Dataset<T> repartition(final int numPartitions) {
+    return from(super.repartition(numPartitions));
   }
 
   @Override
-  public Dataset<T>	repartition(int numPartitions, Column... partitionExprs) {
-    return from(super.);
+  public Dataset<T> repartition(final int numPartitions, final Column... partitionExprs) {
+    return from(super.repartition(numPartitions, partitionExprs));
   }
 
   @Override
-  public Dataset<T>	repartition(int numPartitions, scala.collection.Seq<Column> partitionExprs) {
-    return from(super.);
+  public Dataset<T> repartition(final int numPartitions, final scala.collection.Seq<Column> partitionExprs) {
+    return from(super.repartition(numPartitions, partitionExprs));
   }
 
   @Override
-  public Dataset<T>	repartition(scala.collection.Seq<Column> partitionExprs) {
-    return from(super.);
+  public Dataset<T> repartition(final scala.collection.Seq<Column> partitionExprs) {
+    return from(super.repartition(partitionExprs));
   }
 
   @Override
-  public Dataset<T>	sample(boolean withReplacement, double fraction) {
-    return from(super.);
+  public Dataset<T> sample(final boolean withReplacement, final double fraction) {
+    return from(super.sample(withReplacement, fraction));
   }
 
   @Override
-  public Dataset<T>	sample(boolean withReplacement, double fraction, long seed) {
-    return from(super.);
+  public Dataset<T> sample(final boolean withReplacement, final double fraction, final long seed) {
+    return from(super.sample(withReplacement, fraction, seed));
   }
 
   @Override
-  public Dataset<Row>	select(Column... cols) {
-    return from(super.);
+  public Dataset<Row> select(final Column... cols) {
+    return from(super.select(cols));
   }
 
   @Override
-  public Dataset<Row>	select(scala.collection.Seq<Column> cols) {
-    return from(super.);
+  public Dataset<Row> select(final scala.collection.Seq<Column> cols) {
+    return from(super.select(cols));
   }
 
   @Override
-  public Dataset<Row>	select(String col, scala.collection.Seq<String> cols) {
-    return from(super.);
+  public Dataset<Row> select(final String col, final scala.collection.Seq<String> cols) {
+    return from(super.select(col, cols));
   }
 
   @Override
-  public Dataset<Row>	select(String col, String... cols) {
-    return from(super.);
+  public Dataset<Row> select(final String col, final String... cols) {
+    return from(super.select(col, cols));
   }
 
   @Override
-  public Dataset<Row>	selectExpr(scala.collection.Seq<String> exprs) {
-    return from(super.);
+  public Dataset<Row> selectExpr(final scala.collection.Seq<String> exprs) {
+    return from(super.selectExpr(exprs));
   }
 
   @Override
-  public Dataset<Row>	selectExpr(String... exprs) {
-    return from(super.);
+  public Dataset<Row> selectExpr(final String... exprs) {
+    return from(super.selectExpr(exprs));
   }
 
   @Override
-  public Dataset<T>	sort(Column... sortExprs) {
-    return from(super.);
+  public Dataset<T> sort(final Column... sortExprs) {
+    return from(super.sort(sortExprs));
   }
 
   @Override
-  public Dataset<T>	sort(scala.collection.Seq<Column> sortExprs) {
-    return from(super.);
+  public Dataset<T> sort(final scala.collection.Seq<Column> sortExprs) {
+    return from(super.sort(sortExprs));
   }
 
   @Override
-  public Dataset<T>	sort(String sortCol, scala.collection.Seq<String> sortCols) {
-    return from(super.);
+  public Dataset<T> sort(final String sortCol, final scala.collection.Seq<String> sortCols) {
+    return from(super.sort(sortCol, sortCols));
   }
 
   @Override
-  public Dataset<T>	sort(String sortCol, String... sortCols) {
-    return from(super.);
+  public Dataset<T> sort(final String sortCol, final String... sortCols) {
+    return from(super.sort(sortCol, sortCols));
   }
 
   @Override
-  public Dataset<T>	sortWithinPartitions(Column... sortExprs) {
-    return from(super.);
+  public Dataset<T> sortWithinPartitions(final Column... sortExprs) {
+    return from(super.sortWithinPartitions(sortExprs));
   }
 
   @Override
-  public Dataset<T>	sortWithinPartitions(scala.collection.Seq<Column> sortExprs) {
-    return from(super.);
+  public Dataset<T> sortWithinPartitions(final scala.collection.Seq<Column> sortExprs) {
+    return from(super.sortWithinPartitions(sortExprs));
   }
 
   @Override
-  public Dataset<T>	sortWithinPartitions(String sortCol, scala.collection.Seq<String> sortCols) {
-    return from(super.);
+  public Dataset<T> sortWithinPartitions(final String sortCol, final scala.collection.Seq<String> sortCols) {
+    return from(super.sortWithinPartitions(sortCol, sortCols));
   }
 
   @Override
-  public Dataset<T>	sortWithinPartitions(String sortCol, String... sortCols) {
-    return from(super.);
+  public Dataset<T> sortWithinPartitions(final String sortCol, final String... sortCols) {
+    return from(super.sortWithinPartitions(sortCol, sortCols));
   }
 
   @Override
-  public SparkSession	sparkSession() {
+  public SparkSession sparkSession() {
     return (SparkSession) super.sparkSession();
   }
 
   @Override
-  public Dataset<Row>	toDF() {
-    return from(super.);
+  public Dataset<Row> toDF() {
+    return from(super.toDF());
   }
 
   @Override
-  public Dataset<Row>	toDF(scala.collection.Seq<String> colNames) {
-    return from(super.);
+  public Dataset<Row> toDF(final scala.collection.Seq<String> colNames) {
+    return from(super.toDF(colNames));
   }
 
   @Override
-  public Dataset<Row>	toDF(String... colNames) {
-    return from(super.);
+  public Dataset<Row> toDF(final String... colNames) {
+    return from(super.toDF(colNames));
   }
 
   @Override
-  public Dataset<String>	toJSON() {
-    return from(super.);
+  public Dataset<String> toJSON() {
+    return from(super.toJSON());
   }
 
   @Override
-  public <U> Dataset<U>	transform(scala.Function1<Dataset<T>,Dataset<U>> t) {
-    return from(super.);
+  public <U> Dataset<U> transform(
+      final scala.Function1<org.apache.spark.sql.Dataset<T>, org.apache.spark.sql.Dataset<U>> t) {
+    return from(super.transform(t));
   }
 
   @Override
-  public Dataset<T>	union(Dataset<T> other) {
-    return from(super.);
+  public Dataset<T> union(final org.apache.spark.sql.Dataset<T> other) {
+    return from(super.union(other));
   }
 
   @Override
-  public Dataset<T>	unpersist() {
-    return from(super.);
+  public Dataset<T> unpersist() {
+    return from(super.unpersist());
   }
 
   @Override
-  public Dataset<T>	unpersist(boolean blocking) {
-    return from(super.);
+  public Dataset<T> unpersist(final boolean blocking) {
+    return from(super.unpersist(blocking));
   }
 
   @Override
-  public Dataset<T>	where(Column condition) {
-    return from(super.);
+  public Dataset<T> where(final Column condition) {
+    return from(super.where(condition));
   }
 
   @Override
-  public Dataset<T>	where(String conditionExpr) {
-    return from(super.);
+  public Dataset<T> where(final String conditionExpr) {
+    return from(super.where(conditionExpr));
   }
 
   @Override
-  public Dataset<Row>	withColumn(String colName, Column col) {
-    return from(super.);
+  public Dataset<Row> withColumn(final String colName, final Column col) {
+    return from(super.withColumn(colName, col));
   }
 
   @Override
-  public Dataset<Row>	withColumnRenamed(String existingName, String newName) {
-    return from(super.);
+  public Dataset<Row> withColumnRenamed(final String existingName, final String newName) {
+    return from(super.withColumnRenamed(existingName, newName));
   }
 }
