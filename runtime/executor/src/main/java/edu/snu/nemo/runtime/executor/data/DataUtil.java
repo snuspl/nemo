@@ -241,6 +241,7 @@ public final class DataUtil {
             }
           }
         } catch (final IOException e) {
+          // We cannot recover IOException thrown by buildInputStream.
           throw new RuntimeException(e);
         }
         try {
@@ -249,6 +250,7 @@ public final class DataUtil {
           elementsDecoded++;
           return true;
         } catch (final IOException e) {
+          // IOException from decoder indicates EOF event.
           numSerializedBytes += serializedCountingStream.getCount();
           numEncodedBytes += encodedCountingStream.getCount();
           serializedCountingStream = null;
@@ -336,13 +338,13 @@ public final class DataUtil {
     static <E> IteratorWithNumBytes<E> of(final Iterator<E> innerIterator) {
       return new IteratorWithNumBytes<E>() {
         @Override
-        public long getNumSerializedBytes() {
-          throw new UnsupportedOperationException();
+        public long getNumSerializedBytes() throws NumBytesNotSupportedException {
+          throw new NumBytesNotSupportedException();
         }
 
         @Override
-        public long getNumEncodedBytes() {
-          throw new UnsupportedOperationException();
+        public long getNumEncodedBytes() throws NumBytesNotSupportedException {
+          throw new NumBytesNotSupportedException();
         }
 
         @Override
@@ -357,11 +359,6 @@ public final class DataUtil {
       };
     }
 
-    /**
-     * @param innerIterator {@link Iterator} to wrap
-     * @param <E> the type of decoded object
-     * @return an {@link IteratorWithNumBytes}, with no information about the number of bytes
-     */
     /**
      * Create an {@link IteratorWithNumBytes}, with the number of bytes in decoded and serialized form.
      * @param innerIterator {@link Iterator} to wrap
@@ -397,17 +394,29 @@ public final class DataUtil {
     }
 
     /**
+     * Exception indicates {@link #getNumSerializedBytes()} or {@link #getNumEncodedBytes()} is not supported.
+     */
+    final class NumBytesNotSupportedException extends Exception {
+      /**
+       * Creates {@link NumBytesNotSupportedException}.
+       */
+      public NumBytesNotSupportedException() {
+        super("Getting number of bytes is not supported");
+      }
+    }
+
+    /**
      * @return the number of bytes in serialized form (which is, for example, encoded and compressed)
-     * @throws UnsupportedOperationException when then information is not available
+     * @throws NumBytesNotSupportedException when the operation is not supported
      * @throws IllegalStateException when the information is not ready
      */
-    long getNumSerializedBytes();
+    long getNumSerializedBytes() throws NumBytesNotSupportedException;
 
     /**
      * @return the number of bytes in encoded form (which is ready to be decoded)
-     * @throws UnsupportedOperationException when then information is not available
+     * @throws NumBytesNotSupportedException when the operation is not supported
      * @throws IllegalStateException when the information is not ready
      */
-    long getNumEncodedBytes();
+    long getNumEncodedBytes() throws NumBytesNotSupportedException;
   }
 }

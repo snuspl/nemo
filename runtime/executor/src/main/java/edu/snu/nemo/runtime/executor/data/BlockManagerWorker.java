@@ -137,7 +137,7 @@ public final class BlockManagerWorker {
           }
           return CompletableFuture.completedFuture(DataUtil.IteratorWithNumBytes.of(innerIterator, numSerializedBytes,
               numEncodedBytes));
-        } catch (final UnsupportedOperationException e) {
+        } catch (final DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException e) {
           return CompletableFuture.completedFuture(DataUtil.IteratorWithNumBytes.of(innerIterator));
         }
       } catch (final IOException e) {

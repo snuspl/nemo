@@ -324,7 +324,7 @@ public final class TaskGroupExecutor {
           try {
             accumulatedSerializedBlockSize += availableData.left().getNumSerializedBytes();
             accumulatedEncodedBlockSize += availableData.left().getNumEncodedBytes();
-          } catch (final UnsupportedOperationException e) {
+          } catch (final DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException e) {
             blockSizeAvailable = false;
           }
         }
@@ -366,8 +366,8 @@ public final class TaskGroupExecutor {
     final long writeEndTime = System.currentTimeMillis();
     metric.put("OutputTime(ms)", writeEndTime - transformEndTime + accumulatedWriteTime);
     if (blockSizeAvailable) {
-      metric.put("ReadSerializedBytes", accumulatedSerializedBlockSize);
-      metric.put("ReadEncodedBytes", accumulatedEncodedBlockSize);
+      metric.put("ReadBytes", accumulatedSerializedBlockSize);
+      metric.put("ReadBytes", accumulatedEncodedBlockSize);
     }
     putWrittenBytesMetric(writtenBytesList, metric);
 

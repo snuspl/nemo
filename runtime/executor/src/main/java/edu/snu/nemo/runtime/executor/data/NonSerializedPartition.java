@@ -57,22 +57,24 @@ public final class NonSerializedPartition<K> implements Partition<Iterable, K> {
 
   /**
    * @return the number of bytes in serialized form (which is, for example, encoded and compressed)
-   * @throws UnsupportedOperationException when then information is not available
+   * @throws edu.snu.nemo.runtime.executor.data.DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException
+   *         when then information is not available
    */
-  public long getNumSerializedBytes() {
+  public long getNumSerializedBytes() throws DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException {
     if (numSerializedBytes == -1) {
-      throw new UnsupportedOperationException();
+      throw new DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException();
     }
     return numSerializedBytes;
   }
 
   /**
    * @return the number of bytes in encoded form (which is ready to be decoded)
-   * @throws UnsupportedOperationException when then information is not available
+   * @throws edu.snu.nemo.runtime.executor.data.DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException
+   *         when then information is not available
    */
-  public long getNumEncodedBytes() {
+  public long getNumEncodedBytes() throws DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException {
     if (numEncodedBytes == -1) {
-      throw new UnsupportedOperationException();
+      throw new DataUtil.IteratorWithNumBytes.NumBytesNotSupportedException();
     }
     return numEncodedBytes;
   }
