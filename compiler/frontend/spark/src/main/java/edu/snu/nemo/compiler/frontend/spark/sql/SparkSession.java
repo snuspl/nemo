@@ -58,7 +58,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   }
 
   @Override
-  public void setUserTriggered(boolean userTriggered) {
+  public void setUserTriggered(final boolean userTriggered) {
     this.userTriggered = userTriggered;
   }
 

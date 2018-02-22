@@ -74,62 +74,62 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   }
 
   @Override
-  public void setUserTriggered(boolean userTriggered) {
+  public void setUserTriggered(final boolean userTriggered) {
     this.userTriggered = userTriggered;
   }
 
   @Override
   public Dataset<Row> agg(final Column expr, final Column... exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       expr, exprs));
   }
 
   @Override
   public Dataset<Row> agg(final Column expr, final scala.collection.Seq<Column> exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       expr, exprs));
   }
 
   @Override
   public Dataset<Row> agg(final scala.collection.immutable.Map<String, String> exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       exprs));
   }
 
   @Override
   public Dataset<Row> agg(final java.util.Map<String, String> exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       exprs));
   }
 
   @Override
   public Dataset<Row> agg(final scala.Tuple2<String, String> aggExpr,
                           final scala.collection.Seq<scala.Tuple2<String, String>> aggExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       aggExpr, aggExprs));
   }
 
   @Override
   public Dataset<T> alias(final String alias) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       alias));
   }
 
   @Override
   public Dataset<T> alias(final scala.Symbol alias) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       alias));
   }
 
   @Override
   public Dataset<T> as(final String alias) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       alias));
   }
 
   @Override
   public Dataset<T> as(final scala.Symbol alias) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       alias));
   }
 
@@ -145,31 +145,31 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> checkpoint(final boolean eager) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       eager));
   }
 
   @Override
   public Dataset<T> coalesce(final int numPartitions) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       numPartitions));
   }
 
   @Override
   public Dataset<Row> crossJoin(final org.apache.spark.sql.Dataset<?> right) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right));
   }
 
   @Override
   public Dataset<Row> describe(final scala.collection.Seq<String> cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       cols));
   }
 
   @Override
   public Dataset<Row> describe(final String... cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       cols));
   }
 
@@ -180,25 +180,25 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<Row> drop(final Column col) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       col));
   }
 
   @Override
   public Dataset<Row> drop(final scala.collection.Seq<String> colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
   @Override
   public Dataset<Row> drop(final String... colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
   @Override
   public Dataset<Row> drop(final String colName) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colName));
   }
 
@@ -209,105 +209,105 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> dropDuplicates(final scala.collection.Seq<String> colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
   @Override
   public Dataset<T> dropDuplicates(final String[] colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
   @Override
   public Dataset<T> dropDuplicates(final String col1, final scala.collection.Seq<String> cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       col1, cols));
   }
 
   @Override
   public Dataset<T> dropDuplicates(final String col1, final String... cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       col1, cols));
   }
 
   @Override
   public Dataset<T> except(final org.apache.spark.sql.Dataset<T> other) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       other));
   }
 
   @Override
   public Dataset<T> filter(final Column condition) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       condition));
   }
 
   @Override
   public Dataset<T> filter(final String conditionExpr) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       conditionExpr));
   }
 
   @Override
   public Dataset<T> hint(final String name, final Object... parameters) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       name, parameters));
   }
 
   @Override
   public Dataset<T> hint(final String name, final scala.collection.Seq<Object> parameters) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       name, parameters));
   }
 
   @Override
   public Dataset<T> intersect(final org.apache.spark.sql.Dataset<T> other) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       other));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right, joinExprs));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs, final String joinType) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right, joinExprs, joinType));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right,
                            final scala.collection.Seq<String> usingColumns) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right, usingColumns));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final scala.collection.Seq<String> usingColumns,
                            final String joinType) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right, usingColumns, joinType));
   }
 
   @Override
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final String usingColumn) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       right, usingColumn));
   }
 
   @Override
   public Dataset<T> limit(final int n) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       n));
   }
 
@@ -324,25 +324,25 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> orderBy(final Column... sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> orderBy(final scala.collection.Seq<Column> sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> orderBy(final String sortCol, final scala.collection.Seq<String> sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
   @Override
   public Dataset<T> orderBy(final String sortCol, final String... sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
@@ -353,7 +353,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> persist(final StorageLevel newLevel) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       newLevel));
   }
 
@@ -374,127 +374,127 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> repartition(final Column... partitionExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       partitionExprs));
   }
 
   @Override
   public Dataset<T> repartition(final int numPartitions) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       numPartitions));
   }
 
   @Override
   public Dataset<T> repartition(final int numPartitions, final Column... partitionExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       numPartitions, partitionExprs));
   }
 
   @Override
   public Dataset<T> repartition(final int numPartitions, final scala.collection.Seq<Column> partitionExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       numPartitions, partitionExprs));
   }
 
   @Override
   public Dataset<T> repartition(final scala.collection.Seq<Column> partitionExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       partitionExprs));
   }
 
   @Override
   public Dataset<T> sample(final boolean withReplacement, final double fraction) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       withReplacement, fraction));
   }
 
   @Override
   public Dataset<T> sample(final boolean withReplacement, final double fraction, final long seed) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       withReplacement, fraction, seed));
   }
 
   @Override
   public Dataset<Row> select(final Column... cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       cols));
   }
 
   @Override
   public Dataset<Row> select(final scala.collection.Seq<Column> cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       cols));
   }
 
   @Override
   public Dataset<Row> select(final String col, final scala.collection.Seq<String> cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       col, cols));
   }
 
   @Override
   public Dataset<Row> select(final String col, final String... cols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       col, cols));
   }
 
   @Override
   public Dataset<Row> selectExpr(final scala.collection.Seq<String> exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       exprs));
   }
 
   @Override
   public Dataset<Row> selectExpr(final String... exprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       exprs));
   }
 
   @Override
   public Dataset<T> sort(final Column... sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> sort(final scala.collection.Seq<Column> sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> sort(final String sortCol, final scala.collection.Seq<String> sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
   @Override
   public Dataset<T> sort(final String sortCol, final String... sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
   @Override
   public Dataset<T> sortWithinPartitions(final Column... sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> sortWithinPartitions(final scala.collection.Seq<Column> sortExprs) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortExprs));
   }
 
   @Override
   public Dataset<T> sortWithinPartitions(final String sortCol, final scala.collection.Seq<String> sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
   @Override
   public Dataset<T> sortWithinPartitions(final String sortCol, final String... sortCols) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       sortCol, sortCols));
   }
 
@@ -510,13 +510,13 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<Row> toDF(final scala.collection.Seq<String> colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
   @Override
   public Dataset<Row> toDF(final String... colNames) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colNames));
   }
 
@@ -528,13 +528,13 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   @Override
   public <U> Dataset<U> transform(
       final scala.Function1<org.apache.spark.sql.Dataset<T>, org.apache.spark.sql.Dataset<U>> t) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       t));
   }
 
   @Override
   public Dataset<T> union(final org.apache.spark.sql.Dataset<T> other) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       other));
   }
 
@@ -545,31 +545,31 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
 
   @Override
   public Dataset<T> unpersist(final boolean blocking) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       blocking));
   }
 
   @Override
   public Dataset<T> where(final Column condition) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       condition));
   }
 
   @Override
   public Dataset<T> where(final String conditionExpr) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       conditionExpr));
   }
 
   @Override
   public Dataset<Row> withColumn(final String colName, final Column col) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       colName, col));
   }
 
   @Override
   public Dataset<Row> withColumnRenamed(final String existingName, final String newName) {
-    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       existingName, newName));
   }
 }

@@ -44,31 +44,31 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   }
 
   @Override
-  public void setUserTriggered(boolean userTriggered) {
+  public void setUserTriggered(final boolean userTriggered) {
     this.userTriggered = userTriggered;
   }
 
   @Override
   public Dataset<Row> csv(final org.apache.spark.sql.Dataset<String> csvDataset) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       csvDataset));
   }
 
   @Override
   public Dataset<Row> csv(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> csv(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> csv(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
@@ -80,14 +80,14 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> jdbc(final String url, final String table, final java.util.Properties properties) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       url, table, properties));
   }
 
   @Override
   public Dataset<Row> jdbc(final String url, final String table,
                             final String[] predicates, final java.util.Properties connectionProperties) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       url, table, predicates, connectionProperties));
   }
 
@@ -107,31 +107,31 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> json(final JavaRDD<String> jsonRDD) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       jsonRDD));
   }
 
   @Override
   public Dataset<Row> json(final RDD<String> jsonRDD) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       jsonRDD));
   }
 
   @Override
   public Dataset<Row> json(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> json(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> json(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
@@ -142,19 +142,19 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> load(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> load(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> load(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
@@ -196,37 +196,37 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> orc(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> orc(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> orc(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
   @Override
   public Dataset<Row> parquet(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> parquet(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> parquet(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
@@ -238,43 +238,43 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
 
   @Override
   public Dataset<Row> table(final String tableName) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       tableName));
   }
 
   @Override
   public Dataset<Row> text(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> text(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<Row> text(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 
   @Override
   public Dataset<String> textFile(final scala.collection.Seq<String> paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<String> textFile(final String... paths) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       paths));
   }
 
   @Override
   public Dataset<String> textFile(final String path) {
-    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this, 
+    return Dataset.from((org.apache.spark.sql.Dataset) SparkSession.callSuperclassMethod(this.sparkSession, this,
       path));
   }
 }

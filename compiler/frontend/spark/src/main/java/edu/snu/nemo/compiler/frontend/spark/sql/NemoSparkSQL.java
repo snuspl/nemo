@@ -1,5 +1,8 @@
 package edu.snu.nemo.compiler.frontend.spark.sql;
 
+/**
+ * Common interface for Nemo Spark classes.
+ */
 public interface NemoSparkSQL {
   /**
    * @return the userTriggered flag.
