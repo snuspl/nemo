@@ -19,6 +19,11 @@ package edu.snu.nemo.compiler.frontend.spark.sql;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.rdd.RDD;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.sources.BaseRelation;
+import org.apache.spark.sql.types.StructType;
 import scala.Tuple2;
 
 import javax.naming.OperationNotSupportedException;
@@ -31,9 +36,10 @@ import java.util.stream.Stream;
 /**
  * A simple version of the Spark session, containing SparkContext that contains SparkConf.
  */
-public final class SparkSession extends org.apache.spark.sql.SparkSession {
+public final class SparkSession extends org.apache.spark.sql.SparkSession implements NemoSparkSQL {
   private final LinkedHashMap<String, Object[]> datasetCommandsList;
   private final Map<String, String> initialConf;
+  private boolean userTriggered;
 
   /**
    * Constructor.
@@ -43,6 +49,50 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
     super(sparkContext);
     this.datasetCommandsList = new LinkedHashMap<>();
     this.initialConf = initialConf;
+    this.userTriggered = true;
+  }
+
+  @Override
+  public boolean isUserTriggered() {
+    return userTriggered;
+  }
+
+  @Override
+  public void setUserTriggered(boolean userTriggered) {
+    this.userTriggered = userTriggered;
+  }
+
+  /**
+   *
+   * @param session session to append the commands to.
+   * @param obj object to call the superclass's method from.
+   * @param args arguments of the method.
+   * @return the result of the superclass method.
+   */
+  public static Object callSuperclassMethod(final SparkSession session,
+                                            final NemoSparkSQL obj,
+                                            final Object... args) {
+    final String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
+    final Class<?>[] argTypes = Stream.of(args).map(o -> o.getClass()).toArray(Class[]::new);
+    final boolean isUserTriggered = obj.isUserTriggered();
+
+    try {
+      if (isUserTriggered) {
+        session.appendCommand(obj.getClass().getSimpleName() + "#" + methodName, args);
+        obj.setUserTriggered(false);
+      }
+
+      final Method method = obj.getClass().getSuperclass().getDeclaredMethod(methodName, argTypes);
+      final Object result = method.invoke(obj, args);
+
+      if (isUserTriggered) {
+        obj.setUserTriggered(true);
+      }
+
+      return result;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -50,7 +100,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
    * @param cmd the name of the command to apply. e.g. "SparkSession#read"
    * @param args arguments required for the command.
    */
-  public void appendCommand(final String cmd, final Object... args) {
+  private void appendCommand(final String cmd, final Object... args) {
     this.datasetCommandsList.put(cmd, args);
   }
 
@@ -58,7 +108,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
    * @return the commands list required to recreate the dataset on separate machines.
    */
   public LinkedHashMap<String, Object[]> getDatasetCommandsList() {
-    return datasetCommandsList;
+    return this.datasetCommandsList;
   }
 
   /**
@@ -88,36 +138,17 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
       final Object[] args = command.getValue();
       final Class<?>[] argTypes = Stream.of(args).map(o -> o.getClass()).toArray(Class[]::new);
 
-      switch (clazz) {
-        case "SparkSession":
-          final SparkSession sparkSession = ((SparkSession) result);
-          try {
-            final Method method = sparkSession.getClass().getMethod(methodName, argTypes);
-            result = method.invoke(sparkSession, args);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-          break;
-        case "DataFrameReader":
-          final DataFrameReader dataFrameReader = ((DataFrameReader) result);
-          try {
-            final Method method = dataFrameReader.getClass().getMethod(methodName, argTypes);
-            result = method.invoke(dataFrameReader, args);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-          break;
-        case "Dataset":
-          final Dataset dataset = ((Dataset) result);
-          try {
-            final Method method = dataset.getClass().getMethod(methodName, argTypes);
-            result = method.invoke(dataset, args);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-          break;
-        default:
-          throw new OperationNotSupportedException(cmd + " is not yet supported.");
+      if (!clazz.equals(SparkSession.class.getSimpleName())
+          && !clazz.equals(DataFrameReader.class.getSimpleName())
+          && !clazz.equals(Dataset.class.getSimpleName())) {
+        throw new OperationNotSupportedException(cmd + " is not yet supported.");
+      }
+
+      try {
+        final Method method = result.getClass().getDeclaredMethod(methodName, argTypes);
+        result = method.invoke(result, args);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
     }
 
@@ -126,8 +157,58 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession {
 
   @Override
   public DataFrameReader read() {
-    appendCommand("SparkSession#read");
+    callSuperclassMethod(this, this);
     return new DataFrameReader(this);
+  }
+
+  @Override
+  public Dataset<Row> baseRelationToDataFrame(final BaseRelation baseRelation) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, baseRelation));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final JavaRDD<?> rdd, final Class<?> beanClass) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, rdd, beanClass));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final JavaRDD<Row> rowRDD, final StructType schema) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, rowRDD, schema));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final java.util.List<?> data, final Class<?> beanClass) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, data, beanClass));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final java.util.List<Row> rows, final StructType schema) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, rows, schema));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final RDD<?> rdd, final Class<?> beanClass) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, rdd, beanClass));
+  }
+
+  @Override
+  public Dataset<Row> createDataFrame(final RDD<Row> rowRDD, final StructType schema) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, rowRDD, schema));
+  }
+
+  @Override
+  public Dataset<Row> emptyDataFrame() {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this));
+  }
+
+  @Override
+  public Dataset<Row> sql(final String sqlText) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, sqlText));
+  }
+
+  @Override
+  public Dataset<Row> table(final String tableName) {
+    return Dataset.from((org.apache.spark.sql.Dataset<Row>) callSuperclassMethod(this, this, tableName));
   }
 
   /**

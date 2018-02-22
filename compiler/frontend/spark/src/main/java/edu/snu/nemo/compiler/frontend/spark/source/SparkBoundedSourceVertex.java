@@ -78,6 +78,8 @@ public final class SparkBoundedSourceVertex<T> extends SourceVertex<T> {
       this.commands = commands;
       this.sessionInitialConf = sessionInitialConf;
       this.partitionIndex = partitionIndex;
+      System.out.println("COMMANDS");
+      commands.forEach((k, v) -> System.out.println(k + ": " + v.toString()));
     }
 
     @Override
