@@ -16,9 +16,10 @@
 package edu.snu.nemo.compiler.frontend.spark.sql;
 
 /**
- * Common interface for Nemo Spark classes.
+ * Common interface for SparkSQL supporting Nemo classes containing the methods that are exposed to users.
+ * We currently support {@link SparkSession}, {@link Dataset}, {@link DataFrameReader} APIs.
  */
-public interface NemoSparkSQL {
+public interface NemoSparkUserFacingClass {
   /**
    * @return the userTriggered flag.
    */

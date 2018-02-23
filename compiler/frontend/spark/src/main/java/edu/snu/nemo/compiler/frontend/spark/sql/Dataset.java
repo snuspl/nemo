@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * A dataset component: it represents relational data.
  * @param <T> type of the data.
  */
-public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements NemoSparkSQL {
+public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements NemoSparkUserFacingClass {
   /**
    * Constructor.
    * @param sparkSession spark session.

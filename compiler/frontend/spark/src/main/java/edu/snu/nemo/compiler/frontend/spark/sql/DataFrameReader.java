@@ -23,7 +23,7 @@ import org.apache.spark.sql.types.StructType;
 /**
  * A data frame reader to create the initial dataset.
  */
-public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader implements NemoSparkSQL {
+public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader implements NemoSparkUserFacingClass {
   private final SparkSession sparkSession;
 
   /**
