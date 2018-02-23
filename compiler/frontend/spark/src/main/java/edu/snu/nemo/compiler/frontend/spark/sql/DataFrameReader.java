@@ -21,14 +21,11 @@ import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.StructType;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * A data frame reader to create the initial dataset.
  */
 public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader implements NemoSparkSQL {
   private final SparkSession sparkSession;
-  private final AtomicBoolean userTriggered;
 
   /**
    * Constructor.
@@ -37,17 +34,6 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   DataFrameReader(final SparkSession sparkSession) {
     super(sparkSession);
     this.sparkSession = sparkSession;
-    this.userTriggered = new AtomicBoolean(true);
-  }
-
-  @Override
-  public boolean isUserTriggered() {
-    return userTriggered.get();
-  }
-
-  @Override
-  public void setUserTriggered(final boolean userTriggered) {
-    this.userTriggered.set(userTriggered);
   }
 
   @Override
@@ -59,7 +45,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> csv(final org.apache.spark.sql.Dataset<String> csvDataset) {
     final boolean userTriggered = initializeFunction(csvDataset);
     final Dataset<Row> result = Dataset.from(super.csv(csvDataset));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -67,7 +53,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> csv(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.csv(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -75,7 +61,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> csv(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.csv(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -83,7 +69,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> csv(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.csv(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -97,7 +83,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> jdbc(final String url, final String table, final java.util.Properties properties) {
     final boolean userTriggered = initializeFunction(url, table, properties);
     final Dataset<Row> result = Dataset.from(super.jdbc(url, table, properties));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -106,7 +92,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
                            final String[] predicates, final java.util.Properties connectionProperties) {
     final boolean userTriggered = initializeFunction(url, table, predicates, connectionProperties);
     final Dataset<Row> result = Dataset.from(super.jdbc(url, table, predicates, connectionProperties));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -118,7 +104,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
         url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties);
     final Dataset<Row> result = Dataset.from(super.jdbc(
         url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -126,7 +112,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final org.apache.spark.sql.Dataset<String> jsonDataset) {
     final boolean userTriggered = initializeFunction(jsonDataset);
     final Dataset<Row> result = Dataset.from(super.json(jsonDataset));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -134,7 +120,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final JavaRDD<String> jsonRDD) {
     final boolean userTriggered = initializeFunction(jsonRDD);
     final Dataset<Row> result = Dataset.from(super.json(jsonRDD));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -142,7 +128,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final RDD<String> jsonRDD) {
     final boolean userTriggered = initializeFunction(jsonRDD);
     final Dataset<Row> result = Dataset.from(super.json(jsonRDD));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -150,7 +136,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.json(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -158,7 +144,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.json(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -166,7 +152,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> json(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.json(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -174,7 +160,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> load() {
     final boolean userTriggered = initializeFunction();
     final Dataset<Row> result = Dataset.from(super.load());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -182,7 +168,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> load(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.load(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -190,7 +176,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> load(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.load(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -198,7 +184,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> load(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.load(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -242,7 +228,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> orc(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.orc(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -250,7 +236,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> orc(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.orc(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -258,7 +244,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> orc(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.orc(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -266,7 +252,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> parquet(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.parquet(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -274,7 +260,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> parquet(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.parquet(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -282,7 +268,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> parquet(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.parquet(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -296,7 +282,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> table(final String tableName) {
     final boolean userTriggered = initializeFunction(tableName);
     final Dataset<Row> result = Dataset.from(super.table(tableName));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -304,7 +290,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> text(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.text(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -312,7 +298,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> text(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<Row> result = Dataset.from(super.text(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -320,7 +306,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<Row> text(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<Row> result = Dataset.from(super.text(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -328,7 +314,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<String> textFile(final scala.collection.Seq<String> paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<String> result = Dataset.from(super.textFile(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -336,7 +322,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<String> textFile(final String... paths) {
     final boolean userTriggered = initializeFunction(paths);
     final Dataset<String> result = Dataset.from(super.textFile(paths));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -344,7 +330,7 @@ public final class DataFrameReader extends org.apache.spark.sql.DataFrameReader 
   public Dataset<String> textFile(final String path) {
     final boolean userTriggered = initializeFunction(path);
     final Dataset<String> result = Dataset.from(super.textFile(path));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 }

@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 public final class SparkSession extends org.apache.spark.sql.SparkSession implements NemoSparkSQL {
   private final LinkedHashMap<String, Object[]> datasetCommandsList;
   private final Map<String, String> initialConf;
-  private final AtomicBoolean userTriggered;
+  private final AtomicBoolean isUserTriggered;
 
   /**
    * Constructor.
@@ -50,17 +50,17 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
     super(sparkContext);
     this.datasetCommandsList = new LinkedHashMap<>();
     this.initialConf = initialConf;
-    this.userTriggered = new AtomicBoolean(true);
+    this.isUserTriggered = new AtomicBoolean(true);
   }
 
   @Override
-  public boolean isUserTriggered() {
-    return userTriggered.get();
+  public boolean getIsUserTriggered() {
+    return isUserTriggered.get();
   }
 
   @Override
-  public void setUserTriggered(final boolean userTriggered) {
-    this.userTriggered.set(userTriggered);
+  public void setIsUserTriggered(final boolean isUserTriggered) {
+    this.isUserTriggered.set(isUserTriggered);
   }
 
   @Override
@@ -106,14 +106,14 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
 
     for (Map.Entry<String, Object[]> command: commandList.entrySet()) {
       final String[] cmd = command.getKey().split("#");
-      final String clazz = cmd[0];
+      final String className = cmd[0];
       final String methodName = cmd[1];
       final Object[] args = command.getValue();
       final Class<?>[] argTypes = Stream.of(args).map(o -> o.getClass()).toArray(Class[]::new);
 
-      if (!clazz.equals(SparkSession.class.getSimpleName())
-          && !clazz.equals(DataFrameReader.class.getSimpleName())
-          && !clazz.equals(Dataset.class.getSimpleName())) {
+      if (!className.equals(SparkSession.class.getName())
+          && !className.equals(DataFrameReader.class.getName())
+          && !className.equals(Dataset.class.getName())) {
         throw new OperationNotSupportedException(command + " is not yet supported.");
       }
 
@@ -132,7 +132,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public DataFrameReader read() {
     final boolean userTriggered = initializeFunction();
     final DataFrameReader result = new DataFrameReader(this);
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -140,7 +140,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> baseRelationToDataFrame(final BaseRelation baseRelation) {
     final boolean userTriggered = initializeFunction(baseRelation);
     final Dataset<Row> result = Dataset.from(super.baseRelationToDataFrame(baseRelation));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -148,7 +148,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final JavaRDD<?> rdd, final Class<?> beanClass) {
     final boolean userTriggered = initializeFunction(rdd, beanClass);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rdd, beanClass));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -156,7 +156,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final JavaRDD<Row> rowRDD, final StructType schema) {
     final boolean userTriggered = initializeFunction(rowRDD, schema);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rowRDD, schema));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -164,7 +164,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final java.util.List<?> data, final Class<?> beanClass) {
     final boolean userTriggered = initializeFunction(data, beanClass);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(data, beanClass));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -172,7 +172,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final java.util.List<Row> rows, final StructType schema) {
     final boolean userTriggered = initializeFunction(rows, schema);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rows, schema));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -180,7 +180,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final RDD<?> rdd, final Class<?> beanClass) {
     final boolean userTriggered = initializeFunction(rdd, beanClass);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rdd, beanClass));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -188,7 +188,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final RDD<Row> rowRDD, final StructType schema) {
     final boolean userTriggered = initializeFunction(rowRDD, schema);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rowRDD, schema));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -196,7 +196,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> emptyDataFrame() {
     final boolean userTriggered = initializeFunction();
     final Dataset<Row> result = Dataset.from(super.emptyDataFrame());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -204,7 +204,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> sql(final String sqlText) {
     final boolean userTriggered = initializeFunction(sqlText);
     final Dataset<Row> result = Dataset.from(super.sql(sqlText));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -212,7 +212,7 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> table(final String tableName) {
     final boolean userTriggered = initializeFunction(tableName);
     final Dataset<Row> result = Dataset.from(super.table(tableName));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 

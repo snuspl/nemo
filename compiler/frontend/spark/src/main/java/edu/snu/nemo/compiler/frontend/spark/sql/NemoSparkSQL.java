@@ -7,13 +7,17 @@ public interface NemoSparkSQL {
   /**
    * @return the userTriggered flag.
    */
-  boolean isUserTriggered();
+  default boolean getIsUserTriggered() {
+    return sparkSession().getIsUserTriggered();
+  }
 
   /**
    * Set the userTriggered flag.
    * @param bool boolean to set the flag to.
    */
-  void setUserTriggered(boolean bool);
+  default void setIsUserTriggered(boolean bool) {
+    sparkSession().setIsUserTriggered(bool);
+  }
 
   /**
    * @return the sparkSession of the instance.
@@ -26,7 +30,7 @@ public interface NemoSparkSQL {
    * @return whether or not this function has been called by the user.
    */
   default boolean initializeFunction(final Object... args) {
-    if (!isUserTriggered()) {
+    if (!getIsUserTriggered()) {
       return false;
     }
 
@@ -34,7 +38,7 @@ public interface NemoSparkSQL {
     final String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
 
     sparkSession().appendCommand(className + "#" + methodName, args);
-    setUserTriggered(false);
+    setIsUserTriggered(false);
 
     return true;
   }

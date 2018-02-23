@@ -23,7 +23,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.storage.StorageLevel;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
@@ -31,8 +30,6 @@ import java.util.stream.Stream;
  * @param <T> type of the data.
  */
 public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements NemoSparkSQL {
-  private final AtomicBoolean userTriggered;
-
   /**
    * Constructor.
    * @param sparkSession spark session.
@@ -41,7 +38,6 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
    */
   private Dataset(final SparkSession sparkSession, final LogicalPlan logicalPlan, final Encoder<T> encoder) {
     super(sparkSession, logicalPlan, encoder);
-    this.userTriggered = new AtomicBoolean(true);
   }
 
   /**
@@ -68,20 +64,10 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   }
 
   @Override
-  public boolean isUserTriggered() {
-    return userTriggered.get();
-  }
-
-  @Override
-  public void setUserTriggered(final boolean userTriggered) {
-    this.userTriggered.set(userTriggered);
-  }
-
-  @Override
   public Dataset<Row> agg(final Column expr, final Column... exprs) {
     final boolean userTriggered = initializeFunction(expr, exprs);
     final Dataset<Row> result = from(super.agg(expr, exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -89,7 +75,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> agg(final Column expr, final scala.collection.Seq<Column> exprs) {
     final boolean userTriggered = initializeFunction(expr, exprs);
     final Dataset<Row> result = from(super.agg(expr, exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -97,7 +83,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> agg(final scala.collection.immutable.Map<String, String> exprs) {
     final boolean userTriggered = initializeFunction(exprs);
     final Dataset<Row> result = from(super.agg(exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -105,7 +91,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> agg(final java.util.Map<String, String> exprs) {
     final boolean userTriggered = initializeFunction(exprs);
     final Dataset<Row> result = from(super.agg(exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -114,7 +100,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
                           final scala.collection.Seq<scala.Tuple2<String, String>> aggExprs) {
     final boolean userTriggered = initializeFunction(aggExpr, aggExprs);
     final Dataset<Row> result = from(super.agg(aggExpr, aggExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -122,7 +108,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> alias(final String alias) {
     final boolean userTriggered = initializeFunction(alias);
     final Dataset<T> result = from(super.alias(alias));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -130,7 +116,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> alias(final scala.Symbol alias) {
     final boolean userTriggered = initializeFunction(alias);
     final Dataset<T> result = from(super.alias(alias));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -138,7 +124,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> as(final String alias) {
     final boolean userTriggered = initializeFunction(alias);
     final Dataset<T> result = from(super.as(alias));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -146,7 +132,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> as(final scala.Symbol alias) {
     final boolean userTriggered = initializeFunction(alias);
     final Dataset<T> result = from(super.as(alias));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -154,7 +140,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> cache() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.cache());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -162,7 +148,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> checkpoint() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.checkpoint());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -170,7 +156,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> checkpoint(final boolean eager) {
     final boolean userTriggered = initializeFunction(eager);
     final Dataset<T> result = from(super.checkpoint(eager));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -178,7 +164,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> coalesce(final int numPartitions) {
     final boolean userTriggered = initializeFunction(numPartitions);
     final Dataset<T> result = from(super.coalesce(numPartitions));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -186,7 +172,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> crossJoin(final org.apache.spark.sql.Dataset<?> right) {
     final boolean userTriggered = initializeFunction(right);
     final Dataset<Row> result = from(super.crossJoin(right));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -194,7 +180,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> describe(final scala.collection.Seq<String> cols) {
     final boolean userTriggered = initializeFunction(cols);
     final Dataset<Row> result = from(super.describe(cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -202,7 +188,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> describe(final String... cols) {
     final boolean userTriggered = initializeFunction(cols);
     final Dataset<Row> result = from(super.describe(cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -210,7 +196,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> distinct() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.distinct());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -218,7 +204,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> drop(final Column col) {
     final boolean userTriggered = initializeFunction(col);
     final Dataset<Row> result = from(super.drop(col));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -226,7 +212,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> drop(final scala.collection.Seq<String> colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<Row> result = from(super.drop(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -234,7 +220,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> drop(final String... colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<Row> result = from(super.drop(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -242,7 +228,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> drop(final String colName) {
     final boolean userTriggered = initializeFunction(colName);
     final Dataset<Row> result = from(super.drop(colName));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -250,7 +236,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> dropDuplicates() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.dropDuplicates());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -258,7 +244,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> dropDuplicates(final scala.collection.Seq<String> colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<T> result = from(super.dropDuplicates(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -266,7 +252,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> dropDuplicates(final String[] colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<T> result = from(super.dropDuplicates(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -274,7 +260,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> dropDuplicates(final String col1, final scala.collection.Seq<String> cols) {
     final boolean userTriggered = initializeFunction(col1, cols);
     final Dataset<T> result = from(super.dropDuplicates(col1, cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -282,7 +268,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> dropDuplicates(final String col1, final String... cols) {
     final boolean userTriggered = initializeFunction(col1, cols);
     final Dataset<T> result = from(super.dropDuplicates(col1, cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -290,7 +276,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> except(final org.apache.spark.sql.Dataset<T> other) {
     final boolean userTriggered = initializeFunction(other);
     final Dataset<T> result = from(super.except(other));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -298,7 +284,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> filter(final Column condition) {
     final boolean userTriggered = initializeFunction(condition);
     final Dataset<T> result = from(super.filter(condition));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -306,7 +292,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> filter(final String conditionExpr) {
     final boolean userTriggered = initializeFunction(conditionExpr);
     final Dataset<T> result = from(super.filter(conditionExpr));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -314,7 +300,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> hint(final String name, final Object... parameters) {
     final boolean userTriggered = initializeFunction(name, parameters);
     final Dataset<T> result = from(super.hint(name, parameters));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -322,7 +308,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> hint(final String name, final scala.collection.Seq<Object> parameters) {
     final boolean userTriggered = initializeFunction(name, parameters);
     final Dataset<T> result = from(super.hint(name, parameters));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -330,7 +316,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> intersect(final org.apache.spark.sql.Dataset<T> other) {
     final boolean userTriggered = initializeFunction(other);
     final Dataset<T> result = from(super.intersect(other));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -338,7 +324,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right) {
     final boolean userTriggered = initializeFunction(right);
     final Dataset<Row> result = from(super.join(right));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -346,7 +332,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs) {
     final boolean userTriggered = initializeFunction(right, joinExprs);
     final Dataset<Row> result = from(super.join(right, joinExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -354,7 +340,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final Column joinExprs, final String joinType) {
     final boolean userTriggered = initializeFunction(right, joinExprs, joinType);
     final Dataset<Row> result = from(super.join(right, joinExprs, joinType));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -363,7 +349,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
                            final scala.collection.Seq<String> usingColumns) {
     final boolean userTriggered = initializeFunction(right, usingColumns);
     final Dataset<Row> result = from(super.join(right, usingColumns));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -372,7 +358,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
                            final String joinType) {
     final boolean userTriggered = initializeFunction(right, usingColumns, joinType);
     final Dataset<Row> result = from(super.join(right, usingColumns, joinType));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -380,7 +366,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> join(final org.apache.spark.sql.Dataset<?> right, final String usingColumn) {
     final boolean userTriggered = initializeFunction(right, usingColumn);
     final Dataset<Row> result = from(super.join(right, usingColumn));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -388,7 +374,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> limit(final int n) {
     final boolean userTriggered = initializeFunction(n);
     final Dataset<T> result = from(super.limit(n));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -407,7 +393,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> orderBy(final Column... sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.orderBy(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -415,7 +401,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> orderBy(final scala.collection.Seq<Column> sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.orderBy(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -423,7 +409,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> orderBy(final String sortCol, final scala.collection.Seq<String> sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.orderBy(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -431,7 +417,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> orderBy(final String sortCol, final String... sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.orderBy(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -439,7 +425,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> persist() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.persist());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -447,7 +433,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> persist(final StorageLevel newLevel) {
     final boolean userTriggered = initializeFunction(newLevel);
     final Dataset<T> result = from(super.persist(newLevel));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -455,7 +441,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T>[] randomSplit(final double[] weights) {
     final boolean userTriggered = initializeFunction(weights);
     final Dataset<T>[] result = Stream.of(super.randomSplit(weights)).map(ds -> from(ds)).toArray(Dataset[]::new);
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -463,7 +449,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T>[] randomSplit(final double[] weights, final long seed) {
     final boolean userTriggered = initializeFunction(weights, seed);
     final Dataset<T>[] result = Stream.of(super.randomSplit(weights, seed)).map(ds -> from(ds)).toArray(Dataset[]::new);
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -476,7 +462,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> repartition(final Column... partitionExprs) {
     final boolean userTriggered = initializeFunction(partitionExprs);
     final Dataset<T> result = from(super.repartition(partitionExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -484,7 +470,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> repartition(final int numPartitions) {
     final boolean userTriggered = initializeFunction(numPartitions);
     final Dataset<T> result = from(super.repartition(numPartitions));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -492,7 +478,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> repartition(final int numPartitions, final Column... partitionExprs) {
     final boolean userTriggered = initializeFunction(numPartitions, partitionExprs);
     final Dataset<T> result = from(super.repartition(numPartitions, partitionExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -500,7 +486,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> repartition(final int numPartitions, final scala.collection.Seq<Column> partitionExprs) {
     final boolean userTriggered = initializeFunction(numPartitions, partitionExprs);
     final Dataset<T> result = from(super.repartition(numPartitions, partitionExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -508,7 +494,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> repartition(final scala.collection.Seq<Column> partitionExprs) {
     final boolean userTriggered = initializeFunction(partitionExprs);
     final Dataset<T> result = from(super.repartition(partitionExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -516,7 +502,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sample(final boolean withReplacement, final double fraction) {
     final boolean userTriggered = initializeFunction(withReplacement, fraction);
     final Dataset<T> result = from(super.sample(withReplacement, fraction));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -524,7 +510,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sample(final boolean withReplacement, final double fraction, final long seed) {
     final boolean userTriggered = initializeFunction(withReplacement, fraction, seed);
     final Dataset<T> result = from(super.sample(withReplacement, fraction, seed));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -532,7 +518,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> select(final Column... cols) {
     final boolean userTriggered = initializeFunction(cols);
     final Dataset<Row> result = from(super.select(cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -540,7 +526,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> select(final scala.collection.Seq<Column> cols) {
     final boolean userTriggered = initializeFunction(cols);
     final Dataset<Row> result = from(super.select(cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -548,7 +534,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> select(final String col, final scala.collection.Seq<String> cols) {
     final boolean userTriggered = initializeFunction(col, cols);
     final Dataset<Row> result = from(super.select(col, cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -556,7 +542,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> select(final String col, final String... cols) {
     final boolean userTriggered = initializeFunction(col, cols);
     final Dataset<Row> result = from(super.select(col, cols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -564,7 +550,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> selectExpr(final scala.collection.Seq<String> exprs) {
     final boolean userTriggered = initializeFunction(exprs);
     final Dataset<Row> result = from(super.selectExpr(exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -572,7 +558,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> selectExpr(final String... exprs) {
     final boolean userTriggered = initializeFunction(exprs);
     final Dataset<Row> result = from(super.selectExpr(exprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -580,7 +566,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sort(final Column... sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.sort(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -588,7 +574,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sort(final scala.collection.Seq<Column> sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.sort(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -596,7 +582,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sort(final String sortCol, final scala.collection.Seq<String> sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.sort(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -604,7 +590,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sort(final String sortCol, final String... sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.sort(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -612,7 +598,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sortWithinPartitions(final Column... sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.sortWithinPartitions(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -620,7 +606,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sortWithinPartitions(final scala.collection.Seq<Column> sortExprs) {
     final boolean userTriggered = initializeFunction(sortExprs);
     final Dataset<T> result = from(super.sortWithinPartitions(sortExprs));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -628,7 +614,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sortWithinPartitions(final String sortCol, final scala.collection.Seq<String> sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.sortWithinPartitions(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -636,7 +622,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> sortWithinPartitions(final String sortCol, final String... sortCols) {
     final boolean userTriggered = initializeFunction(sortCol, sortCols);
     final Dataset<T> result = from(super.sortWithinPartitions(sortCol, sortCols));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -649,7 +635,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> toDF() {
     final boolean userTriggered = initializeFunction();
     final Dataset<Row> result = from(super.toDF());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -657,7 +643,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> toDF(final scala.collection.Seq<String> colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<Row> result = from(super.toDF(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -665,7 +651,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> toDF(final String... colNames) {
     final boolean userTriggered = initializeFunction(colNames);
     final Dataset<Row> result = from(super.toDF(colNames));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -673,7 +659,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<String> toJSON() {
     final boolean userTriggered = initializeFunction();
     final Dataset<String> result = from(super.toJSON());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -682,7 +668,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
       final scala.Function1<org.apache.spark.sql.Dataset<T>, org.apache.spark.sql.Dataset<U>> t) {
     final boolean userTriggered = initializeFunction(t);
     final Dataset<U> result = from(super.transform(t));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -690,7 +676,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> union(final org.apache.spark.sql.Dataset<T> other) {
     final boolean userTriggered = initializeFunction(other);
     final Dataset<T> result = from(super.union(other));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -698,7 +684,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> unpersist() {
     final boolean userTriggered = initializeFunction();
     final Dataset<T> result = from(super.unpersist());
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -706,7 +692,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> unpersist(final boolean blocking) {
     final boolean userTriggered = initializeFunction(blocking);
     final Dataset<T> result = from(super.unpersist(blocking));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -714,7 +700,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> where(final Column condition) {
     final boolean userTriggered = initializeFunction(condition);
     final Dataset<T> result = from(super.where(condition));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -722,7 +708,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<T> where(final String conditionExpr) {
     final boolean userTriggered = initializeFunction(conditionExpr);
     final Dataset<T> result = from(super.where(conditionExpr));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -730,7 +716,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> withColumn(final String colName, final Column col) {
     final boolean userTriggered = initializeFunction(colName, col);
     final Dataset<Row> result = from(super.withColumn(colName, col));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 
@@ -738,7 +724,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   public Dataset<Row> withColumnRenamed(final String existingName, final String newName) {
     final boolean userTriggered = initializeFunction(existingName, newName);
     final Dataset<Row> result = from(super.withColumnRenamed(existingName, newName));
-    this.setUserTriggered(userTriggered);
+    this.setIsUserTriggered(userTriggered);
     return result;
   }
 }
