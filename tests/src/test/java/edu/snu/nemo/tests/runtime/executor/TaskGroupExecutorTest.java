@@ -28,8 +28,10 @@ import edu.snu.nemo.runtime.common.RuntimeIdGenerator;
 import edu.snu.nemo.runtime.common.plan.RuntimeEdge;
 import edu.snu.nemo.runtime.common.plan.physical.*;
 import edu.snu.nemo.runtime.common.state.TaskState;
+import edu.snu.nemo.runtime.executor.MetricMessageSender;
 import edu.snu.nemo.runtime.executor.TaskGroupExecutor;
 import edu.snu.nemo.runtime.executor.TaskGroupStateManager;
+import edu.snu.nemo.runtime.executor.data.DataUtil;
 import edu.snu.nemo.runtime.executor.datatransfer.DataTransferFactory;
 import edu.snu.nemo.runtime.executor.datatransfer.InputReader;
 import edu.snu.nemo.runtime.executor.datatransfer.OutputWriter;
@@ -50,10 +52,9 @@ import java.util.stream.StreamSupport;
 import static edu.snu.nemo.tests.runtime.RuntimeTestUtil.getRangedNumList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests {@link TaskGroupExecutor}.
@@ -71,6 +72,7 @@ public final class TaskGroupExecutorTest {
   private TaskGroupStateManager taskGroupStateManager;
   private Map<String, List<TaskState.State>> taskIdToStateList;
   private List<TaskState.State> expectedTaskStateList;
+  private MetricMessageSender metricMessageSender;
 
   @Before
   public void setUp() throws Exception {
@@ -101,6 +103,11 @@ public final class TaskGroupExecutorTest {
     when(dataTransferFactory.createReader(anyInt(), any(), any())).then(new InterStageReaderAnswer());
     when(dataTransferFactory.createLocalWriter(any(), anyInt(), any())).then(new WriterAnswer());
     when(dataTransferFactory.createWriter(any(), anyInt(), any(), any())).then(new WriterAnswer());
+
+    // Mock a MetricMessageSender.
+    metricMessageSender = mock(MetricMessageSender.class);
+    doNothing().when(metricMessageSender).send(anyString(), anyString());
+    doNothing().when(metricMessageSender).close();
   }
 
   /**
@@ -136,7 +143,7 @@ public final class TaskGroupExecutorTest {
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
-        scheduledTaskGroup, taskDag, taskGroupStateManager, dataTransferFactory);
+        scheduledTaskGroup, taskDag, taskGroupStateManager, dataTransferFactory, metricMessageSender);
     taskGroupExecutor.execute();
 
     // Check the output.
@@ -194,7 +201,7 @@ public final class TaskGroupExecutorTest {
 
     // Execute the task group.
     final TaskGroupExecutor taskGroupExecutor = new TaskGroupExecutor(
-        scheduledTaskGroup, taskDag, taskGroupStateManager, dataTransferFactory);
+        scheduledTaskGroup, taskDag, taskGroupStateManager, dataTransferFactory, metricMessageSender);
     taskGroupExecutor.execute();
 
     // Check the output.
@@ -220,8 +227,8 @@ public final class TaskGroupExecutorTest {
     @Override
     public InputReader answer(final InvocationOnMock invocationOnMock) throws Throwable {
       // Read the data.
-      final List<CompletableFuture<Iterator>> inputFutures = new ArrayList<>();
-      inputFutures.add(CompletableFuture.completedFuture(elements.iterator()));
+      final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> inputFutures = new ArrayList<>();
+      inputFutures.add(CompletableFuture.completedFuture(DataUtil.IteratorWithNumBytes.of(elements.iterator())));
       final InputReader inputReader = mock(InputReader.class);
       when(inputReader.read()).thenReturn(inputFutures);
       when(inputReader.isSideInputReader()).thenReturn(false);
@@ -237,11 +244,12 @@ public final class TaskGroupExecutorTest {
   private class InterStageReaderAnswer implements Answer<InputReader> {
     @Override
     public InputReader answer(final InvocationOnMock invocationOnMock) throws Throwable {
-      final List<CompletableFuture<Iterator>> inputFutures = new ArrayList<>(SOURCE_PARALLELISM);
+      final List<CompletableFuture<DataUtil.IteratorWithNumBytes>> inputFutures = new ArrayList<>(SOURCE_PARALLELISM);
       final int elementsPerSource = DATA_SIZE / SOURCE_PARALLELISM;
       for (int i = 0; i < SOURCE_PARALLELISM; i++) {
         inputFutures.add(CompletableFuture.completedFuture(
-            elements.subList(i * elementsPerSource, (i + 1) * elementsPerSource).iterator()));
+            DataUtil.IteratorWithNumBytes.of(elements.subList(i * elementsPerSource, (i + 1) * elementsPerSource)
+                .iterator())));
       }
       final InputReader inputReader = mock(InputReader.class);
       when(inputReader.read()).thenReturn(inputFutures);
