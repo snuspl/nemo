@@ -410,7 +410,7 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
   }
 
   @Override
-  public <U> Dataset<U>	mapPartitions(
+  public <U> Dataset<U> mapPartitions(
       scala.Function1<scala.collection.Iterator<T>, scala.collection.Iterator<U>> func,
       Encoder<U> evidence$7) {
     final boolean userTriggered = initializeFunction(func, evidence$7);
