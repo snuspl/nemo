@@ -62,12 +62,12 @@ public final class Dataset<T> extends org.apache.spark.sql.Dataset<T> implements
    */
   @Override
   public JavaRDD<T> javaRDD() {
-    return JavaRDD.of((SparkSession) super.sparkSession(), this);
+    return this.toJavaRDD();
   }
 
   @Override
   public JavaRDD<T> toJavaRDD() {
-    return this.javaRDD();
+    return JavaRDD.of((SparkSession) super.sparkSession(), this);
   }
 
   @Override
