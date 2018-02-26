@@ -193,25 +193,25 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   }
 
   @Override
-  public <T> Dataset<T> createDataset(java.util.List<T> data, Encoder<T> evidence$6) {
-    final boolean userTriggered = initializeFunction(data, evidence$6);
-    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$6));
+  public <T> Dataset<T> createDataset(final java.util.List<T> data, final Encoder<T> evidence) {
+    final boolean userTriggered = initializeFunction(data, evidence);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence));
     this.setIsUserTriggered(userTriggered);
     return result;
   }
 
   @Override
-  public <T> Dataset<T> createDataset(RDD<T> data, Encoder<T> evidence$5) {
-    final boolean userTriggered = initializeFunction(data, evidence$5);
-    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$5));
+  public <T> Dataset<T> createDataset(final RDD<T> data, final Encoder<T> evidence) {
+    final boolean userTriggered = initializeFunction(data, evidence);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence));
     this.setIsUserTriggered(userTriggered);
     return result;
   }
 
   @Override
-  public <T> Dataset<T> createDataset(scala.collection.Seq<T> data, Encoder<T> evidence$4) {
-    final boolean userTriggered = initializeFunction(data, evidence$4);
-    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$4));
+  public <T> Dataset<T> createDataset(final scala.collection.Seq<T> data, final Encoder<T> evidence) {
+    final boolean userTriggered = initializeFunction(data, evidence);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence));
     this.setIsUserTriggered(userTriggered);
     return result;
   }
