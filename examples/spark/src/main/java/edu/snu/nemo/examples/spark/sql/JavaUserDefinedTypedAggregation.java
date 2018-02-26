@@ -34,103 +34,198 @@ import java.io.Serializable;
  *
  * This code has been copied from the Apache Spark (https://github.com/apache/spark) to demonstrate a spark example.
  */
-public class JavaUserDefinedTypedAggregation {
+public final class JavaUserDefinedTypedAggregation {
 
+  /**
+   * Private constructor.
+   */
+  private JavaUserDefinedTypedAggregation() {
+  }
+
+  /**
+   * Employee class.
+   */
   // $example on:typed_custom_aggregation$
-  public static class Employee implements Serializable {
+  public static final class Employee implements Serializable {
     private String name;
     private long salary;
 
     // Constructors, getters, setters...
     // $example off:typed_custom_aggregation$
+    /**
+     * Getter.
+     * @return name.
+     */
     public String getName() {
       return name;
     }
 
-    public void setName(String name) {
+    /**
+     * Setter.
+     * @param name name.
+     */
+    public void setName(final String name) {
       this.name = name;
     }
 
+    /**
+     * Getter.
+     * @return salary.
+     */
     public long getSalary() {
       return salary;
     }
 
-    public void setSalary(long salary) {
+    /**
+     * Setter.
+     * @param salary salary.
+     */
+    public void setSalary(final long salary) {
       this.salary = salary;
     }
     // $example on:typed_custom_aggregation$
   }
 
-  public static class Average implements Serializable  {
+  /**
+   * Average class.
+   */
+  public static final class Average implements Serializable  {
     private long sum;
     private long count;
 
-    // Constructors, getters, setters...
     // $example off:typed_custom_aggregation$
+
+    /**
+     * Default constructor.
+     */
     public Average() {
     }
 
-    public Average(long sum, long count) {
+    /**
+     * Public constructor.
+     * @param sum sum.
+     * @param count count.
+     */
+    public Average(final long sum, final long count) {
       this.sum = sum;
       this.count = count;
     }
 
+    /**
+     * Getter.
+     * @return sum.
+     */
     public long getSum() {
       return sum;
     }
 
-    public void setSum(long sum) {
+    /**
+     * Setter.
+     * @param sum sum.
+     */
+    public void setSum(final long sum) {
       this.sum = sum;
     }
 
+    /**
+     * Getter.
+     * @return count.
+     */
     public long getCount() {
       return count;
     }
 
-    public void setCount(long count) {
+    /**
+     * Setter.
+     * @param count count.
+     */
+    public void setCount(final long count) {
       this.count = count;
     }
     // $example on:typed_custom_aggregation$
   }
 
-  public static class MyAverage extends Aggregator<Employee, Average, Double> {
-    // A zero value for this aggregation. Should satisfy the property that any b + zero = b
+  /**
+   * MyAverage class.
+   */
+  public static final class MyAverage extends Aggregator<Employee, Average, Double> {
+
+    /**
+     * A zero value for this aggregation. Should satisfy the property that any b + zero = b.
+     *
+     * @return zero.
+     */
     public Average zero() {
       return new Average(0L, 0L);
     }
-    // Combine two values to produce a new value. For performance, the function may modify `buffer`
-    // and return it instead of constructing a new object
-    public Average reduce(Average buffer, Employee employee) {
+
+
+    /**
+     * Combine two values to produce a new value.
+     * For performance, the function may modify `buffer` and return it instead of constructing a new object.
+     *
+     * @param buffer first value.
+     * @param employee second value.
+     * @return average.
+     */
+    public Average reduce(final Average buffer, final Employee employee) {
       long newSum = buffer.getSum() + employee.getSalary();
       long newCount = buffer.getCount() + 1;
       buffer.setSum(newSum);
       buffer.setCount(newCount);
       return buffer;
     }
-    // Merge two intermediate values
-    public Average merge(Average b1, Average b2) {
+
+    /**
+     * Merge two intermediate values.
+     *
+     * @param b1 first value.
+     * @param b2 second value.
+     * @return merged result.
+     */
+    public Average merge(final Average b1, final Average b2) {
       long mergedSum = b1.getSum() + b2.getSum();
       long mergedCount = b1.getCount() + b2.getCount();
       b1.setSum(mergedSum);
       b1.setCount(mergedCount);
       return b1;
     }
-    // Transform the output of the reduction
-    public Double finish(Average reduction) {
+
+    /**
+     * Transform the output of the reduction.
+     *
+     * @param reduction reduction to transform.
+     * @return the transformed result.
+     */
+    public Double finish(final Average reduction) {
       return ((double) reduction.getSum()) / reduction.getCount();
     }
-    // Specifies the Encoder for the intermediate value type
+
+    /**
+     * Specifies the Encoder for the intermediate value type.
+     *
+     * @return buffer encoder.
+     */
     public Encoder<Average> bufferEncoder() {
       return Encoders.bean(Average.class);
     }
-    // Specifies the Encoder for the final output value type
+
+    /**
+     * Specifies the Encoder for the final output value type.
+     *
+     * @return output encoder.
+     */
     public Encoder<Double> outputEncoder() {
       return Encoders.DOUBLE();
     }
   }
   // $example off:typed_custom_aggregation$
 
-  public static void main(String[] args) {
+  /**
+   * Main function.
+   * @param args arguments.
+   */
+  public static void main(final String[] args) {
     SparkSession spark = SparkSession
         .builder()
         .appName("Java Spark SQL user-defined Datasets aggregation example")

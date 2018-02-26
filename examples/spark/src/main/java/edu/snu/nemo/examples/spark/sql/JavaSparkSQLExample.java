@@ -58,31 +58,67 @@ import org.apache.spark.sql.types.StructType;
 import static org.apache.spark.sql.functions.col;
 // $example off:untyped_ops$
 
-public class JavaSparkSQLExample {
+/**
+ * Java Spark SQL Example program.
+ *
+ * This code has been copied from the Apache Spark (https://github.com/apache/spark) to demonstrate a spark example.
+ */
+public final class JavaSparkSQLExample {
+
+  /**
+   * Private constructor.
+   */
+  private JavaSparkSQLExample() {
+  }
+
+  /**
+   * Simple person class.
+   */
   // $example on:create_ds$
-  public static class Person implements Serializable {
+  public static final class Person implements Serializable {
     private String name;
     private int age;
 
+    /**
+     * Getter.
+     * @return name.
+     */
     public String getName() {
       return name;
     }
 
-    public void setName(String name) {
+    /**
+     * Setter.
+     * @param name name.
+     */
+    public void setName(final String name) {
       this.name = name;
     }
 
+    /**
+     * Getter.
+     * @return age.
+     */
     public int getAge() {
       return age;
     }
 
-    public void setAge(int age) {
+    /**
+     * Setter.
+     * @param age age.
+     */
+    public void setAge(final int age) {
       this.age = age;
     }
   }
   // $example off:create_ds$
 
-  public static void main(String[] args) throws AnalysisException {
+  /**
+   * Main function.
+   * @param args arguments.
+   * @throws AnalysisException Exception.
+   */
+  public static void main(final String[] args) throws AnalysisException {
     // $example on:init_session$
     SparkSession spark = SparkSession
         .builder()
@@ -99,7 +135,14 @@ public class JavaSparkSQLExample {
     spark.stop();
   }
 
-  private static void runBasicDataFrameExample(SparkSession spark, String peopleJson) throws AnalysisException {
+  /**
+   * Function to run basic data frame example.
+   * @param spark spark session.
+   * @param peopleJson path to people json file.
+   * @throws AnalysisException exception.
+   */
+  private static void runBasicDataFrameExample(final SparkSession spark, final String peopleJson)
+      throws AnalysisException {
     // $example on:create_df$
     Dataset<Row> df = spark.read().json(peopleJson);
 
@@ -201,7 +244,12 @@ public class JavaSparkSQLExample {
     // $example off:global_temp_view$
   }
 
-  private static void runDatasetCreationExample(SparkSession spark, final String peopleJson) {
+  /**
+   * Function to run data creation example.
+   * @param spark spark session.
+   * @param peopleJson path to people json file.
+   */
+  private static void runDatasetCreationExample(final SparkSession spark, final String peopleJson) {
     // $example on:create_ds$
     // Create an instance of a Bean class
     Person person = new Person();
@@ -243,7 +291,12 @@ public class JavaSparkSQLExample {
     // $example off:create_ds$
   }
 
-  private static void runInferSchemaExample(SparkSession spark, final String peopleTxt) {
+  /**
+   * Function to run infer schema example.
+   * @param spark spark session.
+   * @param peopleTxt path to people txt file.
+   */
+  private static void runInferSchemaExample(final SparkSession spark, final String peopleTxt) {
     // $example on:schema_inferring$
     // Create an RDD of Person objects from a text file
     JavaRDD<Person> peopleRDD = spark.read()
@@ -290,7 +343,12 @@ public class JavaSparkSQLExample {
     // $example off:schema_inferring$
   }
 
-  private static void runProgrammaticSchemaExample(SparkSession spark, final String peopleTxt) {
+  /**
+   * Function to run programmatic schema example.
+   * @param spark spark session.
+   * @param peopleTxt path to people txt file.
+   */
+  private static void runProgrammaticSchemaExample(final SparkSession spark, final String peopleTxt) {
     // $example on:programmatic_schema$
     // Create an RDD
     JavaRDD<String> peopleRDD = spark.read()

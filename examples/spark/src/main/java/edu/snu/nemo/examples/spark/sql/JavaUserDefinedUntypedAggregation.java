@@ -38,14 +38,26 @@ import java.util.List;
  *
  * This code has been copied from the Apache Spark (https://github.com/apache/spark) to demonstrate a spark example.
  */
-public class JavaUserDefinedUntypedAggregation {
+public final class JavaUserDefinedUntypedAggregation {
 
+  /**
+   * Private constructor.
+   */
+  private JavaUserDefinedUntypedAggregation() {
+  }
+
+  /**
+   * MyAverage class.
+   */
   // $example on:untyped_custom_aggregation$
-  public static class MyAverage extends UserDefinedAggregateFunction {
+  public static final class MyAverage extends UserDefinedAggregateFunction {
 
     private StructType inputSchema;
     private StructType bufferSchema;
 
+    /**
+     * Public constructor.
+     */
     public MyAverage() {
       List<StructField> inputFields = new ArrayList<>();
       inputFields.add(DataTypes.createStructField("inputColumn", DataTypes.LongType, true));
@@ -56,32 +68,63 @@ public class JavaUserDefinedUntypedAggregation {
       bufferFields.add(DataTypes.createStructField("count", DataTypes.LongType, true));
       bufferSchema = DataTypes.createStructType(bufferFields);
     }
-    // Data types of input arguments of this aggregate function
+
+    /**
+     * Data types of input arguments of this aggregate function.
+     *
+     * @return input schema.
+     */
     public StructType inputSchema() {
       return inputSchema;
     }
-    // Data types of values in the aggregation buffer
+
+    /**
+     * Data types of values in the aggregation buffer.
+     *
+     * @return buffer schema.
+     */
     public StructType bufferSchema() {
       return bufferSchema;
     }
-    // The data type of the returned value
+
+    /**
+     * The data type of the returned value.
+     *
+     * @return double type.
+     */
     public DataType dataType() {
       return DataTypes.DoubleType;
     }
-    // Whether this function always returns the same output on the identical input
+
+    /**
+     * Whether this function always returns the same output on the identical input.
+     *
+     * @return true.
+     */
     public boolean deterministic() {
       return true;
     }
-    // Initializes the given aggregation buffer. The buffer itself is a `Row` that in addition to
-    // standard methods like retrieving a value at an index (e.g., get(), getBoolean()), provides
-    // the opportunity to update its values. Note that arrays and maps inside the buffer are still
-    // immutable.
-    public void initialize(MutableAggregationBuffer buffer) {
+
+    /**
+     * Initializes the given aggregation buffer.
+     * The buffer itself is a `Row` that in addition to standard methods like retrieving a value at an
+     * index (e.g., get(), getBoolean()), provides the opportunity to update its values.
+     * Note that arrays and maps inside the buffer are still immutable.
+     *
+     * @param buffer buffer to initialize.
+     */
+    public void initialize(final MutableAggregationBuffer buffer) {
       buffer.update(0, 0L);
       buffer.update(1, 0L);
     }
-    // Updates the given aggregation buffer `buffer` with new input data from `input`
-    public void update(MutableAggregationBuffer buffer, Row input) {
+
+    /**
+     * Updates the given aggregation buffer `buffer` with new input data from `input`.
+     *
+     * @param buffer buffer to update.
+     * @param input input to update with.
+     */
+    public void update(final MutableAggregationBuffer buffer, final Row input) {
       if (!input.isNullAt(0)) {
         long updatedSum = buffer.getLong(0) + input.getLong(0);
         long updatedCount = buffer.getLong(1) + 1;
@@ -89,21 +132,37 @@ public class JavaUserDefinedUntypedAggregation {
         buffer.update(1, updatedCount);
       }
     }
-    // Merges two aggregation buffers and stores the updated buffer values back to `buffer1`
-    public void merge(MutableAggregationBuffer buffer1, Row buffer2) {
+
+    /**
+     * Merges two aggregation buffers and stores the updated buffer values back to `buffer1`.
+     *
+     * @param buffer1 first buffer.
+     * @param buffer2 second buffer.
+     */
+    public void merge(final MutableAggregationBuffer buffer1, final Row buffer2) {
       long mergedSum = buffer1.getLong(0) + buffer2.getLong(0);
       long mergedCount = buffer1.getLong(1) + buffer2.getLong(1);
       buffer1.update(0, mergedSum);
       buffer1.update(1, mergedCount);
     }
-    // Calculates the final result
-    public Double evaluate(Row buffer) {
+
+    /**
+     * Calculates the final result.
+     *
+     * @param buffer buffer row.
+     * @return the result.
+     */
+    public Double evaluate(final Row buffer) {
       return ((double) buffer.getLong(0)) / buffer.getLong(1);
     }
   }
   // $example off:untyped_custom_aggregation$
 
-  public static void main(String[] args) {
+  /**
+   * Main function.
+   * @param args arguments.
+   */
+  public static void main(final String[] args) {
     SparkSession spark = SparkSession
         .builder()
         .appName("Java Spark SQL user-defined DataFrames aggregation example")
