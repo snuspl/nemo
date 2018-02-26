@@ -20,6 +20,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.sources.BaseRelation;
 import org.apache.spark.sql.types.StructType;
@@ -187,6 +188,30 @@ public final class SparkSession extends org.apache.spark.sql.SparkSession implem
   public Dataset<Row> createDataFrame(final RDD<Row> rowRDD, final StructType schema) {
     final boolean userTriggered = initializeFunction(rowRDD, schema);
     final Dataset<Row> result = Dataset.from(super.createDataFrame(rowRDD, schema));
+    this.setIsUserTriggered(userTriggered);
+    return result;
+  }
+
+  @Override
+  public <T> Dataset<T>	createDataset(java.util.List<T> data, Encoder<T> evidence$6) {
+    final boolean userTriggered = initializeFunction(data, evidence$6);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$6));
+    this.setIsUserTriggered(userTriggered);
+    return result;
+  }
+
+  @Override
+  public <T> Dataset<T>	createDataset(RDD<T> data, Encoder<T> evidence$5) {
+    final boolean userTriggered = initializeFunction(data, evidence$5);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$5));
+    this.setIsUserTriggered(userTriggered);
+    return result;
+  }
+
+  @Override
+  public <T> Dataset<T>	createDataset(scala.collection.Seq<T> data, Encoder<T> evidence$4) {
+    final boolean userTriggered = initializeFunction(data, evidence$4);
+    final Dataset<T> result = Dataset.from(super.createDataset(data, evidence$4));
     this.setIsUserTriggered(userTriggered);
     return result;
   }
