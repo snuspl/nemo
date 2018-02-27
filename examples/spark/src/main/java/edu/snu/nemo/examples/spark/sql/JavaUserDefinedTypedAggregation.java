@@ -17,7 +17,6 @@
 
 package edu.snu.nemo.examples.spark.sql;
 
-// $example on:typed_custom_aggregation$
 import edu.snu.nemo.compiler.frontend.spark.sql.Dataset;
 import edu.snu.nemo.compiler.frontend.spark.sql.SparkSession;
 import org.apache.spark.sql.Encoder;
@@ -26,8 +25,6 @@ import org.apache.spark.sql.TypedColumn;
 import org.apache.spark.sql.expressions.Aggregator;
 
 import java.io.Serializable;
-
-// $example off:typed_custom_aggregation$
 
 /**
  * Java SparkSQL example: User-defined Typed Aggregation.
@@ -45,13 +42,10 @@ public final class JavaUserDefinedTypedAggregation {
   /**
    * Employee class.
    */
-  // $example on:typed_custom_aggregation$
   public static final class Employee implements Serializable {
     private String name;
     private long salary;
 
-    // Constructors, getters, setters...
-    // $example off:typed_custom_aggregation$
     /**
      * Getter.
      * @return name.
@@ -83,7 +77,6 @@ public final class JavaUserDefinedTypedAggregation {
     public void setSalary(final long salary) {
       this.salary = salary;
     }
-    // $example on:typed_custom_aggregation$
   }
 
   /**
@@ -93,7 +86,6 @@ public final class JavaUserDefinedTypedAggregation {
     private long sum;
     private long count;
 
-    // $example off:typed_custom_aggregation$
 
     /**
      * Default constructor.
@@ -142,7 +134,6 @@ public final class JavaUserDefinedTypedAggregation {
     public void setCount(final long count) {
       this.count = count;
     }
-    // $example on:typed_custom_aggregation$
   }
 
   /**
@@ -219,7 +210,6 @@ public final class JavaUserDefinedTypedAggregation {
       return Encoders.DOUBLE();
     }
   }
-  // $example off:typed_custom_aggregation$
 
   /**
    * Main function.
@@ -231,7 +221,6 @@ public final class JavaUserDefinedTypedAggregation {
         .appName("Java Spark SQL user-defined Datasets aggregation example")
         .getOrCreate();
 
-    // $example on:typed_custom_aggregation$
     Encoder<Employee> employeeEncoder = Encoders.bean(Employee.class);
     String path = args[0];
     Dataset<Employee> ds = spark.read().json(path).as(employeeEncoder);
@@ -255,7 +244,6 @@ public final class JavaUserDefinedTypedAggregation {
     // +--------------+
     // |        3750.0|
     // +--------------+
-    // $example off:typed_custom_aggregation$
     spark.stop();
   }
 

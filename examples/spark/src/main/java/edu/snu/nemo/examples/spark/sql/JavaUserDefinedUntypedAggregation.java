@@ -17,7 +17,6 @@
 
 package edu.snu.nemo.examples.spark.sql;
 
-// $example on:untyped_custom_aggregation$
 import edu.snu.nemo.compiler.frontend.spark.sql.Dataset;
 import edu.snu.nemo.compiler.frontend.spark.sql.SparkSession;
 import org.apache.spark.sql.Row;
@@ -30,8 +29,6 @@ import org.apache.spark.sql.types.StructType;
 
 import java.util.ArrayList;
 import java.util.List;
-
-// $example off:untyped_custom_aggregation$
 
 /**
  * Java SparkSQL example: User-defined Untyped Aggregation.
@@ -49,7 +46,6 @@ public final class JavaUserDefinedUntypedAggregation {
   /**
    * MyAverage class.
    */
-  // $example on:untyped_custom_aggregation$
   public static final class MyAverage extends UserDefinedAggregateFunction {
 
     private StructType inputSchema;
@@ -156,7 +152,6 @@ public final class JavaUserDefinedUntypedAggregation {
       return ((double) buffer.getLong(0)) / buffer.getLong(1);
     }
   }
-  // $example off:untyped_custom_aggregation$
 
   /**
    * Main function.
@@ -168,7 +163,6 @@ public final class JavaUserDefinedUntypedAggregation {
         .appName("Java Spark SQL user-defined DataFrames aggregation example")
         .getOrCreate();
 
-    // $example on:untyped_custom_aggregation$
     // Register the function to access it
     spark.udf().register("myAverage", new MyAverage());
 
@@ -191,7 +185,6 @@ public final class JavaUserDefinedUntypedAggregation {
     // +--------------+
     // |        3750.0|
     // +--------------+
-    // $example off:untyped_custom_aggregation$
 
     spark.stop();
   }

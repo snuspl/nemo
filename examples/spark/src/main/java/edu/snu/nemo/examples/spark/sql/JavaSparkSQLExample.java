@@ -17,46 +17,24 @@
 
 package edu.snu.nemo.examples.spark.sql;
 
-// $example on:programmatic_schema$
 import java.util.ArrayList;
 import java.util.List;
-// $example off:programmatic_schema$
-// $example on:create_ds$
 import java.util.Arrays;
 import java.util.Collections;
 import java.io.Serializable;
-// $example off:create_ds$
 
-// $example on:schema_inferring$
-// $example on:programmatic_schema$
 import edu.snu.nemo.compiler.frontend.spark.core.java.JavaRDD;
 import edu.snu.nemo.compiler.frontend.spark.sql.Dataset;
 import edu.snu.nemo.compiler.frontend.spark.sql.SparkSession;
 import org.apache.spark.api.java.function.Function;
-// $example off:programmatic_schema$
-// $example on:create_ds$
 import org.apache.spark.api.java.function.MapFunction;
-// $example on:create_df$
-// $example on:run_sql$
-// $example on:programmatic_schema$
-// $example off:programmatic_schema$
-// $example off:create_df$
-// $example off:run_sql$
-// $example off:create_ds$
-// $example off:schema_inferring$
-// $example on:init_session$
-// $example off:init_session$
-// $example on:programmatic_schema$
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-// $example off:programmatic_schema$
 
-// $example on:untyped_ops$
 // col("...") is preferable to df.col("...")
 import static org.apache.spark.sql.functions.col;
-// $example off:untyped_ops$
 
 /**
  * Java Spark SQL Example program.
@@ -74,7 +52,6 @@ public final class JavaSparkSQLExample {
   /**
    * Simple person class.
    */
-  // $example on:create_ds$
   public static final class Person implements Serializable {
     private String name;
     private int age;
@@ -111,7 +88,6 @@ public final class JavaSparkSQLExample {
       this.age = age;
     }
   }
-  // $example off:create_ds$
 
   /**
    * Main function.
@@ -119,13 +95,11 @@ public final class JavaSparkSQLExample {
    * @throws AnalysisException Exception.
    */
   public static void main(final String[] args) throws AnalysisException {
-    // $example on:init_session$
     SparkSession spark = SparkSession
         .builder()
         .appName("Java Spark SQL basic example")
         .config("spark.some.config.option", "some-value")
         .getOrCreate();
-    // $example off:init_session$
 
     runBasicDataFrameExample(spark, args[0]);
     runDatasetCreationExample(spark, args[0]);
@@ -143,7 +117,6 @@ public final class JavaSparkSQLExample {
    */
   private static void runBasicDataFrameExample(final SparkSession spark, final String peopleJson)
       throws AnalysisException {
-    // $example on:create_df$
     Dataset<Row> df = spark.read().json(peopleJson);
 
     // Displays the content of the DataFrame to stdout
@@ -155,9 +128,7 @@ public final class JavaSparkSQLExample {
     // |  30|   Andy|
     // |  19| Justin|
     // +----+-------+
-    // $example off:create_df$
 
-    // $example on:untyped_ops$
     // Print the schema in a tree format
     df.printSchema();
     // root
@@ -201,9 +172,7 @@ public final class JavaSparkSQLExample {
     // |null|    1|
     // |  30|    1|
     // +----+-----+
-    // $example off:untyped_ops$
 
-    // $example on:run_sql$
     // Register the DataFrame as a SQL temporary view
     df.createOrReplaceTempView("people");
 
@@ -216,9 +185,7 @@ public final class JavaSparkSQLExample {
     // |  30|   Andy|
     // |  19| Justin|
     // +----+-------+
-    // $example off:run_sql$
 
-    // $example on:global_temp_view$
     // Register the DataFrame as a global temporary view
     df.createGlobalTempView("people");
 
@@ -241,7 +208,6 @@ public final class JavaSparkSQLExample {
     // |  30|   Andy|
     // |  19| Justin|
     // +----+-------+
-    // $example off:global_temp_view$
   }
 
   /**
@@ -250,7 +216,6 @@ public final class JavaSparkSQLExample {
    * @param peopleJson path to people json file.
    */
   private static void runDatasetCreationExample(final SparkSession spark, final String peopleJson) {
-    // $example on:create_ds$
     // Create an instance of a Bean class
     Person person = new Person();
     person.setName("Andy");
@@ -288,7 +253,6 @@ public final class JavaSparkSQLExample {
     // |  30|   Andy|
     // |  19| Justin|
     // +----+-------+
-    // $example off:create_ds$
   }
 
   /**
@@ -297,7 +261,6 @@ public final class JavaSparkSQLExample {
    * @param peopleTxt path to people txt file.
    */
   private static void runInferSchemaExample(final SparkSession spark, final String peopleTxt) {
-    // $example on:schema_inferring$
     // Create an RDD of Person objects from a text file
     JavaRDD<Person> peopleRDD = spark.read()
         .textFile(peopleTxt)
@@ -340,7 +303,6 @@ public final class JavaSparkSQLExample {
     // +------------+
     // |Name: Justin|
     // +------------+
-    // $example off:schema_inferring$
   }
 
   /**
@@ -349,7 +311,6 @@ public final class JavaSparkSQLExample {
    * @param peopleTxt path to people txt file.
    */
   private static void runProgrammaticSchemaExample(final SparkSession spark, final String peopleTxt) {
-    // $example on:programmatic_schema$
     // Create an RDD
     JavaRDD<String> peopleRDD = spark.read()
         .textFile(peopleTxt)
@@ -394,6 +355,5 @@ public final class JavaSparkSQLExample {
     // |   Name: Andy|
     // | Name: Justin|
     // +-------------+
-    // $example off:programmatic_schema$
   }
 }
