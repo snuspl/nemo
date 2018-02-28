@@ -24,10 +24,13 @@ import edu.snu.nemo.runtime.common.plan.physical.PhysicalStageEdge;
 import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.reef.annotations.audience.DriverSide;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 /**
@@ -40,6 +43,7 @@ import java.util.function.BiFunction;
 @ThreadSafe
 @DriverSide
 public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
+  private static final Logger LOG = LoggerFactory.getLogger(SingleJobTaskGroupQueue.class.getName());
   private PhysicalPlan physicalPlan;
 
   /**
@@ -52,6 +56,10 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
    */
   private final BlockingDeque<String> schedulableStages;
 
+  private final List<StringBuffer> logs = new ArrayList<>();
+
+  private final AtomicInteger index = new AtomicInteger();
+
   @Inject
   public SingleJobTaskGroupQueue() {
     stageIdToPendingTaskGroups = new ConcurrentHashMap<>();
@@ -61,8 +69,10 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
   @Override
   public void enqueue(final ScheduledTaskGroup scheduledTaskGroup) {
     final String stageId = RuntimeIdGenerator.getStageIdFromTaskGroupId(scheduledTaskGroup.getTaskGroupId());
+    final int requestId = index.getAndIncrement();
 
     synchronized (stageIdToPendingTaskGroups) {
+      print("#" + requestId + "enq1 (" + scheduledTaskGroup.getTaskGroupId() + ")");
       stageIdToPendingTaskGroups.compute(stageId,
           new BiFunction<String, Deque<ScheduledTaskGroup>, Deque<ScheduledTaskGroup>>() {
             @Override
@@ -79,6 +89,7 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
               }
             }
           });
+      print("#" + requestId + "enq2 (" + scheduledTaskGroup.getTaskGroupId() + ")");
     }
   }
 
@@ -90,6 +101,8 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
   public Optional<ScheduledTaskGroup> dequeue() {
     ScheduledTaskGroup taskGroupToSchedule = null;
     final String stageId;
+
+    final int requestId = index.getAndIncrement();
     try {
       stageId = schedulableStages.takeFirst();
     } catch (InterruptedException e) {
@@ -97,7 +110,9 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
       throw new SchedulingException(new Throwable("An exception occurred while trying to dequeue the next TaskGroup"));
     }
 
+    print("#" + requestId + "deq1");
     synchronized (stageIdToPendingTaskGroups) {
+
       final Deque<ScheduledTaskGroup> pendingTaskGroupsForStage = stageIdToPendingTaskGroups.get(stageId);
 
       if (pendingTaskGroupsForStage == null) {
@@ -112,8 +127,11 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
           schedulableStages.addLast(stageId);
         }
       }
+
     }
 
+    print("#" + requestId + "deq2 (" + ((taskGroupToSchedule == null) ? "null"
+        : taskGroupToSchedule.getTaskGroupId()) + ")");
     return (taskGroupToSchedule == null) ? Optional.empty()
         : Optional.of(taskGroupToSchedule);
   }
@@ -187,9 +205,26 @@ public final class SingleJobTaskGroupQueue implements PendingTaskGroupQueue {
     return true;
   }
 
+  private void print(final String calledMethod) {
+    final StringBuffer result = new StringBuffer();
+
+    synchronized (this) {
+      result.append("\n").append(calledMethod).append("\n");
+      schedulableStages.forEach(stageId -> result.append(stageId).append(", "));
+    }
+
+    logs.add(result);
+  }
+
+  public void printLog() {
+    logs.forEach(log -> LOG.info(log.toString()));
+  }
+
   @Override
   public void onJobScheduled(final PhysicalPlan physicalPlanForJob) {
     this.physicalPlan = physicalPlanForJob;
+    this.schedulableStages.clear();
+    this.stageIdToPendingTaskGroups.clear();
   }
 
   @Override
