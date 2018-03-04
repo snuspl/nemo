@@ -19,10 +19,13 @@ import edu.snu.nemo.common.Pair;
 import edu.snu.nemo.runtime.common.plan.physical.PhysicalPlan;
 import edu.snu.nemo.runtime.common.state.TaskGroupState;
 import edu.snu.nemo.runtime.master.JobStateManager;
+import edu.snu.nemo.runtime.master.resource.ExecutorRepresenter;
 import org.apache.reef.annotations.audience.DriverSide;
 import org.apache.reef.tang.annotations.DefaultImplementation;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * Receives jobs to execute and schedules
@@ -51,9 +54,9 @@ public interface Scheduler {
 
   /**
    * Called when an executor is added to Runtime, so that the extra resource can be used to execute the job.
-   * @param executorId of the executor that has been added.
+   * @param executorRepresenter a representation of the added executor.
    */
-  void onExecutorAdded(String executorId);
+  void onExecutorAdded(ExecutorRepresenter executorRepresenter);
 
   /**
    * Called when an executor is removed from Runtime, so that faults related to the removal can be handled.

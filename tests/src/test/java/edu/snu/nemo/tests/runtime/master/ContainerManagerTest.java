@@ -85,21 +85,6 @@ public final class ContainerManagerTest {
     allocateResource(createMockContext());
     allocateResource(createMockContext());
     allocateResource(createMockContext());
-
-    // Say the job finishes,
-    // and we would like to shutdown the running executors and terminate ContainerManager.
-    final Future<Boolean> terminationResult = containerManager.terminate();
-
-    // But say, the 5th container and executor was only allocated by this point.
-    allocateResource(createMockContext());
-
-    try {
-      assertTrue(terminationResult.get());
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ExecutionException e) {
-      e.printStackTrace();
-    }
   }
 
   private AllocatedEvaluator createMockEvaluator() {
@@ -121,6 +106,6 @@ public final class ContainerManagerTest {
 
   private void allocateResource(final ActiveContext mockContext) {
     containerManager.onContainerAllocated(mockContext.getId(), createMockEvaluator(), null);
-    containerManager.onExecutorLaunched(mockContext);
+    containerManager.onContainerLaunched(mockContext);
   }
 }

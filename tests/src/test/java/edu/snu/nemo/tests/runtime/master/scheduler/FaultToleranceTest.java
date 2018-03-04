@@ -29,7 +29,7 @@ import edu.snu.nemo.common.ir.vertex.transform.Transform;
 import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
 import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.nemo.conf.JobConf;
-import edu.snu.nemo.runtime.master.resource.ExecutorRegistry;
+import edu.snu.nemo.runtime.master.scheduler.ExecutorRegistry;
 import edu.snu.nemo.tests.runtime.RuntimeTestUtil;
 import edu.snu.nemo.runtime.common.comm.ControlMessage;
 import edu.snu.nemo.runtime.common.message.MessageSender;
@@ -127,7 +127,7 @@ public final class FaultToleranceTest {
     // Add nodes
     for (final ExecutorRepresenter executor : executors) {
       executorRegistry.registerRepresenter(executor);
-      scheduler.onExecutorAdded(executor.getExecutorId());
+      scheduler.onExecutorAdded(executor);
     }
   }
 

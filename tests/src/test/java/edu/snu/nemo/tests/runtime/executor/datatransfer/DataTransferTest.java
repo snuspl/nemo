@@ -52,7 +52,7 @@ import edu.snu.nemo.runtime.master.BlockManagerMaster;
 import edu.snu.nemo.runtime.master.eventhandler.UpdatePhysicalPlanEventHandler;
 import edu.snu.nemo.runtime.master.RuntimeMaster;
 import edu.snu.nemo.runtime.master.resource.ContainerManager;
-import edu.snu.nemo.runtime.master.resource.ExecutorRegistry;
+import edu.snu.nemo.runtime.master.scheduler.ExecutorRegistry;
 import edu.snu.nemo.runtime.master.scheduler.*;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
@@ -146,8 +146,8 @@ public final class DataTransferTest {
 
     // Necessary for wiring up the message environments
     final RuntimeMaster runtimeMaster =
-        new RuntimeMaster(scheduler, schedulerRunner, taskGroupQueue,
-            containerManager, master, metricMessageHandler, messageEnvironment, EMPTY_DAG_DIRECTORY);
+        new RuntimeMaster(scheduler, containerManager, master,
+            metricMessageHandler, messageEnvironment, EMPTY_DAG_DIRECTORY);
 
     final Injector injector1 = Tang.Factory.getTang().newInjector();
     injector1.bindVolatileInstance(MessageEnvironment.class, messageEnvironment);

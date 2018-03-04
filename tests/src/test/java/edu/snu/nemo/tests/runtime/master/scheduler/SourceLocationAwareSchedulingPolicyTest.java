@@ -20,7 +20,7 @@ import edu.snu.nemo.runtime.common.plan.physical.ScheduledTaskGroup;
 import edu.snu.nemo.runtime.common.state.TaskGroupState;
 import edu.snu.nemo.common.ir.Readable;
 import edu.snu.nemo.runtime.master.JobStateManager;
-import edu.snu.nemo.runtime.master.resource.ExecutorRegistry;
+import edu.snu.nemo.runtime.master.scheduler.ExecutorRegistry;
 import edu.snu.nemo.runtime.master.resource.ExecutorRepresenter;
 import edu.snu.nemo.runtime.master.scheduler.RoundRobinSchedulingPolicy;
 import edu.snu.nemo.runtime.master.scheduler.SchedulingPolicy;
@@ -233,7 +233,7 @@ public final class SourceLocationAwareSchedulingPolicyTest {
 
   private MockExecutorRepresenterWrapper addExecutor(final MockExecutorRepresenterWrapper executor) {
     executorRegistry.registerRepresenter(executor.get());
-    sourceLocationAware.onExecutorAdded(executor.get().getExecutorId());
+    sourceLocationAware.onExecutorAdded(executor.get());
     return executor;
   }
 

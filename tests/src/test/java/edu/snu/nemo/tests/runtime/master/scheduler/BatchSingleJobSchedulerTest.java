@@ -29,7 +29,7 @@ import edu.snu.nemo.common.ir.executionproperty.ExecutionProperty;
 import edu.snu.nemo.compiler.optimizer.CompiletimeOptimizer;
 import edu.snu.nemo.compiler.optimizer.examples.EmptyComponents;
 import edu.snu.nemo.conf.JobConf;
-import edu.snu.nemo.runtime.master.resource.ExecutorRegistry;
+import edu.snu.nemo.runtime.master.scheduler.ExecutorRegistry;
 import edu.snu.nemo.tests.runtime.RuntimeTestUtil;
 import edu.snu.nemo.runtime.common.comm.ControlMessage;
 import edu.snu.nemo.runtime.common.message.MessageSender;
@@ -137,13 +137,13 @@ public final class BatchSingleJobSchedulerTest {
     executorRegistry.registerRepresenter(b2);
 
     // Add compute nodes
-    scheduler.onExecutorAdded(a1.getExecutorId());
-    scheduler.onExecutorAdded(a2.getExecutorId());
-    scheduler.onExecutorAdded(a3.getExecutorId());
+    scheduler.onExecutorAdded(a1);
+    scheduler.onExecutorAdded(a2);
+    scheduler.onExecutorAdded(a3);
 
     // Add storage nodes
-    scheduler.onExecutorAdded(b1.getExecutorId());
-    scheduler.onExecutorAdded(b2.getExecutorId());
+    scheduler.onExecutorAdded(b1);
+    scheduler.onExecutorAdded(b2);
 
     physicalPlanGenerator = injector.getInstance(PhysicalPlanGenerator.class);
   }
